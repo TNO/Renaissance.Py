@@ -136,7 +136,7 @@ class ClangASTNode(ASTNode):
 
     @staticmethod
     def _is_wrapped(cursor):
-        return cursor.kind.name.startswith('UNEXPOSED') and len(list(cursor.get_children())) == 1
+        return cursor.kind.is_unexposed() and len(list(cursor.get_children())) == 1
 
 # Function to recursively visit AST nodes
 def visit_node(node, depth=0):
