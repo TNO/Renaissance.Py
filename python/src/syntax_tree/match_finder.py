@@ -219,7 +219,7 @@ class MatchFinder:
             wildcard_match.add_node(srcNode)
             return MatchFinder.match_pattern(patternMatch, srcNodes[1:], patterns, depth)
         elif MatchUtils.is_single_wildcard(patternNode) or MatchUtils.is_match(srcNode, patternNode):
-            if patternNode.is_statement() != srcNode.is_statement(): # type: ignore
+            if patternNode.is_statement() and not srcNode.is_statement(): # type: ignore
                 return None
             # if the pattern node has children then kind must match (to distinct for instance while and if)
             if patternNode.get_children() and (not MatchUtils.is_kind_match(srcNode, patternNode)):

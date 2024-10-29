@@ -60,6 +60,14 @@ class TestExpressions(TestMatchFinder):
     ('a == 3',['a==3'], [{}]),   
     ('a == $x',['a==3', 'a==4'], [{'$x':['3']},{'$x':['4']}]),
     ('$y == $x',['a==3', 'a==4', 'b==5'], [{'$y':['a'], '$x':['3']},{'$y':['a'], '$x':['4']},{'$y':['b'], '$x':['5']}]),
+    ('b--',['b--'], [{}]),
+    ('b++',[], []),
+    ('--b',[], []),
+    ('++b',[], []),
+    ('$x--',['b--'], [{'$x': ['b']}]),
+    ('$x++',[], []),
+    ('--$x',[], []),
+    ('++$x',[], []),
 ]))
     def test(self, _, factory, expression, expected_full_matches: list[str], expected_dicts_per_match: list[dict[str, list[str]]]):
         exprNode = CPatternFactory(factory).create_expression(expression)

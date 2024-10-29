@@ -96,9 +96,28 @@ class ClangASTNode(ASTNode):
             result['operator'] = operator.strip()
             # next statement works in C++ but not in Python (yet) will be released later
             # result['operator'] =  self.node.getOpCode()
-        if self.get_kind().endswith('_LITERAL'):
+        elif self.get_kind() == 'UNARY_OPERATOR':
+            #TODO remove below code after clang release that supports the getOpCode() statement
+            child = self.get_children()[0]
+            #list all attributes of self.node excluding the once starting with _
+
+            if child.get_start_offset() > self.get_start_offset():
+                start_offset = self.get_start_offset()
+                end_offset = child.get_start_offset()
+                prefixOperator = True
+            else:
+                start_offset = child.get_start_offset() + child.get_length()
+                end_offset = self.get_start_offset() + self.get_length()
+                prefixOperator = False
+
+            operator = self.get_content(start_offset, end_offset)
+            result['operator'] = operator.strip()
+            result['prefixOperator'] = prefixOperator
+            # next statement works in C++ but not in Python (yet) will be released later
+            # result['operator'] =  self.node.getOpCode()
+        elif self.get_kind().endswith('_LITERAL'):
             self.addTokens(result, 'LITERAL')
-        if self.get_kind() =='DECL_REF_EXPR':
+        elif self.get_kind() =='DECL_REF_EXPR':
             self.addTokens(result, 'LITERAL')
 
         is_all = { attr[len('is_'):]: getattr(self.node, attr)() for attr in dir(self.node) if attr.startswith('is_') and  getattr(self.node, attr)()}
