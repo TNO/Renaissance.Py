@@ -1,8 +1,6 @@
-import logging
-
 from unittest import TestCase
 from parameterized import parameterized
-from test.c_cpp.factories import Factories
+from .factories import Factories
 
 class TestASTFactory(TestCase):
 

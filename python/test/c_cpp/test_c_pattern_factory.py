@@ -1,16 +1,10 @@
-from impl.clang import ClangASTNode
-import logging
-
 from unittest import TestCase
 
-from syntax_tree.ast_factory import ASTFactory
 from syntax_tree.ast_finder import ASTFinder
 from syntax_tree.ast_shower import ASTShower
 from syntax_tree.c_pattern_factory import CPatternFactory
 from parameterized import parameterized
-from test.c_cpp import Factories
-
-logger = logging.getLogger(__name__)
+from test.c_cpp.factories import Factories
 
 class TestCPatternFactory(TestCase):
     pass
@@ -80,15 +74,3 @@ class TestStatements(TestCPatternFactory):
         self.assertEqual(count_refs, expected_refs)
         for stmt in created_statements:
             self.assertTrue(stmt.is_statement())
-
-class Miscellaneous(TestCPatternFactory):
-
-    def test_test(self):
-        factory = ASTFactory(ClangASTNode)
-        code = 'int $a;int (*fp) $f;\n\nvoid __rejuvenation__reserved__(){\n$f($a);\n}'
-        atu = factory.create_from_text(code, 't.c')
-        ASTShower.show_node(atu)
-        atu = factory.create_from_text('class A {}; int a; int (*fp) $f; void x(){a=$f(a);}', 't.cpp')
-        ASTShower.show_node(atu)
-        # atu = factory.create_from_text('void f(){a();}', 't.c')
-        # ASTShower.show_node(atu)

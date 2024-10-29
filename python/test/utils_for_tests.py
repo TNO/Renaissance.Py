@@ -1,7 +1,4 @@
-from itertools import product
 import re
-from impl.clang.clang_ast_node import ClangASTNode
-from syntax_tree.ast_factory import ASTFactory
 from syntax_tree.ast_node import ASTNode
 from syntax_tree.ast_shower import ASTShower
 

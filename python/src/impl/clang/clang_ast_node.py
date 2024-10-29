@@ -3,9 +3,8 @@ from pathlib import Path
 from typing import Optional
 from syntax_tree.ast_node import ASTNode
 from typing_extensions import override
-import re
 
-from clang.cindex import TranslationUnit, Index, Config, CursorKind
+from clang.cindex import TranslationUnit, Index, Config
 
 EMPTY_DICT = {}
 EMPTY_STR = ''
@@ -13,9 +12,17 @@ EMPTY_LIST = []
 
 STMT_PARENTS = [ 'COMPOUND_STMT', 'TRANSLATION_UNIT' ]
 
+
 class ClangASTNode(ASTNode):
-    print(Path(__file__).parent.parent.parent.parent / '.venv/Lib/site-packages/clang/native')
-    Config.set_library_path(Path(__file__).parent.parent.parent.parent / '.venv/Lib/site-packages/clang/native')
+    @staticmethod
+    def set_library_path() -> None:
+        try: 
+            print(Path(__file__).parent.parent.parent.parent / '.venv/Lib/site-packages/clang/native')
+            Config.set_library_path(Path(__file__).parent.parent.parent.parent / '.venv/Lib/site-packages/clang/native')
+        except Exception as e:  
+            print(e)
+            
+    set_library_path()
     index = Index.create()
     parse_args=['-fparse-all-comments', '-ferror-limit=0', '-Xclang', '-ast-dump=json', '-fsyntax-only']
 

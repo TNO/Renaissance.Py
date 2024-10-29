@@ -5,14 +5,12 @@ from syntax_tree.ast_factory import ASTFactory
 from syntax_tree.c_pattern_factory import CPatternFactory
 from syntax_tree.match_finder import MatchFinder
 from syntax_tree.ast_node import ASTNode
-from test.test_utils import to_string, compress, show_node
-
-
-from test.c_cpp import Factories
+from test.utils_for_tests import to_string, compress, show_node
+from test.c_cpp.factories import Factories
 
 logger = logging.getLogger(__name__)
 
-class TestMatchFinder(TestCase):
+class TestCMatchFinder(TestCase):
 
     SIMPLE_CPP  = """
         void f(){
@@ -54,7 +52,7 @@ class TestMatchFinder(TestCase):
         self.assertEqual(len(matches), len(expected_dicts_per_match))
         return matches
 
-class TestExpressions(TestMatchFinder):
+class TestExpressions(TestCMatchFinder):
         
     @parameterized.expand(Factories.extend([
     ('a == 3',['a==3'], [{}]),   
@@ -74,7 +72,7 @@ class TestExpressions(TestMatchFinder):
         matches = self.do_test(factory, TestStatements.SIMPLE_CPP, [exprNode], expected_dicts_per_match, recursive=True)
         self.assertEqual([compress(match.src_nodes[0].get_raw_signature()) for match in matches], expected_full_matches)
 
-class TestStatements(TestMatchFinder):
+class TestStatements(TestCMatchFinder):
         
     @parameterized.expand(Factories.extend([
     ('$x;$y;',[{'$x': ['int a=3;'], '$y': ['int b=4;']}, {'$x': ['if(a==3){b=5;}else{b--;}'], '$y': ['while(a!=3){if(a==4&&b==5){b=a;}}']}]),   
@@ -87,7 +85,7 @@ class TestStatements(TestMatchFinder):
         stmtNodes = CPatternFactory(factory).create_statements(statements)
         self.do_test(factory, TestStatements.SIMPLE_CPP, stmtNodes, expected_dicts_per_match, recursive=True)
 
-class TestFunctionCallStatements(TestMatchFinder):
+class TestFunctionCallStatements(TestCMatchFinder):
 
     @parameterized.expand(Factories.extend([
     ('$f($a);',['int (*fp) $f;'],[{'$f': ['one(a)'], '$a': ['a']}]),   
