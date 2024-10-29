@@ -1,0 +1,23 @@
+from itertools import product
+import re
+from impl.clang.clang_ast_node import ClangASTNode
+from syntax_tree.ast_factory import ASTFactory
+from syntax_tree.ast_node import ASTNode
+from syntax_tree.ast_shower import ASTShower
+
+
+VERBOSE = False
+def to_string(d:dict[str, list[ASTNode]]):
+    return {k: [compress(v.get_raw_signature()) for v in vs] for k, vs in d.items()}
+
+def compress(s:str):
+    skip_whitespace =  re.sub(r'\s+', ' ',s.replace('\n',''))
+    skip_whitespace = re.sub(r'(\W)\s', r'\1',skip_whitespace)
+    skip_whitespace = re.sub(r'\s(\W)', r'\1',skip_whitespace)
+    return skip_whitespace
+
+def show_node(node: ASTNode, title:str = ''):
+    if VERBOSE:
+        if title:
+            print(f'\n{"="*10} {title} {"="*10}')
+        ASTShower.show_node(node)
