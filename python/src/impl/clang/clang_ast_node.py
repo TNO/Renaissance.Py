@@ -5,11 +5,14 @@ from syntax_tree.ast_node import ASTNode
 from typing_extensions import override
 import re
 
-from clang.cindex import TranslationUnit, Index, Config
+from clang.cindex import TranslationUnit, Index, Config, CursorKind
 
 EMPTY_DICT = {}
 EMPTY_STR = ''
 EMPTY_LIST = []
+
+STMT_PARENTS = [ 'COMPOUND_STMT', 'TRANSLATION_UNIT' ]
+
 class ClangASTNode(ASTNode):
     print(Path(__file__).parent.parent.parent.parent / '.venv/Lib/site-packages/clang/native')
     Config.set_library_path(Path(__file__).parent.parent.parent.parent / '.venv/Lib/site-packages/clang/native')
@@ -19,6 +22,7 @@ class ClangASTNode(ASTNode):
     def __init__(self, node, translation_unit:TranslationUnit,  parent =  None):
         super().__init__(self if parent is None else parent.root)
         self.node = node
+        self.skipped_node = None
         self._children = None
         self.parent = parent
         self.translation_unit = translation_unit
@@ -82,9 +86,6 @@ class ClangASTNode(ASTNode):
     @override
     def get_properties(self) -> dict[str, int|str]: 
         result  =  {}
-        name = self.get_name()
-        if name:
-            result['name'] = name
             
         if self.get_kind() == 'BINARY_OPERATOR':
             #TODO remove below code after clang release that supports the getOpCode() statement
@@ -108,6 +109,9 @@ class ClangASTNode(ASTNode):
     def get_parent(self) -> Optional['ClangASTNode']: 
         return  self.parent
 
+    def is_statement(self) ->bool:
+        return self.parent != None and self.parent.get_kind() in STMT_PARENTS
+    
     @override
     def get_children(self) -> list['ClangASTNode']: 
         if self._children is None:
@@ -124,11 +128,15 @@ class ClangASTNode(ASTNode):
     @staticmethod
     def remove_wrapper(cursor):
         try:
-            if cursor.kind.name.startswith('UNEXPOSED') and len(list(cursor.get_children())) == 1:
+            if ClangASTNode._is_wrapped(cursor):
                 return  ClangASTNode.remove_wrapper(list(cursor.get_children())[0])
         except:
             pass
         return cursor
+
+    @staticmethod
+    def _is_wrapped(cursor):
+        return cursor.kind.name.startswith('UNEXPOSED') and len(list(cursor.get_children())) == 1
 
 # Function to recursively visit AST nodes
 def visit_node(node, depth=0):

@@ -82,9 +82,13 @@ class ASTNode(ABC):
     @abstractmethod
     def get_properties(self) -> dict[str, int|str]: 
         pass
-    
+
     @abstractmethod
     def get_parent(self: ASTNodeType) -> Optional[ASTNodeType]: 
+        pass
+
+    @abstractmethod
+    def is_statement(self) ->bool: 
         pass
 
     @abstractmethod
