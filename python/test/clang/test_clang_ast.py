@@ -7,19 +7,19 @@ from unittest import TestCase
 
 from syntax_tree import ASTNode
 
-from test.clang.clang_model_loader import ClangModelLoader
+from test.clang.test_model_loader import TestModelLoader
 
 logger = logging.getLogger(__name__)
 
 class TestClangAst(TestCase):
     logger.info("Loading AST")
-    model = ClangModelLoader.model
+    model = TestModelLoader.model
     logger.info("Loaded AST")
 
 
     def test_rawBinding(self):
         start = time.time()
-        rootNode = ClangModelLoader.model
+        rootNode = TestModelLoader.model
         duration2 = time.time() - start
         children = rootNode.get_children()
         for c in children:
