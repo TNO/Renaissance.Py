@@ -29,7 +29,6 @@ class ClangASTNode(ASTNode):
     def __init__(self, node, translation_unit:TranslationUnit,  parent =  None):
         super().__init__(self if parent is None else parent.root)
         self.node = node
-        self.skipped_node = None
         self._children = None
         self.parent = parent
         self.translation_unit = translation_unit
@@ -54,9 +53,11 @@ class ClangASTNode(ASTNode):
     @override
     def get_name(self) -> str:
         try:
-            return self.node.spelling #TODO fix
+            if self.get_kind() not in ['CALL_EXPR']:
+                return self.node.spelling #TODO fix
         except: 
-            return EMPTY_STR
+            pass
+        return EMPTY_STR
 
     @override
     def get_containing_filename(self) -> str:
