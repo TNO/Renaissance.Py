@@ -1,3 +1,4 @@
+import re
 from unittest import TestCase
 
 from parameterized import parameterized
@@ -43,7 +44,7 @@ class TestAllFinder(TestFinder):
     def test_find_all_expr(self, _, factory):
         model = ModelLoader.load_model(factory)
         def isBinaryOperator(node: ASTNode):
-            if 'BINARY_OPERATOR' in node.get_kind(): yield node
+            if re.fullmatch('(?i).*binary_?operator',node.get_kind()) : yield node
         iter = ASTFinder.find_all(model, isBinaryOperator)
         total = len(list(iter))
         self.assertGreater( total, 0)
