@@ -88,10 +88,10 @@ class TestStatements(TestCMatchFinder):
 class TestFunctionCallStatements(TestCMatchFinder):
 
     @parameterized.expand(Factories.extend([
-    ('$f($a);',['int (*fp) $f;'],[{'$f': ['one(a)'], '$a': ['a']}]),   
-    ('$f($a, $$all);',['int (*fp) $f;'],[{'$f': ['one(a)'], '$a': ['a'], '$$all': []}, {'$f': ['two(a,b)'], '$a': ['a'], '$$all': ['b']}, {'$f': ['three(a,b,c)'], '$a': ['a'], '$$all': ['b', 'c']}]),
-    ('$f($$all, $a);',['int (*fp) $f;'],[{'$f': ['one(a)'], '$$all': [], '$a': ['a']}, {'$f': ['two(a,b)'], '$$all': ['a'], '$a': ['b']}, {'$f': ['three(a,b,c)'], '$$all': ['a', 'b'], '$a': ['c']}]),
-    ('$f($a, $$all, $b);',['int (*fp) $f;'],[{'$f': ['two(a,b)'], '$a': ['a'], '$$all': [], '$b': ['b']}, {'$f': ['three(a,b,c)'], '$a': ['a'], '$$all': ['b'], '$b': ['c']}]),
+    ('$f($a);',['int (*fp) $f;'],[{'$f': ['one'], '$a': ['a']}]),   
+    ('$f($a, $$all);',['int (*fp) $f;'],[{'$f': ['one'], '$a': ['a'], '$$all': []}, {'$f': ['two'], '$a': ['a'], '$$all': ['b']}, {'$f': ['three'], '$a': ['a'], '$$all': ['b', 'c']}]),
+    ('$f($$all, $a);',['int (*fp) $f;'],[{'$f': ['one'], '$$all': [], '$a': ['a']}, {'$f': ['two'], '$$all': ['a'], '$a': ['b']}, {'$f': ['three'], '$$all': ['a', 'b'], '$a': ['c']}]),
+    ('$f($a, $$all, $b);',['int (*fp) $f;'],[{'$f': ['two'], '$a': ['a'], '$$all': [], '$b': ['b']}, {'$f': ['three'], '$a': ['a'], '$$all': ['b'], '$b': ['c']}]),
 ]))
     def test(self, _, factory, statements, extra_declarations, expected_dicts_per_match: list[dict[str, list[str]]]):
         code = """
@@ -109,3 +109,52 @@ class TestFunctionCallStatements(TestCMatchFinder):
         stmtNodes = CPatternFactory(factory).create_statements(statements, extra_declarations=extra_declarations)
         self.do_test(factory, code, stmtNodes, expected_dicts_per_match, recursive=True)
 
+class TestMultiAssignments(TestCMatchFinder):
+
+    @parameterized.expand(Factories.extend([
+    ('$f($$all1);$f($$all2)',['int (*fp) $f;'],[{'$f': ['fc'], '$$all1': ['1', '2', '3', '4', '5'], '$$all2': ['1', '2', '6', '4', '5']}]),   
+    ('$f($$before, $a, $$after);$f($$before, $b, $$after)',['int (*fp) $f;'],[{'$f': ['fc'], '$$before': ['1', '2'], '$a': ['3'], '$$after': ['4', '5'], '$b': ['6']}]),   
+]))
+    def test_args(self, _, factory, statements, extra_declarations, expected_dicts_per_match: list[dict[str, list[str]]]):
+        code = """
+        int fc(int a, int b, int c, int d, int e);
+        int fc_else(int a, int b, int c, int d, int e);
+        void f(){
+            fc(1,2,3,4,5);
+            fc(1,2,6,4,5);
+
+            fc(1,2,3,4,5);
+            fc_else(1,2,6,4,5);
+        }
+        """
+        
+        stmtNodes = CPatternFactory(factory).create_statements(statements, extra_declarations=extra_declarations)
+        self.do_test(factory, code, stmtNodes, expected_dicts_per_match, recursive=True)
+
+    @parameterized.expand(Factories.extend([
+    ('if ($c) {$$before; $true; $$after;} else {$$before; $false; $$after;}',['int (*fp) $f;'],[{'$c': ['1'], '$$before': ['a=1', 'b=2'], '$true': ['c=3'], '$$after': ['d=4', 'e=5'], '$false': ['c=6']}]),   
+]))
+
+    def test_statements(self, _, factory, statements, extra_declarations, expected_dicts_per_match: list[dict[str, list[str]]]):
+        code = """
+        void f(){
+            int a,b,c,d,e;
+            if(1){
+               a=1;
+               b=2;
+               c=3;
+               d=4;
+               e=5;
+            }
+            else {
+               a=1;
+               b=2;
+               c=6; //different
+               d=4;
+               e=5;
+            }
+        }
+        """
+        
+        stmtNodes = CPatternFactory(factory).create_statements(statements, extra_declarations=extra_declarations)
+        self.do_test(factory, code, stmtNodes, expected_dicts_per_match, recursive=True)
