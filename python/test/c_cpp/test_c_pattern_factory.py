@@ -19,7 +19,10 @@ class TestExpression(TestCPatternFactory):
         ('c > $foo',),
         ('d < $bar',),
         ('e >= $baz',),
-        ('f <= $qux',)
+        ('f <= $qux',),
+        ('g--',),
+        ('h++',),
+        ('!i',)
     ]))
     def test(self, _, factory, expression):
         patternFactory = CPatternFactory(factory)
@@ -42,8 +45,8 @@ class TestDeclaration(TestCPatternFactory):
         count_refs = 0
         count_vars = 0
         for decl in created_declarations:
-            count_refs += len(list(ASTFinder.find_kind(decl, 'DECL_REF_EXPR')))
-            count_vars += len(list(ASTFinder.find_kind(decl, 'VAR_DECL')))
+            count_refs += len(list(ASTFinder.find_kind(decl, '(?i)DECL_?REF_?EXPR')))
+            count_vars += len(list(ASTFinder.find_kind(decl, '(?i)VAR_?DECL')))
             print('*'*80)
             ASTShower.show_node(decl)
             print('*'*80)
@@ -66,7 +69,7 @@ class TestStatements(TestCPatternFactory):
         
         count_refs = 0
         for decl in created_statements:
-            count_refs += len(list(ASTFinder.find_kind(decl, 'DECL_REF_EXPR')))
+            count_refs += len(list(ASTFinder.find_kind(decl, '(?i)DECL_?REF_?EXPR')))
             print('*'*80)
             ASTShower.show_node(decl)
             print('*'*80)
