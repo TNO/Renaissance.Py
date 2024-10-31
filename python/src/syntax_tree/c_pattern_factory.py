@@ -17,7 +17,7 @@ class CPatternFactory:
         fullText = '\n'.join(CPatternFactory._to_declaration(keywords)) + f'\nint {CPatternFactory.reserved_name} = ({text});'
         root =  self._create( fullText)
         #return the first expression found in the tree as a ASTNode
-        return next(ASTFinder.find_kind(root, 'PAREN_EXPR')).get_children()[0]
+        return next(ASTFinder.find_kind(root, '(?i)PAREN_?EXPR')).get_children()[0]
 
     def create_declarations(self, text:str, types: list[str] = [] , parameters: list[str] = [], extra_declarations: list[str] = []):
         return self._create_body(text, types, parameters, extra_declarations)
@@ -45,7 +45,7 @@ class CPatternFactory:
              '\nvoid '+CPatternFactory.reserved_name+'(){\n' +text +'\n}'
         root =  self._create(fullText)
         #return the first expression found in the tree as a ASTNode
-        return  next(ASTFinder.find_kind(root, 'COMPOUND_STMT')).get_children()
+        return  next(ASTFinder.find_kind(root, '(?i)COMPOUND_?STMT')).get_children()
 
     def _create(self, text:str):  
         atu =  self.factory.create_from_text( text, 'test.' + self.language)
