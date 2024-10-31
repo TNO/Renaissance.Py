@@ -1,10 +1,11 @@
 from itertools import product
 from impl.clang.clang_ast_node import ClangASTNode
+from impl.clang_json.clang_json_ast_node import ClangJsonASTNode
 from syntax_tree.ast_factory import ASTFactory
 
 class Factories():
     # add factories here to test different ASTNode implementations
-    factories = [ ('clang', ASTFactory(ClangASTNode))]
+    factories = [ ('clang', ASTFactory(ClangASTNode)), ('clang_json', ASTFactory(ClangJsonASTNode)) ]
     
     @staticmethod
     def extend(test_parameters: list[tuple]) -> list[tuple]:
