@@ -1,0 +1,123 @@
+Model:
+    statements*=Statement // for testing only
+    elements*=Element
+;
+
+Element:
+    Function | GimpleBind
+;
+
+Function:
+    names+=Q_NAME '(' params*=Param[','] ')' location?=Location gimple_bind=GimpleBind
+;
+
+
+Declaration:
+    modifier=Modifier type=ID typePointer=Pointer name=Q_NAME ';'
+;
+
+Modifier:
+  (static?='static' const?='const' struct?='struct')#
+;
+
+Pointer:
+  (ref?='&' ptr?='*')#
+;
+
+Param:
+    (typeModifier=Modifier)? type=ID typePointer=Pointer (argPointer=Pointer)? (argModifier=Modifier)? name=ID
+;
+
+GimpleBind:
+    ('[' loc=FILENAME ']')? 'gimple_bind' '<' declarations*=Declaration  statements*=Statement '>'
+;
+
+Statement:
+    ('[' loc=FILENAME ']')? (GimpleBind | GimpleTry | GimpleAssign | GimpleCond | GimpleLabel | GimpleCall | GimpleGoto | Cleanup | GimpleReturn | GimpleEhMustNotThrow)
+;
+
+GimpleTry:
+    'gimple_try' '<' type=ID ',' Eval Cleanup '>'
+;
+
+GimpleAssign:
+    'gimple_assign' '<' expr=ID ',' name=Arg ',' args*=Arg[',']  '>'
+;
+
+GimpleCond:
+    'gimple_cond' '<' expr=ID ',' name=Arg ','  args*=Arg[','] '>'
+;
+
+GimpleLabel:
+    'gimple_label' '<' args*=Arg[','] '>'
+;
+
+GimpleCall:
+    'gimple_call' '<' callee=ID ',' args*=Arg[','] '>'
+;
+
+GimpleGoto:
+    'gimple_goto' '<' ref=Ref '>'
+;
+
+Eval:
+    'EVAL' '<'  statements*=Statement '>'
+;
+
+Cleanup:
+    'CLEANUP' '<' statements*=Statement '>'
+;
+
+GimpleReturn:
+    'gimple_return' (location=Location)? '<' ref=ID_PLUS '>'
+;
+
+GimpleEhMustNotThrow:
+    'gimple_eh_must_not_throw' '<' raise=ID '>'
+;
+
+Location:
+    '[' loc=FILENAME ']'
+;
+
+//Arg:
+//    ('[' loc=FILENAME ']')? (ID_PLUS | Ref | '"' ESCAPED_STRING '"' )
+//;
+
+Arg:
+    ('[' loc=FILENAME ']')? (ID_PLUS | '<' Q_NAME '>' |  '"' ESCAPED_STRING '"')
+;
+
+Ref:
+    '<' name=Q_NAME '>'
+;
+
+FILENAME:
+    /[a-zA-Z0-9_\/\.\-\\:$]+/
+;
+
+ID:
+    /[a-zA-Z0-9_:$]+/
+;
+
+ID_PLUS[noskipws]:
+    /\s*/-
+    /[a-zA-Z0-9_:$&\.\{\}\(\)\[\]\s]+/
+    /\s*/-
+;
+
+//ID_PLUS:
+//    /([^>,\"])+/
+//;
+
+Q_NAME:
+    /[a-zA-Z_][a-zA-Z0-9_:$\.~]*/
+;
+
+INT:
+    /\d+/
+;
+
+ESCAPED_STRING:
+    /([^"\\]|\\.)*/
+;
