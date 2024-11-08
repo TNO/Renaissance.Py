@@ -35,20 +35,20 @@ class ClangASTNode(ASTNode):
 
     @override
     @staticmethod
-    def load(file_path: Path) -> 'ClangASTNode':
-        translation_unit: TranslationUnit = ClangASTNode.index.parse(file_path, args=ClangASTNode.parse_args)
+    def load(file_path: Path,  extra_args=[]) -> 'ClangASTNode':
+        translation_unit: TranslationUnit = ClangASTNode.index.parse(file_path, args=[*ClangASTNode.parse_args,*extra_args])
         return ClangASTNode(translation_unit.cursor, translation_unit, None)
 
     @override
     @staticmethod
-    def load_from_text(file_content: str, file_name: str='test.c') -> 'ClangASTNode':
-        translation_unit: TranslationUnit = ClangASTNode.index.parse(file_name, unsaved_files=[(file_name, file_content)],  args=ClangASTNode.parse_args)
-        rootNode =  ClangASTNode(translation_unit.cursor, translation_unit, None)
+    def load_from_text(file_content: str, file_name: str='test.c', extra_args=[]) -> 'ClangASTNode':
+        translation_unit: TranslationUnit = ClangASTNode.index.parse(file_name, unsaved_files=[(file_name, file_content)],  args=[*ClangASTNode.parse_args,*extra_args])
+        root_node =  ClangASTNode(translation_unit.cursor, translation_unit, None)
         # Convert file_content to bytes
         file_content_bytes = file_content.encode('utf-8')
         # add to cache to avoid reading the file again
-        rootNode.cache[file_name] = file_content_bytes
-        return rootNode
+        root_node.cache[file_name] = file_content_bytes
+        return root_node
     
     @override
     def get_name(self) -> str:
@@ -112,15 +112,15 @@ class ClangASTNode(ASTNode):
             if child.get_start_offset() > self.get_start_offset():
                 start_offset = self.get_start_offset()
                 end_offset = child.get_start_offset()
-                prefixOperator = True
+                prefix_operator = True
             else:
                 start_offset = child.get_start_offset() + child.get_length()
                 end_offset = self.get_start_offset() + self.get_length()
-                prefixOperator = False
+                prefix_operator = False
 
             operator = self.get_content(start_offset, end_offset)
             result['operator'] = operator.strip()
-            result['prefixOperator'] = prefixOperator
+            result['prefixOperator'] = prefix_operator
             # next statement works in C++ but not in Python (yet) will be released later
             # result['operator'] =  self.node.getOpCode()
         elif self.get_kind().endswith('_LITERAL'):
@@ -145,11 +145,11 @@ class ClangASTNode(ASTNode):
             self._children = [ ClangASTNode(ClangASTNode.remove_wrapper(n), self.translation_unit, self) for n in self.node.get_children()]
         return self._children
 
-    def addTokens(self,  result: dict[str,str], *tokenKind):
+    def addTokens(self,  result: dict[str,str], *token_kind):
             for token in self.node.get_tokens():
                 # find all attr of token that are of type str or int
                 kind = str(token.kind).split('.')[-1]
-                if kind in tokenKind:
+                if kind in token_kind:
                     result[kind] = token.spelling
     
     @staticmethod

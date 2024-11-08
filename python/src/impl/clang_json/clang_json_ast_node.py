@@ -17,6 +17,8 @@ EMPTY_LIST = []
 
 STMT_PARENTS = [ 'CompoundStmt', 'TranslationUnitDecl' ]
 
+VERBOSE = False
+
 class ClangJsonASTNode(ASTNode):
     parse_args=['-fparse-all-comments', '-ferror-limit=0', '-Xclang', '-ast-dump=json', '-fsyntax-only']
 
@@ -28,37 +30,40 @@ class ClangJsonASTNode(ASTNode):
         self.translation_unit = translation_unit
         self.file_name = file_name
 
+    @override
     @staticmethod
-    def load(file_path:Path) -> 'ClangJsonASTNode':
+    def load(file_path:Path, extra_args:list[str] = []) -> 'ClangJsonASTNode':
         #in a shell process compile the file_path with clang compiler
         try:
-            command = ['clang', *ClangJsonASTNode.parse_args, file_path]
+            command = ['clang', *ClangJsonASTNode.parse_args, *extra_args, file_path]
             result = subprocess.run(command, capture_output=True, text=True)
             temp_dir = tempfile.gettempdir()
             temp_file_name = os.path.join(temp_dir, file_path.name+'.ast.json')
             with open(temp_file_name, 'w') as temp_file:
-                print ('result stored in ' + temp_file_name)
+                if VERBOSE: print ('result stored in ' + temp_file_name)
                 temp_file.write(result.stdout)
 
             json_atu = json.loads(result.stdout)
-            return ClangJsonASTNode(json_atu, translation_unit=json_atu, file_name=str(file_path))
+            atu = ClangJsonASTNode(json_atu, translation_unit=json_atu, file_name=str(file_path))
+            # cache the result of the temp file before deleting it
+            atu.get_content(0, 0)
+            return atu
+
         except Exception as e:
             print('Call to clang failed. Did you install clang?, is it on the env path?')
             raise e
         
     @override
     @staticmethod
-    def load_from_text(file_content: str, file_name: str='test.c') -> 'ClangJsonASTNode':
+    def load_from_text(file_content: str, file_name: str='test.c', extra_args:list[str] = []) -> 'ClangJsonASTNode':
         # Define the directory for the temporary file
         temp_dir = tempfile.gettempdir()
         # Define the name of the temporary file
         temp_file_name = os.path.join(temp_dir,file_name)
         # Write text to the temporary file
-        with open(temp_file_name, 'w') as temp_file:
-            temp_file.write(file_content)        # write the text to a temporary file
-        result = ClangJsonASTNode.load(Path(temp_file_name))
-        # cache the result of the temp file before deleting it
-        result.get_content(0, len(file_content))
+        with open(temp_file_name, 'wb') as temp_file:
+            temp_file.write(file_content.encode('utf-8'))        # write the text to a temporary file
+        result = ClangJsonASTNode.load(Path(temp_file_name), extra_args)
         # Delete the temporary file
         os.remove(temp_file_name)
         return result
@@ -80,7 +85,7 @@ class ClangJsonASTNode(ASTNode):
     @override
     def get_length(self) -> int: 
         if(self.get_kind() == 'TranslationUnitDecl'):
-            return len(self._get_binary_file_content(self.get_containing_filename()))
+            return len(self.get_binary_file_content(self.get_containing_filename()))
         return self._get(['range', 'end', 'offset'], default=0) + self._get(['range', 'end', 'tokLen'], default=0) - self.get_start_offset()
 
     @override
