@@ -1,0 +1,187 @@
+from io import StringIO
+from unittest import TestCase
+from parameterized import parameterized
+from syntax_tree import ASTRewriter, CPatternFactory, MatchFinder, ASTFactory, ASTNode, ASTShower
+from typing import Callable
+
+from test.c_cpp.factories import Factories
+
+VERBOSE = False
+AST_SHOWER = False
+class TestCommentLocation(TestCase):
+
+    @parameterized.expand([
+        ("single_line_comment", 0, 50, b"Some code // this is a comment\nMore code", (10, 30)),
+        ("double_line_comment", 0, 50, b"Some code// one\n // two\nMore code", (17, 23)),
+        ("block_comment", 0, 50, b"Some code /* this is a block comment */ More code", (10, 39)),
+        ("hash_comment", 0, 50, b"Some code # this is a hash comment\nMore code", (10, 34)),
+        ("no_comment", 0, 50, b"Some code with no comment\nMore code", (-1, -1)),
+        ("comment_outside_range", 0, 10, b"Some code // this is a comment\nMore code", (-1, -1)),
+        ("multiple_comments", 0, 50, b"Some code // first comment\nMore code /* second comment */", (10, 26)),
+    ])
+    def test(self, name, start_offset, stop_offset, content, expected):
+        result = ASTRewriter._get_comment_location(start_offset, stop_offset, content)
+        if(result != (-1, -1)):
+            print(content[result[0]:result[1]])
+        self.assertEqual(result, expected)
+
+class TestRewrites(TestCase):
+
+    def do_test(self, action: Callable[[ASTRewriter, str, list[ASTNode],bool, bool], None], factory: ASTFactory, code: str, replacement:str, include_whitespace: bool, include_comments: bool, expected: str):
+        atu = factory.create_from_text(code, 'test.cpp')
+        patternFactory = CPatternFactory(factory)
+        declaration_pattern = patternFactory.create_declaration('int a=3;')
+        rewriter = ASTRewriter(atu)
+        for match in MatchFinder.find_all(atu, [declaration_pattern]).map(lambda m: m.src_nodes).to_iterable():
+            action(rewriter,replacement, match, include_whitespace, include_comments)
+        expected_result = factory.create_from_text(expected, 'test.cpp')
+        actual = rewriter.apply_to_string()
+        actual_result = factory.create_from_text(rewriter.apply_to_string(), 'test.cpp')
+        if AST_SHOWER:
+            print("Original:")
+            ASTShower.show_node(atu)
+            print("Expected:")
+            ASTShower.show_node(expected_result)
+            print("Actual:")
+            ASTShower.show_node(actual_result)
+        if VERBOSE:
+            print("\nOriginal:" + code.replace('\n', '\\n').replace('\r', '\\r'))
+            print("Expected:" + expected.replace('\n', '\\n').replace('\r', '\\r'))
+            print("  Actual:" + actual.replace('\n', '\\n').replace('\r', '\\r'))
+        code_test_input = f'("{code}", {include_whitespace}, {include_comments}, "{actual}"),'.replace('\n', '\\n').replace('\r', '\\r')
+        print("\nFull parameterized:" +code_test_input)
+
+        self.assertEquals(rewriter.apply_to_string(), expected)
+
+
+class TestReplace(TestRewrites):
+
+    @parameterized.expand(list(Factories.extend( [
+        ("void f() { /* c1 */ int a=3;\n}", True, True, 'void f() { int aa=4;\n}'),
+        ("void f() { /* c1 */ /* c2 */ int a=3;\n}", True, True, 'void f() { /* c1 */ int aa=4;\n}'),
+        ("void f() { // c1\n int a=3;\n}", True, True, 'void f() { int aa=4;\n}'),
+        ("void f() { // c1\n //c2\n int a=3;\n}", True, True, 'void f() { // c1\n int aa=4;\n}'),
+        ("void f() { int a=3;    \n}", True, True, 'void f() { int aa=4;\n}'),
+        ("void f() { int a=3; //c1    \n}", True, True, 'void f() { int aa=4;\n}'),
+        ("void f() { int a=3; /*c1    \n */ }", True, True, 'void f() { int aa=4; }'),
+        ("void f() { int a=3; /*c1    \n */ }", False, True, 'void f() { int aa=4; }'),
+        ("void f() { int a=3; /*c1    \n */ }", False, False, 'void f() { int aa=4; /*c1    \n */ }'),
+        ("/* out scope */ void f() { int a=3; /*c1    \n */ }", True, True, '/* out scope */ void f() { int aa=4; }'),
+        ("/* out scope */ void f() { int a=3; /*c1    \n */ }", False, True, '/* out scope */ void f() { int aa=4; }'),
+        ("/* out scope */ void f() { int a=3; /*c1    \n */ }", False, False, '/* out scope */ void f() { int aa=4; /*c1    \n */ }'),
+        ("void f() { int a=3; /*c1    \n */ }", True, False, 'void f() { int aa=4; /*c1    \n */ }'),
+        ("void f() { int a=3; /*c1    \n */ }", False, False, 'void f() { int aa=4; /*c1    \n */ }'),
+        #siblings with comments
+        ("void f() { int x=2; /* c1 */ int a=3; //c2\n int b=4; }", True, True, 'void f() { int x=2; int aa=4;\n int b=4; }'),
+        ("void f() { //cx\nint x=2; //ca\n int a=3; //caa\n int b=4;//cb }", True, True, 'void f() { //cx\nint x=2; int aa=4;\n int b=4;//cb }'),
+        ("void f() { int x=2 /*ca*/ int a=3; /*caa \n nl*/ int b=4; }", True, True, 'void f() { int x=2 /*ca*/ int aa=4; int b=4; }'),
+
+        
+         ])))   
+    def test(self, name, factory: ASTFactory, code: str, include_whitespace, include_comments, expected):
+        self.do_test(ASTRewriter.replace, factory, code, 'int aa=4;',include_whitespace, include_comments, expected)
+
+
+class TestInsertBeforeSingleLine(TestRewrites):
+
+    @parameterized.expand(list(Factories.extend( [
+        ("/* out scope */ void f() { int a=3; /*c1    \n */ }", False, False, "/* out scope */ void f() { int aa=4; int a=3; /*c1    \n */ }"),
+        ("/* out scope */ void f() { int a=3; /*c1    \n */ }", False, True, "/* out scope */ void f() { int aa=4; int a=3; /*c1    \n */ }"),
+        ("/* out scope */ void f() { int a=3; /*c1    \n */ }", True, True, "/* out scope */ void f() { int aa=4; int a=3; /*c1    \n */ }"),
+        ("void f() { /* c1 */ /* c2 */ int a=3;\n}", True, True, "void f() { /* c1 */ int aa=4;\n /* c2 */ int a=3;\n}"),
+        ("void f() { /* c1 */ int a=3;\n}", True, True, "void f() { int aa=4;\n /* c1 */ int a=3;\n}"),
+        ("void f() { // c1\n //c2\n int a=3;\n}", True, True, "void f() { // c1\n int aa=4;\n //c2\n int a=3;\n}"),
+        ("void f() { // c1\n int a=3;\n}", True, True, "void f() { int aa=4;\n // c1\n int a=3;\n}"),
+        ("void f() { //cx\nint x=2; //ca\n int a=3; //caa\n int b=4;//cb }", True, True, "void f() { //cx\nint x=2; int aa=4;\n //ca\n int a=3; //caa\n int b=4;//cb }"),
+        ("void f() { int a=3;    \n}", True, True, "void f() { int aa=4;\n int a=3;    \n}"),
+        ("void f() { int a=3; /*c1    \n */ }", False, False, "void f() { int aa=4; int a=3; /*c1    \n */ }"),
+        ("void f() { int a=3; /*c1    \n */ }", False, True, "void f() { int aa=4; int a=3; /*c1    \n */ }"),
+        ("void f() { int a=3; /*c1    \n */ }", True, False, "void f() { int aa=4; int a=3; /*c1    \n */ }"),
+        ("void f() { int a=3; /*c1    \n */ }", True, True, "void f() { int aa=4; int a=3; /*c1    \n */ }"),
+        ("void f() { int a=3; //c1    \n}", True, True, "void f() { int aa=4;\n int a=3; //c1    \n}"),
+        ("void f() { int x=2 /*ca*/ int a=3; /*caa \n nl*/ int b=4; }", True, True, "void f() { int x=2 /*ca*/ int aa=4; int a=3; /*caa \n nl*/ int b=4; }"),
+        ("void f() { int x=2; /* c1 */ int a=3; //c2\n int b=4; }", True, True, "void f() { int x=2; int aa=4;\n /* c1 */ int a=3; //c2\n int b=4; }"),
+        ("void f() { int x=2; //c1\n int a=3; //caa\n int b=4;//cb }", True, True, "void f() { int x=2; int aa=4;\n //c1\n int a=3; //caa\n int b=4;//cb }")
+         ])))   
+    def test(self, name, factory: ASTFactory, code: str, include_whitespace, include_comments, expected):
+        self.do_test(ASTRewriter.insert_before, factory, code,'int aa=4;', include_whitespace, include_comments, expected)
+
+class TestInsertBeforeMultiLine(TestRewrites):
+
+    @parameterized.expand(list(Factories.extend( [
+        ("/* out scope */ void f() { int a=3; /*c1    \n */ }", False, False, "/* out scope */ void f() { int aa=4;\n int bb=5; int a=3; /*c1    \n */ }"),
+        ("/* out scope */ void f() { int a=3; /*c1    \n */ }", False, True, "/* out scope */ void f() { int aa=4;\n int bb=5; int a=3; /*c1    \n */ }"),
+        ("/* out scope */ void f() { int a=3; /*c1    \n */ }", True, True, "/* out scope */ void f() { int aa=4;\n int bb=5; int a=3; /*c1    \n */ }"),
+        ("/* indent 2 */ void f() {\n  int a=3; /*c1    \n */ }", False, False, "/* indent 2 */ void f() {\n  int aa=4;\n  int bb=5;  int a=3; /*c1    \n */ }"),
+        ("/* indent 2 */ void f() {\n  int a=3; /*c1    \n */ }", False, True, "/* indent 2 */ void f() {\n  int aa=4;\n  int bb=5;  int a=3; /*c1    \n */ }"),
+        ("/* indent 2 */ void f() {\n  int a=3; /*c1    \n */ }", True, True, "/* indent 2 */ void f() {\n  int aa=4;\n  int bb=5;  int a=3; /*c1    \n */ }"),
+        ("void f() { /* c1 */ /* c2 */ int a=3;\n}", True, True, "void f() { /* c1 */ int aa=4;\n int bb=5;\n /* c2 */ int a=3;\n}"),
+        ("void f() { /* c1 */ int a=3;\n}", True, True, "void f() { int aa=4;\n int bb=5;\n /* c1 */ int a=3;\n}"),
+        ("void f() { // c1\n //c2\n int a=3;\n}", True, True, "void f() { // c1\n int aa=4;\n int bb=5;\n //c2\n int a=3;\n}"),
+        ("void f() { // c1\n int a=3;\n}", True, True, "void f() { int aa=4;\n int bb=5;\n // c1\n int a=3;\n}"),
+        ("void f() { //cx\nint x=2; //ca\n int a=3; //caa\n int b=4;//cb }", True, True, "void f() { //cx\nint x=2; int aa=4;\n int bb=5;\n //ca\n int a=3; //caa\n int b=4;//cb }"),
+        ("void f() { int a=3;    \n}", True, True, "void f() { int aa=4;\n int bb=5;\n int a=3;    \n}"),
+        ("void f() { int a=3; /*c1    \n */ }", False, False, "void f() { int aa=4;\n int bb=5; int a=3; /*c1    \n */ }"),
+        ("void f() { int a=3; /*c1    \n */ }", False, True, "void f() { int aa=4;\n int bb=5; int a=3; /*c1    \n */ }"),
+        ("void f() { int a=3; /*c1    \n */ }", True, False, "void f() { int aa=4;\n int bb=5; int a=3; /*c1    \n */ }"),
+        ("void f() { int a=3; /*c1    \n */ }", True, True, "void f() { int aa=4;\n int bb=5; int a=3; /*c1    \n */ }"),
+        ("void f() { int a=3; //c1    \n}", True, True, "void f() { int aa=4;\n int bb=5;\n int a=3; //c1    \n}"),
+        ("void f() { int x=2 /*ca*/ int a=3; /*caa \n nl*/ int b=4; }", True, True, "void f() { int x=2 /*ca*/ int aa=4;\n int bb=5; int a=3; /*caa \n nl*/ int b=4; }"),
+        ("void f() { int x=2; /* c1 */ int a=3; //c2\n int b=4; }", True, True, "void f() { int x=2; int aa=4;\n int bb=5;\n /* c1 */ int a=3; //c2\n int b=4; }"),
+        ("void f() { int x=2; //c1\n int a=3; //caa\n int b=4;//cb }", True, True, "void f() { int x=2; int aa=4;\n int bb=5;\n //c1\n int a=3; //caa\n int b=4;//cb }"),
+
+        
+         ])))   
+    def test(self, name, factory: ASTFactory, code: str, include_whitespace, include_comments, expected):
+        self.do_test(ASTRewriter.insert_before, factory, code,'int aa=4;\nint bb=5;', include_whitespace, include_comments, expected)
+
+class TestInsertAfterSingleLine(TestRewrites):
+
+    @parameterized.expand(list(Factories.extend( [
+        ("/* out scope */ void f() { int a=3; /*c1    \n */ }", False, False, "/* out scope */ void f() { int a=3; int aa=4; /*c1    \n */ }"),
+        ("/* out scope */ void f() { int a=3; /*c1    \n */ }", False, True, "/* out scope */ void f() { int a=3; /*c1    \n */ int aa=4; }"),
+        ("/* out scope */ void f() { int a=3; /*c1    \n */ }", True, True, "/* out scope */ void f() { int a=3; /*c1    \n */ int aa=4; }"),
+        ("void f() { /* c1 */ /* c2 */ int a=3;\n}", True, True, "void f() { /* c1 */ /* c2 */ int a=3;\n int aa=4;\n}"),
+        ("void f() { /* c1 */ int a=3;\n}", True, True, "void f() { /* c1 */ int a=3;\n int aa=4;\n}"),
+        ("void f() { // c1\n //c2\n int a=3;\n}", True, True, "void f() { // c1\n //c2\n int a=3;\n int aa=4;\n}"),
+        ("void f() { // c1\n int a=3;\n}", True, True, "void f() { // c1\n int a=3;\n int aa=4;\n}"),
+        ("void f() { //cx\nint x=2; //ca\n int a=3; //caa\n int b=4;//cb }", True, True, "void f() { //cx\nint x=2; //ca\n int a=3; //caa\n int aa=4;\n int b=4;//cb }"),
+        ("void f() { int a=3;    \n}", True, True, "void f() { int a=3;    \n int aa=4;\n}"),
+        ("void f() { int a=3; /*c1    \n */ }", False, False, "void f() { int a=3; int aa=4; /*c1    \n */ }"),
+        ("void f() { int a=3; /*c1    \n */ }", False, True, "void f() { int a=3; /*c1    \n */ int aa=4; }"),
+        ("void f() { int a=3; /*c1    \n */ }", True, False, "void f() { int a=3; int aa=4; /*c1    \n */ }"),
+        ("void f() { int a=3; /*c1    \n */ }", True, True, "void f() { int a=3; /*c1    \n */ int aa=4; }"),
+        ("void f() { int a=3; //c1    \n}", True, True, "void f() { int a=3; //c1    \n int aa=4;\n}"),
+        ("void f() { int x=2 /*ca*/ int a=3; /*caa \n nl*/ int b=4; }", True, True, "void f() { int x=2 /*ca*/ int a=3; /*caa \n nl*/ int aa=4; int b=4; }"),
+        ("void f() { int x=2; /* c1 */ int a=3; //c2\n int b=4; }", True, True, "void f() { int x=2; /* c1 */ int a=3; //c2\n int aa=4;\n int b=4; }"),
+        ("void f() { int x=2; //c1\n int a=3; //caa\n int b=4;//cb }", True, True, "void f() { int x=2; //c1\n int a=3; //caa\n int aa=4;\n int b=4;//cb }"),
+    ])))   
+    def test(self, name, factory: ASTFactory, code: str, include_whitespace, include_comments, expected):
+        self.do_test(ASTRewriter.insert_after, factory, code,'int aa=4;', include_whitespace, include_comments, expected)
+
+class TestInsertAfterMultiLine(TestRewrites):
+
+    @parameterized.expand(list(Factories.extend( [
+        ("/* indent 2 */ void f() {\n  int a=3; /*c1    \n */ }", False, False, "/* indent 2 */ void f() {\n  int a=3;  int aa=4;\n  int bb=5; /*c1    \n */ }"),
+        ("/* indent 2 */ void f() {\n  int a=3; /*c1    \n */ }", False, True, "/* indent 2 */ void f() {\n  int a=3; /*c1    \n */  int aa=4;\n  int bb=5; }"),
+        ("/* indent 2 */ void f() {\n  int a=3; /*c1    \n */ }", True, True, "/* indent 2 */ void f() {\n  int a=3; /*c1    \n */  int aa=4;\n  int bb=5; }"),
+        ("/* out scope */ void f() { int a=3; /*c1    \n */ }", False, False, "/* out scope */ void f() { int a=3; int aa=4;\n int bb=5; /*c1    \n */ }"),
+        ("/* out scope */ void f() { int a=3; /*c1    \n */ }", False, True, "/* out scope */ void f() { int a=3; /*c1    \n */ int aa=4;\n int bb=5; }"),
+        ("/* out scope */ void f() { int a=3; /*c1    \n */ }", True, True, "/* out scope */ void f() { int a=3; /*c1    \n */ int aa=4;\n int bb=5; }"),
+        ("void f() { /* c1 */ /* c2 */ int a=3;\n}", True, True, "void f() { /* c1 */ /* c2 */ int a=3;\n int aa=4;\n int bb=5;\n}"),
+        ("void f() { /* c1 */ int a=3;\n}", True, True, "void f() { /* c1 */ int a=3;\n int aa=4;\n int bb=5;\n}"),
+        ("void f() { // c1\n //c2\n int a=3;\n}", True, True, "void f() { // c1\n //c2\n int a=3;\n int aa=4;\n int bb=5;\n}"),
+        ("void f() { // c1\n int a=3;\n}", True, True, "void f() { // c1\n int a=3;\n int aa=4;\n int bb=5;\n}"),
+        ("void f() { //cx\nint x=2; //ca\n int a=3; //caa\n int b=4;//cb }", True, True, "void f() { //cx\nint x=2; //ca\n int a=3; //caa\n int aa=4;\n int bb=5;\n int b=4;//cb }"),
+        ("void f() { int a=3;    \n}", True, True, "void f() { int a=3;    \n int aa=4;\n int bb=5;\n}"),
+        ("void f() { int a=3; /*c1    \n */ }", False, False, "void f() { int a=3; int aa=4;\n int bb=5; /*c1    \n */ }"),
+        ("void f() { int a=3; /*c1    \n */ }", False, True, "void f() { int a=3; /*c1    \n */ int aa=4;\n int bb=5; }"),
+        ("void f() { int a=3; /*c1    \n */ }", True, False, "void f() { int a=3; int aa=4;\n int bb=5; /*c1    \n */ }"),
+        ("void f() { int a=3; /*c1    \n */ }", True, True, "void f() { int a=3; /*c1    \n */ int aa=4;\n int bb=5; }"),
+        ("void f() { int a=3; //c1    \n}", True, True, "void f() { int a=3; //c1    \n int aa=4;\n int bb=5;\n}"),
+        ("void f() { int x=2 /*ca*/ int a=3; /*caa \n nl*/ int b=4; }", True, True, "void f() { int x=2 /*ca*/ int a=3; /*caa \n nl*/ int aa=4;\n int bb=5; int b=4; }"),
+        ("void f() { int x=2; /* c1 */ int a=3; //c2\n int b=4; }", True, True, "void f() { int x=2; /* c1 */ int a=3; //c2\n int aa=4;\n int bb=5;\n int b=4; }"),
+        ("void f() { int x=2; //c1\n int a=3; //caa\n int b=4;//cb }", True, True, "void f() { int x=2; //c1\n int a=3; //caa\n int aa=4;\n int bb=5;\n int b=4;//cb }"),
+    ])))   
+    def test(self, name, factory: ASTFactory, code: str, include_whitespace, include_comments, expected):
+        self.do_test(ASTRewriter.insert_after, factory, code,'int aa=4;\nint bb=5;', include_whitespace, include_comments, expected)
