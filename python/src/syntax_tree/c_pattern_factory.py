@@ -1,9 +1,10 @@
 import re
 
-from syntax_tree.ast_factory import ASTFactory
-from syntax_tree.ast_finder import ASTFinder
 from syntax_tree.ast_shower import ASTShower
 
+from .ast_factory import ASTFactory
+from .ast_finder import ASTFinder
+SHOW_NODE = False
 class CPatternFactory:
 
     reserved_name = '__rejuvenation__reserved__'
@@ -13,11 +14,11 @@ class CPatternFactory:
         self.language = language
 
     def create_expression(self, text:str):
-        keywords = CPatternFactory._get_keywords_fromText(text)
+        keywords = CPatternFactory._get_keywords_from_text(text)
         fullText = '\n'.join(CPatternFactory._to_declaration(keywords)) + f'\nint {CPatternFactory.reserved_name} = ({text});'
         root =  self._create( fullText)
         #return the first expression found in the tree as a ASTNode
-        return next(ASTFinder.find_kind(root, '(?i)PAREN_?EXPR')).get_children()[0]
+        return ASTFinder.find_kind(root, '(?i)PAREN_?EXPR').find_first().get().get_children()[0]
 
     def create_declarations(self, text:str, types: list[str] = [] , parameters: list[str] = [], extra_declarations: list[str] = []):
         return self._create_body(text, types, parameters, extra_declarations)
@@ -29,7 +30,7 @@ class CPatternFactory:
     
     def create_statements(self, text:str, types: list[str] = [], extra_declarations: list[str] = []):
         # create a reference for all used variables excluding the specified types
-        parameters = [ par for par in CPatternFactory._get_keywords_fromText(text) if not par in types and not any(par in ed for ed in extra_declarations)]
+        parameters = [ par for par in CPatternFactory._get_keywords_from_text(text) if not par in types and not any(par in ed for ed in extra_declarations)]
         return self._create_body(text, types, parameters, extra_declarations)
 
     def create_statement(self, text:str, types: list[str] = [], extra_declarations: list[str] = []):
@@ -45,27 +46,27 @@ class CPatternFactory:
              '\nvoid '+CPatternFactory.reserved_name+'(){\n' +text +'\n}'
         root =  self._create(fullText)
         #return the first expression found in the tree as a ASTNode
-        return  next(ASTFinder.find_kind(root, '(?i)COMPOUND_?STMT')).get_children()
+        return  ASTFinder.find_kind(root, '(?i)COMPOUND_?STMT').find_first().get().get_children()
 
     def _create(self, text:str):  
         atu =  self.factory.create_from_text( text, 'test.' + self.language)
-        # ASTShower.show_node(atu)
+        if SHOW_NODE: ASTShower.show_node(atu)
         return atu
 
     @staticmethod
-    def _get_keywords_fromText(text:str) -> list[str]:
+    def _get_keywords_from_text(text:str) -> list[str]:
         # regex to get keywords that start with one of two dollars followed by a \\w+
         pattern = re.compile(r'\${0,2}[a-zA-Z]\w*')
         return list(set(re.findall(pattern, text)))
 
     @staticmethod
-    def _get_dollar_keywords_fromText(text:str) -> list[str]:
+    def _get_dollar_keywords_from_text(text:str) -> list[str]:
         # regex to get keywords that start with one of two dollars followed by a \\w+
         pattern = re.compile(r'\${1,2}[a-zA-Z]\w*')
         return list(set(re.findall(pattern, text)))
 
     @staticmethod
-    def _get_non_dollar_keywords_fromText(text:str, prefix: str ='void* ', postfix: str =';') -> list[str]:
+    def _get_non_dollar_keywords_from_text(text:str, prefix: str ='void* ', postfix: str =';') -> list[str]:
         pattern = re.compile(r'[^\$][a-zA-Z]\w*')
         return list(set(re.findall(pattern, text)))
 
@@ -84,7 +85,7 @@ class CPPPatternFactory(CPatternFactory):
         super().__init__(factory, 'cpp')
 
 if __name__ == "__main__":
-    print(CPatternFactory._get_dollar_keywords_fromText('struct $type;struct $name; $type a = $name; int b = 4; $$x = $$y'))
+    print(CPatternFactory._get_dollar_keywords_from_text('struct $type;struct $name; $type a = $name; int b = 4; $$x = $$y'))
     # factory = ASTFactory(ClangASTNode)
     # patternFactory = CPatternFactory(factory)
     # ASTShower.show_node(patternFactory.create_expression('a == $hallo'))

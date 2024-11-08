@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from  enum import Enum
+from enum import Enum
 from pathlib import Path
 from typing import Callable, Optional, TypeVar
 
@@ -36,11 +36,13 @@ class ASTNode(ABC):
         return self.get_content(start, end)
 
     def get_content(self, start, end):
-        bytes = self.root._get_binary_file_content(self.get_containing_filename())
+        bytes = self.root.get_binary_file_content()
         return str(bytes[start:end], 'utf-8')
 
-    def _get_binary_file_content(self, file_path):
+    def get_binary_file_content(self, file_path: str|None=None) -> bytes:
         assert self is self.root,  "_getBinaryFileContent can only be used for the root node"
+        if not file_path:
+            file_path = self.get_containing_filename()
         try:
             return self.cache[file_path]
         except Exception as e:
@@ -48,15 +50,35 @@ class ASTNode(ABC):
                 bytes =  f.read()
                 self.cache[file_path] = bytes
                 return bytes
+            
+    def get_end_offset(self):
+        return self.get_start_offset() + self.get_length()
+    
+    def get_preceding_sibling(self):
+        parent = self.get_parent()
+        if not parent:
+            return None
+        siblings = parent.get_children()
+        index = siblings.index(self)
+        return siblings[index - 1] if index > 0 else None
+
+    def get_next_sibling(self):
+        parent = self.get_parent()
+        if not parent:
+            return None
+        siblings = parent.get_children()
+        index = siblings.index(self)
+        return siblings[index + 1] if index < len(siblings) - 1 else None
+
 
     @staticmethod
     @abstractmethod
-    def load(file_path: Path)-> 'ASTNode':
+    def load(file_path: Path, extra_args:list[str])-> 'ASTNode':
         pass
 
     @staticmethod
     @abstractmethod
-    def load_from_text(text: str, file_name: str) -> 'ASTNode':
+    def load_from_text(text: str, file_name: str, extra_args:list[str]) -> 'ASTNode':
         pass
 
     @abstractmethod

@@ -2,17 +2,17 @@
 from io import StringIO
 import io
 from typing import IO
-from syntax_tree.ast_node import ASTNode
+from .ast_node import ASTNode
 
 class ASTShower:
     @staticmethod
-    def show_node(astNode: ASTNode):
-        print('\n'+ASTShower.get_node(astNode))
+    def show_node(ast_node: ASTNode):
+        print('\n'+ASTShower.get_node(ast_node))
 
     @staticmethod
-    def get_node(astNode: ASTNode):
+    def get_node(ast_node: ASTNode):
         buffer = io.StringIO()
-        ASTShower._process_node(buffer, "", astNode)
+        ASTShower._process_node(buffer, "", ast_node)
         return buffer.getvalue()
 
     @staticmethod

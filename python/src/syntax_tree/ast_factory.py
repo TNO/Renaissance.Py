@@ -1,22 +1,21 @@
 from pathlib import Path
 from typing import TypeVar
 
-from impl.clang.clang_ast_node import ClangASTNode
-from syntax_tree.ast_node import ASTNode
-from syntax_tree.ast_shower import ASTShower
+from .ast_node import ASTNode
 
 ASTNodeType = TypeVar("ASTNodeType", bound='ASTNode')
 
 class ASTFactory:
 
-    def __init__(self, clazz: type[ASTNodeType]) -> None: 
+    def __init__(self, clazz: type[ASTNodeType], extra_args:list[str]=[]) -> None: 
         self.clazz = clazz
+        self.extra_args = extra_args
 
     def create(self, file_path: Path):  
-        return self.clazz.load(file_path=file_path)
+        return self.clazz.load(file_path=file_path, extra_args = self.extra_args)
 
     def create_from_text(self, text:str, file_name:str):  
-        return self.clazz.load_from_text(text, file_name)
+        return self.clazz.load_from_text(text, file_name, extra_args = self.extra_args)
 
 if __name__ == "__main__":
     pass
