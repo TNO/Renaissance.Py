@@ -15,16 +15,14 @@ class TestKindFinder(TestFinder):
     @parameterized.expand(Factories.factories)
     def test_find_bogus(self, _, factory):
         model = ModelLoader.load_model(factory)
-        iter = ASTFinder.find_kind(model, '(?i).*bogus.*')
-        total = len(list(iter))
+        total = ASTFinder.find_kind(model, '(?i).*bogus.*').count()
         self.assertEqual( total, 0)
         print( total)
 
     @parameterized.expand(Factories.factories)
     def test_find_expr(self, _, factory):
         model = ModelLoader.load_model(factory)
-        iter = ASTFinder.find_kind(model, '(?i).*expr.*')
-        total = len(list(iter))
+        total = ASTFinder.find_kind(model, '(?i).*expr.*').count()
         self.assertGreater( total, 0)
         print( total)
 
@@ -35,8 +33,7 @@ class TestAllFinder(TestFinder):
         model = ModelLoader.load_model(factory)
         def isBogus(node: ASTNode):
             if 'Bogus' in node.get_kind(): yield node
-        iter = ASTFinder.find_all(model, isBogus)
-        total = len(list(iter))
+        total = ASTFinder.find_all(model, isBogus).count()
         self.assertEqual( total, 0)
         print( total)
 
@@ -45,7 +42,6 @@ class TestAllFinder(TestFinder):
         model = ModelLoader.load_model(factory)
         def isBinaryOperator(node: ASTNode):
             if re.fullmatch('(?i).*binary_?operator',node.get_kind()) : yield node
-        iter = ASTFinder.find_all(model, isBinaryOperator)
-        total = len(list(iter))
+        total = ASTFinder.find_all(model, isBinaryOperator).count()
         self.assertGreater( total, 0)
         print( total)

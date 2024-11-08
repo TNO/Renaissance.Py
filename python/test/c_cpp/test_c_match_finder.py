@@ -30,27 +30,29 @@ class TestCMatchFinder(TestCase):
         }
         """
 
-    def do_test(self, factory: ASTFactory, cpp_code, patterns:list[ASTNode], expected_dicts_per_match: list[dict[str, list[str]]] ,recursive: bool):
+    def do_test(self, factory: ASTFactory, cpp_code, patterns:list[ASTNode], recursive: bool):
         for idx, pattern in enumerate(patterns):
             show_node(pattern, f"Pattern[{idx}]")
 
         atu = factory.create_from_text(cpp_code, "test.cpp")
         show_node(atu, "CPP code")
         #find all if and while statements
-        matches = list(MatchFinder.find_all([atu],patterns,recursive=recursive))
+        matches = MatchFinder.find_all([atu],patterns,recursive=recursive).to_list()
         for match in matches:
             print(f'\nmatch({[compress(p.get_raw_signature()) for p in match.patterns]})'+'{')
             print(f"  start node: {compress(match.src_nodes[0].get_raw_signature())}")
-            for k, vs in match.get_dict().items():
+            for k, vs in match.get_nodes().items():
                 # right align the key
                 print(f"{k.rjust(12)}: {[compress(v.get_raw_signature()) for v in vs]}")
             print('}')
         print('    expected dict should look like:')
-        print(f'      {[to_string(match.get_dict()) for match in matches]}')
-        for match, expected_dict in zip(matches, expected_dicts_per_match):
-            self.assertDictEqual(to_string(match.get_dict()), expected_dict)
-        self.assertEqual(len(matches), len(expected_dicts_per_match))
+        print(f'      {[to_string(match.get_nodes()) for match in matches]}')
         return matches
+
+    def assert_matches(self, matches, expected_dicts_per_match):
+        for match, expected_dict in zip(matches, expected_dicts_per_match):
+            self.assertDictEqual(to_string(match.get_nodes()), expected_dict)
+        self.assertEqual(len(matches), len(expected_dicts_per_match))
 
 class TestExpressions(TestCMatchFinder):
         
@@ -69,8 +71,9 @@ class TestExpressions(TestCMatchFinder):
 ]))
     def test(self, _, factory, expression, expected_full_matches: list[str], expected_dicts_per_match: list[dict[str, list[str]]]):
         exprNode = CPatternFactory(factory).create_expression(expression)
-        matches = self.do_test(factory, TestStatements.SIMPLE_CPP, [exprNode], expected_dicts_per_match, recursive=True)
+        matches = self.do_test(factory, TestStatements.SIMPLE_CPP, [exprNode], recursive=True)
         self.assertEqual([compress(match.src_nodes[0].get_raw_signature()) for match in matches], expected_full_matches)
+        self.assert_matches(matches, expected_dicts_per_match)
 
 class TestStatements(TestCMatchFinder):
         
@@ -83,7 +86,8 @@ class TestStatements(TestCMatchFinder):
 ]))
     def test(self, _, factory, statements, expected_dicts_per_match: list[dict[str, list[str]]]):
         stmtNodes = CPatternFactory(factory).create_statements(statements)
-        self.do_test(factory, TestStatements.SIMPLE_CPP, stmtNodes, expected_dicts_per_match, recursive=True)
+        matches = self.do_test(factory, TestStatements.SIMPLE_CPP, stmtNodes, recursive=True)
+        self.assert_matches(matches, expected_dicts_per_match)
 
 class TestFunctionCallStatements(TestCMatchFinder):
 
@@ -107,7 +111,8 @@ class TestFunctionCallStatements(TestCMatchFinder):
         """
         
         stmtNodes = CPatternFactory(factory).create_statements(statements, extra_declarations=extra_declarations)
-        self.do_test(factory, code, stmtNodes, expected_dicts_per_match, recursive=True)
+        matches = self.do_test(factory, code, stmtNodes, recursive=True)
+        self.assert_matches(matches, expected_dicts_per_match)
 
 class TestMultiAssignments(TestCMatchFinder):
 
@@ -129,7 +134,8 @@ class TestMultiAssignments(TestCMatchFinder):
         """
         
         stmtNodes = CPatternFactory(factory).create_statements(statements, extra_declarations=extra_declarations)
-        self.do_test(factory, code, stmtNodes, expected_dicts_per_match, recursive=True)
+        matches = self.do_test(factory, code, stmtNodes, recursive=True)
+        self.assert_matches(matches, expected_dicts_per_match)
 
     @parameterized.expand(Factories.extend([
     ('if ($c) {$$before; $true; $$after;} else {$$before; $false; $$after;}',['int (*fp) $f;'],[{'$c': ['1'], '$$before': ['a=1', 'b=2'], '$true': ['c=3'], '$$after': ['d=4', 'e=5'], '$false': ['c=6']}]),   
@@ -157,4 +163,38 @@ class TestMultiAssignments(TestCMatchFinder):
         """
         
         stmtNodes = CPatternFactory(factory).create_statements(statements, extra_declarations=extra_declarations)
-        self.do_test(factory, code, stmtNodes, expected_dicts_per_match, recursive=True)
+        matches = self.do_test(factory, code, stmtNodes, recursive=True)
+        self.assert_matches(matches, expected_dicts_per_match)
+
+class TestComposeReplacement(TestCMatchFinder):
+
+    @parameterized.expand(Factories.extend([
+    ('if($exp){$$before;$d1;$$after;}else{$$before;$d2;$$after;}',[],{'$$before; ($exp) ? $d1;:$d2; $$after;': "c++; (a==1) ? b = 2;:b = 3; d++;"}),   
+]))
+    def test_args(self, _, factory, statements, extra_declarations, replacement: dict[str, str]):
+        code = """
+        int a = 1;
+        int b = 2;
+        int c = 3;
+        int d = 4;
+        void f(){
+            if (a==1) {
+                c++;
+                b = 2;
+                d++;
+            }
+            else {
+                c++;
+                b = 3;
+                d++;
+            }
+        }
+        """
+        
+        stmtNodes = CPatternFactory(factory).create_statements(statements, extra_declarations=extra_declarations)
+        matches = self.do_test(factory, code, stmtNodes, recursive=True)
+        for match, exp in zip(matches, replacement.items()):
+            org, expected = exp
+            actual = match.compose_replacement(org)
+            self.assertEqual(actual, expected)  
+
