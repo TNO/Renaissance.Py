@@ -1,7 +1,8 @@
 from functools import cache
 from pathlib import Path
 from typing import Optional
-from syntax_tree.ast_node import ASTNode
+from common import Stream
+from syntax_tree import ASTNode
 from typing_extensions import override
 
 from clang.cindex import TranslationUnit, Index, Config
@@ -12,6 +13,16 @@ EMPTY_LIST = []
 
 STMT_PARENTS = [ 'COMPOUND_STMT', 'TRANSLATION_UNIT' ]
 
+
+class ClangTranslationUnit():
+    def __init__(self, translation_unit:TranslationUnit, file_name:str):
+        self.clang_atu = translation_unit
+        # references are used as a cache to store the references of a node
+        # the are stored as id for lazy creation
+        self._references: dict[str, list[str]] = {}
+        self._referenced_by: dict[str, list[str]] = {}
+        self._nodes: dict[str, ClangASTNode] = {}
+        self.file_name = file_name
 
 class ClangASTNode(ASTNode):
     @staticmethod
@@ -26,32 +37,38 @@ class ClangASTNode(ASTNode):
     index = Index.create()
     parse_args=['-fparse-all-comments', '-ferror-limit=0', '-Xclang', '-ast-dump=json', '-fsyntax-only']
 
-    def __init__(self, node, translation_unit:TranslationUnit,  parent =  None):
+    def __init__(self, node, translation_unit:ClangTranslationUnit,  parent =  None):
         super().__init__(self if parent is None else parent.root)
         self.node = node
         self._children = None
         self.parent = parent
         self.translation_unit = translation_unit
+        self.translation_unit._nodes[node.hash] = self
+
 
     @override
     @staticmethod
     def load(file_path: Path,  extra_args=[]) -> 'ClangASTNode':
         translation_unit: TranslationUnit = ClangASTNode.index.parse(file_path, args=[*ClangASTNode.parse_args,*extra_args])
-        return ClangASTNode(translation_unit.cursor, translation_unit, None)
+        root_node =  ClangASTNode(translation_unit.cursor, ClangTranslationUnit(translation_unit, file_name=str(file_path)), None)
+        root_node.process(ClangASTNode.__create_references)
+        return root_node
 
     @override
     @staticmethod
     def load_from_text(file_content: str, file_name: str='test.c', extra_args=[]) -> 'ClangASTNode':
         translation_unit: TranslationUnit = ClangASTNode.index.parse(file_name, unsaved_files=[(file_name, file_content)],  args=[*ClangASTNode.parse_args,*extra_args])
-        root_node =  ClangASTNode(translation_unit.cursor, translation_unit, None)
+        root_node =  ClangASTNode(translation_unit.cursor, ClangTranslationUnit(translation_unit, file_name=str(file_name)), None)
         # Convert file_content to bytes
         file_content_bytes = file_content.encode('utf-8')
         # add to cache to avoid reading the file again
         root_node.cache[file_name] = file_content_bytes
+        root_node.process(ClangASTNode.__create_references)
+
         return root_node
     
     @override
-    def get_name(self) -> str:
+    def _get_name(self) -> str:
         try:
             if self.get_kind() not in ['CALL_EXPR']:
                 return self.node.spelling #TODO fix
@@ -60,16 +77,16 @@ class ClangASTNode(ASTNode):
         return EMPTY_STR
 
     @override
-    def get_containing_filename(self) -> str:
+    def _get_containing_filename(self) -> str:
         if self is self.root:
-            return self.translation_unit.spelling
+            return self.translation_unit.clang_atu.spelling
         try: 
             return self.node.location.file.name 
         except:
             return EMPTY_STR
     
     @override
-    def get_start_offset(self) -> int: 
+    def _get_start_offset(self) -> int: 
         try: 
             return self.node.extent.start.offset
         except:
@@ -77,7 +94,7 @@ class ClangASTNode(ASTNode):
 
     @override
     @cache
-    def get_length(self) -> int: 
+    def _get_length(self) -> int: 
         try: 
             endOffset =  self.node.extent.end.offset
             return endOffset - self.get_start_offset()
@@ -85,14 +102,14 @@ class ClangASTNode(ASTNode):
             return 0
 
     @override
-    def get_kind(self) -> str: 
+    def _get_kind(self) -> str: 
         try:
             return str(self.node.kind.name)
         except Exception as e:
             return EMPTY_STR
 
     @override
-    def get_properties(self) -> dict[str, int|str]: 
+    def _get_properties(self) -> dict[str, int|str]: 
         result  =  {}
             
         if self.get_kind() == 'BINARY_OPERATOR':
@@ -128,22 +145,34 @@ class ClangASTNode(ASTNode):
         elif self.get_kind() =='DECL_REF_EXPR':
             self.addTokens(result, 'LITERAL')
 
-        is_all = { attr[len('is_'):]: getattr(self.node, attr)() for attr in dir(self.node) if attr.startswith('is_') and  getattr(self.node, attr)()}
+        is_all = { attr[len('is_'):]: True for attr in dir(self.node) if attr.startswith('is_') and  callable(getattr(self.node, attr) and getattr(self.node, attr)() == True)}
         result.update(is_all)
         return result
     
     @override
-    def get_parent(self) -> Optional['ClangASTNode']: 
+    def _get_parent(self) -> Optional['ClangASTNode']: 
         return  self.parent
 
-    def is_statement(self) ->bool:
+    @override
+    def _is_statement(self) ->bool:
         return self.parent != None and self.parent.get_kind() in STMT_PARENTS
     
     @override
-    def get_children(self) -> list['ClangASTNode']: 
+    def _get_children(self) -> list['ClangASTNode']: 
         if self._children is None:
             self._children = [ ClangASTNode(ClangASTNode.remove_wrapper(n), self.translation_unit, self) for n in self.node.get_children()]
         return self._children
+
+    @override
+    def _get_referenced_by(self) -> list['ClangASTNode']:
+        return Stream(self.translation_unit._referenced_by.get(self.node.hash, EMPTY_LIST))\
+            .map(lambda ref_id: self.translation_unit._nodes[ref_id]).to_list()
+
+    @override
+    def _get_references(self) -> list['ClangASTNode']:
+        return Stream(self.translation_unit._references.get(self.node.hash, EMPTY_LIST))\
+            .map(lambda ref_id: self.translation_unit._nodes[ref_id]).to_list()
+
 
     def addTokens(self,  result: dict[str,str], *token_kind):
             for token in self.node.get_tokens():
@@ -162,14 +191,45 @@ class ClangASTNode(ASTNode):
         return cursor
 
     @staticmethod
+    def _is_reference(node):
+        try:
+            print(type(node))
+            print(vars(node))
+            print(dir(node))
+            print(node.__dict__)
+            node.__dict__['id']
+            return True
+        except:
+            return False
+
+    @staticmethod
+    @cache
+    def __is_property(key, value):
+        return callable(value) and any( key.startswith( tag) for tag in ['is_', 'get'] )
+
+    @staticmethod
     def _is_wrapped(cursor):
         return cursor.kind.is_unexposed() and len(list(cursor.get_children())) == 1
 
-# Function to recursively visit AST nodes
-def visit_node(node, depth=0):
-    print('  ' * depth + f'{node.kind} {node.spelling}')
-    for child in node.get_children():
-        visit_node(child, depth + 1)
+    @staticmethod
+    def __create_references(ast_node) -> None:
+        assert isinstance(ast_node, ClangASTNode), f'Expected ClangASTNode but got {type(ast_node)}'
+        references = []
+        node_id = ast_node.node.hash
+        ast_node.translation_unit._references[node_id] = references
+        try:
+            ref_id = ast_node.node.referenced.hash
+            if node_id == ref_id:
+                return
+            try:
+                ast_node.translation_unit._referenced_by[ref_id].append(node_id)
+            except:
+                ast_node.translation_unit._referenced_by[ref_id] = [node_id]
+            references.append(ref_id)
+        except:
+            pass
+
+
 
 if __name__ == "__main__":
     pass
