@@ -77,3 +77,53 @@ class TestStatements(TestCPatternFactory):
         self.assertEqual(count_refs, expected_refs)
         for stmt in created_statements:
             self.assertTrue(stmt.is_statement())
+
+
+class TestUseAtuToCreatePatterns(TestCPatternFactory):
+    """
+    Test the creation of a complex pattern that includes a typedef, a struct, a define and a statement
+
+    Complex pattern take the includes, defines and typedefs from the translation unit
+
+    """
+
+    @parameterized.expand(list(Factories.extend( [
+        ('A a = {};',1, 1),   
+        ('const char* aap=FOO;',1, 2),   
+        ('const char* $x = BAR;',1,2),
+    ])))
+    def test(self, _, factory, statementText, expected_stmts, expected_refs):
+        code = """
+        #include <stdio.h>
+        #define FOO "foo"
+        #define BAR "bar"
+        #define SAME "bar"
+        typedef struct A_Struct{
+            int a;
+            int b;
+        } A;
+        int some_decl = 1; 
+
+        void f(){
+            A a = {};
+            const char* aap = AAP;
+            const char* noot = NOOT;
+            const char* same = SAME;
+            printf("%s %s %s", aap, noot, same);
+
+        }
+
+"""
+        atu = factory.create_from_text(code, 'example.c')
+
+        # ASTShower.show_node(atu, include_properties=True)
+        # use the factory and the translation unit (for include, define and typedef reference) to create a pattern factory
+        patternFactory = CPatternFactory(factory, atu)
+
+        # pick the last statement  fo match
+        pattern_root = patternFactory.create(statementText)
+        ASTShower.show_node(pattern_root, include_properties=True)
+
+        # the user must pick it's own pattern in this case the last statement
+        self.assertTrue(pattern_root.get_children()[-1].is_statement())
+        self.assertEqual(pattern_root.get_children()[-1].get_raw_signature() +';',statementText)
