@@ -1,5 +1,4 @@
-#include <stdio.h>
-
+//hËllo  utf-8 2 byte character
 static int static_int = 2;
 
 #define A_DEFINE (4 + static_int)
@@ -10,6 +9,8 @@ do{\
    arg += A_DEFINE;\
 } while(0)
 
+void printf(char*);
+void printf(const char*, const char*, int);
 class A {
 public:
     A() {
@@ -37,7 +38,7 @@ public:
     int b;
     virtual int testB(int x, const char *y) {
         this->testA();
-        printf("B *s test %d\n", y, x);
+        printf("B *s test %d\n", y+A_DEFINE, x);
         return x;
     }
     void testA() {
