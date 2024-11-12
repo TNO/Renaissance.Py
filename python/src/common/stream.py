@@ -35,13 +35,21 @@ class Stream(Generic[T]):
         self.__iterable = filter(func, self.__iterable) # type: ignore
         return self
 
-    def map(self, func: Callable[[T], U]) -> 'Stream[U]':
-        self.__iterable = map(func, self.__iterable)
-        return Stream(self.__iterable)
+    def map(self, func_or_type: type[U]|Callable[[T], U|None]) -> 'Stream[U]':
+        if not isinstance(func_or_type, Callable):
+            return Stream(map(Stream.__cast, filter(lambda x: isinstance(x, func_or_type), self.__iterable)))
+        mapped = map(func_or_type, self.__iterable) # type: ignore
+        filtered = filter(lambda t: t!=None, mapped)
+        return Stream(filtered)
 
-    def flat_map(self, func: Callable[[T], Iterable[U]]) -> 'Stream[U]':
-        self.__iterable = (item for sublist in map(func, self.__iterable) for item in sublist)
-        return Stream(self.__iterable)
+    def flat_map(self, func: Callable[[T], 'Iterable[U]|Stream[U]']) -> 'Stream[U]':
+        def get_iterable(x): 
+            result = func(x)
+            if isinstance(result, Stream):
+                return result.__iterable
+            
+        flat_map = (item for sublist in map(get_iterable, self.__iterable) for item in sublist) # type: ignore
+        return Stream(flat_map)
 
     def distinct(self) -> 'Stream[T]':
         seen = set()
@@ -66,7 +74,9 @@ class Stream(Generic[T]):
 
     def action(self, func: Callable[[T], Any]) -> 'Stream[T]':
         self.__iterable, iter2 = itertools.tee(self.__iterable)
-        func(next(iter2)) # type: ignore
+        for item in iter2:
+            func(item)
+            return self # first item only
         return self
 
     def for_each(self, func: Callable[[T], Any]) -> None:
@@ -76,10 +86,11 @@ class Stream(Generic[T]):
     def to_list(self) -> List[T]:
         return list(self.__iterable) # type: ignore
 
-    def reduce(self, func: Callable[[T, T], T], initial: Optional[T] = None) -> Optional[T]:
-        if initial is not None:
-            return reduce(func, self.__iterable, initial) # type: ignore
-        return reduce(func, self.__iterable) # type: ignore
+    def reduce(self, func: Callable[[T, T], T]) -> StreamOptional[T]:
+        initial = next(self.__iterable, None) # type: ignore
+        if initial is None:
+            return StreamOptional(None)
+        return StreamOptional(reduce(func, self.__iterable, func(initial, initial))) 
 
     def collect(self, collector: Callable[[Iterable[T]], Any]) -> Any:
         return collector(self.__iterable) # type: ignore
@@ -101,9 +112,21 @@ class Stream(Generic[T]):
             return StreamOptional(next(self.__iterable, None)) # type: ignore
         except StopIteration:
             return StreamOptional(None)
-    
+
+    def find_last(self) -> StreamOptional[T]:
+        try:
+            # get the latest element from the iterable
+            return StreamOptional(list(self.__iterable)[-1]) # type: ignore
+        except StopIteration:
+            return StreamOptional(None)
+
     def find_any(self) -> StreamOptional[T]:
         return self.find_first()
+
+    @staticmethod
+    def __cast(node): 
+        assert isinstance(node, node) 
+        return node
 
 if __name__ == '__main__':
     # Example usage
