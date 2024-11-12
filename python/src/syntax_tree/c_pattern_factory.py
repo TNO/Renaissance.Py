@@ -1,6 +1,9 @@
 import re
+from typing import Optional
 
-from syntax_tree.ast_shower import ASTShower
+from common.stream import Stream
+from .ast_node import ASTNode
+from .ast_shower import ASTShower
 
 from .ast_factory import ASTFactory
 from .ast_finder import ASTFinder
@@ -9,16 +12,38 @@ class CPatternFactory:
 
     reserved_name = '__rejuvenation__reserved__'
 
-    def __init__(self, factory: ASTFactory, language: str = 'c'):
+    def __init__(self, factory: ASTFactory, refNode: Optional[ASTNode] = None , language: str = 'c'):
         self.factory = factory
-        self.language = language
+        #collect includes #defines  and var decl from the refNode
+        if refNode:
+            offset = Stream(refNode.get_children()).filter(ASTNode.is_part_of_translation_unit).map(ASTNode.get_start_offset).reduce(min).or_else(0)
+            self.language = refNode.get_containing_filename().split('.')[-1]
+
+            self.header = CPatternFactory.remove_indent(refNode.get_content(0, offset)) + '\n'
+
+            self.header+= Stream(refNode.get_children()).\
+                filter(ASTNode.is_part_of_translation_unit).\
+                filter(lambda c: ASTFinder.matches_kind(c,'(?i)(Var|Typedef)_?Decl')).\
+                map(lambda c: c.get_raw_signature()+';').\
+                action(print).\
+                collect(lambda n: '\n'.join(n)) +'\n'
+        else:
+            self.language = language
+            self.header = ''
+        print(self.header)
+
+    @staticmethod
+    def remove_indent(text):
+        split = [ len(l)-len(l.lstrip()) for l in  text.splitlines() if l.strip()]
+        indent = split[0] if split else 0
+        return '\n'.join([line[indent:] for line in text.splitlines()])
 
     def create_expression(self, text:str):
         keywords = CPatternFactory._get_keywords_from_text(text)
-        fullText = '\n'.join(CPatternFactory._to_declaration(keywords)) + f'\nint {CPatternFactory.reserved_name} = ({text});'
+        fullText = self.header + '\n'.join(CPatternFactory._to_declaration(keywords)) + f'\nint {CPatternFactory.reserved_name} = ({text});'
         root =  self._create( fullText)
         #return the first expression found in the tree as a ASTNode
-        return ASTFinder.find_kind(root, '(?i)PAREN_?EXPR').find_first().get().get_children()[0]
+        return ASTFinder.find_kind(root, '(?i)PAREN_?EXPR').find_last().get().get_children()[0]
 
     def create_declarations(self, text:str, types: list[str] = [] , parameters: list[str] = [], extra_declarations: list[str] = []):
         return self._create_body(text, types, parameters, extra_declarations)
@@ -33,6 +58,22 @@ class CPatternFactory:
         parameters = [ par for par in CPatternFactory._get_keywords_from_text(text) if not par in types and not any(par in ed for ed in extra_declarations)]
         return self._create_body(text, types, parameters, extra_declarations)
 
+    def create(self, text:str):
+        """
+        Creates an object using the factory from the provided text.
+        The object is created by the factory using the provided text and the header of the provided reference node.
+        It is up to the user to pick the right node for pattern matching
+
+        Args:
+            text (str): The input text used to create the object.
+
+        Returns:
+            object: The object created by the factory.
+        """
+        print(self.header + text)
+        return self.factory.create_from_text(self.header + text,  'test.' + self.language)
+
+
     def create_statement(self, text:str, types: list[str] = [], extra_declarations: list[str] = []):
         statements = list(self.create_statements(text, types, extra_declarations))
         assert len(statements) == 1, "Only one statement is expected"
@@ -40,6 +81,7 @@ class CPatternFactory:
     
     def _create_body(self, text, types, parameters, extra_declarations):
         fullText = \
+            self.header+\
             '\n'.join(CPatternFactory._to_typedef(types)) +'\n'\
             '\n'.join(CPatternFactory._to_declaration(parameters)) +'\n'\
             '\n'.join(extra_declarations) +'\n'\
@@ -81,8 +123,8 @@ class CPatternFactory:
 
 class CPPPatternFactory(CPatternFactory):
 
-    def __init__(self, factory: ASTFactory):
-        super().__init__(factory, 'cpp')
+    def __init__(self, factory: ASTFactory, refNode: Optional[ASTNode] = None):
+        super().__init__(factory, refNode, 'cpp')
 
 if __name__ == "__main__":
     print(CPatternFactory._get_dollar_keywords_from_text('struct $type;struct $name; $type a = $name; int b = 4; $$x = $$y'))
