@@ -2,6 +2,7 @@ import logging
 from unittest import TestCase
 from parameterized import parameterized
 from syntax_tree.ast_factory import ASTFactory
+from syntax_tree.ast_shower import ASTShower
 from syntax_tree.c_pattern_factory import CPatternFactory
 from syntax_tree.match_finder import MatchFinder
 from syntax_tree.ast_node import ASTNode
@@ -34,7 +35,8 @@ class TestCMatchFinder(TestCase):
         for idx, pattern in enumerate(patterns):
             show_node(pattern, f"Pattern[{idx}]")
 
-        atu = factory.create_from_text(cpp_code, "test.cpp")
+        atu = factory.create_from_text(cpp_code, "test.c")
+
         show_node(atu, "CPP code")
         #find all if and while statements
         matches = MatchFinder.find_all([atu],patterns,recursive=recursive).to_list()
@@ -86,7 +88,7 @@ class TestStatements(TestCMatchFinder):
 ]))
     def test(self, _, factory, statements, expected_dicts_per_match: list[dict[str, list[str]]]):
         stmtNodes = CPatternFactory(factory).create_statements(statements)
-        matches = self.do_test(factory, TestStatements.SIMPLE_CPP, stmtNodes, recursive=True)
+        matches = self.do_test(factory, TestStatements.SIMPLE_CPP, stmtNodes, recursive=True)  # type: ignore
         self.assert_matches(matches, expected_dicts_per_match)
 
 class TestFunctionCallStatements(TestCMatchFinder):
@@ -111,7 +113,7 @@ class TestFunctionCallStatements(TestCMatchFinder):
         """
         
         stmtNodes = CPatternFactory(factory).create_statements(statements, extra_declarations=extra_declarations)
-        matches = self.do_test(factory, code, stmtNodes, recursive=True)
+        matches = self.do_test(factory, code, stmtNodes, recursive=True) # type: ignore
         self.assert_matches(matches, expected_dicts_per_match)
 
 class TestMultiAssignments(TestCMatchFinder):
@@ -134,7 +136,7 @@ class TestMultiAssignments(TestCMatchFinder):
         """
         
         stmtNodes = CPatternFactory(factory).create_statements(statements, extra_declarations=extra_declarations)
-        matches = self.do_test(factory, code, stmtNodes, recursive=True)
+        matches = self.do_test(factory, code, stmtNodes, recursive=True) # type: ignore
         self.assert_matches(matches, expected_dicts_per_match)
 
     @parameterized.expand(Factories.extend([
@@ -163,13 +165,13 @@ class TestMultiAssignments(TestCMatchFinder):
         """
         
         stmtNodes = CPatternFactory(factory).create_statements(statements, extra_declarations=extra_declarations)
-        matches = self.do_test(factory, code, stmtNodes, recursive=True)
+        matches = self.do_test(factory, code, stmtNodes, recursive=True) # type: ignore
         self.assert_matches(matches, expected_dicts_per_match)
 
 class TestComposeReplacement(TestCMatchFinder):
 
     @parameterized.expand(Factories.extend([
-    ('if($exp){$$before;$d1;$$after;}else{$$before;$d2;$$after;}',[],{'$$before; ($exp) ? $d1;:$d2; $$after;': "c++; (a==1) ? b = 2;:b = 3; d++;"}),   
+    ('if($exp){$$before;b=$d1;$$after;}else{$$before;b=$d2;$$after;}',[],{'$$before; b = ($exp) ? $d1:$d2; $$after;': "c++; b = (a==1) ? 2:3; d++;"}),   
 ]))
     def test_args(self, _, factory, statements, extra_declarations, replacement: dict[str, str]):
         code = """
@@ -192,7 +194,7 @@ class TestComposeReplacement(TestCMatchFinder):
         """
         
         stmtNodes = CPatternFactory(factory).create_statements(statements, extra_declarations=extra_declarations)
-        matches = self.do_test(factory, code, stmtNodes, recursive=True)
+        matches = self.do_test(factory, code, stmtNodes, recursive=True) # type: ignore
         for match, exp in zip(matches, replacement.items()):
             org, expected = exp
             actual = match.compose_replacement(org)
