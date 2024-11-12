@@ -13,7 +13,12 @@ class ASTFinder:
 
     @staticmethod
     def find_kind(ast_node: ASTNodeType, kind: str)-> Stream[ASTNodeType]:
-        return Stream(ASTFinder.__find_kind(ast_node, kind))
+        return Stream(ASTFinder.__matches_kind(ast_node, kind))
+
+    @staticmethod
+    def matches_kind(ast_node: ASTNode, kind: str)-> bool:
+        pattern = re.compile(kind)
+        return pattern.match(ast_node.get_kind())!=None
 
     @staticmethod
     def __find_all(ast_node: ASTNodeType, function: Callable[[ASTNodeType], Iterator[ASTNodeType]])-> Iterator[ASTNodeType]:
@@ -22,9 +27,11 @@ class ASTFinder:
             yield from ASTFinder.__find_all(child, function)
 
     @staticmethod
-    def __find_kind(ast_node: ASTNodeType, kind: str)-> Iterator[ASTNodeType]:
+    def __matches_kind(ast_node: ASTNodeType, kind:str)-> Iterator[ASTNodeType]:
         pattern = re.compile(kind)
-        def match(target: ASTNodeType) -> Iterator[ASTNodeType]:
-            if (pattern.match(target.get_kind())):
-                yield target
-        yield from ASTFinder.__find_all(ast_node, match)
+        if pattern.match(ast_node.get_kind()):
+            yield ast_node
+        for child in ast_node.get_children():
+            assert isinstance(child, type(ast_node)), f'Expected {type(ast_node)} but got {type(child)}'
+            yield from ASTFinder.__matches_kind(child, kind) 
+
