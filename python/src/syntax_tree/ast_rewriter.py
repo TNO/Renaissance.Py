@@ -30,9 +30,9 @@ class ASTRewriter():
         new_content, node_list = ASTRewriter._prepare_replacement_content(new_content, target)
         self.__replace(new_content, node_list, include_whitespace, include_comments)
 
-    def remove(self, target: ASTNode|list[ASTNode]|PatternMatch, include_whitespace: bool = False, include_comments: bool = False):
-        new_content, node_list = ASTRewriter._prepare_replacement_content('', target)
-        self.__replace(new_content, node_list, include_whitespace, include_comments)
+    def remove(self, target: ASTNode|list[ASTNode]|PatternMatch, include_whitespace: bool = True, include_comments: bool = True):
+        _, node_list = ASTRewriter._prepare_replacement_content('', target)
+        self.__remove(node_list, include_whitespace, include_comments)
 
     def insert_before(self,new_content:str, target: ASTNode|list[ASTNode]|PatternMatch, include_whitespace: bool = True, include_comments: bool = True):
         new_content, node_list = ASTRewriter._prepare_replacement_content(new_content, target)
@@ -46,7 +46,7 @@ class ASTRewriter():
         if not nodes:
             return  
         offset = nodes[0].get_start_offset()
-        content = self.__rewriter.content
+        content = self.content
         indent = ASTRewriter._get_indent(content, offset)
         spaces = ' '*indent
         # if flattened_nodes[-1] has a new line after white space then we need to add a new line:
@@ -70,14 +70,41 @@ class ASTRewriter():
         if not nodes:
             return  
         start_offset, end_offset = self.correct_for_comments_and_whitespace(include_whitespace, include_comments, nodes)
+            
         self.replace_bytes(start_offset, end_offset, new_content) 
 
-    
+    def __remove(self, nodes: list[ASTNode], include_whitespace: bool = False, include_comments: bool = False):
+        """
+        Removes a list of AST nodes from the content, optionally including surrounding whitespace and comments.
+
+        Args:
+            nodes (list[ASTNode]): The list of AST nodes to remove.
+            include_whitespace (bool, optional): Whether to include surrounding whitespace in the removal. Defaults to False.
+            include_comments (bool, optional): Whether to include surrounding comments in the removal. Defaults to False.
+
+        Returns:
+            None
+        """
+        if not nodes:
+            return  
+        indent = ASTRewriter._get_indent(self.content, nodes[0].get_start_offset())
+        start_offset, end_offset = self.correct_for_comments_and_whitespace(include_whitespace, include_comments, nodes)
+        #remove the indent in front of it
+        start_offset -= indent
+        #remove the line if it is empty
+        if start_offset>0 and self.content[start_offset-1] == ord('\n') and self.content[end_offset] == ord('\n'):
+            start_offset -= 1
+        self.replace_bytes(start_offset, end_offset, '') 
+
     def apply_to_string(self) -> str:
         return self.__rewriter.apply().decode(self.__encoding)
 
     def apply(self) -> bytes:
         return self.__rewriter.apply()
+    
+    @property
+    def content(self) -> bytes:
+        return self.__rewriter.content
 
     def correct_for_comments_and_whitespace(self, include_whitespace, include_comments, nodes):
         start_offset = nodes[0].get_start_offset()
@@ -86,16 +113,16 @@ class ASTRewriter():
             precedingNode = nodes[0].get_preceding_sibling()
             parent = nodes[0].get_parent()
             start_comment_location = precedingNode.get_end_offset() if precedingNode else parent.get_start_offset() if parent else 0
-            extended_location = ASTRewriter._get_comment_location(start_comment_location, start_offset,self.__rewriter.content)
+            extended_location = ASTRewriter._get_comment_location(start_comment_location, start_offset,self.content)
             if extended_location != (-1, -1):
                 start_offset = extended_location[0]
             nextSibling = nodes[-1].get_next_sibling()
-            end_comment_location = nextSibling.get_start_offset() if nextSibling else parent.get_end_offset() if parent else len(self.__rewriter.content)    
-            location_after_comment = ASTRewriter._get_comment_after_location(end_offset, end_comment_location, self.__rewriter.content)
+            end_comment_location = nextSibling.get_start_offset() if nextSibling else parent.get_end_offset() if parent else len(self.content)    
+            location_after_comment = ASTRewriter._get_comment_after_location(end_offset, end_comment_location, self.content)
             if location_after_comment != (-1, -1):
                 end_offset = location_after_comment[1]
         if include_whitespace:
-            end_offset = ASTRewriter._extend_with_whitespace(end_offset, self.__rewriter.content)
+            end_offset = ASTRewriter._extend_with_whitespace(end_offset, self.content)
         return start_offset,end_offset  
 
     @staticmethod
