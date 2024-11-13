@@ -1,12 +1,13 @@
 # create a class that inherits syntax tree ASTNode
 
+from dataclasses import dataclass
 from functools import cache
 import json
 import os
 from pathlib import Path
 import tempfile
 from common import Stream
-from syntax_tree import ASTNode
+from syntax_tree import ASTNode, ASTReference
 from typing import Any, Optional, TypeVar
 from typing_extensions import override
 import subprocess
@@ -15,22 +16,36 @@ import subprocess
 EMPTY_DICT = {}
 EMPTY_STR = ''
 EMPTY_LIST = []
+ID_TAGS = ['id', 'typeAliasDeclId', 'templateDeclId', 'templateSpecializationDeclId', 'referencedDeclId']
 
 STMT_PARENTS = [ 'CompoundStmt', 'TranslationUnitDecl' ]
 
 VERBOSE = False
 
+class ClangJsonASTReference():
+    def __init__(self, node_id:str, ref_kind:str, properties:dict[str, Any]) -> None:
+        self.node_id = node_id
+        self.ref_kind = ref_kind
+        self.properties = properties
+
 class ClangJsonTranslationUnit():
-    def __init__(self, json_root, file_name:str):
+    def __init__(self, json_root:dict[str, Any], file_name:str):
         self.json_root = json_root
+        self.file_name = file_name
+        self.references_initialized = False
         # references are used as a cache to store the references of a node
         # the are stored as id for lazy creation
-        self._references: dict[str, list[str]] = {}
-        self._referenced_by: dict[str, list[str]] = {}
-        self._nodes: dict[str, ClangJsonASTNode] = {}
-        self.file_name = file_name
-        
+        self._references: dict[str, list[ClangJsonASTReference]] = {}
+        self._referenced_by: dict[str, list[ClangJsonASTReference]] = {}
+        self._nodes: dict[str, 'ClangJsonASTNode'] = {}
     
+    def lazy_create_references(self, root: 'ClangJsonASTNode') -> None:
+        if self.references_initialized:
+            return
+        root.process(ReferenceHelper.create_references)
+        root.process(ReferenceHelper.add_record_references)
+        self.references_initialized = True
+
 class ClangJsonASTNode(ASTNode):
     parse_args=['-fparse-all-comments', '-ferror-limit=0', '-Xclang', '-ast-dump=json', '-fsyntax-only']
 
@@ -60,8 +75,6 @@ class ClangJsonASTNode(ASTNode):
             atu = ClangJsonASTNode(json_atu, translation_unit=ClangJsonTranslationUnit(json_atu, file_name=str(file_path)) )
             # cache the result of the temp file before deleting it
             atu.get_content(0, 0)
-
-            atu.process(ClangJsonASTNode.__create_references)
             return atu
 
         except Exception as e:
@@ -133,21 +146,22 @@ class ClangJsonASTNode(ASTNode):
         return self.node.get('kind', EMPTY_STR)
 
     @override
-    def _get_properties(self) -> dict[str, int|str]: 
+    def _get_properties(self) -> dict[str, Any]: 
         # get all the attributes of self.node except the inner  nodes, id, location, range, kind and name and all reference nodes (that is children with 'id)
-        properties = {k: v for k, v in self.node.items() if ClangJsonASTNode.__is_property(k) and not ClangJsonASTNode._is_reference(v)}
+        properties = {k: ClangJsonASTNode._remove_ids(v) for k, v in self.node.items() if ClangJsonASTNode.__is_property(k) and not ClangJsonASTNode._is_reference(v)==None}
         return properties
-
    
     @override
-    def _get_referenced_by(self) -> list['ClangJsonASTNode']:
+    def _get_referenced_by(self) -> list[ASTReference['ClangJsonASTNode']]:
+        self.translation_unit.lazy_create_references(self)
         return Stream(self.translation_unit._referenced_by.get(self.node['id'], EMPTY_LIST))\
-            .map(lambda ref_id: self.translation_unit._nodes[ref_id]).to_list()
+            .map(lambda ref: ASTReference(self.translation_unit._nodes[ref.node_id], ref.ref_kind, ref.properties)).to_list()
 
     @override
-    def _get_references(self) -> list['ClangJsonASTNode']:
+    def _get_references(self)-> list[ASTReference['ClangJsonASTNode']]:
+        self.translation_unit.lazy_create_references(self)
         return Stream(self.translation_unit._references.get(self.node['id'], EMPTY_LIST))\
-            .map(lambda ref_id: self.translation_unit._nodes[ref_id]).to_list()
+            .map(lambda ref: ASTReference(self.translation_unit._nodes[ref.node_id], ref.ref_kind, ref.properties)).to_list()
 
     @override
     def _get_parent(self) -> Optional['ClangJsonASTNode']: 
@@ -182,8 +196,14 @@ class ClangJsonASTNode(ASTNode):
         return node
 
     @staticmethod
+    def _remove_ids(json_node):
+        if not isinstance(json_node, dict):
+            return json_node
+        return {k:v for k, v in json_node.items() if not k in ID_TAGS}  
+
+    @staticmethod
     def _is_reference(json_node):
-        return isinstance(json_node, dict) and json_node.get('id')
+        return len(ReferenceHelper._get_reference_ids(json_node)) > 0
 
     @staticmethod
     @cache
@@ -205,17 +225,96 @@ class ClangJsonASTNode(ASTNode):
         except:
             return default
 
+class ReferenceHelper:
+
     @staticmethod
-    def __create_references(ast_node) -> None:
+    def create_references(ast_node) -> None:
         assert isinstance(ast_node, ClangJsonASTNode), f'Expected ClangJsonASTNode but got {type(ast_node)}'
         references = []
         node_id = ast_node.node['id']
         ast_node.translation_unit._references[node_id] = references
-        refs = [v for k, v in ast_node.node.items() if not ClangJsonASTNode.__is_property(k) and ClangJsonASTNode._is_reference(v)]
-        for ref in refs:
-            ref_id = ref['id']
-            try:
-                ast_node.translation_unit._referenced_by[ref_id].append(node_id)
-            except:
-                ast_node.translation_unit._referenced_by[ref_id] = [node_id]
-            references.append(ref_id)
+        refs = {k:v for k, v in ast_node.node.items() if not ReferenceHelper._is_child_node(k) and ClangJsonASTNode._is_reference(v)}
+        for kind, ref in refs.items():
+            for ref_id in ReferenceHelper._get_reference_ids(ref):
+                properties = {k:p for k, p in ref.items() if k != ref_id}
+                reference = ClangJsonASTReference(ref_id, kind, properties)
+                referenced_by = ClangJsonASTReference(node_id, kind, properties)
+                try:
+                    ast_node.translation_unit._referenced_by[ref_id].append(referenced_by)
+                except:
+                    ast_node.translation_unit._referenced_by[ref_id] = [referenced_by]
+                references.append(reference)
+
+    @staticmethod
+    def add_record_references(ast_node) -> None:
+        """
+        Json does not contain direct references between classes and their base classes.
+
+        Hence these references are created in this method.
+
+        This method checks if the given AST node is of kind 'CXXRecordDecl' and has a tag 'class'.
+        If so, it processes the base classes of the node and creates references for them.
+
+        Args:
+            ast_node (ClangJsonASTNode): The AST node to process.
+
+        Raises:
+            AssertionError: If the provided ast_node is not an instance of ClangJsonASTNode.
+        """
+        assert isinstance(ast_node, ClangJsonASTNode), f'Expected ClangJsonASTNode but got {type(ast_node)}'
+        bases = ast_node._get(['bases'], [])
+        if not bases:
+            bases = [ast_node.node] if ast_node.node.get('type') else None
+        if not bases:
+            return
+        node_id = ast_node.node['id']
+        for base in bases:
+            ref_id = ReferenceHelper._get_record_decl(ast_node, base)
+            if ref_id:
+                properties = {k:p for k, p in base.items() if k != 'type'}
+                reference = ClangJsonASTReference(ref_id, 'base', properties)
+                referenced_by = ClangJsonASTReference(node_id, 'base', properties)
+                try:
+                    ast_node.translation_unit._referenced_by[ref_id].append(referenced_by)
+                except:
+                    ast_node.translation_unit._referenced_by[ref_id] = [referenced_by]
+                try:
+                    ast_node.translation_unit._references[node_id].append(reference)
+                except:
+                    ast_node.translation_unit._references[node_id] = [reference]
+
+    @staticmethod
+    def _get_record_decl(ast_node, base):
+        try:
+            tp = base['type']
+            # split desugaredQualType to derive the parent namespaces
+            namespaces = tp['desugaredQualType'].split('::')[:-1][::-1]
+            qual_type = tp['qualType']
+            for id, node in ast_node.translation_unit._nodes.items():
+                if node.get_kind() == 'CXXRecordDecl' and node.get_name() == qual_type:
+                    parent = node.get_parent()
+                    for ns in namespaces:
+                        if ns != parent.get_name() or parent.get_kind() != 'NamespaceDecl':
+                            return None
+                        parent = parent.get_parent()
+                    return id
+        except:
+            return None
+
+    @staticmethod
+    def _get_reference_ids(json_node):
+        result = []
+        if not isinstance(json_node, dict):
+            return result
+        for key in ID_TAGS:
+           value = json_node.get(key)
+           if value != None:
+               result.append(value)
+        return result
+
+    @staticmethod
+    @cache
+    def _is_child_node(key):
+        return key in ['inner']
+
+

@@ -1,8 +1,8 @@
 from functools import cache
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 from common import Stream
-from syntax_tree import ASTNode
+from syntax_tree import ASTNode, ASTReference
 from typing_extensions import override
 
 from clang.cindex import TranslationUnit, Index, Config
@@ -13,16 +13,30 @@ EMPTY_LIST = []
 
 STMT_PARENTS = [ 'COMPOUND_STMT', 'TRANSLATION_UNIT' ]
 
+class ClangASTReference():
+    def __init__(self, node_id:str, ref_kind:str, properties:dict[str, Any]) -> None:
+        self.node_id = node_id
+        self.ref_kind = ref_kind
+        self.properties = properties
+
 
 class ClangTranslationUnit():
-    def __init__(self, translation_unit:TranslationUnit, file_name:str):
-        self.clang_atu = translation_unit
-        # references are used as a cache to store the references of a node
-        # the are stored as id for lazy creation
-        self._references: dict[str, list[str]] = {}
-        self._referenced_by: dict[str, list[str]] = {}
-        self._nodes: dict[str, ClangASTNode] = {}
+    def __init__(self, clang_atu:TranslationUnit, file_name:str):
+        self.clang_atu = clang_atu
         self.file_name = file_name
+        self.references_initialized = False
+    # references are used as a cache to store the references of a node
+    # the are stored as id for lazy creation
+        self._references: dict[str, list[ClangASTReference]] = {}
+        self._referenced_by: dict[str, list[ClangASTReference]] = {}
+        self._nodes: dict[str, 'ClangASTNode'] = {}
+
+    def lazy_create_references(self, root: 'ClangASTNode') -> None:
+        if self.references_initialized:
+            return
+        root.process(ReferenceHelper.create_references)
+        self.references_initialized = True
+
 
 class ClangASTNode(ASTNode):
     @staticmethod
@@ -51,7 +65,6 @@ class ClangASTNode(ASTNode):
     def load(file_path: Path,  extra_args=[]) -> 'ClangASTNode':
         translation_unit: TranslationUnit = ClangASTNode.index.parse(file_path, args=[*ClangASTNode.parse_args,*extra_args])
         root_node =  ClangASTNode(translation_unit.cursor, ClangTranslationUnit(translation_unit, file_name=str(file_path)), None)
-        root_node.process(ClangASTNode.__create_references)
         return root_node
 
     @override
@@ -63,8 +76,6 @@ class ClangASTNode(ASTNode):
         file_content_bytes = file_content.encode('utf-8')
         # add to cache to avoid reading the file again
         root_node.cache[file_name] = file_content_bytes
-        root_node.process(ClangASTNode.__create_references)
-
         return root_node
     
     @override
@@ -164,14 +175,16 @@ class ClangASTNode(ASTNode):
         return self._children
 
     @override
-    def _get_referenced_by(self) -> list['ClangASTNode']:
+    def _get_referenced_by(self) -> list[ASTReference['ClangASTNode']]:
+        self.translation_unit.lazy_create_references(self)
         return Stream(self.translation_unit._referenced_by.get(self.node.hash, EMPTY_LIST))\
-            .map(lambda ref_id: self.translation_unit._nodes[ref_id]).to_list()
+            .map(lambda ref: ASTReference(self.translation_unit._nodes[ref.node_id], ref.ref_kind, ref.properties)).to_list()
 
     @override
-    def _get_references(self) -> list['ClangASTNode']:
+    def _get_references(self) -> list[ASTReference['ClangASTNode']]:
+        self.translation_unit.lazy_create_references(self)
         return Stream(self.translation_unit._references.get(self.node.hash, EMPTY_LIST))\
-            .map(lambda ref_id: self.translation_unit._nodes[ref_id]).to_list()
+            .map(lambda ref: ASTReference(self.translation_unit._nodes[ref.node_id], ref.ref_kind, ref.properties)).to_list()
 
 
     def addTokens(self,  result: dict[str,str], *token_kind):
@@ -211,23 +224,33 @@ class ClangASTNode(ASTNode):
     def _is_wrapped(cursor):
         return cursor.kind.is_unexposed() and len(list(cursor.get_children())) == 1
 
+class ReferenceHelper():
     @staticmethod
-    def __create_references(ast_node) -> None:
+    def create_references(ast_node) -> None:
         assert isinstance(ast_node, ClangASTNode), f'Expected ClangASTNode but got {type(ast_node)}'
         references = []
         node_id = ast_node.node.hash
         ast_node.translation_unit._references[node_id] = references
-        try:
-            ref_id = ast_node.node.referenced.hash
-            if node_id == ref_id:
-                return
+        ref_fields = ['referenced'] #, 'type.get_declaration()']
+        for field in ref_fields:
             try:
-                ast_node.translation_unit._referenced_by[ref_id].append(node_id)
+                element = eval('ast_node.node.' + field)
+                if element.kind.name == 'NO_DECL_FOUND':    
+                    continue
+                ref_id = element.hash
+                ref_kind = field.split(".")[0]
+                properties = {k:p for k, p in element.__dict__.items() if not k.startswith('_') and k != 'hash'}
+                if node_id == ref_id:
+                    return
+                reference = ClangASTReference(ref_id, ref_kind, properties)
+                referenced_by = ClangASTReference(node_id, ref_kind, {k:p for k, p in ast_node.node.__dict__.items() if k != 'hash'})
+                try:
+                    ast_node.translation_unit._referenced_by[ref_id].append(referenced_by)
+                except:
+                    ast_node.translation_unit._referenced_by[ref_id] = [referenced_by]
+                references.append(reference)
             except:
-                ast_node.translation_unit._referenced_by[ref_id] = [node_id]
-            references.append(ref_id)
-        except:
-            pass
+                pass
 
 
 

@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from functools import cache
 from pathlib import Path
-from typing import Callable, Optional, TypeVar
+from typing import Any, Callable, Generic, Optional, TypeVar
 
 
 
@@ -14,6 +14,22 @@ class VisitorResult(Enum):
     SKIP = 2
 
 ASTNodeType = TypeVar("ASTNodeType", bound='ASTNode')
+
+class ASTReference(Generic[ASTNodeType]):
+    def __init__(self, ast_node: ASTNodeType, ref_kind: str, properties: dict[str,Any]) -> None:
+        self._node = ast_node
+        self._ref_kind = ref_kind
+        self._properties = properties
+    
+    def get_node(self) -> ASTNodeType:
+        return self._node
+    
+    def get_ref_kind(self) -> str:
+        return self._ref_kind
+    
+    def get_properties(self) -> dict:
+        return self._properties
+    
 
 # To make usage of the concrete class methods easier, ASTNode must NOT have abstract public classes!!
 class ASTNode(ABC):
@@ -125,11 +141,11 @@ class ASTNode(ABC):
         return self._get_children()
 
     @cache
-    def get_references(self: ASTNodeType) -> list[ASTNodeType]:
+    def get_references(self: ASTNodeType) -> list[ASTReference[ASTNodeType]]:
         return self._get_references()
 
     @cache
-    def get_referenced_by(self: ASTNodeType) -> list[ASTNodeType]:
+    def get_referenced_by(self: ASTNodeType) -> list[ASTReference[ASTNodeType]]:
         return self._get_referenced_by()
 
     @abstractmethod
@@ -169,11 +185,11 @@ class ASTNode(ABC):
         pass
 
     @abstractmethod
-    def _get_references(self: ASTNodeType) -> list[ASTNodeType]:
+    def _get_references(self: ASTNodeType) -> list[ASTReference[ASTNodeType]]:
         pass
 
     @abstractmethod
-    def _get_referenced_by(self: ASTNodeType) -> list[ASTNodeType]:
+    def _get_referenced_by(self: ASTNodeType) -> list[ASTReference[ASTNodeType]]:
         pass
     
     def process(self, function: Callable[['ASTNode'], None]):
