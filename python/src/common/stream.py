@@ -1,5 +1,5 @@
 import itertools
-from typing import TypeVar, Generic, Iterable, Callable, List, Any, Optional
+from typing import TypeVar, Generic, Iterable, Callable, Any, Optional
 from functools import reduce
 
 T = TypeVar('T')
@@ -83,7 +83,7 @@ class Stream(Generic[T]):
         for item in self.__iterable:
             func(item) # type: ignore
 
-    def to_list(self) -> List[T]:
+    def to_list(self) -> list[T]:
         return list(self.__iterable) # type: ignore
 
     def reduce(self, func: Callable[[T, T], T]) -> StreamOptional[T]:
