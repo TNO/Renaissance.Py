@@ -1,11 +1,7 @@
 from abc import ABC, abstractmethod
 from enum import Enum
-from functools import cache
 from pathlib import Path
 from typing import Any, Callable, Generic, Optional, Sequence, TypeVar
-
-
-
 
 # enum with ABORT, CONTINUE and SKIP
 class VisitorResult(Enum):
@@ -42,11 +38,9 @@ class ASTNode(ABC):
         self.root = root
         self.cache = {}
     
-    @cache
     def is_part_of_translation_unit(self) -> bool:
         return self.get_containing_filename() == self.root.get_containing_filename()
 
-    @cache
     def get_raw_signature(self) -> str:
         start = self.get_start_offset()
         end = start + self.get_length()
@@ -73,7 +67,6 @@ class ASTNode(ABC):
                 self.cache[file_path] = bytes
                 return bytes
 
-    @cache        
     def get_end_offset(self):
         return self.get_start_offset() + self.get_length()
     
@@ -104,47 +97,36 @@ class ASTNode(ABC):
     def load_from_text(text: str, file_name: str, extra_args:Sequence[str]) -> 'ASTNode':
         pass
 
-    @cache
     def get_name(self) -> str:
         return self._get_name()
 
-    @cache
     def get_containing_filename(self) -> str:
         return self._get_containing_filename()
     
-    @cache
     def get_start_offset(self) -> int: 
         return self._get_start_offset()
     
-    @cache
     def get_length(self) -> int: 
         return self._get_length()
 
-    @cache
     def get_kind(self) -> str: 
         return self._get_kind()
 
-    @cache
     def get_properties(self) -> dict[str, int|str]: 
         return self._get_properties()
 
-    @cache
     def get_parent(self: ASTNodeType) -> Optional[ASTNodeType]: 
         return self._get_parent()
 
-    @cache
     def is_statement(self) ->bool: 
         return self._is_statement()
 
-    @cache
     def get_children(self: ASTNodeType) -> Sequence[ASTNodeType]: 
         return self._get_children()
 
-    @cache
     def get_references(self: ASTNodeType) -> Sequence[ASTReference[ASTNodeType]]:
         return self._get_references()
 
-    @cache
     def get_referenced_by(self: ASTNodeType) -> Sequence[ASTReference[ASTNodeType]]:
         return self._get_referenced_by()
 

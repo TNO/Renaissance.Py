@@ -1,5 +1,5 @@
 import re
-from typing import Optional, Sequence
+from typing import Generic, Optional, Sequence, TypeVar
 
 from common.stream import Stream
 from .ast_node import ASTNode
@@ -8,11 +8,14 @@ from .ast_shower import ASTShower
 from .ast_factory import ASTFactory
 from .ast_finder import ASTFinder
 SHOW_NODE = False
-class CPatternFactory:
+
+ASTNodeType = TypeVar("ASTNodeType", bound='ASTNode')
+
+class CPatternFactory(Generic[ASTNodeType]):
 
     reserved_name = '__rejuvenation__reserved__'
 
-    def __init__(self, factory: ASTFactory, refNode: Optional[ASTNode] = None , language: str = 'c'):
+    def __init__(self, factory: ASTFactory[ASTNodeType], refNode: Optional[ASTNode] = None , language: str = 'c'):
         self.factory = factory
         #collect includes #defines  and var decl from the refNode
         if refNode:
@@ -38,12 +41,12 @@ class CPatternFactory:
         indent = split[0] if split else 0
         return '\n'.join([line[indent:] for line in text.splitlines()])
 
-    def create_expression(self, text:str):
+    def create_expression(self, text:str) -> ASTNodeType:
         keywords = CPatternFactory._get_keywords_from_text(text)
         fullText = self.header + '\n'.join(CPatternFactory._to_declaration(keywords)) + f'\nint {CPatternFactory.reserved_name} = ({text});'
         root =  self._create( fullText)
         #return the first expression found in the tree as a ASTNode
-        return ASTFinder.find_kind(root, '(?i)PAREN_?EXPR').find_last().get().get_children()[0]
+        return  ASTFinder.find_kind(root, '(?i)PAREN_?EXPR').find_last().get().get_children()[0]
 
     def create_declarations(self, text:str, types: Sequence[str] = [] , parameters: Sequence[str] = [], extra_declarations: Sequence[str] = []):
         return self._create_body(text, types, parameters, extra_declarations)
@@ -90,7 +93,7 @@ class CPatternFactory:
         #return the first expression found in the tree as a ASTNode
         return  ASTFinder.find_kind(root, '(?i)COMPOUND_?STMT').find_first().get().get_children()
 
-    def _create(self, text:str):  
+    def _create(self, text:str)-> ASTNodeType:  
         atu =  self.factory.create_from_text( text, 'test.' + self.language)
         if SHOW_NODE: ASTShower.show_node(atu)
         return atu

@@ -97,6 +97,7 @@ class ClangJsonASTNode(ASTNode):
         return result
 
     @override
+    @cache
     def _get_containing_filename(self) -> str:
         if self.node.get('isImplicit', False):
             return ''
@@ -129,6 +130,7 @@ class ClangJsonASTNode(ASTNode):
 
 
     @override
+    @cache
     def _get_length(self) -> int: 
         if(self.get_kind() == 'TranslationUnitDecl'):
             return len(self.get_binary_file_content(self.get_containing_filename()))
@@ -142,22 +144,26 @@ class ClangJsonASTNode(ASTNode):
         return offset + tokLen - self.get_start_offset()
 
     @override
+    @cache
     def _get_kind(self) -> str: 
         return self.node.get('kind', EMPTY_STR)
 
     @override
+    @cache
     def _get_properties(self) -> dict[str, Any]: 
         # get all the attributes of self.node except the inner  nodes, id, location, range, kind and name and all reference nodes (that is children with 'id)
         properties = {k: ClangJsonASTNode._remove_ids(v) for k, v in self.node.items() if ClangJsonASTNode.__is_property(k) and not ClangJsonASTNode._is_reference(v)==None}
         return properties
    
     @override
+    @cache
     def _get_referenced_by(self) -> Sequence[ASTReference['ClangJsonASTNode']]:
         self.translation_unit.lazy_create_references(self)
         return Stream(self.translation_unit._referenced_by.get(self.node['id'], EMPTY_LIST))\
             .map(lambda ref: ASTReference(self.translation_unit._nodes[ref.node_id], ref.ref_kind, ref.properties)).to_list()
 
     @override
+    @cache
     def _get_references(self)-> Sequence[ASTReference['ClangJsonASTNode']]:
         self.translation_unit.lazy_create_references(self)
         return Stream(self.translation_unit._references.get(self.node['id'], EMPTY_LIST))\
@@ -172,12 +178,14 @@ class ClangJsonASTNode(ASTNode):
         return self.parent != None and self.parent.get_kind() in STMT_PARENTS
     
     @override
+    @cache
     def _get_children(self) -> Sequence['ClangJsonASTNode']: 
         if self._children is None:
             self._children = [ ClangJsonASTNode(ClangJsonASTNode._remove_wrapper(n), translation_unit=self.translation_unit, parent=self) for n in self.node.get('inner', []) if not n.get('isImplicit', False)]
         return self._children
     
     @override
+    @cache
     def _get_name(self) -> str:
         name = self.node.get('name')
         if name:

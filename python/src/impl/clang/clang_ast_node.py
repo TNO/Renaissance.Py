@@ -79,6 +79,7 @@ class ClangASTNode(ASTNode):
         return root_node
     
     @override
+    @cache
     def _get_name(self) -> str:
         try:
             if self.get_kind() not in ['CALL_EXPR']:
@@ -88,6 +89,7 @@ class ClangASTNode(ASTNode):
         return EMPTY_STR
 
     @override
+    @cache
     def _get_containing_filename(self) -> str:
         if self is self.root:
             return self.translation_unit.clang_atu.spelling
@@ -97,6 +99,7 @@ class ClangASTNode(ASTNode):
             return EMPTY_STR
     
     @override
+    @cache
     def _get_start_offset(self) -> int: 
         try: 
             return self.node.extent.start.offset
@@ -113,6 +116,7 @@ class ClangASTNode(ASTNode):
             return 0
 
     @override
+    @cache
     def _get_kind(self) -> str: 
         try:
             return str(self.node.kind.name)
@@ -120,6 +124,7 @@ class ClangASTNode(ASTNode):
             return EMPTY_STR
 
     @override
+    @cache
     def _get_properties(self) -> dict[str, int|str]: 
         result  =  {}
             
@@ -169,18 +174,21 @@ class ClangASTNode(ASTNode):
         return self.parent != None and self.parent.get_kind() in STMT_PARENTS
     
     @override
+    @cache
     def _get_children(self) -> Sequence['ClangASTNode']: 
         if self._children is None:
             self._children = [ ClangASTNode(ClangASTNode.remove_wrapper(n), self.translation_unit, self) for n in self.node.get_children()]
         return self._children
 
     @override
+    @cache
     def _get_referenced_by(self) -> Sequence[ASTReference['ClangASTNode']]:
         self.translation_unit.lazy_create_references(self)
         return Stream(self.translation_unit._referenced_by.get(self.node.hash, EMPTY_LIST))\
             .map(lambda ref: ASTReference(self.translation_unit._nodes[ref.node_id], ref.ref_kind, ref.properties)).to_list()
 
     @override
+    @cache
     def _get_references(self) -> Sequence[ASTReference['ClangASTNode']]:
         self.translation_unit.lazy_create_references(self)
         return Stream(self.translation_unit._references.get(self.node.hash, EMPTY_LIST))\
