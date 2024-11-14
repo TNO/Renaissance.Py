@@ -1,5 +1,5 @@
 import re
-from typing import Optional
+from typing import Optional, Sequence
 
 from common.stream import Stream
 from .ast_node import ASTNode
@@ -45,15 +45,15 @@ class CPatternFactory:
         #return the first expression found in the tree as a ASTNode
         return ASTFinder.find_kind(root, '(?i)PAREN_?EXPR').find_last().get().get_children()[0]
 
-    def create_declarations(self, text:str, types: list[str] = [] , parameters: list[str] = [], extra_declarations: list[str] = []):
+    def create_declarations(self, text:str, types: Sequence[str] = [] , parameters: Sequence[str] = [], extra_declarations: Sequence[str] = []):
         return self._create_body(text, types, parameters, extra_declarations)
 
-    def create_declaration(self, text:str, types: list[str] = [] , parameters: list[str] = [], extra_declarations: list[str] = []):
+    def create_declaration(self, text:str, types: Sequence[str] = [] , parameters: Sequence[str] = [], extra_declarations: Sequence[str] = []):
         declarations = list(self.create_declarations(text, types, parameters))
         assert len(declarations) == 1, "Only one declaration is expected"
         return declarations[0]
     
-    def create_statements(self, text:str, types: list[str] = [], extra_declarations: list[str] = []):
+    def create_statements(self, text:str, types: Sequence[str] = [], extra_declarations: Sequence[str] = []):
         # create a reference for all used variables excluding the specified types
         parameters = [ par for par in CPatternFactory._get_keywords_from_text(text) if not par in types and not any(par in ed for ed in extra_declarations)]
         return self._create_body(text, types, parameters, extra_declarations)
@@ -74,7 +74,7 @@ class CPatternFactory:
         return self.factory.create_from_text(self.header + text,  'test.' + self.language)
 
 
-    def create_statement(self, text:str, types: list[str] = [], extra_declarations: list[str] = []):
+    def create_statement(self, text:str, types: Sequence[str] = [], extra_declarations: Sequence[str] = []):
         statements = list(self.create_statements(text, types, extra_declarations))
         assert len(statements) == 1, "Only one statement is expected"
         return statements[0]
@@ -96,28 +96,28 @@ class CPatternFactory:
         return atu
 
     @staticmethod
-    def _get_keywords_from_text(text:str) -> list[str]:
+    def _get_keywords_from_text(text:str) -> Sequence[str]:
         # regex to get keywords that start with one of two dollars followed by a \\w+
         pattern = re.compile(r'\${0,2}[a-zA-Z]\w*')
         return list(set(re.findall(pattern, text)))
 
     @staticmethod
-    def _get_dollar_keywords_from_text(text:str) -> list[str]:
+    def _get_dollar_keywords_from_text(text:str) -> Sequence[str]:
         # regex to get keywords that start with one of two dollars followed by a \\w+
         pattern = re.compile(r'\${1,2}[a-zA-Z]\w*')
         return list(set(re.findall(pattern, text)))
 
     @staticmethod
-    def _get_non_dollar_keywords_from_text(text:str, prefix: str ='void* ', postfix: str =';') -> list[str]:
+    def _get_non_dollar_keywords_from_text(text:str, prefix: str ='void* ', postfix: str =';') -> Sequence[str]:
         pattern = re.compile(r'[^\$][a-zA-Z]\w*')
         return list(set(re.findall(pattern, text)))
 
     @staticmethod
-    def _to_declaration(keywords:list[str], prefix: str ='int ', postfix: str =';') -> list[str]:
+    def _to_declaration(keywords:Sequence[str], prefix: str ='int ', postfix: str =';') -> Sequence[str]:
         return  [ prefix + keyword + postfix for keyword in keywords]
 
     @staticmethod
-    def _to_typedef(keywords:list[str], prefix: str ='typedef int ', postfix: str =';') -> list[str]:
+    def _to_typedef(keywords:Sequence[str], prefix: str ='typedef int ', postfix: str =';') -> Sequence[str]:
         return  [ prefix + keyword + postfix for keyword in keywords]
 
 

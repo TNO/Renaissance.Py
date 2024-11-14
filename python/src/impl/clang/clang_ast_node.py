@@ -1,6 +1,6 @@
 from functools import cache
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, Sequence
 from common import Stream
 from syntax_tree import ASTNode, ASTReference
 from typing_extensions import override
@@ -169,19 +169,19 @@ class ClangASTNode(ASTNode):
         return self.parent != None and self.parent.get_kind() in STMT_PARENTS
     
     @override
-    def _get_children(self) -> list['ClangASTNode']: 
+    def _get_children(self) -> Sequence['ClangASTNode']: 
         if self._children is None:
             self._children = [ ClangASTNode(ClangASTNode.remove_wrapper(n), self.translation_unit, self) for n in self.node.get_children()]
         return self._children
 
     @override
-    def _get_referenced_by(self) -> list[ASTReference['ClangASTNode']]:
+    def _get_referenced_by(self) -> Sequence[ASTReference['ClangASTNode']]:
         self.translation_unit.lazy_create_references(self)
         return Stream(self.translation_unit._referenced_by.get(self.node.hash, EMPTY_LIST))\
             .map(lambda ref: ASTReference(self.translation_unit._nodes[ref.node_id], ref.ref_kind, ref.properties)).to_list()
 
     @override
-    def _get_references(self) -> list[ASTReference['ClangASTNode']]:
+    def _get_references(self) -> Sequence[ASTReference['ClangASTNode']]:
         self.translation_unit.lazy_create_references(self)
         return Stream(self.translation_unit._references.get(self.node.hash, EMPTY_LIST))\
             .map(lambda ref: ASTReference(self.translation_unit._nodes[ref.node_id], ref.ref_kind, ref.properties)).to_list()

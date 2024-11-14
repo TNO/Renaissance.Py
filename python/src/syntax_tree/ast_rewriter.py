@@ -1,4 +1,5 @@
 
+from typing import Sequence
 from common import Rewriter
 from .match_finder import PatternMatch
 from .ast_node import ASTNode
@@ -26,23 +27,23 @@ class ASTRewriter():
     def get_filename(self) -> str:
         return self.__filename
     
-    def replace(self, new_content:str, target: ASTNode|list[ASTNode]|PatternMatch, include_whitespace: bool = False, include_comments: bool = False):
+    def replace(self, new_content:str, target: ASTNode|Sequence[ASTNode]|PatternMatch, include_whitespace: bool = False, include_comments: bool = False):
         new_content, node_list = ASTRewriter._prepare_replacement_content(new_content, target)
         self.__replace(new_content, node_list, include_whitespace, include_comments)
 
-    def remove(self, target: ASTNode|list[ASTNode]|PatternMatch, include_whitespace: bool = True, include_comments: bool = True):
+    def remove(self, target: ASTNode|Sequence[ASTNode]|PatternMatch, include_whitespace: bool = True, include_comments: bool = True):
         _, node_list = ASTRewriter._prepare_replacement_content('', target)
         self.__remove(node_list, include_whitespace, include_comments)
 
-    def insert_before(self,new_content:str, target: ASTNode|list[ASTNode]|PatternMatch, include_whitespace: bool = True, include_comments: bool = True):
+    def insert_before(self,new_content:str, target: ASTNode|Sequence[ASTNode]|PatternMatch, include_whitespace: bool = True, include_comments: bool = True):
         new_content, node_list = ASTRewriter._prepare_replacement_content(new_content, target)
         self.__insert(new_content, True, node_list, include_whitespace, include_comments)
 
-    def insert_after(self,new_content:str, target: ASTNode|list[ASTNode]|PatternMatch, include_whitespace: bool = True, include_comments: bool = True):
+    def insert_after(self,new_content:str, target: ASTNode|Sequence[ASTNode]|PatternMatch, include_whitespace: bool = True, include_comments: bool = True):
         new_content, node_list = ASTRewriter._prepare_replacement_content(new_content, target)
         self.__insert(new_content, False, node_list, include_whitespace, include_comments)
 
-    def __insert(self,new_content:str, before:bool, nodes: list[ASTNode], include_whitespace: bool = False, include_comments: bool = False):
+    def __insert(self,new_content:str, before:bool, nodes: Sequence[ASTNode], include_whitespace: bool = False, include_comments: bool = False):
         if not nodes:
             return  
         offset = nodes[0].get_start_offset()
@@ -59,12 +60,12 @@ class ASTRewriter():
         else:
             self.replace_bytes( ext_end_offset,  ext_end_offset, insert_new_line + spaces + new_content)
 
-    def __replace(self, new_content: str, nodes: list[ASTNode], include_whitespace: bool = False, include_comments: bool = False):
+    def __replace(self, new_content: str, nodes: Sequence[ASTNode], include_whitespace: bool = False, include_comments: bool = False):
         """
         Replaces the content of the given node(s) with new content.
 
         Args:
-            nodes (list[ASTNode]): The nodes whose content is to be replaced.
+            nodes (Sequence[ASTNode]): The nodes whose content is to be replaced.
             new_content (str): The new content to insert in the specified range.
         """
         if not nodes:
@@ -73,12 +74,12 @@ class ASTRewriter():
             
         self.replace_bytes(start_offset, end_offset, new_content) 
 
-    def __remove(self, nodes: list[ASTNode], include_whitespace: bool = False, include_comments: bool = False):
+    def __remove(self, nodes: Sequence[ASTNode], include_whitespace: bool = False, include_comments: bool = False):
         """
         Removes a list of AST nodes from the content, optionally including surrounding whitespace and comments.
 
         Args:
-            nodes (list[ASTNode]): The list of AST nodes to remove.
+            nodes (Sequence[ASTNode]): The list of AST nodes to remove.
             include_whitespace (bool, optional): Whether to include surrounding whitespace in the removal. Defaults to False.
             include_comments (bool, optional): Whether to include surrounding comments in the removal. Defaults to False.
 

@@ -1,6 +1,6 @@
 from functools import cache
 import re
-from typing import Iterator, Optional
+from typing import Iterator, Optional, Sequence
 
 from common import Stream
 from collections import Counter
@@ -41,7 +41,7 @@ class MatchUtils:
         return MatchUtils.is_single_wildcard(target.get_name())
 
     @staticmethod
-    def exclude_nodes_by_kind(exclude_kind:str, nodes: list[ASTNode]):
+    def exclude_nodes_by_kind(exclude_kind:str, nodes: Sequence[ASTNode]):
         if exclude_kind:
             filtered_nodes = [node for node in nodes if re.search(exclude_kind,node.get_kind(), re.IGNORECASE)==None]
             return filtered_nodes
@@ -49,12 +49,12 @@ class MatchUtils:
 
 
     @staticmethod
-    def get_multi_wildcard_keys(patterns: list[ASTNode], result: list[str] = []) -> list[str]:
+    def get_multi_wildcard_keys(patterns: Sequence[ASTNode], result: list[str] = []) -> list[str]:
         """
         Recursively finds and returns the names of all multi-wildcard patterns in the given list of AST nodes.
 
         Args:
-            patterns (list[ASTNode]): A list of ASTNode objects to search for multi-wildcard patterns.
+            patterns (Sequence[ASTNode]): A list of ASTNode objects to search for multi-wildcard patterns.
             result (list, optional): A list to store the names of the multi-wildcard patterns found. Defaults to an empty list.
 
         Returns:
@@ -97,7 +97,7 @@ class KeyMatch:
         self.nodes.append(node)
 
 class PatternMatch:
-    def __init__(self, src_nodes: list[ASTNode], patterns: list[ASTNode]) -> None:
+    def __init__(self, src_nodes: Sequence[ASTNode], patterns: Sequence[ASTNode]) -> None:
         self._key_matches: list[KeyMatch] = []
         self._remaining_nodes: list[ASTNode] = []
         self.src_nodes = src_nodes
@@ -117,14 +117,14 @@ class PatternMatch:
         self._key_matches.append(KeyMatch(key))
         return self._key_matches[-1]
    
-    def _get_remaining_nodes(self)-> list[ASTNode]:
+    def _get_remaining_nodes(self)-> Sequence[ASTNode]:
         return self._remaining_nodes
 
-    def _set_remaining_nodes(self, nodes: list[ASTNode]):
-        self._remaining_nodes = nodes
+    def _set_remaining_nodes(self, nodes: Sequence[ASTNode]):
+        self._remaining_nodes = list(nodes)
     
     @cache
-    def get_nodes(self) -> dict[str, list[ASTNode]]:
+    def get_nodes(self) -> dict[str, Sequence[ASTNode]]:
         # take the deepest found match for each wildcard key
         return {key_match.key: [key_match.nodes[-1]] if MatchUtils.is_single_wildcard(key_match.key) else key_match.nodes for key_match in self._key_matches if MatchUtils.is_wildcard(key_match.key) }
 
@@ -178,31 +178,31 @@ class MatchFinder:
     DEFAULT_EXCLUDE_KIND = 'comment'
 
     @staticmethod
-    def find_all(src_nodes: list[ASTNode]|ASTNode, *patterns_list: list[ASTNode], recursive=True, exclude_kind=DEFAULT_EXCLUDE_KIND)-> Stream[PatternMatch]:
+    def find_all(src_nodes: Sequence[ASTNode]|ASTNode, *patterns_list: Sequence[ASTNode], recursive=True, exclude_kind=DEFAULT_EXCLUDE_KIND)-> Stream[PatternMatch]:
         """
         Finds all pattern matches in the given source nodes.
 
         Args:
-            src_nodes (list[ASTNode] | ASTNode): The source nodes to search within. Can be a single ASTNode or a list of ASTNodes.
-            *patterns_list (list[ASTNode]): One or more lists of ASTNodes representing the patterns to match.
+            src_nodes (Sequence[ASTNode] | ASTNode): The source nodes to search within. Can be a single ASTNode or a list of ASTNodes.
+            *patterns_list (Sequence[ASTNode]): One or more lists of ASTNodes representing the patterns to match.
             recursive (bool, optional): Whether to search recursively within the source nodes. Defaults to True.
             exclude_kind (type, optional): The kind of nodes to exclude from the search. Defaults to DEFAULT_EXCLUDE_KIND.
 
         Returns:
             Stream[PatternMatch]: A stream of pattern matches found in the source nodes.
         """
-        if not isinstance(src_nodes, list): 
+        if not isinstance(src_nodes, Sequence): 
             src_nodes = [src_nodes]
         return Stream(MatchFinder.__find_all(src_nodes, *patterns_list, recursive=recursive, exclude_kind=exclude_kind))
 
     @staticmethod
-    def match_pattern(src_nodes: list[ASTNode]|ASTNode, patterns: list[ASTNode], exclude_kind=DEFAULT_EXCLUDE_KIND)-> Optional[PatternMatch]:
+    def match_pattern(src_nodes: Sequence[ASTNode]|ASTNode, patterns: Sequence[ASTNode], exclude_kind=DEFAULT_EXCLUDE_KIND)-> Optional[PatternMatch]:
         """
         Matches a given source node or list of source nodes against a list of pattern nodes.
 
         Args:
-            src_nodes (list[ASTNode] | ASTNode): The source node or list of source nodes to be matched.
-            patterns (list[ASTNode]): The list of pattern nodes to match against the source nodes.
+            src_nodes (Sequence[ASTNode] | ASTNode): The source node or list of source nodes to be matched.
+            patterns (Sequence[ASTNode]): The list of pattern nodes to match against the source nodes.
             exclude_kind: The kind of nodes to exclude from matching, defaults to DEFAULT_EXCLUDE_KIND.
 
         Returns:
@@ -225,13 +225,13 @@ class MatchFinder:
         return None
 
     @staticmethod
-    def is_match(src1: ASTNode|list[ASTNode], src2: ASTNode|list[ASTNode], exclude_kind=DEFAULT_EXCLUDE_KIND) -> bool:
+    def is_match(src1: ASTNode|Sequence[ASTNode], src2: ASTNode|Sequence[ASTNode], exclude_kind=DEFAULT_EXCLUDE_KIND) -> bool:
         if isinstance(src2, ASTNode):
             src2 = [src2]
         return MatchFinder.match_pattern(src1, src2, exclude_kind=exclude_kind) is not None
 
     @staticmethod
-    def __find_all(src_nodes: list[ASTNode], *patterns_list: list[ASTNode], recursive:bool, exclude_kind:str)-> Iterator[PatternMatch]:
+    def __find_all(src_nodes: Sequence[ASTNode], *patterns_list: Sequence[ASTNode], recursive:bool, exclude_kind:str)-> Iterator[PatternMatch]:
         target_nodes = MatchUtils.exclude_nodes_by_kind(exclude_kind,src_nodes) # exclude nodes by kind
 
         while target_nodes:
@@ -253,7 +253,7 @@ class MatchFinder:
                 yield from MatchFinder.__find_all(node.get_children(), *patterns_list, recursive=recursive, exclude_kind=exclude_kind)
 
     @staticmethod
-    def __match_pattern(src_nodes: list[ASTNode], patterns: list[ASTNode],  depth, multiplicity: dict[str,int], patternMatch: Optional[PatternMatch], exclude_kind:str)-> Optional[PatternMatch]:
+    def __match_pattern(src_nodes: Sequence[ASTNode], patterns: Sequence[ASTNode],  depth, multiplicity: dict[str,int], patternMatch: Optional[PatternMatch], exclude_kind:str)-> Optional[PatternMatch]:
         if patternMatch is None:
             patternMatch = PatternMatch(src_nodes, patterns)
 
@@ -332,7 +332,7 @@ class MatchFinder:
 
 class MatchValidation:
     @staticmethod
-    def _check_duplicate_matches(key_matches: list[KeyMatch]):
+    def _check_duplicate_matches(key_matches: Sequence[KeyMatch]):
         """
         Checks for duplicate matches in the keyMatches attribute.
 
@@ -363,7 +363,7 @@ class MatchValidation:
                         return False
         return True
     @staticmethod
-    def _check_single_matches(key_matches: list[KeyMatch]):
+    def _check_single_matches(key_matches: Sequence[KeyMatch]):
         """
         Checks for single matches in the keyMatches attribute.
 
@@ -378,13 +378,13 @@ class MatchValidation:
         return result
 
     @staticmethod
-    def validate(key_matches: list[KeyMatch]):
+    def validate(key_matches: Sequence[KeyMatch]):
         return MatchValidation._check_single_matches(key_matches) and MatchValidation._check_duplicate_matches(key_matches)
 
 def do_log(indent, *msgs: str):
     text = '\n'.join(msgs)
     print('\n'.join(f'{" "*indent}{l}' for l in text.splitlines()))
 
-def raw(nodes: list[ASTNode]):
+def raw(nodes: Sequence[ASTNode]):
     return ' '.join([n.get_raw_signature() for n in nodes])
 

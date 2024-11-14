@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from functools import cache
 from pathlib import Path
-from typing import Any, Callable, Generic, Optional, TypeVar
+from typing import Any, Callable, Generic, Optional, Sequence, TypeVar
 
 
 
@@ -96,12 +96,12 @@ class ASTNode(ABC):
 
     @staticmethod
     @abstractmethod
-    def load(file_path: Path, extra_args:list[str])-> 'ASTNode':
+    def load(file_path: Path, extra_args:Sequence[str])-> 'ASTNode':
         pass
 
     @staticmethod
     @abstractmethod
-    def load_from_text(text: str, file_name: str, extra_args:list[str]) -> 'ASTNode':
+    def load_from_text(text: str, file_name: str, extra_args:Sequence[str]) -> 'ASTNode':
         pass
 
     @cache
@@ -137,15 +137,15 @@ class ASTNode(ABC):
         return self._is_statement()
 
     @cache
-    def get_children(self: ASTNodeType) -> list[ASTNodeType]: 
+    def get_children(self: ASTNodeType) -> Sequence[ASTNodeType]: 
         return self._get_children()
 
     @cache
-    def get_references(self: ASTNodeType) -> list[ASTReference[ASTNodeType]]:
+    def get_references(self: ASTNodeType) -> Sequence[ASTReference[ASTNodeType]]:
         return self._get_references()
 
     @cache
-    def get_referenced_by(self: ASTNodeType) -> list[ASTReference[ASTNodeType]]:
+    def get_referenced_by(self: ASTNodeType) -> Sequence[ASTReference[ASTNodeType]]:
         return self._get_referenced_by()
 
     @abstractmethod
@@ -181,15 +181,15 @@ class ASTNode(ABC):
         pass
 
     @abstractmethod
-    def _get_children(self: ASTNodeType) -> list[ASTNodeType]: 
+    def _get_children(self: ASTNodeType) -> Sequence[ASTNodeType]: 
         pass
 
     @abstractmethod
-    def _get_references(self: ASTNodeType) -> list[ASTReference[ASTNodeType]]:
+    def _get_references(self: ASTNodeType) -> Sequence[ASTReference[ASTNodeType]]:
         pass
 
     @abstractmethod
-    def _get_referenced_by(self: ASTNodeType) -> list[ASTReference[ASTNodeType]]:
+    def _get_referenced_by(self: ASTNodeType) -> Sequence[ASTReference[ASTNodeType]]:
         pass
     
     def process(self, function: Callable[['ASTNode'], None]):

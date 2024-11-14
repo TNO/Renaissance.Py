@@ -8,7 +8,7 @@ from pathlib import Path
 import tempfile
 from common import Stream
 from syntax_tree import ASTNode, ASTReference
-from typing import Any, Optional, TypeVar
+from typing import Any, Optional, Sequence, TypeVar
 from typing_extensions import override
 import subprocess
 
@@ -52,14 +52,14 @@ class ClangJsonASTNode(ASTNode):
     def __init__(self, node: dict[str, Any], translation_unit: ClangJsonTranslationUnit, parent: Optional['ClangJsonASTNode'] = None):
         super().__init__(self if parent is None else parent.root)
         self.node = node
-        self._children: Optional[list['ClangJsonASTNode']] = None
+        self._children: Optional[Sequence['ClangJsonASTNode']] = None
         self.parent = parent
         self.translation_unit = translation_unit
         self.translation_unit._nodes[node['id']] = self
 
     @override
     @staticmethod
-    def load(file_path:Path, extra_args:list[str] = []) -> 'ClangJsonASTNode':
+    def load(file_path:Path, extra_args:Sequence[str] = []) -> 'ClangJsonASTNode':
         #in a shell process compile the file_path with clang compiler
         try:
             clang = 'clang++' if file_path.suffix == '.cpp' else 'clang'
@@ -83,7 +83,7 @@ class ClangJsonASTNode(ASTNode):
         
     @override
     @staticmethod
-    def load_from_text(file_content: str, file_name: str='test.c', extra_args:list[str] = []) -> 'ClangJsonASTNode':
+    def load_from_text(file_content: str, file_name: str='test.c', extra_args:Sequence[str] = []) -> 'ClangJsonASTNode':
         # Define the directory for the temporary file
         temp_dir = tempfile.gettempdir()
         # Define the name of the temporary file
@@ -152,13 +152,13 @@ class ClangJsonASTNode(ASTNode):
         return properties
    
     @override
-    def _get_referenced_by(self) -> list[ASTReference['ClangJsonASTNode']]:
+    def _get_referenced_by(self) -> Sequence[ASTReference['ClangJsonASTNode']]:
         self.translation_unit.lazy_create_references(self)
         return Stream(self.translation_unit._referenced_by.get(self.node['id'], EMPTY_LIST))\
             .map(lambda ref: ASTReference(self.translation_unit._nodes[ref.node_id], ref.ref_kind, ref.properties)).to_list()
 
     @override
-    def _get_references(self)-> list[ASTReference['ClangJsonASTNode']]:
+    def _get_references(self)-> Sequence[ASTReference['ClangJsonASTNode']]:
         self.translation_unit.lazy_create_references(self)
         return Stream(self.translation_unit._references.get(self.node['id'], EMPTY_LIST))\
             .map(lambda ref: ASTReference(self.translation_unit._nodes[ref.node_id], ref.ref_kind, ref.properties)).to_list()
@@ -172,7 +172,7 @@ class ClangJsonASTNode(ASTNode):
         return self.parent != None and self.parent.get_kind() in STMT_PARENTS
     
     @override
-    def _get_children(self) -> list['ClangJsonASTNode']: 
+    def _get_children(self) -> Sequence['ClangJsonASTNode']: 
         if self._children is None:
             self._children = [ ClangJsonASTNode(ClangJsonASTNode._remove_wrapper(n), translation_unit=self.translation_unit, parent=self) for n in self.node.get('inner', []) if not n.get('isImplicit', False)]
         return self._children
@@ -215,7 +215,7 @@ class ClangJsonASTNode(ASTNode):
         return node['kind'].startswith("Implicit") and len(list(node['inner'])) == 1
 
     T = TypeVar('T')
-    def _get(self, path: list[str], default: T) -> T:
+    def _get(self, path: Sequence[str], default: T) -> T:
         assert default is not None, 'default value must be provided'
         target = self.node
         try:

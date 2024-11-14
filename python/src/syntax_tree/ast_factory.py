@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import TypeVar
+from typing import Sequence, TypeVar
 
 from .ast_node import ASTNode
 
@@ -7,7 +7,7 @@ ASTNodeType = TypeVar("ASTNodeType", bound='ASTNode')
 
 class ASTFactory:
 
-    def __init__(self, clazz: type[ASTNodeType], extra_args:list[str]=[]) -> None: 
+    def __init__(self, clazz: type[ASTNodeType], extra_args:Sequence[str]=[]) -> None: 
         self.clazz = clazz
         self.extra_args = extra_args
 
