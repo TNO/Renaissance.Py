@@ -15,7 +15,7 @@ class ASTShower:
         return buffer.getvalue()
 
     @staticmethod
-    def _process_node( output: StringIO, indent, node: 'ASTNode', include_properties):
+    def _process_node( output: StringIO, indent, node: ASTNode, include_properties):
         if not node.is_part_of_translation_unit():
             return
         
