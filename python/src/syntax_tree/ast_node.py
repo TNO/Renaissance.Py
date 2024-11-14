@@ -27,7 +27,7 @@ class ASTReference(Generic[ASTNodeType]):
         return self._properties
     
 
-# To make usage of the concrete class methods easier, ASTNode must NOT have abstract public classes!!
+# To make usage of the concrete class methods easier, ASTNode MUST NOT have ABSTRACT public classes!!
 class ASTNode(ABC):
     """
        The base class to represent an AST node. 
