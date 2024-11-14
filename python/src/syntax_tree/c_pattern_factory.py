@@ -23,12 +23,10 @@ class CPatternFactory(Generic[ASTNodeType]):
             self.language = refNode.get_containing_filename().split('.')[-1]
 
             self.header = CPatternFactory.remove_indent(refNode.get_content(0, offset)) + '\n'
-
             self.header+= Stream(refNode.get_children()).\
                 filter(ASTNode.is_part_of_translation_unit).\
                 filter(lambda c: ASTFinder.matches_kind(c,'(?i)(Var|Typedef)_?Decl')).\
                 map(lambda c: c.get_raw_signature()+';').\
-                action(print).\
                 collect(lambda n: '\n'.join(n)) +'\n'
         else:
             self.language = language
