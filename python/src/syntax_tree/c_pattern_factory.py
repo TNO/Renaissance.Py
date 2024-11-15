@@ -19,7 +19,11 @@ class CPatternFactory(Generic[ASTNodeType]):
         self.factory = factory
         #collect includes #defines  and var decl from the refNode
         if refNode:
-            offset = Stream(refNode.get_children()).filter(ASTNode.is_part_of_translation_unit).map(ASTNode.get_start_offset).reduce(min).or_else(0)
+            offset = Stream(refNode.get_children()).\
+                filter(ASTNode.is_part_of_translation_unit).\
+                filter(lambda c: not ASTFinder.matches_kind(c,'(?i)Macro.*|Inclusion_?Directive')).\
+                peek(lambda c: print("-->"+c.get_kind())).\
+                map(ASTNode.get_start_offset).reduce(min).or_else(0)
             self.language = refNode.get_containing_filename().split('.')[-1]
 
             self.header = CPatternFactory.remove_indent(refNode.get_content(0, offset)) + '\n'
