@@ -13,6 +13,7 @@ EMPTY_LIST = []
 
 STMT_PARENTS = [ 'COMPOUND_STMT', 'TRANSLATION_UNIT' ]
 
+PRINT_ALL_NODES = False
 class ClangASTReference():
     def __init__(self, node_id:str, ref_kind:str, properties:dict[str, Any]) -> None:
         self.node_id = node_id
@@ -25,6 +26,8 @@ class ClangTranslationUnit():
         self.clang_atu = clang_atu
         self.file_name = file_name
         self.references_initialized = False
+        print_node_kind(clang_atu.cursor)
+        self.macro_expansions = ClangTranslationUnit._collect_expansions(clang_atu)
     # references are used as a cache to store the references of a node
     # the are stored as id for lazy creation
         self._references: dict[str, list[ClangASTReference]] = {}
@@ -36,6 +39,14 @@ class ClangTranslationUnit():
             return
         root.process(ReferenceHelper.create_references)
         self.references_initialized = True
+
+    @staticmethod
+    def _collect_expansions(translation_unit: TranslationUnit) -> set[tuple[str,int,int]]:
+        result = set()
+        for child in translation_unit.cursor.get_children():
+            if child.kind.name == 'MACRO_INSTANTIATION':
+                result.add((child.extent.start.file, child.extent.start.offset, child.extent.end.offset))
+        return result
 
 
 class ClangASTNode(ASTNode):
@@ -49,7 +60,7 @@ class ClangASTNode(ASTNode):
             
     set_library_path()
     index = Index.create()
-    parse_args=['-fparse-all-comments', '-ferror-limit=0', '-Xclang', '-ast-dump=json', '-fsyntax-only']
+    parse_args=['-fparse-all-comments', '-ferror-limit=0', '-Xclang', '-detailed-preprocessing-record','-ast-dump=json', '-fsyntax-only']
 
     def __init__(self, node, translation_unit:ClangTranslationUnit,  parent =  None):
         super().__init__(self if parent is None else parent.root)
@@ -58,6 +69,7 @@ class ClangASTNode(ASTNode):
         self.parent = parent
         self.translation_unit = translation_unit
         self.translation_unit._nodes[node.hash] = self
+        
 
 
     @override
@@ -127,7 +139,10 @@ class ClangASTNode(ASTNode):
     @cache
     def _get_properties(self) -> dict[str, int|str]: 
         result  =  {}
-            
+        offsets = (self.get_containing_filename(), self.get_start_offset(), self.get_end_offset())
+        if offsets in self.translation_unit.macro_expansions:
+            result['macro_expansion'] = self.get_raw_signature()
+
         if self.get_kind() == 'BINARY_OPERATOR':
             #TODO remove below code after clang release that supports the getOpCode() statement
             children = self.get_children()
@@ -157,9 +172,9 @@ class ClangASTNode(ASTNode):
             # next statement works in C++ but not in Python (yet) will be released later
             # result['operator'] =  self.node.getOpCode()
         elif self.get_kind().endswith('_LITERAL'):
-            self.addTokens(result, 'LITERAL')
+            self._addTokens(result, 'LITERAL')
         elif self.get_kind() =='DECL_REF_EXPR':
-            self.addTokens(result, 'LITERAL')
+            self._addTokens(result, 'LITERAL')
 
         is_all = { attr[len('is_'):]: True for attr in dir(self.node) if attr.startswith('is_') and  callable(getattr(self.node, attr) and getattr(self.node, attr)() == True)}
         result.update(is_all)
@@ -195,13 +210,13 @@ class ClangASTNode(ASTNode):
             .map(lambda ref: ASTReference(self.translation_unit._nodes[ref.node_id], ref.ref_kind, ref.properties)).to_list()
 
 
-    def addTokens(self,  result: dict[str,str], *token_kind):
+    def _addTokens(self,  result: dict[str,str], *token_kind):
             for token in self.node.get_tokens():
                 # find all attr of token that are of type str or int
                 kind = str(token.kind).split('.')[-1]
                 if kind in token_kind:
                     result[kind] = token.spelling
-    
+
     @staticmethod
     def remove_wrapper(cursor):
         try:
@@ -281,3 +296,13 @@ if __name__ == "__main__":
     # # root.process(visitFunction)
 
     # ASTShower.show_node(root)
+
+
+# Function to visit all nodes
+def print_node_kind(node, depth=0):
+    if PRINT_ALL_NODES:
+        print(f"{' '*depth} Node: {node.spelling}, Kind: {node.kind}")
+        
+        for child in node.get_children():
+            print_node_kind(child, depth+2)
+
