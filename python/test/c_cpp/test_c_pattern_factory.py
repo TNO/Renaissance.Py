@@ -89,7 +89,7 @@ class TestUseAtuToCreatePatterns(TestCPatternFactory):
 
     @parameterized.expand(list(Factories.extend( [
         ('A a = {};',1, 1),   
-        ('const char* aap=FOO;',1, 2),   
+        ('const char* foo=FOO;',1, 2),   
         ('const char* $x = BAR;',1,2),
     ])))
     def test(self, _, factory, statementText, expected_stmts, expected_refs):
@@ -106,8 +106,8 @@ class TestUseAtuToCreatePatterns(TestCPatternFactory):
 
         void f(){
             A a = {};
-            const char* aap = AAP;
-            const char* noot = NOOT;
+            const char* foo = FOO;
+            const char* bar = BAR;
             const char* same = SAME;
             printf("%s %s %s", aap, noot, same);
 
@@ -126,4 +126,4 @@ class TestUseAtuToCreatePatterns(TestCPatternFactory):
 
         # the user must pick it's own pattern in this case the last statement
         self.assertTrue(pattern_root.get_children()[-1].is_statement())
-        self.assertEqual(pattern_root.get_children()[-1].get_raw_signature() +';',statementText)
+        self.assertEqual(pattern_root.get_children()[-1].get_raw_signature()+';',statementText)
