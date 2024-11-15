@@ -1,10 +1,11 @@
 import re
+from typing import Sequence
 from syntax_tree.ast_node import ASTNode
 from syntax_tree.ast_shower import ASTShower
 
 
 VERBOSE = False
-def to_string(d:dict[str, list[ASTNode]]):
+def to_string(d:dict[str, Sequence[ASTNode]]):
     return {k: [compress(v.get_raw_signature()) for v in vs] for k, vs in d.items()}
 
 def compress(s:str):
