@@ -1,11 +1,7 @@
 import logging
 from unittest import TestCase
 from parameterized import parameterized
-from syntax_tree.ast_factory import ASTFactory
-from syntax_tree.ast_shower import ASTShower
-from syntax_tree.c_pattern_factory import CPatternFactory
-from syntax_tree.match_finder import MatchFinder
-from syntax_tree.ast_node import ASTNode
+from syntax_tree import ASTFactory, ASTFinder, ASTShower, ASTNode, MatchFinder, CPatternFactory
 from test.utils_for_tests import to_string, compress, show_node
 from test.c_cpp.factories import Factories
 
@@ -39,7 +35,8 @@ class TestCMatchFinder(TestCase):
 
         show_node(atu, "CPP code")
         #find all if and while statements
-        matches = MatchFinder.find_all([atu],patterns,recursive=recursive).to_list()
+        matches = MatchFinder.find_all([atu],patterns,recursive=recursive).\
+            filter(lambda match: match.src_nodes[0].is_part_of_translation_unit()).to_list()
         for match in matches:
             print(f'\nmatch({[compress(p.get_raw_signature()) for p in match.patterns]})'+'{')
             print(f"  start node: {compress(match.src_nodes[0].get_raw_signature())}")
@@ -200,3 +197,48 @@ class TestComposeReplacement(TestCMatchFinder):
             actual = match.compose_replacement(org)
             self.assertEqual(actual, expected)  
 
+
+class TestUseAtuToCreatePattern(TestCMatchFinder):
+    @parameterized.expand(Factories.extend([
+    ('void f() {const char* bar = BAR;}','(?i)Decl_?Stmt', ['const char* bar = BAR;'], {}),   
+    ('void f() {const char* foo = FOO;}','(?i)Decl_?Stmt',['const char* foo = FOO;'], {}),   
+    ('void f() {const char* same = SAME;}','(?i)Decl_?Stmt',['const char* same = SAME;'], {}),
+    ('void f() {const char* $name = BAR;}','(?i)Decl_?Stmt',['const char* bar = BAR;'], {'$name':['bar']}),   
+    ('void f() {const char* $name = FOO;}','(?i)Decl_?Stmt',['const char* foo = FOO;'] , {'$name':['foo']}),   
+    ('void f() {const char* $name = SAME;}','(?i)Decl_?Stmt',['const char* same = SAME;'], {'$name':['same']}),
+    ('int $$args; void f() { printf($$args);}','(?i)Call_?Expr',['printf("%s %s %s", foo, bar, same)'], {'$$args': ['"%s %s %s"', 'foo', 'bar', 'same']}),
+    ]))
+    def test(self, _, factory, statements, pattern_type, expected, names):
+        code = """
+        #include <stdio.h>
+        #define FOO "foo"
+        #define BAR "bar"
+        #define SAME "bar"
+        typedef struct A_Struct{
+            int a;
+            int b;
+        } A;
+        int some_decl = 1; 
+
+        void f(){
+            A a = {};
+            const char* foo = FOO;
+            const char* bar = BAR;
+            const char* same = SAME;
+            printf("%s %s %s", foo, bar, same);
+
+        }
+        """
+        atu = factory.create_from_text(code, 'test.c')
+        patternFactory = CPatternFactory(factory, refNode=atu) 
+        statementsAtu = patternFactory.create(statements)
+        statements = ASTFinder.find_kind(statementsAtu, pattern_type).find_last().get()  # pick the last statement
+        # ASTShower.show_node(atu, include_properties=True)
+        # ASTShower.show_node(statementsAtu, include_properties=True)
+        result = MatchFinder.find_all([atu], [statements], recursive=True).\
+            filter(lambda match: match.get_names() == names).\
+            peek(lambda match: print(str(match.get_names()))).\
+            map(lambda match: match.src_nodes[0]).\
+            filter(ASTNode.is_part_of_translation_unit).\
+            map(ASTNode.get_raw_signature).to_list() 
+        self.assertEqual(expected, result)
