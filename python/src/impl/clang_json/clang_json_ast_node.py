@@ -153,6 +153,8 @@ class ClangJsonASTNode(ASTNode):
     def _get_properties(self) -> dict[str, Any]: 
         # get all the attributes of self.node except the inner  nodes, id, location, range, kind and name and all reference nodes (that is children with 'id)
         properties = {k: ClangJsonASTNode._remove_ids(v) for k, v in self.node.items() if ClangJsonASTNode.__is_property(k) and not ClangJsonASTNode._is_reference(v)==None}
+        if self._get(['range', 'end', 'expansionLoc', 'offset'], -1) != -1: #dealing with a macro expansion
+            properties['macro_expansion'] = self.get_raw_signature()
         return properties
    
     @override
@@ -192,6 +194,8 @@ class ClangJsonASTNode(ASTNode):
             return name
         if self.get_kind() =='DeclRefExpr':
             return self._get(['referencedDecl', 'name'], default=EMPTY_STR)
+        if self.get_kind() =='StringLiteral':
+            return self._get(['value'], default=EMPTY_STR)
         return self.node.get('name', EMPTY_STR)
 
     @staticmethod
