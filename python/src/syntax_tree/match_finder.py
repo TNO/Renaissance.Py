@@ -139,8 +139,8 @@ class PatternMatch:
         return {k:get_raw_signature(k,v) for k,v in self.get_locations().items()}
 
     @cache
-    def get_names(self) -> dict[str, str]:
-        return {k:v[0].get_name() for k,v in self.get_nodes().items()}
+    def get_names(self) -> dict[str, list[str]]:
+        return {k:[vi.get_name() for vi in v] for k,v in self.get_nodes().items()}
 
     @cache
     def get_locations(self) -> dict[str, tuple[int,int]]:
