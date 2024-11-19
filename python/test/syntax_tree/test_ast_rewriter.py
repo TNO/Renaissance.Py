@@ -2,7 +2,7 @@ from io import StringIO
 from unittest import TestCase
 from parameterized import parameterized
 from syntax_tree import ASTRewriter, CPatternFactory, MatchFinder, ASTFactory, ASTNode, ASTShower
-from typing import Callable
+from typing import Callable, Sequence
 
 from test.c_cpp.factories import Factories
 
@@ -27,7 +27,7 @@ class TestCommentLocation(TestCase):
 
 class TestRewrites(TestCase):
 
-    def do_test(self, action: Callable[[ASTRewriter, str, list[ASTNode],bool, bool], None], factory: ASTFactory, code: str, replacement:str, include_whitespace: bool, include_comments: bool, expected: str):
+    def do_test(self, action: Callable[[ASTRewriter, str, Sequence[ASTNode],bool, bool], None], factory: ASTFactory, code: str, replacement:str, include_whitespace: bool, include_comments: bool, expected: str):
         atu = factory.create_from_text(code, 'test.cpp')
         patternFactory = CPatternFactory(factory)
         declaration_pattern = patternFactory.create_declaration('int a=3;')
@@ -52,7 +52,6 @@ class TestRewrites(TestCase):
         print("\nFull parameterized:" +code_test_input)
 
         self.assertEquals(rewriter.apply_to_string(), expected)
-
 
 class TestReplace(TestRewrites):
 
