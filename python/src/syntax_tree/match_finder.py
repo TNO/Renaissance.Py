@@ -19,7 +19,13 @@ class MatchUtils:
 
     @staticmethod
     def is_match(src: ASTNode, cmp: ASTNode)-> bool:
-        return MatchUtils.is_name_match(src,cmp) and  src.get_kind() == cmp.get_kind() and src.get_properties() == cmp.get_properties()
+        name_and_kind_match = MatchUtils.is_name_match(src,cmp) and  src.get_kind() == cmp.get_kind() 
+        if name_and_kind_match:
+            properties_match = src.get_properties() == cmp.get_properties()
+            if not properties_match:
+                if VERBOSE: do_log(0,f"FAILED on properties not matching", str(src.get_properties()), str(cmp.get_properties()))
+            return properties_match
+        return False
 
     @staticmethod
     def is_kind_match(src: ASTNode, cmp: ASTNode)-> bool:
@@ -284,7 +290,7 @@ class MatchFinder:
         src_node = src_nodes[0]
         pattern_node = patterns[0]
 
-        if VERBOSE: do_log(indent, '\n** CHECKING **',src_node.get_raw_signature(),'** AGAINST **',pattern_node.get_raw_signature(), '\n')
+        if VERBOSE: do_log(indent, '\n** CHECKING **',src_node.get_text(),'** AGAINST **',pattern_node.get_text(), '\n')
 
         if MatchUtils.is_multi_wildcard(pattern_node):
             wildcard_match = patternMatch._query_create(pattern_node.get_name())
@@ -298,7 +304,7 @@ class MatchFinder:
                     return nextMatch  
             wildcard_match._add_node(src_node)
 
-            if VERBOSE: do_log(indent, "** $$WILDCARD **",pattern_node.get_raw_signature(),"** MATCHES **",raw(wildcard_match.nodes))
+            if VERBOSE: do_log(indent, "** $$WILDCARD **",pattern_node.get_text(),"** MATCHES **",raw(wildcard_match.nodes))
             return MatchFinder.__match_pattern(src_nodes[1:], patterns, depth, multiplicity, patternMatch, exclude_kind)
         elif MatchUtils.is_single_wildcard(pattern_node) or MatchUtils.is_match(src_node, pattern_node):
             if pattern_node.is_statement() and not src_node.is_statement(): # type: ignore
@@ -315,7 +321,7 @@ class MatchFinder:
             else:
                 # store the exact match because it might be needed to determine the location of a multi wildcard match without nodes
                 patternMatch._query_create(MatchUtils.EXACT_MATCH)._add_node(src_node)
-            if VERBOSE: do_log(indent,pattern_node.get_raw_signature(),'** MATCHES **',src_node.get_raw_signature())
+            if VERBOSE: do_log(indent,pattern_node.get_text(),'** MATCHES **',src_node.get_text())
 
             # the current match is found if the current pattern and src node match and their children match
             if pattern_node.get_children():
@@ -386,5 +392,5 @@ def do_log(indent, *msgs: str):
     print('\n'.join(f'{" "*indent}{l}' for l in text.splitlines()))
 
 def raw(nodes: Sequence[ASTNode]):
-    return ' '.join([n.get_raw_signature() for n in nodes])
+    return ' '.join([n.get_text() for n in nodes])
 
