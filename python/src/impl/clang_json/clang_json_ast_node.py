@@ -5,6 +5,7 @@ from functools import cache
 import json
 import os
 from pathlib import Path
+import re
 import tempfile
 from common import Stream
 from syntax_tree import ASTNode, ASTReference
@@ -132,6 +133,10 @@ class ClangJsonASTNode(ASTNode):
     @override
     @cache
     def _get_length(self) -> int: 
+        return self._get_end_offset() - self.get_start_offset()
+
+    @cache
+    def _get_end_offset(self) -> int: 
         if(self.get_kind() == 'TranslationUnitDecl'):
             return len(self.get_binary_file_content(self.get_containing_filename()))
         offset = self._get(['range', 'end', 'offset'], default=-1)
@@ -141,7 +146,23 @@ class ClangJsonASTNode(ASTNode):
             offset = self._get(['range', 'end', 'expansionLoc', 'offset'], default=0)
             tokLen = self._get(['range', 'end', 'expansionLoc', 'tokLen'], default=0)
 
-        return offset + tokLen - self.get_start_offset()
+        return offset + tokLen
+
+    @override
+    @cache
+    def _get_extended_end_offset(self) -> int: 
+        try: 
+            endOffset =  self._get_end_offset()
+            if (not self._is_statement_or_declaration()) and (self.parent and self.parent.get_kind() in STMT_PARENTS):  
+                content = self.root.get_binary_file_content()
+                while endOffset < len(content) and not content[endOffset-1] in b';':
+                    endOffset += 1
+            return endOffset
+        except:
+            return 0
+
+    def _is_statement_or_declaration(self):
+        return re.match('(?i).*(Stmt|Decl)', self.get_kind())
 
     @override
     @cache
@@ -154,7 +175,7 @@ class ClangJsonASTNode(ASTNode):
         # get all the attributes of self.node except the inner  nodes, id, location, range, kind and name and all reference nodes (that is children with 'id)
         properties = {k: ClangJsonASTNode._remove_ids(v) for k, v in self.node.items() if ClangJsonASTNode.__is_property(k) and not ClangJsonASTNode._is_reference(v)==None}
         if self._get(['range', 'end', 'expansionLoc', 'offset'], -1) != -1: #dealing with a macro expansion
-            properties['macro_expansion'] = self.get_raw_signature()
+            properties['macro_expansion'] = self.get_text()
         return properties
    
     @override

@@ -1,5 +1,6 @@
 from functools import cache
 from pathlib import Path
+import re
 from typing import Any, Optional, Sequence
 from common import Stream
 from syntax_tree import ASTNode, ASTReference
@@ -12,6 +13,7 @@ EMPTY_STR = ''
 EMPTY_LIST = []
 
 STMT_PARENTS = [ 'COMPOUND_STMT', 'TRANSLATION_UNIT' ]
+
 
 PRINT_ALL_NODES = False
 class ClangASTReference():
@@ -129,6 +131,22 @@ class ClangASTNode(ASTNode):
 
     @override
     @cache
+    def _get_extended_end_offset(self) -> int: 
+        try: 
+            endOffset =  self.node.extent.end.offset
+            if (not self._is_statement_or_declaration()) and (self.parent and self.parent.get_kind() in STMT_PARENTS):  
+                content = self.root.get_binary_file_content()
+                while endOffset < len(content) and not content[endOffset-1] in b';':
+                    endOffset += 1
+            return endOffset
+        except:
+            return 0
+
+    def _is_statement_or_declaration(self):
+        return re.match('.*(_STMT|_DECL)', self.get_kind())
+
+    @override
+    @cache
     def _get_kind(self) -> str: 
         try:
             return str(self.node.kind.name)
@@ -141,7 +159,7 @@ class ClangASTNode(ASTNode):
         result  =  {}
         offsets = (self.get_containing_filename(), self.get_start_offset(), self.get_end_offset())
         if offsets in self.translation_unit.macro_expansions:
-            result['macro_expansion'] = self.get_raw_signature()
+            result['macro_expansion'] = self.get_text()
 
         if self.get_kind() == 'BINARY_OPERATOR':
             #TODO remove below code after clang release that supports the getOpCode() statement
@@ -306,3 +324,9 @@ def print_node_kind(node, depth=0):
         for child in node.get_children():
             print_node_kind(child, depth+2)
 
+
+def save_get(target, key):
+    try:
+        return getattr(target,key)()
+    except:
+        return None
