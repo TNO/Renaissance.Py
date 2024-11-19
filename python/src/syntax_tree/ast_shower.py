@@ -19,12 +19,12 @@ class ASTShower:
         if not node.is_part_of_translation_unit():
             return
         
-        raw = node.get_raw_signature()
-        raw_lines = raw.splitlines()
+        text = node.get_text()
+        raw_lines = text.splitlines()
         properties_text = node.get_properties() if include_properties else ""
         output.write(f"{indent}({node.get_kind()}, {node.get_name()}, {node.get_containing_filename()}[{node.get_start_offset()}:{node.get_start_offset()+node.get_length()}]){properties_text}:")
         if len(raw_lines) < 2:
-            output.write(f" |{raw}|")
+            output.write(f" |{text}|")
         else:
             for line in raw_lines:
                 output.write(f"\n{indent}    |{line}|")
