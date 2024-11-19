@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from pathlib import Path
 from typing import Any, Callable, Generic, Optional, Sequence, TypeVar
+from .text_utils import TextUtils
 
 # enum with ABORT, CONTINUE and SKIP
 class VisitorResult(Enum):
@@ -43,22 +44,24 @@ class ASTNode(ABC):
 
     def get_raw_signature(self) -> str:
         start = self.get_start_offset()
-        end = start + self.get_length()
+        end = self.get_extended_end_offset()
         if start == end:
             return ""
         file = self.get_containing_filename()
         if not file: 
             return ""
         return self.get_content(start, end)
+    
+    def get_text(self) -> str: 
+        return TextUtils.shift_left(self.get_raw_signature(), self.get_indent(), start_line=1)
 
     def get_content(self, start, end):
         bytes = self.root.get_binary_file_content()
         return str(bytes[start:end], 'utf-8')
 
     def get_binary_file_content(self, file_path: str|None=None) -> bytes:
-        assert self is self.root,  "_getBinaryFileContent can only be used for the root node"
         if not file_path:
-            file_path = self.get_containing_filename()
+            file_path = self.root.get_containing_filename()
         try:
             return self.cache[file_path]
         except Exception as e:
@@ -69,7 +72,10 @@ class ASTNode(ABC):
 
     def get_end_offset(self):
         return self.get_start_offset() + self.get_length()
-    
+
+    def get_extended_end_offset(self):
+        return self._get_extended_end_offset()
+
     def get_preceding_sibling(self):
         parent = self.get_parent()
         if not parent:
@@ -86,6 +92,16 @@ class ASTNode(ABC):
         index = siblings.index(self)
         return siblings[index + 1] if index < len(siblings) - 1 else None
 
+    def is_descendent_of(self, node: 'ASTNode'):
+        return node.is_ancestor_of(self)
+
+    def is_ancestor_of(self, descendant: 'ASTNode'):
+        parent = descendant.get_parent()
+        if parent == self:
+            return True
+        if not parent:
+            return False
+        return self.is_ancestor_of(parent)
 
     @staticmethod
     @abstractmethod
@@ -143,6 +159,10 @@ class ASTNode(ABC):
         pass
 
     @abstractmethod
+    def _get_extended_end_offset(self) -> int: 
+        pass
+
+    @abstractmethod
     def _get_length(self) -> int: 
         pass
 
@@ -192,3 +212,12 @@ class ASTNode(ABC):
         if function(self) == VisitorResult.CONTINUE:
             for child in self.get_children():
                 child.accept(function)
+
+    
+    def get_indent(self) -> int:
+        if not self.is_part_of_translation_unit():
+            return 0
+        content = self.root.get_binary_file_content()
+        offset = self.get_start_offset()
+        return TextUtils.get_indent(content, offset)
+
