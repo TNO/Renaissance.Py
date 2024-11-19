@@ -38,11 +38,11 @@ class TestCMatchFinder(TestCase):
         matches = MatchFinder.find_all([atu],patterns,recursive=recursive).\
             filter(lambda match: match.src_nodes[0].is_part_of_translation_unit()).to_list()
         for match in matches:
-            print(f'\nmatch({[compress(p.get_raw_signature()) for p in match.patterns]})'+'{')
-            print(f"  start node: {compress(match.src_nodes[0].get_raw_signature())}")
+            print(f'\nmatch({[compress(p.get_text()) for p in match.patterns]})'+'{')
+            print(f"  start node: {compress(match.src_nodes[0].get_text())}")
             for k, vs in match.get_nodes().items():
                 # right align the key
-                print(f"{k.rjust(12)}: {[compress(v.get_raw_signature()) for v in vs]}")
+                print(f"{k.rjust(12)}: {[compress(v.get_text()) for v in vs]}")
             print('}')
         print('    expected dict should look like:')
         print(f'      {[to_string(match.get_nodes()) for match in matches]}')
@@ -59,11 +59,11 @@ class TestExpressions(TestCMatchFinder):
     ('a == 3',['a==3'], [{}]),   
     ('a == $x',['a==3', 'a==4'], [{'$x':['3']},{'$x':['4']}]),
     ('$y == $x',['a==3', 'a==4', 'b==5'], [{'$y':['a'], '$x':['3']},{'$y':['a'], '$x':['4']},{'$y':['b'], '$x':['5']}]),
-    ('b--',['b--'], [{}]),
+    ('b--',['b--;'], [{}]),
     ('b++',[], []),
     ('--b',[], []),
     ('++b',[], []),
-    ('$x--',['b--'], [{'$x': ['b']}]),
+    ('$x--',['b--;'], [{'$x': ['b']}]),
     ('$x++',[], []),
     ('--$x',[], []),
     ('++$x',[], []),
@@ -71,16 +71,16 @@ class TestExpressions(TestCMatchFinder):
     def test(self, _, factory, expression, expected_full_matches: list[str], expected_dicts_per_match: list[dict[str, list[str]]]):
         exprNode = CPatternFactory(factory).create_expression(expression)
         matches = self.do_test(factory, TestStatements.SIMPLE_CPP, [exprNode], recursive=True)
-        self.assertEqual([compress(match.src_nodes[0].get_raw_signature()) for match in matches], expected_full_matches)
+        self.assertEqual([compress(match.src_nodes[0].get_text()) for match in matches], expected_full_matches)
         self.assert_matches(matches, expected_dicts_per_match)
 
 class TestStatements(TestCMatchFinder):
         
     @parameterized.expand(Factories.extend([
     ('$x;$y;',[{'$x': ['int a=3;'], '$y': ['int b=4;']}, {'$x': ['if(a==3){b=5;}else{b--;}'], '$y': ['while(a!=3){if(a==4&&b==5){b=a;}}']}]),   
-    ('if($x){$$stmts;}',[{'$x': ['a==4&&b==5'], '$$stmts': ['b=a']}]),
-    ('if($x){$$stmts;}else{$single;$$multi}',[{'$x': ['a==3'], '$$stmts': ['b=5'], '$single': ['b--'], '$$multi': []}]),
-    ('if($x){$$stmts;}else{$$multi;$single;}',[{'$x': ['a==3'], '$$stmts': ['b=5'], '$single': ['b--'], '$$multi': []}]),
+    ('if($x){$$stmts;}',[{'$x': ['a==4&&b==5'], '$$stmts': ['b=a;']}]),
+    ('if($x){$$stmts;}else{$single;$$multi}',[{'$x': ['a==3'], '$$stmts': ['b=5;'], '$single': ['b--;'], '$$multi': []}]),
+    ('if($x){$$stmts;}else{$$multi;$single;}',[{'$x': ['a==3'], '$$stmts': ['b=5;'], '$single': ['b--;'], '$$multi': []}]),
     ('while(a!=$x){$$stmts;}',[{'$x': ['3'], '$$stmts': ['if(a==4&&b==5){b=a;}']}]),
 ]))
     def test(self, _, factory, statements, expected_dicts_per_match: list[dict[str, list[str]]]):
@@ -137,7 +137,7 @@ class TestMultiAssignments(TestCMatchFinder):
         self.assert_matches(matches, expected_dicts_per_match)
 
     @parameterized.expand(Factories.extend([
-    ('if ($c) {$$before; $true; $$after;} else {$$before; $false; $$after;}',['int (*fp) $f;'],[{'$c': ['1'], '$$before': ['a=1', 'b=2'], '$true': ['c=3'], '$$after': ['d=4', 'e=5'], '$false': ['c=6']}]),   
+    ('if ($c) {$$before; $true; $$after;} else {$$before; $false; $$after;}',['int (*fp) $f;'],[{'$c': ['1'], '$$before': ['a=1;', 'b=2;'], '$true': ['c=3;'], '$$after': ['d=4;', 'e=5;'], '$false': ['c=6;']}]),   
 ]))
 
     def test_statements(self, _, factory, statements, extra_declarations, expected_dicts_per_match: list[dict[str, list[str]]]):
@@ -206,7 +206,7 @@ class TestUseAtuToCreatePattern(TestCMatchFinder):
     ('void f() {const char* $name = BAR;}','(?i)Decl_?Stmt',['const char* bar = BAR;'], {'$name':['bar']}),   
     ('void f() {const char* $name = FOO;}','(?i)Decl_?Stmt',['const char* foo = FOO;'] , {'$name':['foo']}),   
     ('void f() {const char* $name = SAME;}','(?i)Decl_?Stmt',['const char* same = SAME;'], {'$name':['same']}),
-    ('int $$args; void f() { printf($$args);}','(?i)Call_?Expr',['printf("%s %s %s", foo, bar, same)'], {'$$args': ['"%s %s %s"', 'foo', 'bar', 'same']}),
+    ('int $$args; void f() { printf($$args);}','(?i)Call_?Expr',['printf("%s %s %s", foo, bar, same);'], {'$$args': ['"%s %s %s"', 'foo', 'bar', 'same']}),
     ]))
     def test(self, _, factory, statements, pattern_type, expected, names):
         code = """
@@ -240,5 +240,5 @@ class TestUseAtuToCreatePattern(TestCMatchFinder):
             peek(lambda match: print(str(match.get_names()))).\
             map(lambda match: match.src_nodes[0]).\
             filter(ASTNode.is_part_of_translation_unit).\
-            map(ASTNode.get_raw_signature).to_list() 
+            map(ASTNode.get_text).to_list() 
         self.assertEqual(expected, result)
