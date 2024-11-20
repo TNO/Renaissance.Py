@@ -105,12 +105,12 @@ class ASTNode(ABC):
 
     @staticmethod
     @abstractmethod
-    def load(file_path: Path, extra_args:Sequence[str])-> 'ASTNode':
+    def load(file_path: Path, extra_args:Sequence[str], working_dir:Path)-> 'ASTNode':
         pass
 
     @staticmethod
     @abstractmethod
-    def load_from_text(text: str, file_name: str, extra_args:Sequence[str]) -> 'ASTNode':
+    def load_from_text(text: str, file_name: str, extra_args:Sequence[str], working_dir:Path) -> 'ASTNode':
         pass
 
     def get_name(self) -> str:
