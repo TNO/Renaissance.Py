@@ -45,6 +45,9 @@ class ASTRewriter():
             return self.__rewrites.content
         return self.__rewrites.apply()
     
+    def has_changed(self) -> bool:
+        return len(self.__rewrites.rewrites) > 0
+    
     @staticmethod
     def _get_comment_location(start_offset: int, stop_offset: int, content: bytes) -> tuple[int,int]:
         return _RewriteActions._get_comment_location(start_offset, stop_offset, content)
