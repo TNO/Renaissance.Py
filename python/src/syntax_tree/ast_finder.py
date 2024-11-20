@@ -27,11 +27,11 @@ class ASTFinder:
             yield from ASTFinder.__find_all(child, function)
 
     @staticmethod
-    def __matches_kind(ast_node: ASTNodeType, kind:str)-> Iterator[ASTNodeType]:
-        pattern = re.compile(kind)
+    def __matches_kind(ast_node: ASTNodeType, kind:str|re.Pattern)-> Iterator[ASTNodeType]:
+        pattern = kind if isinstance(kind, re.Pattern) else re.compile(kind)
         if pattern.match(ast_node.get_kind()):
             yield ast_node
         for child in ast_node.get_children():
             assert isinstance(child, type(ast_node)), f'Expected {type(ast_node)} but got {type(child)}'
-            yield from ASTFinder.__matches_kind(child, kind) 
+            yield from ASTFinder.__matches_kind(child, pattern) 
 
