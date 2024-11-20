@@ -1,7 +1,8 @@
 
 #This script demonstrates the use of the syntax_tree library to parse and rewrite C code.
 #It specifically showcases the replacement of if-else statements with ternary operators.
-from syntax_tree import ASTFactory, ASTFinder, ASTRewriter, ASTShower
+from refactoring import CleanupRefactoring
+from syntax_tree import ASTFactory, ASTFinder, ASTRewriter, ASTShower, ASTRefactor
 from impl import ClangJsonASTNode, ClangASTNode
 
 example_code = """
@@ -23,14 +24,29 @@ example_code = """
         }
         """
 
-
-def main(args):
+def remove_unused_variable_using_refactor_method(args):
     # the first argument is the code to be parsed
     code = args[1] if len(args) > 1 else ''
 
     # Create a factory args from the command line are passed to the factory for example -I/usr/include
     for node_type in [ClangASTNode, ClangJsonASTNode]:
-        print (f'Using {node_type.__name__}')
+        factory = ASTFactory(ClangJsonASTNode, args if not code else args[1:])
+        #create translation unit
+        atu = factory.create(code) if code else factory.create_from_text(example_code, 'test.c')
+        #create a Refactor
+        refactor = ASTRefactor(atu, factory, in_memory=True)
+
+        result = CleanupRefactoring.remove_unused_variables(refactor).apply_to_string()
+        #print the rewritten code
+        print (f'Using cleanup refactoring results {node_type.__name__}:')
+        print(result)
+
+def remove_unused_variable_low_level(args):
+    # the first argument is the code to be parsed
+    code = args[1] if len(args) > 1 else ''
+
+    # Create a factory args from the command line are passed to the factory for example -I/usr/include
+    for node_type in [ClangASTNode, ClangJsonASTNode]:
         factory = ASTFactory(ClangJsonASTNode, args if not code else args[1:])
         # Create a pattern factory (using the factory (hence also its args)
         #create translation unit
@@ -48,9 +64,10 @@ def main(args):
             for_each(lambda node: rewriter.remove(node, True, True))
             
         #print the rewritten code
-        print (f'Results using {node_type.__name__}:')
+        print (f'Low level results using {node_type.__name__}:')
         print(rewriter.apply_to_string())
 
 if __name__ == "__main__":
     import sys
-    main(sys.argv)
+    remove_unused_variable_low_level(sys.argv)
+    remove_unused_variable_using_refactor_method(sys.argv)
