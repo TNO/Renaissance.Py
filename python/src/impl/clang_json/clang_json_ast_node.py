@@ -12,6 +12,7 @@ from syntax_tree import ASTNode, ASTReference
 from typing import Any, Optional, Sequence, TypeVar
 from typing_extensions import override
 import subprocess
+import tempfile
 
 
 EMPTY_DICT = {}
@@ -60,12 +61,22 @@ class ClangJsonASTNode(ASTNode):
 
     @override
     @staticmethod
-    def load(file_path:Path, extra_args:Sequence[str] = []) -> 'ClangJsonASTNode':
+    def load(file_path:Path, extra_args:Sequence[str], working_dir: Path) -> 'ClangJsonASTNode':
         #in a shell process compile the file_path with clang compiler
         try:
-            clang = 'clang++' if file_path.suffix == '.cpp' else 'clang'
-            command = [clang, *ClangJsonASTNode.parse_args, *extra_args, file_path]
-            result = subprocess.run(command, capture_output=True, text=True)
+            # remove the compiler name if it is the first argument
+            if len(extra_args) > 0 and re.match('.*(g++|gcc|cl.exe).*', extra_args[0]):
+                extra_args = extra_args[1:]
+            # add clang compiler if it is not in the arguments
+            if len(extra_args) > 0 and not 'clang' in extra_args[0]:
+                clang = 'clang++' if file_path.suffix == '.cpp' else 'clang'
+                extra_args = [clang, * extra_args]
+            
+            command = [*extra_args, *ClangJsonASTNode.parse_args]
+            if str(file_path) not in command:
+                command.append(str(file_path))
+
+            result = subprocess.run(command, capture_output=True, text=True, cwd=working_dir)
             temp_dir = tempfile.gettempdir()
             temp_file_name = os.path.join(temp_dir, file_path.name+'.ast.json')
             with open(temp_file_name, 'w') as temp_file:
@@ -73,7 +84,7 @@ class ClangJsonASTNode(ASTNode):
                 temp_file.write(result.stdout)
 
             json_atu = json.loads(result.stdout)
-            atu = ClangJsonASTNode(json_atu, translation_unit=ClangJsonTranslationUnit(json_atu, file_name=str(file_path)) )
+            atu = ClangJsonASTNode(json_atu, translation_unit=ClangJsonTranslationUnit(json_atu, file_name=str(working_dir / file_path)) )
             # cache the result of the temp file before deleting it
             atu.get_content(0, 0)
             return atu
@@ -84,15 +95,15 @@ class ClangJsonASTNode(ASTNode):
         
     @override
     @staticmethod
-    def load_from_text(file_content: str, file_name: str='test.c', extra_args:Sequence[str] = []) -> 'ClangJsonASTNode':
+    def load_from_text(file_content: str, file_name: str, extra_args:Sequence[str], working_dir: Path) -> 'ClangJsonASTNode':
         # Define the directory for the temporary file
-        temp_dir = tempfile.gettempdir()
-        # Define the name of the temporary file
-        temp_file_name = os.path.join(temp_dir,file_name)
-        # Write text to the temporary file
-        with open(temp_file_name, 'wb') as temp_file:
+        temp_dir = working_dir
+        temp_file_name = ''
+        # Define a unique temporary name of the temporary file
+        with tempfile.NamedTemporaryFile(dir=temp_dir, delete=False, mode='wb', suffix=file_name) as temp_file:
             temp_file.write(file_content.encode('utf-8'))        # write the text to a temporary file
-        result = ClangJsonASTNode.load(Path(temp_file_name), extra_args)
+            temp_file_name = temp_file.name
+        result = ClangJsonASTNode.load(Path(temp_file.name), extra_args, working_dir)
         # Delete the temporary file
         os.remove(temp_file_name)
         return result
@@ -245,7 +256,14 @@ class ClangJsonASTNode(ASTNode):
 
     @staticmethod
     def _is_wrapped(node):
-        return node['kind'].startswith("Implicit") and len(list(node['inner'])) == 1
+        """
+        Check if a node is wrapped.
+
+        A node is considered wrapped if it meets the following conditions:
+        1. The node does not have an 'id' or its 'kind' starts with "Implicit".
+        2. The node has exactly one inner node.
+        """
+        return (not node.get('id') or node['kind'].startswith("Implicit")) and len(list(node['inner'])) == 1
 
     T = TypeVar('T')
     def _get(self, path: Sequence[str], default: T) -> T:

@@ -62,7 +62,7 @@ class ClangASTNode(ASTNode):
             
     set_library_path()
     index = Index.create()
-    parse_args=['-fparse-all-comments', '-ferror-limit=0', '-Xclang', '-detailed-preprocessing-record','-ast-dump=json', '-fsyntax-only']
+    parse_args=['-fparse-all-comments', '-ferror-limit=0', '-Xclang', '-detailed-preprocessing-record', '-fsyntax-only']
 
     def __init__(self, node, translation_unit:ClangTranslationUnit,  parent =  None):
         super().__init__(self if parent is None else parent.root)
@@ -71,20 +71,19 @@ class ClangASTNode(ASTNode):
         self.parent = parent
         self.translation_unit = translation_unit
         self.translation_unit._nodes[node.hash] = self
-        
-
 
     @override
     @staticmethod
-    def load(file_path: Path,  extra_args=[]) -> 'ClangASTNode':
-        translation_unit: TranslationUnit = ClangASTNode.index.parse(file_path, args=[*ClangASTNode.parse_args,*extra_args])
+    def load(file_path: Path, extra_args:Sequence[str], working_dir:Path) -> 'ClangASTNode':
+        args=[*extra_args, *ClangASTNode.parse_args]
+        translation_unit: TranslationUnit = ClangASTNode.index.parse(working_dir / file_path, args=args[3:])
         root_node =  ClangASTNode(translation_unit.cursor, ClangTranslationUnit(translation_unit, file_name=str(file_path)), None)
         return root_node
 
     @override
     @staticmethod
-    def load_from_text(file_content: str, file_name: str='test.c', extra_args=[]) -> 'ClangASTNode':
-        translation_unit: TranslationUnit = ClangASTNode.index.parse(file_name, unsaved_files=[(file_name, file_content)],  args=[*ClangASTNode.parse_args,*extra_args])
+    def load_from_text(file_content: str, file_name: str, extra_args:Sequence[str], working_dir:Path) -> 'ClangASTNode':
+        translation_unit: TranslationUnit = ClangASTNode.index.parse(working_dir / file_name, unsaved_files=[(file_name, file_content)],  args=[*ClangASTNode.parse_args,*extra_args])
         root_node =  ClangASTNode(translation_unit.cursor, ClangTranslationUnit(translation_unit, file_name=str(file_name)), None)
         # Convert file_content to bytes
         file_content_bytes = file_content.encode('utf-8')
