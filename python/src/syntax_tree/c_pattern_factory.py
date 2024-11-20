@@ -1,15 +1,13 @@
 import re
-from typing import Generic, Optional, Sequence, TypeVar
+from typing import Generic, Optional, Sequence
 
 from common.stream import Stream
-from .ast_node import ASTNode
+from .ast_node import ASTNode, ASTNodeType
 from .ast_shower import ASTShower
 
 from .ast_factory import ASTFactory
 from .ast_finder import ASTFinder
 SHOW_NODE = False
-
-ASTNodeType = TypeVar("ASTNodeType", bound='ASTNode')
 
 class CPatternFactory(Generic[ASTNodeType]):
 

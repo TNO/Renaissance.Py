@@ -2,9 +2,7 @@ import re
 from typing import Callable, Iterator, TypeVar
 
 from common import Stream
-from .ast_node import ASTNode
-
-ASTNodeType = TypeVar("ASTNodeType", bound='ASTNode')
+from .ast_node import ASTNode, ASTNodeType
 
 class ASTFinder:
     @staticmethod

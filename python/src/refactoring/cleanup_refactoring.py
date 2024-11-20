@@ -1,9 +1,4 @@
-from typing import TypeVar
-from syntax_tree.ast_finder import ASTFinder
-from syntax_tree.ast_node import ASTNode
-from syntax_tree.ast_refactor import ASTRefactor
-
-ASTNodeType = TypeVar('ASTNodeType', bound=ASTNode)
+from syntax_tree import ASTFinder, ASTRefactor, ASTNodeType, ASTNodeType
 
 class CleanupRefactoring:
     def __init__(self):

@@ -1,9 +1,7 @@
 from pathlib import Path
 from typing import Generic, Sequence, TypeVar
 
-from .ast_node import ASTNode
-
-ASTNodeType = TypeVar("ASTNodeType", bound='ASTNode')
+from .ast_node import ASTNodeType
 
 class ASTFactory(Generic[ASTNodeType]):
     """

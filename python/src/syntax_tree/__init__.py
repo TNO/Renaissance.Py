@@ -1,5 +1,5 @@
 # __init__.py
-from .ast_node import (ASTNode, ASTReference, VisitorResult)
+from .ast_node import (ASTNode, ASTReference, VisitorResult, ASTNodeType)
 from .ast_finder import (ASTFinder)
 from .ast_shower import (ASTShower)
 from .ast_factory import (ASTFactory)
@@ -12,6 +12,7 @@ from .text_utils import (TextUtils)
 
 __all__ = [
     'ASTNode',
+    'ASTNodeType',
     'ASTReference',
     'VisitorResult',
     'ASTFinder',

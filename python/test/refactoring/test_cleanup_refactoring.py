@@ -1,12 +1,10 @@
-from typing import TypeVar
 import unittest
 from parameterized import parameterized
 from refactoring import CleanupRefactoring
-from syntax_tree import ASTShower, ASTNode, ASTFactory, ASTRefactor
+from syntax_tree import ASTShower, ASTFactory, ASTRefactor, ASTNodeType
 
 from test.c_cpp.factories import Factories
 
-ASTNodeType = TypeVar('ASTNodeType', bound=ASTNode)
 class TestCleanupRefactoring(unittest.TestCase):
 
     @parameterized.expand(list(Factories.extend( [
