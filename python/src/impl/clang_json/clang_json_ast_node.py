@@ -40,11 +40,11 @@ class ClangJsonTranslationUnit():
         self._referenced_by: dict[str, list[ClangJsonASTReference]] = {}
         self._nodes: dict[str, 'ClangJsonASTNode'] = {}
     
-    def lazy_create_references(self, root: 'ClangJsonASTNode') -> None:
+    def lazy_create_references(self, node: 'ClangJsonASTNode') -> None:
         if self.references_initialized:
             return
-        root.process(ReferenceHelper.create_references)
-        root.process(ReferenceHelper.add_record_references)
+        node.root.process(ReferenceHelper.create_references)
+        node.root.process(ReferenceHelper.add_record_references)
         self.references_initialized = True
 
 class ClangJsonASTNode(ASTNode):

@@ -36,10 +36,10 @@ class ClangTranslationUnit():
         self._referenced_by: dict[str, list[ClangASTReference]] = {}
         self._nodes: dict[str, 'ClangASTNode'] = {}
 
-    def lazy_create_references(self, root: 'ClangASTNode') -> None:
+    def lazy_create_references(self, node: 'ClangASTNode') -> None:
         if self.references_initialized:
             return
-        root.process(ReferenceHelper.create_references)
+        node.root.process(ReferenceHelper.create_references)
         self.references_initialized = True
 
     @staticmethod
