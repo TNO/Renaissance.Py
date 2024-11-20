@@ -64,7 +64,7 @@ class Stream(Generic[T]):
         return self
 
     def peek(self, func: Callable[[T], Any]) -> 'Stream[T]':
-        self.__iterable = (x for x in self.__iterable if not func(x))
+        self.__iterable = (x for x in self.__iterable if not func(x) or True)
         return self
 
     def limit(self, max_size: int) -> 'Stream[T]':
