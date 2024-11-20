@@ -1,0 +1,29 @@
+from typing import TypeVar
+import unittest
+from parameterized import parameterized
+from refactoring import CleanupRefactoring
+from syntax_tree import ASTShower, ASTNode, ASTFactory, ASTRefactor
+
+from test.c_cpp.factories import Factories
+
+ASTNodeType = TypeVar('ASTNodeType', bound=ASTNode)
+class TestCleanupRefactoring(unittest.TestCase):
+
+    @parameterized.expand(list(Factories.extend( [
+        ( "int foo() {\n    int x = 1;\n    return 2;\n}", "int foo() {\n    return 2;\n}"),
+        ( "int bar() {\n    int y = 2;\n    int z = y + 3;\n    return z;\n}", "int bar() {\n    int y = 2;\n    int z = y + 3;\n    return z;\n}"),
+        ( "int baz() {\n    int a = 1;\n    int b = 2;\n    int c = a + b;\n    return c;\n}", "int baz() {\n    int a = 1;\n    int b = 2;\n    int c = a + b;\n    return c;\n}")
+    ])))   
+    def test_remove_unused_variables(self, name, factory: ASTFactory[ASTNodeType], input_code, expected_code):
+        atu = factory.create_from_text(input_code, 'test.c')
+        ASTShower.show_node(atu)
+        ast_refactor = ASTRefactor(atu, factory, in_memory=True) 
+        result = CleanupRefactoring.remove_unused_variables(ast_refactor)
+        self.assertEqual(result.apply_to_string(), expected_code)
+    
+    def test_should_not_be_instantiable(self):
+        with self.assertRaises(Exception):
+            CleanupRefactoring()
+
+if __name__ == '__main__':
+    unittest.main()
