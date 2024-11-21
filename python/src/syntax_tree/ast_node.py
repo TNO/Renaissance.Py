@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from enum import Enum
 from pathlib import Path
+import re
+import sys
 from typing import Any, Callable, Generic, Optional, Sequence, TypeVar
 from .text_utils import TextUtils
 
@@ -57,7 +59,7 @@ class ASTNode(ABC):
 
     def get_content(self, start, end):
         bytes = self.root.get_binary_file_content()
-        return str(bytes[start:end], 'utf-8')
+        return str(bytes[start:end], sys.getfilesystemencoding())
 
     def get_binary_file_content(self, file_path: str|None=None) -> bytes:
         if not file_path:
@@ -91,6 +93,15 @@ class ASTNode(ABC):
         siblings = parent.get_children()
         index = siblings.index(self)
         return siblings[index + 1] if index < len(siblings) - 1 else None
+
+    def get_ancestor(self: ASTNodeType, kind: str|re.Pattern) -> Optional[ASTNodeType]:
+        pattern = re.compile(kind) if isinstance(kind, str) else kind
+        parent = self._get_parent()
+        if not parent:
+            return None
+        if pattern.match(parent.get_kind()):
+            return parent
+        return parent.get_ancestor(pattern)
 
     def is_descendent_of(self, node: 'ASTNode'):
         return node.is_ancestor_of(self)
