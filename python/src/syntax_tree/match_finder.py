@@ -1,5 +1,6 @@
 from functools import cache
 import re
+import sys
 from typing import Iterator, Optional, Sequence
 
 from common import Stream
@@ -141,7 +142,7 @@ class PatternMatch:
             matched_nodes = nodes.get(key, [])
             if(not matched_nodes or location[1]==0):
                 return ''
-            return matched_nodes[0].root.get_binary_file_content()[matched_nodes[0].get_start_offset():matched_nodes[-1].get_end_offset()].decode('utf-8')
+            return matched_nodes[0].root.get_binary_file_content()[matched_nodes[0].get_start_offset():matched_nodes[-1].get_end_offset()].decode(sys.getfilesystemencoding())
         return {k:get_raw_signature(k,v) for k,v in self.get_locations().items()}
 
     @cache
