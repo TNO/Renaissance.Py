@@ -1,7 +1,7 @@
 import unittest
 from parameterized import parameterized
 from refactoring import CleanupRefactoring
-from syntax_tree import ASTShower, ASTFactory, ASTRefactor, ASTNodeType
+from syntax_tree import ASTShower, ASTFactory, ASTProcessor, ASTNodeType
 
 from test.c_cpp.factories import Factories
 
@@ -15,9 +15,10 @@ class TestCleanupRefactoring(unittest.TestCase):
     def test_remove_unused_variables(self, name, factory: ASTFactory[ASTNodeType], input_code, expected_code):
         atu = factory.create_from_text(input_code, 'test.c')
         ASTShower.show_node(atu)
-        ast_refactor = ASTRefactor(atu, factory, in_memory=True) 
-        result = CleanupRefactoring.remove_unused_variables(ast_refactor)
-        self.assertEqual(result.apply_to_string(), expected_code)
+        ast_refactor = ASTProcessor(atu, factory, user_objects= {}, in_memory=True) 
+        CleanupRefactoring.remove_unused_variables(ast_refactor)
+        result = ast_refactor.commit().apply_to_string()
+        self.assertEqual(result, expected_code)
     
     def test_should_not_be_instantiable(self):
         with self.assertRaises(Exception):
