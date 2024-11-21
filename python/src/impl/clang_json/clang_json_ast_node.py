@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import re
+import sys
 import tempfile
 from common import Stream
 from syntax_tree import ASTNode, ASTReference
@@ -61,30 +62,47 @@ class ClangJsonASTNode(ASTNode):
 
     @override
     @staticmethod
-    def load(file_path:Path, extra_args:Sequence[str], working_dir: Path) -> 'ClangJsonASTNode':
+    def load(file_path:Path, extra_args:Sequence[str], working_dir: Path, code: Optional[str] = None) -> 'ClangJsonASTNode':
         #in a shell process compile the file_path with clang compiler
         try:
             # remove the compiler name if it is the first argument
             if len(extra_args) > 0 and re.match('.*(g++|gcc|cl.exe).*', extra_args[0]):
                 extra_args = extra_args[1:]
             # add clang compiler if it is not in the arguments
-            if len(extra_args) > 0 and not 'clang' in extra_args[0]:
+            if len(extra_args) == 0 or not 'clang' in extra_args[0]:
                 clang = 'clang++' if file_path.suffix == '.cpp' else 'clang'
                 extra_args = [clang, * extra_args]
             
             command = [*extra_args, *ClangJsonASTNode.parse_args]
-            if str(file_path) not in command:
-                command.append(str(file_path))
+            json_dump = None
+            if code:
+                if str(file_path) in command:
+                    command.remove(str(file_path))
+                compile = '-xc++' if file_path.suffix == '.cpp' else '-xc'
+                if not compile in command:
+                    command.append(compile)
+                if not '-' in command:
+                    command.append('-')
+                # command.append('-main-file-name=' + str(file_path))
+                result = subprocess.run(command, input=code.encode(sys.getfilesystemencoding()), capture_output=True, cwd=working_dir)
+                json_dump = result.stdout.decode().replace("<stdin>", str(file_path))
+            else:
+                if str(file_path) not in command:
+                    command.append(str(file_path))
+                result = subprocess.run(command, capture_output=True, text=True, cwd=working_dir) 
+                json_dump = result.stdout  
 
-            result = subprocess.run(command, capture_output=True, text=True, cwd=working_dir)
-            temp_dir = tempfile.gettempdir()
-            temp_file_name = os.path.join(temp_dir, file_path.name+'.ast.json')
-            with open(temp_file_name, 'w') as temp_file:
-                if VERBOSE: print ('result stored in ' + temp_file_name)
-                temp_file.write(result.stdout)
+            if VERBOSE:
+                temp_dir = tempfile.gettempdir()
+                temp_file_name = os.path.join(temp_dir, file_path.name+'.ast.json')
+                with open(temp_file_name, 'w') as temp_file:
+                    print ('result stored in ' + temp_file_name)
+                    temp_file.write(json_dump)
 
-            json_atu = json.loads(result.stdout)
-            atu = ClangJsonASTNode(json_atu, translation_unit=ClangJsonTranslationUnit(json_atu, file_name=str(working_dir / file_path)) )
+            json_atu = json.loads(json_dump)
+            atu = ClangJsonASTNode(json_atu, translation_unit=ClangJsonTranslationUnit(json_atu, file_name=str(file_path)) )
+            if code:
+                atu.cache[str(file_path)] = code.encode(sys.getfilesystemencoding())   
             # cache the result of the temp file before deleting it
             atu.get_content(0, 0)
             return atu
@@ -96,17 +114,7 @@ class ClangJsonASTNode(ASTNode):
     @override
     @staticmethod
     def load_from_text(file_content: str, file_name: str, extra_args:Sequence[str], working_dir: Path) -> 'ClangJsonASTNode':
-        # Define the directory for the temporary file
-        temp_dir = working_dir
-        temp_file_name = ''
-        # Define a unique temporary name of the temporary file
-        with tempfile.NamedTemporaryFile(dir=temp_dir, delete=False, mode='wb', suffix=file_name) as temp_file:
-            temp_file.write(file_content.encode('utf-8'))        # write the text to a temporary file
-            temp_file_name = temp_file.name
-        result = ClangJsonASTNode.load(Path(temp_file.name), extra_args, working_dir)
-        # Delete the temporary file
-        os.remove(temp_file_name)
-        return result
+        return ClangJsonASTNode.load(Path(file_name), extra_args, working_dir, code=file_content)
 
     @override
     @cache
