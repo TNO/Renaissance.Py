@@ -1,6 +1,7 @@
 from functools import cache
 from pathlib import Path
 import re
+import sys
 from typing import Any, Optional, Sequence
 from common import Stream
 from syntax_tree import ASTNode, ASTReference
@@ -83,10 +84,10 @@ class ClangASTNode(ASTNode):
     @override
     @staticmethod
     def load_from_text(file_content: str, file_name: str, extra_args:Sequence[str], working_dir:Path) -> 'ClangASTNode':
-        translation_unit: TranslationUnit = ClangASTNode.index.parse(working_dir / file_name, unsaved_files=[(file_name, file_content)],  args=[*ClangASTNode.parse_args,*extra_args])
+        translation_unit: TranslationUnit = ClangASTNode.index.parse(file_name, unsaved_files=[(file_name, file_content)],  args=[*ClangASTNode.parse_args,*extra_args])
         root_node =  ClangASTNode(translation_unit.cursor, ClangTranslationUnit(translation_unit, file_name=str(file_name)), None)
         # Convert file_content to bytes
-        file_content_bytes = file_content.encode('utf-8')
+        file_content_bytes = file_content.encode(sys.getfilesystemencoding())
         # add to cache to avoid reading the file again
         root_node.cache[file_name] = file_content_bytes
         return root_node

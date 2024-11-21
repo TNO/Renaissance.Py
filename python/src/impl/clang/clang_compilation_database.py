@@ -7,7 +7,7 @@ from clang.cindex import CompilationDatabase as ClangCompilationDatabase
 class CompilationDatabase:
 
     @staticmethod
-    def load(typ: type[ASTNodeType], path: Path) -> Iterator[tuple[ASTFactory, ASTNodeType]]:
+    def walk(typ: type[ASTNodeType], path: Path) -> Iterator[tuple[ASTFactory, ASTNodeType]]:
         """
         Load the Clang compilation database and yield factory and AST node type tuples.
 
@@ -23,11 +23,11 @@ class CompilationDatabase:
         """
         db = ClangCompilationDatabase.fromDirectory(str(path))
         def factory_and_atu(command):
-            return CompilationDatabase.__create_factory_and_atu(typ, command)
+            return CompilationDatabase.__create_processor(typ, command)
         yield from map(factory_and_atu, db.getAllCompileCommands())
 
     @staticmethod
-    def __create_factory_and_atu(typ: type[ASTNodeType], compile_command ) -> tuple[ASTFactory, ASTNodeType]:
+    def __create_processor(typ: type[ASTNodeType], compile_command ) -> tuple[ASTFactory, ASTNodeType]:
         extra_args = list(compile_command.arguments)
         skip = ['-o', '-c']
         filtered_args = [arg for idx, arg in enumerate(extra_args) if not arg in skip and (idx==0 or not extra_args[idx-1] in skip)]    

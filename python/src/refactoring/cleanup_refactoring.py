@@ -1,11 +1,11 @@
-from syntax_tree import ASTFinder, ASTRefactor, ASTNodeType, ASTNodeType
+from syntax_tree import ASTFinder, ASTProcessor, ASTNodeType, ASTNodeType
 
 class CleanupRefactoring:
     def __init__(self):
         raise Exception("This class should not be instantiated")
 
     @staticmethod
-    def remove_unused_variables(ast_refactor: ASTRefactor[ASTNodeType]) -> ASTRefactor:
+    def remove_unused_variables(ast_refactor: ASTProcessor[ASTNodeType]) -> None:
         """
         Removes all unused variables from a function
         """
@@ -14,6 +14,5 @@ class CleanupRefactoring:
             filter(lambda node: len(node.get_referenced_by())==0).\
             map(lambda node: node.get_parent()).\
             for_each(lambda node: ast_refactor.remove(node, True, True))
-        return ast_refactor.commit()
         
         

@@ -2,7 +2,7 @@
 
 from pathlib import Path
 from impl import CompilationDatabase, ClangASTNode, ClangJsonASTNode
-from syntax_tree import ASTRefactor, ASTNode, ASTShower
+from syntax_tree import ASTProcessor, ASTNode, ASTShower
 
     
 def main(args):
@@ -11,12 +11,12 @@ def main(args):
     for impl_type in [ClangASTNode, ClangJsonASTNode]:
         #load the compilation database by specifying the path to the folder 
         #and the implementation type
-        db = CompilationDatabase.load(impl_type, Path(database))
+        db = CompilationDatabase.walk(impl_type, Path(database))
         for factory, atu in db:
             #show atu
             ASTShower.show_node(atu, include_properties=True)
             #do something with the factory and atu
-            ast_refactor = ASTRefactor(atu,factory, in_memory=True)
+            ast_refactor = ASTProcessor(atu,factory, user_objects={},  in_memory=True)
             ast_refactor.find_kind('(?i)Function_?Decl').\
                 map(ASTNode.get_text).\
                 for_each(print)

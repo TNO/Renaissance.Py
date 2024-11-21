@@ -1,4 +1,7 @@
 
+import sys
+
+
 class Rewrite():
     def __init__(self, start, end, replacement: bytes) -> None:
         self.start = start
@@ -73,7 +76,7 @@ if __name__ == '__main__':
     rewriter.replace(5, 10, b"hellooo")
     rewriter.replace(5, 10, b" world")
     rewriter.replace(0, 0, b"BEGIN")
-    s = rewriter.apply().decode('utf-8')
+    s = rewriter.apply().decode(sys.getfilesystemencoding())
     print(len(s))
     print(s) 
 
