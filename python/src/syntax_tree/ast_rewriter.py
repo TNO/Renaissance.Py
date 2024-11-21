@@ -2,6 +2,7 @@
 
 from enum import Enum
 import re
+import sys
 from typing import Optional, Sequence
 from common import Rewriter
 from .match_finder import PatternMatch
@@ -18,9 +19,9 @@ class _RewriteActionType(Enum):
 DEFAULT_INDENT = 4
 
 class ASTRewriter():
-    def __init__(self, nodes: ASTNode|Sequence[ASTNode], encoding='utf-8', correctIndent=True) -> None:
+    def __init__(self, nodes: ASTNode|Sequence[ASTNode], encoding=sys.getfilesystemencoding(), correctIndent=True) -> None:
         self.__rewrites = _RewriteActions(nodes,encoding,  correct_indent=correctIndent)
-        self.__filename = nodes[0].get_containing_filename() if isinstance(nodes, Sequence) else nodes.get_containing_filename()
+        self.__filename = nodes[0].root.get_containing_filename() if isinstance(nodes, Sequence) else nodes.root.get_containing_filename()
     
     def get_filename(self) -> str:
         return self.__filename
@@ -163,14 +164,14 @@ class _RewriteActions():
         spaces = ' '*indent
         # if flattened_nodes[-1] has a new line after white space then we need to add a new line:
         ext_start_offset, ext_end_offset =  _RewriteActions.__correct_for_comments_and_whitespace(self.content, include_whitespace, include_comments, nodes)
-        insert_new_line = '\n' if content[ext_end_offset] in b'\n' else ''
+        white_space = '\n' + spaces if content[ext_end_offset] in b'\n' else spaces
         #indent the new content except the first line
         new_content =TextUtils.shift_right(new_content, indent, start_line=1)
 
         if before:
-            self.__replace_bytes(rewriter, ext_start_offset, ext_start_offset, new_content + insert_new_line + spaces)
+            self.__replace_bytes(rewriter, ext_start_offset, ext_start_offset, new_content + white_space)
         else:
-            self.__replace_bytes(rewriter, ext_end_offset,  ext_end_offset, insert_new_line + spaces + new_content)
+            self.__replace_bytes(rewriter, ext_end_offset,  ext_end_offset, white_space + new_content)
 
     def __replace_bytes(self, rewriter:Rewriter, start: int, end: int, new_content: str):
         """
@@ -255,13 +256,22 @@ class _RewriteActions():
 
 
     @staticmethod
-    def __correct_for_comments_and_whitespace(content:bytes, include_whitespace, include_comments, nodes):
+    def __correct_for_comments_and_whitespace(content:bytes, include_whitespace: bool, include_comments: bool, nodes: Sequence[ASTNode]):
         start_offset = nodes[0].get_start_offset()
-        end_offset = nodes[-1].get_end_offset()
+        end_offset = nodes[-1].get_extended_end_offset()
         if include_comments:
             precedingNode = nodes[0].get_preceding_sibling()
             parent = nodes[0].get_parent()
-            start_comment_location = precedingNode.get_end_offset() if precedingNode else parent.get_start_offset() if parent else 0
+            start_comment_location = 0
+            if precedingNode:
+                # start after the comment of the preceding node
+                start_comment_location = precedingNode.get_extended_end_offset()
+                preceding_end_offset = _RewriteActions.__get_comment_after_location(start_comment_location, start_offset, content)
+                if preceding_end_offset != (-1, -1):
+                    start_comment_location = preceding_end_offset[1]
+            elif parent:
+                start_comment_location = parent.get_start_offset()
+            # get the comment belonging to the preceding node
             extended_location = _RewriteActions._get_comment_location(start_comment_location, start_offset,content)
             if extended_location != (-1, -1):
                 start_offset = extended_location[0]
