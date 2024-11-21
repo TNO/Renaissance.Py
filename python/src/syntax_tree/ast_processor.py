@@ -1,6 +1,6 @@
 
 from pathlib import Path
-from typing import Callable, Generic, Iterator, Sequence, TypeVar
+from typing import Any, Callable, Generic, Iterator, Sequence, TypeVar
 
 from common.stream import Stream
 from .ast_finder import ASTFinder
@@ -11,13 +11,13 @@ from .ast_node import ASTNode, ASTNodeType
 
 T = TypeVar('T')
 
-class ASTRefactor(Generic[ASTNodeType]):
-    def __init__(self, root: ASTNodeType, ast_factory: ASTFactory, in_memory=False) -> None:
+class ASTProcessor(Generic[ASTNodeType]):
+    def __init__(self, root: ASTNodeType, ast_factory: ASTFactory,  user_objects : dict[str,Any], in_memory=False,) -> None:
         self.__root_node = root
         self.__rewriter = ASTRewriter(root)
         self.__ast_factory = ast_factory
         self.in_memory = in_memory
-        self.__user_objects = {}
+        self.__user_objects = user_objects
     
     def get_filename(self) -> str:
         return self.__rewriter.get_filename()
@@ -53,20 +53,23 @@ class ASTRefactor(Generic[ASTNodeType]):
             self.__user_objects[key] = result
         assert isinstance(result, factory), f"Expected {factory} but got {type(result)}"
         return result
+    
+    def has_changed(self) -> bool:
+        return self.__rewriter.has_changed()
 
     def apply_to_string(self) -> str:
         return self.__rewriter.apply_to_string()
 
-    def commit(self) -> 'ASTRefactor':
+    def commit(self) -> 'ASTProcessor':
         """
-        Commits the current changes to the AST (Abstract Syntax Tree) and returns a new ASTRefactor instance.
+        Commits the current changes to the AST (Abstract Syntax Tree) and returns a new ASTProcessor instance.
 
-        This method applies the current changes to the source code and creates a new ASTRefactor instance
+        This method applies the current changes to the source code and creates a new ASTProcessor instance
         with the updated AST. If the changes are in-memory, it directly creates the new AST from the updated
         code string. Otherwise, it writes the changes to the file, reloads the file, and then creates the new AST.
 
         Returns:
-            ASTRefactor: A new instance of ASTRefactor with the updated AST.
+            ASTProcessor: A new instance of ASTProcessor with the updated AST.
 
         Raises:
             IOError: If there is an error writing to the file.
@@ -75,19 +78,15 @@ class ASTRefactor(Generic[ASTNodeType]):
         if (self.__rewriter.has_changed() == False):
             return self
         
-        next_refactor = None
         if self.in_memory:
-            atu = self.__ast_factory.create_from_text(new_code, self.get_filename())
-            next_refactor = ASTRefactor(atu, self.__ast_factory, self.in_memory)
+            atu = self.__ast_factory.create_from_text(new_code, str(Path(self.get_filename()).name))
         else:
             #save file first then reload it
             with open(self.get_filename(), 'wb') as f:
                 f.write(self.__rewriter.apply())
             # TODO check errors
             atu = self.__ast_factory.create(Path(self.get_filename()))
-            next_refactor =  ASTRefactor(atu, self.__ast_factory, self.in_memory)
-        next_refactor.__user_objects  = self.__user_objects
-        return next_refactor
+        return ASTProcessor(atu, self.__ast_factory, self.__user_objects, self.in_memory)
 
 #main
 if __name__ == '__main__':
