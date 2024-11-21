@@ -51,7 +51,18 @@ class TestRewrites(TestCase):
         code_test_input = f'("{code}", {include_whitespace}, {include_comments}, "{actual}"),'.replace('\n', '\\n').replace('\r', '\\r')
         print("\nFull parameterized:" +code_test_input)
 
-        self.assertEquals(rewriter.apply_to_string(), expected)
+        self.assertEquals(expected, rewriter.apply_to_string())
+
+class TestRemove(TestRewrites):
+
+    @parameterized.expand(list(Factories.extend( [
+        ("void f() { /* c1 */ int a=3;\n}", True, True, 'void f() { \n}'),
+        ("void f() { int x=2 //x cmt\n  int a=3;\n}", True, True, 'void f() { int x=2 //x cmt\n}'),
+         ])))   
+    def test(self, name, factory: ASTFactory, code: str, include_whitespace, include_comments, expected):
+        
+        self.do_test(lambda s,_,n,ws,cm: ASTRewriter.remove(s,n,ws,cm), factory, code, 'int aa=4;',include_whitespace, include_comments, expected)
+
 
 class TestReplace(TestRewrites):
 
@@ -71,8 +82,8 @@ class TestReplace(TestRewrites):
         ("void f() { int a=3; /*c1    \n */ }", True, False, 'void f() { int aa=4; /*c1    \n */ }'),
         ("void f() { int a=3; /*c1    \n */ }", False, False, 'void f() { int aa=4; /*c1    \n */ }'),
         #siblings with comments
-        ("void f() { int x=2; /* c1 */ int a=3; //c2\n int b=4; }", True, True, 'void f() { int x=2; int aa=4;\n int b=4; }'),
-        ("void f() { //cx\nint x=2; //ca\n int a=3; //caa\n int b=4;//cb }", True, True, 'void f() { //cx\nint x=2; int aa=4;\n int b=4;//cb }'),
+        ("void f() { int x=2; /* c1 */ int a=3; //c2\n int b=4; }", True, True, 'void f() { int x=2; /* c1 */ int aa=4;\n int b=4; }'),
+        ("void f() { //cx\nint x=2; //ca\n int a=3; //caa\n int b=4;//cb }", True, True, 'void f() { //cx\nint x=2; //ca\n int aa=4;\n int b=4;//cb }'),
         ("void f() { int x=2 /*ca*/ int a=3; /*caa \n nl*/ int b=4; }", True, True, 'void f() { int x=2 /*ca*/ int aa=4; int b=4; }'),
 
         
@@ -91,7 +102,7 @@ class TestInsertBeforeSingleLine(TestRewrites):
         ("void f() { /* c1 */ int a=3;\n}", True, True, "void f() { int aa=4;\n /* c1 */ int a=3;\n}"),
         ("void f() { // c1\n //c2\n int a=3;\n}", True, True, "void f() { // c1\n int aa=4;\n //c2\n int a=3;\n}"),
         ("void f() { // c1\n int a=3;\n}", True, True, "void f() { int aa=4;\n // c1\n int a=3;\n}"),
-        ("void f() { //cx\nint x=2; //ca\n int a=3; //caa\n int b=4;//cb }", True, True, "void f() { //cx\nint x=2; int aa=4;\n //ca\n int a=3; //caa\n int b=4;//cb }"),
+        ("void f() { //cx\n int x=2; //ca\n int a=3; //caa\n int b=4;//cb }", True, True, "void f() { //cx\n int x=2; //ca\n int aa=4;\n int a=3; //caa\n int b=4;//cb }"),
         ("void f() { int a=3;    \n}", True, True, "void f() { int aa=4;\n int a=3;    \n}"),
         ("void f() { int a=3; /*c1    \n */ }", False, False, "void f() { int aa=4; int a=3; /*c1    \n */ }"),
         ("void f() { int a=3; /*c1    \n */ }", False, True, "void f() { int aa=4; int a=3; /*c1    \n */ }"),
@@ -99,8 +110,8 @@ class TestInsertBeforeSingleLine(TestRewrites):
         ("void f() { int a=3; /*c1    \n */ }", True, True, "void f() { int aa=4; int a=3; /*c1    \n */ }"),
         ("void f() { int a=3; //c1    \n}", True, True, "void f() { int aa=4;\n int a=3; //c1    \n}"),
         ("void f() { int x=2 /*ca*/ int a=3; /*caa \n nl*/ int b=4; }", True, True, "void f() { int x=2 /*ca*/ int aa=4; int a=3; /*caa \n nl*/ int b=4; }"),
-        ("void f() { int x=2; /* c1 */ int a=3; //c2\n int b=4; }", True, True, "void f() { int x=2; int aa=4;\n /* c1 */ int a=3; //c2\n int b=4; }"),
-        ("void f() { int x=2; //c1\n int a=3; //caa\n int b=4;//cb }", True, True, "void f() { int x=2; int aa=4;\n //c1\n int a=3; //caa\n int b=4;//cb }")
+        ("void f() { int x=2; /* c1 */ int a=3; //c2\n int b=4; }", True, True, "void f() { int x=2; /* c1 */ int aa=4;\n int a=3; //c2\n int b=4; }"),
+        ("void f() { int x=2; //c1\n int a=3; //caa\n int b=4;//cb }", True, True, "void f() { int x=2; //c1\n int aa=4;\n int a=3; //caa\n int b=4;//cb }")
          ])))   
     def test(self, name, factory: ASTFactory, code: str, include_whitespace, include_comments, expected):
         self.do_test(ASTRewriter.insert_before, factory, code,'int aa=4;', include_whitespace, include_comments, expected)
@@ -118,7 +129,7 @@ class TestInsertBeforeMultiLine(TestRewrites):
         ("void f() { /* c1 */ int a=3;\n}", True, True, "void f() { int aa=4;\n int bb=5;\n /* c1 */ int a=3;\n}"),
         ("void f() { // c1\n //c2\n int a=3;\n}", True, True, "void f() { // c1\n int aa=4;\n int bb=5;\n //c2\n int a=3;\n}"),
         ("void f() { // c1\n int a=3;\n}", True, True, "void f() { int aa=4;\n int bb=5;\n // c1\n int a=3;\n}"),
-        ("void f() { //cx\nint x=2; //ca\n int a=3; //caa\n int b=4;//cb }", True, True, "void f() { //cx\nint x=2; int aa=4;\n int bb=5;\n //ca\n int a=3; //caa\n int b=4;//cb }"),
+        ("void f() { //cx\n int x=2; //ca\n int a=3; //caa\n int b=4;//cb }", True, True, "void f() { //cx\n int x=2; //ca\n int aa=4;\n int bb=5;\n int a=3; //caa\n int b=4;//cb }"),
         ("void f() { int a=3;    \n}", True, True, "void f() { int aa=4;\n int bb=5;\n int a=3;    \n}"),
         ("void f() { int a=3; /*c1    \n */ }", False, False, "void f() { int aa=4;\n int bb=5; int a=3; /*c1    \n */ }"),
         ("void f() { int a=3; /*c1    \n */ }", False, True, "void f() { int aa=4;\n int bb=5; int a=3; /*c1    \n */ }"),
@@ -126,8 +137,8 @@ class TestInsertBeforeMultiLine(TestRewrites):
         ("void f() { int a=3; /*c1    \n */ }", True, True, "void f() { int aa=4;\n int bb=5; int a=3; /*c1    \n */ }"),
         ("void f() { int a=3; //c1    \n}", True, True, "void f() { int aa=4;\n int bb=5;\n int a=3; //c1    \n}"),
         ("void f() { int x=2 /*ca*/ int a=3; /*caa \n nl*/ int b=4; }", True, True, "void f() { int x=2 /*ca*/ int aa=4;\n int bb=5; int a=3; /*caa \n nl*/ int b=4; }"),
-        ("void f() { int x=2; /* c1 */ int a=3; //c2\n int b=4; }", True, True, "void f() { int x=2; int aa=4;\n int bb=5;\n /* c1 */ int a=3; //c2\n int b=4; }"),
-        ("void f() { int x=2; //c1\n int a=3; //caa\n int b=4;//cb }", True, True, "void f() { int x=2; int aa=4;\n int bb=5;\n //c1\n int a=3; //caa\n int b=4;//cb }"),
+        ("void f() { int x=2; /* c1 */ int a=3; //c2\n int b=4; }", True, True, "void f() { int x=2; /* c1 */ int aa=4;\n int bb=5;\n int a=3; //c2\n int b=4; }"),
+        ("void f() { int x=2; //c1\n int a=3; //caa\n int b=4;//cb }", True, True, "void f() { int x=2; //c1\n int aa=4;\n int bb=5;\n int a=3; //caa\n int b=4;//cb }"),
 
         
          ])))   
