@@ -1,4 +1,5 @@
 
+from abc import ABC, abstractmethod
 from functools import partial
 import multiprocessing
 import dill as pickle
@@ -20,6 +21,11 @@ IterableProvider = Callable[[], Iterable[ATU]]
 
 class BatchASTProcessor():
 
+    class HasFinalAction(ABC):
+        @abstractmethod
+        def final_action(self)->None:
+            pass
+
     def __init__(self, user_objects: Optional[dict[str, Any]] = None, in_memory: bool = False, max_processes=4):
         """
         Initialize the BatchASTProcessor.
@@ -33,6 +39,14 @@ class BatchASTProcessor():
         self.in_memory: bool = in_memory
         self.in_memory_files : dict[str,str] ={}
         self.max_processes = max_processes
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        for user_object in self.user_objects.values():
+            if isinstance(user_object, BatchASTProcessor.HasFinalAction):
+                user_object.final_action()
 
     def once(self, iterable: Iterable[ATU]|IterableProvider, actions: Action|Sequence[Action], file_filter: Optional[str|re.Pattern] = None):
         """
@@ -103,3 +117,4 @@ def process_atu(atu: ATU, self: BatchASTProcessor, actions: Sequence[Action], in
         ast_processor = ast_processor.commit()
         if self.in_memory:
             self.in_memory_files[ast_processor.get_filename()] = ast_processor.apply_to_string()
+

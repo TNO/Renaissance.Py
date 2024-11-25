@@ -1,7 +1,7 @@
 #use clang to load and walk a compilation database
 
 from dataclasses import dataclass
-from typing import Iterable
+from typing_extensions import Iterable, override
 from impl import ClangASTNode, ClangJsonASTNode
 from refactoring import CleanupRefactoring
 from syntax_tree import ASTProcessor, ASTNode, ASTNodeType, TextUtils, ASTFactory, BatchASTProcessor
@@ -96,6 +96,20 @@ def batch_repeat_example():
     #print the rewritten code normally you would write to a file
     print_results('example batch repeat', batch_processor)
 
+@dataclass
+class Call:
+    callee: str
+    calls: str
+
+@dataclass
+class Calls(list[Call], BatchASTProcessor.HasFinalAction):
+    @override
+    def final_action(self):
+        print('example batch analysis:\n')
+        print('Calls:')
+        for call in self:
+            print('    '+call.callee + ' --  calls --> ' + call.calls)
+
 def batch_analysis_example():
     """
     Example function demonstrating analysis of AST nodes.
@@ -112,31 +126,22 @@ def batch_analysis_example():
 
     """
     #generate a batch processor for testing purposes we store into memory
-    batch_processor = BatchASTProcessor(in_memory=True)
+    with BatchASTProcessor(in_memory=True) as batch_processor:
     #remove a function to create more unused variables
-    @dataclass
-    class Call:
-        callee: str
-        calls: str
-    @dataclass
-    class Calls(list[Call]):
-        pass
-    def add_function_call(call: ASTNode, calls: Calls):
-        callee = call.get_ancestor('(?i)Function_?Decl')
-        if callee:
-            calls.append(Call(callee.get_name(), call.get_children()[0].get_name()))
 
-    def store_function_call(ast_processor: ASTProcessor[ASTNodeType]):
-        calls = ast_processor.user_object(str(Calls), Calls)
-        ast_processor.find_kind('(?i)Call_?Expr').\
-            for_each(lambda node: add_function_call(node, calls))
-
+        def add_function_call(call: ASTNode, calls: Calls):
+            callee = call.get_ancestor('(?i)Function_?Decl')
+            if callee:
+                calls.append(Call(callee.get_name(), call.get_children()[0].get_name()))
         
-    batch_processor.once(simple_codebase_provider, store_function_call)   
-    print('example batch analysis:\n')
-    #print the rewritten code normally you would write to a file
-    for call in batch_processor.user_objects[str(Calls)]:
-        print('    '+call.callee + ' --  calls --> ' + call.calls)
+
+        def store_function_call(ast_processor: ASTProcessor[ASTNodeType]):
+            calls = ast_processor.user_object(str(Calls), Calls)
+            ast_processor.find_kind('(?i)Call_?Expr').\
+                for_each(lambda node: add_function_call(node, calls))
+
+            
+        batch_processor.once(simple_codebase_provider, store_function_call)   
 
 
 if __name__ == "__main__":
