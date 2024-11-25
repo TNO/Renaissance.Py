@@ -95,8 +95,8 @@ class TestReplace(TestRewrites):
 class TestInsertBeforeSingleLine(TestRewrites):
 
     @parameterized.expand(list(Factories.extend( [
-        ("/* out scope */ void f() { int a=3; /*c1    \n */ }", False, False, "/* out scope */ void f() { int aa=4; int a=3; /*c1    \n */ }"),
-        ("/* out scope */ void f() { int a=3; /*c1    \n */ }", False, True, "/* out scope */ void f() { int aa=4; int a=3; /*c1    \n */ }"),
+        ("/* out scope */ void f() { int a=3; /*c1    \n */ }", False, False, "/* out scope */ void f() { int aa=4;int a=3; /*c1    \n */ }"),
+        ("/* out scope */ void f() { int a=3; /*c1    \n */ }", False, True, "/* out scope */ void f() { int aa=4;int a=3; /*c1    \n */ }"),
         ("/* out scope */ void f() { int a=3; /*c1    \n */ }", True, True, "/* out scope */ void f() { int aa=4; int a=3; /*c1    \n */ }"),
         ("void f() { /* c1 */ /* c2 */ int a=3;\n}", True, True, "void f() { /* c1 */ int aa=4;\n /* c2 */ int a=3;\n}"),
         ("void f() { /* c1 */ int a=3;\n}", True, True, "void f() { int aa=4;\n /* c1 */ int a=3;\n}"),
@@ -104,8 +104,8 @@ class TestInsertBeforeSingleLine(TestRewrites):
         ("void f() { // c1\n int a=3;\n}", True, True, "void f() { int aa=4;\n // c1\n int a=3;\n}"),
         ("void f() { //cx\n int x=2; //ca\n int a=3; //caa\n int b=4;//cb }", True, True, "void f() { //cx\n int x=2; //ca\n int aa=4;\n int a=3; //caa\n int b=4;//cb }"),
         ("void f() { int a=3;    \n}", True, True, "void f() { int aa=4;\n int a=3;    \n}"),
-        ("void f() { int a=3; /*c1    \n */ }", False, False, "void f() { int aa=4; int a=3; /*c1    \n */ }"),
-        ("void f() { int a=3; /*c1    \n */ }", False, True, "void f() { int aa=4; int a=3; /*c1    \n */ }"),
+        ("void f() { int a=3; /*c1    \n */ }", False, False, "void f() { int aa=4;int a=3; /*c1    \n */ }"),
+        ("void f() { int a=3; /*c1    \n */ }", False, True, "void f() { int aa=4;int a=3; /*c1    \n */ }"),
         ("void f() { int a=3; /*c1    \n */ }", True, False, "void f() { int aa=4; int a=3; /*c1    \n */ }"),
         ("void f() { int a=3; /*c1    \n */ }", True, True, "void f() { int aa=4; int a=3; /*c1    \n */ }"),
         ("void f() { int a=3; //c1    \n}", True, True, "void f() { int aa=4;\n int a=3; //c1    \n}"),
@@ -119,11 +119,11 @@ class TestInsertBeforeSingleLine(TestRewrites):
 class TestInsertBeforeMultiLine(TestRewrites):
 
     @parameterized.expand(list(Factories.extend( [
-        ("/* out scope */ void f() { int a=3; /*c1    \n */ }", False, False, "/* out scope */ void f() { int aa=4;\n int bb=5; int a=3; /*c1    \n */ }"),
-        ("/* out scope */ void f() { int a=3; /*c1    \n */ }", False, True, "/* out scope */ void f() { int aa=4;\n int bb=5; int a=3; /*c1    \n */ }"),
+        ("/* out scope */ void f() { int a=3; /*c1    \n */ }", False, False, "/* out scope */ void f() { int aa=4;\n int bb=5;int a=3; /*c1    \n */ }"),
+        ("/* out scope */ void f() { int a=3; /*c1    \n */ }", False, True, "/* out scope */ void f() { int aa=4;\n int bb=5;int a=3; /*c1    \n */ }"),
         ("/* out scope */ void f() { int a=3; /*c1    \n */ }", True, True, "/* out scope */ void f() { int aa=4;\n int bb=5; int a=3; /*c1    \n */ }"),
-        ("/* indent 2 */ void f() {\n  int a=3; /*c1    \n */ }", False, False, "/* indent 2 */ void f() {\n  int aa=4;\n  int bb=5;  int a=3; /*c1    \n */ }"),
-        ("/* indent 2 */ void f() {\n  int a=3; /*c1    \n */ }", False, True, "/* indent 2 */ void f() {\n  int aa=4;\n  int bb=5;  int a=3; /*c1    \n */ }"),
+        ("/* indent 2 */ void f() {\n  int a=3; /*c1    \n */ }", False, False, "/* indent 2 */ void f() {\n  int aa=4;\n  int bb=5;int a=3; /*c1    \n */ }"),
+        ("/* indent 2 */ void f() {\n  int a=3; /*c1    \n */ }", False, True, "/* indent 2 */ void f() {\n  int aa=4;\n  int bb=5;int a=3; /*c1    \n */ }"),
         ("/* indent 2 */ void f() {\n  int a=3; /*c1    \n */ }", True, True, "/* indent 2 */ void f() {\n  int aa=4;\n  int bb=5;  int a=3; /*c1    \n */ }"),
         ("void f() { /* c1 */ /* c2 */ int a=3;\n}", True, True, "void f() { /* c1 */ int aa=4;\n int bb=5;\n /* c2 */ int a=3;\n}"),
         ("void f() { /* c1 */ int a=3;\n}", True, True, "void f() { int aa=4;\n int bb=5;\n /* c1 */ int a=3;\n}"),
@@ -131,8 +131,8 @@ class TestInsertBeforeMultiLine(TestRewrites):
         ("void f() { // c1\n int a=3;\n}", True, True, "void f() { int aa=4;\n int bb=5;\n // c1\n int a=3;\n}"),
         ("void f() { //cx\n int x=2; //ca\n int a=3; //caa\n int b=4;//cb }", True, True, "void f() { //cx\n int x=2; //ca\n int aa=4;\n int bb=5;\n int a=3; //caa\n int b=4;//cb }"),
         ("void f() { int a=3;    \n}", True, True, "void f() { int aa=4;\n int bb=5;\n int a=3;    \n}"),
-        ("void f() { int a=3; /*c1    \n */ }", False, False, "void f() { int aa=4;\n int bb=5; int a=3; /*c1    \n */ }"),
-        ("void f() { int a=3; /*c1    \n */ }", False, True, "void f() { int aa=4;\n int bb=5; int a=3; /*c1    \n */ }"),
+        ("void f() { int a=3; /*c1    \n */ }", False, False, "void f() { int aa=4;\n int bb=5;int a=3; /*c1    \n */ }"),
+        ("void f() { int a=3; /*c1    \n */ }", False, True, "void f() { int aa=4;\n int bb=5;int a=3; /*c1    \n */ }"),
         ("void f() { int a=3; /*c1    \n */ }", True, False, "void f() { int aa=4;\n int bb=5; int a=3; /*c1    \n */ }"),
         ("void f() { int a=3; /*c1    \n */ }", True, True, "void f() { int aa=4;\n int bb=5; int a=3; /*c1    \n */ }"),
         ("void f() { int a=3; //c1    \n}", True, True, "void f() { int aa=4;\n int bb=5;\n int a=3; //c1    \n}"),
@@ -148,8 +148,8 @@ class TestInsertBeforeMultiLine(TestRewrites):
 class TestInsertAfterSingleLine(TestRewrites):
 
     @parameterized.expand(list(Factories.extend( [
-        ("/* out scope */ void f() { int a=3; /*c1    \n */ }", False, False, "/* out scope */ void f() { int a=3; int aa=4; /*c1    \n */ }"),
-        ("/* out scope */ void f() { int a=3; /*c1    \n */ }", False, True, "/* out scope */ void f() { int a=3; /*c1    \n */ int aa=4; }"),
+        ("/* out scope */ void f() { int a=3; /*c1    \n */ }", False, False, "/* out scope */ void f() { int a=3;int aa=4; /*c1    \n */ }"),
+        ("/* out scope */ void f() { int a=3; /*c1    \n */ }", False, True, "/* out scope */ void f() { int a=3; /*c1    \n */int aa=4; }"),
         ("/* out scope */ void f() { int a=3; /*c1    \n */ }", True, True, "/* out scope */ void f() { int a=3; /*c1    \n */ int aa=4; }"),
         ("void f() { /* c1 */ /* c2 */ int a=3;\n}", True, True, "void f() { /* c1 */ /* c2 */ int a=3;\n int aa=4;\n}"),
         ("void f() { /* c1 */ int a=3;\n}", True, True, "void f() { /* c1 */ int a=3;\n int aa=4;\n}"),
@@ -157,8 +157,8 @@ class TestInsertAfterSingleLine(TestRewrites):
         ("void f() { // c1\n int a=3;\n}", True, True, "void f() { // c1\n int a=3;\n int aa=4;\n}"),
         ("void f() { //cx\nint x=2; //ca\n int a=3; //caa\n int b=4;//cb }", True, True, "void f() { //cx\nint x=2; //ca\n int a=3; //caa\n int aa=4;\n int b=4;//cb }"),
         ("void f() { int a=3;    \n}", True, True, "void f() { int a=3;    \n int aa=4;\n}"),
-        ("void f() { int a=3; /*c1    \n */ }", False, False, "void f() { int a=3; int aa=4; /*c1    \n */ }"),
-        ("void f() { int a=3; /*c1    \n */ }", False, True, "void f() { int a=3; /*c1    \n */ int aa=4; }"),
+        ("void f() { int a=3; /*c1    \n */ }", False, False, "void f() { int a=3;int aa=4; /*c1    \n */ }"),
+        ("void f() { int a=3; /*c1    \n */ }", False, True, "void f() { int a=3; /*c1    \n */int aa=4; }"),
         ("void f() { int a=3; /*c1    \n */ }", True, False, "void f() { int a=3; int aa=4; /*c1    \n */ }"),
         ("void f() { int a=3; /*c1    \n */ }", True, True, "void f() { int a=3; /*c1    \n */ int aa=4; }"),
         ("void f() { int a=3; //c1    \n}", True, True, "void f() { int a=3; //c1    \n int aa=4;\n}"),
@@ -172,11 +172,11 @@ class TestInsertAfterSingleLine(TestRewrites):
 class TestInsertAfterMultiLine(TestRewrites):
 
     @parameterized.expand(list(Factories.extend( [
-        ("/* indent 2 */ void f() {\n  int a=3; /*c1    \n */ }", False, False, "/* indent 2 */ void f() {\n  int a=3;  int aa=4;\n  int bb=5; /*c1    \n */ }"),
-        ("/* indent 2 */ void f() {\n  int a=3; /*c1    \n */ }", False, True, "/* indent 2 */ void f() {\n  int a=3; /*c1    \n */  int aa=4;\n  int bb=5; }"),
+        ("/* indent 2 */ void f() {\n  int a=3; /*c1    \n */ }", False, False, "/* indent 2 */ void f() {\n  int a=3;int aa=4;\n  int bb=5; /*c1    \n */ }"),
+        ("/* indent 2 */ void f() {\n  int a=3; /*c1    \n */ }", False, True, "/* indent 2 */ void f() {\n  int a=3; /*c1    \n */int aa=4;\n  int bb=5; }"),
         ("/* indent 2 */ void f() {\n  int a=3; /*c1    \n */ }", True, True, "/* indent 2 */ void f() {\n  int a=3; /*c1    \n */  int aa=4;\n  int bb=5; }"),
-        ("/* out scope */ void f() { int a=3; /*c1    \n */ }", False, False, "/* out scope */ void f() { int a=3; int aa=4;\n int bb=5; /*c1    \n */ }"),
-        ("/* out scope */ void f() { int a=3; /*c1    \n */ }", False, True, "/* out scope */ void f() { int a=3; /*c1    \n */ int aa=4;\n int bb=5; }"),
+        ("/* out scope */ void f() { int a=3; /*c1    \n */ }", False, False, "/* out scope */ void f() { int a=3;int aa=4;\n int bb=5; /*c1    \n */ }"),
+        ("/* out scope */ void f() { int a=3; /*c1    \n */ }", False, True, "/* out scope */ void f() { int a=3; /*c1    \n */int aa=4;\n int bb=5; }"),
         ("/* out scope */ void f() { int a=3; /*c1    \n */ }", True, True, "/* out scope */ void f() { int a=3; /*c1    \n */ int aa=4;\n int bb=5; }"),
         ("void f() { /* c1 */ /* c2 */ int a=3;\n}", True, True, "void f() { /* c1 */ /* c2 */ int a=3;\n int aa=4;\n int bb=5;\n}"),
         ("void f() { /* c1 */ int a=3;\n}", True, True, "void f() { /* c1 */ int a=3;\n int aa=4;\n int bb=5;\n}"),
@@ -184,8 +184,8 @@ class TestInsertAfterMultiLine(TestRewrites):
         ("void f() { // c1\n int a=3;\n}", True, True, "void f() { // c1\n int a=3;\n int aa=4;\n int bb=5;\n}"),
         ("void f() { //cx\nint x=2; //ca\n int a=3; //caa\n int b=4;//cb }", True, True, "void f() { //cx\nint x=2; //ca\n int a=3; //caa\n int aa=4;\n int bb=5;\n int b=4;//cb }"),
         ("void f() { int a=3;    \n}", True, True, "void f() { int a=3;    \n int aa=4;\n int bb=5;\n}"),
-        ("void f() { int a=3; /*c1    \n */ }", False, False, "void f() { int a=3; int aa=4;\n int bb=5; /*c1    \n */ }"),
-        ("void f() { int a=3; /*c1    \n */ }", False, True, "void f() { int a=3; /*c1    \n */ int aa=4;\n int bb=5; }"),
+        ("void f() { int a=3; /*c1    \n */ }", False, False, "void f() { int a=3;int aa=4;\n int bb=5; /*c1    \n */ }"),
+        ("void f() { int a=3; /*c1    \n */ }", False, True, "void f() { int a=3; /*c1    \n */int aa=4;\n int bb=5; }"),
         ("void f() { int a=3; /*c1    \n */ }", True, False, "void f() { int a=3; int aa=4;\n int bb=5; /*c1    \n */ }"),
         ("void f() { int a=3; /*c1    \n */ }", True, True, "void f() { int a=3; /*c1    \n */ int aa=4;\n int bb=5; }"),
         ("void f() { int a=3; //c1    \n}", True, True, "void f() { int a=3; //c1    \n int aa=4;\n int bb=5;\n}"),
@@ -194,4 +194,4 @@ class TestInsertAfterMultiLine(TestRewrites):
         ("void f() { int x=2; //c1\n int a=3; //caa\n int b=4;//cb }", True, True, "void f() { int x=2; //c1\n int a=3; //caa\n int aa=4;\n int bb=5;\n int b=4;//cb }"),
     ])))   
     def test(self, name, factory: ASTFactory, code: str, include_whitespace, include_comments, expected):
-        self.do_test(ASTRewriter.insert_after, factory, code,'int aa=4;\nint bb=5;', include_whitespace, include_comments, expected)
+        self.do_test(ASTRewriter.insert_after, factory, code, 'int aa=4;\nint bb=5;', include_whitespace, include_comments, expected)

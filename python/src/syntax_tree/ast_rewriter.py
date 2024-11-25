@@ -164,7 +164,7 @@ class _RewriteActions():
         spaces = ' '*indent
         # if flattened_nodes[-1] has a new line after white space then we need to add a new line:
         ext_start_offset, ext_end_offset =  _RewriteActions.__correct_for_comments_and_whitespace(self.content, include_whitespace, include_comments, nodes)
-        white_space = '\n' + spaces if content[ext_end_offset] in b'\n' else spaces
+        white_space = '' if not include_whitespace else '\n' + spaces if content[ext_end_offset] in b'\n' else spaces
         #indent the new content except the first line
         new_content =TextUtils.shift_right(new_content, indent, start_line=1)
 
