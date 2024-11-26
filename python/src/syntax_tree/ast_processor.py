@@ -12,12 +12,12 @@ from .ast_node import ASTNode, ASTNodeType
 T = TypeVar('T')
 
 class ASTProcessor(Generic[ASTNodeType]):
-    def __init__(self, root: ASTNodeType, ast_factory: ASTFactory,  user_objects : dict[str,Any], in_memory=False,) -> None:
+    def __init__(self, root: ASTNodeType, ast_factory: ASTFactory,  in_memory=False,) -> None:
         self.__root_node = root
         self.__rewriter = ASTRewriter(root)
         self.__ast_factory = ast_factory
         self.in_memory = in_memory
-        self.__user_objects = user_objects
+        self.repeat_step = 0
     
     def get_filename(self) -> str:
         return self.__rewriter.get_filename()
@@ -46,14 +46,6 @@ class ASTProcessor(Generic[ASTNodeType]):
     def find_match(self,  *patterns_list: Sequence[ASTNode], recursive=True, exclude_kind=MatchFinder.DEFAULT_EXCLUDE_KIND)-> Stream[PatternMatch]:
         return MatchFinder.find_all(self.__root_node, *patterns_list, recursive=recursive, exclude_kind=exclude_kind)
 
-    def user_object(self, key: str, factory: type[T]) -> T:
-        result = self.__user_objects.get(key)
-        if not result:
-            result = factory()
-            self.__user_objects[key] = result
-        assert isinstance(result, factory), f"Expected {factory} but got {type(result)}"
-        return result
-    
     def has_changed(self) -> bool:
         return self.__rewriter.has_changed()
 
@@ -86,7 +78,7 @@ class ASTProcessor(Generic[ASTNodeType]):
                 f.write(self.__rewriter.apply())
             # TODO check errors
             atu = self.__ast_factory.create(Path(self.get_filename()))
-        return ASTProcessor(atu, self.__ast_factory, self.__user_objects, self.in_memory)
+        return ASTProcessor(atu, self.__ast_factory, self.in_memory)
 
 #main
 if __name__ == '__main__':
