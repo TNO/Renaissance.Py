@@ -3,7 +3,7 @@ from .ast_node import (ASTNode, ASTReference, VisitorResult, ASTNodeType)
 from .ast_finder import (ASTFinder)
 from .ast_shower import (ASTShower)
 from .ast_factory import (ASTFactory)
-from .batch_ast_processor import (BatchASTProcessor, IterableProvider)
+from .batch_ast_processor import (BatchASTProcessor, IterableProvider, AST_FACTORY_AND_ATU, Action)
 from .match_finder import (MatchFinder, PatternMatch)
 from .ast_rewriter import (ASTRewriter)
 from .ast_processor import (ASTProcessor)
@@ -27,5 +27,7 @@ __all__ = [
     'TextUtils',
     'ASTProcessor',
     'BatchASTProcessor',
-    'IterableProvider'
+    'IterableProvider',
+    'AST_FACTORY_AND_ATU',
+    'Action'
 ]
