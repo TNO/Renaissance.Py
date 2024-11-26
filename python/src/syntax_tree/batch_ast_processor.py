@@ -1,32 +1,23 @@
 
-from abc import ABC, abstractmethod
 from functools import partial
-import multiprocessing
-import dill as pickle
+import concurrent.futures
 import re
 from typing import Any, Callable, Iterable, Optional, Sequence, TypeVar
 
 from syntax_tree.ast_processor import ASTProcessor
 from .ast_factory import ASTFactory
 from .ast_node import ASTNodeType
-from .ast_shower import ASTShower
 
 
 T = TypeVar('T')
 
-ATU = tuple[ASTFactory[ASTNodeType],ASTNodeType]
-Action = Callable[[ASTProcessor],None]
-IterableProvider = Callable[[], Iterable[ATU]]
-
+AST_FACTORY_AND_ATU = tuple[ASTFactory[ASTNodeType],ASTNodeType]
+Action = Callable[[ASTProcessor],None|Callable[[],Any]]
+IterableProvider = Callable[[], Iterable[AST_FACTORY_AND_ATU]]
 
 class BatchASTProcessor():
 
-    class HasFinalAction(ABC):
-        @abstractmethod
-        def final_action(self)->None:
-            pass
-
-    def __init__(self, user_objects: Optional[dict[str, Any]] = None, in_memory: bool = False, max_processes=4):
+    def __init__(self, in_memory: bool = False, max_processes=4):
         """
         Initialize the BatchASTProcessor.
 
@@ -35,20 +26,11 @@ class BatchASTProcessor():
             in_memory (bool): Flag to indicate if processing should be done in memory. Defaults to False.
             max_processes (int): The maximum number of processes to use. Defaults to 4.
         """
-        self.user_objects: dict[str,Any] = user_objects if isinstance(user_objects, dict) else {}
         self.in_memory: bool = in_memory
         self.in_memory_files : dict[str,str] ={}
         self.max_processes = max_processes
 
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        for user_object in self.user_objects.values():
-            if isinstance(user_object, BatchASTProcessor.HasFinalAction):
-                user_object.final_action()
-
-    def once(self, iterable: Iterable[ATU]|IterableProvider, actions: Action|Sequence[Action], file_filter: Optional[str|re.Pattern] = None):
+    def once(self, iterable: Iterable[AST_FACTORY_AND_ATU]|IterableProvider, actions: Action|Sequence[Action], file_filter: Optional[str|re.Pattern] = None):
         """
         Processes a given iterable of ATU objects or an IterableProvider with specified actions.
 
@@ -89,32 +71,37 @@ class BatchASTProcessor():
         # use parallel processing possible here
         partial_process_item = partial(process_atu, self=self, actions=actions, in_memory=in_memory, max_repeat=max_repeat)
 
-        for atu in filter( is_eligible, iterable):
-            partial_process_item(atu) # TODO us 
-        # with multiprocessing.Pool(processes=self.max_processes, ) as pool:
-        #     pool._pickle = pickle # type: ignore
-        #     pool.map(partial_process_item, filter( is_eligible, iterable))
+        with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_processes) as executor:
+            for results in executor.map(partial_process_item, filter( is_eligible, iterable)):
+                for callable in results:
+                    # the post processing is done in the main thread
+                    callable()
 
-    def _replace_if_in_memory( self, item: ATU )-> ATU:
+    def _replace_if_in_memory( self, item: AST_FACTORY_AND_ATU )-> AST_FACTORY_AND_ATU:
         if self.in_memory and self.in_memory_files.get(item[1].get_containing_filename()):
             return  item[0], item[0].create_from_text(self.in_memory_files[item[1].get_containing_filename()], item[1].get_containing_filename())
         return item
 
     @staticmethod
-    def __eligible_file( file_filter: Optional[re.Pattern],  item: ATU )-> bool:
+    def __eligible_file( file_filter: Optional[re.Pattern],  item: AST_FACTORY_AND_ATU )-> bool:
         return file_filter is None or file_filter.match(item[1].get_containing_filename()) != None
 
-def process_atu(atu: ATU, self: BatchASTProcessor, actions: Sequence[Action], in_memory: bool, max_repeat: int):
+def process_atu(atu: AST_FACTORY_AND_ATU, self: BatchASTProcessor, actions: Sequence[Action], in_memory: bool, max_repeat: int) -> Sequence[Callable[[],None]]:
     atu = self._replace_if_in_memory(atu)   
-    ast_processor = ASTProcessor(atu[1], atu[0], self.user_objects, in_memory)
+    ast_processor = ASTProcessor(atu[1], atu[0], in_memory)
+    results: Sequence[Callable[[], None]] = []
 
-    for _ in range(max_repeat):
+    for repeat in range(max_repeat):
         for action in actions:
-            action(ast_processor)
+            ast_processor.repeat_step = repeat
+            result = action(ast_processor)
+            if result:
+                results.append(result)
         has_changed = ast_processor.has_changed()
         if not has_changed:
-            return
+            return results
         ast_processor = ast_processor.commit()
         if self.in_memory:
             self.in_memory_files[ast_processor.get_filename()] = ast_processor.apply_to_string()
+    return results
 
