@@ -1,6 +1,8 @@
 #use clang to load and walk a compilation database
 
 from dataclasses import dataclass
+from typing import Callable
+from syntax_tree.recipe_ast_processor import RecipeASTProcessor, after_step, recipe_step, final_action
 from typing_extensions import Iterable, override
 from impl import ClangASTNode, ClangJsonASTNode
 from refactoring import CleanupRefactoring
@@ -101,51 +103,44 @@ class Call:
     callee: str
     calls: str
 
-@dataclass
-class Calls(list[Call], BatchASTProcessor.HasFinalAction):
-    @override
-    def final_action(self):
-        print('example batch analysis:\n')
-        print('Calls:')
-        for call in self:
-            print('    '+call.callee + ' --  calls --> ' + call.calls)
+class AnalysisRecipe:
+    def __init__(self):
+        self._calls = []
 
-def batch_analysis_example():
-    """
-    Example function demonstrating analysis of AST nodes.
-    This function creates a batch processor that processes AST nodes in memory.
-    It defines a `Call` dataclass to represent function calls and a `Calls` dataclass
-    to store a list of `Call` instances. The function `add_function_call` adds a function
-    call to the `Calls` list, and `store_function_call` processes AST nodes to find
-    function call expressions and store them.
-    The batch processor runs the `store_function_call` function on a simple codebase
-    provider and prints the collected function calls.
-    
-    Note that instead of an find_kind also a visitor could be used. 
-    See the ASTNode process method for more information.
-
-    """
-    #generate a batch processor for testing purposes we store into memory
-    with BatchASTProcessor(in_memory=True) as batch_processor:
-    #remove a function to create more unused variables
-
-        def add_function_call(call: ASTNode, calls: Calls):
-            callee = call.get_ancestor('(?i)Function_?Decl')
-            if callee:
-                calls.append(Call(callee.get_name(), call.get_children()[0].get_name()))
+    @recipe_step(order=0)
+    def store_function_call(self, ast_processor: ASTProcessor[ASTNodeType]) -> Callable[[], None]|None:
+        # find all function calls and store them, this routing is invoked in parallel!
+        calls = []
+        ast_processor.find_kind('(?i)Call_?Expr').\
+            for_each(lambda node: AnalysisRecipe._add_function_call(node, calls))
+        # the resulting lambda is invoked single threaded
+        # this kind of mechanism is mainly used to store results from multiple processors
+        # for refactoring operations this is not needed as a refactoring operation is single threaded
+        if calls:
+            return lambda: self._calls.extend(calls)
         
+    @after_step('store_function_call')
+    def just_show_the_method(self):
+        print('called after store_function_call')
 
-        def store_function_call(ast_processor: ASTProcessor[ASTNodeType]):
-            calls = ast_processor.user_object(str(Calls), Calls)
-            ast_processor.find_kind('(?i)Call_?Expr').\
-                for_each(lambda node: add_function_call(node, calls))
+    @final_action()
+    def final_action(self):
+        print('Calls:')
+        for call in self._calls:
+            print('    '+call.callee + ' --  calls --> ' + call.calls)
+    @staticmethod
+    def _add_function_call(call: ASTNode, calls: list[Call]):
+        callee = call.get_ancestor('(?i)Function_?Decl')
+        if callee:
+            calls.append(Call(callee.get_name(), call.get_children()[0].get_name()))
 
-            
-        batch_processor.once(simple_codebase_provider, store_function_call)   
-
+def batch_recipe_example():
+    print('example batch analysis using recipe:\n')
+    recipeAstProcessor = RecipeASTProcessor(AnalysisRecipe(), simple_codebase_provider, r'.*', in_memory=True)
+    recipeAstProcessor.run()
 
 if __name__ == "__main__":
     # a list of example to show batch processing of a code base
     batch_remove_unused_variable_once_example()
     batch_repeat_example()
-    batch_analysis_example()
+    batch_recipe_example()
