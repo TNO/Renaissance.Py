@@ -15,7 +15,7 @@ class TestCleanupRefactoring(unittest.TestCase):
     def test_remove_unused_variables(self, name, factory: ASTFactory[ASTNodeType], input_code, expected_code):
         atu = factory.create_from_text(input_code, 'test.c')
         ASTShower.show_node(atu)
-        ast_refactor = ASTProcessor(atu, factory, user_objects= {}, in_memory=True) 
+        ast_refactor = ASTProcessor(atu, factory, in_memory=True) 
         CleanupRefactoring.remove_unused_variables(ast_refactor)
         result = ast_refactor.commit().apply_to_string()
         self.assertEqual(result, expected_code)
