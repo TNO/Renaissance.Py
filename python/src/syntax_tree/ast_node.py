@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from enum import Enum
+from functools import cache
 from pathlib import Path
 import re
 import sys
@@ -139,6 +140,19 @@ class ASTNode(ABC):
     def get_kind(self) -> str: 
         return self._get_kind()
 
+    def matches_kind(self, node: 'ASTNode') -> bool: 
+        return self._matches_kind(node)
+
+    @cache
+    def get_frozen_properties(self) -> frozenset[tuple[str, Any]]: 
+        def freeze(value):
+            if isinstance(value, dict):
+                return frozenset((k, freeze(v)) for k, v in value.items())
+            if isinstance(value, list):
+                return tuple(freeze(v) for v in value)
+            return value
+        return frozenset(freeze(self._get_properties()))
+
     def get_properties(self) -> dict[str, int|str]: 
         return self._get_properties()
 
@@ -180,6 +194,9 @@ class ASTNode(ABC):
     @abstractmethod
     def _get_kind(self) -> str: 
         pass
+
+    def _matches_kind(self, node: 'ASTNode') -> bool: 
+        return node.get_kind() == self.get_kind()
 
     @abstractmethod
     def _get_properties(self) -> dict[str, int|str]: 
