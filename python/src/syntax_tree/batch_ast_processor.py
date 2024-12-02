@@ -70,7 +70,6 @@ class BatchASTProcessor():
         actions = actions if isinstance(actions, Sequence) else [actions] 
         # use parallel processing possible here
         partial_process_item = partial(process_atu, self=self, actions=actions, in_memory=in_memory, max_repeat=max_repeat)
-
         with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_processes) as executor:
             for results in executor.map(partial_process_item, filter( is_eligible, iterable)):
                 for callable in results:
