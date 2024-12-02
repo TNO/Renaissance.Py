@@ -34,7 +34,7 @@ def remove_unused_variable_using_refactor_method(args):
         #create translation unit
         atu = factory.create(code) if code else factory.create_from_text(example_code, 'test.c')
         #create a Refactor
-        refactor = ASTProcessor(atu, factory, {}, in_memory=True)
+        refactor = ASTProcessor(atu, factory, in_memory=True)
 
         CleanupRefactoring.remove_unused_variables(refactor)
         result = refactor.apply_to_string()
