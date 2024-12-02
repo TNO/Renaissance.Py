@@ -1,5 +1,5 @@
 import re
-from typing import Callable, Iterator, TypeVar
+from typing import Callable, Iterator
 
 from common import Stream
 from .ast_node import ASTNode, ASTNodeType
@@ -26,8 +26,8 @@ class ASTFinder:
 
     @staticmethod
     def __matches_kind(ast_node: ASTNodeType, kind:str|re.Pattern)-> Iterator[ASTNodeType]:
-        pattern = kind if isinstance(kind, re.Pattern) else re.compile(kind)
-        if pattern.match(ast_node.get_kind()):
+        pattern = kind if isinstance(kind, re.Pattern) else re.compile(kind, re.IGNORECASE)
+        if pattern.fullmatch(ast_node.get_kind()):
             yield ast_node
         for child in ast_node.get_children():
             assert isinstance(child, type(ast_node)), f'Expected {type(ast_node)} but got {type(child)}'
