@@ -1,8 +1,10 @@
-from io import StringIO
 from unittest import TestCase
 from parameterized import parameterized
 from syntax_tree import ASTRewriter, CPatternFactory, MatchFinder, ASTFactory, ASTNode, ASTShower
 from typing import Callable, Sequence
+from test.utils_for_tests import compress
+
+from syntax_tree.ast_processor import ASTProcessor
 
 from test.c_cpp.factories import Factories
 
@@ -195,3 +197,40 @@ class TestInsertAfterMultiLine(TestRewrites):
     ])))   
     def test(self, name, factory: ASTFactory, code: str, include_whitespace, include_comments, expected):
         self.do_test(ASTRewriter.insert_after, factory, code, 'int aa=4;\nint bb=5;', include_whitespace, include_comments, expected)
+
+
+class TestComposeReplacement(TestCase):
+
+    @parameterized.expand(Factories.extend([
+    ('if($exp){$$before;b=$d1;$$after;}else{$$before;b=$d2;$$after;}',[],{'$$before; b = ($exp) ? $d1:$d2; $$after;': "int a=1;int b=2;int c=3;int d=4;void f(){c++;b=(a==1)?2:3;d++;}"}),   
+]))
+    def test_args(self, _, factory, statements, extra_declarations, replacement: dict[str, str]):
+        code = """
+        int a = 1;
+        int b = 2;
+        int c = 3;
+        int d = 4;
+        void f(){
+            if (a==1) {
+                c++;
+                b = 2;
+                d++;
+            }
+            else {
+                c++;
+                b = 3;
+                d++;
+            }
+        }
+        """
+        atu = factory.create_from_text(code, 'test.cpp')
+        stmtNodes = CPatternFactory(factory).create_statements(statements, extra_declarations=extra_declarations)
+        matches = MatchFinder.find_all([atu],stmtNodes).\
+            filter(lambda match: match.src_nodes[0].is_part_of_translation_unit()).to_list()
+
+        for match, exp in zip(matches, replacement.items()):
+            rewriter = ASTRewriter(match.src_nodes[0].root)
+            org, expected = exp
+            rewriter.replace(org, match)
+            actual = rewriter.apply_to_string()
+            self.assertEqual(compress(actual), compress(expected))  

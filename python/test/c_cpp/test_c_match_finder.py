@@ -165,39 +165,6 @@ class TestMultiAssignments(TestCMatchFinder):
         matches = self.do_test(factory, code, stmtNodes, recursive=True) # type: ignore
         self.assert_matches(matches, expected_dicts_per_match)
 
-class TestComposeReplacement(TestCMatchFinder):
-
-    @parameterized.expand(Factories.extend([
-    ('if($exp){$$before;b=$d1;$$after;}else{$$before;b=$d2;$$after;}',[],{'$$before; b = ($exp) ? $d1:$d2; $$after;': "c++; b = (a==1) ? 2:3; d++;"}),   
-]))
-    def test_args(self, _, factory, statements, extra_declarations, replacement: dict[str, str]):
-        code = """
-        int a = 1;
-        int b = 2;
-        int c = 3;
-        int d = 4;
-        void f(){
-            if (a==1) {
-                c++;
-                b = 2;
-                d++;
-            }
-            else {
-                c++;
-                b = 3;
-                d++;
-            }
-        }
-        """
-        
-        stmtNodes = CPatternFactory(factory).create_statements(statements, extra_declarations=extra_declarations)
-        matches = self.do_test(factory, code, stmtNodes, recursive=True) # type: ignore
-        for match, exp in zip(matches, replacement.items()):
-            org, expected = exp
-            actual = match.compose_replacement(org)
-            self.assertEqual(actual, expected)  
-
-
 class TestUseAtuToCreatePattern(TestCMatchFinder):
     @parameterized.expand(Factories.extend([
     ('void f() {const char* bar = BAR;}','(?i)Decl_?Stmt', ['const char* bar = BAR;'], {}),   
