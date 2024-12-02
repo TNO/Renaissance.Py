@@ -67,6 +67,9 @@ class Stream(Generic[T]):
         self.__iterable = (x for x in self.__iterable if not func(x) or True)
         return self
 
+    def action(self, func: Callable[[T], Any]) -> 'Stream[T]':
+        return self.peek(func)
+
     def limit(self, max_size: int) -> 'Stream[T]':
         self.__iterable = (x for i, x in enumerate(self.__iterable) if i < max_size)
         return self
