@@ -70,7 +70,7 @@ class ClangJsonASTNode(ASTNode):
         # an fake child is introduced to handle the case where the type of a declaration is not found
         # for example in the case of a base type. 
         # without the fake child pattern matching on types will be difficult
-        self.__insert_children = []
+        self.__inserted_children = []
         type = self.node.get('type')
         if insert_kind == None and  type and not self.node.get('implicit') and re.fullmatch('(Var|Function|CxxMethod)Decl', self._kind):
             if self.node.get('loc'):
@@ -80,7 +80,7 @@ class ClangJsonASTNode(ASTNode):
                 if tokLen != 0:
                     insert_child = ClangJsonASTNode(self.node, self.translation_unit, self, offset, tokLen, 'DeclLoc') 
                     insert_child._children = []
-                    self.__insert_children.append(insert_child) 
+                    self.__inserted_children.append(insert_child) 
             if not ReferenceHelper._get_reference_ids(type): 
                 # deep clone the type node and remove the parentheses
                 base_type = type['qualType'].replace('(', '').replace(')', '').strip()
@@ -88,7 +88,7 @@ class ClangJsonASTNode(ASTNode):
                     length_ref = len(base_type.encode(sys.getdefaultencoding()))
                     insert_child = ClangJsonASTNode(self.node, self.translation_unit, self, self._start_offset, length_ref, "TypeRef") 
                     insert_child._children = []
-                    self.__insert_children.append(insert_child) 
+                    self.__inserted_children.append(insert_child) 
             #add the declaration as node
             # deep clone the type node and remove the parentheses
 
@@ -254,7 +254,7 @@ class ClangJsonASTNode(ASTNode):
     @cache
     def _get_children(self) -> Sequence['ClangJsonASTNode']: 
         if self._children is None:
-            self._children = self.__insert_children + [ ClangJsonASTNode(ClangJsonASTNode._remove_wrapper(n), translation_unit=self.translation_unit, parent=self) for n in self.node.get('inner', []) if not n.get('isImplicit', False)]
+            self._children = self.__inserted_children + [ ClangJsonASTNode(ClangJsonASTNode._remove_wrapper(n), translation_unit=self.translation_unit, parent=self) for n in self.node.get('inner', []) if not n.get('isImplicit', False)]
         return self._children
     
     @override
@@ -342,6 +342,8 @@ class ReferenceHelper:
     @staticmethod
     def create_references(ast_node) -> None:
         assert isinstance(ast_node, ClangJsonASTNode), f'Expected ClangJsonASTNode but got {type(ast_node)}'
+        if ast_node.inserted:
+            return
         references = []
         node_id = ast_node.node['id']
         ast_node.translation_unit._references[node_id] = references
@@ -374,6 +376,9 @@ class ReferenceHelper:
             AssertionError: If the provided ast_node is not an instance of ClangJsonASTNode.
         """
         assert isinstance(ast_node, ClangJsonASTNode), f'Expected ClangJsonASTNode but got {type(ast_node)}'
+        if ast_node.inserted:
+            return
+
         bases = ast_node._get(['bases'], [])
         if not bases:
             bases = [ast_node.node] if ast_node.node.get('type') else None
