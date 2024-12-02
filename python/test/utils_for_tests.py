@@ -12,7 +12,7 @@ def compress(s:str):
     skip_whitespace =  re.sub(r'\s+', ' ',s.replace('\n',''))
     skip_whitespace = re.sub(r'(\W)\s', r'\1',skip_whitespace)
     skip_whitespace = re.sub(r'\s(\W)', r'\1',skip_whitespace)
-    return skip_whitespace
+    return skip_whitespace.strip()
 
 def show_node(node: ASTNode, title:str = ''):
     if VERBOSE:
