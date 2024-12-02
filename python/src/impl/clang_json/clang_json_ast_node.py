@@ -1,6 +1,5 @@
 # create a class that inherits syntax tree ASTNode
 
-from dataclasses import dataclass
 from functools import cache
 import json
 import os
@@ -9,7 +8,7 @@ import re
 import sys
 import tempfile
 from common import Stream
-from syntax_tree import ASTNode, ASTReference
+from syntax_tree import ASTNode, ASTReference, CPPUtils
 from typing import Any, Optional, Sequence, TypeVar
 from typing_extensions import override
 import subprocess
@@ -23,7 +22,7 @@ ID_TAGS = ['id', 'typeAliasDeclId', 'templateDeclId', 'templateSpecializationDec
 
 STMT_PARENTS = [ 'CompoundStmt', 'TranslationUnitDecl' ]
 
-VERBOSE = False
+VERBOSE = True
 
 class ClangJsonASTReference():
     def __init__(self, node_id:str, ref_kind:str, properties:dict[str, Any]) -> None:
@@ -52,13 +51,35 @@ class ClangJsonTranslationUnit():
 class ClangJsonASTNode(ASTNode):
     parse_args=['-fparse-all-comments', '-ferror-limit=0', '-Xclang', '-ast-dump=json', '-fsyntax-only']
 
-    def __init__(self, node: dict[str, Any], translation_unit: ClangJsonTranslationUnit, parent: Optional['ClangJsonASTNode'] = None):
+    def __init__(self, node: dict[str, Any], translation_unit: ClangJsonTranslationUnit, parent: Optional['ClangJsonASTNode'] = None, start_offset: Optional[int] = None, length: Optional[int] = None, insert_kind : Optional[str]=None):
         super().__init__(self if parent is None else parent.root)
         self.node = node
         self._children: Optional[Sequence['ClangJsonASTNode']] = None
         self.parent = parent
         self.translation_unit = translation_unit
-        self.translation_unit._nodes[node['id']] = self
+        # if the node has not been added to the translation unit, add it
+        # a node might already be added if it is split into multiple nodes
+        # an example is for base types like int, char, etc. which are split into multiple nodes
+        if self.translation_unit._nodes.get(node['id']) == None:
+            self.translation_unit._nodes[node['id']] = self
+        self._start_offset = start_offset if start_offset!=None else self.__derive_start_offset()
+        self._end_offset = self._start_offset+length if length!=None else self.__derive_end_offset()
+        self._length = self._end_offset - self._start_offset
+        self._kind = insert_kind if insert_kind != None else self.__derive_kind()
+        # an fake child is introduced to handle the case where the type of a declaration is not found
+        # for example in the case of a base type. 
+        # without the fake child pattern matching on types will be difficult
+        self.__insert_children = []
+        type = self.node.get('type')
+        if insert_kind == None and  type and not self.node.get('implicit') and re.fullmatch('(Var|Function|CxxMethod)Decl', self._kind) and not ReferenceHelper._get_reference_ids(type): 
+            # deep clone the type node and remove the parentheses
+            base_type = type['qualType'].replace('(', '').replace(')', '').strip()
+            if not base_type in CPPUtils.RESERVED_KEYWORDS:
+                return
+            length_ref = len(base_type.encode(sys.getdefaultencoding()))
+            insert_child = ClangJsonASTNode(self.node, self.translation_unit, self, self._start_offset, length_ref, "TypeRef") 
+            insert_child._children = []
+            self.__insert_children.append(insert_child) 
 
     @override
     @staticmethod
@@ -75,6 +96,7 @@ class ClangJsonASTNode(ASTNode):
             
             command = [*extra_args, *ClangJsonASTNode.parse_args]
             json_dump = None
+            length = 0
             if code:
                 if str(file_path) in command:
                     command.remove(str(file_path))
@@ -84,13 +106,16 @@ class ClangJsonASTNode(ASTNode):
                 if not '-' in command:
                     command.append('-')
                 # command.append('-main-file-name=' + str(file_path))
-                result = subprocess.run(command, input=code.encode(sys.getfilesystemencoding()), capture_output=True, cwd=working_dir)
+                input = code.encode(sys.getfilesystemencoding())
+                result = subprocess.run(command, input=input, capture_output=True, cwd=working_dir)
                 json_dump = result.stdout.decode().replace("<stdin>", str(file_path))
+                length = len(input)
             else:
                 if str(file_path) not in command:
                     command.append(str(file_path))
                 result = subprocess.run(command, capture_output=True, text=True, cwd=working_dir) 
                 json_dump = result.stdout  
+                length = os.path.getsize(file_path)
 
             if VERBOSE:
                 temp_dir = tempfile.gettempdir()
@@ -100,7 +125,7 @@ class ClangJsonASTNode(ASTNode):
                     temp_file.write(json_dump)
 
             json_atu = json.loads(json_dump)
-            atu = ClangJsonASTNode(json_atu, translation_unit=ClangJsonTranslationUnit(json_atu, file_name=str(file_path)) )
+            atu = ClangJsonASTNode(json_atu, translation_unit=ClangJsonTranslationUnit(json_atu, file_name=str(file_path)), length=length )
             if code:
                 atu.cache[str(file_path)] = code.encode(sys.getfilesystemencoding())   
             # cache the result of the temp file before deleting it
@@ -139,39 +164,24 @@ class ClangJsonASTNode(ASTNode):
         if self.parent:
             return self.parent.get_containing_filename()
         return EMPTY_STR
-    
+
     @override
     def _get_start_offset(self) -> int: 
-        offset = self._get(['range', 'begin', 'offset'], default=-1)
-        if offset == -1:
-            #we might be dealing with a macro in that case use the expansion location
-            offset = self._get(['range', 'begin', 'expansionLoc', 'offset'], default=0)
-        return offset
-
+        return self._start_offset
 
     @override
-    @cache
     def _get_length(self) -> int: 
-        return self._get_end_offset() - self.get_start_offset()
+        return self._length
 
-    @cache
-    def _get_end_offset(self) -> int: 
-        if(self.get_kind() == 'TranslationUnitDecl'):
-            return len(self.get_binary_file_content(self.get_containing_filename()))
-        offset = self._get(['range', 'end', 'offset'], default=-1)
-        tokLen = self._get(['range', 'end', 'tokLen'], default=-1)
-        if offset == -1:
-            #we might be dealing with a macro in that case use the expansion location
-            offset = self._get(['range', 'end', 'expansionLoc', 'offset'], default=0)
-            tokLen = self._get(['range', 'end', 'expansionLoc', 'tokLen'], default=0)
-
-        return offset + tokLen
+    @override
+    def get_end_offset(self) -> int: 
+        return self._end_offset
 
     @override
     @cache
     def _get_extended_end_offset(self) -> int: 
         try: 
-            endOffset =  self._get_end_offset()
+            endOffset =  self._end_offset
             if (not self._is_statement_or_declaration()) and (self.parent and self.parent.get_kind() in STMT_PARENTS):  
                 content = self.root.get_binary_file_content()
                 while endOffset < len(content) and not content[endOffset-1] in b';':
@@ -184,10 +194,15 @@ class ClangJsonASTNode(ASTNode):
         return re.match('(?i).*(Stmt|Decl)', self.get_kind())
 
     @override
-    @cache
     def _get_kind(self) -> str: 
-        return self.node.get('kind', EMPTY_STR)
-
+        return self._kind
+    
+    @override
+    def _matches_kind(self, node:ASTNode) -> bool: 
+        kind = self._get_kind()
+        return kind == node.get_kind() or\
+           (kind.endswith('Literal') and node=='DeclRefExpr') or\
+           (kind=='DeclRefExpr' and node.get_kind().endswith('Literal'))
     @override
     @cache
     def _get_properties(self) -> dict[str, Any]: 
@@ -223,7 +238,7 @@ class ClangJsonASTNode(ASTNode):
     @cache
     def _get_children(self) -> Sequence['ClangJsonASTNode']: 
         if self._children is None:
-            self._children = [ ClangJsonASTNode(ClangJsonASTNode._remove_wrapper(n), translation_unit=self.translation_unit, parent=self) for n in self.node.get('inner', []) if not n.get('isImplicit', False)]
+            self._children = self.__insert_children + [ ClangJsonASTNode(ClangJsonASTNode._remove_wrapper(n), translation_unit=self.translation_unit, parent=self) for n in self.node.get('inner', []) if not n.get('isImplicit', False)]
         return self._children
     
     @override
@@ -237,6 +252,28 @@ class ClangJsonASTNode(ASTNode):
         if self.get_kind() =='StringLiteral':
             return self._get(['value'], default=EMPTY_STR)
         return self.node.get('name', EMPTY_STR)
+
+    def __derive_start_offset(self) -> int: 
+        offset = self._get(['range', 'begin', 'offset'], default=-1)
+        if offset == -1:
+            #we might be dealing with a macro in that case use the expansion location
+            offset = self._get(['range', 'begin', 'expansionLoc', 'offset'], default=0)
+        return offset
+
+    def __derive_end_offset(self) -> int: 
+        if(self.__derive_kind() == 'TranslationUnitDecl'):
+            return len(self.get_binary_file_content(self.get_containing_filename()))
+        offset = self._get(['range', 'end', 'offset'], default=-1)
+        tokLen = self._get(['range', 'end', 'tokLen'], default=-1)
+        if offset == -1:
+            #we might be dealing with a macro in that case use the expansion location
+            offset = self._get(['range', 'end', 'expansionLoc', 'offset'], default=0)
+            tokLen = self._get(['range', 'end', 'expansionLoc', 'tokLen'], default=0)
+
+        return offset + tokLen
+
+    def __derive_kind(self) -> str: 
+        return self.node.get('kind', EMPTY_STR)
 
     @staticmethod
     def _remove_wrapper(node):

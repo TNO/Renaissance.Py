@@ -7,7 +7,7 @@ from common import Stream
 from syntax_tree import ASTNode, ASTReference
 from typing_extensions import override
 
-from clang.cindex import TranslationUnit, Index, Config
+from clang.cindex import TranslationUnit, Index, Config, CursorKind, TypeKind
 
 EMPTY_DICT = {}
 EMPTY_STR = ''
@@ -65,13 +65,31 @@ class ClangASTNode(ASTNode):
     index = Index.create()
     parse_args=['-fparse-all-comments', '-ferror-limit=0', '-Xclang', '-detailed-preprocessing-record', '-fsyntax-only']
 
-    def __init__(self, node, translation_unit:ClangTranslationUnit,  parent =  None):
+    def __init__(self, node, translation_unit:ClangTranslationUnit,  parent =  None, start_offset: Optional[int] = None, length: Optional[int] = None, insert_kind : Optional[str]=None):
         super().__init__(self if parent is None else parent.root)
         self.node = node
         self._children = None
         self.parent = parent
         self.translation_unit = translation_unit
-        self.translation_unit._nodes[node.hash] = self
+        self.inserted = insert_kind != None
+        # if the node has not been added to the translation unit, add it
+        # a node might already be added if it is split into multiple nodes
+        # an example is for base types like int, char, etc. which are split into multiple nodes
+        if self.node.hash not in self.translation_unit._nodes:
+            self.translation_unit._nodes[node.hash] = self
+        self.__start_offset = start_offset if start_offset!=None else self.__derive_start_offset()
+        self.__length = length if length != None else self.__derive_length()
+        self.__kind = insert_kind if insert_kind != None else self.__derive_kind()
+        # an fake child is introduced to handle the case where the type of a declaration is not found
+        # for example in the case of a base type. 
+        # without the fake child pattern matching on types will be difficult
+        self.__inserted_children = []
+        if insert_kind == None and  not self.node.location.is_in_system_header and self.node.kind.is_declaration() and self.node.type.kind != TypeKind.INVALID and self.node.type.get_declaration().kind is CursorKind.NO_DECL_FOUND:  # type: ignore
+            type = self.node.type if self.node.result_type.kind == TypeKind.INVALID else self.node.result_type # type: ignore
+            length_ref = len(type.spelling.encode(sys.getdefaultencoding()))
+            insert_child = ClangASTNode(self.node, self.translation_unit, self, self.__start_offset, length_ref, CursorKind.TYPE_REF.name)  # type: ignore
+            insert_child._children = []
+            self.__inserted_children.append(insert_child) 
 
     @override
     @staticmethod
@@ -96,7 +114,7 @@ class ClangASTNode(ASTNode):
     @cache
     def _get_name(self) -> str:
         try:
-            if self.get_kind() not in ['CALL_EXPR']:
+            if self.__kind not in ['CALL_EXPR']:
                 return self.node.spelling #TODO fix
         except: 
             pass
@@ -111,29 +129,20 @@ class ClangASTNode(ASTNode):
             return self.node.location.file.name 
         except:
             return EMPTY_STR
-    
-    @override
-    @cache
-    def _get_start_offset(self) -> int: 
-        try: 
-            return self.node.extent.start.offset
-        except:
-            return 0
 
     @override
-    @cache
+    def _get_start_offset(self) -> int: 
+        return self.__start_offset
+
+    @override
     def _get_length(self) -> int: 
-        try: 
-            endOffset =  self.node.extent.end.offset
-            return endOffset - self.get_start_offset()
-        except:
-            return 0
+        return self.__length
 
     @override
     @cache
     def _get_extended_end_offset(self) -> int: 
         try: 
-            endOffset =  self.node.extent.end.offset
+            endOffset =  self.__start_offset + self.__length
             if (not self._is_statement_or_declaration()) and (self.parent and self.parent.get_kind() in STMT_PARENTS):  
                 content = self.root.get_binary_file_content()
                 while endOffset < len(content) and not content[endOffset-1] in b';':
@@ -143,15 +152,17 @@ class ClangASTNode(ASTNode):
             return 0
 
     def _is_statement_or_declaration(self):
-        return re.match('.*(_STMT|_DECL)', self.get_kind())
+        return re.match('.*(_STMT|_DECL|CXX_METHOD)', self.get_kind())
 
     @override
-    @cache
     def _get_kind(self) -> str: 
-        try:
-            return str(self.node.kind.name)
-        except Exception as e:
-            return EMPTY_STR
+        return self.__kind
+
+    @override
+    def _matches_kind(self, node:ASTNode) -> bool: 
+        return self.__kind == node.get_kind() or\
+            (self.__kind.endswith('_LITERAL') and node.get_kind()=='DECL_REF_EXPR') or\
+            (self.__kind=='DECL_REF_EXPR' and node.get_kind().endswith('_LITERAL'))\
 
     @override
     @cache
@@ -210,7 +221,7 @@ class ClangASTNode(ASTNode):
     @cache
     def _get_children(self) -> Sequence['ClangASTNode']: 
         if self._children is None:
-            self._children = [ ClangASTNode(ClangASTNode.remove_wrapper(n), self.translation_unit, self) for n in self.node.get_children()]
+            self._children = self.__inserted_children + [ClangASTNode(ClangASTNode.remove_wrapper(n), self.translation_unit, self) for n in self.node.get_children()]
         return self._children
 
     @override
@@ -234,6 +245,25 @@ class ClangASTNode(ASTNode):
                 kind = str(token.kind).split('.')[-1]
                 if kind in token_kind:
                     result[kind] = token.spelling
+
+    def __derive_start_offset(self) -> int: 
+        try: 
+            return self.node.extent.start.offset
+        except:
+            return 0
+
+    def __derive_length(self) -> int: 
+        try: 
+            endOffset =  self.node.extent.end.offset
+            return endOffset - self.__derive_start_offset()
+        except:
+            return 0
+
+    def __derive_kind(self) -> str: 
+        try:
+            return str(self.node.kind.name)
+        except Exception as e:
+            return EMPTY_STR
 
     @staticmethod
     def remove_wrapper(cursor):
@@ -292,8 +322,6 @@ class ReferenceHelper():
                 references.append(reference)
             except:
                 pass
-
-
 
 if __name__ == "__main__":
     pass
