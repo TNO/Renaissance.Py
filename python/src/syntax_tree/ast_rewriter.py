@@ -115,7 +115,7 @@ class _RewriteActions():
         Returns:
             bool: True if the node is an descendent of any nodes in the rewrite list, False otherwise.
         """
-        return any(node.is_descendent_of(rewrite_node) for rewrite in self.rewrites for rewrite_node in rewrite.nodes)
+        return any(node != rewrite_node and node.is_descendent_of(rewrite_node) for rewrite in self.rewrites for rewrite_node in rewrite.nodes)
 
     def __replace(self, rewriter: Rewriter, new_content: str, nodes: Sequence[ASTNode], include_whitespace: bool, include_comments: bool):
         """
@@ -190,6 +190,9 @@ class _RewriteActions():
         for placeholder, nodes in match.get_nodes().items():
             quoted_placeholder = re.escape(placeholder)
             raw_signature = self.__get_texts(nodes)
+            text_before_first_wildcard = match.patterns[0].get_text().split('$')[0]
+            if text_before_first_wildcard:
+                raw_signature = raw_signature.replace(text_before_first_wildcard, '', 1)
             while placeholder in replacement:
                 pattern = re.compile(r"( *)" + quoted_placeholder)
                 matcher = pattern.search(replacement)
@@ -199,7 +202,7 @@ class _RewriteActions():
                     indent_replacement = raw_signature.replace("\n", "\n" + spaces)
                     index = replacement.index(placeholder)
                     place_holder_length = len(placeholder)
-                    if replacement[index + place_holder_length] == ';':
+                    if PatternMatch.is_multi(placeholder) and replacement[index + place_holder_length] == ';':
                         place_holder_length += 1
                     # replace the placeholder with the indent replacement
                     replacement = replacement[:index] + indent_replacement + replacement[index + place_holder_length:]
@@ -225,7 +228,7 @@ class _RewriteActions():
         if self._should_skip(node):
             return ''
         # the descendants may need to be rewritten as well
-        rewrites = [rewrite for rewrite in self.rewrites if any(node==rewrite_node or node.is_ancestor_of(rewrite_node) for rewrite_node in rewrite.nodes)]
+        rewrites = [rewrite for rewrite in self.rewrites if any(node!=rewrite_node and node.is_ancestor_of(rewrite_node) for rewrite_node in rewrite.nodes)]
         if rewrites:
             rewriter = _RewriteActions(node, self.encoding, self.correct_indent, rewrites)
             return rewriter.apply_to_string()
