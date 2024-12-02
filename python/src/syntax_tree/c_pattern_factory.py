@@ -21,7 +21,6 @@ class CPatternFactory(Generic[ASTNodeType]):
             offset = Stream(refNode.get_children()).\
                 filter(ASTNode.is_part_of_translation_unit).\
                 filter(lambda c: not ASTFinder.matches_kind(c,'(?i)Macro.*|Inclusion_?Directive')).\
-                peek(lambda c:  print("-->"+c.get_kind())).\
                 map(ASTNode.get_start_offset).reduce(min).or_else(0)
             self.language = refNode.get_containing_filename().split('.')[-1]
 
@@ -35,7 +34,7 @@ class CPatternFactory(Generic[ASTNodeType]):
         else:
             self.language = language
             self.header = ''
-        print(self.header)
+        # print(self.header)
 
     @staticmethod
     def remove_indent(text):
@@ -77,7 +76,7 @@ class CPatternFactory(Generic[ASTNodeType]):
         Returns:
             object: The object created by the factory.
         """
-        print(self.header + text)
+        # print(self.header + text)
         return self.factory.create_from_text(self.header + text,  'test.' + self.language)
 
 

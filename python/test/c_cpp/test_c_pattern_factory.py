@@ -26,7 +26,7 @@ class TestExpression(TestCPatternFactory):
     ]))
     def test(self, _, factory, expression):
         patternFactory = CPatternFactory(factory)
-        ASTShower.show_node(patternFactory.create_expression(expression))
+        # ASTShower.show_node(patternFactory.create_expression(expression))
 
 class TestDeclaration(TestCPatternFactory):
 
@@ -122,7 +122,6 @@ class TestUseAtuToCreatePatterns(TestCPatternFactory):
 
         # pick the last statement  fo match
         pattern_root = patternFactory.create(statementText)
-        ASTShower.show_node(pattern_root, include_properties=True)
 
         # the user must pick it's own pattern in this case the last statement
         self.assertTrue(pattern_root.get_children()[-1].is_statement())

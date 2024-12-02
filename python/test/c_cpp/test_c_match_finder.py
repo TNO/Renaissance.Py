@@ -7,6 +7,8 @@ from test.c_cpp.factories import Factories
 
 logger = logging.getLogger(__name__)
 
+debug_mismatches = False
+
 class TestCMatchFinder(TestCase):
 
     SIMPLE_CPP  = """
@@ -37,15 +39,16 @@ class TestCMatchFinder(TestCase):
         #find all if and while statements
         matches = MatchFinder.find_all([atu],patterns,recursive=recursive).\
             filter(lambda match: match.src_nodes[0].is_part_of_translation_unit()).to_list()
-        for match in matches:
-            print(f'\nmatch({[compress(p.get_text()) for p in match.patterns]})'+'{')
-            print(f"  start node: {compress(match.src_nodes[0].get_text())}")
-            for k, vs in match.get_nodes().items():
-                # right align the key
-                print(f"{k.rjust(12)}: {[compress(v.get_text()) for v in vs]}")
-            print('}')
-        print('    expected dict should look like:')
-        print(f'      {[to_string(match.get_nodes()) for match in matches]}')
+        if debug_mismatches:
+            for match in matches:
+                print(f'\nmatch({[compress(p.get_text()) for p in match.patterns]})'+'{')
+                print(f"  start node: {compress(match.src_nodes[0].get_text())}")
+                for k, vs in match.get_nodes().items():
+                    # right align the key
+                    print(f"{k.rjust(12)}: {[compress(v.get_text()) for v in vs]}")
+                print('}')
+            print('    expected dict should look like:')
+            print(f'      {[to_string(match.get_nodes()) for match in matches]}')
         return matches
 
     def assert_matches(self, matches, expected_dicts_per_match):
@@ -204,7 +207,6 @@ class TestUseAtuToCreatePattern(TestCMatchFinder):
         # ASTShower.show_node(statementsAtu, include_properties=True)
         result = MatchFinder.find_all([atu], [statements], recursive=True).\
             filter(lambda match: match.get_names() == names).\
-            peek(lambda match: print(str(match.get_names()))).\
             map(lambda match: match.src_nodes[0]).\
             filter(ASTNode.is_part_of_translation_unit).\
             map(ASTNode.get_text).to_list() 
