@@ -15,6 +15,10 @@ class ASTShower:
         return buffer.getvalue()
 
     @staticmethod
+    def store_node(filename: str, ast_node: ASTNode, include_properties = False):
+        with open(filename, 'w') as f: f.write(ASTShower.get_node(ast_node, include_properties))
+
+    @staticmethod
     def _process_node( output: StringIO, indent, node: ASTNode, include_properties):
         if not node.is_part_of_translation_unit():
             return
