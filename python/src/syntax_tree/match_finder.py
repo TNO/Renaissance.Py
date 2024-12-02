@@ -1,7 +1,8 @@
+from dataclasses import dataclass
 from functools import cache
 import re
 import sys
-from typing import Iterator, Optional, Sequence
+from typing import Callable, Iterable, Iterator, Optional, Sequence
 
 from common import Stream
 from collections import Counter
@@ -29,8 +30,9 @@ class MatchUtils:
         return False
 
     @staticmethod
-    def is_kind_match(src: ASTNode, cmp: ASTNode)-> bool:
-        return src.get_kind() == cmp.get_kind()
+    def _is_wildcard_match(src: ASTNode, pattern: ASTNode)-> bool:
+        return pattern.matches_kind(src)#\
+            #and pattern.get_frozen_properties().issubset(src.get_frozen_properties())
 
     @staticmethod
     def is_wildcard(target: ASTNode|str)-> bool:
@@ -48,12 +50,16 @@ class MatchUtils:
         return MatchUtils.is_single_wildcard(target.get_name())
 
     @staticmethod
-    def exclude_nodes_by_kind(exclude_kind:str, nodes: Sequence[ASTNode]):
+    def exclude_nodes_by_kind(exclude_kind:str, nodes: Iterable[ASTNode])-> Iterable[ASTNode]:
         if exclude_kind:
-            filtered_nodes = [node for node in nodes if re.search(exclude_kind,node.get_kind(), re.IGNORECASE)==None]
-            return filtered_nodes
+            return filter(lambda node: re.search(exclude_kind,node.get_kind(), re.IGNORECASE)==None, nodes)
         return nodes
 
+    @staticmethod
+    def exclude_nodes_by_kind_as_sequence(exclude_kind:str, nodes: Iterable[ASTNode])-> Sequence[ASTNode]:
+        if exclude_kind:
+            return tuple(filter(lambda node: re.search(exclude_kind,node.get_kind(), re.IGNORECASE)==None, nodes))
+        return nodes if isinstance(nodes, Sequence) else tuple(nodes) 
 
     @staticmethod
     def get_multi_wildcard_keys(patterns: Sequence[ASTNode], result: list[str] = []) -> list[str]:
@@ -148,7 +154,7 @@ class PatternMatch:
     @cache
     def get_names(self) -> dict[str, list[str]]:
         return {k:[vi.get_name() for vi in v] for k,v in self.get_nodes().items()}
-
+    
     @cache
     def get_locations(self) -> dict[str, tuple[int,int]]:
         result = {}
@@ -161,31 +167,38 @@ class PatternMatch:
             if MatchUtils.is_wildcard(key_match.key):
                 result[key_match.key] = (location, length)
         return result
-    
-    def compose_replacement(self, replacement:str)-> str:
-        for placeholder, raw_signature in self.get_raw_signatures().items():
-            quoted_placeholder = re.escape(placeholder)
-            while placeholder in replacement:
-                pattern = re.compile(r"( *)" + quoted_placeholder)
-                matcher = pattern.search(replacement)
+    # utilities methods
+    def get_name(self, key:str) -> str:
+        result = self.get_names().get(key, [])
+        assert len(result) == 1, f"Only one name is expected for key {key}"
+        return result[0]
 
-                if matcher:
-                    spaces = matcher[1]
-                    indent_replacement = raw_signature.replace("\n", "\n" + spaces)
-                    index = replacement.index(placeholder)
-                    # replace the placeholder with the indent replacement
-                    replacement = replacement[:index] + indent_replacement + replacement[index + len(placeholder):]
-                else:
-                    print("Match doesn't match unexpectedly")
-        return replacement
+    def get_text(self, key:str) -> str:
+        result = self.get_nodes().get(key, [])
+        assert len(result) == 1, f"Only one node is expected for key {key}"
+        return result[0].get_text()
+
+    def get_as_int(self, key:str) -> int:
+        return int(self.get_text(key))
+
+    def get_as_float(self, key:str) -> float:
+        return float(self.get_text(key))
+    
+    @staticmethod
+    def is_multi(placeholder:str):
+        return MatchUtils.is_multi_wildcard(placeholder)
         
+@dataclass(frozen=True)        
+class ConstrainedPattern:
+    patterns: Sequence[ASTNode]|ASTNode
+    eligible: Callable[[PatternMatch], bool]
 
 class MatchFinder:
 
     DEFAULT_EXCLUDE_KIND = 'comment'
 
     @staticmethod
-    def find_all(src_nodes: Sequence[ASTNode]|ASTNode, *patterns_list: Sequence[ASTNode], recursive=True, exclude_kind=DEFAULT_EXCLUDE_KIND)-> Stream[PatternMatch]:
+    def find_all(src_nodes: Sequence[ASTNode]|ASTNode, *patterns_list: Sequence[ASTNode]|ConstrainedPattern, recursive=True, exclude_kind=DEFAULT_EXCLUDE_KIND, part_of_translation_unit=True)-> Stream[PatternMatch]:
         """
         Finds all pattern matches in the given source nodes.
 
@@ -200,24 +213,34 @@ class MatchFinder:
         """
         if not isinstance(src_nodes, Sequence): 
             src_nodes = [src_nodes]
-        return Stream(MatchFinder.__find_all(src_nodes, *patterns_list, recursive=recursive, exclude_kind=exclude_kind))
+        src_filter = lambda nodes: MatchUtils.exclude_nodes_by_kind_as_sequence(exclude_kind,nodes) 
+        if part_of_translation_unit:
+            src_filter = lambda nodes: list(filter(ASTNode.is_part_of_translation_unit, MatchUtils.exclude_nodes_by_kind(exclude_kind,nodes)))\
+
+        return Stream(MatchFinder.__find_all(src_nodes, *patterns_list, recursive=recursive, src_filter=src_filter))
 
     @staticmethod
-    def match_pattern(src_nodes: Sequence[ASTNode]|ASTNode, patterns: Sequence[ASTNode], exclude_kind=DEFAULT_EXCLUDE_KIND)-> Optional[PatternMatch]:
+    def match_pattern(src_nodes: Sequence[ASTNode]|ASTNode, patterns: Sequence[ASTNode]|ConstrainedPattern, src_filter: Callable[[Sequence[ASTNode]],Sequence[ASTNode]]= lambda n:n)-> Optional[PatternMatch]:
         """
         Matches a given source node or list of source nodes against a list of pattern nodes.
 
         Args:
             src_nodes (Sequence[ASTNode] | ASTNode): The source node or list of source nodes to be matched.
             patterns (Sequence[ASTNode]): The list of pattern nodes to match against the source nodes.
-            exclude_kind: The kind of nodes to exclude from matching, defaults to DEFAULT_EXCLUDE_KIND.
+            src_filter: The kind of nodes to exclude from matching.
 
         Returns:
             Optional[PatternMatch]: A PatternMatch object if a match is found, otherwise None.
         """
+        eligible = lambda x: True
         if isinstance(src_nodes, ASTNode):
             src_nodes = [src_nodes]
-        patterns = MatchUtils.exclude_nodes_by_kind(exclude_kind,patterns) # exclude nodes by kind
+        if isinstance(patterns, ConstrainedPattern):
+            eligible = patterns.eligible
+            patterns = patterns.patterns if isinstance(patterns.patterns, Sequence) else [patterns.patterns]
+        if isinstance(patterns, ASTNode):
+            patterns = [patterns]
+        patterns = src_filter(patterns) # exclude nodes by kind
         keys = MatchUtils.get_multi_wildcard_keys(patterns)
         multiplicity  = {key:0 for key,count in Counter(keys).items() if count > 1}
                 # remove the last item from multiplicity because it the last item is already greedy
@@ -225,26 +248,27 @@ class MatchFinder:
             multiplicity.popitem()
         has_next_multiplicity = True
         while  has_next_multiplicity:
-            pattern_match = MatchFinder.__match_pattern(src_nodes, patterns, 0, multiplicity, None, exclude_kind=exclude_kind)
-            if pattern_match:
+            pattern_match = MatchFinder.__match_pattern(src_nodes, patterns, 0, multiplicity, None, src_filter=src_filter)
+            if pattern_match and eligible(pattern_match):
                 return  pattern_match
             has_next_multiplicity = MatchUtils.next_multiplicity(multiplicity)
         return None
 
     @staticmethod
-    def is_match(src1: ASTNode|Sequence[ASTNode], src2: ASTNode|Sequence[ASTNode], exclude_kind=DEFAULT_EXCLUDE_KIND) -> bool:
+    def is_match(src1: ASTNode|Sequence[ASTNode], src2: ASTNode|Sequence[ASTNode], src_filter:Callable[[Sequence[ASTNode]],Sequence[ASTNode]]=lambda n: n) -> bool:
         if isinstance(src2, ASTNode):
             src2 = [src2]
-        return MatchFinder.match_pattern(src1, src2, exclude_kind=exclude_kind) is not None
+        return MatchFinder.match_pattern(src1, src2, src_filter=src_filter) is not None
 
     @staticmethod
-    def __find_all(src_nodes: Sequence[ASTNode], *patterns_list: Sequence[ASTNode], recursive:bool, exclude_kind:str)-> Iterator[PatternMatch]:
-        target_nodes = MatchUtils.exclude_nodes_by_kind(exclude_kind,src_nodes) # exclude nodes by kind
+    def __find_all(src_nodes: Sequence[ASTNode], *patterns_list: Sequence[ASTNode]|ConstrainedPattern, recursive:bool, src_filter:Callable[[Sequence[ASTNode]],Sequence[ASTNode]])-> Iterator[PatternMatch]:
+        src_nodes = src_filter(src_nodes) # exclude nodes by kind and optionally is part of translation unit 
+        target_nodes = src_nodes 
 
         while target_nodes:
             pattern_match = None
             for patterns in patterns_list:
-                pattern_match = MatchFinder.match_pattern(target_nodes, patterns, exclude_kind)
+                pattern_match = MatchFinder.match_pattern(target_nodes, patterns, src_filter)
                 if pattern_match:
                     break # only one match is needed
 
@@ -257,10 +281,12 @@ class MatchFinder:
         #recursively evaluate all children
         if recursive:
             for node in src_nodes:
-                yield from MatchFinder.__find_all(node.get_children(), *patterns_list, recursive=recursive, exclude_kind=exclude_kind)
+                children = node.get_children()
+                if children:
+                    yield from MatchFinder.__find_all(children, *patterns_list, recursive=recursive, src_filter=src_filter)
 
     @staticmethod
-    def __match_pattern(src_nodes: Sequence[ASTNode], patterns: Sequence[ASTNode],  depth, multiplicity: dict[str,int], patternMatch: Optional[PatternMatch], exclude_kind:str)-> Optional[PatternMatch]:
+    def __match_pattern(src_nodes: Sequence[ASTNode], patterns: Sequence[ASTNode],  depth, multiplicity: dict[str,int], patternMatch: Optional[PatternMatch], src_filter:Callable[[Sequence[ASTNode]],Sequence[ASTNode]])-> Optional[PatternMatch]:
         if patternMatch is None:
             patternMatch = PatternMatch(src_nodes, patterns)
 
@@ -300,18 +326,18 @@ class MatchFinder:
                 # multiplicity of multi-wildcards is 0 so first try to match the next pattern with the current srcNodes
                 # a clone is needed to keep the current state of the match when the next match fails
 
-                nextMatch = MatchFinder.__match_pattern(src_nodes, patterns[1:], depth, multiplicity, patternMatch.clone(), exclude_kind)
+                nextMatch = MatchFinder.__match_pattern(src_nodes, patterns[1:], depth, multiplicity, patternMatch.clone(), src_filter)
                 if nextMatch:                 
                     return nextMatch  
             wildcard_match._add_node(src_node)
 
             if VERBOSE: do_log(indent, "** $$WILDCARD **",pattern_node.get_text(),"** MATCHES **",raw(wildcard_match.nodes))
-            return MatchFinder.__match_pattern(src_nodes[1:], patterns, depth, multiplicity, patternMatch, exclude_kind)
+            return MatchFinder.__match_pattern(src_nodes[1:], patterns, depth, multiplicity, patternMatch, src_filter)
         elif MatchUtils.is_single_wildcard(pattern_node) or MatchUtils.is_match(src_node, pattern_node):
             if pattern_node.is_statement() and not src_node.is_statement(): # type: ignore
                 return None
             # if the pattern node has children then kind must match (to distinct for instance while and if)
-            if pattern_node.get_children() and (not MatchUtils.is_kind_match(src_node, pattern_node)):
+            if pattern_node.get_children() and (not MatchUtils._is_wildcard_match(src_node, pattern_node)):
                 return None
             
             if MatchUtils.is_single_wildcard(pattern_node):
@@ -326,14 +352,14 @@ class MatchFinder:
 
             # the current match is found if the current pattern and src node match and their children match
             if pattern_node.get_children():
-                src_child_nodes = MatchUtils.exclude_nodes_by_kind(exclude_kind,src_node.get_children())
-                pattern_child_nodes = MatchUtils.exclude_nodes_by_kind(exclude_kind,pattern_node.get_children())
-                foundMatch =  MatchFinder.__match_pattern(src_child_nodes, pattern_child_nodes, depth+1, multiplicity,patternMatch,exclude_kind)
+                src_child_nodes = src_filter(src_node.get_children())
+                pattern_child_nodes = src_filter(pattern_node.get_children())
+                foundMatch =  MatchFinder.__match_pattern(src_child_nodes, pattern_child_nodes, depth+1, multiplicity,patternMatch,src_filter)
                 if not foundMatch:
                     return None
                 patternMatch = foundMatch # update the pattern match with the result of the child
             # invariant: a match is found if the current pattern and src node match and their successors match
-            return MatchFinder.__match_pattern(src_nodes[1:], patterns[1:], depth, multiplicity, patternMatch, exclude_kind)
+            return MatchFinder.__match_pattern(src_nodes[1:], patterns[1:], depth, multiplicity, patternMatch, src_filter)
         return None
 
 
