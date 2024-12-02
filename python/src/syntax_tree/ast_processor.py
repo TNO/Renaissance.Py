@@ -1,10 +1,10 @@
 
 from pathlib import Path
-from typing import Any, Callable, Generic, Iterator, Sequence, TypeVar
+from typing import Callable, Generic, Iterator, Sequence, TypeVar
 
 from common.stream import Stream
 from .ast_finder import ASTFinder
-from .match_finder import MatchFinder, PatternMatch
+from .match_finder import ConstrainedPattern, MatchFinder, PatternMatch
 from .ast_rewriter import ASTRewriter
 from .ast_factory import ASTFactory
 from .ast_node import ASTNode, ASTNodeType
@@ -19,6 +19,14 @@ class ASTProcessor(Generic[ASTNodeType]):
         self.in_memory = in_memory
         self.repeat_step = 0
     
+    @property
+    def factory(self):
+        return self.__ast_factory
+
+    @property
+    def node(self):
+        return self.__root_node
+
     def get_filename(self) -> str:
         return self.__rewriter.get_filename()
     
@@ -43,7 +51,7 @@ class ASTProcessor(Generic[ASTNodeType]):
     def find_kind(self, kind: str) -> Stream[ASTNodeType]:
         return ASTFinder.find_kind(self.__root_node, kind)
 
-    def find_match(self,  *patterns_list: Sequence[ASTNode], recursive=True, exclude_kind=MatchFinder.DEFAULT_EXCLUDE_KIND)-> Stream[PatternMatch]:
+    def find_match(self,  *patterns_list: Sequence[ASTNode]|ConstrainedPattern, recursive=True, exclude_kind=MatchFinder.DEFAULT_EXCLUDE_KIND)-> Stream[PatternMatch]:
         return MatchFinder.find_all(self.__root_node, *patterns_list, recursive=recursive, exclude_kind=exclude_kind)
 
     def has_changed(self) -> bool:
