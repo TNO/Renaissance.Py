@@ -52,7 +52,8 @@ class TestASTReference(TestCase):
         # in clang json the VarDecl node contains the reference
         # use show_node to understand the difference
         # ASTShower.show_node(ast)
-        using = ASTFinder.find_kind(ast, '(?i)(Type)_?Ref').find_first().or_else(None)
+        using = ASTFinder.find_kind(ast, '(?i)(Type)_?Ref').\
+            filter(lambda n: len(n.get_references())>0).find_first().or_else(None)
         if not using:
             using = ASTFinder.find_kind(ast, '(?i)(Parm)?(Var)?_?Decl').find_first().get()
         assert isinstance(using, ASTNode)
@@ -64,7 +65,6 @@ class TestASTReference(TestCase):
         referenced_by = ref_node.get_referenced_by()
         self.assertGreater(len(referenced_by), 0)  # clang python returns 2 references, clang json 1
         self.assertTrue(using in [r.get_node() for r in referenced_by])
-        ASTShower.show_node(ast)
 
     @parameterized.expand(Factories.extend([
         ('class A {}; class B: public A {};','cpp'),
