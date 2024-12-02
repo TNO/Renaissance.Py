@@ -5,31 +5,62 @@ from syntax_tree import ASTFactory, CPatternFactory, MatchFinder, ASTRewriter
 from impl import ClangASTNode, ClangJsonASTNode
 from syntax_tree import ASTShower, TextUtils, ASTFinder
 
-example_code = TextUtils.strip_indent("""
-    void f1(int a, int b, int c);
-    void f2(int a, int c);
-    void f(){
-        const int a = 1;
-        const int b = 2;
-        int isAOne = a==1;
-        int c = 0, d=0;
-        if (a==1) {
+example_code = """
+void f1(int a, int b, int c);
+void f2(int a, int c);
+void f(){
+    const int a = 1;
+    const int b = 2;
+    int isAOne = a==1;
+    int c = 0, d=0;
+    if (a==1) {
+        d++;
+        if(a==1){
             d++;
-            if(a==1){
-                d++;
-                c=d;
-                f1(a,b,c);
-            }
-        }
-        if (a==2) {
-            c++;
+            c=d;
             f1(a,b,c);
         }
+    }
+    if (a==2) {
+        c++;
         f1(a,b,c);
     }
-""")
+    f1(a,b,c);
+}
+""".strip()
 
-def main(args):
+expected_result = """
+void f1(int a, int b, int c);
+void f2(int a, int c);
+void f(){
+    const int a = 1;
+    const int b = 2;
+    int isAOne = a==1;
+    int c = 0, d=0;
+    //changed if expr to const
+    if(isAOne){
+       d++;
+       //changed if expr to const
+       if(isAOne){
+          d++;
+          c=d;
+          //changed function f1 to f2
+          f2(a,c)
+       }
+    }
+    if (a==2) {
+        c++;
+        //changed function f1 to f2
+        f2(a,c)
+    }
+    //changed function f1 to f2
+    f2(a,c)
+}
+""".strip()
+
+
+
+def refactor_with_nested_compositions(args):
     # the first argument is the code to be parsed
     code = args[1] if len(args) > 1 else ''
 
@@ -80,8 +111,11 @@ def main(args):
         for_each(refactor)
     
     #print the rewritten code
-    print(rewriter.apply_to_string())
+    result = rewriter.apply_to_string()
+    return result
 
 if __name__ == "__main__":
     import sys
-    main(sys.argv)
+    result =  refactor_with_nested_compositions(sys.argv)
+    print(result)
+

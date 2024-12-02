@@ -105,3 +105,8 @@ class TextUtils:
     @staticmethod
     def to_clipboard(text:str):
         pyperclip.copy(text)
+
+    @staticmethod
+    def to_file(filename:str, text:str):
+        with open(filename  , 'w') as f:
+            f.write(text)   
