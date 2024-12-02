@@ -22,7 +22,7 @@ ID_TAGS = ['id', 'typeAliasDeclId', 'templateDeclId', 'templateSpecializationDec
 
 STMT_PARENTS = [ 'CompoundStmt', 'TranslationUnitDecl' ]
 
-VERBOSE = False
+VERBOSE = True
 
 class ClangJsonASTReference():
     def __init__(self, node_id:str, ref_kind:str, properties:dict[str, Any]) -> None:
@@ -57,6 +57,7 @@ class ClangJsonASTNode(ASTNode):
         self._children: Optional[Sequence['ClangJsonASTNode']] = None
         self.parent = parent
         self.translation_unit = translation_unit
+        self.inserted = insert_kind != None
         # if the node has not been added to the translation unit, add it
         # a node might already be added if it is split into multiple nodes
         # an example is for base types like int, char, etc. which are split into multiple nodes
@@ -71,15 +72,26 @@ class ClangJsonASTNode(ASTNode):
         # without the fake child pattern matching on types will be difficult
         self.__insert_children = []
         type = self.node.get('type')
-        if insert_kind == None and  type and not self.node.get('implicit') and re.fullmatch('(Var|Function|CxxMethod)Decl', self._kind) and not ReferenceHelper._get_reference_ids(type): 
+        if insert_kind == None and  type and not self.node.get('implicit') and re.fullmatch('(Var|Function|CxxMethod)Decl', self._kind):
+            if self.node.get('loc'):
+                loc = self.node['loc']
+                offset = loc['offset'] if loc.get('offset') else self._get(['loc','expansionLoc', 'offset'],  0)
+                tokLen = loc['tokLen'] if loc.get('tokLen') else self._get(['loc','expansionLoc', 'tokLen'],  0)
+                if tokLen != 0:
+                    insert_child = ClangJsonASTNode(self.node, self.translation_unit, self, offset, tokLen, 'DeclLoc') 
+                    insert_child._children = []
+                    self.__insert_children.append(insert_child) 
+            if not ReferenceHelper._get_reference_ids(type): 
+                # deep clone the type node and remove the parentheses
+                base_type = type['qualType'].replace('(', '').replace(')', '').strip()
+                if base_type in CPPUtils.RESERVED_KEYWORDS:
+                    length_ref = len(base_type.encode(sys.getdefaultencoding()))
+                    insert_child = ClangJsonASTNode(self.node, self.translation_unit, self, self._start_offset, length_ref, "TypeRef") 
+                    insert_child._children = []
+                    self.__insert_children.append(insert_child) 
+            #add the declaration as node
             # deep clone the type node and remove the parentheses
-            base_type = type['qualType'].replace('(', '').replace(')', '').strip()
-            if not base_type in CPPUtils.RESERVED_KEYWORDS:
-                return
-            length_ref = len(base_type.encode(sys.getdefaultencoding()))
-            insert_child = ClangJsonASTNode(self.node, self.translation_unit, self, self._start_offset, length_ref, "TypeRef") 
-            insert_child._children = []
-            self.__insert_children.append(insert_child) 
+
 
     @override
     @staticmethod
@@ -215,6 +227,8 @@ class ClangJsonASTNode(ASTNode):
     @override
     @cache
     def _get_referenced_by(self) -> Sequence[ASTReference['ClangJsonASTNode']]:
+        if self.inserted:
+            return []
         self.translation_unit.lazy_create_references(self)
         return Stream(self.translation_unit._referenced_by.get(self.node['id'], EMPTY_LIST))\
             .map(lambda ref: ASTReference(self.translation_unit._nodes[ref.node_id], ref.ref_kind, ref.properties)).to_list()
@@ -222,6 +236,8 @@ class ClangJsonASTNode(ASTNode):
     @override
     @cache
     def _get_references(self)-> Sequence[ASTReference['ClangJsonASTNode']]:
+        if self.inserted:
+            return []
         self.translation_unit.lazy_create_references(self)
         return Stream(self.translation_unit._references.get(self.node['id'], EMPTY_LIST))\
             .map(lambda ref: ASTReference(self.translation_unit._nodes[ref.node_id], ref.ref_kind, ref.properties)).to_list()

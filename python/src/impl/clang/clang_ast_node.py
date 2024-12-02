@@ -84,12 +84,20 @@ class ClangASTNode(ASTNode):
         # for example in the case of a base type. 
         # without the fake child pattern matching on types will be difficult
         self.__inserted_children = []
-        if insert_kind == None and  not self.node.location.is_in_system_header and self.node.kind.is_declaration() and self.node.type.kind != TypeKind.INVALID and self.node.type.get_declaration().kind is CursorKind.NO_DECL_FOUND:  # type: ignore
-            type = self.node.type if self.node.result_type.kind == TypeKind.INVALID else self.node.result_type # type: ignore
-            length_ref = len(type.spelling.encode(sys.getdefaultencoding()))
-            insert_child = ClangASTNode(self.node, self.translation_unit, self, self.__start_offset, length_ref, CursorKind.TYPE_REF.name)  # type: ignore
+        if insert_kind == None and  not self.node.location.is_in_system_header and self.node.kind.is_declaration() and self.node.type.kind != TypeKind.INVALID:  # type: ignore
+            loc_offset: int = self.node.location.offset
+            length = len(self.node.spelling.encode(sys.getdefaultencoding()))
+            insert_child = ClangASTNode(self.node, self.translation_unit, self, loc_offset, length, 'DECL_LOC') 
             insert_child._children = []
             self.__inserted_children.append(insert_child) 
+            if self.node.type.get_declaration().kind is CursorKind.NO_DECL_FOUND: # type: ignore
+                type = self.node.type if self.node.result_type.kind == TypeKind.INVALID else self.node.result_type # type: ignore
+                length_ref = len(type.spelling.encode(sys.getdefaultencoding()))
+                insert_child = ClangASTNode(self.node, self.translation_unit, self, self.__start_offset, length_ref, CursorKind.TYPE_REF.name)  # type: ignore
+                insert_child._children = []
+                self.__inserted_children.append(insert_child) 
+
+            
 
     @override
     @staticmethod
