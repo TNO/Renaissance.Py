@@ -1,6 +1,8 @@
 
 import re
 
+import pyperclip
+
 
 class TextUtils:
 
@@ -99,3 +101,7 @@ class TextUtils:
                 break
             indent -= 1
         return offset - indent - 1
+    
+    @staticmethod
+    def to_clipboard(text:str):
+        pyperclip.copy(text)

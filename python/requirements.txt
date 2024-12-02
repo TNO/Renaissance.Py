@@ -4,3 +4,4 @@ clang
 libclang
 parameterized
 coverage
+pyperclip
