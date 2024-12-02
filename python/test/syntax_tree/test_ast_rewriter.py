@@ -50,8 +50,9 @@ class TestRewrites(TestCase):
             print("\nOriginal:" + code.replace('\n', '\\n').replace('\r', '\\r'))
             print("Expected:" + expected.replace('\n', '\\n').replace('\r', '\\r'))
             print("  Actual:" + actual.replace('\n', '\\n').replace('\r', '\\r'))
-        code_test_input = f'("{code}", {include_whitespace}, {include_comments}, "{actual}"),'.replace('\n', '\\n').replace('\r', '\\r')
-        print("\nFull parameterized:" +code_test_input)
+        
+            code_test_input = f'("{code}", {include_whitespace}, {include_comments}, "{actual}"),'.replace('\n', '\\n').replace('\r', '\\r')
+            print("\nFull parameterized:" +code_test_input)
 
         self.assertEquals(expected, rewriter.apply_to_string())
 
