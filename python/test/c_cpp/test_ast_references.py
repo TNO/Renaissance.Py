@@ -5,39 +5,68 @@ from .factories import Factories
 
 class TestASTReference(TestCase):
 
+    @parameterized.expand(Factories.extend([
+        ('class A{ public: A(int x); }; void f(){ A a(3);}',...),
+        ('class A{ public: A(int x); }; A::A(int x){} void f(){ A a(3);}',...),
+        ('int a(); void f(){ int x = a();}',...),
+        ('int a(); int a(){return 0;} void f(){ int x = a();}',...),
+        ('int a(){return 0;} void f(){ int x = a();}',...),
+    ]))
+    def test_definition_declaration_references(self, _, factory, code, *args):
+        ast =  factory.create_from_text(code, "test.cpp")
+        ASTShower.store_node('c:/temp/c0.txt', ast)
+        call = ASTFinder.find_kind(ast, '(Call|CXXConstruct)Expr').find_first().get()
+        assert isinstance(call, ASTNode)
+        refs = call.get_references()
+        refs = [r for r in refs if ASTFinder.matches_kind(r.get_node(), '.*(Constructor|Function).*')]
+        
+        self.assertGreater(len(refs), 0)
+        for ref in refs:
+            ref_node = ref.get_node()
+            self.assertEqual(ref_node.get_name().lower(), 'a')
+            referenced_by = ref_node.get_referenced_by()
+            self.assertGreater(len(referenced_by), 0)  # clang python return 2 references, clang json 1
+            #clang python has a crosse reference to call clang json to the DeclRefExpr child of the call
+            self.assertTrue(call in [r.get_node() for r in referenced_by] or call.get_children()[0] in [r.get_node() for r in referenced_by])
+        declarations = ASTFinder.find_kind(ast, '.*(Constructor|Function_?Decl).*').\
+            filter(lambda f: f.get_name()!='f').\
+            to_list()
+        self.assertGreater(len(declarations), 0)
+
     @parameterized.expand(Factories.factories)
     def test_call_reference(self, _, factory):
         ast =  factory.create_from_text('void f(){} void f1(){ f();}', "test.c")
-        call = ASTFinder.find_kind(ast, '(?i)Decl_?Ref_?Expr').find_first().get()
+        call = ASTFinder.find_kind(ast, 'Decl_?Ref_?Expr').find_first().get()
         assert isinstance(call, ASTNode)
         refs = call.get_references()
         self.assertEqual(len(refs), 1)
         ref = refs[0]
         ref_node = ref.get_node()
-        self.assertEqual(ASTFinder.matches_kind(ref_node, '(?i)Function_?Decl'), True)
+        self.assertEqual(ASTFinder.matches_kind(ref_node, 'Function_?Decl'), True)
         self.assertEqual(ref_node.get_name(), 'f')
         referenced_by = ref_node.get_referenced_by()
         self.assertGreater(len(referenced_by), 0)  # clang python return 2 references, clang json 1
         self.assertTrue(call in [r.get_node() for r in referenced_by])
 
     @parameterized.expand(Factories.extend([
-        ('int a = 3; int b = a;',...),
+        ('const int a = 3; const int b = a;',...),
         ('int a = 3; void f() {int b = a;}',...),
         ('void f() {int a = 3; int b = a;}',...),
         ('void f(int a) {int b = a;}',...),
     ]))
     def test_var_reference(self, _, factory, code, *args):
         ast =  factory.create_from_text(code, "test.c")
-        using = ASTFinder.find_kind(ast, '(?i)Decl_?Ref_?Expr').find_first().get()
+        using = ASTFinder.find_kind(ast, 'Decl_?Ref_?Expr').find_first().get()
         assert isinstance(using, ASTNode)
         refs = using.get_references()
         self.assertEqual(len(refs), 1)
         ref = refs[0]
         ref_node = ref.get_node()
-        self.assertEqual(ASTFinder.matches_kind(ref_node, '(?i)(Parm)?(Var)?_?Decl'), True)
+        self.assertEqual(ASTFinder.matches_kind(ref_node, '(Parm)?(Var)?_?Decl'), True)
         referenced_by = ref_node.get_referenced_by()
         self.assertGreater(len(referenced_by), 0)  # clang python return 2 references, clang json 1
         self.assertTrue(using in [r.get_node() for r in referenced_by])
+
 
 
     @parameterized.expand(Factories.extend([
@@ -52,16 +81,16 @@ class TestASTReference(TestCase):
         # in clang json the VarDecl node contains the reference
         # use show_node to understand the difference
         # ASTShower.show_node(ast)
-        using = ASTFinder.find_kind(ast, '(?i)(Type)_?Ref').\
+        using = ASTFinder.find_kind(ast, '(Type)_?Ref').\
             filter(lambda n: len(n.get_references())>0).find_first().or_else(None)
         if not using:
-            using = ASTFinder.find_kind(ast, '(?i)(Parm)?(Var)?_?Decl').find_first().get()
+            using = ASTFinder.find_kind(ast, '(Parm)?(Var)?_?Decl').find_first().get()
         assert isinstance(using, ASTNode)
         refs = using.get_references()
         self.assertEqual(len(refs), 1)
         ref = refs[0]
         ref_node = ref.get_node()
-        self.assertEqual(ASTFinder.matches_kind(ref_node, '(?i)(CXXRecord|Typedef|Class)?_?Decl'), True)
+        self.assertEqual(ASTFinder.matches_kind(ref_node, '(CXXRecord|Typedef|Class)?_?Decl'), True)
         referenced_by = ref_node.get_referenced_by()
         self.assertGreater(len(referenced_by), 0)  # clang python returns 2 references, clang json 1
         self.assertTrue(using in [r.get_node() for r in referenced_by])
@@ -81,9 +110,9 @@ class TestASTReference(TestCase):
         # in clang json there is a bases/base element 
         # use show_node to understand the difference
         # ASTShower.show_node(ast)
-        using = ASTFinder.find_kind(ast, '(?i)(Type)_?Ref').find_first().or_else(None)
+        using = ASTFinder.find_kind(ast, '(Type)_?Ref').find_first().or_else(None)
         if not using:
-            using = ASTFinder.find_kind(ast, '(?i)(CXX_?Record)_?Decl').\
+            using = ASTFinder.find_kind(ast, '(CXX_?Record)_?Decl').\
                 filter(lambda n: n.get_name() == 'B').\
                 find_first().get()
         assert isinstance(using, ASTNode)
@@ -91,7 +120,7 @@ class TestASTReference(TestCase):
         self.assertEqual(len(refs), 1)
         ref = refs[0]
         ref_node = ref.get_node()
-        self.assertEqual(ASTFinder.matches_kind(ref_node, '(?i)(CXX_?Record|Class|Struct)_?Decl'), True)
+        self.assertEqual(ASTFinder.matches_kind(ref_node, '(CXX_?Record|Class|Struct)_?Decl'), True)
         referenced_by = ref_node.get_referenced_by()
         self.assertGreater(len(referenced_by), 0)  # clang python return 2 references, clang json 1
         self.assertTrue(using in [r.get_node() for r in referenced_by])
