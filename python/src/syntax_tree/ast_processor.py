@@ -33,19 +33,19 @@ class ASTProcessor(Generic[ASTNodeType]):
     def get_root(self) -> ASTNodeType:
         return self.__root_node
     
-    def replace(self, new_content:str, target: ASTNode|Sequence[ASTNode]|PatternMatch, include_whitespace: bool = True, include_comments: bool = True):
+    def replace(self, new_content:str, target: ASTNode|Sequence[ASTNode]|PatternMatch|Sequence[PatternMatch], include_whitespace: bool = True, include_comments: bool = True):
         self.__rewriter.replace(new_content, target, include_whitespace, include_comments)
 
-    def remove(self, target: ASTNode|Sequence[ASTNode]|PatternMatch, include_whitespace: bool = True, include_comments: bool = True):
+    def remove(self, target: ASTNode|Sequence[ASTNode]|PatternMatch|Sequence[PatternMatch], include_whitespace: bool = True, include_comments: bool = True):
         self.__rewriter.remove(target, include_whitespace, include_comments)
 
-    def insert_before(self,new_content:str, target: ASTNode|Sequence[ASTNode]|PatternMatch, include_whitespace: bool = True, include_comments: bool = True):
+    def insert_before(self,new_content:str, target: ASTNode|Sequence[ASTNode]|PatternMatch|Sequence[PatternMatch], include_whitespace: bool = True, include_comments: bool = True):
         self.__rewriter.insert_before(new_content, target, include_whitespace, include_comments)
 
-    def insert_after(self,new_content:str, target: ASTNode|Sequence[ASTNode]|PatternMatch, include_whitespace: bool = True, include_comments: bool = True):
+    def insert_after(self,new_content:str, target: ASTNode|Sequence[ASTNode]|PatternMatch|Sequence[PatternMatch], include_whitespace: bool = True, include_comments: bool = True):
         self.__rewriter.insert_after(new_content, target, include_whitespace, include_comments)
     
-    def find_all(self, function: Callable[[ASTNodeType], Iterator[ASTNodeType]]) -> Stream[ASTNodeType]:
+    def find_all(self, function: Callable[[ASTNodeType], Iterator[ASTNodeType]|bool]) -> Stream[ASTNodeType]:
         return ASTFinder.find_all(self.__root_node, function)
 
     def find_kind(self, kind: str) -> Stream[ASTNodeType]:
