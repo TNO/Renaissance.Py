@@ -19,7 +19,7 @@ class StreamOptional(Generic[T]):
             raise ValueError("No value present")
         return self.__value
     
-    def or_else(self, other: T) -> T:
+    def or_else(self, other: U) -> T|U:
         return self.__value if not self.__value is None else other
     
   
