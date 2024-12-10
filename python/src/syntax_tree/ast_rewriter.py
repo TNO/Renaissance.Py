@@ -26,16 +26,16 @@ class ASTRewriter():
     def get_filename(self) -> str:
         return self.__filename
     
-    def replace(self, new_content:str, target: ASTNode|Sequence[ASTNode]|PatternMatch, include_whitespace: bool = True, include_comments: bool = True):
+    def replace(self, new_content:str, target: ASTNode|Sequence[ASTNode]|PatternMatch|Sequence[PatternMatch], include_whitespace: bool = True, include_comments: bool = True):
         self.__rewrites.add(_RewriteActionType.REPLACE, target, new_content, include_whitespace, include_comments)
 
-    def remove(self, target: ASTNode|Sequence[ASTNode]|PatternMatch, include_whitespace: bool = True, include_comments: bool = True):
+    def remove(self, target: ASTNode|Sequence[ASTNode]|PatternMatch|Sequence[PatternMatch], include_whitespace: bool = True, include_comments: bool = True):
         self.__rewrites.add(_RewriteActionType.REMOVE, target, '', include_whitespace, include_comments)
 
-    def insert_before(self,new_content:str, target: ASTNode|Sequence[ASTNode]|PatternMatch, include_whitespace: bool = True, include_comments: bool = True):
+    def insert_before(self,new_content:str, target: ASTNode|Sequence[ASTNode]|PatternMatch|Sequence[PatternMatch], include_whitespace: bool = True, include_comments: bool = True):
         self.__rewrites.add(_RewriteActionType.INSERT_BEFORE, target, new_content, include_whitespace, include_comments)
 
-    def insert_after(self,new_content:str, target: ASTNode|Sequence[ASTNode]|PatternMatch, include_whitespace: bool = True, include_comments: bool = True):
+    def insert_after(self,new_content:str, target: ASTNode|Sequence[ASTNode]|PatternMatch|Sequence[PatternMatch], include_whitespace: bool = True, include_comments: bool = True):
         self.__rewrites.add(_RewriteActionType.INSERT_AFTER, target, new_content, include_whitespace, include_comments)
 
     def apply_to_string(self) -> str:
@@ -57,26 +57,38 @@ class _RewriteAction():
     """
     Data container for  a rewrite action to be applied later on to the AST.
     """
-    def __init__(self, action: _RewriteActionType, target: ASTNode|Sequence[ASTNode]|PatternMatch, replacement: str, include_whitespace:bool, include_comments:bool) -> None:
+    def __init__(self, action: _RewriteActionType, target: ASTNode|Sequence[ASTNode]|PatternMatch|Sequence[PatternMatch], replacement: str, include_whitespace:bool, include_comments:bool) -> None:
         self.action = action
         self.target = target
         self.replacement = replacement
-        self.nodes = target if isinstance(target, Sequence) else target.src_nodes if isinstance(target, PatternMatch) else [target]
+        self.nodes = self._get_nodes(target)
         self.include_whitespace = include_whitespace
         self.include_comments = include_comments
 
+    @staticmethod
+    def _get_nodes(target:  ASTNode|Sequence[ASTNode]|PatternMatch|Sequence[PatternMatch]) -> Sequence[ASTNode]:
+        if (isinstance(target, ASTNode)):
+            return [target]
+        if (isinstance(target, PatternMatch)):
+            return target.src_nodes
+        if (isinstance(target, Sequence)) and len(target) > 0:
+            if isinstance(target[0], ASTNode):
+                return [n for n in target if isinstance(n, ASTNode)]
+            if isinstance(target[-1], PatternMatch):
+                return target[-1].src_nodes
+        return []
 class _RewriteActions():
     """
     Data container for a list of rewrite actions to be applied later on to the AST.
     """
-    def __init__(self, nodes: ASTNode|Sequence[ASTNode], encoding:str, correct_indent: bool, rewrites: Optional[list[_RewriteAction]] = None ) -> None:
+    def __init__(self, nodes: ASTNode|Sequence[ASTNode]|PatternMatch, encoding:str, correct_indent: bool, rewrites: Optional[list[_RewriteAction]] = None ) -> None:
         self.rewrites = rewrites if rewrites else []
         self.nodes = nodes if isinstance(nodes, Sequence) else nodes.src_nodes if isinstance(nodes, PatternMatch) else [nodes]
         self.encoding = encoding
         self.content = self.nodes[0].root.get_binary_file_content()[self.nodes[0].get_start_offset():self.nodes[-1].get_extended_end_offset()]
         self.correct_indent = correct_indent
     
-    def add(self, action: _RewriteActionType, target: ASTNode|Sequence[ASTNode]|PatternMatch, replacement: str, include_whitespace: bool, include_comments: bool):   
+    def add(self, action: _RewriteActionType, target: ASTNode|Sequence[ASTNode]|PatternMatch|Sequence[PatternMatch], replacement: str, include_whitespace: bool, include_comments: bool):   
         rewrite = _RewriteAction(action, target, replacement, include_whitespace, include_comments)
         self.add_rewrite(rewrite)
 
@@ -88,7 +100,8 @@ class _RewriteActions():
 
         for rewrite in self.rewrites:
             # skip nested rewrites as they they are handled recursively by the parent rewrite
-            if any(self.__is_ancestor_in_nodes(n) for n in rewrite.nodes):
+            # except for if the rewrite node is the root node
+            if any(self.__is_ancestor_in_nodes(n) for n in rewrite.nodes if n != self.nodes[0]):
                continue
             new_content, nodelist = self.__prepare_replacement_content(rewrite.replacement, rewrite.target)  
             if rewrite.action == _RewriteActionType.REPLACE:
@@ -127,7 +140,7 @@ class _RewriteActions():
         """
         if not nodes:
             return
-        start_offset, end_offset = _RewriteActions.__correct_for_comments_and_whitespace(self.content, include_whitespace, include_comments, nodes)
+        start_offset, end_offset = _RewriteActions.__correct_for_comments_and_whitespace(self.nodes[0].get_start_offset(), self.content, include_whitespace, include_comments, nodes)
         indent = nodes[0].get_indent()
         if self.correct_indent:
             new_content = TextUtils.shift_right(new_content, indent, start_line=1)
@@ -148,7 +161,7 @@ class _RewriteActions():
         if not nodes:
             return  
         indent = nodes[0].get_indent()
-        start_offset, end_offset = _RewriteActions.__correct_for_comments_and_whitespace(self.content, include_whitespace, include_comments, nodes)
+        start_offset, end_offset = _RewriteActions.__correct_for_comments_and_whitespace(self.nodes[0].get_start_offset(), self.content, include_whitespace, include_comments, nodes)
         #remove the indent in front of it
         start_offset -= indent
         #remove the line if it is empty
@@ -163,7 +176,7 @@ class _RewriteActions():
         indent = TextUtils.get_spaces_before(content, nodes[0].get_start_offset())
         spaces = ' '*indent
         # if flattened_nodes[-1] has a new line after white space then we need to add a new line:
-        ext_start_offset, ext_end_offset =  _RewriteActions.__correct_for_comments_and_whitespace(self.content, include_whitespace, include_comments, nodes)
+        ext_start_offset, ext_end_offset =  _RewriteActions.__correct_for_comments_and_whitespace(self.nodes[0].get_start_offset(), self.content, include_whitespace, include_comments, nodes)
         white_space = '' if not include_whitespace else '\n' + spaces if content[ext_end_offset] in b'\n' else spaces
         #indent the new content except the first line
         new_content =TextUtils.shift_right(new_content, indent, start_line=1)
@@ -183,11 +196,11 @@ class _RewriteActions():
             new_content (str): The new content to insert in the specified range.
         """
         enc = self.encoding
-        start_offset = self.nodes[0].get_start_offset()
-        rewriter.replace(start-start_offset, end-start_offset, new_content.encode(enc))    
+        rewriter.replace(start, end, new_content.encode(enc))    
     
-    def __compose_replacement(self, replacement:str, match: PatternMatch)-> str:
-        for placeholder, nodes in match.get_nodes().items():
+    def __compose_replacement(self, replacement:str, matches: Sequence[PatternMatch])-> str:
+        all_placeholders = {p:n for m in matches for p,n in m.get_nodes().items()}
+        for placeholder, nodes in all_placeholders.items():
             quoted_placeholder = re.escape(placeholder)
             raw_signature = self.__get_texts(nodes)
             while placeholder in replacement:
@@ -196,9 +209,21 @@ class _RewriteActions():
 
                 if matcher:
                     spaces = matcher[1]
-                    indent_replacement = raw_signature.replace("\n", "\n" + spaces)
-                    index = replacement.index(placeholder)
                     place_holder_length = len(placeholder)
+                    index = replacement.index(placeholder)
+                    #TODO a regex may be provided between backticks and the groupes are used. This needs a better design
+                    # A preferable solution is to pass a transformer function to the compose_replacement
+                    if(replacement[index + place_holder_length] == '`'):
+                        # ` ` means get regex
+                        endIndex = replacement.index('`', index + place_holder_length + 1)
+                        if not endIndex:
+                            raise ValueError("No closing ` found")
+                        regex = replacement[index + place_holder_length + 1:endIndex]
+                        regexMatch = re.match(regex, raw_signature)
+                        if regexMatch:
+                            raw_signature = ''.join(regexMatch.groups())    
+                        place_holder_length = endIndex - index + 1
+                    indent_replacement = raw_signature.replace("\n", "\n" + spaces)
                     if PatternMatch.is_multi(placeholder) and replacement[index + place_holder_length] == ';':
                         place_holder_length += 1
                     # replace the placeholder with the indent replacement
@@ -224,8 +249,12 @@ class _RewriteActions():
     def __get_text(self, node:ASTNode) -> str:
         if self._should_skip(node):
             return ''
+        
+        if node==self.nodes[0]:
+            return node.get_text()
         # the descendants may need to be rewritten as well
-        rewrites = [rewrite for rewrite in self.rewrites if any(node==rewrite_node or node.is_ancestor_of(rewrite_node) for rewrite_node in rewrite.nodes)]
+#        rewrites = [rewrite for rewrite in self.rewrites if any(node.is_ancestor_of(rewrite_node) for rewrite_node in rewrite.nodes)]
+        rewrites = [rewrite for rewrite in self.rewrites if any(node.is_ancestor_of(rewrite_node) for rewrite_node in rewrite.nodes)]
         if rewrites:
             rewriter = _RewriteActions(node, self.encoding, self.correct_indent, rewrites)
             return rewriter.apply_to_string()
@@ -234,7 +263,7 @@ class _RewriteActions():
     def __prepare_replacement_content(self, new_content:str, target):
         node_list = []
         if isinstance(target, PatternMatch):
-            new_content = self.__compose_replacement(new_content, target)
+            new_content = self.__compose_replacement(new_content, [target])
             node_list = target.src_nodes
         else:
             node_list = [target] if isinstance(target, ASTNode) else target
@@ -256,33 +285,36 @@ class _RewriteActions():
 
 
     @staticmethod
-    def __correct_for_comments_and_whitespace(content:bytes, include_whitespace: bool, include_comments: bool, nodes: Sequence[ASTNode]):
-        start_offset = nodes[0].get_start_offset()
-        end_offset = nodes[-1].get_extended_end_offset()
+    def __correct_for_comments_and_whitespace(offset: int,  content:bytes, include_whitespace: bool, include_comments: bool, nodes: Sequence[ASTNode]):
+        start_offset = nodes[0].get_start_offset() - offset
+        end_offset = nodes[-1].get_extended_end_offset() - offset
         if include_comments:
             precedingNode = nodes[0].get_preceding_sibling()
             parent = nodes[0].get_parent()
             start_comment_location = 0
             if precedingNode:
                 # start after the comment of the preceding node
-                start_comment_location = precedingNode.get_extended_end_offset()
+                start_comment_location = precedingNode.get_extended_end_offset() - offset
                 preceding_end_offset = _RewriteActions.__get_comment_after_location(start_comment_location, start_offset, content)
                 if preceding_end_offset != (-1, -1):
                     start_comment_location = preceding_end_offset[1]
             elif parent:
-                start_comment_location = parent.get_start_offset()
+                start_comment_location = parent.get_start_offset() - offset
             # get the comment belonging to the preceding node
             extended_location = _RewriteActions._get_comment_location(start_comment_location, start_offset,content)
             if extended_location != (-1, -1):
                 start_offset = extended_location[0]
             nextSibling = nodes[-1].get_next_sibling()
-            end_comment_location = nextSibling.get_start_offset() if nextSibling else parent.get_end_offset() if parent else len(content)    
+            end_comment_location = nextSibling.get_start_offset() - offset if nextSibling else parent.get_end_offset() - offset if parent else len(content)    
             location_after_comment = _RewriteActions.__get_comment_after_location(end_offset, end_comment_location, content)
             if location_after_comment != (-1, -1):
                 end_offset = location_after_comment[1]
         if include_whitespace:
             end_offset = _RewriteActions.__extend_with_whitespace(end_offset, content)
         return start_offset,end_offset  
+
+    def cor_offset(self, offset):
+        return offset - self.nodes[0].get_start_offset()
 
     @staticmethod
     def _get_comment_location(start_offset: int,stop_offset: int, content: bytes) -> tuple[int,int]:
