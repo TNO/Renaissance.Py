@@ -45,16 +45,16 @@ void f(){
           d++;
           c=d;
           //changed function f1 to f2
-          f2(a,c)
+          f2(a,c);
        }
     }
     if (a==2) {
         c++;
         //changed function f1 to f2
-        f2(a,c)
+        f2(a,c);
     }
     //changed function f1 to f2
-    f2(a,c)
+    f2(a,c);
 }
 """.strip()
 
@@ -88,7 +88,7 @@ def refactor_with_nested_compositions(args):
         if(isAOne){
             $$stmts;
         }""")
-    pattern2replacement = '//changed function f1 to f2\nf2($a,$c)'
+    pattern2replacement = '//changed function f1 to f2\nf2($a,$c);'
    
     # show node and patterns enable include properties to show the properties of the nodes
     include_properties = True
@@ -96,22 +96,28 @@ def refactor_with_nested_compositions(args):
     ASTShower.show_node(pattern1[0], include_properties)
     ASTShower.show_node(pattern2[0], include_properties)
 
-    #create an ASTRewriter
-    rewriter = ASTRewriter(atu)
+    result = None
+    while atu:
+        #create an ASTRewriter
+        rewriter = ASTRewriter(atu)
 
-    # create a refactoring that use different replacement code for different patterns
-    def refactor(match):
-        if match.patterns == pattern1:
-            return rewriter.replace(pattern1replacement, match)
-        return rewriter.replace(pattern2replacement, match)
+        # create a refactoring that use different replacement code for different patterns
+        def refactor(match):
+            if match.patterns == pattern1:
+                return rewriter.replace(pattern1replacement, match)
+            return rewriter.replace(pattern2replacement, match)
+            
+        # search matches for pattern1 and pattern2 and replace them using the refactor function
+        MatchFinder.find_all(atu, pattern1, pattern2).\
+            peek(lambda match: print('peek: ' +str(match.get_raw_signatures()))).\
+            for_each(refactor)
         
-    # search matches for pattern1 and pattern2 and replace them using the refactor function
-    MatchFinder.find_all(atu, pattern1, pattern2).\
-        peek(lambda match: print('peek: ' +str(match.get_raw_signatures()))).\
-        for_each(refactor)
-    
-    #print the rewritten code
-    result = rewriter.apply_to_string()
+        #print the rewritten code
+        result = rewriter.apply_to_string()
+        if rewriter.has_changed():
+            atu = factory.create_from_text(result, 'test.c')
+        else:
+            atu = None
     return result
 
 if __name__ == "__main__":
