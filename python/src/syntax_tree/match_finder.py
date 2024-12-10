@@ -7,9 +7,11 @@ from typing import Callable, Iterable, Iterator, Optional, Sequence
 from common import Stream
 from collections import Counter
 
-from .ast_node import ASTNode
+from .ast_node import ASTNode, ASTReference
 
 VERBOSE = False
+DEFAULT_EXCLUDE_KIND = 'comment'
+
 
 class MatchUtils:
 
@@ -50,16 +52,17 @@ class MatchUtils:
         return MatchUtils.is_single_wildcard(target.get_name())
 
     @staticmethod
-    def exclude_nodes_by_kind(exclude_kind:str, nodes: Iterable[ASTNode])-> Iterable[ASTNode]:
+    def exclude_nodes_by_kind(exclude_kind:str, nodes: Sequence[ASTNode])-> Sequence[ASTNode]:
         if exclude_kind:
-            return filter(lambda node: re.search(exclude_kind,node.get_kind(), re.IGNORECASE)==None, nodes)
+            return [node for node in nodes if re.search(exclude_kind,node.get_kind(), re.IGNORECASE)==None]
+            # return filter(lambda node: re.search(exclude_kind,node.get_kind(), re.IGNORECASE)==None, nodes)
         return nodes
 
     @staticmethod
-    def exclude_nodes_by_kind_as_sequence(exclude_kind:str, nodes: Iterable[ASTNode])-> Sequence[ASTNode]:
+    def exclude_nodes_by_kind_as_sequence(exclude_kind:str, nodes: Sequence[ASTNode])-> Sequence[ASTNode]:
         if exclude_kind:
-            return tuple(filter(lambda node: re.search(exclude_kind,node.get_kind(), re.IGNORECASE)==None, nodes))
-        return nodes if isinstance(nodes, Sequence) else tuple(nodes) 
+            return [node for node in nodes if re.search(exclude_kind,node.get_kind(), re.IGNORECASE)==None]
+        return nodes
 
     @staticmethod
     def get_multi_wildcard_keys(patterns: Sequence[ASTNode], result: list[str] = []) -> list[str]:
@@ -184,6 +187,28 @@ class PatternMatch:
     def get_as_float(self, key:str) -> float:
         return float(self.get_text(key))
     
+    def get_references(self) -> Sequence[ASTReference[ASTNode]]:
+        return [ ref for n in self.src_nodes for ref in n.get_references()]
+    
+    def get_referenced_by(self) -> Sequence[ASTReference[ASTNode]]:
+        return [ ref for n in self.src_nodes for ref in n.get_referenced_by()]
+
+    def match_referenced_by(self, *patterns_list: 'Sequence[ASTNode]|ConstrainedPattern', recursive=True, exclude_kind=DEFAULT_EXCLUDE_KIND, part_of_translation_unit=True) -> Stream['PatternMatch']:
+        return Stream(self._match_referenced_by(patterns_list, recursive, exclude_kind, part_of_translation_unit))
+
+    def match_references(self, *patterns_list: 'Sequence[ASTNode]|ConstrainedPattern', recursive=True, exclude_kind=DEFAULT_EXCLUDE_KIND, part_of_translation_unit=True) -> Stream['PatternMatch']:
+        return Stream(self._match_references(patterns_list, recursive, exclude_kind, part_of_translation_unit))
+
+    def _match_referenced_by(self, patterns_list: 'Sequence[Sequence[ASTNode]|ConstrainedPattern]' , recursive, exclude_kind, part_of_translation_unit) -> Iterable['PatternMatch']:
+        for n in self.src_nodes:
+            for ref in n.get_referenced_by():
+                yield from MatchFinder.find_all_strict(ref.get_node(), patterns_list, recursive, exclude_kind, part_of_translation_unit).to_iterable()
+
+    def _match_references(self, patterns_list, recursive, exclude_kind, part_of_translation_unit) -> Iterable['PatternMatch']:
+        for n in self.src_nodes:
+            for ref in n.get_references():
+                yield from MatchFinder.find_all_strict([ref.get_node()], patterns_list, recursive, exclude_kind, part_of_translation_unit).to_iterable()
+
     @staticmethod
     def is_multi(placeholder:str):
         return MatchUtils.is_multi_wildcard(placeholder)
@@ -199,6 +224,10 @@ class MatchFinder:
 
     @staticmethod
     def find_all(src_nodes: Sequence[ASTNode]|ASTNode, *patterns_list: Sequence[ASTNode]|ConstrainedPattern, recursive=True, exclude_kind=DEFAULT_EXCLUDE_KIND, part_of_translation_unit=True)-> Stream[PatternMatch]:
+        return MatchFinder.find_all_strict(src_nodes, patterns_list, recursive=recursive, exclude_kind=exclude_kind, part_of_translation_unit=part_of_translation_unit)
+
+    @staticmethod
+    def find_all_strict(src_nodes: Sequence[ASTNode]|ASTNode, patterns_list: Sequence[Sequence[ASTNode]|ConstrainedPattern], recursive=True, exclude_kind=DEFAULT_EXCLUDE_KIND, part_of_translation_unit=True)-> Stream[PatternMatch]:
         """
         Finds all pattern matches in the given source nodes.
 
@@ -213,11 +242,12 @@ class MatchFinder:
         """
         if not isinstance(src_nodes, Sequence): 
             src_nodes = [src_nodes]
-        src_filter = lambda nodes: MatchUtils.exclude_nodes_by_kind_as_sequence(exclude_kind,nodes) 
-        if part_of_translation_unit:
-            src_filter = lambda nodes: list(filter(ASTNode.is_part_of_translation_unit, MatchUtils.exclude_nodes_by_kind(exclude_kind,nodes)))\
+        def src_filter(nodes: Sequence[ASTNode]):
+            if not part_of_translation_unit:
+                return MatchUtils.exclude_nodes_by_kind(exclude_kind,nodes)
+            return [ node for node in MatchUtils.exclude_nodes_by_kind_as_sequence(exclude_kind,nodes) if node.is_part_of_translation_unit()]
 
-        return Stream(MatchFinder.__find_all(src_nodes, *patterns_list, recursive=recursive, src_filter=src_filter))
+        return Stream(MatchFinder.__find_all(src_nodes, patterns_list, recursive=recursive, src_filter=src_filter))
 
     @staticmethod
     def match_pattern(src_nodes: Sequence[ASTNode]|ASTNode, patterns: Sequence[ASTNode]|ConstrainedPattern, src_filter: Callable[[Sequence[ASTNode]],Sequence[ASTNode]]= lambda n:n)-> Optional[PatternMatch]:
@@ -261,7 +291,7 @@ class MatchFinder:
         return MatchFinder.match_pattern(src1, src2, src_filter=src_filter) is not None
 
     @staticmethod
-    def __find_all(src_nodes: Sequence[ASTNode], *patterns_list: Sequence[ASTNode]|ConstrainedPattern, recursive:bool, src_filter:Callable[[Sequence[ASTNode]],Sequence[ASTNode]])-> Iterator[PatternMatch]:
+    def __find_all(src_nodes: Sequence[ASTNode], patterns_list: Sequence[Sequence[ASTNode]|ConstrainedPattern], recursive:bool, src_filter:Callable[[Sequence[ASTNode]],Sequence[ASTNode]])-> Iterator[PatternMatch]:
         src_nodes = src_filter(src_nodes) # exclude nodes by kind and optionally is part of translation unit 
         target_nodes = src_nodes 
 
@@ -283,7 +313,7 @@ class MatchFinder:
             for node in src_nodes:
                 children = node.get_children()
                 if children:
-                    yield from MatchFinder.__find_all(children, *patterns_list, recursive=recursive, src_filter=src_filter)
+                    yield from MatchFinder.__find_all(children, patterns_list, recursive=recursive, src_filter=src_filter)
 
     @staticmethod
     def __match_pattern(src_nodes: Sequence[ASTNode], patterns: Sequence[ASTNode],  depth, multiplicity: dict[str,int], patternMatch: Optional[PatternMatch], src_filter:Callable[[Sequence[ASTNode]],Sequence[ASTNode]])-> Optional[PatternMatch]:
@@ -343,8 +373,8 @@ class MatchFinder:
             if MatchUtils.is_single_wildcard(pattern_node):
                 wildcard_match = patternMatch._query_create(pattern_node.get_name())
                 # TODO check with pierre whether we should take the highest or the deepest match
-                if not  wildcard_match.nodes: 
-                    wildcard_match._add_node(src_node)
+                # if not  wildcard_match.nodes: 
+                wildcard_match._add_node(src_node)
             else:
                 # store the exact match because it might be needed to determine the location of a multi wildcard match without nodes
                 patternMatch._query_create(MatchUtils.EXACT_MATCH)._add_node(src_node)
@@ -380,7 +410,11 @@ class MatchValidation:
         for key_match in [m for m in key_matches if MatchUtils.is_wildcard(m.key)]:
             if key_match.key not in key_groups:
                 key_groups[key_match.key] = []
-            key_groups[key_match.key].append(key_match.nodes)
+            # for single wildcards only the last/deepest node is relevant
+            # an example of this is CallExpr where is matches twice once for the function and once for the function name
+            # only the function name must be evaluated
+            nodes = key_match.nodes if MatchUtils.is_multi_wildcard(key_match.key) else key_match.nodes[-1:]
+            key_groups[key_match.key].append(nodes)
         for key, same in key_groups.items():
             if len(same) < 2:
                 continue
@@ -416,7 +450,7 @@ class MatchValidation:
 
 def do_log(indent, *msgs: str):
     text = '\n'.join(msgs)
-    print('\n'.join(f'{" "*indent}{l}' for l in text.splitlines()))
+    print(' '.join(f'{" "*indent}{l}' for l in text.splitlines()))
 
 def raw(nodes: Sequence[ASTNode]):
     return ' '.join([n.get_text() for n in nodes])
