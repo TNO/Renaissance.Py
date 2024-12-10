@@ -16,7 +16,7 @@ def main(args):
             #show atu
             ASTShower.show_node(atu, include_properties=True)
             #do something with the factory and atu
-            ast_refactor = ASTProcessor(atu,factory, user_objects={},  in_memory=True)
+            ast_refactor = ASTProcessor(atu,factory, in_memory=True)
             ast_refactor.find_kind('(?i)Function_?Decl').\
                 map(ASTNode.get_text).\
                 for_each(print)
