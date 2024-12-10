@@ -1,0 +1,69 @@
+from functools import cache
+from typing import Generic, Optional, Sequence
+
+from common.stream import Stream
+from syntax_tree.match_finder import MatchFinder, PatternMatch
+
+from .c_pattern_factory import CPPPatternFactory
+
+from .ast_finder import ASTFinder
+from .ast_processor import ASTProcessor
+from .ast_node import ASTNode, ASTNodeType
+
+class ASTRefactorActions(Generic[ASTNodeType]):
+    def __init__(self, processor: ASTProcessor, pattern_factory: CPPPatternFactory ) -> None: 
+        self.processor = processor
+        self.pattern_factory = pattern_factory
+        self.replaced = set()
+
+
+    def replace_expr(self, name: str, replacement: str, kind: Optional[str] = None):
+        def test(n: ASTNode):
+            if (kind and ASTFinder.matches_kind(n, kind)) and n.get_name() == name:
+                yield n                    
+        self.processor.find_all(test).\
+            for_each(lambda n: self.processor.replace(n.get_text().replace(n.get_name(), replacement, 1), n))
+
+    def replace_name(self, name: str, replacement: str, kind: Optional[str] = None, skip_kind: Optional[str] = None):
+        matches_name = lambda n: (not kind or ASTFinder.matches_kind(n, kind)) and (not skip_kind or not ASTFinder.matches_kind(n, skip_kind)) and n.get_name() == name
+        self.processor.find_all(matches_name).\
+            filter (lambda n: not n.get_start_offset() in self.replaced).\
+            action (lambda n: self.replaced.add(n.get_start_offset())).\
+            for_each(lambda n: self.processor.replace(n.get_text().replace(n.get_name(), replacement, 1), n))
+
+    def replace_text(self, text: str, replacement: str, kind: Optional[str] = None, skip_kind: Optional[str] = None):
+        matches_text = lambda n: (not kind or ASTFinder.matches_kind(n, kind)) and (not skip_kind or not ASTFinder.matches_kind(n, skip_kind)) and n.get_text() == text
+        self.processor.find_all(matches_text).\
+            filter (lambda n: not n.get_start_offset() in self.replaced).\
+            action (lambda n: self.replaced.add(n.get_start_offset())).\
+            for_each(lambda n: self.processor.replace(replacement, n))
+   
+    def replace_decl(self, declaration: str, replacement: str):
+        matches = self.find_declaration(declaration)
+        Stream(matches).\
+            for_each(lambda m: self.processor.replace(replacement, m))
+
+    def _replace_patterns(self, node:ASTNode, replacement: str, patterns: Sequence[Sequence[ASTNode]], matches: Sequence[PatternMatch]):
+        if not patterns:
+            self.processor.replace(replacement, matches)
+            return
+        MatchFinder.find_all(node, patterns[0]).\
+            for_each(lambda m: self._replace_patterns(m.src_nodes[0], replacement, patterns[1:], list(matches)+[m]))
+
+    @cache
+    def find_declaration(self, decl_pattern: str):
+        pattern = self.pattern_factory.create_declaration(decl_pattern)
+        return self.processor.find_match(pattern).\
+            to_list()
+
+    @cache
+    def collect( self, pattern:str, pattern_kind:str):
+        root = self.pattern_factory.create(pattern)
+
+        return self.processor.find_match(root).to_list()
+
+
+
+if __name__ == "__main__":
+    pass
+
