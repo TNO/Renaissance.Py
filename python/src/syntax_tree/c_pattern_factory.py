@@ -42,29 +42,35 @@ class CPatternFactory(Generic[ASTNodeType]):
         indent = split[0] if split else 0
         return '\n'.join([line[indent:] for line in text.splitlines()])
 
-    def create_expression(self, text:str) -> ASTNodeType:
+    def create_expression(self, text:str, extra_declarations: Sequence[str] = []) -> ASTNodeType:
         keywords = CPatternFactory._get_keywords_from_text(text)
-        fullText = self.header + '\n'.join(CPatternFactory._to_declaration(keywords)) + f'\nint {CPatternFactory.reserved_name} = ({text});'
+        keywords = [k for k in keywords if not any(k in ed for ed in extra_declarations)]
+        fullText = self.header + '\n'.join(extra_declarations) +'\n'+ '\n'.join(CPatternFactory._to_declaration(keywords)) + f'\nvoid f() {{ int {CPatternFactory.reserved_name} = ({text}); }}'
         root =  self._create( fullText)
         #return the first expression found in the tree as a ASTNode
         return  ASTFinder.find_kind(root.get_children()[-1], '(?i)PAREN_?EXPR').\
             filter(ASTNode.is_part_of_translation_unit).find_last().get().get_children()[0]
 
-    def create_declarations(self, text:str, types: Sequence[str] = [] , parameters: Sequence[str] = [], extra_declarations: Sequence[str] = []):
-        return self._create_body(text, types, parameters, extra_declarations, '(?i).*DECL.*')
+    def create_declarations(self, text:str, types: Sequence[str] = [] , parameters: Sequence[str] = [], extra_declarations: Sequence[str] = [], declarations:Sequence[str]=[] ):
+        keywords = CPatternFactory._get_keywords_from_text(text)
+        keywords = [k for k in keywords if not any(k in ed for ed in extra_declarations)\
+                    and not any(k in ed for ed in parameters)\
+                    and not any(k in ed for ed in types)\
+                    and not any(k in ed for ed in declarations)]
+        return self._create_body(text, types, [*parameters, *keywords] , extra_declarations, '(?i).*DECL.*')
 
-    def create_declaration(self, text:str, types: Sequence[str] = [] , parameters: Sequence[str] = [], extra_declarations: Sequence[str] = []):
-        declarations = self.create_declarations(text, types, parameters, extra_declarations)
-        assert len(declarations) > 0, "At least one declaration is expected"
-        return declarations[0]
+    def create_declaration(self, text:str, types: Sequence[str] = [] , parameters: Sequence[str] = [], extra_declarations: Sequence[str] = [], declarations:Sequence[str]=[]) -> ASTNodeType:
+        result = self.create_declarations(text, types, parameters, extra_declarations, declarations)
+        assert len(result) > 0, "At least one declaration is expected"
+        return result[0]
 
     
-    def create_statements(self, text:str, types: Sequence[str] = [], extra_declarations: Sequence[str] = []):
+    def create_statements(self, text:str, types: Sequence[str] = [], extra_declarations: Sequence[str] = [], kind='.*') -> Sequence[ASTNodeType]:
         # create a reference for all used variables excluding the specified types
         parameters = [ par for par in CPatternFactory._get_keywords_from_text(text) if not par in types and not any(par in ed for ed in extra_declarations)]
-        return self._create_body(text, types, parameters, extra_declarations, '.*')
+        return self._create_body(text, types, parameters, extra_declarations, kind)
 
-    def create(self, text:str):
+    def create(self, text:str, kind:Optional[str] = None) -> ASTNodeType:
         """
         Creates an object using the factory from the provided text.
         The object is created by the factory using the provided text and the header of the provided reference node.
@@ -77,11 +83,14 @@ class CPatternFactory(Generic[ASTNodeType]):
             object: The object created by the factory.
         """
         # print(self.header + text)
-        return self.factory.create_from_text(self.header + text,  'test.' + self.language)
+        root =  self.factory.create_from_text(self.header + text,  'test.' + self.language)
+        if kind:
+            return ASTFinder.find_kind(root.get_children()[-1], kind).find_first().get()
+        return root
 
 
-    def create_statement(self, text:str, types: Sequence[str] = [], extra_declarations: Sequence[str] = []):
-        statements = list(self.create_statements(text, types, extra_declarations))
+    def create_statement(self, text:str, types: Sequence[str] = [], extra_declarations: Sequence[str] = [], kind='.*') -> ASTNodeType:  
+        statements = list(self.create_statements(text, types, extra_declarations, kind))
         assert len(statements) == 1, "Only one statement is expected"
         return statements[0]
     
@@ -138,15 +147,15 @@ class CPPPatternFactory(CPatternFactory):
     def __init__(self, factory: ASTFactory, refNode: Optional[ASTNode] = None):
         super().__init__(factory, refNode, 'cpp')
 
-    def create_constructor_chain_initializer(self, pattern ):
+    def create_constructor_call(self, pattern ):
         class_and_args = re.match(R'([$\w]+)\(([^)]+)\)', pattern.replace(' ',''))
         if class_and_args:
             class_name = class_and_args.group(1)
             args = class_and_args.group(2).split(',')
-        return self._create_constructor_chain_initializer(class_name, args)
+        return self._create_constructor_call(class_name, args)
 
 
-    def _create_constructor_chain_initializer(self, class_name:str, args: Sequence[str] = [] ):
+    def _create_constructor_call(self, class_name:str, args: Sequence[str] = [] ):
         arg_call_string = ','.join(args)
         arg_decl_string = ','.join('int '+ arg for arg in args)
         code = f"""
@@ -159,9 +168,26 @@ class CPPPatternFactory(CPatternFactory):
                 derived({arg_decl_string}) : {class_name}({arg_call_string}) {{ }}
            }};
         """
-        root = self.factory.create_from_text(code, 'test' + self.language)
-        return  ASTFinder.find_kind(root.get_children()[-1], '(?i)Call_?Expr').\
-           find_first().get()
+        root: ASTNode = self.factory.create_from_text(code, 'test.' + self.language)
+        target_class = root.get_children()[-1]
+        # this should yield something like:
+        # (TYPE_REF, $var, test.cpp[237:241]): |$var|
+        # (CALL_EXPR, , test.cpp[237:266]): |$var($container,$headerCount)|
+        #     (DECL_REF_EXPR, $container, test.cpp[242:252]): |$container|
+        #     (DECL_REF_EXPR, $headerCount, test.cpp[253:265]): |$headerCount|
+        if SHOW_NODE:
+            ASTShower.show_node(target_class)
+        # search the call expr and the the preceding type ref            
+        call_expr = ASTFinder.find_kind(target_class, "CallExpr").\
+            peek(lambda n: ASTShower.show_node(n)).\
+            find_last().get()
+        # include the preceding typeref
+        assert isinstance(call_expr, ASTNode), "No call expression found"
+        type_ref = call_expr.get_preceding_sibling()
+        assert isinstance(type_ref, ASTNode), "No type ref found"
+        # return the constrained pattern where the first node must be of type TypeRef
+        # return ConstrainedPattern([type_ref, call_expr], lambda m: ASTFinder.matches_kind(m.src_nodes[0], 'TypeRef'))
+        return call_expr
 
 
 if __name__ == "__main__":
