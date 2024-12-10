@@ -7,10 +7,12 @@ from .batch_ast_processor import (BatchASTProcessor, IterableProvider, AST_FACTO
 from .match_finder import (MatchFinder, PatternMatch, ConstrainedPattern)
 from .ast_rewriter import (ASTRewriter)
 from .ast_processor import (ASTProcessor)
-from .c_pattern_factory import (CPatternFactory)
+from .c_pattern_factory import (CPatternFactory, CPPPatternFactory)
 from .ast_utils import (ASTUtils)
 from .text_utils import (TextUtils)
 from .cpp_utils import (CPPUtils)
+from .ast_refactor_actions import (ASTRefactorActions)
+from .recipe_ast_processor import (RecipeASTProcessor, after_step, recipe_step, final_action)
 
 __all__ = [
     'ASTNode',
@@ -32,5 +34,11 @@ __all__ = [
     'BatchASTProcessor',
     'IterableProvider',
     'AST_FACTORY_AND_ATU',
-    'Action'
+    'Action',
+    'ASTRefactorActions',
+    'CPPPatternFactory',
+    'RecipeASTProcessor',
+    'after_step',
+    'recipe_step',
+    'final_action'  
 ]
