@@ -19,11 +19,12 @@ example_code = """
 def example_add_comment_and_commit(factory, pattern_factory, code):
     # create a pattern that matches the declaration of old 
     # please note that we need to help by telling the old is a type and $value is a variable
-    patterns = pattern_factory.create_declarations('old $name = $value;old $name;', extra_declarations=['typedef int old;'], parameters=['$value'])
-    #put the pattern in a matrix because we want to find both statements in one go and not a sequence
-    patterns_list =[[p] for p in patterns] 
+    pattern1 = pattern_factory.create_declarations('old $name = $value;', extra_declarations=['typedef int old;'], parameters=['$value'])
+    pattern2 = pattern_factory.create_declarations('old $name;', extra_declarations=['typedef int old;'], parameters=['$value'])
+    #put the patterns in a matrix because we want to find both statements in one go and not a sequence
+    patterns_list =[pattern1, pattern2] 
 
-    ASTShower.show_node(patterns[0])
+    ASTShower.show_node(pattern1[0])
     # if you want to find both statements in one go, you should pass a list of patterns
     # if you don't do that that a sequence of the patterns is searched for
 
@@ -47,9 +48,10 @@ def example_add_comment_and_commit(factory, pattern_factory, code):
 
 def example_replace_old_by_fancy_new(factory, pattern_factory, code):
     # using some different techniques to show the possibilities of map and filter
-    patterns = pattern_factory.create_declarations('$old $name = $value;$old $name;', extra_declarations=['typedef int $old;'], parameters=['$value'])
-    #put the pattern in a matrix because we want to find separate statements in one go and not the sequence
-    patterns_list =[[p] for p in patterns] 
+    pattern1 = pattern_factory.create_declarations('$old $name = $value;', types=['$old'], parameters=['$value'])
+    pattern2 = pattern_factory.create_declarations('$old $name;', types=['$old'], parameters=['$value'])
+    #put the patterns in a matrix because we want to find both statements in one go and not a sequence
+    patterns_list =[pattern1, pattern2] 
 
     # a example of how to use a function iso of lambda to filter the nodes
     def matches_old(node):
