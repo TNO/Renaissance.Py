@@ -60,19 +60,16 @@ class TestStatements(TestCPatternFactory):
         ('a = b;',[],1, 2),   
         ('a = $x;',[],1,2),
         ('a=2;b = 3;c=4;',[],3,3),
-        ('a = ($type)$x;',['$type'],1,2),
-        ('a = f($x);',['f'],1,2),
+        ('a = ($type)$x;',['typedef int $type;'],1,2),
+        ('a = f($x);',['int f(int);'],1,3),
     ])))
-    def test(self, _, factory, statementText, types, expected_stmts, expected_refs):
+    def test(self, _, factory, statementText, extra_declarations, expected_stmts, expected_refs):
         patternFactory = CPatternFactory(factory)
-        created_statements = list(patternFactory.create_statements(statementText,types=types))
+        created_statements = list(patternFactory.create_statements(statementText,extra_declarations=extra_declarations))
         
         count_refs = 0
         for decl in created_statements:
-            count_refs += ASTFinder.find_kind(decl, '(?i)DECL_?REF_?EXPR').count()
-            print('*'*80)
-            ASTShower.show_node(decl)
-            print('*'*80)
+            count_refs += ASTFinder.find_kind(decl, 'DECL_?REF_?EXPR').count()
         self.assertEqual(len(created_statements), expected_stmts)
         self.assertEqual(count_refs, expected_refs)
         for stmt in created_statements:
@@ -109,7 +106,7 @@ class TestUseAtuToCreatePatterns(TestCPatternFactory):
             const char* foo = FOO;
             const char* bar = BAR;
             const char* same = SAME;
-            printf("%s %s %s", aap, noot, same);
+            printf("%s %s %s", foo, bar, same);
 
         }
 

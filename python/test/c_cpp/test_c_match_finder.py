@@ -82,7 +82,7 @@ class TestStatements(TestCMatchFinder):
     @parameterized.expand(Factories.extend([
     ('$x;$y;',[{'$x': ['int a=3;'], '$y': ['int b=4;']}, {'$x': ['if(a==3){b=5;}else{b--;}'], '$y': ['while(a!=3){if(a==4&&b==5){b=a;}}']}]),   
     ('if($x){$$stmts;}',[{'$x': ['a==4&&b==5'], '$$stmts': ['b=a;']}]),
-    ('if($x){$$stmts;}else{$single;$$multi}',[{'$x': ['a==3'], '$$stmts': ['b=5;'], '$single': ['b--;'], '$$multi': []}]),
+    ('if($x){$$stmts;}else{$single;$$multi;}',[{'$x': ['a==3'], '$$stmts': ['b=5;'], '$single': ['b--;'], '$$multi': []}]),
     ('if($x){$$stmts;}else{$$multi;$single;}',[{'$x': ['a==3'], '$$stmts': ['b=5;'], '$single': ['b--;'], '$$multi': []}]),
     ('while(a!=$x){$$stmts;}',[{'$x': ['3'], '$$stmts': ['if(a==4&&b==5){b=a;}']}]),
 ]))
@@ -94,10 +94,10 @@ class TestStatements(TestCMatchFinder):
 class TestFunctionCallStatements(TestCMatchFinder):
 
     @parameterized.expand(Factories.extend([
-    ('$f($a);',['int (*fp) $f;'],[{'$f': ['one'], '$a': ['a']}]),   
-    ('$f($a, $$all);',['int (*fp) $f;'],[{'$f': ['one'], '$a': ['a'], '$$all': []}, {'$f': ['two'], '$a': ['a'], '$$all': ['b']}, {'$f': ['three'], '$a': ['a'], '$$all': ['b', 'c']}]),
-    ('$f($$all, $a);',['int (*fp) $f;'],[{'$f': ['one'], '$$all': [], '$a': ['a']}, {'$f': ['two'], '$$all': ['a'], '$a': ['b']}, {'$f': ['three'], '$$all': ['a', 'b'], '$a': ['c']}]),
-    ('$f($a, $$all, $b);',['int (*fp) $f;'],[{'$f': ['two'], '$a': ['a'], '$$all': [], '$b': ['b']}, {'$f': ['three'], '$a': ['a'], '$$all': ['b'], '$b': ['c']}]),
+    ('$f($a);',['int $f(int);'],[{'$f': ['one'], '$a': ['a']}]),   
+    ('$f($a, $$all);',['int $f(int,int);'],[{'$f': ['one'], '$a': ['a'], '$$all': []}, {'$f': ['two'], '$a': ['a'], '$$all': ['b']}, {'$f': ['three'], '$a': ['a'], '$$all': ['b', 'c']}]),
+    ('$f($$all, $a);',['int $f(int,int);'],[{'$f': ['one'], '$$all': [], '$a': ['a']}, {'$f': ['two'], '$$all': ['a'], '$a': ['b']}, {'$f': ['three'], '$$all': ['a', 'b'], '$a': ['c']}]),
+    ('$f($a, $$all, $b);',['int $f(int,int,int);'],[{'$f': ['two'], '$a': ['a'], '$$all': [], '$b': ['b']}, {'$f': ['three'], '$a': ['a'], '$$all': ['b'], '$b': ['c']}]),
 ]))
     def test(self, _, factory, statements, extra_declarations, expected_dicts_per_match: list[dict[str, list[str]]]):
         code = """
@@ -107,7 +107,7 @@ class TestFunctionCallStatements(TestCMatchFinder):
         int a,b,c;
         void f(){
             one(a);
-            two(a,b)
+            two(a,b);
             three(a,b,c);
         }
         """
@@ -119,8 +119,8 @@ class TestFunctionCallStatements(TestCMatchFinder):
 class TestMultiAssignments(TestCMatchFinder):
 
     @parameterized.expand(Factories.extend([
-    ('$f($$all1);$f($$all2)',['int (*fp) $f;'],[{'$f': ['fc'], '$$all1': ['1', '2', '3', '4', '5'], '$$all2': ['1', '2', '6', '4', '5']}]),   
-    ('$f($$before, $a, $$after);$f($$before, $b, $$after)',['int (*fp) $f;'],[{'$f': ['fc'], '$$before': ['1', '2'], '$a': ['3'], '$$after': ['4', '5'], '$b': ['6']}]),   
+    ('$f($$all1);$f($$all2);',['int $f(int);'],[{'$f': ['fc'], '$$all1': ['1', '2', '3', '4', '5'], '$$all2': ['1', '2', '6', '4', '5']}]),   
+    ('$f($$before, $a, $$after);$f($$before, $b, $$after);',['int $f(int,int,int);'],[{'$f': ['fc'], '$$before': ['1', '2'], '$a': ['3'], '$$after': ['4', '5'], '$b': ['6']}]),   
 ]))
     def test_args(self, _, factory, statements, extra_declarations, expected_dicts_per_match: list[dict[str, list[str]]]):
         code = """
@@ -140,7 +140,7 @@ class TestMultiAssignments(TestCMatchFinder):
         self.assert_matches(matches, expected_dicts_per_match)
 
     @parameterized.expand(Factories.extend([
-    ('if ($c) {$$before; $true; $$after;} else {$$before; $false; $$after;}',['int (*fp) $f;'],[{'$c': ['1'], '$$before': ['a=1;', 'b=2;'], '$true': ['c=3;'], '$$after': ['d=4;', 'e=5;'], '$false': ['c=6;']}]),   
+    ('if ($c) {$$before; $true; $$after;} else {$$before; $false; $$after;}',[],[{'$c': ['1'], '$$before': ['a=1;', 'b=2;'], '$true': ['c=3;'], '$$after': ['d=4;', 'e=5;'], '$false': ['c=6;']}]),   
 ]))
 
     def test_statements(self, _, factory, statements, extra_declarations, expected_dicts_per_match: list[dict[str, list[str]]]):
@@ -176,7 +176,7 @@ class TestUseAtuToCreatePattern(TestCMatchFinder):
     ('void f() {const char* $name = BAR;}','(?i)Decl_?Stmt',['const char* bar = BAR;'], {'$name':['bar']}),   
     ('void f() {const char* $name = FOO;}','(?i)Decl_?Stmt',['const char* foo = FOO;'] , {'$name':['foo']}),   
     ('void f() {const char* $name = SAME;}','(?i)Decl_?Stmt',['const char* same = SAME;'], {'$name':['same']}),
-    ('int $$args; void f() { printf($$args);}','(?i)Call_?Expr',['printf("%s %s %s", foo, bar, same);'], {'$$args': ['"%s %s %s"', 'foo', 'bar', 'same']}),
+    ('const char* $$args; void f() { printf($$args);}','(?i)Call_?Expr',['printf("%s %s %s", foo, bar, same);'], {'$$args': ['"%s %s %s"', 'foo', 'bar', 'same']}),
     ]))
     def test(self, _, factory, statements, pattern_type, expected, names):
         code = """

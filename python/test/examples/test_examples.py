@@ -7,4 +7,5 @@ class TestRefactorWithNestedCompositions(TestCase):
 
     def test_refactor_with_nested_compositions(self):
         result =  refactor_with_nested_compositions(['', ''])
+        assert result
         self.assertMultiLineEqual(result, expected_result)
