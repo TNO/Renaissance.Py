@@ -7,9 +7,11 @@ from pathlib import Path
 import re
 import sys
 import tempfile
+import threading
 from common import Stream
 from syntax_tree import ASTNode, ASTReference, CPPUtils
 from typing import Any, Optional, Sequence, TypeVar
+from syntax_tree.ast_finder import ASTFinder
 from typing_extensions import override
 import subprocess
 import tempfile
@@ -18,7 +20,8 @@ import tempfile
 EMPTY_DICT = {}
 EMPTY_STR = ''
 EMPTY_LIST = []
-ID_TAGS = ['id', 'typeAliasDeclId', 'templateDeclId', 'templateSpecializationDeclId', 'referencedDeclId']
+ON_NODE_ID_TAGS = ['previousDecl', 'parentDeclContextId']
+ID_TAGS = ['id', 'typeAliasDeclId', 'templateDeclId', 'templateSpecializationDeclId', 'referencedDeclId', *ON_NODE_ID_TAGS]
 
 STMT_PARENTS = [ 'CompoundStmt', 'TranslationUnitDecl' ]
 
@@ -108,38 +111,51 @@ class ClangJsonASTNode(ASTNode):
             
             command = [*extra_args, *ClangJsonASTNode.parse_args]
             json_dump = None
+            error = None
             length = 0
-            if code:
-                if str(file_path) in command:
-                    command.remove(str(file_path))
-                compile = '-xc++' if file_path.suffix == '.cpp' else '-xc'
-                if not compile in command:
-                    command.append(compile)
-                if not '-' in command:
-                    command.append('-')
-                # command.append('-main-file-name=' + str(file_path))
-                input = code.encode(sys.getfilesystemencoding())
-                result = subprocess.run(command, input=input, capture_output=True, cwd=working_dir)
-                json_dump = result.stdout.decode().replace("<stdin>", str(file_path))
-                length = len(input)
-            else:
-                if str(file_path) not in command:
-                    command.append(str(file_path))
-                result = subprocess.run(command, capture_output=True, text=True, cwd=working_dir) 
-                json_dump = result.stdout  
-                length = os.path.getsize(file_path)
+            with tempfile.NamedTemporaryFile(delete=True) as std_out_file:
+                with tempfile.NamedTemporaryFile(delete=True) as std_err_file:
+                    if code:
+                        if str(file_path) in command:
+                            command.remove(str(file_path))
+                        compile = '-xc++' if file_path.suffix == '.cpp' else '-xc'
+                        if not compile in command:
+                            command.append(compile)
+                        if not '-' in command:
+                            command.append('-')
+                        # command.append('-main-file-name=' + str(file_path))
+                        input = code.encode(sys.getfilesystemencoding())
+                        result = subprocess.run(command, input=input, stdout=std_out_file, stderr=std_err_file, cwd=working_dir, shell=True)
+                        std_out_file.seek(0)
+                        json_dump = std_out_file.read().decode().replace("<stdin>", str(file_path))
+                        std_err_file.seek(0)
+                        error = std_err_file.read().decode()
+                        length = len(input)
+                    else:
+                        if str(file_path) not in command:
+                            command.append(str(file_path))
+                        result = subprocess.run(command, stdout=std_out_file, stderr=std_err_file, text=True, cwd=working_dir) 
+                        std_out_file.seek(0)
+                        json_dump = std_out_file.read().decode()
+                        error = result.stderr
+                        length = os.path.getsize(working_dir / file_path)
+                        std_err_file.seek(0)
+                        error = std_err_file.read()
 
             if VERBOSE:
                 temp_dir = tempfile.gettempdir()
                 temp_file_name = os.path.join(temp_dir, file_path.name+'.ast.json')
-                with open(temp_file_name, 'w') as temp_file:
+                with open(temp_file_name, 'w') as std_out_file:
                     print ('result stored in ' + temp_file_name)
-                    temp_file.write(json_dump)
-
+                    std_out_file.write(json_dump)
+            print(error)
             json_atu = json.loads(json_dump)
             atu = ClangJsonASTNode(json_atu, translation_unit=ClangJsonTranslationUnit(json_atu, file_name=str(file_path)), length=length )
             if code:
-                atu.cache[str(file_path)] = code.encode(sys.getfilesystemencoding())   
+                atu.cache[str(file_path)] = code.encode(sys.getfilesystemencoding())
+            else:
+                with open(working_dir / file_path, 'rb') as f:
+                    atu.cache[str(file_path)] = f.read()
             # cache the result of the temp file before deleting it
             atu.get_content(0, 0)
             return atu
@@ -230,16 +246,38 @@ class ClangJsonASTNode(ASTNode):
         if self.inserted:
             return []
         self.translation_unit.lazy_create_references(self)
-        return Stream(self.translation_unit._referenced_by.get(self.node['id'], EMPTY_LIST))\
+        ref_by = self.translation_unit._referenced_by.get(self.node['id'], EMPTY_LIST)
+        definition_node_id = self._get_function_definition()
+        if (definition_node_id):
+            # try to find the definition which might have references
+                ref_by += self.translation_unit._referenced_by.get(definition_node_id, EMPTY_LIST)
+        return Stream(ref_by)\
+            .filter(lambda ref: ref.node_id != self.node['id'])\
             .map(lambda ref: ASTReference(self.translation_unit._nodes[ref.node_id], ref.ref_kind, ref.properties)).to_list()
 
+    def _get_function_definition(self):
+        refs = self.translation_unit._referenced_by.get(self.node['id'], EMPTY_LIST)
+        for ref in refs:
+            if ref.ref_kind == "previousDecl":
+                return ref.node_id
+        return None
     @override
     @cache
     def _get_references(self)-> Sequence[ASTReference['ClangJsonASTNode']]:
         if self.inserted:
             return []
         self.translation_unit.lazy_create_references(self)
-        return Stream(self.translation_unit._references.get(self.node['id'], EMPTY_LIST))\
+
+        refs = self.translation_unit._references.get(self.node['id'], EMPTY_LIST)
+        definition_node_id = self._get_function_definition()
+        if (definition_node_id):
+            # try to find the definition which might have references
+            refs += self.translation_unit._references.get(definition_node_id, EMPTY_LIST)
+        # remove duplicates
+        refs = list({ref.node_id:ref for ref in refs}.values())
+        
+        return Stream(refs)\
+            .filter(lambda ref: ref.node_id != self.node['id'])\
             .map(lambda ref: ASTReference(self.translation_unit._nodes[ref.node_id], ref.ref_kind, ref.properties)).to_list()
 
     @override
@@ -263,6 +301,9 @@ class ClangJsonASTNode(ASTNode):
         name = self.node.get('name')
         if name:
             return name
+        if self.get_kind() =='CallExpr':
+            if self.get_children() and self.get_children()[0].get_kind() == 'DeclRefExpr':
+                return self.get_children()[0].get_name()    
         if self.get_kind() =='DeclRefExpr':
             return self._get(['referencedDecl', 'name'], default=EMPTY_STR)
         if self.get_kind() =='StringLiteral':
@@ -313,7 +354,7 @@ class ClangJsonASTNode(ASTNode):
     @staticmethod
     @cache
     def __is_property(key):
-        return key not in ['id', 'inner', 'loc', 'range', 'kind', 'name', 'isUsed', 'isReferenced', 'referencedDecl', 'previousDecl', 'mangledName']
+        return key not in ['id', 'inner', 'loc', 'range', 'kind', 'name', 'isUsed', 'isReferenced', 'referencedDecl', 'mangledName', *ON_NODE_ID_TAGS]
 
     @staticmethod
     def _is_wrapped(node):
@@ -348,9 +389,21 @@ class ReferenceHelper:
         node_id = ast_node.node['id']
         ast_node.translation_unit._references[node_id] = references
         refs = {k:v for k, v in ast_node.node.items() if not ReferenceHelper._is_child_node(k) and ClangJsonASTNode._is_reference(v)}
+        for k in [k for k in ast_node.node.keys() if k in ON_NODE_ID_TAGS]:
+            refs[k] = ast_node.node # add the node if it contains a reference for example in case of previousDecl
+
+        # to make clang json compatible with clang python, we add the reference of the DeclRefExpr child to the CallExpr
+        if ast_node._kind == 'CallExpr':
+            for n in ast_node.get_children():
+                if n.get_kind() == 'DeclRefExpr':
+                    refChild = {k:v for k, v in n.node.items() if not ReferenceHelper._is_child_node(k) and ClangJsonASTNode._is_reference(v)}
+                    refs.update(refChild)
+      
         for kind, ref in refs.items():
             for ref_id in ReferenceHelper._get_reference_ids(ref):
-                properties = {k:p for k, p in ref.items() if k != ref_id}
+                if ref_id == node_id:
+                    continue
+                properties = {k:p for k, p in ref.items() if k != ref_id} if ref != ast_node.node else EMPTY_DICT      
                 reference = ClangJsonASTReference(ref_id, kind, properties)
                 referenced_by = ClangJsonASTReference(node_id, kind, properties)
                 try:
@@ -358,6 +411,7 @@ class ReferenceHelper:
                 except:
                     ast_node.translation_unit._referenced_by[ref_id] = [referenced_by]
                 references.append(reference)
+
 
     @staticmethod
     def add_record_references(ast_node) -> None:
@@ -386,11 +440,11 @@ class ReferenceHelper:
             return
         node_id = ast_node.node['id']
         for base in bases:
-            ref_id = ReferenceHelper._get_record_decl(ast_node, base)
-            if ref_id:
+            ref_ids = ReferenceHelper._get_record_decl(ast_node, base)
+            for kind, ref_id in ref_ids:
                 properties = {k:p for k, p in base.items() if k != 'type'}
-                reference = ClangJsonASTReference(ref_id, 'base', properties)
-                referenced_by = ClangJsonASTReference(node_id, 'base', properties)
+                reference = ClangJsonASTReference(ref_id, kind, properties)
+                referenced_by = ClangJsonASTReference(node_id, kind, properties)
                 try:
                     ast_node.translation_unit._referenced_by[ref_id].append(referenced_by)
                 except:
@@ -401,22 +455,36 @@ class ReferenceHelper:
                     ast_node.translation_unit._references[node_id] = [reference]
 
     @staticmethod
-    def _get_record_decl(ast_node, base):
+    def _get_record_decl(ast_node, base) -> Sequence[str]:
         try:
             tp = base['type']
             # split desugaredQualType to derive the parent namespaces
             namespaces = tp['desugaredQualType'].split('::')[:-1][::-1]
             qual_type = tp['qualType']
+            ids = []
+            ctorType = EMPTY_STR
+            if (ast_node.get_kind() == 'CXXConstructExpr'):
+                ctorType = ast_node._get(['ctorType', 'qualType'], EMPTY_STR)
+
             for id, node in ast_node.translation_unit._nodes.items():
                 if node.get_kind() == 'CXXRecordDecl' and node.get_name() == qual_type:
                     parent = node.get_parent()
+                    matches = True
                     for ns in namespaces:
                         if ns != parent.get_name() or parent.get_kind() != 'NamespaceDecl':
-                            return None
+                            matches = False
                         parent = parent.get_parent()
-                    return id
+                    if matches:
+                        ids.append((node.get_kind(), id))
+                if ctorType != EMPTY_STR and node.get_kind() == 'CXXConstructorDecl':
+                    # link all matching
+                    matches = node._get(['type', 'qualType'], EMPTY_STR) == ctorType
+                    if matches:
+                        ids.append((node.get_kind(),id))
+            return ids
         except:
-            return None
+            pass    
+        return []
 
     @staticmethod
     def _get_reference_ids(json_node):
