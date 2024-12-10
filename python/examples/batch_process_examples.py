@@ -9,9 +9,11 @@ from refactoring import CleanupRefactoring
 from syntax_tree import ASTProcessor, ASTNode, ASTNodeType, TextUtils, ASTFactory, BatchASTProcessor
 
 example_1 = TextUtils.strip_indent("""
-        void x(int a) {
-        }
-        void f1(){
+        void x(int a) {}
+        void x1(int a) {}
+        void x2(int a) {}
+
+        void f1(int a){
             int unused = 0;
             int unused2 = 0; //must be removed
             if (a==1) {
@@ -24,9 +26,10 @@ example_1 = TextUtils.strip_indent("""
         """)
 
 example_2 = TextUtils.strip_indent("""
-        void x(int a) {
-        }
-        void f2(){
+        void x(int a) {}
+        void x1(int a) {}
+        void x2(int a) {}
+        void f2(int a){
             int unused = 0;
             if (a==1) {
                 int unused = 0;
