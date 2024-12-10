@@ -96,7 +96,7 @@ class ASTNode(ABC):
         return siblings[index + 1] if index < len(siblings) - 1 else None
 
     def get_ancestor(self: ASTNodeType, kind: str|re.Pattern) -> Optional[ASTNodeType]:
-        pattern = re.compile(kind) if isinstance(kind, str) else kind
+        pattern = re.compile(kind, re.IGNORECASE) if isinstance(kind, str) else kind
         parent = self._get_parent()
         if not parent:
             return None

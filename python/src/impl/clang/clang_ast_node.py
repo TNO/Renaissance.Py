@@ -4,7 +4,7 @@ import re
 import sys
 from typing import Any, Optional, Sequence
 from common import Stream
-from syntax_tree import ASTNode, ASTReference
+from syntax_tree import ASTNode, ASTReference, ASTFinder
 from typing_extensions import override
 
 from clang.cindex import TranslationUnit, Index, Config, CursorKind, TypeKind
@@ -104,6 +104,7 @@ class ClangASTNode(ASTNode):
     def load(file_path: Path, extra_args:Sequence[str], working_dir:Path) -> 'ClangASTNode':
         args=[*extra_args, *ClangASTNode.parse_args]
         translation_unit: TranslationUnit = ClangASTNode.index.parse(working_dir / file_path, args=args[3:])
+        ClangASTNode.check_diagnostics(translation_unit, file_path.name)
         root_node =  ClangASTNode(translation_unit.cursor, ClangTranslationUnit(translation_unit, file_name=str(file_path)), None)
         return root_node
 
@@ -111,19 +112,37 @@ class ClangASTNode(ASTNode):
     @staticmethod
     def load_from_text(file_content: str, file_name: str, extra_args:Sequence[str], working_dir:Path) -> 'ClangASTNode':
         translation_unit: TranslationUnit = ClangASTNode.index.parse(file_name, unsaved_files=[(file_name, file_content)],  args=[*ClangASTNode.parse_args,*extra_args])
+        ClangASTNode.check_diagnostics(translation_unit, file_name)
         root_node =  ClangASTNode(translation_unit.cursor, ClangTranslationUnit(translation_unit, file_name=str(file_name)), None)
         # Convert file_content to bytes
         file_content_bytes = file_content.encode(sys.getfilesystemencoding())
         # add to cache to avoid reading the file again
         root_node.cache[file_name] = file_content_bytes
+        ClangASTNode.check_diagnostics(translation_unit, file_name)
         return root_node
+
+    @staticmethod
+    def check_diagnostics(translation_unit, file_name: str) -> None:
+        has_error = False
+        errors = ''
+        for d in translation_unit.diagnostics:
+            if d.severity >= 3:
+                has_error = True
+                errors += f'{d.severity}: {d.spelling} at {d.location}\n'    
+            print(f'{d.severity}: {d.spelling} at {d.location}')
+        if has_error:
+            raise Exception(f'Error parsing: {file_name} \n+ errors: {errors}')
     
     @override
     @cache
     def _get_name(self) -> str:
         try:
-            if self.__kind not in ['CALL_EXPR']:
-                return self.node.spelling #TODO fix
+            if self.node.type.kind == TypeKind.RECORD: # type: ignore
+                return self.node.type.spelling
+        except:
+            pass
+        try:
+            return self.node.spelling
         except: 
             pass
         return EMPTY_STR
@@ -236,8 +255,37 @@ class ClangASTNode(ASTNode):
     @cache
     def _get_referenced_by(self) -> Sequence[ASTReference['ClangASTNode']]:
         self.translation_unit.lazy_create_references(self)
-        return Stream(self.translation_unit._referenced_by.get(self.node.hash, EMPTY_LIST))\
+        node_id = self.node.hash
+        ref_by = self.translation_unit._referenced_by.get(node_id, EMPTY_LIST)
+        # if both the function declaration and function definition are avaible 
+        # the references are stored in the function definition
+        # but we want them to also show up in the declaration
+        if (len(ref_by) == 0):
+            definition = self._get_function_definition()
+            if definition:
+                ref_by = self.translation_unit._referenced_by.get(definition.node.hash, EMPTY_LIST)
+        return Stream(ref_by)\
             .map(lambda ref: ASTReference(self.translation_unit._nodes[ref.node_id], ref.ref_kind, ref.properties)).to_list()
+
+    def _get_function_definition(self):
+        if self.node.type.kind == TypeKind.FUNCTIONPROTO: # type: ignore
+            signature = self.node.displayname
+            semantic_parent = self.node.semantic_parent.hash
+            def has_body(node):
+               return  any(c.kind == CursorKind.COMPOUND_STMT for c in node.node.get_children())  # type: ignore
+            def is_match(node):
+                if node.__kind != self.__kind: return False
+                if node.node.type.kind != TypeKind.FUNCTIONPROTO: return False # type: ignore
+                if node.node.semantic_parent.hash != semantic_parent: return False
+                if node.node.displayname != signature: return False
+                return has_body(node)           
+            
+            if has_body(self):
+                return None
+            body = ASTFinder.find_all(self.root, is_match).find_first().or_else(None) # type: ignore
+            if isinstance(body, ClangASTNode):
+                return body
+        return None
 
     @override
     @cache
@@ -330,6 +378,7 @@ class ReferenceHelper():
                 references.append(reference)
             except:
                 pass
+
 
 if __name__ == "__main__":
     pass
