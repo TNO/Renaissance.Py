@@ -54,7 +54,7 @@ class ClangJsonTranslationUnit():
 class ClangJsonASTNode(ASTNode):
     parse_args=['-fparse-all-comments', '-ferror-limit=0', '-Xclang', '-ast-dump=json', '-fsyntax-only']
 
-    def __init__(self, node: dict[str, Any], translation_unit: ClangJsonTranslationUnit, parent: Optional['ClangJsonASTNode'] = None, start_offset: Optional[int] = None, length: Optional[int] = None, insert_kind : Optional[str]=None):
+    def __init__(self, node: dict[str, Any], translation_unit: ClangJsonTranslationUnit, parent: Optional['ClangJsonASTNode'] = None, start_offset: Optional[int] = None, length: Optional[int] = None, insert_kind : Optional[str]=None, insert_name: Optional[str]=None) -> None:
         super().__init__(self if parent is None else parent.root)
         self.node = node
         self._children: Optional[Sequence['ClangJsonASTNode']] = None
@@ -70,12 +70,14 @@ class ClangJsonASTNode(ASTNode):
         self._end_offset = self._start_offset+length if length!=None else self.__derive_end_offset()
         self._length = self._end_offset - self._start_offset
         self._kind = insert_kind if insert_kind != None else self.__derive_kind()
+        self._name = insert_name if insert_name != None else self._derive_name()
         # an fake child is introduced to handle the case where the type of a declaration is not found
         # for example in the case of a base type. 
         # without the fake child pattern matching on types will be difficult
         self.__inserted_children = []
         type = self.node.get('type')
         if insert_kind == None and  type and not self.node.get('implicit') and re.fullmatch('(Var|Function|CxxMethod)Decl', self._kind):
+            declared_type = type['qualType'].replace('(', '').replace(')', '').strip()
             if self.node.get('loc'):
                 loc = self.node['loc']
                 offset = loc['offset'] if loc.get('offset') else self._get(['loc','expansionLoc', 'offset'],  0)
@@ -84,12 +86,12 @@ class ClangJsonASTNode(ASTNode):
                     insert_child = ClangJsonASTNode(self.node, self.translation_unit, self, offset, tokLen, 'DeclLoc') 
                     insert_child._children = []
                     self.__inserted_children.append(insert_child) 
-            if not ReferenceHelper._get_reference_ids(type): 
+            if not 'TypeRef' in [inner['kind']  for inner in self.node.get('inner',[])]: 
                 # deep clone the type node and remove the parentheses
-                base_type = type['qualType'].replace('(', '').replace(')', '').strip()
+                base_type = type.get('desugaredQualType', declared_type).replace('(', '').replace(')', '').strip()
                 if base_type in CPPUtils.RESERVED_KEYWORDS:
-                    length_ref = len(base_type.encode(sys.getdefaultencoding()))
-                    insert_child = ClangJsonASTNode(self.node, self.translation_unit, self, self._start_offset, length_ref, "TypeRef") 
+                    length_ref = len(declared_type.encode(sys.getdefaultencoding()))
+                    insert_child = ClangJsonASTNode(self.node, self.translation_unit, self, self._start_offset, length_ref, "TypeRef", declared_type) 
                     insert_child._children = []
                     self.__inserted_children.append(insert_child) 
             #add the declaration as node
@@ -289,24 +291,29 @@ class ClangJsonASTNode(ASTNode):
         return self.parent != None and self.parent.get_kind() in STMT_PARENTS
     
     @override
-    @cache
     def _get_children(self) -> Sequence['ClangJsonASTNode']: 
         if self._children is None:
             self._children = self.__inserted_children + [ ClangJsonASTNode(ClangJsonASTNode._remove_wrapper(n), translation_unit=self.translation_unit, parent=self) for n in self.node.get('inner', []) if not n.get('isImplicit', False)]
         return self._children
     
     @override
-    @cache
     def _get_name(self) -> str:
+        return self._name
+    
+    def _derive_name(self) -> str:
         name = self.node.get('name')
         if name:
             return name
-        if self.get_kind() =='CallExpr':
-            if self.get_children() and self.get_children()[0].get_kind() == 'DeclRefExpr':
-                return self.get_children()[0].get_name()    
-        if self.get_kind() =='DeclRefExpr':
-            return self._get(['referencedDecl', 'name'], default=EMPTY_STR)
-        if self.get_kind() =='StringLiteral':
+        kind = self.node.get('kind')
+        decl_ref_name_path = ['referencedDecl', 'name']
+        if kind =='CallExpr':
+            #equalize with libclang
+            decl_ref_child = [inner['kind'] for inner in self.node.get('inner', []) if inner.get('kind') == 'DeclRefExpr']
+            if decl_ref_child:
+                return self._get_property(decl_ref_child[0], decl_ref_name_path, default=EMPTY_STR)    
+        if kind =='DeclRefExpr':
+            return self._get(decl_ref_name_path, default=EMPTY_STR)
+        if kind =='StringLiteral':
             return self._get(['value'], default=EMPTY_STR)
         return self.node.get('name', EMPTY_STR)
 
@@ -369,8 +376,12 @@ class ClangJsonASTNode(ASTNode):
 
     T = TypeVar('T')
     def _get(self, path: Sequence[str], default: T) -> T:
+        return self._get_property(self.node, path, default)
+
+    T = TypeVar('T')
+    @staticmethod
+    def _get_property(target, path: Sequence[str], default: T) -> T:
         assert default is not None, 'default value must be provided'
-        target = self.node
         try:
             for p in path:
                 target = target[p]
