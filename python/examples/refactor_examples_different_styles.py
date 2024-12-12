@@ -15,8 +15,34 @@ example_code = """
         old e;
     }
     """
+expected_result_old_fancy_new = """
+    typedef int fancy_new;
+    typedef int old;
+    void f(){
+        int a = 1;
+        fancy_new b = 2;
+        int c = 3;
+        fancy_new d = 4;
+        fancy_new e;
+    }
+    """.strip()
 
-def example_add_comment_and_commit(factory, pattern_factory, code):
+expected_result_old_with_comment = """
+    typedef int fancy_new;
+    typedef int old;
+    void f(){
+        int a = 1;
+        // old has become obsolete
+        old b = 2;
+        int c = 3;
+        // old has become obsolete
+        old d = 4;
+        // old has become obsolete
+        old e;
+    }
+    """.strip()
+
+def example_add_comment_and_commit(factory, pattern_factory):
     # create a pattern that matches the declaration of old 
     # please note that we need to help by telling the old is a type and $value is a variable
     pattern1 = pattern_factory.create_declarations('old $name = $value;', extra_declarations=['typedef int old;'], parameters=['$value'])
@@ -29,7 +55,7 @@ def example_add_comment_and_commit(factory, pattern_factory, code):
     # if you don't do that that a sequence of the patterns is searched for
 
     #create translation unit
-    atu = factory.create(code) if code else factory.create_from_text(example_code, 'test.c')
+    atu = factory.create_from_text(example_code, 'test.c')
 
     ASTShower.show_node(atu)
 
@@ -44,9 +70,11 @@ def example_add_comment_and_commit(factory, pattern_factory, code):
     
     # look at the print that marks all old declarations with the provided comment
     print('results after adding comments to the obsolete types:')
-    print(atu.get_raw_signature())
+    result = rewriter.apply_to_string().strip()
+    print(result)
+    return result, expected_result_old_with_comment
 
-def example_replace_old_by_fancy_new(factory, pattern_factory, code):
+def example_replace_old_by_fancy_new(factory, pattern_factory):
     # using some different techniques to show the possibilities of map and filter
     pattern1 = pattern_factory.create_declarations('$old $name = $value;', types=['$old'], parameters=['$value'])
     pattern2 = pattern_factory.create_declarations('$old $name;', types=['$old'], parameters=['$value'])
@@ -59,7 +87,7 @@ def example_replace_old_by_fancy_new(factory, pattern_factory, code):
             return True
         return False
     
-    atu = factory.create(code) if code else factory.create_from_text(example_code, 'test.c')
+    atu = factory.create_from_text(example_code, 'test.c')
     rewriter = ASTRewriter(atu)
 
     MatchFinder.find_all(atu, *patterns_list).\
@@ -67,11 +95,13 @@ def example_replace_old_by_fancy_new(factory, pattern_factory, code):
         filter(matches_old).\
         for_each(lambda node: rewriter.replace('fancy_new',node))
     print('results after replacing the old type by fancy_new using MatchFinder:')
-    print(rewriter.apply_to_string())
+    result = rewriter.apply_to_string().strip()
+    print(result)
+    return result, expected_result_old_fancy_new
 
-def example_use_ast_kind_finder(factory, pattern_factory, code):
+def example_use_ast_kind_finder(factory, _):
     # Create the translation unit from the provided code or example code
-    atu = factory.create(code) if code else factory.create_from_text(example_code, 'test.c')
+    atu = factory.create_from_text(example_code, 'test.c')
     # Create an ASTRewriter for the translation unit
     rewriter = ASTRewriter(atu)
 
@@ -82,18 +112,22 @@ def example_use_ast_kind_finder(factory, pattern_factory, code):
     
     # Print the results after replacing the old type by fancy_new
     print('results after replacing the old type by fancy_new using ASTFinder.find_kind')
-    print(rewriter.apply_to_string())
+    result = rewriter.apply_to_string().strip()
+    print(result)
+    return result, expected_result_old_fancy_new
 
-def example_use_ast_function_finder(factory, pattern_factory, code):
+def example_use_ast_function_finder(factory, _):
     # Create the translation unit from the provided code or example code
-    atu = factory.create(code) if code else factory.create_from_text(example_code, 'test.c')
+    atu = factory.create_from_text(example_code, 'test.c')
     # Create an ASTRewriter for the translation unit
     rewriter = ASTRewriter(atu)
 
+    ASTShower.show_node(atu)
+
     # Define a match function to find nodes of kind TYPE_REF with name 'old'
     def match(node):
-        if node.get_kind() == 'TYPE_REF' and node.get_name() == 'old':
-            yield node
+        result =  ASTFinder.matches_kind(node, 'TYPE_?REF') and node.get_name() == 'old'
+        return result
 
     # Use ASTFinder to find all matching nodes and replace 'old' with 'fancy_new'
     ASTFinder.find_all(atu, match).\
@@ -101,7 +135,9 @@ def example_use_ast_function_finder(factory, pattern_factory, code):
     
     # Print the results after replacing the old type by fancy_new
     print('results after replacing the old type by fancy_new using ASTFinder.find_all')
-    print(rewriter.apply_to_string())
+    result = rewriter.apply_to_string().strip()
+    print(result)
+    return result, expected_result_old_fancy_new
 
 
 
@@ -114,10 +150,10 @@ def main(args):
     # Create a pattern factory (using the factory (hence also its args)
     pattern_factory = CPatternFactory(factory)
     
-    example_add_comment_and_commit(factory, pattern_factory, code)
-    example_replace_old_by_fancy_new(factory, pattern_factory, code)
-    example_use_ast_kind_finder(factory, pattern_factory, code)
-    example_use_ast_function_finder(factory, pattern_factory, code)
+    example_add_comment_and_commit(factory, pattern_factory)
+    example_replace_old_by_fancy_new(factory, pattern_factory)
+    example_use_ast_kind_finder(factory, pattern_factory)
+    example_use_ast_function_finder(factory, pattern_factory)
 
 if __name__ == "__main__":
     import sys
