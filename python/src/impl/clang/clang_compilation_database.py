@@ -30,7 +30,8 @@ class CompilationDatabase:
     def __create_processor(typ: type[ASTNodeType], compile_command ) -> tuple[ASTFactory, ASTNodeType]:
         extra_args = list(compile_command.arguments)
         skip = ['-o', '-c']
-        filtered_args = [arg for idx, arg in enumerate(extra_args) if not arg in skip and (idx==0 or not extra_args[idx-1] in skip)]    
+        filtered_args = [arg for idx, arg in enumerate(extra_args) if arg != compile_command.filename 
+                         and not arg in skip and (idx==0 or not extra_args[idx-1] in skip)]
         factory = ASTFactory(typ, extra_args=filtered_args, working_dir=Path(compile_command.directory))
         atu = factory.create(Path(compile_command.filename))  # The first argument is the file path
         return factory, atu
