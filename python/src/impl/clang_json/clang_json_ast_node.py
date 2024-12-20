@@ -64,7 +64,7 @@ class ClangJsonASTNode(ASTNode):
         # if the node has not been added to the translation unit, add it
         # a node might already be added if it is split into multiple nodes
         # an example is for base types like int, char, etc. which are split into multiple nodes
-        if self.translation_unit._nodes.get(node['id']) == None:
+        if 'id' in node and self.translation_unit._nodes.get(node['id']) == None:
             self.translation_unit._nodes[node['id']] = self
         self._start_offset = start_offset if start_offset!=None else self.__derive_start_offset()
         self._end_offset = self._start_offset+length if length!=None else self.__derive_end_offset()
@@ -104,7 +104,7 @@ class ClangJsonASTNode(ASTNode):
         #in a shell process compile the file_path with clang compiler
         try:
             # remove the compiler name if it is the first argument
-            if len(extra_args) > 0 and re.match('.*(g++|gcc|cl.exe).*', extra_args[0]):
+            if len(extra_args) > 0 and re.match(r'.*(g\+\+|gcc|cl\.exe).*', extra_args[0]):
                 extra_args = extra_args[1:]
             # add clang compiler if it is not in the arguments
             if len(extra_args) == 0 or not 'clang' in extra_args[0]:
@@ -139,10 +139,9 @@ class ClangJsonASTNode(ASTNode):
                         result = subprocess.run(command, stdout=std_out_file, stderr=std_err_file, text=True, cwd=working_dir) 
                         std_out_file.seek(0)
                         json_dump = std_out_file.read().decode()
-                        error = result.stderr
                         length = os.path.getsize(working_dir / file_path)
                         std_err_file.seek(0)
-                        error = std_err_file.read()
+                        error = std_err_file.read().decode()
 
             if VERBOSE:
                 temp_dir = tempfile.gettempdir()
@@ -150,7 +149,7 @@ class ClangJsonASTNode(ASTNode):
                 with open(temp_file_name, 'w') as std_out_file:
                     print ('result stored in ' + temp_file_name)
                     std_out_file.write(json_dump)
-            print(error)
+            print(error, file=sys.stderr)
             json_atu = json.loads(json_dump)
             atu = ClangJsonASTNode(json_atu, translation_unit=ClangJsonTranslationUnit(json_atu, file_name=str(file_path)), length=length )
             if code:
