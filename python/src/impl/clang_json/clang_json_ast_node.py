@@ -25,7 +25,7 @@ ID_TAGS = ['id', 'typeAliasDeclId', 'templateDeclId', 'templateSpecializationDec
 
 STMT_PARENTS = [ 'CompoundStmt', 'TranslationUnitDecl' ]
 
-VERBOSE = True
+VERBOSE = False
 
 class ClangJsonASTReference():
     def __init__(self, node_id:str, ref_kind:str, properties:dict[str, Any]) -> None:
