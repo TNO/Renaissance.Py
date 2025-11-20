@@ -43,7 +43,7 @@ class ASTNode(ABC):
     It is an abstract class that should be inherited by concrete classes that represent specific AST nodes.
     """
 
-    def __init__(self, root: "ASTNode") -> None:
+    def __init__(self: ASTNodeType, root: ASTNodeType) -> None:
         super().__init__()
         self.root = root
         self.cache: dict[str, bytes] = {}
@@ -70,7 +70,7 @@ class ASTNode(ABC):
         bytes = self.root.get_binary_file_content()
         return str(bytes[start:end], sys.getfilesystemencoding())
 
-    def get_binary_file_content(self, file_path: str | None = None) -> bytes:
+    def get_binary_file_content(self, file_path: Optional[str] = None) -> bytes:
         if not file_path:
             file_path = self.root.get_containing_filename()
         try:
@@ -87,7 +87,7 @@ class ASTNode(ABC):
     def get_extended_end_offset(self):
         return self._get_extended_end_offset()
 
-    def get_preceding_sibling(self):
+    def get_preceding_sibling(self: ASTNodeType) -> Optional[ASTNodeType]:
         parent = self.get_parent()
         if not parent:
             return None
@@ -95,7 +95,7 @@ class ASTNode(ABC):
         index = siblings.index(self)
         return siblings[index - 1] if index > 0 else None
 
-    def get_next_sibling(self):
+    def get_next_sibling(self: ASTNodeType) -> Optional[ASTNodeType]:
         parent = self.get_parent()
         if not parent:
             return None
@@ -114,10 +114,10 @@ class ASTNode(ABC):
             return parent
         return parent.get_ancestor(pattern)
 
-    def is_descendent_of(self, node: "ASTNode") -> bool:
+    def is_descendent_of(self: ASTNodeType, node: ASTNodeType) -> bool:
         return node.is_ancestor_of(self)
 
-    def is_ancestor_of(self, descendant: "ASTNode") -> bool:
+    def is_ancestor_of(self: ASTNodeType, descendant: ASTNodeType) -> bool:
         parent = descendant.get_parent()
         if parent == self:
             return True
@@ -154,16 +154,22 @@ class ASTNode(ABC):
     def get_kind(self) -> str:
         return self._get_kind()
 
-    def matches_kind(self, node: "ASTNode") -> bool:
+    def matches_kind(self: ASTNodeType, node: ASTNodeType) -> bool:
         return self._matches_kind(node)
 
     @cache
     def get_frozen_properties(self) -> frozenset[tuple[str, Any]]:
+        # TODO How to get type correct? How to get right of pyright: ignore comments?
         def freeze(value: Any) -> Any:
             if isinstance(value, dict):
-                return frozenset((k, freeze(v)) for k, v in value.items())
+                return frozenset(
+                    (k, freeze(v)) for k, v in value.items()  # pyright: ignore
+                )
             if isinstance(value, list):
-                return tuple(freeze(v) for v in value)
+                return tuple(
+                    freeze(v)
+                    for v in value  # pyright: ignore[reportUnknownVariableType]
+                )
             return value
 
         return frozenset(freeze(self._get_properties()))
@@ -210,7 +216,7 @@ class ASTNode(ABC):
     def _get_kind(self) -> str:
         pass
 
-    def _matches_kind(self, node: "ASTNode") -> bool:
+    def _matches_kind(self : ASTNodeType, node: ASTNodeType) -> bool:
         return node.get_kind() == self.get_kind()
 
     @abstractmethod
@@ -242,12 +248,12 @@ class ASTNode(ABC):
         for child in self.get_children():
             child.process(function)
 
-    def accept(self, function: Callable[["ASTNode"], VisitorResult]):
+    def accept(self, function: Callable[["ASTNode"], VisitorResult]) -> None:
         """
         Accepts a visitor function and applies it to the current node and its children.
 
         Args:
-            function (Callable[['ASTNode'], None]): A function that takes an ASTNode as an argument and returns a VisitorResult.
+            function (Callable[["ASTNode"], None]): A function that takes an ASTNode as an argument and returns a VisitorResult.
 
         Returns:
             None

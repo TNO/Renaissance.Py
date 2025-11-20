@@ -1,4 +1,4 @@
-from syntax_tree import ASTFinder, ASTProcessor, ASTNodeType, ASTNodeType
+from syntax_tree import ASTFinder, ASTProcessor, ASTNodeType
 
 class CleanupRefactoring:
     def __init__(self):

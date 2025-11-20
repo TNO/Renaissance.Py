@@ -1,16 +1,20 @@
-
 import functools
-from typing import TypeVar
+from typing import Sequence, TypeVar, Callable, Any
 
+from .ast_node import ASTNodeType
 from .ast_processor import ASTProcessor
 from .batch_ast_processor import BatchASTProcessor, IterableProvider
 
-T = TypeVar('T')
+T = TypeVar("T")
+TFunc = Callable[..., Any]
 
-def annotate_decorator(foreignDecorator, name:str):
-    def newDecorator(func):
-        R = foreignDecorator(func) # apply foreignDecorator, like call to foreignDecorator(method) would have done
-        R.decorator = newDecorator # keep track of decorator
+
+def annotate_decorator(foreignDecorator: TFunc, name: str):
+    def newDecorator(func: TFunc) -> TFunc:
+        R = foreignDecorator(
+            func
+        )  # apply foreignDecorator, like call to foreignDecorator(method) would have done
+        R.decorator = newDecorator  # keep track of decorator
         R.recipe_action = name
         return R
 
@@ -18,78 +22,118 @@ def annotate_decorator(foreignDecorator, name:str):
     newDecorator.__doc__ = foreignDecorator.__doc__
     return newDecorator
 
-def get_methods_with_decorator(cls, decorator):
+
+def get_methods_with_decorator(cls: Any, decorator: TFunc):
     for maybeDecorated in cls.__dict__.values():
-        if hasattr(maybeDecorated, 'recipe_action'):
+        if hasattr(maybeDecorated, "recipe_action"):
             if maybeDecorated.recipe_action == decorator.__name__:
                 yield maybeDecorated
 
+
 # Decorators
 
+
 def final_action():
-    def final_action_decorator(func):
+    def final_action_decorator(func: TFunc) -> TFunc:
         @functools.wraps(func)
-        def final_action_wrapper(recipe, *args, **kwargs):
+        def final_action_wrapper(recipe: TFunc, *args: str, **kwargs: int):
             func(recipe)
+
         return final_action_wrapper
+
     return annotate_decorator(final_action_decorator, final_action.__name__)
 
-def recipe_step(order=0, repeat=False):
-    def recipe_step_decorator(func):
+
+def recipe_step(order: int = 0, repeat: bool = False) -> TFunc:
+    def recipe_step_decorator(func: TFunc) -> TFunc:
         @functools.wraps(func)
-        def recipe_step_wrapper(step: int, recipe, ast_processor: ASTProcessor,  *args, **kwargs):
+        def recipe_step_wrapper(
+            step: int,
+            recipe: TFunc,
+            ast_processor: ASTProcessor[ASTNodeType],
+            *args: str,
+            **kwargs: int
+        ):
             if step == order:
                 if repeat or ast_processor.repeat_step == 0:
                     result = func(recipe, ast_processor)
+
                     def callable_result():
-                        if result: 
+                        if result:
                             result()
                         return func.__name__
+
                     return callable_result()
             return None
+
         return recipe_step_wrapper
+
     return annotate_decorator(recipe_step_decorator, recipe_step.__name__)
 
-def after_step(step:str):
-    def after_step_decorator(func):
+
+def after_step(step: str) -> TFunc:
+    def after_step_decorator(func: TFunc) -> TFunc:
         @functools.wraps(func)
-        def after_step_wrapper(preceding_methods, recipe, *args, **kwargs):
+        def after_step_wrapper(
+            preceding_methods: Sequence[str], recipe: TFunc, *args: str, **kwargs: int
+        ):
             if step in preceding_methods:
                 func(recipe)
+
         return after_step_wrapper
+
     return annotate_decorator(after_step_decorator, after_step.__name__)
 
 
-class RecipeASTProcessor():
+class RecipeASTProcessor:
 
-    def __init__(self, recipe, iterableProvider: IterableProvider, file_filter:str,in_memory: bool = False, max_processes=4):
+    def __init__(
+        self,
+        recipe: TFunc,
+        iterableProvider: IterableProvider[ASTNodeType],
+        file_filter: str,
+        in_memory: bool = False,
+        max_processes: int = 4,
+    ):
         self.__recipe = recipe
-        self.__batch_processor = BatchASTProcessor(in_memory=in_memory, max_processes=max_processes)
+        self.__batch_processor = BatchASTProcessor(
+            in_memory=in_memory, max_processes=max_processes
+        )
         self.__iterableProvider = iterableProvider
         self.__file_filter = file_filter
 
     def run(self):
-        actions = []
-        results = []
-        for idx, recipe_step_method in enumerate(get_methods_with_decorator(self.__recipe.__class__, recipe_step)):
+        actions : Sequence[TFunc] = []
+        results : Sequence[Any] = []
+        for idx, recipe_step_method in enumerate(
+            get_methods_with_decorator(self.__recipe.__class__, recipe_step)
+        ):
             results.append(None)
-            def recipe_action(ast_processor):
+
+            def recipe_action(ast_processor : ASTProcessor[ASTNodeType]):
                 result = recipe_step_method(step, self.__recipe, ast_processor)
                 if result:
                     results[idx] = result
+
             actions.append(recipe_action)
-        after_step_actions = []
-        for after_step_method in get_methods_with_decorator(self.__recipe.__class__, after_step):
+        
+        after_step_actions : Sequence[TFunc] = []
+        for after_step_method in get_methods_with_decorator(
+            self.__recipe.__class__, after_step
+        ):
+
             def after_step_action():
                 after_step_method(results, self.__recipe)
-            after_step_actions.append(after_step_action)
 
+            after_step_actions.append(after_step_action)
 
         step = 0
         while len(actions) > 0:
             for idx in range(len(results)):
                 results[idx] = None
-            self.__batch_processor.repeat(self.__iterableProvider, actions, self.__file_filter)
+            self.__batch_processor.repeat(
+                self.__iterableProvider, actions, self.__file_filter
+            )
             if all([result == None for result in results]):
                 break
             for after_step_action in after_step_actions:
@@ -98,4 +142,3 @@ class RecipeASTProcessor():
 
         for method in get_methods_with_decorator(self.__recipe.__class__, final_action):
             method(self.__recipe)
-

@@ -1,10 +1,4 @@
 
-import re
-import subprocess
-
-import pyperclip
-
-
 class CPPUtils:
 
     # a set of cpp reserved keywords in reverse alphabetical order:

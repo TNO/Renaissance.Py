@@ -11,11 +11,11 @@ class ASTFinder:
         return Stream(ASTFinder.__find_all(ast_node, function))
 
     @staticmethod
-    def find_kind(ast_node: ASTNodeType, kind: str)-> Stream[ASTNodeType]:
+    def find_kind(ast_node: ASTNodeType, kind: str|re.Pattern[str])-> Stream[ASTNodeType]:
         return Stream(ASTFinder.__matches_kind(ast_node, kind))
 
     @staticmethod
-    def matches_kind(ast_node: Optional[ASTNode], kind: str)-> bool:
+    def matches_kind(ast_node: Optional[ASTNode], kind: str|re.Pattern[str])-> bool:
         # compare kind with the ast_node kind only using word characters
         # get kind of the ast_node with only word characters
         if ast_node == None:
@@ -35,7 +35,7 @@ class ASTFinder:
             yield from ASTFinder.__find_all(child, function)
 
     @staticmethod
-    def __matches_kind(ast_node: ASTNodeType, kind:str|re.Pattern)-> Iterator[ASTNodeType]:
+    def __matches_kind(ast_node: ASTNodeType, kind:str|re.Pattern[str])-> Iterator[ASTNodeType]:
         pattern = kind if isinstance(kind, re.Pattern) else re.compile(kind, re.IGNORECASE)
         ast_kind = ASTFinder.KIND_MATCH.sub('', ast_node.get_kind()).lower()
 

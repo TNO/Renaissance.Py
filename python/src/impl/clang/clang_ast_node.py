@@ -110,12 +110,12 @@ class ClangASTNode(ASTNode):
 
     @override
     @staticmethod
-    def load_from_text(file_content: str, file_name: str, extra_args:Sequence[str], working_dir:Path) -> 'ClangASTNode':
-        translation_unit: TranslationUnit = ClangASTNode.index.parse(file_name, unsaved_files=[(file_name, file_content)],  args=[*ClangASTNode.parse_args,*extra_args])
+    def load_from_text(text: str, file_name: str, extra_args:Sequence[str], working_dir:Path) -> "ClangASTNode":
+        translation_unit: TranslationUnit = ClangASTNode.index.parse(file_name, unsaved_files=[(file_name, text)],  args=[*ClangASTNode.parse_args,*extra_args])
         ClangASTNode.check_diagnostics(translation_unit, file_name)
         root_node =  ClangASTNode(translation_unit.cursor, ClangTranslationUnit(translation_unit, file_name=str(file_name)), None)
         # Convert file_content to bytes
-        file_content_bytes = file_content.encode(sys.getfilesystemencoding())
+        file_content_bytes = text.encode(sys.getfilesystemencoding())
         # add to cache to avoid reading the file again
         root_node.cache[file_name] = file_content_bytes
         ClangASTNode.check_diagnostics(translation_unit, file_name)

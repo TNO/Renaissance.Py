@@ -1,32 +1,37 @@
-
 from io import StringIO
 import io
 from .ast_node import ASTNode
 
+
 class ASTShower:
     @staticmethod
-    def show_node(ast_node: ASTNode, include_properties = False):
-        print('\n'+ASTShower.get_node(ast_node, include_properties))
+    def show_node(ast_node: ASTNode, include_properties: bool = False):
+        print("\n" + ASTShower.get_node(ast_node, include_properties))
 
     @staticmethod
-    def get_node(ast_node: ASTNode, include_properties = False):
+    def get_node(ast_node: ASTNode, include_properties: bool = False):
         buffer = io.StringIO()
         ASTShower._process_node(buffer, "", ast_node, include_properties)
         return buffer.getvalue()
 
     @staticmethod
-    def store_node(filename: str, ast_node: ASTNode, include_properties = False):
-        with open(filename, 'w') as f: f.write(ASTShower.get_node(ast_node, include_properties))
+    def store_node(filename: str, ast_node: ASTNode, include_properties: bool = False):
+        with open(filename, "w") as f:
+            f.write(ASTShower.get_node(ast_node, include_properties))
 
     @staticmethod
-    def _process_node( output: StringIO, indent, node: ASTNode, include_properties):
+    def _process_node(
+        output: StringIO, indent: str, node: ASTNode, include_properties: bool
+    ):
         if not node.is_part_of_translation_unit():
             return
-        
+
         text = node.get_text()
         raw_lines = text.splitlines()
         properties_text = node.get_properties() if include_properties else ""
-        output.write(f"{indent}({node.get_kind()}, {node.get_name()}, {node.get_containing_filename()}[{node.get_start_offset()}:{node.get_start_offset()+node.get_length()}]){properties_text}:")
+        output.write(
+            f"{indent}({node.get_kind()}, {node.get_name()}, {node.get_containing_filename()}[{node.get_start_offset()}:{node.get_start_offset()+node.get_length()}]){properties_text}:"
+        )
         if len(raw_lines) < 2:
             output.write(f" |{text}|")
         else:

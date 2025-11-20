@@ -1,4 +1,3 @@
-import itertools
 from typing import Sequence, TypeVar, Generic, Iterable, Callable, Any, Optional
 from functools import reduce
 
