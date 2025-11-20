@@ -7,41 +7,47 @@ import sys
 from typing import Any, Callable, Generic, Optional, Sequence, TypeVar
 from .text_utils import TextUtils
 
+
 # enum with ABORT, CONTINUE and SKIP
 class VisitorResult(Enum):
     ABORT = 0
     CONTINUE = 1
     SKIP = 2
 
-ASTNodeType = TypeVar("ASTNodeType", bound='ASTNode')
+
+ASTNodeType = TypeVar("ASTNodeType", bound="ASTNode")
+
 
 class ASTReference(Generic[ASTNodeType]):
-    def __init__(self, ast_node: ASTNodeType, ref_kind: str, properties: dict[str,Any]) -> None:
+    def __init__(
+        self, ast_node: ASTNodeType, ref_kind: str, properties: dict[str, Any]
+    ) -> None:
         self._node = ast_node
         self._ref_kind = ref_kind
         self._properties = properties
-    
+
     def get_node(self) -> ASTNodeType:
         return self._node
-    
+
     def get_ref_kind(self) -> str:
         return self._ref_kind
-    
-    def get_properties(self) -> dict:
+
+    def get_properties(self) -> dict[str, Any]:
         return self._properties
-    
+
 
 # To make usage of the concrete class methods easier, ASTNode MUST NOT have ABSTRACT public classes!!
 class ASTNode(ABC):
     """
-       The base class to represent an AST node. 
-       It is an abstract class that should be inherited by concrete classes that represent specific AST nodes.
+    The base class to represent an AST node.
+    It is an abstract class that should be inherited by concrete classes that represent specific AST nodes.
     """
-    def __init__(self, root: 'ASTNode') -> None:
+
+    def __init__(self, root: "ASTNode") -> None:
         super().__init__()
         self.root = root
-        self.cache = {}
-    
+        self.cache: dict[str, bytes] = {}
+
     def is_part_of_translation_unit(self) -> bool:
         return self.get_containing_filename() == self.root.get_containing_filename()
 
@@ -51,25 +57,27 @@ class ASTNode(ABC):
         if start == end:
             return ""
         file = self.get_containing_filename()
-        if not file: 
+        if not file:
             return ""
         return self.get_content(start, end)
-    
-    def get_text(self) -> str: 
-        return TextUtils.shift_left(self.get_raw_signature(), self.get_indent(), start_line=1)
 
-    def get_content(self, start, end):
+    def get_text(self) -> str:
+        return TextUtils.shift_left(
+            self.get_raw_signature(), self.get_indent(), start_line=1
+        )
+
+    def get_content(self, start: int, end: int):
         bytes = self.root.get_binary_file_content()
         return str(bytes[start:end], sys.getfilesystemencoding())
 
-    def get_binary_file_content(self, file_path: str|None=None) -> bytes:
+    def get_binary_file_content(self, file_path: str | None = None) -> bytes:
         if not file_path:
             file_path = self.root.get_containing_filename()
         try:
             return self.cache[file_path]
-        except Exception as e:
-            with open(file_path, 'rb') as f:
-                bytes =  f.read()
+        except Exception:
+            with open(file_path, "rb") as f:
+                bytes = f.read()
                 self.cache[file_path] = bytes
                 return bytes
 
@@ -95,7 +103,9 @@ class ASTNode(ABC):
         index = siblings.index(self)
         return siblings[index + 1] if index < len(siblings) - 1 else None
 
-    def get_ancestor(self: ASTNodeType, kind: str|re.Pattern) -> Optional[ASTNodeType]:
+    def get_ancestor(
+        self: ASTNodeType, kind: str | re.Pattern[str]
+    ) -> Optional[ASTNodeType]:
         pattern = re.compile(kind, re.IGNORECASE) if isinstance(kind, str) else kind
         parent = self._get_parent()
         if not parent:
@@ -104,10 +114,10 @@ class ASTNode(ABC):
             return parent
         return parent.get_ancestor(pattern)
 
-    def is_descendent_of(self, node: 'ASTNode'):
+    def is_descendent_of(self, node: "ASTNode") -> bool:
         return node.is_ancestor_of(self)
 
-    def is_ancestor_of(self, descendant: 'ASTNode'):
+    def is_ancestor_of(self, descendant: "ASTNode") -> bool:
         parent = descendant.get_parent()
         if parent == self:
             return True
@@ -117,12 +127,16 @@ class ASTNode(ABC):
 
     @staticmethod
     @abstractmethod
-    def load(file_path: Path, extra_args:Sequence[str], working_dir:Path)-> 'ASTNode':
+    def load(
+        file_path: Path, extra_args: Sequence[str], working_dir: Path
+    ) -> "ASTNode":
         pass
 
     @staticmethod
     @abstractmethod
-    def load_from_text(text: str, file_name: str, extra_args:Sequence[str], working_dir:Path) -> 'ASTNode':
+    def load_from_text(
+        text: str, file_name: str, extra_args: Sequence[str], working_dir: Path
+    ) -> "ASTNode":
         pass
 
     def get_name(self) -> str:
@@ -130,39 +144,40 @@ class ASTNode(ABC):
 
     def get_containing_filename(self) -> str:
         return self._get_containing_filename()
-    
-    def get_start_offset(self) -> int: 
+
+    def get_start_offset(self) -> int:
         return self._get_start_offset()
-    
-    def get_length(self) -> int: 
+
+    def get_length(self) -> int:
         return self._get_length()
 
-    def get_kind(self) -> str: 
+    def get_kind(self) -> str:
         return self._get_kind()
 
-    def matches_kind(self, node: 'ASTNode') -> bool: 
+    def matches_kind(self, node: "ASTNode") -> bool:
         return self._matches_kind(node)
 
     @cache
-    def get_frozen_properties(self) -> frozenset[tuple[str, Any]]: 
-        def freeze(value):
+    def get_frozen_properties(self) -> frozenset[tuple[str, Any]]:
+        def freeze(value: Any) -> Any:
             if isinstance(value, dict):
                 return frozenset((k, freeze(v)) for k, v in value.items())
             if isinstance(value, list):
                 return tuple(freeze(v) for v in value)
             return value
+
         return frozenset(freeze(self._get_properties()))
 
-    def get_properties(self) -> dict[str, int|str]: 
+    def get_properties(self) -> dict[str, int | str]:
         return self._get_properties()
 
-    def get_parent(self: ASTNodeType) -> Optional[ASTNodeType]: 
+    def get_parent(self: ASTNodeType) -> Optional[ASTNodeType]:
         return self._get_parent()
 
-    def is_statement(self) ->bool: 
+    def is_statement(self) -> bool:
         return self._is_statement()
 
-    def get_children(self: ASTNodeType) -> Sequence[ASTNodeType]: 
+    def get_children(self: ASTNodeType) -> Sequence[ASTNodeType]:
         return self._get_children()
 
     def get_references(self: ASTNodeType) -> Sequence[ASTReference[ASTNodeType]]:
@@ -178,40 +193,40 @@ class ASTNode(ABC):
     @abstractmethod
     def _get_containing_filename(self) -> str:
         pass
-    
+
     @abstractmethod
-    def _get_start_offset(self) -> int: 
+    def _get_start_offset(self) -> int:
         pass
 
     @abstractmethod
-    def _get_extended_end_offset(self) -> int: 
+    def _get_extended_end_offset(self) -> int:
         pass
 
     @abstractmethod
-    def _get_length(self) -> int: 
+    def _get_length(self) -> int:
         pass
 
     @abstractmethod
-    def _get_kind(self) -> str: 
+    def _get_kind(self) -> str:
         pass
 
-    def _matches_kind(self, node: 'ASTNode') -> bool: 
+    def _matches_kind(self, node: "ASTNode") -> bool:
         return node.get_kind() == self.get_kind()
 
     @abstractmethod
-    def _get_properties(self) -> dict[str, int|str]: 
+    def _get_properties(self) -> dict[str, int | str]:
         pass
 
     @abstractmethod
-    def _get_parent(self: ASTNodeType) -> Optional[ASTNodeType]: 
+    def _get_parent(self: ASTNodeType) -> Optional[ASTNodeType]:
         pass
 
     @abstractmethod
-    def _is_statement(self) ->bool: 
+    def _is_statement(self) -> bool:
         pass
 
     @abstractmethod
-    def _get_children(self: ASTNodeType) -> Sequence[ASTNodeType]: 
+    def _get_children(self: ASTNodeType) -> Sequence[ASTNodeType]:
         pass
 
     @abstractmethod
@@ -221,13 +236,13 @@ class ASTNode(ABC):
     @abstractmethod
     def _get_referenced_by(self: ASTNodeType) -> Sequence[ASTReference[ASTNodeType]]:
         pass
-    
-    def process(self, function: Callable[['ASTNode'], None]):
+
+    def process(self, function: Callable[["ASTNode"], None]):
         function(self)
         for child in self.get_children():
             child.process(function)
 
-    def accept(self,  function: Callable[['ASTNode'], VisitorResult]):
+    def accept(self, function: Callable[["ASTNode"], VisitorResult]):
         """
         Accepts a visitor function and applies it to the current node and its children.
 
@@ -241,11 +256,9 @@ class ASTNode(ABC):
             for child in self.get_children():
                 child.accept(function)
 
-    
     def get_indent(self) -> int:
         if not self.is_part_of_translation_unit():
             return 0
         content = self.root.get_binary_file_content()
         offset = self.get_start_offset()
         return TextUtils.get_indent(content, offset)
-
