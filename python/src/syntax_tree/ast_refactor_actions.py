@@ -1,5 +1,5 @@
 from functools import cache
-from typing import Generic, Optional, Sequence
+from typing import Callable, Generic, Optional, Sequence
 
 from common.stream import Stream
 from .match_finder import MatchFinder, PatternMatch
@@ -17,10 +17,10 @@ class ASTRefactorActions(Generic[ASTNodeType]):
     ) -> None:
         self.processor = processor
         self.pattern_factory = pattern_factory
-        self.replaced = set()
+        self.replaced: set[int] = set()
 
     def replace_expr(self, name: str, replacement: str, kind: Optional[str] = None):
-        def test(n: ASTNode):
+        def test(n: ASTNodeType):
             if (kind and ASTFinder.matches_kind(n, kind)) and n.get_name() == name:
                 yield n
 
@@ -37,10 +37,10 @@ class ASTRefactorActions(Generic[ASTNodeType]):
         kind: Optional[str] = None,
         skip_kind: Optional[str] = None,
     ):
-        matches_name = (
+        matches_name: Callable[[Optional[ASTNodeType]], bool] = (
             lambda n: (not kind or ASTFinder.matches_kind(n, kind))
             and (not skip_kind or not ASTFinder.matches_kind(n, skip_kind))
-            and n.get_name() == name
+            and n.get_name() == name        # TODO: prevent get_name on None
         )
         self.processor.find_all(matches_name).filter(
             lambda n: not n.get_start_offset() in self.replaced
@@ -57,10 +57,10 @@ class ASTRefactorActions(Generic[ASTNodeType]):
         kind: Optional[str] = None,
         skip_kind: Optional[str] = None,
     ):
-        matches_text = (
+        matches_text: Callable[[Optional[ASTNodeType]], bool] = (
             lambda n: (not kind or ASTFinder.matches_kind(n, kind))
             and (not skip_kind or not ASTFinder.matches_kind(n, skip_kind))
-            and n.get_text() == text
+            and n.get_text() == text      # TODO: prevent get_text on None
         )
         self.processor.find_all(matches_text).filter(
             lambda n: not n.get_start_offset() in self.replaced

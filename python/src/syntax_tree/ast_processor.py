@@ -25,11 +25,11 @@ class ASTProcessor(Generic[ASTNodeType]):
         self.repeat_step = 0
 
     @property
-    def factory(self):
+    def factory(self) -> ASTFactory[ASTNodeType]:
         return self.__ast_factory
 
     @property
-    def node(self):
+    def node(self) -> ASTNodeType:
         return self.__root_node
 
     def get_filename(self) -> str:
@@ -44,7 +44,7 @@ class ASTProcessor(Generic[ASTNodeType]):
         target: ASTNode | Sequence[ASTNode] | PatternMatch | Sequence[PatternMatch],
         include_whitespace: bool = True,
         include_comments: bool = True,
-    ):
+    ) -> None:
         self.__rewriter.replace(
             new_content, target, include_whitespace, include_comments
         )
@@ -54,7 +54,7 @@ class ASTProcessor(Generic[ASTNodeType]):
         target: ASTNode | Sequence[ASTNode] | PatternMatch | Sequence[PatternMatch],
         include_whitespace: bool = True,
         include_comments: bool = True,
-    ):
+    ) -> None:
         self.__rewriter.remove(target, include_whitespace, include_comments)
 
     def insert_before(
@@ -63,7 +63,7 @@ class ASTProcessor(Generic[ASTNodeType]):
         target: ASTNode | Sequence[ASTNode] | PatternMatch | Sequence[PatternMatch],
         include_whitespace: bool = True,
         include_comments: bool = True,
-    ):
+    ) -> None:
         self.__rewriter.insert_before(
             new_content, target, include_whitespace, include_comments
         )
@@ -74,7 +74,7 @@ class ASTProcessor(Generic[ASTNodeType]):
         target: ASTNode | Sequence[ASTNode] | PatternMatch | Sequence[PatternMatch],
         include_whitespace: bool = True,
         include_comments: bool = True,
-    ):
+    ) -> None:
         self.__rewriter.insert_after(
             new_content, target, include_whitespace, include_comments
         )

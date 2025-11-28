@@ -132,7 +132,7 @@ class CPatternFactory(Generic[ASTNodeType]):
         text: str,
         types: Sequence[str] = [],
         extra_declarations: Sequence[str] = [],
-        kind=".*",
+        kind: str =".*",
     ) -> Sequence[ASTNodeType]:
         # create a reference for all used variables excluding the specified types
         parameters = [
@@ -173,7 +173,14 @@ class CPatternFactory(Generic[ASTNodeType]):
         assert len(statements) == 1, "Only one statement is expected"
         return statements[0]
 
-    def _create_body(self, text: str, types, parameters, extra_declarations, kind: str):
+    def _create_body(
+        self,
+        text: str,
+        types: Sequence[str],
+        parameters: Sequence[str],
+        extra_declarations: Sequence[str],
+        kind: str,
+    ):
         fullText = (
             self.header + "\n".join(CPatternFactory._to_typedef(types)) + "\n"
             "\n".join(CPatternFactory._to_declaration(parameters)) + "\n"
@@ -239,16 +246,17 @@ class CPatternFactory(Generic[ASTNodeType]):
         return [prefix + keyword + postfix for keyword in keywords]
 
 
-class CPPPatternFactory(CPatternFactory):
+class CPPPatternFactory(CPatternFactory[ASTNodeType]):
 
-    def __init__(self, factory: ASTFactory, refNode: Optional[ASTNode] = None):
+    def __init__(self, factory: ASTFactory[ASTNodeType], refNode: Optional[ASTNode] = None):
         super().__init__(factory, refNode, "cpp")
 
-    def create_constructor_call(self, pattern):
+    def create_constructor_call(self, pattern: str):
         class_and_args = re.match(R"([$\w]+)\(([^)]+)\)", pattern.replace(" ", ""))
         if class_and_args:
             class_name = class_and_args.group(1)
             args = class_and_args.group(2).split(",")
+        # TODO: implement else or use default values for class_name and args 
         return self._create_constructor_call(class_name, args)
 
     def _create_constructor_call(self, class_name: str, args: Sequence[str] = []):
