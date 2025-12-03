@@ -1,7 +1,7 @@
 # This script demonstrates the use of the syntax_tree library to parse and rewrite C code.
 # It specifically showcases the replacement of if-else statements with ternary operators.
 from refactoring import CleanupRefactoring
-from syntax_tree import ASTFactory, ASTFinder, ASTRewriter, ASTShower, ASTProcessor
+from syntax_tree import ASTFactory, ASTFinder, ASTRewriter, ASTShower, ASTProcessor, ASTNode
 from impl import ClangJsonASTNode, ClangASTNode
 
 example_code = """
@@ -38,7 +38,7 @@ expected_result_refactor = """
         }""".strip()
 
 
-def remove_unused_variable_using_refactor_method(node_type: type):
+def remove_unused_variable_using_refactor_method(node_type: type[ASTNode]):
     factory = ASTFactory(node_type, [])
     # create translation unit
     atu = factory.create_from_text(example_code, "test.c")
@@ -54,7 +54,7 @@ def remove_unused_variable_using_refactor_method(node_type: type):
     return result, expected_result_refactor
 
 
-def remove_unused_variable_low_level(node_type: type):
+def remove_unused_variable_low_level(node_type: type[ASTNode]):
     factory = ASTFactory(ClangJsonASTNode, [])
     # Create a pattern factory (using the factory (hence also its args)
     # create translation unit
