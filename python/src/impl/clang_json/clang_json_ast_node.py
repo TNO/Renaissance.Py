@@ -9,14 +9,14 @@ import sys
 import tempfile
 from common import Stream
 from syntax_tree import ASTNode, ASTReference, CPPUtils
-from typing import Any, Optional, Sequence, TypeVar
+from typing import Any, Optional, Sequence
 from typing_extensions import override
 import subprocess
 
 
 EMPTY_DICT = {}
 EMPTY_STR = ""
-EMPTY_LIST : list[ClangJsonASTReference]= []
+EMPTY_LIST: list[ClangJsonASTReference] = []
 ON_NODE_ID_TAGS = ["previousDecl", "parentDeclContextId"]
 ID_TAGS = [
     "id",
@@ -53,7 +53,7 @@ class ClangJsonTranslationUnit:
     def lazy_create_references(self, node: "ClangJsonASTNode") -> None:
         if self.references_initialized:
             return
-        node.root.process(ReferenceHelper.create_references)
+        node.json_root.process(ReferenceHelper.create_references)
         node.root.process(ReferenceHelper.add_record_references)
         self.references_initialized = True
 
@@ -78,7 +78,7 @@ class ClangJsonASTNode(ASTNode):
         insert_name: Optional[str] = None,
     ) -> None:
         super().__init__(self if parent is None else parent.root)
-        self.node = node
+        self.node: dict[str, Any] = node
         self._children: Optional[Sequence["ClangJsonASTNode"]] = None
         self.parent = parent
         self.translation_unit = translation_unit
@@ -102,7 +102,7 @@ class ClangJsonASTNode(ASTNode):
         # an fake child is introduced to handle the case where the type of a declaration is not found
         # for example in the case of a base type.
         # without the fake child pattern matching on types will be difficult
-        self.__inserted_children : list [ClangJsonASTNode] = []
+        self.__inserted_children: list[ClangJsonASTNode] = []
         type = self.node.get("type")
         if (
             insert_kind == None
@@ -396,7 +396,7 @@ class ClangJsonASTNode(ASTNode):
 
         refs = self.translation_unit._references.get(self.node["id"], EMPTY_LIST)
         definition_node_id = self._get_function_definition()
-            #TODO: also class definitions, type definitions, ...
+        # TODO: also class definitions, type definitions, ...
         if definition_node_id:
             # try to find the definition which might have references
             refs += self.translation_unit._references.get(
@@ -547,8 +547,8 @@ class ClangJsonASTNode(ASTNode):
         try:
             for p in path:
                 target = target[p]
-                #TODO: Is this code really correct when path contains multiple strings?
-                # Doesn't target become an Any, and hence might not support __get_item__ any more? 
+                # TODO: Is this code really correct when path contains multiple strings?
+                # Doesn't target become an Any, and hence might not support __get_item__ any more?
             return target if isinstance(target, type(default)) else default
         except:
             return default

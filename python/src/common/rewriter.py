@@ -1,7 +1,5 @@
 import sys
 
-# TODO: why is buildin bytes not recognized by type hint checker?
-
 class Rewrite:
     def __init__(self, start: int, end: int, replacement: bytes) -> None:
         self.start = start
@@ -74,10 +72,10 @@ class Rewriter:
 if __name__ == "__main__":
     # create a byte array a random bytes of len 20
 
-    bytes = bytearray(20)
+    my_bytes = bytearray(20)
     for i in range(20):
-        bytes[i] = ord("a") + i
-    rewriter = Rewriter(bytes)
+        my_bytes[i] = ord("a") + i
+    rewriter = Rewriter(my_bytes)
     rewriter.replace(5, 10, b"hellooo")
     rewriter.replace(5, 10, b" world")
     rewriter.replace(0, 0, b"BEGIN")
