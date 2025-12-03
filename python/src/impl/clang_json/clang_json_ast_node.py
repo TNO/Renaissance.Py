@@ -330,11 +330,12 @@ class ClangJsonASTNode(ASTNode):
 
     @override
     def _matches_kind(self, node: ASTNode) -> bool:
-        kind = self._get_kind()
+        self_kind = self._get_kind()
+        node_kind = node.get_kind()
         return (
-            kind == node.get_kind()
-            or (kind.endswith("Literal") and node == "DeclRefExpr")
-            or (kind == "DeclRefExpr" and node.get_kind().endswith("Literal"))
+            self_kind == node_kind
+            or (self_kind.endswith("Literal") and node_kind == "DeclRefExpr")
+            or (self_kind == "DeclRefExpr" and node_kind.endswith("Literal"))
         )
 
     @override
@@ -355,7 +356,7 @@ class ClangJsonASTNode(ASTNode):
 
     @override
     @cache
-    def _get_referenced_by(self) -> Sequence[ASTReference["ClangJsonASTNode"]]:
+    def _get_referenced_by(self) -> Sequence[ASTReference]:
         if self.inserted:
             return []
         self.translation_unit.lazy_create_references(self)
@@ -537,17 +538,17 @@ class ClangJsonASTNode(ASTNode):
             list(node["inner"])
         ) == 1
 
-    T = TypeVar("T")
-
-    def _get(self, path: Sequence[str], default: T) -> T:
+    def _get[T](self, path: Sequence[str], default: T) -> T:
         return self._get_property(self.node, path, default)
 
     @staticmethod
-    def _get_property(target, path: Sequence[str], default: T) -> T:
+    def _get_property[T](target: dict[str, Any], path: Sequence[str], default: T) -> T:
         assert default is not None, "default value must be provided"
         try:
             for p in path:
                 target = target[p]
+                #TODO: Is this code really correct when path contains multiple strings?
+                # Doesn't target become an Any, and hence might not support __get_item__ any more? 
             return target if isinstance(target, type(default)) else default
         except:
             return default

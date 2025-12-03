@@ -253,7 +253,7 @@ class ClangASTNode(ASTNode):
 
     @override
     @cache
-    def _get_referenced_by(self) -> Sequence[ASTReference['ClangASTNode']]:
+    def _get_referenced_by(self) -> Sequence[ASTReference]:
         self.translation_unit.lazy_create_references(self)
         node_id = self.node.hash
         ref_by = self.translation_unit._referenced_by.get(node_id, EMPTY_LIST)
@@ -289,7 +289,7 @@ class ClangASTNode(ASTNode):
 
     @override
     @cache
-    def _get_references(self) -> Sequence[ASTReference['ClangASTNode']]:
+    def _get_references(self) -> Sequence[ASTReference]:
         self.translation_unit.lazy_create_references(self)
         return Stream(self.translation_unit._references.get(self.node.hash, EMPTY_LIST))\
             .map(lambda ref: ASTReference(self.translation_unit._nodes[ref.node_id], ref.ref_kind, ref.properties)).to_list()
