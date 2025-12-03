@@ -45,7 +45,7 @@ class ClangTranslationUnit():
 
     @staticmethod
     def _collect_expansions(translation_unit: TranslationUnit) -> set[tuple[str,int,int]]:
-        result = set()
+        result: set[tuple[str,int,int]] = set()
         for child in translation_unit.cursor.get_children():
             if child.kind.name == 'MACRO_INSTANTIATION':
                 result.add((child.extent.start.file, child.extent.start.offset, child.extent.end.offset))
@@ -122,7 +122,7 @@ class ClangASTNode(ASTNode):
         return root_node
 
     @staticmethod
-    def check_diagnostics(translation_unit, file_name: str) -> None:
+    def check_diagnostics(translation_unit: TranslationUnit, file_name: str) -> None:
         has_error = False
         errors = ''
         for d in translation_unit.diagnostics:
@@ -242,7 +242,7 @@ class ClangASTNode(ASTNode):
 
     @override
     def _is_statement(self) ->bool:
-        return self.parent != None and self.parent.get_kind() in STMT_PARENTS
+        return self.parent is not None and self.parent.get_kind() in STMT_PARENTS
     
     @override
     @cache
@@ -260,7 +260,7 @@ class ClangASTNode(ASTNode):
         # if both the function declaration and function definition are avaible 
         # the references are stored in the function definition
         # but we want them to also show up in the declaration
-        if (len(ref_by) == 0):
+        if len(ref_by) == 0:
             definition = self._get_function_definition()
             if definition:
                 ref_by = self.translation_unit._referenced_by.get(definition.node.hash, EMPTY_LIST)
@@ -353,10 +353,10 @@ class ClangASTNode(ASTNode):
 
 class ReferenceHelper():
     @staticmethod
-    def create_references(ast_node) -> None:
+    def create_references(ast_node: ClangASTNode) -> None:
         assert isinstance(ast_node, ClangASTNode), f'Expected ClangASTNode but got {type(ast_node)}'
         references = []
-        node_id = ast_node.node.hash
+        node_id: str = ast_node.node.hash
         ast_node.translation_unit._references[node_id] = references
         ref_fields = ['referenced'] #, 'type.get_declaration()']
         for field in ref_fields:

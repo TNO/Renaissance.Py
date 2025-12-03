@@ -1,21 +1,19 @@
 from pathlib import Path
-from typing import Callable, Generic, Iterator, Sequence, TypeVar
+from typing import Callable, Iterator, Sequence
 
 from common.stream import Stream
 from .ast_finder import ASTFinder
 from .match_finder import ConstrainedPattern, MatchFinder, PatternMatch
 from .ast_rewriter import ASTRewriter
 from .ast_factory import ASTFactory
-from .ast_node import ASTNode, ASTNodeType
-
-T = TypeVar("T")
+from .ast_node import ASTNode
 
 
-class ASTProcessor(Generic[ASTNodeType]):
+class ASTProcessor:
     def __init__(
         self,
-        root: ASTNodeType,
-        ast_factory: ASTFactory[ASTNodeType],
+        root: ASTNode,
+        ast_factory: ASTFactory,
         in_memory: bool = False,
     ) -> None:
         self.__root_node = root
@@ -25,17 +23,17 @@ class ASTProcessor(Generic[ASTNodeType]):
         self.repeat_step = 0
 
     @property
-    def factory(self) -> ASTFactory[ASTNodeType]:
+    def factory(self) -> ASTFactory:
         return self.__ast_factory
 
     @property
-    def node(self) -> ASTNodeType:
+    def node(self) -> ASTNode:
         return self.__root_node
 
     def get_filename(self) -> str:
         return self.__rewriter.get_filename()
 
-    def get_root(self) -> ASTNodeType:
+    def get_root(self) -> ASTNode:
         return self.__root_node
 
     def replace(
@@ -80,11 +78,11 @@ class ASTProcessor(Generic[ASTNodeType]):
         )
 
     def find_all(
-        self, function: Callable[[ASTNodeType], Iterator[ASTNodeType] | bool]
-    ) -> Stream[ASTNodeType]:
+        self, function: Callable[[ASTNode], Iterator[ASTNode] | bool]
+    ) -> Stream[ASTNode]:
         return ASTFinder.find_all(self.__root_node, function)
 
-    def find_kind(self, kind: str) -> Stream[ASTNodeType]:
+    def find_kind(self, kind: str) -> Stream[ASTNode]:
         return ASTFinder.find_kind(self.__root_node, kind)
 
     def find_match(
@@ -106,7 +104,7 @@ class ASTProcessor(Generic[ASTNodeType]):
     def apply_to_string(self) -> str:
         return self.__rewriter.apply_to_string()
 
-    def commit(self: "ASTProcessor[ASTNodeType]") -> "ASTProcessor[ASTNodeType]":
+    def commit(self) -> ASTProcessor:
         """
         Commits the current changes to the AST (Abstract Syntax Tree) and returns a new ASTProcessor instance.
 
@@ -121,7 +119,7 @@ class ASTProcessor(Generic[ASTNodeType]):
             IOError: If there is an error writing to the file.
         """
         new_code = self.apply_to_string()
-        if self.__rewriter.has_changed() == False:
+        if not self.__rewriter.has_changed():
             return self
 
         if self.in_memory:
@@ -140,7 +138,7 @@ class ASTProcessor(Generic[ASTNodeType]):
 # main
 if __name__ == "__main__":
 
-    def test(key: str, factory: type[T]) -> T:
+    def test[T](_: str, factory: type[T]) -> T:
         result = factory()
         assert isinstance(result, factory)
         return result

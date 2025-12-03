@@ -1,5 +1,5 @@
 from functools import cache
-from typing import Callable, Generic, Optional, Sequence
+from typing import Callable, Optional, Sequence
 
 from common.stream import Stream
 from .match_finder import MatchFinder, PatternMatch
@@ -8,19 +8,19 @@ from .c_pattern_factory import CPPPatternFactory
 
 from .ast_finder import ASTFinder
 from .ast_processor import ASTProcessor
-from .ast_node import ASTNode, ASTNodeType
+from .ast_node import ASTNode
 
 
-class ASTRefactorActions(Generic[ASTNodeType]):
+class ASTRefactorActions:
     def __init__(
-        self, processor: ASTProcessor[ASTNodeType], pattern_factory: CPPPatternFactory
+        self, processor: ASTProcessor, pattern_factory: CPPPatternFactory
     ) -> None:
         self.processor = processor
         self.pattern_factory = pattern_factory
         self.replaced: set[int] = set()
 
     def replace_expr(self, name: str, replacement: str, kind: Optional[str] = None):
-        def test(n: ASTNodeType):
+        def test(n: "ASTNode"):
             if (kind and ASTFinder.matches_kind(n, kind)) and n.get_name() == name:
                 yield n
 
@@ -37,7 +37,7 @@ class ASTRefactorActions(Generic[ASTNodeType]):
         kind: Optional[str] = None,
         skip_kind: Optional[str] = None,
     ):
-        matches_name: Callable[[Optional[ASTNodeType]], bool] = (
+        matches_name: Callable[[Optional["ASTNode"]], bool] = (
             lambda n: (not kind or ASTFinder.matches_kind(n, kind))
             and (not skip_kind or not ASTFinder.matches_kind(n, skip_kind))
             and n.get_name() == name        # TODO: prevent get_name on None
@@ -57,7 +57,7 @@ class ASTRefactorActions(Generic[ASTNodeType]):
         kind: Optional[str] = None,
         skip_kind: Optional[str] = None,
     ):
-        matches_text: Callable[[Optional[ASTNodeType]], bool] = (
+        matches_text: Callable[[Optional["ASTNode"]], bool] = (
             lambda n: (not kind or ASTFinder.matches_kind(n, kind))
             and (not skip_kind or not ASTFinder.matches_kind(n, skip_kind))
             and n.get_text() == text      # TODO: prevent get_text on None
@@ -68,7 +68,7 @@ class ASTRefactorActions(Generic[ASTNodeType]):
             lambda n: self.processor.replace(replacement, n)
         )
 
-    def replace_decl(self, declaration: str, replacement: str):
+    def replace_declaration(self, declaration: str, replacement: str):
         matches = self.find_declaration(declaration)
         Stream(matches).for_each(lambda m: self.processor.replace(replacement, m))
 
@@ -95,7 +95,7 @@ class ASTRefactorActions(Generic[ASTNodeType]):
 
     @cache
     def collect(self, pattern: str, pattern_kind: str):
-        root = self.pattern_factory.create(pattern)
+        root = self.pattern_factory.create(pattern, pattern_kind)
 
         return self.processor.find_match(root).to_list()
 

@@ -32,7 +32,7 @@ class MatchUtils:
                 if VERBOSE:
                     do_log(
                         0,
-                        f"FAILED on properties not matching",
+                        "FAILED on properties not matching",
                         str(src.get_properties()),
                         str(cmp.get_properties()),
                     )
@@ -70,7 +70,7 @@ class MatchUtils:
             return [
                 node
                 for node in nodes
-                if re.search(exclude_kind, node.get_kind(), re.IGNORECASE) == None
+                if re.search(exclude_kind, node.get_kind(), re.IGNORECASE) is None
             ]
             # return filter(lambda node: re.search(exclude_kind,node.get_kind(), re.IGNORECASE)==None, nodes)
         return nodes
@@ -207,7 +207,7 @@ class PatternMatch:
 
     @cache
     def get_locations(self) -> dict[str, tuple[int, int]]:
-        result = {}
+        result: dict[str, tuple[int, int]] = {}
         location = 0
         length = 0
         for key_match in self._key_matches:
@@ -239,18 +239,18 @@ class PatternMatch:
     def get_as_float(self, key: str) -> float:
         return float(self.get_text(key))
 
-    def get_references(self) -> Sequence[ASTReference[ASTNode]]:
+    def get_references(self) -> Sequence[ASTReference]:
         return [ref for n in self.src_nodes for ref in n.get_references()]
 
-    def get_referenced_by(self) -> Sequence[ASTReference[ASTNode]]:
+    def get_referenced_by(self) -> Sequence[ASTReference]:
         return [ref for n in self.src_nodes for ref in n.get_referenced_by()]
 
     def match_referenced_by(
         self,
         *patterns_list: "Sequence[ASTNode]|ConstrainedPattern",
-        recursive=True,
-        exclude_kind=DEFAULT_EXCLUDE_KIND,
-        part_of_translation_unit=True,
+        recursive: bool = True,
+        exclude_kind: str = DEFAULT_EXCLUDE_KIND,
+        part_of_translation_unit: bool = True,
     ) -> Stream["PatternMatch"]:
         return Stream(
             self._match_referenced_by(
@@ -261,9 +261,9 @@ class PatternMatch:
     def match_references(
         self,
         *patterns_list: "Sequence[ASTNode]|ConstrainedPattern",
-        recursive=True,
-        exclude_kind=DEFAULT_EXCLUDE_KIND,
-        part_of_translation_unit=True,
+        recursive: bool = True,
+        exclude_kind: str = DEFAULT_EXCLUDE_KIND,
+        part_of_translation_unit: bool = True,
     ) -> Stream["PatternMatch"]:
         return Stream(
             self._match_references(
@@ -273,10 +273,10 @@ class PatternMatch:
 
     def _match_referenced_by(
         self,
-        patterns_list: "Sequence[Sequence[ASTNode]|ConstrainedPattern]",
-        recursive,
-        exclude_kind,
-        part_of_translation_unit,
+        patterns_list: Sequence[Sequence[ASTNode]|ConstrainedPattern],
+        recursive: bool,
+        exclude_kind: str,
+        part_of_translation_unit: bool,
     ) -> Iterable["PatternMatch"]:
         for n in self.src_nodes:
             for ref in n.get_referenced_by():
@@ -289,7 +289,8 @@ class PatternMatch:
                 ).to_iterable()
 
     def _match_references(
-        self, patterns_list, recursive, exclude_kind, part_of_translation_unit
+        self, patterns_list : Sequence[Sequence[ASTNode]|ConstrainedPattern], 
+        recursive: bool, exclude_kind: str, part_of_translation_unit: bool
     ) -> Iterable["PatternMatch"]:
         for n in self.src_nodes:
             for ref in n.get_references():
@@ -321,7 +322,7 @@ class MatchFinder:
         src_nodes: Sequence[ASTNode] | ASTNode,
         *patterns_list: Sequence[ASTNode] | ConstrainedPattern,
         recursive: bool = True,
-        exclude_kind :str =DEFAULT_EXCLUDE_KIND,
+        exclude_kind: str = DEFAULT_EXCLUDE_KIND,
         part_of_translation_unit: bool = True,
     ) -> Stream[PatternMatch]:
         return MatchFinder.find_all_strict(
@@ -336,9 +337,9 @@ class MatchFinder:
     def find_all_strict(
         src_nodes: Sequence[ASTNode] | ASTNode,
         patterns_list: Sequence[Sequence[ASTNode] | ConstrainedPattern],
-        recursive: bool=True,
+        recursive: bool = True,
         exclude_kind: str = DEFAULT_EXCLUDE_KIND,
-        part_of_translation_unit: bool=True,
+        part_of_translation_unit: bool = True,
     ) -> Stream[PatternMatch]:
         """
         Finds all pattern matches in the given source nodes.
@@ -389,7 +390,7 @@ class MatchFinder:
         Returns:
             Optional[PatternMatch]: A PatternMatch object if a match is found, otherwise None.
         """
-        eligible : Callable[[PatternMatch], bool] = lambda _ : True
+        eligible: Callable[[PatternMatch], bool] = lambda _: True
         if isinstance(src_nodes, ASTNode):
             src_nodes = [src_nodes]
         if isinstance(patterns, ConstrainedPattern):
@@ -451,7 +452,7 @@ class MatchFinder:
             if pattern_match:
                 target_nodes = pattern_match._get_remaining_nodes()
                 if VERBOSE:
-                    do_log("VALID MATCH FOUND")
+                    do_log(0, "VALID MATCH FOUND")
                 yield pattern_match
             else:
                 target_nodes = target_nodes[1:]  # skip the first node
@@ -471,13 +472,13 @@ class MatchFinder:
     def __match_pattern(
         src_nodes: Sequence[ASTNode],
         patterns: Sequence[ASTNode],
-        depth : int,
+        depth: int,
         multiplicity: dict[str, int],
-        patternMatch: Optional[PatternMatch],
+        pattern_match: Optional[PatternMatch],
         src_filter: Callable[[Sequence[ASTNode]], Sequence[ASTNode]],
     ) -> Optional[PatternMatch]:
-        if patternMatch is None:
-            patternMatch = PatternMatch(src_nodes, patterns)
+        if pattern_match is None:
+            pattern_match = PatternMatch(src_nodes, patterns)
 
         indent = depth * 4  # for logging purposes only
 
@@ -489,16 +490,16 @@ class MatchFinder:
                 return None
             # we might end up with a multi wildcard at the end of the pattern list and no srcNodes left so add it
             if only_multi_wild_cards and len(patterns) == 1:
-                patternMatch._query_create(patterns[0].get_name())
+                pattern_match._query_create(patterns[0].get_name())
 
-            if MatchValidation.validate(patternMatch._key_matches):
+            if MatchValidation.validate(pattern_match._key_matches):
                 # srcNodes that are not (yet) matched are stored in the pattern match
-                patternMatch._set_remaining_nodes(src_nodes)
-                # remove the non matching from the source nodes
-                patternMatch.src_nodes = [
-                    n for n in patternMatch.src_nodes if n not in src_nodes
+                pattern_match._set_remaining_nodes(src_nodes)
+                # remove the non-matching from the source nodes
+                pattern_match.src_nodes = [
+                    n for n in pattern_match.src_nodes if n not in src_nodes
                 ]
-                return patternMatch
+                return pattern_match
             return None
 
         # if patterns left but no source nodes, return None
@@ -519,22 +520,22 @@ class MatchFinder:
             )
 
         if MatchUtils.is_multi_wildcard(pattern_node):
-            wildcard_match = patternMatch._query_create(pattern_node.get_name())
+            wildcard_match = pattern_match._query_create(pattern_node.get_name())
             greediness = multiplicity.get(pattern_node.get_name(), 0)
             if greediness <= len(wildcard_match.nodes) and len(patterns) > 1:
                 # multiplicity of multi-wildcards is 0 so first try to match the next pattern with the current srcNodes
                 # a clone is needed to keep the current state of the match when the next match fails
 
-                nextMatch = MatchFinder.__match_pattern(
+                next_match = MatchFinder.__match_pattern(
                     src_nodes,
                     patterns[1:],
                     depth,
                     multiplicity,
-                    patternMatch.clone(),
+                    pattern_match.clone(),
                     src_filter,
                 )
-                if nextMatch:
-                    return nextMatch
+                if next_match:
+                    return next_match
             wildcard_match._add_node(src_node)
 
             if VERBOSE:
@@ -546,7 +547,7 @@ class MatchFinder:
                     raw(wildcard_match.nodes),
                 )
             return MatchFinder.__match_pattern(
-                src_nodes[1:], patterns, depth, multiplicity, patternMatch, src_filter
+                src_nodes[1:], patterns, depth, multiplicity, pattern_match, src_filter
             )
         elif MatchUtils.is_single_wildcard(pattern_node) or MatchUtils.is_match(
             src_node, pattern_node
@@ -560,13 +561,13 @@ class MatchFinder:
                 return None
 
             if MatchUtils.is_single_wildcard(pattern_node):
-                wildcard_match = patternMatch._query_create(pattern_node.get_name())
+                wildcard_match = pattern_match._query_create(pattern_node.get_name())
                 # TODO check with pierre whether we should take the highest or the deepest match
                 # if not  wildcard_match.nodes:
                 wildcard_match._add_node(src_node)
             else:
                 # store the exact match because it might be needed to determine the location of a multi wildcard match without nodes
-                patternMatch._query_create(MatchUtils.EXACT_MATCH)._add_node(src_node)
+                pattern_match._query_create(MatchUtils.EXACT_MATCH)._add_node(src_node)
             if VERBOSE:
                 do_log(
                     indent,
@@ -579,18 +580,18 @@ class MatchFinder:
             if pattern_node.get_children():
                 src_child_nodes = src_filter(src_node.get_children())
                 pattern_child_nodes = src_filter(pattern_node.get_children())
-                foundMatch = MatchFinder.__match_pattern(
+                found_match = MatchFinder.__match_pattern(
                     src_child_nodes,
                     pattern_child_nodes,
                     depth + 1,
                     multiplicity,
-                    patternMatch,
+                    pattern_match,
                     src_filter,
                 )
-                if not foundMatch:
+                if not found_match:
                     return None
-                patternMatch = (
-                    foundMatch  # update the pattern match with the result of the child
+                pattern_match = (
+                    found_match  # update the pattern match with the result of the child
                 )
             # invariant: a match is found if the current pattern and src node match and their successors match
             return MatchFinder.__match_pattern(
@@ -598,7 +599,7 @@ class MatchFinder:
                 patterns[1:],
                 depth,
                 multiplicity,
-                patternMatch,
+                pattern_match,
                 src_filter,
             )
         return None
@@ -617,7 +618,7 @@ class MatchValidation:
         Returns:
             bool: False if any group of nodes at the same index do not match, otherwise None.
         """
-        key_groups = {}
+        key_groups: dict[str, list[list[ASTNode]]] = {}
         for key_match in [m for m in key_matches if MatchUtils.is_wildcard(m.key)]:
             if key_match.key not in key_groups:
                 key_groups[key_match.key] = []
@@ -640,7 +641,7 @@ class MatchValidation:
                     if VERBOSE:
                         do_log(
                             0,
-                            f"FAILED on duplicate matches having different lengths",
+                            "FAILED on duplicate matches having different lengths",
                             key,
                             f"first[{raw(comp)}]",
                             f" next[{raw(row)}]",
@@ -651,7 +652,7 @@ class MatchValidation:
                         if VERBOSE:
                             do_log(
                                 0,
-                                f"FAILED on duplicate matches not matching",
+                                "FAILED on duplicate matches not matching",
                                 key,
                                 " != ".join(
                                     ["[" + raw(comp) + "]", "[" + raw(row) + "]"]
@@ -686,7 +687,7 @@ class MatchValidation:
         ) and MatchValidation._check_duplicate_matches(key_matches)
 
 
-def do_log(indent, *msgs: str):
+def do_log(indent: int, *msgs: str):
     text = "\n".join(msgs)
     print(" ".join(f'{" "*indent}{l}' for l in text.splitlines()))
 

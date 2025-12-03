@@ -1,11 +1,9 @@
-from typing import Sequence, TypeVar, Generic, Iterable, Callable, Any, Optional
+from typing import Iterable, Callable, Any, Optional
 from functools import reduce
 
-T = TypeVar('T')
-U = TypeVar('U')
 
-class StreamOptional(Generic[T]):
-    """ Creates a Optional result similar to java.util.Optional"""
+class StreamOptional[T]:
+    """ Creates an Optional result similar to java.util.Optional"""
     def __init__(self, value: Optional[T]):
         self.__value = value
 
@@ -18,33 +16,34 @@ class StreamOptional(Generic[T]):
             raise ValueError("No value present")
         return self.__value
     
-    def or_else(self, other: U) -> T|U:
+    def or_else[U](self, other: U) -> T|U:
         return self.__value if not self.__value is None else other
     
   
-class Stream(Generic[T]):
+class Stream[T]:
     """A Stream similar to java.util.Stream"""
     def __init__(self, iterable: Iterable[T]):
-        self.__iterable = iterable if not isinstance(iterable, Sequence) else iter(iterable)
+        self.__iterable: Iterable[T] = iterable
+                            #TODO: correctly solved Iterator[T@Stream] iso Iterable[T@Stream]
 
     def to_iterable(self) -> Iterable[T]:
         return self.__iterable 
 
-    def filter(self, func: Callable[[T], bool]) -> 'Stream[T]':
+    def filter(self, func: Callable[[T], bool]) -> Stream[T]:
         self.__iterable = filter(func, self.__iterable) 
         return self
 
-    def map(self, func_or_type: type[U]|Callable[[T], U|None]) -> 'Stream[U]':
-        mapped = None
-        if type(func_or_type) == type:
-            mapped = map(lambda x: Stream.__cast(x,func_or_type), self.__iterable)
+    def map[U](self, func_or_type: type[U]|Callable[[T], Optional[U]]) -> Stream[Optional[U]]:
+        if type(func_or_type) is type[U]:
+            cast : Callable[[T], Optional[U]] = lambda x: Stream.__cast(x, func_or_type)
+            mapped = map(cast, self.__iterable)
         else: 
             mapped = map(func_or_type, self.__iterable) 
-        filtered = filter(lambda t: t!=None, mapped)
+        filtered = filter(lambda t: t is not None, mapped)
         return Stream(filtered)
 
-    def flat_map(self, func: Callable[[T], 'Iterable[U]|Stream[U]']) -> 'Stream[U]':
-        def get_iterable(x): 
+    def flat_map[U](self, func: Callable[[T], Iterable[U]|Stream[U]]) -> Stream[U]:
+        def get_iterable(x: T): 
             result = func(x)
             if isinstance(result, Stream):
                 return result.__iterable
@@ -54,7 +53,7 @@ class Stream(Generic[T]):
         return Stream(flat_map)
 
     def distinct(self) -> 'Stream[T]':
-        seen = set()
+        seen: set[T] = set()
         self.__iterable = (x for x in self.__iterable if x not in seen and not seen.add(x))
         return self
 
@@ -87,6 +86,7 @@ class Stream(Generic[T]):
     def reduce(self, func: Callable[[T, T], T]) -> StreamOptional[T]:
         for item in self.__iterable:
             initial = item
+            #TODO: first item is used twice - as initial value and first value
             return StreamOptional(reduce(func, self.__iterable, initial)) 
         return StreamOptional(None)
 
@@ -121,7 +121,7 @@ class Stream(Generic[T]):
         return self.find_first()
 
     @staticmethod
-    def __cast(obj, type): 
-        if isinstance(obj, type):
+    def __cast[U](obj : object, typ : type[U]) -> Optional[U]: 
+        if isinstance(obj, typ):
             return obj
         return None

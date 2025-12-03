@@ -1,7 +1,6 @@
 import functools
 from typing import Sequence, TypeVar, Callable, Any
 
-from .ast_node import ASTNodeType
 from .ast_processor import ASTProcessor
 from .batch_ast_processor import BatchASTProcessor, IterableProvider
 
@@ -9,18 +8,18 @@ T = TypeVar("T")
 TFunc = Callable[..., Any]
 
 
-def annotate_decorator(foreignDecorator: TFunc, name: str):
-    def newDecorator(func: TFunc) -> TFunc:
-        R = foreignDecorator(
+def annotate_decorator(foreign_decorator: TFunc, name: str):
+    def new_decorator(func: TFunc) -> TFunc:
+        r = foreign_decorator(
             func
         )  # apply foreignDecorator, like call to foreignDecorator(method) would have done
-        R.decorator = newDecorator  # keep track of decorator
-        R.recipe_action = name
-        return R
+        r.decorator = new_decorator  # keep track of decorator
+        r.recipe_action = name
+        return r
 
-    newDecorator.__name__ = foreignDecorator.__name__
-    newDecorator.__doc__ = foreignDecorator.__doc__
-    return newDecorator
+    new_decorator.__name__ = foreign_decorator.__name__
+    new_decorator.__doc__ = foreign_decorator.__doc__
+    return new_decorator
 
 
 def get_methods_with_decorator(cls: Any, decorator: TFunc):
@@ -33,7 +32,7 @@ def get_methods_with_decorator(cls: Any, decorator: TFunc):
 # Decorators
 
 
-def final_action():
+def final_action() -> TFunc:
     def final_action_decorator(func: TFunc) -> TFunc:
         @functools.wraps(func)
         def final_action_wrapper(recipe: TFunc, *args: str, **kwargs: int):
@@ -50,7 +49,7 @@ def recipe_step(order: int = 0, repeat: bool = False) -> TFunc:
         def recipe_step_wrapper(
             step: int,
             recipe: TFunc,
-            ast_processor: ASTProcessor[ASTNodeType],
+            ast_processor: ASTProcessor,
             *args: str,
             **kwargs: int
         ):
@@ -90,7 +89,7 @@ class RecipeASTProcessor:
     def __init__(
         self,
         recipe: TFunc,
-        iterableProvider: IterableProvider[ASTNodeType],
+        iterable_provider: IterableProvider,
         file_filter: str,
         in_memory: bool = False,
         max_processes: int = 4,
@@ -99,7 +98,7 @@ class RecipeASTProcessor:
         self.__batch_processor = BatchASTProcessor(
             in_memory=in_memory, max_processes=max_processes
         )
-        self.__iterableProvider = iterableProvider
+        self.__iterableProvider = iterable_provider
         self.__file_filter = file_filter
 
     def run(self):
@@ -110,7 +109,7 @@ class RecipeASTProcessor:
         ):
             results.append(None)
 
-            def recipe_action(ast_processor : ASTProcessor[ASTNodeType]):
+            def recipe_action(ast_processor : ASTProcessor):
                 result = recipe_step_method(step, self.__recipe, ast_processor)
                 if result:
                     results[idx] = result
@@ -134,7 +133,7 @@ class RecipeASTProcessor:
             self.__batch_processor.repeat(
                 self.__iterableProvider, actions, self.__file_filter
             )
-            if all([result == None for result in results]):
+            if all([result is None for result in results]):
                 break
             for after_step_action in after_step_actions:
                 after_step_action()

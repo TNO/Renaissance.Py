@@ -4,7 +4,7 @@ from common.stream import Stream
 from syntax_tree import ASTFinder, ASTRefactorActions, CPPPatternFactory, RecipeASTProcessor, TextUtils, recipe_step
 from typing_extensions import Iterable
 from impl import ClangASTNode, ClangJsonASTNode
-from syntax_tree import ASTProcessor, ASTNode, ASTNodeType, TextUtils, ASTFactory
+from syntax_tree import ASTProcessor, ASTNode, TextUtils, ASTFactory
 
 example_1 = TextUtils.strip_indent("""
 #include <vector>
@@ -196,7 +196,7 @@ void main(){
 }
 """)
 # generate a simple code base provider in real life use a compilation database
-def simple_codebase_provider() -> Iterable[tuple[ASTFactory[ASTNodeType], ASTNodeType]]:
+def simple_codebase_provider() -> Iterable[tuple[ASTFactory, ASTNode]]:
     for impl_type in [ClangASTNode, ClangJsonASTNode][0:1]:
         factory = ASTFactory(impl_type)
         atu1 = factory.create_from_text(example_1, impl_type.__name__+'1.cpp')
@@ -216,7 +216,7 @@ class MyRefactor:
             # TODO debate the way to replace this the options are:
             # 1. make a match of the consecutive nodes.
             # 2. find a neat construction for the current backtick replacement
-            actions.replace_decl("int $var;", r"bool $var`int\s+(.+)`;")
+            actions.replace_declaration("int $var;", r"bool $var`int\s+(.+)`;")
             # create a constructor pattern
             constructor_pattern = pattern.create("typedef int string; class ListView_LEGACY { ListView_LEGACY(string container, int val); };", kind='Constructor')
             # create a pattern to match a call to a constructor in both declarations and derived classes

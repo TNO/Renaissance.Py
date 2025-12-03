@@ -24,9 +24,9 @@ class ASTRewriter:
         self,
         nodes: ASTNode | Sequence[ASTNode],
         encoding: str = sys.getfilesystemencoding(),
-        correctIndent: bool = True,
+        correct_indent: bool = True,
     ) -> None:
-        self.__rewrites = _RewriteActions(nodes, encoding, correct_indent=correctIndent)
+        self.__rewrites = _RewriteActions(nodes, encoding, correct_indent=correct_indent)
         self.__filename = (
             nodes[0].root.get_containing_filename()
             if isinstance(nodes, Sequence)
@@ -192,7 +192,7 @@ class _RewriteActions:
         rewriter = Rewriter(self.content[:])
 
         for rewrite in self.rewrites:
-            # skip nested rewrites as they they are handled recursively by the parent rewrite
+            # skip nested rewrites as they are handled recursively by the parent rewrite
             # except for if the rewrite node is the root node
             if any(
                 self.__is_ancestor_in_nodes(n)
@@ -243,16 +243,16 @@ class _RewriteActions:
 
     def __is_ancestor_in_nodes(self, node: ASTNode) -> bool:
         """
-        Check if the given node is a descendent of any nodes in the rewrite list.
+        Check if the given node is a descendant of any nodes in the rewrite list.
 
         Args:
             node (ASTNode): The node to check.
 
         Returns:
-            bool: True if the node is an descendent of any nodes in the rewrite list, False otherwise.
+            bool: True if the node is a descendant of any nodes in the rewrite list, False otherwise.
         """
         return any(
-            node != rewrite_node and node.is_descendent_of(rewrite_node)
+            node != rewrite_node and node.is_descendant_of(rewrite_node)
             for rewrite in self.rewrites
             for rewrite_node in rewrite.nodes
         )
@@ -398,20 +398,20 @@ class _RewriteActions:
                     spaces = matcher[1]
                     place_holder_length = len(placeholder)
                     index = replacement.index(placeholder)
-                    # TODO a regex may be provided between backticks and the groupes are used. This needs a better design
+                    # TODO a regex may be provided between backticks and the groups are used. This needs a better design
                     # A preferable solution is to pass a transformer function to the compose_replacement
                     if replacement[index + place_holder_length] == "`":
                         # ` ` means get regex
-                        endIndex = replacement.index(
+                        end_index = replacement.index(
                             "`", index + place_holder_length + 1
                         )
-                        if not endIndex:
+                        if not end_index:
                             raise ValueError("No closing ` found")
-                        regex = replacement[index + place_holder_length + 1 : endIndex]
-                        regexMatch = re.match(regex, raw_signature)
-                        if regexMatch:
-                            raw_signature = "".join(regexMatch.groups())
-                        place_holder_length = endIndex - index + 1
+                        regex = replacement[index + place_holder_length + 1 : end_index]
+                        regex_match = re.match(regex, raw_signature)
+                        if regex_match:
+                            raw_signature = "".join(regex_match.groups())
+                        place_holder_length = end_index - index + 1
                     indent_replacement = raw_signature.replace("\n", "\n" + spaces)
                     if (
                         PatternMatch.is_multi(placeholder)
@@ -432,7 +432,7 @@ class _RewriteActions:
         if len(nodes) == 1:
             return self.__get_text(nodes[0])
         # Use a ASTRewriter to only rewrite exactly that what needs to be rewritten
-        rewriter = ASTRewriter(nodes, self.encoding, correctIndent=False)
+        rewriter = ASTRewriter(nodes, self.encoding, correct_indent=False)
         for node in nodes:
             rs = self.__get_text(node)
             org_rs = node.get_text()
@@ -465,7 +465,6 @@ class _RewriteActions:
     def __prepare_replacement_content(
         self, new_content: str, target: PatternMatch | ASTNode | Sequence[ASTNode]
     ) -> tuple[str, Sequence[ASTNode]]:
-        node_list: Sequence[ASTNode] = []
         if isinstance(target, PatternMatch):
             new_content = self.__compose_replacement(new_content, [target])
             node_list = target.src_nodes
@@ -503,13 +502,13 @@ class _RewriteActions:
         start_offset = nodes[0].get_start_offset() - offset
         end_offset = nodes[-1].get_extended_end_offset() - offset
         if include_comments:
-            precedingNode = nodes[0].get_preceding_sibling()
+            preceding_node = nodes[0].get_preceding_sibling()
             parent = nodes[0].get_parent()
             start_comment_location = 0
-            if precedingNode:
+            if preceding_node:
                 # start after the comment of the preceding node
                 start_comment_location = (
-                    precedingNode.get_extended_end_offset() - offset
+                    preceding_node.get_extended_end_offset() - offset
                 )
                 preceding_end_offset = _RewriteActions.__get_comment_after_location(
                     start_comment_location, start_offset, content
@@ -524,10 +523,10 @@ class _RewriteActions:
             )
             if extended_location != (-1, -1):
                 start_offset = extended_location[0]
-            nextSibling = nodes[-1].get_next_sibling()
+            next_sibling = nodes[-1].get_next_sibling()
             end_comment_location = (
-                nextSibling.get_start_offset() - offset
-                if nextSibling
+                next_sibling.get_start_offset() - offset
+                if next_sibling
                 else parent.get_end_offset() - offset if parent else len(content)
             )
             location_after_comment = _RewriteActions.__get_comment_after_location(

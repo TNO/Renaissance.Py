@@ -1,13 +1,12 @@
 from pathlib import Path
 from .ast_factory import ASTFactory
-from .ast_node import ASTNodeType
 from .ast_rewriter import ASTRewriter
 
 
 class ASTUtils:
     @staticmethod
     def commit(
-        rewriter: ASTRewriter, factory: ASTFactory[ASTNodeType], in_memory: bool = False
+        rewriter: ASTRewriter, factory: ASTFactory, in_memory: bool = False
     ):
         rewriter.apply_to_string()
         if in_memory:

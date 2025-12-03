@@ -6,7 +6,7 @@ from syntax_tree.recipe_ast_processor import RecipeASTProcessor, after_step, rec
 from typing_extensions import Iterable, override
 from impl import ClangASTNode, ClangJsonASTNode
 from refactoring import CleanupRefactoring
-from syntax_tree import ASTProcessor, ASTNode, ASTNodeType, TextUtils, ASTFactory, BatchASTProcessor
+from syntax_tree import ASTProcessor, ASTNode, TextUtils, ASTFactory, BatchASTProcessor
 
 example_1 = TextUtils.strip_indent("""
         void x(int a) {}
@@ -42,7 +42,7 @@ example_2 = TextUtils.strip_indent("""
         """)
 
 # generate a simple code base provider in real life use a compilation database
-def simple_codebase_provider() -> Iterable[tuple[ASTFactory[ASTNodeType], ASTNodeType]]:
+def simple_codebase_provider() -> Iterable[tuple[ASTFactory, ASTNode]]:
     for impl_type in [ClangASTNode, ClangJsonASTNode]:
         factory = ASTFactory(impl_type)
         atu1 = factory.create_from_text(example_1, impl_type.__name__+'1.c')
@@ -92,7 +92,7 @@ def batch_repeat_example():
     #generate a batch processor for testing purposes we store into memory
     batch_processor = BatchASTProcessor(in_memory=True)
     #remove a function to create more unused variables
-    def remove_function(ast_processor: ASTProcessor[ASTNodeType]):
+    def remove_function(ast_processor: ASTProcessor):
         ast_processor.find_kind('(?i)Call_?Expr').\
             for_each(lambda node: ast_processor.insert_before( '// ', node, False, False ))
         
@@ -111,7 +111,7 @@ class AnalysisRecipe:
         self._calls = []
 
     @recipe_step(order=0)
-    def store_function_call(self, ast_processor: ASTProcessor[ASTNodeType]) -> Callable[[], None]|None:
+    def store_function_call(self, ast_processor: ASTProcessor) -> Callable[[], None]|None:
         # find all function calls and store them, this routing is invoked in parallel!
         calls = []
         ast_processor.find_kind('(?i)Call_?Expr').\

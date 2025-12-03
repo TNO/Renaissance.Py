@@ -200,7 +200,7 @@ class TestUseAtuToCreatePattern(TestCMatchFinder):
         }
         """
         atu = factory.create_from_text(code, 'test.c')
-        patternFactory = CPatternFactory(factory, refNode=atu) 
+        patternFactory = CPatternFactory(factory, ref_node=atu) 
         statementsAtu = patternFactory.create(statements)
         statements = ASTFinder.find_kind(statementsAtu, pattern_type).find_last().get()  # pick the last statement
         # ASTShower.show_node(atu, include_properties=True)

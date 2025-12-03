@@ -1,5 +1,5 @@
 # __init__.py
-from .ast_node import (ASTNode, ASTReference, VisitorResult, ASTNodeType)
+from .ast_node import (ASTNode, ASTReference, VisitorResult)
 from .ast_finder import (ASTFinder)
 from .ast_shower import (ASTShower)
 from .ast_factory import (ASTFactory)
@@ -16,7 +16,6 @@ from .recipe_ast_processor import (RecipeASTProcessor, after_step, recipe_step, 
 
 __all__ = [
     'ASTNode',
-    'ASTNodeType',
     'ASTReference',
     'VisitorResult',
     'ASTFinder',

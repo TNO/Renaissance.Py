@@ -59,7 +59,7 @@ class TestStream(TestCase):
     b = BA() #b is a subclass of A
     c = C()
     @parameterized.expand([
-        (([a,b,c]), A,  [a,b]),
+        (([a,b,c]), A, [a,b]),
         (([a,b,c]), C, [c])
     ])
     def test_map_cast(self, input, typ, expected):
@@ -141,12 +141,13 @@ class TestStream(TestCase):
         self.assertEqual(result, expected)
 
     @parameterized.expand([
-        (([1, 2, 3, 4, 5]), 15),
-        (([1, 2, 3]), 6),
+        (([0, 1, 2, 3, 4, 5]), 15),
+        (([0, 1, 2, 3]), 6),
         (([]), None)
     ])
     def test_reduce(self, input, expected):
         result = Stream(input).reduce(lambda x, y: x + y).or_else(None)
+        print(result)
         self.assertEqual(result, expected)
 
     @parameterized.expand([

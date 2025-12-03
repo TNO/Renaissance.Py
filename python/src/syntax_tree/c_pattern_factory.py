@@ -1,9 +1,9 @@
 import re
-from typing import Generic, Optional, Sequence
+from typing import Optional, Sequence
 
 from common.stream import Stream
 from .cpp_utils import CPPUtils
-from .ast_node import ASTNode, ASTNodeType
+from .ast_node import ASTNode
 from .ast_shower import ASTShower
 
 from .ast_factory import ASTFactory
@@ -12,21 +12,21 @@ from .ast_finder import ASTFinder
 SHOW_NODE = False
 
 
-class CPatternFactory(Generic[ASTNodeType]):
+class CPatternFactory:
 
     reserved_name = "__rejuvenation__reserved__"
 
     def __init__(
         self,
-        factory: ASTFactory[ASTNodeType],
-        refNode: Optional[ASTNode] = None,
+        factory: ASTFactory,
+        ref_node: Optional[ASTNode] = None,
         language: str = "c",
     ):
         self.factory = factory
         # collect includes #defines  and var decl from the refNode
-        if refNode:
+        if ref_node:
             offset = (
-                Stream(refNode.get_children())
+                Stream(ref_node.get_children())
                 .filter(ASTNode.is_part_of_translation_unit)
                 .filter(
                     lambda c: not ASTFinder.matches_kind(
@@ -37,13 +37,13 @@ class CPatternFactory(Generic[ASTNodeType]):
                 .reduce(min)
                 .or_else(0)
             )
-            self.language = refNode.get_containing_filename().split(".")[-1]
+            self.language = ref_node.get_containing_filename().split(".")[-1]
 
             self.header = (
-                CPatternFactory.remove_indent(refNode.get_content(0, offset)) + "\n"
+                    CPatternFactory.remove_indent(ref_node.get_content(0, offset)) + "\n"
             )
             self.header += (
-                Stream(refNode.get_children())
+                Stream(ref_node.get_children())
                 .filter(ASTNode.is_part_of_translation_unit)
                 .filter(
                     lambda c: ASTFinder.matches_kind(
@@ -70,19 +70,19 @@ class CPatternFactory(Generic[ASTNodeType]):
 
     def create_expression(
         self, text: str, extra_declarations: Sequence[str] = []
-    ) -> ASTNodeType:
+    ) -> ASTNode:
         keywords = CPatternFactory._get_keywords_from_text(text)
         keywords = [
             k for k in keywords if not any(k in ed for ed in extra_declarations)
         ]
-        fullText = (
+        full_text = (
             self.header
             + "\n".join(extra_declarations)
             + "\n"
             + "\n".join(CPatternFactory._to_declaration(keywords))
             + f"\nvoid f() {{ int {CPatternFactory.reserved_name} = ({text}); }}"
         )
-        root = self._create(fullText)
+        root = self._create(full_text)
         # return the first expression found in the tree as a ASTNode
         return (
             ASTFinder.find_kind(root.get_children()[-1], "(?i)PAREN_?EXPR")
@@ -120,7 +120,7 @@ class CPatternFactory(Generic[ASTNodeType]):
         parameters: Sequence[str] = [],
         extra_declarations: Sequence[str] = [],
         declarations: Sequence[str] = [],
-    ) -> ASTNodeType:
+    ) -> ASTNode:
         result = self.create_declarations(
             text, types, parameters, extra_declarations, declarations
         )
@@ -133,7 +133,7 @@ class CPatternFactory(Generic[ASTNodeType]):
         types: Sequence[str] = [],
         extra_declarations: Sequence[str] = [],
         kind: str =".*",
-    ) -> Sequence[ASTNodeType]:
+    ) -> Sequence[ASTNode]:
         # create a reference for all used variables excluding the specified types
         parameters = [
             par
@@ -142,7 +142,7 @@ class CPatternFactory(Generic[ASTNodeType]):
         ]
         return self._create_body(text, types, parameters, extra_declarations, kind)
 
-    def create(self, text: str, kind: Optional[str] = None) -> ASTNodeType:
+    def create(self, text: str, kind: Optional[str] = None) -> ASTNode:
         """
         Creates an object using the factory from the provided text.
         The object is created by the factory using the provided text and the header of the provided reference node.
@@ -168,7 +168,7 @@ class CPatternFactory(Generic[ASTNodeType]):
         types: Sequence[str] = [],
         extra_declarations: Sequence[str] = [],
         kind: str = ".*",
-    ) -> ASTNodeType:
+    ) -> ASTNode:
         statements = list(self.create_statements(text, types, extra_declarations, kind))
         assert len(statements) == 1, "Only one statement is expected"
         return statements[0]
@@ -180,14 +180,14 @@ class CPatternFactory(Generic[ASTNodeType]):
         parameters: Sequence[str],
         extra_declarations: Sequence[str],
         kind: str,
-    ):
-        fullText = (
+    ) -> list[ASTNode]:
+        full_text = (
             self.header + "\n".join(CPatternFactory._to_typedef(types)) + "\n"
             "\n".join(CPatternFactory._to_declaration(parameters)) + "\n"
             "\n".join(extra_declarations) + "\n"
             "\nvoid " + CPatternFactory.reserved_name + "(){\n" + text + "\n}"
         )
-        root = self._create(fullText)
+        root = self._create(full_text)
 
         # from the children of the compound statement that contains the text, get for each child the first
         # node of the specified kind
@@ -204,7 +204,7 @@ class CPatternFactory(Generic[ASTNodeType]):
             .to_list()
         )
 
-    def _create(self, text: str) -> ASTNodeType:
+    def _create(self, text: str) -> ASTNode:
         atu = self.factory.create_from_text(text, "test." + self.language)
         if SHOW_NODE:
             ASTShower.show_node(atu)
@@ -246,10 +246,10 @@ class CPatternFactory(Generic[ASTNodeType]):
         return [prefix + keyword + postfix for keyword in keywords]
 
 
-class CPPPatternFactory(CPatternFactory[ASTNodeType]):
+class CPPPatternFactory(CPatternFactory):
 
-    def __init__(self, factory: ASTFactory[ASTNodeType], refNode: Optional[ASTNode] = None):
-        super().__init__(factory, refNode, "cpp")
+    def __init__(self, factory: ASTFactory, ref_node: Optional[ASTNode] = None):
+        super().__init__(factory, ref_node, "cpp")
 
     def create_constructor_call(self, pattern: str):
         class_and_args = re.match(R"([$\w]+)\(([^)]+)\)", pattern.replace(" ", ""))
@@ -281,7 +281,7 @@ class CPPPatternFactory(CPatternFactory[ASTNodeType]):
         #     (DECL_REF_EXPR, $headerCount, test.cpp[253:265]): |$headerCount|
         if SHOW_NODE:
             ASTShower.show_node(target_class)
-        # search the call expr and the the preceding type ref
+        # search the call expr and the preceding type ref
         call_expr = (
             ASTFinder.find_kind(target_class, "CallExpr")
             .peek(lambda n: ASTShower.show_node(n))

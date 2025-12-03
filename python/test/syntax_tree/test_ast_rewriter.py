@@ -21,11 +21,13 @@ class TestCommentLocation(TestCase):
         ("comment_outside_range", 0, 10, b"Some code // this is a comment\nMore code", (-1, -1)),
         ("multiple_comments", 0, 50, b"Some code // first comment\nMore code /* second comment */", (10, 26)),
     ])
-    def test(self, name, start_offset, stop_offset, content, expected):
+    def test(self, _, start_offset: int, stop_offset: int, content: bytes, expected: tuple[int, int]):
         result = ASTRewriter._get_comment_location(start_offset, stop_offset, content)
         if(result != (-1, -1)):
             print(content[result[0]:result[1]])
         self.assertEqual(result, expected)
+
+
 
 class TestRewrites(TestCase):
 
@@ -54,7 +56,7 @@ class TestRewrites(TestCase):
             code_test_input = f'("{code}", {include_whitespace}, {include_comments}, "{actual}"),'.replace('\n', '\\n').replace('\r', '\\r')
             print("\nFull parameterized:" +code_test_input)
 
-        self.assertEquals(expected, rewriter.apply_to_string())
+        self.assertEqual(expected, rewriter.apply_to_string())
 
 class TestRemove(TestRewrites):
 

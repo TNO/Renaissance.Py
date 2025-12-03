@@ -4,7 +4,7 @@ from functools import cache
 from pathlib import Path
 import re
 import sys
-from typing import Any, Callable, Generic, Optional, Sequence, TypeVar
+from typing import Any, Callable, Optional, Sequence
 from .text_utils import TextUtils
 
 
@@ -15,18 +15,15 @@ class VisitorResult(Enum):
     SKIP = 2
 
 
-ASTNodeType = TypeVar("ASTNodeType", bound="ASTNode")
-
-
-class ASTReference(Generic[ASTNodeType]):
+class ASTReference:
     def __init__(
-        self, ast_node: ASTNodeType, ref_kind: str, properties: dict[str, Any]
+        self, ast_node: ASTNode, ref_kind: str, properties: dict[str, Any]
     ) -> None:
         self._node = ast_node
         self._ref_kind = ref_kind
         self._properties = properties
 
-    def get_node(self) -> ASTNodeType:
+    def get_node(self) -> ASTNode:
         return self._node
 
     def get_ref_kind(self) -> str:
@@ -43,7 +40,7 @@ class ASTNode(ABC):
     It is an abstract class that should be inherited by concrete classes that represent specific AST nodes.
     """
 
-    def __init__(self: ASTNodeType, root: ASTNodeType) -> None:
+    def __init__(self, root: "ASTNode") -> None:
         super().__init__()
         self.root = root
         self.cache: dict[str, bytes] = {}
@@ -66,9 +63,9 @@ class ASTNode(ABC):
             self.get_raw_signature(), self.get_indent(), start_line=1
         )
 
-    def get_content(self, start: int, end: int):
-        bytes = self.root.get_binary_file_content()
-        return str(bytes[start:end], sys.getfilesystemencoding())
+    def get_content(self, start: int, end: int) -> str:
+        content = self.root.get_binary_file_content()
+        return str(content[start:end], sys.getfilesystemencoding())
 
     def get_binary_file_content(self, file_path: Optional[str] = None) -> bytes:
         if not file_path:
@@ -77,17 +74,17 @@ class ASTNode(ABC):
             return self.cache[file_path]
         except Exception:
             with open(file_path, "rb") as f:
-                bytes = f.read()
-                self.cache[file_path] = bytes
-                return bytes
+                content = f.read()
+                self.cache[file_path] = content
+                return content
 
-    def get_end_offset(self):
+    def get_end_offset(self) -> int:
         return self.get_start_offset() + self.get_length()
 
-    def get_extended_end_offset(self):
+    def get_extended_end_offset(self) -> int:
         return self._get_extended_end_offset()
 
-    def get_preceding_sibling(self: ASTNodeType) -> Optional[ASTNodeType]:
+    def get_preceding_sibling(self) -> Optional["ASTNode"]:
         parent = self.get_parent()
         if not parent:
             return None
@@ -95,7 +92,7 @@ class ASTNode(ABC):
         index = siblings.index(self)
         return siblings[index - 1] if index > 0 else None
 
-    def get_next_sibling(self: ASTNodeType) -> Optional[ASTNodeType]:
+    def get_next_sibling(self) -> Optional["ASTNode"]:
         parent = self.get_parent()
         if not parent:
             return None
@@ -103,9 +100,7 @@ class ASTNode(ABC):
         index = siblings.index(self)
         return siblings[index + 1] if index < len(siblings) - 1 else None
 
-    def get_ancestor(
-        self: ASTNodeType, kind: str | re.Pattern[str]
-    ) -> Optional[ASTNodeType]:
+    def get_ancestor(self, kind: str | re.Pattern[str]) -> Optional["ASTNode"]:
         pattern = re.compile(kind, re.IGNORECASE) if isinstance(kind, str) else kind
         parent = self._get_parent()
         if not parent:
@@ -114,10 +109,10 @@ class ASTNode(ABC):
             return parent
         return parent.get_ancestor(pattern)
 
-    def is_descendent_of(self: ASTNodeType, node: ASTNodeType) -> bool:
+    def is_descendant_of(self, node: "ASTNode") -> bool:
         return node.is_ancestor_of(self)
 
-    def is_ancestor_of(self: ASTNodeType, descendant: ASTNodeType) -> bool:
+    def is_ancestor_of(self, descendant: "ASTNode") -> bool:
         parent = descendant.get_parent()
         if parent == self:
             return True
@@ -154,7 +149,7 @@ class ASTNode(ABC):
     def get_kind(self) -> str:
         return self._get_kind()
 
-    def matches_kind(self: ASTNodeType, node: ASTNodeType) -> bool:
+    def matches_kind(self, node: "ASTNode") -> bool:
         return self._matches_kind(node)
 
     @cache
@@ -177,19 +172,19 @@ class ASTNode(ABC):
     def get_properties(self) -> dict[str, int | str]:
         return self._get_properties()
 
-    def get_parent(self: ASTNodeType) -> Optional[ASTNodeType]:
+    def get_parent(self) -> Optional["ASTNode"]:
         return self._get_parent()
 
     def is_statement(self) -> bool:
         return self._is_statement()
 
-    def get_children(self: ASTNodeType) -> Sequence[ASTNodeType]:
+    def get_children(self) -> Sequence["ASTNode"]:
         return self._get_children()
 
-    def get_references(self: ASTNodeType) -> Sequence[ASTReference[ASTNodeType]]:
+    def get_references(self) -> Sequence[ASTReference]:
         return self._get_references()
 
-    def get_referenced_by(self: ASTNodeType) -> Sequence[ASTReference[ASTNodeType]]:
+    def get_referenced_by(self) -> Sequence[ASTReference]:
         return self._get_referenced_by()
 
     @abstractmethod
@@ -216,7 +211,7 @@ class ASTNode(ABC):
     def _get_kind(self) -> str:
         pass
 
-    def _matches_kind(self : ASTNodeType, node: ASTNodeType) -> bool:
+    def _matches_kind(self, node: "ASTNode") -> bool:
         return node.get_kind() == self.get_kind()
 
     @abstractmethod
@@ -224,7 +219,7 @@ class ASTNode(ABC):
         pass
 
     @abstractmethod
-    def _get_parent(self: ASTNodeType) -> Optional[ASTNodeType]:
+    def _get_parent(self) -> Optional["ASTNode"]:
         pass
 
     @abstractmethod
@@ -232,18 +227,18 @@ class ASTNode(ABC):
         pass
 
     @abstractmethod
-    def _get_children(self: ASTNodeType) -> Sequence[ASTNodeType]:
+    def _get_children(self) -> Sequence["ASTNode"]:
         pass
 
     @abstractmethod
-    def _get_references(self: ASTNodeType) -> Sequence[ASTReference[ASTNodeType]]:
+    def _get_references(self) -> Sequence[ASTReference]:
         pass
 
     @abstractmethod
-    def _get_referenced_by(self: ASTNodeType) -> Sequence[ASTReference[ASTNodeType]]:
+    def _get_referenced_by(self) -> Sequence[ASTReference]:
         pass
 
-    def process(self, function: Callable[["ASTNode"], None]):
+    def process(self, function: Callable[["ASTNode"], None]) -> None:
         function(self)
         for child in self.get_children():
             child.process(function)

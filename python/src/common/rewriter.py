@@ -1,5 +1,6 @@
 import sys
 
+# TODO: why is buildin bytes not recognized by type hint checker?
 
 class Rewrite:
     def __init__(self, start: int, end: int, replacement: bytes) -> None:

@@ -1,20 +1,21 @@
 from pathlib import Path
-from typing import Generic, Optional, Sequence
+from typing import Optional, Sequence
 
-from .ast_node import ASTNodeType
+from .ast_node import ASTNode
 
 
-class ASTFactory(Generic[ASTNodeType]):
+class ASTFactory:
     """
-    A factory class for creating instances of ASTNodeType.
+    A factory class for creating instances of ASTNode.
     Attributes:
-        clazz (type[ASTNodeType]): The class type of the AST nodes to be created.
-        extra_args (Sequence[str]): Additional arguments to be passed during the creation of AST nodes.
+        clazz (type[ASTNode]): The class type of the AST nodes to be created.
+        extra_args (Optional[Sequence[str]]): Additional arguments to be passed during the creation of AST nodes.
+        #TODO working_dir
     """
 
     def __init__(
         self,
-        clazz: type[ASTNodeType],
+        clazz: type[ASTNode],
         extra_args: Optional[Sequence[str]] = None,
         working_dir: Optional[Path] = None,
     ) -> None:
@@ -24,7 +25,7 @@ class ASTFactory(Generic[ASTNodeType]):
         )
         self.working_dir = working_dir if working_dir else Path.cwd()
 
-    def create(self, file_path: Path) -> ASTNodeType:
+    def create(self, file_path: Path) -> ASTNode:
         atu = self.clazz.load(
             file_path=file_path,
             extra_args=self.extra_args,
@@ -35,7 +36,7 @@ class ASTFactory(Generic[ASTNodeType]):
         ), "The loaded AST node is not an instance of the expected type"
         return atu
 
-    def create_from_text(self, text: str, file_name: str) -> ASTNodeType:
+    def create_from_text(self, text: str, file_name: str) -> ASTNode:
         atu = self.clazz.load_from_text(
             text, file_name, extra_args=self.extra_args, working_dir=self.working_dir
         )
