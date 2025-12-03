@@ -18,6 +18,7 @@ class TestASTReference(TestCase):
         call = ASTFinder.find_kind(ast, '(Call|CXXConstruct)Expr').find_first().get()
         assert isinstance(call, ASTNode)
         refs = call.get_references()
+        self.assertGreater(len(refs), 0)
         refs = [r for r in refs if ASTFinder.matches_kind(r.get_node(), '.*(Constructor|Function).*')]
         
         self.assertGreater(len(refs), 0)
@@ -116,6 +117,7 @@ class TestASTReference(TestCase):
                 filter(lambda n: n.get_name() == 'B').\
                 find_first().get()
         assert isinstance(using, ASTNode)
+        ASTShower.show_node(using)
         refs = using.get_references()
         self.assertEqual(len(refs), 1)
         ref = refs[0]

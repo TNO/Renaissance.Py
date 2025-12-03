@@ -113,7 +113,7 @@ class ASTProcessor:
         code string. Otherwise, it writes the changes to the file, reloads the file, and then creates the new AST.
 
         Returns:
-            ASTProcessor[ASTNode]: A new instance of ASTProcessor with the updated AST.
+            ASTProcessor: A new instance of ASTProcessor with the updated AST.
 
         Raises:
             IOError: If there is an error writing to the file.

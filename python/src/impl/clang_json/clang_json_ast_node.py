@@ -16,7 +16,7 @@ import subprocess
 
 EMPTY_DICT = {}
 EMPTY_STR = ""
-EMPTY_LIST = []
+EMPTY_LIST : list[ClangJsonASTReference]= []
 ON_NODE_ID_TAGS = ["previousDecl", "parentDeclContextId"]
 ID_TAGS = [
     "id",
@@ -388,13 +388,14 @@ class ClangJsonASTNode(ASTNode):
 
     @override
     @cache
-    def _get_references(self) -> Sequence[ASTReference["ClangJsonASTNode"]]:
+    def _get_references(self) -> Sequence[ASTReference]:
         if self.inserted:
             return []
         self.translation_unit.lazy_create_references(self)
 
         refs = self.translation_unit._references.get(self.node["id"], EMPTY_LIST)
         definition_node_id = self._get_function_definition()
+            #TODO: also class definitions, type definitions, ...
         if definition_node_id:
             # try to find the definition which might have references
             refs += self.translation_unit._references.get(
