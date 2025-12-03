@@ -53,7 +53,7 @@ class ClangJsonTranslationUnit:
     def lazy_create_references(self, node: "ClangJsonASTNode") -> None:
         if self.references_initialized:
             return
-        node.json_root.process(ReferenceHelper.create_references)
+        node.root.process(ReferenceHelper.create_references)
         node.root.process(ReferenceHelper.add_record_references)
         self.references_initialized = True
 
@@ -71,7 +71,7 @@ class ClangJsonASTNode(ASTNode):
         self,
         node: dict[str, Any],
         translation_unit: ClangJsonTranslationUnit,
-        parent: Optional["ClangJsonASTNode"] = None,
+        parent: Optional[ClangJsonASTNode] = None,
         start_offset: Optional[int] = None,
         length: Optional[int] = None,
         insert_kind: Optional[str] = None,
