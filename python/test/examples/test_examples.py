@@ -2,6 +2,7 @@ from typing import Callable
 from unittest import TestCase
 
 from parameterized import parameterized
+from syntax_tree.ast_node import ASTNode
 
 
 from examples.refactor_with_nested_compositions import refactor_with_nested_compositions, expected_result as expected_result_nested
@@ -30,13 +31,13 @@ class TestReplaceIfWithTernaryOperator(TestCase):
 class TestRemoveUnusedVariable(TestCase):
 
     @parameterized.expand(Factories.node_types)
-    def test_remove_unused_variable_using_refactor_method(self, _, node_type):
+    def test_remove_unused_variable_using_refactor_method(self, _: str, node_type: type[ASTNode]):
         result, expected = remove_unused_variable_using_refactor_method(node_type)
         assert result
         self.assertMultiLineEqual(result, expected)
 
     @parameterized.expand(Factories.node_types)
-    def test_remove_unused_variable_low_level(self, _, node_type):
+    def test_remove_unused_variable_low_level(self, _: str, node_type: type[ASTNode]):
         result, expected_result = remove_unused_variable_low_level(node_type)
         assert result
         self.assertMultiLineEqual(result, expected_result)
@@ -50,7 +51,7 @@ class TestExamplesDifferentStyles(TestCase):
         ('match',example_replace_old_by_fancy_new),
 
     ])))
-    def test(self, _, factory: ASTFactory, unused, method: Callable[[ASTFactory, CPatternFactory], tuple[str, str]]):
+    def test(self, _, factory: ASTFactory, _node_type : type[ASTNode], method: Callable[[ASTFactory, CPatternFactory], tuple[str, str]]):
         pattern_factory = CPatternFactory(factory)
         result, expected = method(factory, pattern_factory)
         assert result

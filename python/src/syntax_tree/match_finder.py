@@ -126,7 +126,7 @@ class MatchUtils:
 
 
 class KeyMatch:
-    def clone(self) -> "KeyMatch":
+    def clone(self) -> KeyMatch:
         cloned = KeyMatch(self.key)
         cloned.nodes = self.nodes[:]
         return cloned
@@ -145,10 +145,10 @@ class PatternMatch:
     ) -> None:
         self._key_matches: list[KeyMatch] = []
         self._remaining_nodes: list[ASTNode] = []
-        self.src_nodes = src_nodes
+        self.src_nodes: Sequence[ASTNode] = src_nodes
         self.patterns = patterns
 
-    def clone(self) -> "PatternMatch":
+    def clone(self) -> PatternMatch:
         # create a new instance of the pattern match
         clone = PatternMatch(self.src_nodes, self.patterns)
         # clone the key matches
@@ -173,7 +173,7 @@ class PatternMatch:
         # take the deepest found match for each wildcard key
         return {
             key_match.key: (
-                [key_match.nodes[-1]]
+                [key_match.nodes[-1]]       #TODO: What other nodes are in the key_match? Why is this needed?
                 if MatchUtils.is_single_wildcard(key_match.key)
                 else key_match.nodes
             )
@@ -247,11 +247,11 @@ class PatternMatch:
 
     def match_referenced_by(
         self,
-        *patterns_list: "Sequence[ASTNode]|ConstrainedPattern",
+        *patterns_list: Sequence[ASTNode]|ConstrainedPattern,
         recursive: bool = True,
         exclude_kind: str = DEFAULT_EXCLUDE_KIND,
         part_of_translation_unit: bool = True,
-    ) -> Stream["PatternMatch"]:
+    ) -> Stream[PatternMatch]:
         return Stream(
             self._match_referenced_by(
                 patterns_list, recursive, exclude_kind, part_of_translation_unit
@@ -260,11 +260,11 @@ class PatternMatch:
 
     def match_references(
         self,
-        *patterns_list: "Sequence[ASTNode]|ConstrainedPattern",
+        *patterns_list: Sequence[ASTNode]|ConstrainedPattern,
         recursive: bool = True,
         exclude_kind: str = DEFAULT_EXCLUDE_KIND,
         part_of_translation_unit: bool = True,
-    ) -> Stream["PatternMatch"]:
+    ) -> Stream[PatternMatch]:
         return Stream(
             self._match_references(
                 patterns_list, recursive, exclude_kind, part_of_translation_unit
@@ -277,7 +277,7 @@ class PatternMatch:
         recursive: bool,
         exclude_kind: str,
         part_of_translation_unit: bool,
-    ) -> Iterable["PatternMatch"]:
+    ) -> Iterable[PatternMatch]:
         for n in self.src_nodes:
             for ref in n.get_referenced_by():
                 yield from MatchFinder.find_all_strict(
@@ -291,7 +291,7 @@ class PatternMatch:
     def _match_references(
         self, patterns_list : Sequence[Sequence[ASTNode]|ConstrainedPattern], 
         recursive: bool, exclude_kind: str, part_of_translation_unit: bool
-    ) -> Iterable["PatternMatch"]:
+    ) -> Iterable[PatternMatch]:
         for n in self.src_nodes:
             for ref in n.get_references():
                 yield from MatchFinder.find_all_strict(
@@ -307,9 +307,10 @@ class PatternMatch:
         return MatchUtils.is_multi_wildcard(placeholder)
 
 
+#TODO: do we want to merge the filter functionality with the find pattern?
 @dataclass(frozen=True)
 class ConstrainedPattern:
-    patterns: Sequence[ASTNode] | ASTNode
+    patterns: Sequence[ASTNode] | ASTNode       # TODO Why plural, i.e., patterns?
     eligible: Callable[[PatternMatch], bool]
 
 
@@ -333,6 +334,12 @@ class MatchFinder:
             part_of_translation_unit=part_of_translation_unit,
         )
 
+    #TODO: Why don't we define types for X | Sequence[X]?
+    #TODO: Why don't we enforce that input is always a sequence of ASTNodes (so just use [] around a single ASTNode)?
+    #TODO: Why don't we define a type for a pattern: Sequence[ASTNode] | ConstrainedPattern
+    #TODO: Why don't we introduce a Pattern class (with multiple constructors for the different cases)?
+
+    #TODO: why is the type of patterns_list different from find_all (directly above)?
     @staticmethod
     def find_all_strict(
         src_nodes: Sequence[ASTNode] | ASTNode,

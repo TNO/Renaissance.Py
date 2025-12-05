@@ -1,3 +1,7 @@
+#TODO: Why our own implementation?
+#TODO: Why not use itertools? 
+#TODO: Why not use RxPy?
+
 from typing import Iterable, Callable, Any, Optional
 from functools import reduce
 
@@ -24,7 +28,7 @@ class Stream[T]:
     """A Stream similar to java.util.Stream"""
     def __init__(self, iterable: Iterable[T]):
         self.__iterable: Iterable[T] = iterable
-                            #TODO: correctly solved Iterator[T@Stream] iso Iterable[T@Stream]
+                            #TODO: correctly solved Iterator[T@Stream] iso Iterable[T@Stream]?
 
     def to_iterable(self) -> Iterable[T]:
         return self.__iterable 
@@ -52,12 +56,12 @@ class Stream[T]:
         flat_map = (item for sublist in map(get_iterable, self.__iterable) for item in sublist) 
         return Stream(flat_map)
 
-    def distinct(self) -> 'Stream[T]':
+    def distinct(self) -> Stream[T]:
         seen: set[T] = set()
         self.__iterable = (x for x in self.__iterable if x not in seen and not seen.add(x))
         return self
 
-    def sorted(self, key: Optional[Callable[[T], Any]] = None, reverse: bool = False) -> 'Stream[T]':
+    def sorted(self, key: Optional[Callable[[T], Any]] = None, reverse: bool = False) -> Stream[T]:
         self.__iterable = iter(sorted(self.__iterable, key=key, reverse=reverse))  # type: ignore
         return self
 

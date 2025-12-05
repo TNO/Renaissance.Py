@@ -147,7 +147,6 @@ class TestStream(TestCase):
     ])
     def test_reduce(self, input, expected):
         result = Stream(input).reduce(lambda x, y: x + y).or_else(None)
-        print(result)
         self.assertEqual(result, expected)
 
     @parameterized.expand([

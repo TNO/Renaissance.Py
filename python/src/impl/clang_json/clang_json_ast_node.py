@@ -48,9 +48,9 @@ class ClangJsonTranslationUnit:
         # the are stored as id for lazy creation
         self._references: dict[str, list[ClangJsonASTReference]] = {}
         self._referenced_by: dict[str, list[ClangJsonASTReference]] = {}
-        self._nodes: dict[str, "ClangJsonASTNode"] = {}
+        self._nodes: dict[str, ClangJsonASTNode] = {}
 
-    def lazy_create_references(self, node: "ClangJsonASTNode") -> None:
+    def lazy_create_references(self, node: ClangJsonASTNode) -> None:
         if self.references_initialized:
             return
         node.root.process(ReferenceHelper.create_references)
@@ -79,7 +79,7 @@ class ClangJsonASTNode(ASTNode):
     ) -> None:
         super().__init__(self if parent is None else parent.root)
         self.node: dict[str, Any] = node
-        self._children: Optional[Sequence["ClangJsonASTNode"]] = None
+        self._children: Optional[Sequence[ClangJsonASTNode]] = None
         self.parent = parent
         self.translation_unit = translation_unit
         self.inserted = insert_kind != None
@@ -165,7 +165,7 @@ class ClangJsonASTNode(ASTNode):
         extra_args: Sequence[str],
         working_dir: Path,
         code: Optional[str] = None,
-    ) -> "ClangJsonASTNode":
+    ) -> ClangJsonASTNode:
         # in a shell process compile the file_path with clang compiler
         try:
             # remove the compiler name if it is the first argument
@@ -261,7 +261,7 @@ class ClangJsonASTNode(ASTNode):
     @staticmethod
     def load_from_text(
         text: str, file_name: str, extra_args: Sequence[str], working_dir: Path
-    ) -> "ClangJsonASTNode":
+    ) -> ClangJsonASTNode:
         return ClangJsonASTNode.load(
             Path(file_name), extra_args, working_dir, code=text
         )
@@ -419,7 +419,7 @@ class ClangJsonASTNode(ASTNode):
         )
 
     @override
-    def _get_parent(self) -> Optional["ClangJsonASTNode"]:
+    def _get_parent(self) -> Optional[ClangJsonASTNode]:
         return self.parent
 
     @override
@@ -427,7 +427,7 @@ class ClangJsonASTNode(ASTNode):
         return self.parent != None and self.parent.get_kind() in STMT_PARENTS
 
     @override
-    def _get_children(self) -> Sequence["ClangJsonASTNode"]:
+    def _get_children(self) -> Sequence[ClangJsonASTNode]:
         if self._children is None:
             self._children = self.__inserted_children + [
                 ClangJsonASTNode(

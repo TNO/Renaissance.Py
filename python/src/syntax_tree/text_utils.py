@@ -8,7 +8,7 @@ class TextUtils:
     __PRECEDING_SPACES_PATTERN = re.compile(r"([\t\s]*)")
 
     @staticmethod
-    def shift_left(text: str, shift: int, start_line: int = 0):
+    def shift_left(text: str, shift: int, start_line: int = 0) -> str:
         """
         Shifts each line of the given text to the left by the specified number of spaces. Only spaces are shifted
         """
@@ -21,7 +21,7 @@ class TextUtils:
         return "\n".join(lines)
 
     @staticmethod
-    def correct_indent(text: str, indent: int, depth: int = 0):
+    def correct_indent(text: str, indent: int, depth: int = 0) -> str:
         """
         Shifts each line of the given text to the left by the specified number of spaces. Only spaces are shifted
         """
@@ -34,7 +34,7 @@ class TextUtils:
         return "\n".join(lines)
 
     @staticmethod
-    def strip_indent(text: str, start_line: int = 0):
+    def strip_indent(text: str, start_line: int = 0) -> str:
         """
         Shifts left the text such that the first line has no leading spaces and all other lines shifted left with the first line spaces length.
         """
@@ -45,7 +45,7 @@ class TextUtils:
         return text.strip()
 
     @staticmethod
-    def shift_right(text: str, shift: int, start_line: int = 0):
+    def shift_right(text: str, shift: int, start_line: int = 0) -> str:
         """
         Shifts each line of the given text to the left by the specified number of spaces. Only spaces are shifted
         """
@@ -101,10 +101,10 @@ class TextUtils:
         return offset - indent - 1
 
     @staticmethod
-    def to_clipboard(text: str):
+    def to_clipboard(text: str) -> None:
         pyperclip.copy(text)
 
     @staticmethod
-    def to_file(filename: str, text: str):
+    def to_file(filename: str, text: str) -> None:
         with open(filename, "w") as f:
             f.write(text)
