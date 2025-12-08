@@ -65,18 +65,18 @@ class Stream[T]:
         self.__iterable = iter(sorted(self.__iterable, key=key, reverse=reverse))  # type: ignore
         return self
 
-    def peek(self, func: Callable[[T], Any]) -> 'Stream[T]':
+    def peek(self, func: Callable[[T], Any]) -> Stream[T]:
         self.__iterable = (x for x in self.__iterable if not func(x) or True)
         return self
 
-    def action(self, func: Callable[[T], Any]) -> 'Stream[T]':
+    def action(self, func: Callable[[T], Any]) -> Stream[T]:
         return self.peek(func)
 
-    def limit(self, max_size: int) -> 'Stream[T]':
+    def limit(self, max_size: int) -> Stream[T]:
         self.__iterable = (x for i, x in enumerate(self.__iterable) if i < max_size)
         return self
 
-    def skip(self, n: int) -> 'Stream[T]':
+    def skip(self, n: int) -> Stream[T]:
         self.__iterable = (x for i, x in enumerate(self.__iterable) if i >= n)
         return self
 
