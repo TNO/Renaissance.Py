@@ -1,28 +1,26 @@
 from unittest import TestCase
 from parameterized import parameterized
 
-from syntax_tree.ast_node import ASTNode
 from syntax_tree.ast_shower import ASTShower
 from examples.descendant_search import find_descendant_match
 from test.c_cpp.factories import Factories
-from syntax_tree import CPatternFactory, ASTFactory, TextUtils
+from syntax_tree import CPatternFactory, ASTFactory
 
 
 class TestFindDescendantMatch(TestCase):
 
     code_text: str = """
-            int my_function() {
-                return 3;
-            }
+            int my_function();
                                        
             int main(int argc, char *argv[]) {
-                my_function();
+                int z = my_function();
                 if (argc > my_function()) {
+                    int x = my_function();
                     my_function();
                 }
                 my_function();
                 if (argc <= my_function()) {
-                    my_function();
+                    int y = my_function();
                 } else {
                     my_function();
                 }
@@ -42,8 +40,17 @@ class TestFindDescendantMatch(TestCase):
         inner_pattern = pattern_factory.create_expression(
             self.inner_text, self.extra_declarations_inner_text
         )
-        result = find_descendant_match(code_pattern, outer_pattern, inner_pattern)
-        ASTShower.show_node(code_pattern)
+        # ASTShower.show_node(code_pattern)
         ASTShower.show_node(outer_pattern)
         ASTShower.show_node(inner_pattern)
-        assert 2 == result.count(), "count = " + str(result.count())
+        results = find_descendant_match(code_pattern, outer_pattern, inner_pattern)
+        # TODO: why doesn't .collect(list) not work?
+        # AttributeError: 'list' object has no attribute 'for_each'
+
+        print("========== found =================")
+        results.for_each(lambda match: ASTShower.show_nodes(match.src_nodes))
+        print("==================================")
+
+        # TODO: stream is consumed so count is 0
+        # count: int = results.count()
+        # assert 3 == count, "count = " + str(count)

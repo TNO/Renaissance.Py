@@ -9,6 +9,11 @@ class ASTShower:
         print("\n" + ASTShower.get_node(ast_node, include_properties))
 
     @staticmethod
+    def show_nodes(ast_nodes: list[ASTNode], include_properties: bool = False) -> None:
+        for ast_node in ast_nodes:
+            ASTShower.show_node(ast_node, include_properties)
+    
+    @staticmethod
     def get_node(ast_node: ASTNode, include_properties: bool = False) -> str:
         buffer = io.StringIO()
         ASTShower._process_node(buffer, "", ast_node, include_properties)
