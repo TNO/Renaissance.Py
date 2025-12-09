@@ -14,7 +14,8 @@ SHOW_NODE = False
 
 class CPatternFactory:
 
-    reserved_name = "__rejuvenation__reserved__"
+    reserved_function_name = "__rejuvenation__reserved__function__name__"
+    reserved_variable_name = "__rejuvenation__reserved__variable__name__"
 
     def __init__(
         self,
@@ -40,7 +41,7 @@ class CPatternFactory:
             self.language = ref_node.get_containing_filename().split(".")[-1]
 
             self.header = (
-                    CPatternFactory.remove_indent(ref_node.get_content(0, offset)) + "\n"
+                CPatternFactory.remove_indent(ref_node.get_content(0, offset)) + "\n"
             )
             self.header += (
                 Stream(ref_node.get_children())
@@ -80,7 +81,7 @@ class CPatternFactory:
             + "\n".join(extra_declarations)
             + "\n"
             + "\n".join(CPatternFactory._to_declaration(keywords))
-            + f"\nvoid f() {{ int {CPatternFactory.reserved_name} = ({text}); }}"
+            + f"\nvoid {CPatternFactory.reserved_function_name}() {{ int {CPatternFactory.reserved_variable_name} = ({text}); }}"
         )
         root = self._create(full_text)
         # return the first expression found in the tree as a ASTNode
@@ -132,7 +133,7 @@ class CPatternFactory:
         text: str,
         types: Sequence[str] = [],
         extra_declarations: Sequence[str] = [],
-        kind: str =".*",
+        kind: str = ".*",
     ) -> Sequence[ASTNode]:
         # create a reference for all used variables excluding the specified types
         parameters = [
@@ -185,7 +186,7 @@ class CPatternFactory:
             self.header + "\n".join(CPatternFactory._to_typedef(types)) + "\n"
             "\n".join(CPatternFactory._to_declaration(parameters)) + "\n"
             "\n".join(extra_declarations) + "\n"
-            "\nvoid " + CPatternFactory.reserved_name + "(){\n" + text + "\n}"
+            "\nvoid " + CPatternFactory.reserved_function_name + "(){\n" + text + "\n}"
         )
         root = self._create(full_text)
 
@@ -256,7 +257,7 @@ class CPPPatternFactory(CPatternFactory):
         if class_and_args:
             class_name = class_and_args.group(1)
             args = class_and_args.group(2).split(",")
-        # TODO: implement else or use default values for class_name and args 
+        # TODO: implement else or use default values for class_name and args
         return self._create_constructor_call(class_name, args)
 
     def _create_constructor_call(self, class_name: str, args: Sequence[str] = []):
