@@ -3,7 +3,7 @@ from parameterized import parameterized
 
 from examples.descendant_search import find_descendant_match
 from test.c_cpp.factories import Factories
-from syntax_tree import CPatternFactory, ASTFactory, ASTShower, MatchFinder
+from syntax_tree import CPatternFactory, ASTFactory, MatchFinder
 
 
 class TestFindDescendantMatch(TestCase):
