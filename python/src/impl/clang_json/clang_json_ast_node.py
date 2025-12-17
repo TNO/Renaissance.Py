@@ -51,6 +51,7 @@ class ClangJsonTranslationUnit:
         self._nodes: dict[str, ClangJsonASTNode] = {}
 
     def lazy_create_references(self, node: ClangJsonASTNode) -> None:
+        # TODO: Do I correctly assume that the usage of this function must be synchronized?
         if self.references_initialized:
             return
         node.root.process(ReferenceHelper.create_references)
@@ -194,7 +195,7 @@ class ClangJsonASTNode(ASTNode):
                             command.append("-")
                         # command.append('-main-file-name=' + str(file_path))
                         input = code.encode(sys.getfilesystemencoding())
-                        _ = subprocess.run(
+                        subprocess.run(
                             command,
                             input=input,
                             stdout=std_out_file,
@@ -214,7 +215,7 @@ class ClangJsonASTNode(ASTNode):
                     else:
                         if str(file_path) not in command:
                             command.append(str(file_path))
-                        _ = subprocess.run(
+                        subprocess.run(
                             command,
                             stdout=std_out_file,
                             stderr=std_err_file,
@@ -311,11 +312,16 @@ class ClangJsonASTNode(ASTNode):
     def _get_extended_end_offset(self) -> int:
         try:
             endOffset = self._end_offset
+            # TODO: Do I correctly assume this is for Expression Statements like
+            # "f(x,y);" and "a = f(3);" that are according to clang NOT statements,
+            # but expressions (without the semicolon)
             if (not self._is_statement_or_declaration()) and (
                 self.parent and self.parent.get_kind() in STMT_PARENTS
             ):
                 content = self.root.get_binary_file_content()
-                while endOffset < len(content) and not content[endOffset - 1] in b";":
+                while (
+                    endOffset < len(content) and not content[endOffset - 1] in b";"
+                ):  # Why use 'in' when list has one element, i.e. ';'?
                     endOffset += 1
             return endOffset
         except:
@@ -424,7 +430,9 @@ class ClangJsonASTNode(ASTNode):
 
     @override
     def _is_statement(self) -> bool:
-        return self.parent != None and self.parent.get_kind() in STMT_PARENTS
+        return (
+            self.parent != None and self.parent.get_kind() in STMT_PARENTS
+        )  # TODO: Why look at the kind of your parent and not at your own kind?
 
     @override
     def _get_children(self) -> Sequence[ClangJsonASTNode]:
