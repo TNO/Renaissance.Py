@@ -1,0 +1,50 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Python: Run Matcher Example",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/examples/python_example.py",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Python: Run Tests",
+      "type": "python",
+      "request": "launch",
+      "module": "unittest",
+      "args": [
+        "discover",
+        "-s",
+        "tests"
+      ],
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Python: Test Adapter",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/tests/test_tree_sitter_adapter.py",
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "C/C++ Runner: Debug Session",
+      "type": "cppdbg",
+      "request": "launch",
+      "args": [],
+      "stopAtEntry": false,
+      "externalConsole": true,
+      "cwd": "c:/Code/lst_toolkit/examples",
+      "program": "c:/Code/lst_toolkit/examples/build/Debug/outDebug",
+      "MIMode": "gdb",
+      "miDebuggerPath": "gdb",
+      "setupCommands": [
+        {
+          "description": "Enable pretty-printing for gdb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ]
+    }
+  ]
+}
