@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Generator, List, Optional
 
 
 class LSTNode:
@@ -8,8 +8,8 @@ class LSTNode:
         attributes: Dict[str, Any],
         signature: str,
         offset: Optional[int] = None,
-        children: Optional[List["LSTNode"]] = None,
-        parent: Optional["LSTNode"] = None
+        children: Optional[List[LSTNode]] = None,
+        parent: Optional[LSTNode] = None,
     ):
         self.node_type = node_type
         self.attributes = attributes
@@ -18,7 +18,7 @@ class LSTNode:
         self.children = children if children else []
         self.parent = parent
 
-    def add_child(self, child: "LSTNode"):
+    def add_child(self, child: LSTNode):
         self.children.append(child)
         child.parent = self
 
@@ -33,10 +33,10 @@ class LST:
     def __init__(self, root: LSTNode):
         self.root = root
 
-    def traverse(self):
+    def traverse(self) -> Generator[LSTNode]:
         yield from self._traverse_recursive(self.root)
 
-    def _traverse_recursive(self, node: LSTNode):
+    def _traverse_recursive(self, node: LSTNode) -> Generator[LSTNode]:
         yield node
         for child in node.children:
             yield from self._traverse_recursive(child)
