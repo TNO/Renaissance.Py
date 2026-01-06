@@ -83,13 +83,14 @@ class MatchUtils:
             return [
                 node
                 for node in nodes
-                if re.search(exclude_kind, node.get_kind(), re.IGNORECASE) == None
+                if re.search(exclude_kind, node.get_kind(), re.IGNORECASE) is None
             ]
         return nodes
 
     @staticmethod
     def get_multi_wildcard_keys(
         patterns: Sequence[ASTNode], result: list[str] = []
+            # TODO: replace mutable default argument
     ) -> list[str]:
         """
         Recursively finds and returns the names of all multi-wildcard patterns in the given list of AST nodes.
