@@ -1,3 +1,4 @@
+from __future__ import annotations
 from abc import ABC, abstractmethod
 from enum import Enum
 from functools import cache
@@ -23,7 +24,7 @@ class ASTReference:
         self._ref_kind = ref_kind
         self._properties = properties
 
-    def get_node(self) -> ASTNode:
+    def get_node(self) -> "ASTNode":
         return self._node
 
     def get_ref_kind(self) -> str:
