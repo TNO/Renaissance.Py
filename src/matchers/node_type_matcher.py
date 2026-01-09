@@ -13,7 +13,7 @@ class NodeTypeMatcher:
         self.node_type = node_type
 
     def match(self, lst_root: LSTNode) -> List[MatchResult]:
-        results = []
+        results: List[MatchResult] = []
         self._search(lst_root, results)
         return results
 

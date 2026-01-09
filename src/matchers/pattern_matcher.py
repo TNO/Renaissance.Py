@@ -20,7 +20,7 @@ class StructuralPatternMatcher:
         self.pattern_root = pattern_root
 
     def match(self, lst_root: LSTNode) -> List[MatchResult]:
-        results = []
+        results: List[MatchResult] = []
         self._search(lst_root, results)
         return results
 
@@ -35,13 +35,13 @@ class StructuralPatternMatcher:
         result = MatchResult()
 
         def recurse(p_node: LSTNode, t_node: LSTNode) -> bool:
-            if (p_node.node_type == "identifier" 
-                or p_node.node_type == "placeholder" )and (
+            if (
+                p_node.node_type == "identifier" or p_node.node_type == "placeholder"
+            ) and (
                 p_node.signature.startswith(
                     "$"
                 )  # this does not work for call expressions in tree sitter
-                or 
-                p_node.signature.startswith("__PLH_")
+                or p_node.signature.startswith("__PLH_")
             ):
                 result.add_binding(p_node.signature[1:], t_node)
                 return True
