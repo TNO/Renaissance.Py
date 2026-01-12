@@ -4,6 +4,9 @@ from pathlib import Path
 import re
 import sys
 from typing import Any, Optional, Sequence
+
+from textx import get_children
+
 from common import Stream
 from syntax_tree import ASTNode, ASTReference, ASTFinder
 from typing_extensions import override
@@ -63,15 +66,31 @@ class PythonASTNode(ASTNode):
         else:
             self.file_name = None
             self.translation_unit = None
+        self._children = []
         self.__start_offset = start_offset if start_offset!=None else self.__derive_start_offset()
         self.__length = length if length != None else self.__derive_length()
-        self.__kind = node.__class__.__name__
-        if('body' in dir(node)):
-            self._children = map(PythonASTNode, node.body)
-        else:
-            self._children =[]
+        self.__kind = type(node).__name__
 
+        match type(node):
+            case ast.Expr:
+                for arg in node.value.args:
+                    self._children.append(PythonASTNode(arg))
+            case ast.Module:
+                for stmt in node.body:
+                    self._children.append(PythonASTNode(stmt))
 
+    def eq(self, other):
+        if not isinstance(other, type(self)):
+            return False
+        return self.get_name() == other.get_name() and self.eq_tree(other.get_children)
+
+    def eq(self, other):
+        if len(get_children()) != len(other.get_children):
+            return False
+        for stmt, index in get_children():
+            if not stmt.eq(other.get_children[index]):
+                return False
+        return True
 
     @override
     @staticmethod
@@ -209,7 +228,7 @@ class PythonASTNode(ASTNode):
     
     @override
     @cache
-    def _get_children(self) -> Sequence['PythonASTNode']:
+    def _get_children(self):
         return self._children
     @override
     @cache

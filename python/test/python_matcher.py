@@ -40,6 +40,33 @@ class MyTestCase(unittest.TestCase):
         simple = ast.parse('pa(55)').body[0]
         assert(simple.value.func.id == 'pa')
 
+    def test_equal_nodes(self):
+        factory = ASTFactory(PythonASTNode, [])
+        atu = factory.create_from_text('pa(55)\nif pa(55):\n  pa(55)\n  pa=55', 'test.py')
+        pattern_factory = PythonPatternFactory(factory, atu)
+        simple = pattern_factory.create('pa(55)')
+        self.assertTrue(simple.eq(atu.get_children()[0]))
+
+    def test_equal_nodes_different_args(self):
+        factory = ASTFactory(PythonASTNode, [])
+        atu = factory.create_from_text('pa(55)\nif pa(55):\n  pa(55)\n  pa=55', 'test.py')
+        pattern_factory = PythonPatternFactory(factory, atu)
+        simple = pattern_factory.create('pa(66)')
+        self.assertFalse(simple.eq(atu.get_children()[0]))
+
+    def test_call_has_args_as_children(self):
+        factory = ASTFactory(PythonASTNode, [])
+        atu = factory.create_from_text('pa(55)\nif pa(55):\n  pa(55)\n  pa=55', 'test.py')
+        pattern_factory = PythonPatternFactory(factory, atu)
+        simple = pattern_factory.create('pa(66)')
+        self.assertGreater(len(simple.get_children()),0)
+
+    def test_not_equal_nodes(self):
+        factory = ASTFactory(PythonASTNode, [])
+        atu = factory.create_from_text('pap(55)\nif pa(55):\n  pa(55)\n  pa=55', 'test.py')
+        pattern_factory = PythonPatternFactory(factory, atu)
+        simple = pattern_factory.create('ma(55)')
+        self.assertFalse(simple.eq(atu.get_children()[0]))
 
 if __name__ == '__main__':
     unittest.main()
