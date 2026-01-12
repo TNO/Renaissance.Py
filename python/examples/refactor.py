@@ -155,7 +155,11 @@ def refactor_with_nested_compositions(args):
     atu = factory.create(code) if code else factory.create_from_text(example_code, 'test.py')
     # create a pattern factory atu is passed to the pattern factory for use of all # includes, #defines and declarations
     pattern_factory = PythonPatternFactory(factory, atu)
-    # create a pattern that matches an if statement with a==1 as the condition and a block of statements as the body
+
+    simple = pattern_factory.create('pa(ss)')
+    result = MatchFinder.find_all(atu,simple).to_list()
+    print(result)
+                         # create a pattern that matches an if statement with a==1 as the condition and a block of statements as the body
     # the type is important so it's declared as const int a
     pattern1 = pattern_factory.create_statements('if a:\n    __PLH_stmts\n',extra_declarations=['const int a;'])
 
@@ -185,7 +189,6 @@ def refactor_with_nested_compositions(args):
     while atu:
         #create an ASTRewriter
         rewriter = ASTRewriter(atu)
-
         # create a refactoring that use different replacement code for different patterns
         def refactor(match):
             if match.patterns == pattern1:

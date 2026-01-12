@@ -53,7 +53,7 @@ class PythonTranslationUnit():
 
 
 class PythonASTNode(ASTNode):
-    def __init__(self, node, translation_unit:PythonTranslationUnit=None,  parent =  None, start_offset: Optional[int] = None, length: Optional[int] = None, insert_kind : Optional[str]=None):
+    def __init__(self, node:AST, translation_unit:PythonTranslationUnit=None,  parent =  None, start_offset: Optional[int] = None, length: Optional[int] = None, insert_kind : Optional[str]=None):
         super().__init__(self if parent is None else parent.root)
         self.node = node
         self.parent = parent
@@ -110,16 +110,13 @@ class PythonASTNode(ASTNode):
     @override
     @cache
     def _get_name(self) -> str:
-        try:
-            if self.node.type.kind == TypeKind.RECORD: # type: ignore
-                return self.node.type.spelling
-        except:
-            pass
-        try:
-            return self.node.spelling
-        except: 
-            pass
-        return EMPTY_STR
+        if isinstance(self.node, ast.Expr):
+             if isinstance(self.node.value , ast.Call):
+                 return self.node.value.func.id
+             else:
+                 return str(self.node.value)
+        else:
+            return str(self.node)
 
     @override
     @cache
