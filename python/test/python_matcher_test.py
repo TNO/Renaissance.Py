@@ -3,7 +3,7 @@ import unittest
 from typing import Sequence
 
 from impl import PythonASTNode, PythonPatternFactory
-from impl.python import match_pattern
+from impl.python import match_pattern, find_all
 from syntax_tree import ASTFactory, MatchFinder
 
 
@@ -14,7 +14,7 @@ class MyTestCase(unittest.TestCase):
         # create a pattern factory atu is passed to the pattern factory for use of all # includes, #defines and declarations
         pattern_factory = PythonPatternFactory(factory, atu)
         simple = pattern_factory.create('pa(55)')
-        result = MatchFinder.find_all(atu, simple).to_list()
+        result = find_all(atu, simple).to_list()
         self.assertGreater(len(result),0)
 
     def test_match_all(self):
@@ -23,7 +23,7 @@ class MyTestCase(unittest.TestCase):
         # create a pattern factory atu is passed to the pattern factory for use of all # includes, #defines and declarations
         pattern_factory = PythonPatternFactory(factory, atu)
         simple = pattern_factory.create('pa(55)')
-        results = match_pattern( atu.get_children(), simple, lambda n: n )
+        results = match_pattern( atu.get_children(), simple )
         for res in results:
             print( str(res))
         self.assertGreater(len(results),0)

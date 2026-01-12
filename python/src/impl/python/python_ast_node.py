@@ -75,6 +75,9 @@ class PythonASTNode(ASTNode):
             case ast.Expr:
                 for arg in node.value.args:
                     self._children.append(PythonASTNode(arg))
+            case ast.If:
+                for arg in node.body:
+                    self._children.append(PythonASTNode(arg))
             case ast.Module:
                 for stmt in node.body:
                     self._children.append(PythonASTNode(stmt))
@@ -138,6 +141,8 @@ class PythonASTNode(ASTNode):
                      return str(self.node.value)
             case ast.Constant:
                 return str(self.node.value)
+            case ast.If:
+                return 'If'
             case _:
                 return str(self.node.value)
 
