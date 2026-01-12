@@ -3,16 +3,17 @@ import unittest
 from typing import Sequence
 
 from impl import PythonASTNode, PythonPatternFactory
+from impl.python import match_pattern
 from syntax_tree import ASTFactory, MatchFinder
 
 
 class MyTestCase(unittest.TestCase):
     def test_something(self):
         factory = ASTFactory(PythonASTNode, [])
-        atu = factory.create_from_text('pa(ss)\nif pa(ss):\n  pa(ss)\n  pa=ss', 'test.py')
+        atu = factory.create_from_text('pa(55)\nif pa(55):\n  pa(55)\n  pa=55', 'test.py')
         # create a pattern factory atu is passed to the pattern factory for use of all # includes, #defines and declarations
         pattern_factory = PythonPatternFactory(factory, atu)
-        simple = pattern_factory.create('pa(ss)')
+        simple = pattern_factory.create('pa(55)')
         result = MatchFinder.find_all(atu, simple).to_list()
         self.assertGreater(len(result),0)
 
@@ -22,7 +23,7 @@ class MyTestCase(unittest.TestCase):
         # create a pattern factory atu is passed to the pattern factory for use of all # includes, #defines and declarations
         pattern_factory = PythonPatternFactory(factory, atu)
         simple = pattern_factory.create('pa(55)')
-        results = MatchFinder.match_pattern( atu.get_children(), simple, lambda n: n )
+        results = match_pattern( atu.get_children(), simple, lambda n: n )
         for res in results:
             print( str(res))
         self.assertGreater(len(results),0)

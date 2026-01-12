@@ -8,3 +8,10 @@ __all__ = [
     'PythonPatternFactory'
 ]
 
+def match_pattern( stmts, pattern):
+    found = []
+    for stmt in stmts:
+        if stmt.eq(pattern):
+            found.append(pattern)
+    return found
+

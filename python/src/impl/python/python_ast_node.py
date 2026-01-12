@@ -82,13 +82,14 @@ class PythonASTNode(ASTNode):
     def eq(self, other):
         if not isinstance(other, type(self)):
             return False
-        return self.get_name() == other.get_name() and self.eq_tree(other.get_children)
+        return self.get_name() == other.get_name() and self.eq_children(other.get_children())
 
-    def eq(self, other):
-        if len(get_children()) != len(other.get_children):
+    def eq_children(self, children):
+        size = len(self.get_children())
+        if  size != len(children):
             return False
-        for stmt, index in get_children():
-            if not stmt.eq(other.get_children[index]):
+        for index in range(size):
+            if not self._children[index].eq(children[index]):
                 return False
         return True
 
@@ -129,13 +130,16 @@ class PythonASTNode(ASTNode):
     @override
     @cache
     def _get_name(self) -> str:
-        if isinstance(self.node, ast.Expr):
-             if isinstance(self.node.value , ast.Call):
-                 return self.node.value.func.id
-             else:
-                 return str(self.node.value)
-        else:
-            return str(self.node)
+        match type(self.node):
+            case ast.Expr:
+                 if isinstance(self.node.value , ast.Call):
+                     return self.node.value.func.id
+                 else:
+                     return str(self.node.value)
+            case ast.Constant:
+                return str(self.node.value)
+            case _:
+                return str(self.node.value)
 
     @override
     @cache
