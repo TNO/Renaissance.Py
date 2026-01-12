@@ -17,7 +17,7 @@ EMPTY_LIST = []
 STMT_PARENTS = [ 'COMPOUND_STMT', 'TRANSLATION_UNIT' ]
 
 
-PRINT_ALL_NODES = False
+PRINT_ALL_NODES = True
 class PythonASTReference():
     def __init__(self, node_id:str, ref_kind:str, properties:dict[str, Any]) -> None:
         self.node_id = node_id
@@ -370,12 +370,12 @@ if __name__ == "__main__":
 
 
 # Function to visit all nodes
-def print_node_kind(node, depth=0):
+def print_node_kind(node: ast.AST, depth=0):
     if PRINT_ALL_NODES:
-        print(f"{' '*depth} Node: {node.spelling}, Kind: {node.kind}")
-        
-        for child in node.get_children():
-            print_node_kind(child, depth+2)
+        print(f"{' '*depth} Node: {ast.dump(node)}, Kind: {node.__class__.__name__}")
+        if 'body' in dir(node):
+            for child in node.body:
+                print_node_kind(child, depth+2)
 
 
 def save_get(target, key):
