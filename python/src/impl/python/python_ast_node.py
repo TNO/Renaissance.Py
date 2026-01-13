@@ -82,19 +82,6 @@ class PythonASTNode(ASTNode):
                 for stmt in node.body:
                     self._children.append(PythonASTNode(stmt))
 
-    def eq(self, other):
-        if not isinstance(other, type(self)):
-            return False
-        return self.get_name() == other.get_name() and self.eq_children(other.get_children())
-
-    def eq_children(self, children):
-        size = len(self.get_children())
-        if  size != len(children):
-            return False
-        for index in range(size):
-            if not self._children[index].eq(children[index]):
-                return False
-        return True
 
     @override
     @staticmethod

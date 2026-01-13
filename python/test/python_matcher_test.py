@@ -3,19 +3,19 @@ import unittest
 from typing import Sequence
 
 from impl import PythonASTNode, PythonPatternFactory
-from impl.python import match_pattern, find_all
+from impl.python import match_pattern, find_all, match
 from syntax_tree import ASTFactory, MatchFinder
 
 
 class MyTestCase(unittest.TestCase):
-    def test_something(self):
+    def test_match_pattern(self):
         factory = ASTFactory(PythonASTNode, [])
         atu = factory.create_from_text('pa(55)\nif pa(55):\n  pa(55)\n  pa=55', 'test.py')
         # create a pattern factory atu is passed to the pattern factory for use of all # includes, #defines and declarations
         pattern_factory = PythonPatternFactory(factory, atu)
-        simple = pattern_factory.create('pa(55)')
-        result = find_all(atu, simple).to_list()
-        self.assertGreater(len(result),0)
+        simple = pattern_factory.create('$pa($55)')
+        result = find_all(atu, [simple]).to_list()
+        self.assertEqual(len(result),3)
 
     def test_match_all(self):
         factory = ASTFactory(PythonASTNode, [])
@@ -23,7 +23,7 @@ class MyTestCase(unittest.TestCase):
         # create a pattern factory atu is passed to the pattern factory for use of all # includes, #defines and declarations
         pattern_factory = PythonPatternFactory(factory, atu)
         simple = pattern_factory.create('pa(55)')
-        results = match_pattern( atu.get_children(), simple )
+        results = match_pattern( atu.get_children(), [simple] )
         for res in results:
             print( str(res))
         self.assertGreater(len(results),0)
@@ -46,14 +46,14 @@ class MyTestCase(unittest.TestCase):
         atu = factory.create_from_text('pa(55)\nif pa(55):\n  pa(55)\n  pa=55', 'test.py')
         pattern_factory = PythonPatternFactory(factory, atu)
         simple = pattern_factory.create('pa(55)')
-        self.assertTrue(simple.eq(atu.get_children()[0]))
+        self.assertTrue(match(simple,atu.get_children()[0]))
 
     def test_equal_nodes_different_args(self):
         factory = ASTFactory(PythonASTNode, [])
         atu = factory.create_from_text('pa(55)\nif pa(55):\n  pa(55)\n  pa=55', 'test.py')
         pattern_factory = PythonPatternFactory(factory, atu)
         simple = pattern_factory.create('pa(66)')
-        self.assertFalse(simple.eq(atu.get_children()[0]))
+        self.assertFalse(match(simple,atu.get_children()[0]))
 
     def test_call_has_args_as_children(self):
         factory = ASTFactory(PythonASTNode, [])
@@ -67,7 +67,7 @@ class MyTestCase(unittest.TestCase):
         atu = factory.create_from_text('pap(55)\nif pa(55):\n  pa(55)\n  pa=55', 'test.py')
         pattern_factory = PythonPatternFactory(factory, atu)
         simple = pattern_factory.create('ma(55)')
-        self.assertFalse(simple.eq(atu.get_children()[0]))
+        self.assertFalse(match(simple,atu.get_children()[0]))
 
 if __name__ == '__main__':
     unittest.main()

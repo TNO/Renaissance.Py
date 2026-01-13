@@ -11,10 +11,12 @@ from syntax_tree.ast_factory import ASTFactory
 from syntax_tree.ast_finder import ASTFinder
 
 SHOW_NODE = False
-
+MATCH_ONE = '_MatchOne__'
+MATCH_ALL = '_MatchAll__'
 
 class PythonPatternFactory:
 
+    # RENAISSANCE
     RESERVED_KEYWORDS = ['class', 'in', 'def']
     reserved_function_name = "__rejuvenation__reserved__function__name__"
     reserved_variable_name = "__rejuvenation__reserved__variable__name__"
@@ -138,6 +140,7 @@ class PythonPatternFactory:
         return Stream(ast.parse(text).body).map(PythonASTNode).to_list()
 
     def create(self, text: str, kind: Optional[str] = None) -> ASTNode:
+        text = text.replace('$$', MATCH_ALL).replace('$', MATCH_ONE)
         return PythonASTNode(ast.parse(text).body[0])
 
     def create_statement(
