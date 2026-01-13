@@ -56,7 +56,7 @@ class PythonTranslationUnit():
 
 
 class PythonASTNode(ASTNode):
-    def __init__(self, node:AST, translation_unit:PythonTranslationUnit=None,  parent =  None, start_offset: Optional[int] = None, length: Optional[int] = None, insert_kind : Optional[str]=None):
+    def __init__(self, node, translation_unit:PythonTranslationUnit=None,  parent =  None, start_offset: Optional[int] = None, length: Optional[int] = None, insert_kind : Optional[str]=None):
         super().__init__(self if parent is None else parent.root)
         self.node = node
         self.parent = parent
@@ -76,12 +76,20 @@ class PythonASTNode(ASTNode):
                 for arg in node.value.args:
                     self._children.append(PythonASTNode(arg))
             case ast.If:
-                for arg in node.body:
-                    self._children.append(PythonASTNode(arg))
+                self._children.append(PythonASTNode(node.test ))
+                body = PythonASTNode(None )
+                for stmt in node.body:
+                    body._children.append(PythonASTNode(stmt))
+                self._children.append(body)
+                orelse = PythonASTNode(None)
+                for stmt in node.orelse:
+                    orelse._children.append(PythonASTNode(stmt))
+                self._children.append(orelse)
             case ast.Module:
                 for stmt in node.body:
                     self._children.append(PythonASTNode(stmt))
-
+            case _:
+                pass
 
     @override
     @staticmethod
