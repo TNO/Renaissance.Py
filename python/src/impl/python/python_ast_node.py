@@ -242,7 +242,7 @@ class PythonASTNode(ASTNode):
 
     @override
     def _is_statement(self) ->bool:
-        return self.parent is not None and self.parent.get_kind() in STMT_PARENTS
+        return isinstance(self.node, ast.stmt)
     
     @override
     @cache

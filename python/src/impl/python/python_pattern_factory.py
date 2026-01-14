@@ -79,7 +79,7 @@ class PythonPatternFactory:
             + "\n".join(PythonPatternFactory._to_declaration(keywords))
             + f"\nvoid {PythonPatternFactory.reserved_function_name}() {{ int {PythonPatternFactory.reserved_variable_name} = ({text}); }}"
         )
-        root = self._create(full_text)
+        root = self._create(text)
         # return the first expression found in the tree as a ASTNode
         return (
             ASTFinder.find_kind(root.get_children()[-1], "(?i)PAREN_?EXPR")
@@ -136,6 +136,18 @@ class PythonPatternFactory:
         for node in ast.parse(text).body:
             result.append(PythonASTNode(node))
         return result
+
+    def create_import(self, text: str) -> ASTNode:
+        return PythonASTNode(ast.parse(text).body[0])
+
+    def create_compare(self, text: str) -> ASTNode:
+        return PythonASTNode(ast.parse(text).body[0])
+
+    def create_if_statement(self, text: str):
+        return PythonASTNode(ast.parse(text).body[0])
+
+    def create_try_statement(self, text: str):
+        return PythonASTNode(ast.parse(text).body[0])
 
     def create(self, text: str, kind: Optional[str] = None) -> ASTNode:
         text = text.replace('$$', MATCH_ALL).replace('$', MATCH_ONE)
