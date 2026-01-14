@@ -16,8 +16,10 @@ class PythonShowerTest(unittest.TestCase):
         pattern_factory = PythonPatternFactory(factory, atu)
         simple = pattern_factory.create('$pa($55)')
         text = ASTShower.get_node(simple)
-        text2 = ast.dump(simple.node)
-        self.assertEqual(text2,text)
+        self.assertEqual(('(Expr, _MatchOne__pa, None[100000:200028]): |_MatchOne__pa(_MatchOne__55)|\n'
+ '  (Call, _MatchOne__pa, None[0:0]): |_MatchOne__pa(_MatchOne__55)|\n'
+ '    (Name, _MatchOne__pa, None[0:0]): |_MatchOne__pa|\n'
+ '    (NoneType, , None[0:0]): ||\n'),text)
 
 if __name__ == '__main__':
     unittest.main()

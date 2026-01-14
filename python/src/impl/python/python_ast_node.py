@@ -78,11 +78,11 @@ class PythonASTNode(ASTNode):
         self._children = []
         #convert later
         if(isinstance(node, ast.stmt)):
-            self.__start_offset = node.lineno*100000+node.col_offset
-            self.__length = node.end_lineno*100000+node.end_col_offset
+            self._start_offset = node.lineno*100000+node.col_offset
+            self._length = node.end_lineno*100000+node.end_col_offset
         else:
-            self.__start_offset = 0
-            self.__length = 0
+            self._start_offset = 0
+            self._length = 0
 
         cls = type(node)
         self.__kind = cls.__name__
@@ -96,10 +96,18 @@ class PythonASTNode(ASTNode):
                 keywords = True
                 continue
             match child:
-                case ast.AST():  # Matches any instance of ast.AST
-                    self._children.append(PythonASTNode(child))
+                case ast.AST():
+                    if type(child)!= ast.Load:
+                        self._children.append(PythonASTNode(child))
                 case list():  # Matches any list
-                    self._children.append(PythonImpliciteBlock(self, name, child))
+                    if name=='keywords':
+                        self._children.append(PythonImpliciteBlock(self, name, child))
+                case str():
+                    if name=='id':
+                        self.__name = child
+                case int():
+                    if name=='value':
+                        self.__name = str(child)
                 case _:
                     pass
             self.attributes={}
@@ -182,6 +190,8 @@ class PythonASTNode(ASTNode):
             return self.node.value.func.id
         elif isinstance(self.node, ast.Expr) and isinstance(self.node.value, ast.Name):
             return self.node.value.id
+        elif isinstance(self.node, ast.Call):
+            return self.node.func.id
         else:
             return ''
 
@@ -192,11 +202,11 @@ class PythonASTNode(ASTNode):
 
     @override
     def _get_start_offset(self) -> int: 
-        return self.__start_offset
+        return self._start_offset
 
     @override
     def _get_length(self) -> int: 
-        return self.__length
+        return self._length
 
     @override
     @cache
@@ -415,12 +425,16 @@ class PythonImpliciteBlock(PythonASTNode):
         self.parent = parent
         self.file_name = None
         self.translation_unit = None
-        self.__start_offset = 0
-        self.__length = 0
+        self._start_offset = 0
+        self._length = 0
         self._children=[]
         self.__kind = "__ADDED__"
         for child in children:
             self._children.append(PythonASTNode(child))
+
+    @override
+    def get_raw_signature(self) -> str:
+        return ''
 
             # Function to visit all nodes
 def print_node_kind(node: ast.AST, depth=0):
