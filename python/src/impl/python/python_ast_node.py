@@ -143,9 +143,11 @@ class PythonASTNode(ASTNode):
     
     @override
     def _get_name(self) -> str:
-        if isinstance(self.node.value, ast.Call):
+        if isinstance(self.node, ast.Name):
+            return self.node.id
+        if isinstance(self.node, ast.Expr) and isinstance(self.node.value, ast.Call):
             return self.node.value.func.id
-        elif isinstance(self.node.value, ast.Name):
+        elif isinstance(self.node, ast.Expr) and isinstance(self.node.value, ast.Name):
             return self.node.value.id
         else:
             return ''
@@ -185,7 +187,7 @@ class PythonASTNode(ASTNode):
 
     @override
     def get_raw_signature(self) -> str:
-        return str(self.node)
+        return ast.unparse(self.node)
     @override
     def _matches_kind(self, node:ASTNode) -> bool: 
         return self.__kind == node.get_kind() or\

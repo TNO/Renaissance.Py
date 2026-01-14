@@ -7,7 +7,7 @@ from impl.python import match_pattern, find_all, match
 from syntax_tree import ASTFactory, MatchFinder
 
 
-class MyTestCase(unittest.TestCase):
+class PythonMatcherTest(unittest.TestCase):
     def test_match_pattern(self):
         factory = ASTFactory(PythonASTNode, [])
         atu = factory.create_from_text('ba(55)\nca(555)\nlo(4444)\nna=55', 'test.py')
