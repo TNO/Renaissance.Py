@@ -13,9 +13,9 @@ __all__ = [
     'PythonPatternFactory'
 ]
 
-def find_all( atu, pattern):
-    return Stream(match_pattern( atu.get_children(), pattern))
 
+def find_all(atu, pattern):
+    return Stream(match_pattern(atu.get_children(), pattern))
 
 
 ANY_ID = "\\$\\w+(\\(\\$\\))?";
@@ -25,52 +25,58 @@ WILDLIST = "[$$"
 expandArgList = {}
 expansionList = {}
 expansion = {}
-foundStatements=[]
-
+foundStatements = []
 
 
 def match_pattern(statements, pattern):
     resetExpansions()
 
-    find_matching_pattern( pattern, statements)
+    find_matching_pattern(statements, pattern)
     return foundStatements
 
 
-def find_matching_pattern( pattern, statements):
+def find_matching_pattern(statements, pattern):
     greedy = False;
     foundPosition = 0;
     for i in range(len(statements)):
         node = statements[i]
-        # cursor = pattern[foundPosition].get_name()
-        # if cursor.startswith(MATCH_ALL):
-        #     greedy = True
-        if match(node.node, pattern[foundPosition].node):
+        current_name = pattern[foundPosition].get_name()
+        if current_name.startswith(MATCH_ALL):
+            if foundPosition==0:
+                start=i
             foundPosition = foundPosition + 1
-            greedy = False
-        # elif cursor.startswith(ANY_ID):
-        #     expansion.put(cursor, node)
-        #     greedy = False
-        # elif greedy:
-        #     foundPosition = foundPosition -1
+            foundPositionInExpandedList = 0
+            expansion_start = i
+            greedy = True
+        elif match(node.node, pattern[foundPosition].node):
+            if foundPosition==0:
+                start=i
+            foundPosition = foundPosition + 1
+            if greedy == True:
+                greedy = False
+                last_name = pattern[foundPosition-1].get_name()
+                if not last_name in expansionList:
+                    expansionList[last_name] = statements[expansion_start:i+1]
+
+        elif greedy:
+            if current_name in expansionList:
+                if match(expansionList[current_name][foundPositionInExpandedList], node.node):
+                    foundPositionInExpandedList=foundPositionInExpandedList+1
+                else:
+                    foundPositionInExpandedList=0
+                    foundPosition=0
+
         elif node.get_children():
-            find_matching_pattern(pattern, node.get_children())
+            find_matching_pattern(node.get_children(), pattern)
+        elif not greedy:
+            foundPosition = 0
 
         if foundPosition == len(pattern):
-            foundStatements.append(statements[i: i + 1])
-            # is_match_any(statements[i-foundPosition: i], cursor, greedy)
+            end = i + 1
+            foundStatements.append(statements[start:end])
             foundPosition = 0
 
 
-def is_match_one(node, other):
-    code = other.get_name()
-    if code.matches(ANY_ID):
-        if code in expansion:
-            return expansion[code]
-        else:
-            expansion[code]= node
-            return True
-    else:
-        return False
 
 
 
@@ -79,7 +85,7 @@ def is_match_any(nodes, other, greedy):
         if other in expansionList:
             return safeSubtreeListMatch(nodes, expansionList[other])
         else:
-            expansionList[other]= nodes
+            expansionList[other] = nodes
             return True
     else:
         return True
@@ -94,24 +100,29 @@ def isWildCardString(node, other):
     else:
         return False
 
+
 def resetExpansions():
     expansion.clear()
     expansionList.clear()
     foundStatements.clear()
 
+
 def match_stmt(node, other):
     return False
 
 
-def match_if(node:ast.If, other):
+def match_if(node: ast.If, other):
     if not isinstance(other, ast.If):
         return False
-    if match(node.test, other.test) and match(node.body, other.body) and match(node.orelse , other.orelse):
+    if match(node.test, other.test) and match(node.body, other.body) and match(node.orelse, other.orelse):
         return True
 
-def match_call(node:Call, other):
+
+def match_call(node: Call, other):
     if isinstance(other, ast.Expr):
         other = other.value
+    if not isinstance(other, Call):
+        return False
     if match(node.func, other.func):
         for i in range(len(node.args)):
             if not match(node.args[i], other.args[i]):
@@ -127,26 +138,33 @@ def match_call(node:Call, other):
     # found = isWildCard(node, other);
     # return found;
 
+
 def subtree_match(node, other):
     if (isinstance(other, type(node))
-            and (node.get_name() == other.get_name()) and eq_children(node,other.get_children())):
+            and (node.get_name() == other.get_name()) and eq_children(node, other.get_children())):
         return True
     if other.get_name().startswith(MATCH_ONE):
         return False
+
 
 def eq_children(self, children):
     size = len(self.get_children())
     if size != len(children):
         return False
     for index in range(size):
-        if not match(self._children[index],children[index]):
+        if not match(self._children[index], children[index]):
             return False
     return True
 
 
 def match(node, other):
-    if(type(other)==ast.Name and other.id.startswith(MATCH_ONE)):
-        return True
+    # def is_match_one(node, other):
+    if (type(other) == ast.Name and other.id.startswith(MATCH_ONE)):
+        if not other in expansion:
+            expansion[other] = node
+            return True
+        else:
+            other = expansion[other]
     match type(node):
         # case Add(__ast.operator):
         # case And(__ast.boolop):
@@ -161,15 +179,16 @@ def match(node, other):
         # case AugAssign(__ast.stmt):
         # case Await(__ast.expr):
         # case BinOp(__ast.expr):
-        # case BitAnd(__ast.operator):
+        # case ast.BitAnd:
         # case BitOr(__ast.operator):
         # case BitXor(__ast.operator):
         # case BoolOp(__ast.expr):
         # case Break(__ast.stmt):
         case ast.Call:
-            return match_call(node,other)
+            return match_call(node, other)
         # case ClassDef(__ast.stmt):
-        # case Compare(__ast.expr):
+        case ast.Compare:
+            pass
         case ast.Constant:
             return match(node.value, other.value)
         # case Continue(__ast.stmt):
@@ -261,6 +280,8 @@ def match(node, other):
         case _:
             return node == other
         # compare type if not arguments, compare the same type
+
+
 #
 #
 
@@ -280,6 +301,7 @@ def subtreeMatch(node, param):
 
 def isWildList(param, cursor, greedy):
     pass
+
 
 def safeSubtreeListMatch(nodes, param):
     pass

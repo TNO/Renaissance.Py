@@ -70,16 +70,34 @@ class PythonASTNode(ASTNode):
         self.__start_offset = start_offset if start_offset!=None else self.__derive_start_offset()
         self.__length = length if length != None else self.__derive_length()
         self.__kind = type(node).__name__
-
+        self.__name = ''
         match type(node):
+            case ast.Name:
+                self.__name = node.id
             case ast.Expr:
-                for arg in node.value.args:
-                    self._children.append(PythonASTNode(arg))
+                if isinstance(node.value, ast.Call):
+                    self.__name == node.value.func.id
+                    for arg in node.value.args:
+                        self._children.append(PythonASTNode(arg))
+                elif isinstance(node.value, ast.Name):
+                    self.__name = node.value.id
+                else:
+                    self.__name = str(node.value)
+            case ast.Constant:
+                self.__name = self.node.value
             case ast.If:
-                self._children.append(PythonASTNode(node.test ))
+                self._children.append(PythonASTNode(node.test))
                 body = PythonASTNode(None )
                 for stmt in node.body:
                     body._children.append(PythonASTNode(stmt))
+                self._children.append(body)
+                orelse = PythonASTNode(None)
+                for stmt in node.orelse:
+                    orelse._children.append(PythonASTNode(stmt))
+                self._children.append(orelse)
+            case ast.For:
+                for stmt in node.body:
+                    self._children.append(PythonASTNode(stmt))
                 self._children.append(body)
                 orelse = PythonASTNode(None)
                 for stmt in node.orelse:
@@ -128,18 +146,7 @@ class PythonASTNode(ASTNode):
     @override
     @cache
     def _get_name(self) -> str:
-        match type(self.node):
-            case ast.Expr:
-                 if isinstance(self.node.value , ast.Call):
-                     return self.node.value.func.id
-                 else:
-                     return str(self.node.value)
-            case ast.Constant:
-                return str(self.node.value)
-            case ast.If:
-                return 'If'
-            case _:
-                return str(self.node.value)
+        return self.__name
 
     @override
     @cache
@@ -174,6 +181,9 @@ class PythonASTNode(ASTNode):
     def _get_kind(self) -> str: 
         return self.node.__class__.__name__
 
+    @override
+    def get_raw_signature(self) -> str:
+        return str(self.node)
     @override
     def _matches_kind(self, node:ASTNode) -> bool: 
         return self.__kind == node.get_kind() or\

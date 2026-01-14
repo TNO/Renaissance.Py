@@ -28,6 +28,98 @@ class MyTestCase(unittest.TestCase):
             print( str(res))
         self.assertEqual(len(results),3)
 
+    def test_match_multiple(self):
+        factory = ASTFactory(PythonASTNode, [])
+        atu = factory.create_from_text('ba(55)\nna(55)\nna(55)\npa(55)\npa(55)\nba(55)\nna(55)\nna(55)\nna=55', 'test.py')
+        # create a pattern factory atu is passed to the pattern factory for use of all # includes, #defines and declarations
+        pattern_factory = PythonPatternFactory(factory, atu)
+        simple = pattern_factory.create_statements('ba($a)\nna($b)\nna($c)')
+        results = match_pattern( atu.get_children(), simple )
+        self.assertEqual(len(results[0]),3)
+        self.assertEqual(len(results),2)
+
+    def test_match_different_placeholder(self):
+        factory = ASTFactory(PythonASTNode, [])
+        atu = factory.create_from_text('ba(51)\nna(52)\nna(53)\npa(54)\npa(55)\nba(56)\nna(57)\nna(58)\nna=59\nba(51)\nna(52)\nna(53)\n', 'test.py')
+        # create a pattern factory atu is passed to the pattern factory for use of all # includes, #defines and declarations
+        pattern_factory = PythonPatternFactory(factory, atu)
+        simple = pattern_factory.create_statements('ba($a)\nna($b)\nna($c)')
+        results = match_pattern( atu.get_children(), simple )
+        self.assertEqual(len(results),2)
+        self.assertEqual(len(results[0]),3)
+
+    def test_match_recursion_placeholder(self):
+        factory = ASTFactory(PythonASTNode, [])
+        atu = factory.create_from_text('ba(51)\nna(52)\nna(53)\npa(54)\nif pa(55):\n  ba(51)\n  na(52)\n  na(53)\n  na=59\nelse:\n  ba(51)\n  na(52)\n  na(53)\n', 'test.py')
+        # create a pattern factory atu is passed to the pattern factory for use of all # includes, #defines and declarations
+        pattern_factory = PythonPatternFactory(factory, atu)
+        simple = pattern_factory.create_statements('ba($a)\nna($b)\nna($c)')
+        results = match_pattern( atu.get_children(), simple )
+        self.assertEqual(len(results),3)
+        self.assertEqual(len(results[0]),3)
+
+    def test_match_any_placeholder(self):
+        factory = ASTFactory(PythonASTNode, [])
+        atu = factory.create_from_text('''
+ba(51)
+na(52)  
+na(52)  
+na(53)
+ba(53)
+pa(54)
+if pa(55):
+  ba(51)  
+  na(52)  
+  na(52)  
+  na(53)
+  ba(53)
+  na(53)  
+  na=59
+else:  
+    ba(51)  
+    na(52)  
+    na(52)  
+    na(53)
+    ba(53)
+
+''', 'test.py')
+        # create a pattern factory atu is passed to the pattern factory for use of all # includes, #defines and declarations
+        pattern_factory = PythonPatternFactory(factory, atu)
+        simple = pattern_factory.create_statements('ba($a)\n$$na\nba($c)')
+        results = match_pattern( atu.get_children(), simple )
+        self.assertEqual(len(results),3)
+        self.assertEqual(len(results[0]),5)
+
+    def test_match_any_placeholder_but_different_content(self):
+        factory = ASTFactory(PythonASTNode, [])
+        atu = factory.create_from_text(
+    '''
+        ba(51)
+        na(52)  
+        na(52)  
+        na(53)
+        ba(53)
+        pa(54)
+        if pa(55):
+            ba(51)  
+            na(52)  
+            na(53)
+            ba(53)
+            na(53)  
+            na=59
+        else:  
+            ba(51)  
+            na(52)  
+            ba(53)
+        
+        ''', 'test.py')
+        # create a pattern factory atu is passed to the pattern factory for use of all # includes, #defines and declarations
+        pattern_factory = PythonPatternFactory(factory, atu)
+        simple = pattern_factory.create_statements('ba($a)\n$$na\nba($c)')
+        results = match_pattern(atu.get_children(), simple)
+        self.assertEqual(len(results), 1)
+        self.assertEqual(len(results[0]), 5)
+
     def test_match_all(self):
         factory = ASTFactory(PythonASTNode, [])
         atu = factory.create_from_text('pa(55)\nif pa(55):\n  pa(55)\n  if pa(55):\n    pa(55)\n  pa=55', 'test.py')
@@ -35,8 +127,6 @@ class MyTestCase(unittest.TestCase):
         pattern_factory = PythonPatternFactory(factory, atu)
         simple = pattern_factory.create('pa(55)')
         results = match_pattern( atu.get_children(), [simple] )
-        for res in results:
-            print( str(res))
         self.assertEqual(len(results),5)
 
     def test_ast_name(self):

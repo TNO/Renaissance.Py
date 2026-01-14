@@ -131,13 +131,11 @@ class PythonPatternFactory:
         extra_declarations: Sequence[str] = [],
         kind: str = ".*",
     ) -> Sequence[ASTNode]:
-        # create a reference for all used variables excluding the specified types
-        parameters = [
-            par
-            for par in PythonPatternFactory._get_keywords_from_text(text)
-            if not par in types and not any(par in ed for ed in extra_declarations)
-        ]
-        return Stream(ast.parse(text).body).map(PythonASTNode).to_list()
+        text = text.replace('$$', MATCH_ALL).replace('$', MATCH_ONE)
+        result = []
+        for node in ast.parse(text).body:
+            result.append(PythonASTNode(node))
+        return result
 
     def create(self, text: str, kind: Optional[str] = None) -> ASTNode:
         text = text.replace('$$', MATCH_ALL).replace('$', MATCH_ONE)
