@@ -68,24 +68,20 @@ class PythonASTNode(ASTNode):
             self.file_name = None
             self.translation_unit = None
         self._children = []
-        self.__start_offset = start_offset if start_offset!=None else self.__derive_start_offset()
-        self.__length = length if length != None else self.__derive_length()
+        #convert later
+        if(isinstance(node, ast.stmt)):
+            self.__start_offset = node.lineno*100000+node.col_offset
+            self.__length = node.end_lineno*100000+node.end_col_offset
+        else:
+            self.__start_offset = 0
+            self.__length = 0
         self.__kind = type(node).__name__
-        self.__name = ''
         match type(node):
-            case ast.Name:
-                self.__name = node.id
             case ast.Expr:
                 if isinstance(node.value, ast.Call):
-                    self.__name == node.value.func.id
                     for arg in node.value.args:
                         self._children.append(PythonASTNode(arg))
-                elif isinstance(node.value, ast.Name):
-                    self.__name = node.value.id
-                else:
-                    self.__name = str(node.value)
-            case ast.Constant:
-                self.__name = self.node.value
+
             case ast.If:
                 self._children.append(PythonASTNode(node.test))
                 body = PythonASTNode(ImpliciteNode() )
@@ -145,7 +141,9 @@ class PythonASTNode(ASTNode):
     def _get_name(self) -> str:
         if isinstance(self.node, ast.Name):
             return self.node.id
-        if isinstance(self.node, ast.Expr) and isinstance(self.node.value, ast.Call):
+        elif isinstance(self.node, ast.Constant):
+            return self.node.value
+        elif isinstance(self.node, ast.Expr) and isinstance(self.node.value, ast.Call):
             return self.node.value.func.id
         elif isinstance(self.node, ast.Expr) and isinstance(self.node.value, ast.Name):
             return self.node.value.id
