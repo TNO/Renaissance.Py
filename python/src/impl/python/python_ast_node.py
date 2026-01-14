@@ -56,6 +56,14 @@ class PythonTranslationUnit():
 
 class ImpliciteNode(ast.AST):
     pass
+
+
+class PythonImpliciteBNode(ast.AST):
+    pass
+
+
+
+
 class PythonASTNode(ASTNode):
     def __init__(self, node:ast.AST, translation_unit:PythonTranslationUnit=None,  parent =  None, start_offset: Optional[int] = None, length: Optional[int] = None, insert_kind : Optional[str]=None):
         super().__init__(self if parent is None else parent.root)
@@ -68,44 +76,75 @@ class PythonASTNode(ASTNode):
             self.file_name = None
             self.translation_unit = None
         self._children = []
-        self.__start_offset = start_offset if start_offset!=None else self.__derive_start_offset()
-        self.__length = length if length != None else self.__derive_length()
-        self.__kind = type(node).__name__
-        self.__name = ''
-        match type(node):
-            case ast.Name:
-                self.__name = node.id
-            case ast.Expr:
-                if isinstance(node.value, ast.Call):
-                    self.__name == node.value.func.id
-                    for arg in node.value.args:
-                        self._children.append(PythonASTNode(arg))
-                elif isinstance(node.value, ast.Name):
-                    self.__name = node.value.id
-                else:
-                    self.__name = str(node.value)
-            case ast.Constant:
-                self.__name = self.node.value
-            case ast.If:
-                self._children.append(PythonASTNode(node.test))
-                body = PythonASTNode(ImpliciteNode() )
-                for stmt in node.body:
-                    body._children.append(PythonASTNode(stmt))
-                self._children.append(body)
-                orelse = PythonASTNode(ImpliciteNode())
-                for stmt in node.orelse:
-                    orelse._children.append(PythonASTNode(stmt))
-                self._children.append(orelse)
-            case ast.For:
-                body = PythonASTNode(ImpliciteNode())
-                for stmt in node.body:
-                    body._children.append(PythonASTNode(stmt))
-                self._children.append(body)
-            case ast.Module:
-                for stmt in node.body:
-                    self._children.append(PythonASTNode(stmt))
-            case _:
-                pass
+        #convert later
+        if(isinstance(node, ast.stmt)):
+            self._start_offset = node.lineno*100000+node.col_offset
+            self._length = node.end_lineno*100000+node.end_col_offset
+        else:
+            self._start_offset = 0
+            self._length = 0
+
+        cls = type(node)
+        self.__kind = cls.__name__
+        for name in node._fields:
+            try:
+                child = getattr(node, name)
+            except AttributeError:
+                keywords = True
+                continue
+            if child is None and getattr(cls, name, ...) is None:
+                keywords = True
+                continue
+            match child:
+                case ast.AST():
+                    if type(child)!= ast.Load:
+                        self._children.append(PythonASTNode(child))
+                case list():  # Matches any list
+                    if name=='keywords':
+                        self._children.append(PythonImpliciteBlock(self, name, child))
+                case str():
+                    if name=='id':
+                        self.__name = child
+                case int():
+                    if name=='value':
+                        self.__name = str(child)
+                case _:
+                    pass
+            self.attributes={}
+            try:
+                value = getattr(node, name)
+            except AttributeError:
+                continue
+            if value is None and getattr(cls, name, ...) is None:
+                continue
+            self.attributes[name]=value
+
+        # match type(node):
+        #     case ast.Expr:
+        #         if isinstance(node.value, ast.Call):
+        #             for arg in node.value.args:
+        #                 self._children.append(PythonASTNode(arg))
+        #
+        #     case ast.If:
+        #         self._children.append(PythonASTNode(node.test))
+        #         body = PythonASTNode(ImpliciteNode() )
+        #         for stmt in node.body:
+        #             body._children.append(PythonASTNode(stmt))
+        #         self._children.append(body)
+        #         orelse = PythonASTNode(ImpliciteNode())
+        #         for stmt in node.orelse:
+        #             orelse._children.append(PythonASTNode(stmt))
+        #         self._children.append(orelse)
+        #     case ast.For:
+        #         body = PythonASTNode(ImpliciteNode())
+        #         for stmt in node.body:
+        #             body._children.append(PythonASTNode(stmt))
+        #         self._children.append(body)
+        #     case ast.Module:
+        #         for stmt in node.body:
+        #             self._children.append(PythonASTNode(stmt))
+        #     case _:
+        #         pass
 
     @override
     @staticmethod
@@ -145,10 +184,14 @@ class PythonASTNode(ASTNode):
     def _get_name(self) -> str:
         if isinstance(self.node, ast.Name):
             return self.node.id
-        if isinstance(self.node, ast.Expr) and isinstance(self.node.value, ast.Call):
+        elif isinstance(self.node, ast.Constant):
+            return self.node.value
+        elif isinstance(self.node, ast.Expr) and isinstance(self.node.value, ast.Call):
             return self.node.value.func.id
         elif isinstance(self.node, ast.Expr) and isinstance(self.node.value, ast.Name):
             return self.node.value.id
+        elif isinstance(self.node, ast.Call):
+            return self.node.func.id
         else:
             return ''
 
@@ -159,11 +202,11 @@ class PythonASTNode(ASTNode):
 
     @override
     def _get_start_offset(self) -> int: 
-        return self.__start_offset
+        return self._start_offset
 
     @override
     def _get_length(self) -> int: 
-        return self.__length
+        return self._length
 
     @override
     @cache
@@ -304,33 +347,6 @@ class PythonASTNode(ASTNode):
                 if kind in token_kind:
                     result[kind] = token.spelling
 
-    def __derive_start_offset(self) -> int: 
-        try: 
-            return self.node.extent.start.offset
-        except:
-            return 0
-
-    def __derive_length(self) -> int: 
-        try: 
-            endOffset =  self.node.extent.end.offset
-            return endOffset - self.__derive_start_offset()
-        except:
-            return 0
-
-    def __derive_kind(self) -> str: 
-        try:
-            return str(self.node.kind.name)
-        except Exception as e:
-            return EMPTY_STR
-
-    @staticmethod
-    def remove_wrapper(cursor):
-        try:
-            if PythonASTNode._is_wrapped(cursor):
-                return  PythonASTNode.remove_wrapper(list(cursor.get_children())[0])
-        except:
-            pass
-        return cursor
 
     @staticmethod
     def _is_reference(node):
@@ -402,8 +418,25 @@ if __name__ == "__main__":
 
     # ASTShower.show_node(root)
 
+class PythonImpliciteBlock(PythonASTNode):
+    def __init__(self, parent, kind, children):
+        self.root = parent.root
+        self.node = None
+        self.parent = parent
+        self.file_name = None
+        self.translation_unit = None
+        self._start_offset = 0
+        self._length = 0
+        self._children=[]
+        self.__kind = "__ADDED__"
+        for child in children:
+            self._children.append(PythonASTNode(child))
 
-# Function to visit all nodes
+    @override
+    def get_raw_signature(self) -> str:
+        return ''
+
+            # Function to visit all nodes
 def print_node_kind(node: ast.AST, depth=0):
     if PRINT_ALL_NODES:
         print(f"{' '*depth} Node: {ast.dump(node)}, Kind: {node.__class__.__name__}")
