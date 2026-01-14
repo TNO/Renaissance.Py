@@ -54,9 +54,10 @@ class PythonTranslationUnit():
                 result.add((child.extent.start.file, child.extent.start.offset, child.extent.end.offset))
         return result
 
-
+class ImpliciteNode(ast.AST):
+    pass
 class PythonASTNode(ASTNode):
-    def __init__(self, node, translation_unit:PythonTranslationUnit=None,  parent =  None, start_offset: Optional[int] = None, length: Optional[int] = None, insert_kind : Optional[str]=None):
+    def __init__(self, node:ast.AST, translation_unit:PythonTranslationUnit=None,  parent =  None, start_offset: Optional[int] = None, length: Optional[int] = None, insert_kind : Optional[str]=None):
         super().__init__(self if parent is None else parent.root)
         self.node = node
         self.parent = parent
@@ -87,22 +88,19 @@ class PythonASTNode(ASTNode):
                 self.__name = self.node.value
             case ast.If:
                 self._children.append(PythonASTNode(node.test))
-                body = PythonASTNode(None )
+                body = PythonASTNode(ImpliciteNode() )
                 for stmt in node.body:
                     body._children.append(PythonASTNode(stmt))
                 self._children.append(body)
-                orelse = PythonASTNode(None)
+                orelse = PythonASTNode(ImpliciteNode())
                 for stmt in node.orelse:
                     orelse._children.append(PythonASTNode(stmt))
                 self._children.append(orelse)
             case ast.For:
+                body = PythonASTNode(ImpliciteNode())
                 for stmt in node.body:
-                    self._children.append(PythonASTNode(stmt))
+                    body._children.append(PythonASTNode(stmt))
                 self._children.append(body)
-                orelse = PythonASTNode(None)
-                for stmt in node.orelse:
-                    orelse._children.append(PythonASTNode(stmt))
-                self._children.append(orelse)
             case ast.Module:
                 for stmt in node.body:
                     self._children.append(PythonASTNode(stmt))
@@ -144,9 +142,13 @@ class PythonASTNode(ASTNode):
             raise Exception(f'Error parsing: {file_name} \n+ errors: {errors}')
     
     @override
-    @cache
     def _get_name(self) -> str:
-        return self.__name
+        if isinstance(self.node.value, ast.Call):
+            return self.node.value.func.id
+        elif isinstance(self.node.value, ast.Name):
+            return self.node.value.id
+        else:
+            return ''
 
     @override
     @cache

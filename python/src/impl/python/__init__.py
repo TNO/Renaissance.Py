@@ -36,40 +36,38 @@ def match_pattern(statements, pattern):
 
 
 def find_matching_pattern(statements, pattern):
-    greedy = False;
-    foundPosition = 0;
+    greedy = False
+    foundPosition = 0
+    foundPositionInExpandedList=0
     for i in range(len(statements)):
         node = statements[i]
         current_name = pattern[foundPosition].get_name()
         if current_name.startswith(MATCH_ALL):
             if foundPosition==0:
                 start=i
-            foundPosition = foundPosition + 1
-            foundPositionInExpandedList = 0
-            expansion_start = i
-            greedy = True
+            if current_name in expansionList:
+                if match(expansionList[current_name][foundPositionInExpandedList], node.node):
+                    foundPositionInExpandedList = foundPositionInExpandedList + 1
+                else:
+                    foundPosition = 0
+            else:
+                foundPosition = foundPosition + 1
+                foundPositionInExpandedList = 0
+                expansion_start = i
+                greedy = True
         elif match(node.node, pattern[foundPosition].node):
             if foundPosition==0:
                 start=i
-            foundPosition = foundPosition + 1
             if greedy == True:
                 greedy = False
                 last_name = pattern[foundPosition-1].get_name()
                 if not last_name in expansionList:
                     expansionList[last_name] = statements[expansion_start:i+1]
-
-        elif greedy:
-            if current_name in expansionList:
-                if match(expansionList[current_name][foundPositionInExpandedList], node.node):
-                    foundPositionInExpandedList=foundPositionInExpandedList+1
-                else:
                     foundPositionInExpandedList=0
-                    foundPosition=0
+            foundPosition = foundPosition + 1
 
         elif node.get_children():
             find_matching_pattern(node.get_children(), pattern)
-        elif not greedy:
-            foundPosition = 0
 
         if foundPosition == len(pattern):
             end = i + 1
