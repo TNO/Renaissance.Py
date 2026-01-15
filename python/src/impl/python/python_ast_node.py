@@ -54,15 +54,24 @@ class PythonTranslationUnit():
                 result.add((child.extent.start.file, child.extent.start.offset, child.extent.end.offset))
         return result
 
-class ImpliciteNode(ast.AST):
-    pass
+class ImpliciteNode(ast.Name):
+    def __init__(self,name, children):
+        self.id =name
+        self.body=children
 
 
-class PythonImpliciteBNode(ast.AST):
-    pass
-
-
-
+    _fields = (
+        'body',
+    )
+    _field_types = {
+        'body': list[ast.stmt],
+    }
+    __annotations__ = {
+        'body': list[ast.stmt],
+     }
+    __match_args__ = (
+        'body',
+    )
 
 class PythonASTNode(ASTNode):
     def __init__(self, node:ast.AST, translation_unit:PythonTranslationUnit=None,  parent =  None, start_offset: Optional[int] = None, length: Optional[int] = None, insert_kind : Optional[str]=None):
@@ -100,8 +109,11 @@ class PythonASTNode(ASTNode):
                     if type(child)!= ast.Load:
                         self._children.append(PythonASTNode(child))
                 case list():  # Matches any list
-                    if name=='keywords':
-                        self._children.append(PythonImpliciteBlock(self, name, child))
+                    if isinstance(node, ImpliciteNode):
+                        for n in child:
+                            self._children.append(PythonASTNode(n))
+                    elif not name in ['keywords', 'type_ignores'] and child:
+                        self._children.append(PythonASTNode(ImpliciteNode(name, child)))
                 case str():
                     if name=='id':
                         self.__name = child
