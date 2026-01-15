@@ -68,7 +68,7 @@ class ClangASTNode(ASTNode):
     def __init__(self, node, translation_unit:ClangTranslationUnit,  parent =  None, start_offset: Optional[int] = None, length: Optional[int] = None, insert_kind : Optional[str]=None):
         super().__init__(self if parent is None else parent.root)
         self.node = node
-        self._children = None
+        self._children = None   # TODO why not empty list?
         self.parent = parent
         self.translation_unit = translation_unit
         self.inserted = insert_kind != None
