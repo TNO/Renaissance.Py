@@ -1,5 +1,6 @@
 # create a class that inherits syntax tree ASTNode
 
+from __future__ import annotations
 from functools import cache
 import json
 import os

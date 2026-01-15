@@ -2,6 +2,7 @@
 #TODO: Why not use itertools? 
 #TODO: Why not use RxPy?
 
+from __future__ import annotations
 from typing import Iterable, Callable, Any, Optional
 from functools import reduce
 
