@@ -1,7 +1,0 @@
-adapters
-engine
-extractors
-lst
-matchers
-project
-visualizers

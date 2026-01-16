@@ -53,16 +53,18 @@ class MatchUtils:
 
     @staticmethod
     def is_multi_wildcard(target: ASTNode | str) -> bool:
-        if isinstance(target, str):
-            return target.startswith("$$")
-        return MatchUtils.is_multi_wildcard(target.get_name())
-
+        if target != None :
+            if isinstance(target, str):
+                return target.startswith("$$")
+            return MatchUtils.is_multi_wildcard(target.get_name())
+        return False
     @staticmethod
     def is_single_wildcard(target: ASTNode | str) -> bool:
-        if isinstance(target, str):
-            return not MatchUtils.is_multi_wildcard(target) and target.startswith("$")
-        return MatchUtils.is_single_wildcard(target.get_name())
-
+        if target != None :
+            if isinstance(target, str):
+                return not MatchUtils.is_multi_wildcard(target) and target.startswith("$")
+            return MatchUtils.is_single_wildcard(target.get_name())
+        return False
     @staticmethod
     def exclude_nodes_by_kind(
         exclude_kind: str, nodes: Sequence[ASTNode]
