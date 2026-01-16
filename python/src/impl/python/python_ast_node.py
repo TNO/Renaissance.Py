@@ -11,8 +11,6 @@ from common import Stream
 from syntax_tree import ASTNode, ASTReference, ASTFinder
 from typing_extensions import override
 
-from ast import AST
-
 EMPTY_DICT = {}
 EMPTY_STR = ''
 EMPTY_LIST = []
@@ -66,15 +64,6 @@ class ImpliciteNode(ast.Name):
         self.end_col_offset=0
 
     _fields = (
-        'body',
-    )
-    _field_types = {
-        'body': list[ast.stmt],
-    }
-    __annotations__ = {
-        'body': list[ast.stmt],
-     }
-    __match_args__ = (
         'body',
     )
 
@@ -169,8 +158,8 @@ class PythonASTNode(ASTNode):
     @staticmethod
     def load(file_path: Path, extra_args:Sequence[str], working_dir:Path) -> 'PythonASTNode':
         args=[*extra_args, *PythonASTNode.parse_args]
-        translation_unit = PythonASTNode.index.parse(working_dir / file_path, args=args[3:])
-        PythonASTNode.check_diagnostics(translation_unit, file_path.name)
+        translation_unit = ast.parse(working_dir / file_path, args=args[3:])
+        translation_unit.check_diagnostics(file_path.name)
         root_node =  PythonASTNode(translation_unit, PythonTranslationUnit(translation_unit, file_name=str(file_path)), None)
         return root_node
 
@@ -178,26 +167,16 @@ class PythonASTNode(ASTNode):
     @staticmethod
     def load_from_text(text: str, file_name: str, extra_args:Sequence[str], working_dir:Path) -> "PythonASTNode":
         translation_unit = ast.parse(text, file_name)
-        PythonASTNode.check_diagnostics(translation_unit, file_name)
+        check_diagnostics(translation_unit, file_name)
         root_node =  PythonASTNode(translation_unit, PythonTranslationUnit(translation_unit, file_name=str(file_name)), None)
         # Convert file_content to bytes
         file_content_bytes = text.encode(sys.getfilesystemencoding())
         # add to cache to avoid reading the file again
         root_node.cache[file_name] = file_content_bytes
-        PythonASTNode.check_diagnostics(translation_unit, file_name)
+        check_diagnostics(translation_unit, file_name)
         return root_node
 
-    @staticmethod
-    def check_diagnostics(translation_unit, file_name: str) -> None:
-        has_error = False
-        errors = ''
-        for d in translation_unit.type_ignores:
-            if d.severity >= 3:
-                has_error = True
-                errors += f'{d.severity}: {d.spelling} at {d.location}\n'    
-            print(f'{d.severity}: {d.spelling} at {d.location}')
-        if has_error:
-            raise Exception(f'Error parsing: {file_name} \n+ errors: {errors}')
+
     
     @override
     def _get_name(self) -> str:
@@ -420,43 +399,22 @@ class ReferenceHelper():
 
 if __name__ == "__main__":
     pass
-    # Set the path to libclang.so
-    # clang.cindex.Config.set_library_file('C:/Users/pnelissen/scoop/apps/llvm/current/bin/libclang.dll')
-    # root = PythonASTNode.load(Path('Z:/testproject/c/src/main.c'))
-
-    # root.translation_unit.save('Z:/testproject/c/src/main.c.ast')
-
-    # def visitFunction(astNode: ASTNode) -> None:
-    #     parent = astNode.get_parent()
-    #     depth = 0
-    #     while parent:
-    #         depth += 1
-    #         parent = parent.get_parent()
-    #     print(str('  ' * depth) + astNode.get_kind())
-
-    # # root.process(visitFunction)
-
-    # ASTShower.show_node(root)
-
-class PythonImpliciteBlock(PythonASTNode):
-    def __init__(self, parent, kind, children):
-        self.root = parent.root
-        self.node = None
-        self.parent = parent
-        self.file_name = None
-        self.translation_unit = None
-        self._start_offset = 0
-        self._length = 0
-        self._children=[]
-        self.__kind = "__ADDED__"
-        for child in children:
-            self._children.append(PythonASTNode(child))
 
     @override
     def get_raw_signature(self) -> str:
         return ''
 
-            # Function to visit all nodes
+def check_diagnostics(translation_unit, file_name: str) -> None:
+    has_error = False
+    errors = ''
+    for d in translation_unit.type_ignores:
+        if d.severity >= 3:
+            has_error = True
+            errors += f'{d.severity}: {d.spelling} at {d.location}\n'
+        print(f'{d.severity}: {d.spelling} at {d.location}')
+    if has_error:
+        raise Exception(f'Error parsing: {file_name} \n+ errors: {errors}')
+    # Function to visit all nodes
 def print_node_kind(node: ast.AST, depth=0):
     if PRINT_ALL_NODES:
         print(f"{' '*depth} Node: {ast.dump(node)}, Kind: {node.__class__.__name__}")
