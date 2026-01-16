@@ -38,12 +38,55 @@ else:
 ''', 'test.py')
         text = ASTShower.get_node(atu)
         self.assertEqual(
-            '''
-            (Expr, _MatchOne__pa, None[100000:200028]): |_MatchOne__pa(_MatchOne__55)|
-            (Call, _MatchOne__pa, None[0:0]): |_MatchOne__pa(_MatchOne__55)|
-             (Name, _MatchOne__pa, None[0:0]): |_MatchOne__pa|
-             (ImplesiteType, , None[0:0]): ||),text)
-        ''', text)
+('(Module, , test.py[0:0]):\n'
+ '    |if x > y:|\n'
+ '    |    x = 1|\n'
+ '    |    call(x)|\n'
+ '    |else:|\n'
+ '    |    y = 1|\n'
+ '    |    call(y)|\n'
+ '  (ImpliciteNode, body, None[0:0]):\n'
+ '      |if x > y:|\n'
+ '      |    x = 1|\n'
+ '      |    call(x)|\n'
+ '      |else:|\n'
+ '      |    y = 1|\n'
+ '      |    call(y)|\n'
+ '    (If, , None[0:0]):\n'
+ '        |if x > y:|\n'
+ '        |    x = 1|\n'
+ '        |    call(x)|\n'
+ '        |else:|\n'
+ '        |    y = 1|\n'
+ '        |    call(y)|\n'
+ '      (Compare, , None[0:0]): |x > y|\n'
+ '        (Name, x, None[0:0]): |x|\n'
+ '        (ImpliciteNode, ops, None[0:0]): ||\n'
+ '          (Gt, , None[0:0]): ||\n'
+ '        (ImpliciteNode, comparators, None[0:0]): |y|\n'
+ '          (Name, y, None[0:0]): |y|\n'
+ '      (ImpliciteNode, body, None[0:0]): |call(x)|\n'
+ '        (Assign, , None[0:0]): |x = 1|\n'
+ '          (ImpliciteNode, targets, None[0:0]): |x|\n'
+ '            (Name, x, None[0:0]): |x|\n'
+ '              (Store, , None[0:0]): ||\n'
+ '          (Constant, 1, None[0:0]): |1|\n'
+ '        (Expr, call, None[0:0]): |call(x)|\n'
+ '          (Call, call, None[0:0]): |call(x)|\n'
+ '            (Name, call, None[0:0]): |call|\n'
+ '            (ImpliciteNode, args, None[0:0]): |x|\n'
+ '              (Name, x, None[0:0]): |x|\n'
+ '      (ImpliciteNode, orelse, None[0:0]): |call(y)|\n'
+ '        (Assign, , None[0:0]): |y = 1|\n'
+ '          (ImpliciteNode, targets, None[0:0]): |y|\n'
+ '            (Name, y, None[0:0]): |y|\n'
+ '              (Store, , None[0:0]): ||\n'
+ '          (Constant, 1, None[0:0]): |1|\n'
+ '        (Expr, call, None[0:0]): |call(y)|\n'
+ '          (Call, call, None[0:0]): |call(y)|\n'
+ '            (Name, call, None[0:0]): |call|\n'
+ '            (ImpliciteNode, args, None[0:0]): |y|\n'
+ '              (Name, y, None[0:0]): |y|\n'), text)
 
 
 if __name__ == '__main__':

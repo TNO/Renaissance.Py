@@ -34,6 +34,7 @@ class PythonTranslationUnit():
         self.file_name = file_name
         self.references_initialized = False
         print_node_kind(atu)
+        self.lines = ast.unparse(atu).splitlines()
     # references are used as a cache to store the references of a node
     # the are stored as id for lazy creation
         self._references: dict[str, list[PythonASTReference]] = {}
@@ -45,7 +46,8 @@ class PythonTranslationUnit():
             return
         node.root.process(ReferenceHelper.create_references)
         self.references_initialized = True
-
+    def convert(self, line_nr, col):
+        return sum(len(self.lines[i])+1 for i in range(line_nr-1))+col
     @staticmethod
     def _collect_expansions(translation_unit) -> set[tuple[str,int,int]]:
         result: set[tuple[str,int,int]] = set()
@@ -58,7 +60,10 @@ class ImpliciteNode(ast.Name):
     def __init__(self,name, children):
         self.id =name
         self.body=children
-
+        self.lineno=0
+        self.col_offset=0
+        self.end_lineno=0
+        self.end_col_offset=0
 
     _fields = (
         'body',
@@ -86,9 +91,11 @@ class PythonASTNode(ASTNode):
             self.translation_unit = None
         self._children = []
         #convert later
-        if(isinstance(node, ast.stmt)):
-            self._start_offset = node.lineno*100000+node.col_offset
-            self._length = node.end_lineno*100000+node.end_col_offset
+        if ( isinstance(node, ast.stmt) or isinstance(node, ast.expr)) and translation_unit:
+
+            self._start_offset = self.translation_unit.convert(self.node.lineno, self.node.col_offset)
+            self._length = self.translation_unit.convert(self.node.end_lineno,
+                                                         self.node.end_col_offset) - self._start_offset
         else:
             self._start_offset = 0
             self._length = 0
@@ -107,13 +114,13 @@ class PythonASTNode(ASTNode):
             match child:
                 case ast.AST():
                     if type(child)!= ast.Load:
-                        self._children.append(PythonASTNode(child))
+                        self._children.append(PythonASTNode(child,translation_unit))
                 case list():  # Matches any list
-                    if isinstance(node, ImpliciteNode):
+                    if isinstance(node, ImpliciteNode) or isinstance(node, ast.Module) :
                         for n in child:
-                            self._children.append(PythonASTNode(n))
+                            self._children.append(PythonASTNode(n,translation_unit))
                     elif not name in ['keywords', 'type_ignores'] and child:
-                        self._children.append(PythonASTNode(ImpliciteNode(name, child)))
+                        self._children.append(PythonASTNode(ImpliciteNode(name, child),translation_unit))
                 case str():
                     if name=='id':
                         self.__name = child
@@ -213,11 +220,12 @@ class PythonASTNode(ASTNode):
         return self.file_name
 
     @override
-    def _get_start_offset(self) -> int: 
+    def _get_start_offset(self) -> int:
         return self._start_offset
 
     @override
-    def _get_length(self) -> int: 
+    def _get_length(self) -> int:
+
         return self._length
 
     @override
