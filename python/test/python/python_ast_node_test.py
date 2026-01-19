@@ -184,16 +184,25 @@ def outer():
     # def test_Invert(__ast.unaryop):
     # def test_Not(__ast.unaryop):
 
-    # def test_Eq(__ast.cmpop):
-    # def test_In(__ast.cmpop):
-    # def test_Is(__ast.cmpop):
-    # def test_IsNot(__ast.cmpop):
-    # def test_Lt(__ast.cmpop):
-    # def test_LtE(__ast.cmpop):
-    # def test_NotEq(__ast.cmpop):
-    # def test_NotIn(__ast.cmpop):
-    # def test_Gt(__ast.cmpop):
-    # def test_GtE(__ast.cmpop):
+
+
+    @parameterized.expand([
+        ('a == b', 'Eq'),
+        ('a in b', 'In'),
+        ('a is b', 'Is'),
+        ('a is not b', 'IsNot'),
+        ('a < b', 'Lt'),
+        ('a <=b', 'LtE'),
+        ('a != b', 'NotEq'),
+        ('a not in b', 'NotIn'),
+        ('a > b', 'Gt'),
+        ('a >= b', 'GtE'),
+    ])
+
+    def test_comperator_operator(self, raw, kind):
+        it = self.pattern_factory.create_expression(raw)
+        result = ASTShower.show_node(it)
+        self.assertEqual(kind, it.get_children()[1].get_children()[0].get_kind())
 
 
     # def test_MatchAs(__ast.pattern):
