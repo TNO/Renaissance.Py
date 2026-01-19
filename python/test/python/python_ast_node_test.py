@@ -120,53 +120,43 @@ class PythonNodeTest(unittest.TestCase):
         result = ASTShower.get_node(it)
         self.assertEqual(kind, it.get_kind())
 
-    # ('with', 'With'),
-    # ('await (fun(2))', 'Await'),
-    # ('True and False', 'BinOp'),
-
-    # ('0x01 and 0x10', 'BitAnd'''),
-    # ('0x01 or 0x10', 'BitOr'),
-    # ('0x01 xor 0x10', 'BitXor'),
-    # ('', 'BoolOp'),
-
-    # ('global x', 'Global'),
-
-    # ('non local x = 0', 'Nonlocal'),
-
-    # ('delete', 'Delete'),
-    #
-    # ('y as x', 'TypeAlias'),
-    #
-    # # Code with nonlocal statement
-    code = """
-    
-    """
-    # tree = ast.parse(code)
-
-
-    # for node in ast.walk(tree):
-    #     if isinstance(node, ast.Nonlocal):
-    #         print(f"Found Nonlocal node with names: {node.names}")
-
     @parameterized.expand([
+        ('with open() as c: pass', 'With'),
+        ('await (fun(2))', 'Await'),
+        ('a = 5 + 3', 'BinOp'),
+
+        ('0x01 & 0x10', 'BitAnd'''),
+        ('0x01 | 0x10', 'BitOr'),
+        ('0x01 ^ 0x10', 'BitXor'),
+        ('True and False', 'BoolOp'),
+        ('global x', 'Global'),
+        ('del x', 'Delete'),
+
+        ('type UserId = int', 'TypeAlias'),
         ('''
 def outer():
     x = 10
     y = 20
-    
     def inner():
         nonlocal x, y
-    #     x += 5
-    # return inner()
-''', 'NonLocal'),
+        x += 5
+    return inner()
+''', 'Nonlocal'),
+
     ])
     def test_stmt_kind_in_context(self, raw, kind):
         it = self.factory.create_from_text(raw,'context.py')
         kinds = [node.get_kind() for node in walk(it)]
         self.assertIn(kind,kinds)
 
+    @parameterized.expand([
 
-
+        ('while True: pass',   'While'),
+    ])
+    def test_expr_kind(self, raw, kind):
+        it = self.pattern_factory.create_expression(raw)
+        result = ASTShower.get_node(it)
+        self.assertEqual(kind, it.get_kind())
     #     ast.Call:
     #     return isinstance(other, type(node)) and match_call(node, other)
     #

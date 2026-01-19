@@ -91,6 +91,10 @@ class PythonASTNode(ASTNode):
 
         cls = type(node)
         self.__kind = cls.__name__
+        if(isinstance(node , str)):
+            self.__name = node
+            self.__kind = 'Name'
+            return
         for name in node._fields:
             try:
                 child = getattr(node, name)

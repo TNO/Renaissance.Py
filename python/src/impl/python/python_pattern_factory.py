@@ -68,26 +68,9 @@ class PythonPatternFactory:
     def create_expression(
         self, text: str, extra_declarations: Sequence[str] = []
     ) -> ASTNode:
-        keywords = PythonPatternFactory._get_keywords_from_text(text)
-        keywords = [
-            k for k in keywords if not any(k in ed for ed in extra_declarations)
-        ]
-        full_text = (
-            self.header
-            + "\n".join(extra_declarations)
-            + "\n"
-            + "\n".join(PythonPatternFactory._to_declaration(keywords))
-            + f"\nvoid {PythonPatternFactory.reserved_function_name}() {{ int {PythonPatternFactory.reserved_variable_name} = ({text}); }}"
-        )
-        root = self._create(text)
-        # return the first expression found in the tree as a ASTNode
-        return (
-            ASTFinder.find_kind(root.get_children()[-1], "(?i)PAREN_?EXPR")
-            .filter(ASTNode.is_part_of_translation_unit)
-            .find_last()
-            .get()
-            .get_children()[0]
-        )
+        text = text.replace('$$', MATCH_ALL).replace('$', MATCH_ONE)
+        return PythonASTNode(ast.parse(text).body[0].value)
+
 
     def create_declarations(
         self,
