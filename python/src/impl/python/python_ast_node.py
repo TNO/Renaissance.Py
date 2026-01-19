@@ -229,12 +229,13 @@ class PythonASTNode(ASTNode):
 
     @override
     def get_raw_signature(self) -> str:
+        #if isinstance(self.node, ast.boolop):
+        #    return self.__kind.lower #type(self.node).__name__.lower
         return ast.unparse(self.node)
+
     @override
     def _matches_kind(self, node:ASTNode) -> bool: 
-        return self.__kind == node.get_kind() or\
-            (self.__kind.endswith('_LITERAL') and node.get_kind()=='DECL_REF_EXPR') or\
-            (self.__kind=='DECL_REF_EXPR' and node.get_kind().endswith('_LITERAL'))\
+        return self.__kind == node.get_kind()
 
     @override
     @cache
@@ -400,9 +401,6 @@ class ReferenceHelper():
 if __name__ == "__main__":
     pass
 
-    @override
-    def get_raw_signature(self) -> str:
-        return ''
 
 def check_diagnostics(translation_unit, file_name: str) -> None:
     has_error = False
