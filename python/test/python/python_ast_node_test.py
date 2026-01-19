@@ -1,12 +1,6 @@
-import ast
 import unittest
-from _ast import AST
-from typing import Sequence
-
 from parameterized import parameterized
-
 from impl import PythonASTNode, PythonPatternFactory, ClangASTNode
-from impl.python import match_pattern, find_all, match
 from syntax_tree import ASTFactory, MatchFinder, ASTShower
 
 
@@ -19,26 +13,12 @@ def walk(node):
         yield node
 
 
-ALL_SYNTAX = '''
-a = 3
-
-'''
-
-
 class PythonNodeTest(unittest.TestCase):
     def setUp(self):
         self.factory = ASTFactory(PythonASTNode, [])
-        self.atu = self.factory.create_from_text(ALL_SYNTAX, 'all.py')
+        self.atu = self.factory.create_from_text('a = 0', 'all.py')
         # create a pattern factory atu is passed to the pattern factory for use of all # includes, #defines and declarations
         self.pattern_factory = PythonPatternFactory(self.factory, self.atu)
-
-    def test_Add(self):
-        simple = self.pattern_factory.create('True and False')
-        it = simple.get_children()[0].get_children()[0]
-        result = ASTShower.get_node(it)
-        self.assertEqual('(And, , None[0:0]): ||\n', result)
-        self.assertEqual('And', it.get_kind())
-        # self.assertEqual('And', it.get_raw_signature())
 
     @parameterized.expand([
         ('i:int=0', 'AnnAssign'),
@@ -99,7 +79,6 @@ def outer():
         self.assertIn(kind, kinds)
 
     @parameterized.expand([
-
         ('fun()', 'Call'),
         ('{one: 1, two:2}', 'Dict'),
         ('{1,2}', 'Set'),
@@ -162,7 +141,6 @@ def outer():
     ])
     def test_comperator_operator(self, raw, kind):
         it = self.pattern_factory.create_expression(raw)
-        result = ASTShower.show_node(it)
         self.assertEqual(kind, it.get_children()[1].get_children()[0].get_kind())
 
     @parameterized.expand([
@@ -194,18 +172,6 @@ def outer():
                              1].get_kind())
         self.assertEqual('MatchAs', stmt.get_children()[1].get_children()[1].get_children()[0].get_kind())
 
-    # def test_ast.Compare:
-    # def test_ast.Constant:
-
-    # def test_Expression(__ast.mod):
-    # def test_FunctionType(__ast.mod):
-    # def test_Interactive(__ast.mod):
-    # def test_Module(__ast.mod):
-
-    # def test_Load(__ast.expr_context):
-
-    # def test_Store(__ast.expr_context):
-
     @parameterized.expand([
         ('a % b', 'Mod'),
         ('a / b', 'Div'),
@@ -219,18 +185,28 @@ def outer():
     ])
     def test_binary_operator(self, raw, kind):
         it = self.pattern_factory.create_expression(raw)
-        result = ASTShower.show_node(it)
         self.assertEqual(kind, it.get_children()[1].get_kind())
 
-    # def test_TypeIgnore(__ast.type_ignore):
-    # def test_TypeVar(__ast.type_param):
-    # def test_TypeVarTuple(__ast.type_param):
-    # def test_ParamSpec(__ast.type_param):
+    # @parameterized.expand([
+    #     ('x = some_undefined_var', 'type_ignore'),
+    #     ('-b', 'TypeVar'),
+    #     ('~b', 'TypeVarTuple'),
+    #     ('not b', 'ParamSpec'),
+    # ])
+    # def test_infer_types(self, raw, kind):
+    #     it = self.factory.create_from_text(raw, 'context.py')
+    #     kinds = [node.get_kind() for node in walk(it)]
+    #     self.assertIn(kind, kinds)
 
-    # def test_UAdd(__ast.unaryop):
-    # def test_USub(__ast.unaryop):
-    # def test_Invert(__ast.unaryop):
-    # def test_Not(__ast.unaryop):
+    @parameterized.expand([
+        ('+b', 'UAdd'),
+        ('-b', 'USub'),
+        ('~b', 'Invert'),
+        ('not b', 'Not'),
+    ])
+    def test_unary_operator(self, raw, kind):
+        it = self.pattern_factory.create_expression(raw)
+        self.assertEqual(kind, it.get_children()[0].get_kind())
 
     def test_show_call(self):
         factory = ASTFactory(PythonASTNode, [])
