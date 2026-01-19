@@ -1,3 +1,4 @@
+import ast
 import unittest
 from parameterized import parameterized
 from impl import PythonASTNode, PythonPatternFactory, ClangASTNode

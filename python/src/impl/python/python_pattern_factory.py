@@ -3,7 +3,7 @@ import re
 from typing import Optional, Sequence
 
 from common.stream import Stream
-from .python_ast_node import PythonASTNode
+from .python_ast_node import PythonASTNode, MATCH_ALL, MATCH_ONE
 from syntax_tree.ast_node import ASTNode
 from syntax_tree.ast_shower import ASTShower
 
@@ -11,8 +11,7 @@ from syntax_tree.ast_factory import ASTFactory
 from syntax_tree.ast_finder import ASTFinder
 
 SHOW_NODE = False
-MATCH_ONE = '_MatchOne__'
-MATCH_ALL = '_MatchAll__'
+
 
 class PythonPatternFactory:
 

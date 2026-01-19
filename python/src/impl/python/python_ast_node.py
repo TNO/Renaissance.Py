@@ -8,14 +8,15 @@ from typing import Any, Optional, Sequence
 from textx import get_children
 
 from common import Stream
+
 from syntax_tree import ASTNode, ASTReference, ASTFinder
 from typing_extensions import override
 
 EMPTY_DICT = {}
 EMPTY_STR = ''
 EMPTY_LIST = []
-
-STMT_PARENTS = [ 'COMPOUND_STMT', 'TRANSLATION_UNIT' ]
+MATCH_ONE = '_MatchOne__'
+MATCH_ALL = '_MatchAll__'
 
 
 PRINT_ALL_NODES = True
@@ -184,19 +185,20 @@ class PythonASTNode(ASTNode):
     
     @override
     def _get_name(self) -> str:
-        if isinstance(self.node, ast.Name):
-            return self.node.id
-        elif isinstance(self.node, ast.Constant):
-            return self.node.value
-        elif isinstance(self.node, ast.Expr) and isinstance(self.node.value, ast.Call):
-            return self.node.value.func.id
-        elif isinstance(self.node, ast.Expr) and isinstance(self.node.value, ast.Name):
-            return self.node.value.id
-        elif isinstance(self.node, ast.Call):
-            return self.node.func.id
-        else:
-            return ''
 
+        if isinstance(self.node, ast.Name):
+            name = self.node.id
+        elif isinstance(self.node, ast.Constant):
+            name = self.node.value
+        elif isinstance(self.node, ast.Expr) and isinstance(self.node.value, ast.Call):
+            name = self.node.value.func.id
+        elif isinstance(self.node, ast.Expr) and isinstance(self.node.value, ast.Name):
+            name = self.node.value.id
+        elif isinstance(self.node, ast.Call):
+            name = self.node.func.id
+        else:
+            name = ''
+        return name.replace(MATCH_ALL,'$$').replace(MATCH_ONE, '$')
     @override
     @cache
     def _get_containing_filename(self) -> str:

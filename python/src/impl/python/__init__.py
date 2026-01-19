@@ -5,7 +5,7 @@ from common import Stream
 
 from .python_ast_node import PythonASTNode
 from .python_codebase import PythonCodebase
-from .python_pattern_factory import PythonPatternFactory, MATCH_ALL, MATCH_ONE
+from .python_pattern_factory import PythonPatternFactory
 
 __all__ = [
     'PythonASTNode',
@@ -37,7 +37,7 @@ def find_matching_pattern(statements, pattern):
     for i in range(len(statements)):
         node = statements[i]
         current_name = pattern[foundPosition].get_name()
-        if current_name.startswith(MATCH_ALL):
+        if current_name.startswith('$$'):
             if foundPosition==0:
                 start=i
             if current_name in expansionList:
@@ -103,7 +103,7 @@ def match_call(node: Call, other):
 
 def match(node, other):
     # def is_match_one(node, other):
-    if (type(other) == ast.Name and other.id.startswith(MATCH_ONE)):
+    if (type(other) == ast.Name and other.id.startswith('$')):
         if not other in expansion:
             expansion[other] = node
             return True
