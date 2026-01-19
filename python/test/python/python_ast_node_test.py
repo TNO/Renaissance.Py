@@ -107,6 +107,7 @@ def outer():
         ('[ n*3 for n in [1, 2]]', 'ListComp'),
         ('{ n*3 for n in [1, 2]}', 'SetComp'),
         ('lambda: fun()', 'Lambda'),
+        ('x = (n*2 for n in[1,2])', 'GeneratorExp'),
         ('f"{one}two"', 'JoinedStr'),
         ('items[1:4]','Subscript'),
         ('(9, 10)', 'Tuple'),
@@ -148,7 +149,11 @@ def outer():
         result = ASTShower.show_node(it)
         self.assertEqual('FormattedValue', it.get_children()[0].get_children()[0].get_kind())
 
-    # def test_ExceptHandler(__ast.excepthandler):
+    def test_ExceptHandler(self):
+        it = self.pattern_factory.create('try: pass\nexcept NameError:pass')
+        result = ASTShower.show_node(it)
+        self.assertEqual('ExceptHandler', it.get_children()[1].get_children()[0].get_kind())
+
 
     # def test_Expression(__ast.mod):
     # def test_FunctionType(__ast.mod):
