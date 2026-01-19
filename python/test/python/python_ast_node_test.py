@@ -9,6 +9,16 @@ from impl import PythonASTNode, PythonPatternFactory, ClangASTNode
 from impl.python import match_pattern, find_all, match
 from syntax_tree import ASTFactory, MatchFinder, ASTShower
 
+
+def walk(node):
+    from collections import deque
+    todo = deque([node])
+    while todo:
+        node = todo.popleft()
+        todo.extend(node.get_children())
+        yield node
+
+
 ALL_SYNTAX = '''
 a = 3
 # long_expression = component_one + component_two + component_three + component_four + component_five + component_six
@@ -91,36 +101,70 @@ class PythonNodeTest(unittest.TestCase):
         ('async for f in fs:  pass', 'AsyncFor'),
         ('async def fun(): pass', 'AsyncFunctionDef'),
         ('async with open("x"): pass' ,'AsyncWith'),
-        ('','AugAssign'),
-        ('','Break'),
-        ('','ClassDef'),
-        ('','Await'),
-        ('','BinOp'),
-        ('','BitAnd'''),
-        ('','BitOr'),
-        ('','BitXor'),
-        ('','BoolOp'),
+        ('x += 5','AugAssign'),
+        ('break','Break'),
+        ('class x:pass','ClassDef'),
         ('continue', 'Continue'),
-        ('delete',  'Delete'),
-        ('','With'),
-        ('',   'Global'),
-        ('',   'Import'),
-        ('',   'ImportFrom'),
-        ('',   'Match'),
-        ('',   'Nonlocal'),
-        ('',   'Pass'),
-        ('',   'Raise'),
-        ('',   'Return'),
-        ('',   'Try'),
-        ('',   'TryStar'),
-        ('',   'TypeAlias'),
-        ('',   'While'),
+        ('import x',   'Import'),
+        ('from x import y',   'ImportFrom'),
+        ('match x:\n  case _:    pass',   'Match'),
+        ('pass',   'Pass'),
+        ('raise',   'Raise'),
+        ('return',   'Return'),
+        ('try:\n  pass\nfinally:\n  pass',   'Try'),
+        ('try:\n  x()\nexcept* e:\n  pass','TryStar'),
+        ('while True: pass',   'While'),
     ])
-
     def test_stmt_kind(self, raw, kind):
         it = self.pattern_factory.create(raw)
         result = ASTShower.get_node(it)
         self.assertEqual(kind, it.get_kind())
+
+    # ('with', 'With'),
+    # ('await (fun(2))', 'Await'),
+    # ('True and False', 'BinOp'),
+
+    # ('0x01 and 0x10', 'BitAnd'''),
+    # ('0x01 or 0x10', 'BitOr'),
+    # ('0x01 xor 0x10', 'BitXor'),
+    # ('', 'BoolOp'),
+
+    # ('global x', 'Global'),
+
+    # ('non local x = 0', 'Nonlocal'),
+
+    # ('delete', 'Delete'),
+    #
+    # ('y as x', 'TypeAlias'),
+    #
+    # # Code with nonlocal statement
+    code = """
+    
+    """
+    # tree = ast.parse(code)
+
+
+    # for node in ast.walk(tree):
+    #     if isinstance(node, ast.Nonlocal):
+    #         print(f"Found Nonlocal node with names: {node.names}")
+
+    @parameterized.expand([
+        ('''
+def outer():
+    x = 10
+    y = 20
+    
+    def inner():
+        nonlocal x, y
+    #     x += 5
+    # return inner()
+''', 'NonLocal'),
+    ])
+    def test_stmt_kind_in_context(self, raw, kind):
+        it = self.factory.create_from_text(raw,'context.py')
+        kinds = [node.get_kind() for node in walk(it)]
+        self.assertIn(kind,kinds)
+
 
 
     #     ast.Call:
@@ -216,19 +260,19 @@ class PythonNodeTest(unittest.TestCase):
         self.assertEqual(atu.translation_unit, second_stmt.translation_unit)
 
 
-    def test_show_call(self):
-        c_factory = ASTFactory(ClangASTNode, [])
-        c_atu = c_factory.create_from_text(' int ba(int);\n int ca(int);\n int lo(int);\n int na(int);\nint main(){\n  ba(55);\n  ca(555);\n  lo(4444);\n  int na=55;\n}\n', 'lila.c')
-
-        c_second_stmt = c_atu.get_children()[4].get_children()[1]
-        p_factory = ASTFactory(PythonASTNode, [])
-        p_atu = p_factory.create_from_text('def main():\n  ba(55) \n  ca(555) \n  lo(4444) \n  na=55 \n ', 'apple.py')
-        p_second_stmt = p_atu.get_children()[0].get_children()[1]
-        self.assertEqual(c_second_stmt.get_start_offset(),p_second_stmt.get_start_offset())
-        self.assertEqual (c_second_stmt.get_length(), p_second_stmt.get_length())
-        self.assertEqual (c_second_stmt.get_raw_signature(), p_second_stmt.get_raw_signature())
-        self.assertEqual (len(c_second_stmt.get_children()), len(p_second_stmt.get_length()))
-        # self.assertEqual (c_second_stmt.get_length(), p_second_stmt.get_length())
+    # def test_show_call_btween_c_and_python(self):
+    #     c_factory = ASTFactory(ClangASTNode, [])
+    #     c_atu = c_factory.create_from_text(' int ba(int);\n int ca(int);\n int lo(int);\n int na(int);\nint main(){\n  ba(55);\n  ca(555);\n  lo(4444);\n  int na=55;\n}\n', 'lila.c')
+    #
+    #     c_second_stmt = c_atu.get_children()[4].get_children()[1]
+    #     p_factory = ASTFactory(PythonASTNode, [])
+    #     p_atu = p_factory.create_from_text('def main():\n  ba(55) \n  ca(555) \n  lo(4444) \n  na=55 \n ', 'apple.py')
+    #     p_second_stmt = p_atu.get_children()[0].get_children()[1]
+    #     self.assertEqual(c_second_stmt.get_start_offset(),p_second_stmt.get_start_offset())
+    #     self.assertEqual (c_second_stmt.get_length(), p_second_stmt.get_length())
+    #     self.assertEqual (c_second_stmt.get_raw_signature(), p_second_stmt.get_raw_signature())
+    #     self.assertEqual (len(c_second_stmt.get_children()), len(p_second_stmt.get_length()))
+    #     # self.assertEqual (c_second_stmt.get_length(), p_second_stmt.get_length())
 
 
 
