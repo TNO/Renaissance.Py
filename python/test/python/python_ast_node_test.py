@@ -206,15 +206,21 @@ def outer():
 
     # def test_Store(__ast.expr_context):
 
-    # def test_Mod(__ast.operator):
-    # def test_FloorDiv(__ast.operator):
-    # def test_Div(__ast.operator):
-    # def test_LShift(__ast.operator):
-    # def test_MatMult(__ast.operator):
-    # def test_Mult(__ast.operator):
-    # def test_Pow(__ast.operator):
-    # def test_RShift(__ast.operator):
-    # def test_Sub(__ast.operator):
+    @parameterized.expand([
+        ('a % b', 'Mod'),
+        ('a / b', 'Div'),
+        ('a // b', 'FloorDiv'),
+        ('a << b', 'LShift'),
+        ('a >> b', 'RShift'),
+        ('a * b', 'Mult'),
+        ('a ** b', 'Pow'),
+        ('a - b', 'Sub'),
+        ('a + b', 'Add'),
+    ])
+    def test_binary_operator(self, raw, kind):
+        it = self.pattern_factory.create_expression(raw)
+        result = ASTShower.show_node(it)
+        self.assertEqual(kind, it.get_children()[1].get_kind())
 
     # def test_TypeIgnore(__ast.type_ignore):
     # def test_TypeVar(__ast.type_param):
