@@ -21,63 +21,7 @@ def walk(node):
 
 ALL_SYNTAX = '''
 a = 3
-# long_expression = component_one + component_two + component_three + component_four + component_five + component_six
-# 
-# 
-# def xyzzy(a1, a2,
-#           long_parameter_1,
-#           a3, a4,
-#           long_parameter_2):
-#     pass
-# 
-# 
-# xyzzy(1, 2,
-#       'long_string_constant1',
-#       3, 4,
-#       'long_string_constant2')
-# 
-# xyzzy(
-#     'with',
-#     'hanging',
-#     'indent'
-# )
-# attrs = [e.attr for e in
-#          items]
-# 
-# num_dict = {"one": 1,
-#             "two": 2,
-#             "three": 3,
-#             "four": 4,
-#             "five": 5}
-# 
-# colors = ['red', 'green',
-#           'blue', 'black',
-#           'white', 'gray']
-# 
-# star_names = {"Sirius",
-#               "Betelgeuse",
-#               "Polaris",
-#               "Vega",
-#               "Arcturus",
-#               "Aldebaran"}
-# 
-# planets = ("Mercury", "Venus",
-#            "Earth", "Mars",
-#            "Jupiter",
-#            "Saturn", "Uranus",
-#            "Neptune")
-# 
-# ingredients = [
-#     'green',
-#     'eggs',
-# ]
-# 
-# if True: pass
-# 
-# try:
-#     pass
-# finally:
-#     pass
+
 '''
 
 class PythonNodeTest(unittest.TestCase):
@@ -105,7 +49,11 @@ class PythonNodeTest(unittest.TestCase):
         ('break','Break'),
         ('class x:pass','ClassDef'),
         ('continue', 'Continue'),
+        ('fun()', 'Expr'),
+        ('def fun(): pass', 'FunctionDef'),
+        ('for i in items: pass', 'For'),
         ('import x',   'Import'),
+        ('if True: pass',   'If'),
         ('from x import y',   'ImportFrom'),
         ('match x:\n  case _:    pass',   'Match'),
         ('pass',   'Pass'),
@@ -151,50 +99,98 @@ def outer():
 
     @parameterized.expand([
 
-        ('while True: pass',   'While'),
+        ('fun()',   'Call'),
+        ('{one: 1, two:2}', 'Dict'),
+        ('{1,2}', 'Set'),
+        ('[1, 2]', 'List'),
+        ('{word: len(word) for word in ["one","two"]}', 'DictComp'),
+        ('[ n*3 for n in [1, 2]]', 'ListComp'),
+        ('{ n*3 for n in [1, 2]}', 'SetComp'),
+        ('lambda: fun()', 'Lambda'),
+        ('f"{one}two"', 'JoinedStr'),
+        ('items[1:4]','Subscript'),
+        ('(9, 10)', 'Tuple'),
+        ('x = not True', 'UnaryOp'),
+        ('yield fun', 'Yield'),
+        ('yield from [1,2]', 'YieldFrom'),
+        ('x = z if z>y else y', 'IfExp'),
+
     ])
+
+    # def test_GeneratorExp(__ast.expr):
+
+    # def test_ast.Compare:
+    # def test_ast.Constant:
+
     def test_expr_kind(self, raw, kind):
+
         it = self.pattern_factory.create_expression(raw)
         result = ASTShower.get_node(it)
         self.assertEqual(kind, it.get_kind())
-    #     ast.Call:
-    #     return isinstance(other, type(node)) and match_call(node, other)
-    #
-    #
-    # def test_ast.Compare:
-    # def test_pass
-    # def test_ast.Constant:
-    # def test_return isinstance(other, type(node)) and match(node.value, other.value)
 
+    def test_Slice(self):
+        it = self.pattern_factory.create_expression('items[1:2:3]')
+        result = ASTShower.get_node(it)
+        self.assertEqual('Slice', it.get_children()[1].get_kind())
 
-    # def test_Dict(__ast.expr):
-    # def test_DictComp(__ast.expr):
-    # def test_Div(__ast.operator):
-    # def test_Eq(__ast.cmpop):
+    def test_NamedExpr(self):
+        it = self.pattern_factory.create('if n:= len(items): pass')
+        result = ASTShower.get_node(it)
+        self.assertEqual('NamedExpr', it.get_children()[0].get_kind())
+
+    def test_Starred(self):
+        it = self.pattern_factory.create('*x =[1,2]')
+        result = ASTShower.show_node(it)
+        self.assertEqual('Starred', it.get_children()[0].get_children()[0].get_kind())
+
+    def test_FormattedValue(self):
+        it = self.pattern_factory.create_expression('f"{one}two"')
+        result = ASTShower.show_node(it)
+        self.assertEqual('FormattedValue', it.get_children()[0].get_children()[0].get_kind())
+
     # def test_ExceptHandler(__ast.excepthandler):
-    # def test_Expr:
-    #     return isinstance(other, type(node)) and match(node.value, other.value)
+
     # def test_Expression(__ast.mod):
-    # def test_FloorDiv(__ast.operator):
-    # def test_For(__ast.stmt):
-    # def test_FormattedValue(__ast.expr):
     # def test_FunctionType(__ast.mod):
-    # def test_GeneratorExp(__ast.expr):
-    # def test_In(__ast.cmpop):
     # def test_Interactive(__ast.mod):
+    # def test_Module(__ast.mod):
+
+    # def test_Load(__ast.expr_context):
+
+    # def test_Store(__ast.expr_context):
+
+    # def test_Mod(__ast.operator):
+    # def test_FloorDiv(__ast.operator):
+    # def test_Div(__ast.operator):
+    # def test_LShift(__ast.operator):
+    # def test_MatMult(__ast.operator):
+    # def test_Mult(__ast.operator):
+    # def test_Pow(__ast.operator):
+    # def test_RShift(__ast.operator):
+    # def test_Sub(__ast.operator):
+
+    # def test_TypeIgnore(__ast.type_ignore):
+    # def test_TypeVar(__ast.type_param):
+    # def test_TypeVarTuple(__ast.type_param):
+    # def test_ParamSpec(__ast.type_param):
+
+    # def test_UAdd(__ast.unaryop):
+    # def test_USub(__ast.unaryop):
     # def test_Invert(__ast.unaryop):
+    # def test_Not(__ast.unaryop):
+
+    # def test_Eq(__ast.cmpop):
+    # def test_In(__ast.cmpop):
     # def test_Is(__ast.cmpop):
     # def test_IsNot(__ast.cmpop):
-    # def test_JoinedStr(__ast.expr):
-    # def test_LShift(__ast.operator):
-    # def test_Lambda(__ast.expr):
-    # def test_List(__ast.expr):
-    # def test_ListComp(__ast.expr):
-    # def test_Load(__ast.expr_context):
     # def test_Lt(__ast.cmpop):
     # def test_LtE(__ast.cmpop):
-    # def test_MatMult(__ast.operator):
-    # def test_FunctionDef(__ast.stmt):
+    # def test_NotEq(__ast.cmpop):
+    # def test_NotIn(__ast.cmpop):
+    # def test_Gt(__ast.cmpop):
+    # def test_GtE(__ast.cmpop):
+
+
     # def test_MatchAs(__ast.pattern):
     # def test_MatchClass(__ast.pattern):
     # def test_MatchMapping(__ast.pattern):
@@ -203,42 +199,8 @@ def outer():
     # def test_MatchSingleton(__ast.pattern):
     # def test_MatchStar(__ast.pattern):
     # def test_MatchValue(__ast.pattern):
-    # def test_Mod(__ast.operator):
-    # def test_Module(__ast.mod):
-    # def test_Mult(__ast.operator):
-    # def test_Name(self):
-    #     return isinstance(other, type(node)) and match(node.id, other.id)
-    # def test_NamedExpr(__ast.expr):
-    # def test_Not(__ast.unaryop):
-    # def test_NotEq(__ast.cmpop):
-    # def test_NotIn(__ast.cmpop):
-    # def test_Or(__ast.boolop):
-    # def test_ParamSpec(__ast.type_param):
-    # def test_Pow(__ast.operator):
-    # def test_RShift(__ast.operator):
-    # def test_Set(__ast.expr):
-    # def test_SetComp(__ast.expr):
-    # def test_Slice(__ast.expr):
-    # def test_Starred(__ast.expr):
-    # def test_Store(__ast.expr_context):
-    # def test_Sub(__ast.operator):
-    # def test_Subscript(__ast.expr):
-    # def test_Tuple(__ast.expr):
-    # def test_TypeIgnore(__ast.type_ignore):
-    # def test_TypeVar(__ast.type_param):
-    # def test_TypeVarTuple(__ast.type_param):
-    # def test_UAdd(__ast.unaryop):
-    # def test_USub(__ast.unaryop):
-    # def test_UnaryOp(__ast.expr):
-# def test_Gt(__ast.cmpop):
-# def test_GtE(__ast.cmpop):
-#
-# def test_If(self):
-# def test_IfExp(__ast.expr):
 
 
-    # def test_Yield(__ast.expr):
-    # def test_YieldFrom(__ast.expr):
 
     def test_show_call(self):
         factory = ASTFactory(PythonASTNode, [])
