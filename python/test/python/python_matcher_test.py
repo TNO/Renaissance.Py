@@ -26,6 +26,42 @@ class PythonMatcherTest(unittest.TestCase):
         result = MatchFinder.find_all(atu, [simple]).to_list()
         self.assertEqual(1,len(result))
 
+    def test_match_fun_pattern_using_generic_matcher(self):
+        factory = ASTFactory(PythonASTNode, [])
+        atu = factory.create_from_text('ba(55)\nca(555)\nlo(4444)\nna=55', 'test.py')
+        # create a pattern factory atu is passed to the pattern factory for use of all # includes, #defines and declarations
+        pattern_factory = PythonPatternFactory(factory, atu)
+        simple = pattern_factory.create('$ca(555)')
+        result = MatchFinder.find_all(atu, [simple]).to_list()
+        self.assertEqual(1, len(result))
+
+    def test_match_fun_using_generic_matcher(self):
+        factory = ASTFactory(PythonASTNode, [])
+        atu = factory.create_from_text('ba(55)\nca(555)\nlo(4444)\nna=55', 'test.py')
+        # create a pattern factory atu is passed to the pattern factory for use of all # includes, #defines and declarations
+        pattern_factory = PythonPatternFactory(factory, atu)
+        simple = pattern_factory.create('ca(555)')
+        result = MatchFinder.find_all(atu, [simple]).to_list()
+        self.assertEqual(1, len(result))
+
+    def test_match_multi_fun_using_generic_matcher(self):
+        factory = ASTFactory(PythonASTNode, [])
+        atu = factory.create_from_text('ba(55)\nca(555)\nlo(4444)\nna=55', 'test.py')
+        # create a pattern factory atu is passed to the pattern factory for use of all # includes, #defines and declarations
+        pattern_factory = PythonPatternFactory(factory, atu)
+        simple = pattern_factory.create('ba(55)\nca(555)')
+        result = MatchFinder.find_all(atu, [simple]).to_list()
+        self.assertEqual(1, len(result))
+
+    def test_match_multi_fun_using_generic_matcher(self):
+        factory = ASTFactory(PythonASTNode, [])
+        atu = factory.create_from_text('ba(55)\nca(555)\nlo(4444)\nna=55', 'test.py')
+        # create a pattern factory atu is passed to the pattern factory for use of all # includes, #defines and declarations
+        pattern_factory = PythonPatternFactory(factory, atu)
+        simple = pattern_factory.create('ba(55)\nca(555)')
+        result = MatchFinder.find_all(atu, [simple]).to_list()
+        self.assertEqual(1, len(result))
+
     def test_match_flat(self):
         factory = ASTFactory(PythonASTNode, [])
         atu = factory.create_from_text('pa(55)\npa(55)\npa(55)\npa=55', 'test.py')

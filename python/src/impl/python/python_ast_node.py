@@ -189,7 +189,7 @@ class PythonASTNode(ASTNode):
         if isinstance(self.node, ast.Name):
             name = self.node.id
         elif isinstance(self.node, ast.Constant):
-            name = self.node.value
+            name = str(self.node.value)
         elif isinstance(self.node, ast.Expr) and isinstance(self.node.value, ast.Call):
             name = self.node.value.func.id
         elif isinstance(self.node, ast.Expr) and isinstance(self.node.value, ast.Name):

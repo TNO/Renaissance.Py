@@ -18,7 +18,7 @@ class IfAstNode():
 ```
 
 instead of
-```angular2html
+```python
 class IfAstNode():
     _Children = [
          ImpliciteNode(test,[AstNode]  ) 
