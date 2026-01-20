@@ -16,17 +16,7 @@ na(53)
 pa(54)
 if pa():
   ba()
-
-if pa(55):
-  ba(51)
-  na(52)
-  na(53)
-  na=59
-else:
-  ba(51)
-  na(52)
-  na(53)
-  
+pa(54)  
 """.strip()
 
 
@@ -41,7 +31,7 @@ def refactor_with_nested_compositions(args):
     atu = factory.create(code) if code else factory.create_from_text(example_code, 'test.py')
     # create a pattern factory atu is passed to the pattern factory for use of all # includes, #defines and declarations
     pattern_factory = PythonPatternFactory(factory, atu)
-    pattern1 = pattern_factory.create_statements('if pa(): $$stmts;')
+    pattern1 = pattern_factory.create_statements('if pa(): $$stmts')
     # for pattern 2 we create a fully functional c snippet with a call to f1
     # note that the f1 declaration is derived from the atu
     pattern2 = pattern_factory.create_expression('na($a)')
@@ -49,11 +39,11 @@ def refactor_with_nested_compositions(args):
 
     # the replacement code strip indent is used to be agnostic to the indentation of the replacement
     pattern1replacement = TextUtils.strip_indent("""
-            //changed if expr to const
+            # changed if expr to const
             if(isAOne):
                 $$stmts
             """)
-    pattern2replacement = '#changed function f1 to f2\nf2($a,c);'
+    pattern2replacement = '# changed function f1 to f2\nf2($a,c)'
 
     # show node and patterns enable include properties to show the properties of the nodes
     include_properties = True

@@ -245,5 +245,27 @@ else:
         simple = pattern_factory.create('ma(55)')
         self.assertFalse(match(simple,atu.get_children()[0]))
 
+    def test_replace_multiple_different_nodes(self):
+
+        example_code = """
+        from module import foo, bar, baz, quux
+        ba(51)
+        na(52)
+        na(53)
+        pa(54)
+        if pa():
+          ba()
+        
+        if pa(55):
+          ba(51)
+          na(52)
+          na(53)
+          na=59
+        else:
+          ba(51)
+          na(52)
+          na(53)
+        
+        """.strip()
 if __name__ == '__main__':
     unittest.main()
