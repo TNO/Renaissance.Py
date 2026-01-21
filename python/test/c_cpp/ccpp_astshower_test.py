@@ -28,24 +28,24 @@ class CcppShowerTest(unittest.TestCase):
         }''')
         simple = ASTFinder.find_kind(pattern, '(?i)Call_?Expr').to_list()[0]
 
-        self.assertEqual('        (CALL_EXPR, $pa, test.c[91:99]){}: |$pa($xx);|\n', str(simple))
+        self.assertEqual('(CALL_EXPR, $pa, test.c[91:99]): |$pa($xx);|\n', str(simple))
 
     def test_show_main(self):
-        expected = ('(TRANSLATION_UNIT, test.c, test.c[0:105]){}:\n'
- '||\n'
- '|        void ba(int i){}|\n'
- '|        void ca(int i){}|\n'
- '|        void lo(int i){}|\n'
- '|        int na = 55;|\n'
- '|        |\n')
+        expected = ('(TRANSLATION_UNIT, test.c, test.c[0:105]):\n'
+ '    ||\n'
+ '    |        void ba(int i){}|\n'
+ '    |        void ca(int i){}|\n'
+ '    |        void lo(int i){}|\n'
+ '    |        int na = 55;|\n'
+ '    |        |\n')
         self.assertEqual(expected, str(self.atu))
 
     def test_show_body(self):
-        expected =('[        (FUNCTION_DECL, ba, test.c[9:25]){}: |void ba(int i){}|\n'
-                     ',         (FUNCTION_DECL, ca, test.c[34:50]){}: |void ca(int i){}|\n'
-                     ',         (FUNCTION_DECL, lo, test.c[59:75]){}: |void lo(int i){}|\n'
-                     ',         (VAR_DECL, na, test.c[84:95]){}: |int na = 55|\n'
-                     ']')
+        expected =(('[(FUNCTION_DECL, ba, test.c[9:25]): |void ba(int i){}|\n'
+         ', (FUNCTION_DECL, ca, test.c[34:50]): |void ca(int i){}|\n'
+         ', (FUNCTION_DECL, lo, test.c[59:75]): |void lo(int i){}|\n'
+         ', (VAR_DECL, na, test.c[84:95]): |int na = 55|\n'
+         ']'))
         real_children = list(filter(lambda n: n.get_kind()!='MACRO_DEFINITION', self.atu.get_children()))
         self.assertEqual(expected, str(real_children))
 

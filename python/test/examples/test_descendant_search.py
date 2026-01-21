@@ -1,8 +1,10 @@
 from unittest import TestCase
 from parameterized import parameterized
 
-from examples.descendant_search import find_descendant_match
-from test.c_cpp.factories import Factories
+from c_cpp.factories import Factories
+from descendant_search import find_descendant_match
+
+
 from syntax_tree import CPatternFactory, ASTFactory, MatchFinder
 
 

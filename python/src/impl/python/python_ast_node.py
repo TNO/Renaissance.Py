@@ -147,6 +147,7 @@ class PythonASTNode(ASTNode):
         self.indent = ''
         self.name = self._derive_name()
         self.text = ast.unparse(self.node)
+        self.show_props =False
         if translation_unit:
             self.file_name = translation_unit.file_name
             self.translation_unit = translation_unit
@@ -210,10 +211,11 @@ class PythonASTNode(ASTNode):
             self.attributes[name] = value
     def __repr__(self):
         raw_lines = self.text.splitlines()
+        properties_text = '' if not self.show_props else self.get_properties()
         properties_text = self.get_properties()
         prefix = " " if len(raw_lines) < 2 else "\n{self.indent}"
         formatted_lines = [f"{prefix}|{line}|" for line in raw_lines]
-        return f"{self.indent}({self.kind}, {self.name}, {self.file_name}[{self.offset}:{self.length}]){properties_text}: {''.join(formatted_lines)}\n"
+        return f"{self.indent}({self.kind}, {self.name}, {self.file_name}[{self.offset}:{self.offset+self.length}]){properties_text}: {''.join(formatted_lines)}\n"
 
     @override
     @staticmethod
