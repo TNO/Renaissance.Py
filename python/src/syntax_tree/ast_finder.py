@@ -15,6 +15,9 @@ class ASTFinder:
         return Stream(ASTFinder.__matches_kind(ast_node, kind))
 
     @staticmethod
+    def find(ast_node: ASTNode, kind: str|re.Pattern[str])-> Stream[ASTNode]:
+        return ASTFinder.__matches_kind(ast_node, kind)
+    @staticmethod
     def matches_kind(ast_node: Optional[ASTNode], kind: str|re.Pattern[str])-> bool:
         # compare kind with the ast_node kind only using word characters
         # get kind of the ast_node with only word characters
