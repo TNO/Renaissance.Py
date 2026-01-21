@@ -9,20 +9,42 @@ from syntax_tree import ASTFactory, MatchFinder, ASTShower
 
 
 class PythonShowerTest(unittest.TestCase):
-    def test_show_call(self):
-        factory = ASTFactory(PythonASTNode, [])
-        atu = factory.create_from_text('ba(55)\nca(555)\nlo(4444)\nna=55', 'test.py')
-        # create a pattern factory atu is passed to the pattern factory for use of all # includes, #defines and declarations
-        pattern_factory = PythonPatternFactory(factory, atu)
-        simple = pattern_factory.create('$pa($55)')
-        text = ASTShower.get_node(simple)
-        self.assertEqual(
-            '''
-            (Expr, _MatchOne__pa, None[100000:200028]): |_MatchOne__pa(_MatchOne__55)|
-            (Call, _MatchOne__pa, None[0:0]): |_MatchOne__pa(_MatchOne__55)|
-             (Name, _MatchOne__pa, None[0:0]): |_MatchOne__pa|
-             (ImplesiteType, , None[0:0]): ||),text)
-        ''', text)
+    def setUp(self):
+        self.factory = ASTFactory(PythonASTNode, [])
+        self.atu = self.factory.create_from_text('ba(55)\nca(555)\nlo(4444)\nna=55', 'test.py')
+        self.pattern_factory = PythonPatternFactory(self.factory, self.atu)
+
+    def test_show_call_using_repr(self):
+        simple = self.pattern_factory.create('$pa($55)')
+        self.assertEqual('(Expr, $pa($55), None[0:0]): \n|_MatchOne__pa(_MatchOne__55)|\n', str(simple))
+
+    def test_show_module(self):
+        text = ASTShower.get_node(self.atu)
+        expected = '(Module, Module, test.py[0:29]): \n|ba(55)|\n|ca(555)|\n|lo(4444)|\n|na = 55|\n'
+        self.assertEqual(expected, str(self.atu))
+    def test_show_body(self):
+        text = ASTShower.get_node(self.atu)
+        expected =('[(Expr, ba(55), test.py[0:6]): \n'    '|ba(55)|\n'
+                 ', (Expr, ca(555), test.py[7:7]): \n'    '|ca(555)|\n'
+                 ', (Expr, lo(4444), test.py[15:8]): \n'  '|lo(4444)|\n'
+                 ', (Assign, na = 55, test.py[24:5]): \n' '|na = 55|\n'
+                 ']')
+
+        self.assertEqual(expected, str(self.atu.get_children()))
+
+    def test_show_ast_a_b(self):
+        text = ASTShower.get_node(self.atu)
+        ptext = ASTShower.get_python_node(self.atu)
+        self.assertEqual(text+"a",ptext)
+
+    def test_show_ast_filter_implicite_Node(self):
+
+        ptext = ASTShower.get_python_node(self.atu)
+        self.assertNotIn("ImplicitNode",ptext)
+
+    def test_show_ast(self):
+        text = ASTShower.get_node(self.atu)
+        self.assertEqual('', text)
 
 
     def test_show_if_else(self):
@@ -36,57 +58,8 @@ else:
     y=1
     call(y)    
 ''', 'test.py')
-        text = ASTShower.get_node(atu)
-        self.assertEqual(
-('(Module, , test.py[0:0]):\n'
- '    |if x > y:|\n'
- '    |    x = 1|\n'
- '    |    call(x)|\n'
- '    |else:|\n'
- '    |    y = 1|\n'
- '    |    call(y)|\n'
- '  (ImpliciteNode, body, None[0:0]):\n'
- '      |if x > y:|\n'
- '      |    x = 1|\n'
- '      |    call(x)|\n'
- '      |else:|\n'
- '      |    y = 1|\n'
- '      |    call(y)|\n'
- '    (If, , None[0:0]):\n'
- '        |if x > y:|\n'
- '        |    x = 1|\n'
- '        |    call(x)|\n'
- '        |else:|\n'
- '        |    y = 1|\n'
- '        |    call(y)|\n'
- '      (Compare, , None[0:0]): |x > y|\n'
- '        (Name, x, None[0:0]): |x|\n'
- '        (ImpliciteNode, ops, None[0:0]): ||\n'
- '          (Gt, , None[0:0]): ||\n'
- '        (ImpliciteNode, comparators, None[0:0]): |y|\n'
- '          (Name, y, None[0:0]): |y|\n'
- '      (ImpliciteNode, body, None[0:0]): |call(x)|\n'
- '        (Assign, , None[0:0]): |x = 1|\n'
- '          (ImpliciteNode, targets, None[0:0]): |x|\n'
- '            (Name, x, None[0:0]): |x|\n'
- '              (Store, , None[0:0]): ||\n'
- '          (Constant, 1, None[0:0]): |1|\n'
- '        (Expr, call, None[0:0]): |call(x)|\n'
- '          (Call, call, None[0:0]): |call(x)|\n'
- '            (Name, call, None[0:0]): |call|\n'
- '            (ImpliciteNode, args, None[0:0]): |x|\n'
- '              (Name, x, None[0:0]): |x|\n'
- '      (ImpliciteNode, orelse, None[0:0]): |call(y)|\n'
- '        (Assign, , None[0:0]): |y = 1|\n'
- '          (ImpliciteNode, targets, None[0:0]): |y|\n'
- '            (Name, y, None[0:0]): |y|\n'
- '              (Store, , None[0:0]): ||\n'
- '          (Constant, 1, None[0:0]): |1|\n'
- '        (Expr, call, None[0:0]): |call(y)|\n'
- '          (Call, call, None[0:0]): |call(y)|\n'
- '            (Name, call, None[0:0]): |call|\n'
- '            (ImpliciteNode, args, None[0:0]): |y|\n'
- '              (Name, y, None[0:0]): |y|\n'), text)
+        text = ASTShower.get_python_node(atu.get_children()[0])
+        self.assertEqual( "", text)
 
 
 if __name__ == '__main__':

@@ -18,6 +18,20 @@ class ASTShower:
         buffer = io.StringIO()
         ASTShower._process_node(buffer, "", ast_node, include_properties)
         return buffer.getvalue()
+    def get_python_node(ast_node: ASTNode, include_properties: bool = False) -> str:
+        buffer = io.StringIO()
+        ASTShower.process_python_node(buffer, "", ast_node, include_properties)
+        return buffer.getvalue()
+    @staticmethod
+    def process_python_node(output: StringIO, indent: str, node: ASTNode, include_properties: bool
+    ) -> None:
+        if  node.is_part_of_translation_unit():
+            node.indent = indent
+            output.write(str(node))
+        else:
+            output.write(f"----{node.name}------\n")
+        for child in node.get_children():
+            ASTShower.process_python_node(output, indent + "  ", child, include_properties)
 
     @staticmethod
     def store_node(filename: str, ast_node: ASTNode, include_properties: bool = False) -> None:

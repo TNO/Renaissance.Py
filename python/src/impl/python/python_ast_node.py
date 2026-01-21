@@ -109,7 +109,7 @@ class PythonTranslationUnit():
         return result
 
 
-class ImpliciteNode(ast.Name):
+class ImplicitNode(ast.Name):
     def __init__(self, name, children):
         self.id = name
         self.body = children
@@ -142,7 +142,9 @@ class PythonASTNode(ASTNode):
         self.parent = parent
         cls = type(node)
         self.kind = cls.__name__
+        self.indent = ''
         self.name = self._derive_name()
+        self.text = ast.unparse(self.node)
         if translation_unit:
             self.file_name = translation_unit.file_name
             self.translation_unit = translation_unit
@@ -166,6 +168,8 @@ class PythonASTNode(ASTNode):
             self.name = node
             self.__kind = 'Name'
             return
+        if (isinstance(node, ast.Assign)):
+            self.node = node
         for name in node._fields:
             try:
                 child = getattr(node, name)
@@ -177,14 +181,14 @@ class PythonASTNode(ASTNode):
                 continue
             match child:
                 case ast.AST():
-                    if type(child) != ast.Load:
+                    if type(child) not in [ast.Load, ast.Store]:
                         self._children.append(PythonASTNode(child, translation_unit))
                 case list():  # Matches any list
-                    if isinstance(node, ImpliciteNode) or isinstance(node, ast.Module):
+                    if isinstance(node, ImplicitNode) or isinstance(node, ast.Module):
                         for n in child:
                             self._children.append(PythonASTNode(n, translation_unit))
                     elif not name in ['keywords', 'type_ignores'] and child:
-                        self._children.append(PythonASTNode(ImpliciteNode(name, child), translation_unit))
+                        self._children.append(PythonASTNode(ImplicitNode(name, child), translation_unit))
                 case str():
                     if name == 'id':
                         self.name = child
@@ -201,6 +205,10 @@ class PythonASTNode(ASTNode):
             if value is None and getattr(cls, name, ...) is None:
                 continue
             self.attributes[name] = value
+    def __repr__(self):
+        raw_lines = self.text.splitlines()
+        formatted_lines = [f"\n{self.indent}|{line}|" for line in raw_lines]
+        return f"({self.kind}, {self.name}, {self.file_name}[{self.offset}:{self.length}]): {''.join(formatted_lines)}\n"
 
     @override
     @staticmethod
@@ -327,7 +335,7 @@ class PythonASTNode(ASTNode):
 
     @override
     def is_part_of_translation_unit(self) -> bool:
-        return True
+        return self.kind not in ['ImplicitNode']
 
     @override
     def get_indent(self) -> int:

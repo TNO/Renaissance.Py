@@ -21,8 +21,8 @@ instead of
 ```python
 class IfAstNode():
     _Children = [
-         ImpliciteNode(test,[AstNode]  ) 
-         ImpliciteNode(body,[AstNode]  )
-         ImpliciteNode(orelse.[AstNode]) 
+         ImplicitNode(test,[AstNode]  ) 
+         ImplicitNode(body,[AstNode]  )
+         ImplicitNode(orelse.[AstNode]) 
                 ]
 ```
