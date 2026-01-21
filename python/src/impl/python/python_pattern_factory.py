@@ -137,21 +137,18 @@ class PythonPatternFactory:
             result.append(PythonASTNode(node))
         return result
 
-    def create_import(self, text: str) -> ASTNode:
-        return PythonASTNode(ast.parse(text).body[0])
-
-    def create_compare(self, text: str) -> ASTNode:
-        return PythonASTNode(ast.parse(text).body[0])
-
-    def create_if_statement(self, text: str):
-        return PythonASTNode(ast.parse(text).body[0])
-
-    def create_try_statement(self, text: str):
+    def create_python_pattern(self, text: str) -> PythonASTNode:
+        # create python node from string
+        # the output could be different, the comments are removed
+        # Return PythonASTNode
         return PythonASTNode(ast.parse(text).body[0])
 
     def create(self, text: str, kind: Optional[str] = None) -> ASTNode:
+        # create python from text
+        # the comments are removed
+        # Return Module
         text = text.replace('$$', MATCH_ALL).replace('$', MATCH_ONE)
-        return PythonASTNode(ast.parse(text).body[0])
+        return self._create(text)
 
     def create_statement(
         self,
