@@ -97,7 +97,16 @@ class ClangASTNode(ASTNode):
                 insert_child._children = []
                 self.__inserted_children.append(insert_child) 
 
-            
+    def __repr__(self):
+        text = self.get_text()
+        raw_lines = text.splitlines()
+        properties_text = '' #if not self.show_props else self.get_properties()
+        if not self.indent:
+            self.indent=''
+        prefix = " " if len(raw_lines) < 2 else f"\n    {self.indent}"
+        formatted_lines = [f"{prefix}|{line}|" for line in raw_lines]
+        return f"{self.indent}({self.get_kind()}, {self.get_name()}, {self.get_containing_filename()}[{self.get_start_offset()}:{self.get_start_offset()+self.get_length()}]){properties_text}:{''.join(formatted_lines)}\n"
+
 
     @override
     @staticmethod
