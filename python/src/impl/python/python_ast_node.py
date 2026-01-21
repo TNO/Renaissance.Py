@@ -295,7 +295,7 @@ class PythonASTNode(ASTNode):
 
     @override
     def _matches_kind(self, node: ASTNode) -> bool:
-        return self.__kind == node.get_kind()
+        return self.kind == node.get_kind()
 
     @override
     @cache

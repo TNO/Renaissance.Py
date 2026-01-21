@@ -3,7 +3,7 @@ from _ast import Call
 
 from common import Stream
 
-from .python_ast_node import PythonASTNode
+from .python_ast_node import PythonASTNode, MATCH_ONE
 from .python_codebase import PythonCodebase
 from .python_pattern_factory import PythonPatternFactory
 
@@ -103,7 +103,7 @@ def match_call(node: Call, other):
 
 def match(node, other):
     # def is_match_one(node, other):
-    if (type(other) == ast.Name and other.id.startswith('$')):
+    if (type(other) == ast.Name and other.id.startswith(MATCH_ONE)):
         if not other in expansion:
             expansion[other] = node
             return True
