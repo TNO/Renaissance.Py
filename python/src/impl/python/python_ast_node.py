@@ -138,6 +138,8 @@ class PythonASTNode(ASTNode):
     def __init__(self, node: ast.AST, translation_unit: PythonTranslationUnit = None, parent=None,
                  start_offset: Optional[int] = None, length: Optional[int] = None, insert_kind: Optional[str] = None):
         super().__init__(self if parent is None else parent.root)
+        if(isinstance(node, str)):
+            pass
         self.node = node
         self.parent = parent
         cls = type(node)
@@ -153,8 +155,7 @@ class PythonASTNode(ASTNode):
             self.translation_unit = None
         self._children = []
         # convert later
-        if (isinstance(node, ast.stmt) or isinstance(node, ast.expr)) and translation_unit:
-
+        if (isinstance(node, ast.stmt) or isinstance(node, ast.expr)) and translation_unit and self.node.lineno:
             self.offset = self.translation_unit.convert(self.node.lineno, self.node.col_offset)
             self.length = self.translation_unit.convert(self.node.end_lineno, self.node.end_col_offset) - self.offset
         elif isinstance(node, ast.Module) and translation_unit:
@@ -186,6 +187,8 @@ class PythonASTNode(ASTNode):
                 case list():  # Matches any list
                     if isinstance(node, ImplicitNode) or isinstance(node, ast.Module):
                         for n in child:
+                            if not isinstance(n, ast.AST):
+                                n = ImplicitNode(n, None)
                             self._children.append(PythonASTNode(n, translation_unit))
                     elif not name in ['keywords', 'type_ignores'] and child:
                         self._children.append(PythonASTNode(ImplicitNode(name, child), translation_unit))
@@ -230,10 +233,14 @@ class PythonASTNode(ASTNode):
 
     @override
     def _derive_name(self):
-        if 'body' not in self.node._fields:
+        if isinstance(self.node, str):
+            name = self.node
+        elif 'body' not in self.node._fields:
             name = ast.unparse(self.node)
-        elif 'name' in self.node._fields:
+        elif 'name' in self.node._fields and self.node.name:
             name = self.node.name
+        elif 'id' in self.node._fields and self.node.id:
+            name = self.node.id
         elif isinstance(self.node, ast.Call):
             name = ast.unparse(self.node)
         else:

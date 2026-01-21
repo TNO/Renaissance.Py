@@ -29,7 +29,9 @@ class ASTShower:
             node.indent = indent
             output.write(str(node))
         else:
-            output.write(f"----{node.name}------\n")
+            pass
+            # if __debug__:
+            #     output.write(f"----{node.name}------\n")
         for child in node.get_children():
             ASTShower.process_python_node(output, indent + "  ", child, include_properties)
 
