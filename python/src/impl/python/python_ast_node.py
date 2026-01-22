@@ -212,8 +212,7 @@ class PythonASTNode(ASTNode):
     def __repr__(self):
         raw_lines = self.text.splitlines()
         properties_text = '' if not self.show_props else self.get_properties()
-        properties_text = self.get_properties()
-        prefix = " " if len(raw_lines) < 2 else "\n{self.indent}"
+        prefix = " " if len(raw_lines) < 2 else f"\n{self.indent}"
         formatted_lines = [f"{prefix}|{line}|" for line in raw_lines]
         return f"{self.indent}({self.kind}, {self.name}, {self.file_name}[{self.offset}:{self.offset+self.length}]){properties_text}: {''.join(formatted_lines)}\n"
 

@@ -4,7 +4,7 @@ from unittest import TestCase
 from parameterized import parameterized
 
 from c_cpp.factories import Factories
-from refactor import refactor_with_nested_compositions
+from refactor_with_nested_compositions import refactor_with_nested_compositions
 from refactor_examples_different_styles import example_add_comment_and_commit, example_use_ast_kind_finder, \
     example_use_ast_function_finder, example_replace_old_by_fancy_new
 from remove_unused_variable import remove_unused_variable_using_refactor_method, remove_unused_variable_low_level
