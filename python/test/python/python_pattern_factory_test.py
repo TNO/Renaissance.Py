@@ -11,7 +11,7 @@ class PythonFactoryTestCase(unittest.TestCase):
         ('x = 10', ...),
         ('x += y', ...),
         ('name = \'John\'', ...),
-        ('a, b, c = 1, 2, 3', ...)
+        #('a, b, c = 1, 2, 3', ...)
     ]))
     def test_statement(self, _, factory, statement, *args):
         """

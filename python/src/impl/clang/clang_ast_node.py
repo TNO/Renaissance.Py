@@ -72,6 +72,9 @@ class ClangASTNode(ASTNode):
         self.parent = parent
         self.translation_unit = translation_unit
         self.inserted = insert_kind != None
+        self.show_props = False
+        self.indent = ''
+
         # if the node has not been added to the translation unit, add it
         # a node might already be added if it is split into multiple nodes
         # an example is for base types like int, char, etc. which are split into multiple nodes
@@ -97,7 +100,14 @@ class ClangASTNode(ASTNode):
                 insert_child._children = []
                 self.__inserted_children.append(insert_child) 
 
-            
+    def __repr__(self):
+        text = self.get_text()
+        raw_lines = text.splitlines()
+        properties_text = '' if not self.show_props else self.get_properties()
+        prefix = " " if len(raw_lines) < 2 else f"\n    {self.indent}"
+        formatted_lines = [f"{prefix}|{line}|" for line in raw_lines]
+        return f"{self.indent}({self.get_kind()}, {self.get_name()}, {self.get_containing_filename()}[{self.get_start_offset()}:{self.get_start_offset()+self.get_length()}]){properties_text}:{''.join(formatted_lines)}\n"
+
 
     @override
     @staticmethod

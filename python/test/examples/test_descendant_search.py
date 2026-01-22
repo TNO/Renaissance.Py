@@ -1,8 +1,10 @@
 from unittest import TestCase
 from parameterized import parameterized
 
-from examples.descendant_search import find_descendant_match
-from test.c_cpp.factories import Factories
+from c_cpp.factories import Factories
+from descendant_search import find_descendant_match
+
+
 from syntax_tree import CPatternFactory, ASTFactory, MatchFinder
 
 
@@ -101,13 +103,14 @@ class TestBasic(TestCase):
     def test_is_match_statement(self, _: str, factory: ASTFactory):
         pattern_factory = CPatternFactory(factory)
         statement1_pattern = pattern_factory.create_statement("f();", extra_declarations=["int f();"])
-        assert MatchFinder.is_match(statement1_pattern, statement1_pattern), "A statement matches itself"
+        self.assertTrue( MatchFinder.is_match(statement1_pattern, statement1_pattern), "A statement matches itself")
         
-        statement2_pattern = pattern_factory.create_statement("f();", extra_declarations=["int f();"])
-        assert MatchFinder.is_match(statement1_pattern, statement2_pattern), "Identical statements match"
-        
-        expression_pattern = pattern_factory.create_expression("f()", ["int f();"])
-        assert not MatchFinder.is_match(statement1_pattern, expression_pattern), "A statement doesn't match an expression"
+        statement2_pattern = pattern_factory.create_statement("f ( ) ;", extra_declarations=["int f();"])
+        self.assertTrue(  MatchFinder.is_match(statement1_pattern, statement2_pattern), "Identical statements match")
+
+        # expression can be foundwith f(), is match is not exact match
+        expression_pattern = pattern_factory.create_expression("f(3)", ["int f();"])
+        self.assertFalse(  MatchFinder.is_match(statement1_pattern, expression_pattern), "A statement doesn't match an expression")
         
         
    

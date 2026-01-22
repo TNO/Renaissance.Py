@@ -3,7 +3,7 @@ import re
 from typing import Optional, Sequence
 
 from common.stream import Stream
-from .python_ast_node import PythonASTNode
+from .python_ast_node import PythonASTNode, MATCH_ALL, MATCH_ONE
 from syntax_tree.ast_node import ASTNode
 from syntax_tree.ast_shower import ASTShower
 
@@ -11,8 +11,7 @@ from syntax_tree.ast_factory import ASTFactory
 from syntax_tree.ast_finder import ASTFinder
 
 SHOW_NODE = False
-MATCH_ONE = '_MatchOne__'
-MATCH_ALL = '_MatchAll__'
+
 
 class PythonPatternFactory:
 
@@ -68,26 +67,9 @@ class PythonPatternFactory:
     def create_expression(
         self, text: str, extra_declarations: Sequence[str] = []
     ) -> ASTNode:
-        keywords = PythonPatternFactory._get_keywords_from_text(text)
-        keywords = [
-            k for k in keywords if not any(k in ed for ed in extra_declarations)
-        ]
-        full_text = (
-            self.header
-            + "\n".join(extra_declarations)
-            + "\n"
-            + "\n".join(PythonPatternFactory._to_declaration(keywords))
-            + f"\nvoid {PythonPatternFactory.reserved_function_name}() {{ int {PythonPatternFactory.reserved_variable_name} = ({text}); }}"
-        )
-        root = self._create(text)
-        # return the first expression found in the tree as a ASTNode
-        return (
-            ASTFinder.find_kind(root.get_children()[-1], "(?i)PAREN_?EXPR")
-            .filter(ASTNode.is_part_of_translation_unit)
-            .find_last()
-            .get()
-            .get_children()[0]
-        )
+        text = text.replace('$$', MATCH_ALL).replace('$', MATCH_ONE)
+        return PythonASTNode(ast.parse(text).body[0].value)
+
 
     def create_declarations(
         self,

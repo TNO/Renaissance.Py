@@ -8,70 +8,146 @@ from typing import Any, Optional, Sequence
 from textx import get_children
 
 from common import Stream
+
 from syntax_tree import ASTNode, ASTReference, ASTFinder
 from typing_extensions import override
 
 EMPTY_DICT = {}
 EMPTY_STR = ''
 EMPTY_LIST = []
+MATCH_ONE = '_MatchOne__'
+MATCH_ALL = '_MatchAll__'
 
-STMT_PARENTS = [ 'COMPOUND_STMT', 'TRANSLATION_UNIT' ]
 
-
-PRINT_ALL_NODES = True
 class PythonASTReference():
-    def __init__(self, node_id:str, ref_kind:str, properties:dict[str, Any]) -> None:
+    def __repr__(self):
+        return f"{self.node_id}:{self.ref_kind}"
+
+    def __init__(self, node_id: str, ref_kind: str, properties: dict[str, Any]) -> None:
         self.node_id = node_id
         self.ref_kind = ref_kind
         self.properties = properties
 
 
 class PythonTranslationUnit():
-    def __init__(self, atu, file_name:str):
-        self.atu = atu
-        self.file_name = file_name
-        self.references_initialized = False
-        print_node_kind(atu)
-        self.lines = ast.unparse(atu).splitlines()
-    # references are used as a cache to store the references of a node
-    # the are stored as id for lazy creation
-        self._references: dict[str, list[PythonASTReference]] = {}
-        self._referenced_by: dict[str, list[PythonASTReference]] = {}
-        self._nodes: dict[str, 'PythonASTNode'] = {}
+    cache = {}
 
-    def lazy_create_references(self, node: 'PythonASTNode') -> None:
-        if self.references_initialized:
+    def __init__(self, content, file_name: str):
+        self.content = content.encode(sys.getfilesystemencoding())
+        self.atu = ast.parse(content, file_name)
+        self.file_name = file_name
+        PythonTranslationUnit.cache[file_name] = content
+        self.lines = self.content.splitlines()
+
+        self.references: dict[str, list[PythonASTReference]] = {}
+        self.referenced_by: dict[str, list[PythonASTReference]] = {}
+        self.nodes: dict[str, 'PythonASTNode'] = {}
+
+    def check_diagnostics(self) -> None:
+        has_error = False
+        errors = ''
+        for d in self.atu.type_ignores:
+            if d.severity >= 3:
+                has_error = True
+                errors += f'{d.severity}: {d.spelling} at {d.location}\n'
+            print(f'{d.severity}: {d.spelling} at {d.location}')
+        if has_error:
+            raise Exception(f'Error parsing: {self.file_name} \n+ errors: {errors}')
+        # Function to visit all nodes
+
+    def lazy_create_references(self, atu) -> None:
+        if self.references:
             return
-        node.root.process(ReferenceHelper.create_references)
+        globals = {}
+        for var in ASTFinder.find(atu, 'Assign'):
+            for n in var.node.targets:
+                if isinstance(n, ast.Name) and isinstance(var.node.value, ast.Call):
+                    if isinstance(n, ast.Name) and isinstance(var.node.value.func, ast.Name):
+                        globals[n.id] = var.node.value.func.id
+                        ref = PythonASTReference(var.node.value.func.id, n.id, {})
+                        self.append_to_source(n.id, ref)
+        for cls in ASTFinder.find(atu, 'ClassDef'):
+            for fun in ASTFinder.find(cls, 'FunctionDef'):
+                for call in ASTFinder.find(fun, 'Attribute'):
+                    target = self.derrive_target_name(call, cls, fun, globals)
+                    self.add_reference(call, cls, fun, target)
         self.references_initialized = True
+
+    def derrive_target_name(self, call, cls, fun, globals: dict[Any, Any]) -> Any:
+        target = call.node.value.id.replace('self', cls.name)
+        for arg in fun.node.args.args:
+            if arg.annotation:
+                self.references[f"{cls.name}.{fun.name}[{arg.arg}]"] = PythonASTReference(arg.annotation.id, arg.arg,
+                                                                                          {})
+                target = target.replace(arg.arg, arg.annotation.id)
+        for n in globals:
+            target = target.replace(n, globals[n])
+        return target
+
+    def add_reference(self, call, cls, fun, target):
+        src = f"{cls.name}.{fun.name}"
+        ref = PythonASTReference(f"{target}::{call.node.attr}", call.node.value.id, {})
+        self.append_to_source(src, ref)
+
+    def append_to_source(self, src, ref):
+        if src in self.references:
+            self.references[src].append(ref)
+        else:
+            self.references[src] = [ref]
+
     def convert(self, line_nr, col):
-        return sum(len(self.lines[i])+1 for i in range(line_nr-1))+col
+        if (line_nr > len(self.lines)):
+            return 0
+        return sum(len(self.lines[i]) + 1 for i in range(line_nr - 1)) + col
+
     @staticmethod
-    def _collect_expansions(translation_unit) -> set[tuple[str,int,int]]:
-        result: set[tuple[str,int,int]] = set()
+    def _collect_expansions(translation_unit) -> set[tuple[str, int, int]]:
+        result: set[tuple[str, int, int]] = set()
         for child in translation_unit.cursor.get_children():
             if child.kind.name == 'MACRO_INSTANTIATION':
                 result.add((child.extent.start.file, child.extent.start.offset, child.extent.end.offset))
         return result
 
-class ImpliciteNode(ast.Name):
-    def __init__(self,name, children):
-        self.id =name
-        self.body=children
-        self.lineno=0
-        self.col_offset=0
-        self.end_lineno=0
-        self.end_col_offset=0
+
+class ImplicitNode(ast.Name):
+    def __init__(self, name, children):
+        self.id = name
+        self.body = children
+        self.lineno = 0
+        self.col_offset = 0
+        self.end_lineno = 0
+        self.end_col_offset = 0
 
     _fields = (
         'body',
     )
 
+
 class PythonASTNode(ASTNode):
-    def __init__(self, node:ast.AST, translation_unit:PythonTranslationUnit=None,  parent =  None, start_offset: Optional[int] = None, length: Optional[int] = None, insert_kind : Optional[str]=None):
+    _attributes = (
+        'translation_unit',
+        'parent',
+        'offset',
+        'length',
+        'kind',
+        'name'
+        'offset',
+    )
+    _fields = ('expresion', 'body', 'alt_body')
+
+    def __init__(self, node: ast.AST, translation_unit: PythonTranslationUnit = None, parent=None,
+                 start_offset: Optional[int] = None, length: Optional[int] = None, insert_kind: Optional[str] = None):
         super().__init__(self if parent is None else parent.root)
+        if(isinstance(node, str)):
+            pass
         self.node = node
         self.parent = parent
+        cls = type(node)
+        self.kind = cls.__name__
+        self.indent = ''
+        self.name = self._derive_name()
+        self.text = ast.unparse(self.node)
+        self.show_props =False
         if translation_unit:
             self.file_name = translation_unit.file_name
             self.translation_unit = translation_unit
@@ -79,18 +155,23 @@ class PythonASTNode(ASTNode):
             self.file_name = None
             self.translation_unit = None
         self._children = []
-        #convert later
-        if ( isinstance(node, ast.stmt) or isinstance(node, ast.expr)) and translation_unit:
-
-            self._start_offset = self.translation_unit.convert(self.node.lineno, self.node.col_offset)
-            self._length = self.translation_unit.convert(self.node.end_lineno,
-                                                         self.node.end_col_offset) - self._start_offset
+        # convert later
+        if (isinstance(node, ast.stmt) or isinstance(node, ast.expr)) and translation_unit and self.node.lineno:
+            self.offset = self.translation_unit.convert(self.node.lineno, self.node.col_offset)
+            self.length = self.translation_unit.convert(self.node.end_lineno, self.node.end_col_offset) - self.offset
+        elif isinstance(node, ast.Module) and translation_unit:
+            self.offset = 0
+            self.length = len(translation_unit.content)
         else:
-            self._start_offset = 0
-            self._length = 0
+            self.offset = 0
+            self.length = 0
 
-        cls = type(node)
-        self.__kind = cls.__name__
+        if (isinstance(node, str)):
+            self.name = node
+            self.__kind = 'Name'
+            return
+        if (isinstance(node, ast.Assign)):
+            self.node = node
         for name in node._fields:
             try:
                 child = getattr(node, name)
@@ -102,194 +183,146 @@ class PythonASTNode(ASTNode):
                 continue
             match child:
                 case ast.AST():
-                    if type(child)!= ast.Load:
-                        self._children.append(PythonASTNode(child,translation_unit))
+                    if type(child) not in [ast.Load, ast.Store]:
+                        self._children.append(PythonASTNode(child, translation_unit))
                 case list():  # Matches any list
-                    if isinstance(node, ImpliciteNode) or isinstance(node, ast.Module) :
+                    if isinstance(node, ImplicitNode) or isinstance(node, ast.Module):
                         for n in child:
-                            self._children.append(PythonASTNode(n,translation_unit))
+                            if not isinstance(n, ast.AST):
+                                n = ImplicitNode(n, None)
+                            self._children.append(PythonASTNode(n, translation_unit))
                     elif not name in ['keywords', 'type_ignores'] and child:
-                        self._children.append(PythonASTNode(ImpliciteNode(name, child),translation_unit))
+                        self._children.append(PythonASTNode(ImplicitNode(name, child), translation_unit))
                 case str():
-                    if name=='id':
-                        self.__name = child
+                    if name == 'id':
+                        self.name = child
                 case int():
-                    if name=='value':
-                        self.__name = str(child)
+                    if name == 'value':
+                        self.name = str(child)
                 case _:
                     pass
-            self.attributes={}
+            self.attributes = {}
             try:
                 value = getattr(node, name)
             except AttributeError:
                 continue
             if value is None and getattr(cls, name, ...) is None:
                 continue
-            self.attributes[name]=value
-
-        # match type(node):
-        #     case ast.Expr:
-        #         if isinstance(node.value, ast.Call):
-        #             for arg in node.value.args:
-        #                 self._children.append(PythonASTNode(arg))
-        #
-        #     case ast.If:
-        #         self._children.append(PythonASTNode(node.test))
-        #         body = PythonASTNode(ImpliciteNode() )
-        #         for stmt in node.body:
-        #             body._children.append(PythonASTNode(stmt))
-        #         self._children.append(body)
-        #         orelse = PythonASTNode(ImpliciteNode())
-        #         for stmt in node.orelse:
-        #             orelse._children.append(PythonASTNode(stmt))
-        #         self._children.append(orelse)
-        #     case ast.For:
-        #         body = PythonASTNode(ImpliciteNode())
-        #         for stmt in node.body:
-        #             body._children.append(PythonASTNode(stmt))
-        #         self._children.append(body)
-        #     case ast.Module:
-        #         for stmt in node.body:
-        #             self._children.append(PythonASTNode(stmt))
-        #     case _:
-        #         pass
+            self.attributes[name] = value
+    def __repr__(self):
+        raw_lines = self.text.splitlines()
+        properties_text = '' if not self.show_props else self.get_properties()
+        prefix = " " if len(raw_lines) < 2 else f"\n{self.indent}"
+        formatted_lines = [f"{prefix}|{line}|" for line in raw_lines]
+        return f"{self.indent}({self.kind}, {self.name}, {self.file_name}[{self.offset}:{self.offset+self.length}]){properties_text}: {''.join(formatted_lines)}\n"
 
     @override
     @staticmethod
-    def load(file_path: Path, extra_args:Sequence[str], working_dir:Path) -> 'PythonASTNode':
-        args=[*extra_args, *PythonASTNode.parse_args]
-        translation_unit = ast.parse(working_dir / file_path, args=args[3:])
-        translation_unit.check_diagnostics(file_path.name)
-        root_node =  PythonASTNode(translation_unit, PythonTranslationUnit(translation_unit, file_name=str(file_path)), None)
-        return root_node
+    def load(file_path: Path, extra_args: Sequence[str], working_dir: Path) -> 'PythonASTNode':
+        args = [*extra_args, *PythonASTNode.parse_args]
+        with open(working_dir / file_path, 'r') as file:
+            content = file.read()
+            return PythonASTNode.load_from_text(content, file_path, args[3:], working_dir)
 
     @override
     @staticmethod
-    def load_from_text(text: str, file_name: str, extra_args:Sequence[str], working_dir:Path) -> "PythonASTNode":
-        translation_unit = ast.parse(text, file_name)
-        check_diagnostics(translation_unit, file_name)
-        root_node =  PythonASTNode(translation_unit, PythonTranslationUnit(translation_unit, file_name=str(file_name)), None)
-        # Convert file_content to bytes
-        file_content_bytes = text.encode(sys.getfilesystemencoding())
-        # add to cache to avoid reading the file again
-        root_node.cache[file_name] = file_content_bytes
-        check_diagnostics(translation_unit, file_name)
+    def load_from_text(text: str, file_name: str, extra_args: Sequence[str], working_dir: Path) -> "PythonASTNode":
+        # TODO: solve else where bug in matcher
+        text = text.replace('()()', '(  )')
+        translation_unit = PythonTranslationUnit(text, file_name=str(file_name))
+        translation_unit.check_diagnostics()
+        root_node = PythonASTNode(translation_unit.atu, translation_unit, None)
         return root_node
 
-
-    
     @override
-    def _get_name(self) -> str:
-        if isinstance(self.node, ast.Name):
-            return self.node.id
-        elif isinstance(self.node, ast.Constant):
-            return self.node.value
-        elif isinstance(self.node, ast.Expr) and isinstance(self.node.value, ast.Call):
-            return self.node.value.func.id
-        elif isinstance(self.node, ast.Expr) and isinstance(self.node.value, ast.Name):
-            return self.node.value.id
+    def _derive_name(self):
+        if isinstance(self.node, str):
+            name = self.node
+        elif 'body' not in self.node._fields:
+            name = ast.unparse(self.node)
+        elif 'name' in self.node._fields and self.node.name:
+            name = self.node.name
+        elif 'id' in self.node._fields and self.node.id:
+            name = self.node.id
         elif isinstance(self.node, ast.Call):
-            return self.node.func.id
+            name = ast.unparse(self.node)
         else:
-            return ''
+            name = self.kind
+        # if isinstance(self.node, ast.Name):
+        #     name = self.node.id
+        # elif isinstance(self.node, ast.Constant):
+        #     name = str(self.node.value)
+        # elif isinstance(self.node, ast.Expr) and isinstance(self.node.value, ast.Call):
+        #     name = self.node.value.func.id
+        # elif isinstance(self.node, ast.Expr) and isinstance(self.node.value, ast.Name):
+        #     name = self.node.value.id
+        # elif isinstance(self.node, ast.Call):
+        #     name = ast.unparse(self.node)
+        # else:
+        #     name = ''
+        return name.replace(MATCH_ALL, '$$').replace(MATCH_ONE, '$')
 
     @override
     @cache
     def _get_containing_filename(self) -> str:
-        return self.file_name
+        return self.translation_unit.file_name if self.translation_unit else ""
 
     @override
     def _get_start_offset(self) -> int:
-        return self._start_offset
+        return self.offset
 
     @override
     def _get_length(self) -> int:
-
-        return self._length
+        return self.length
 
     @override
     @cache
-    def _get_extended_end_offset(self) -> int: 
-        try: 
-            endOffset =  self.__start_offset + self.__length
-            if (not self._is_statement_or_declaration()) and (self.parent and self.parent.get_kind() in STMT_PARENTS):  
-                content = self.root.get_binary_file_content()
-                while endOffset < len(content) and not content[endOffset-1] in b';':
-                    endOffset += 1
-            return endOffset
-        except:
-            return 0
+    def _get_extended_end_offset(self) -> int:
+        return self.offset + self.length
 
     def _is_statement_or_declaration(self):
-        return re.match('.*(_STMT|_DECL|CXX_METHOD)', self.get_kind())
+        return isinstance(self.node, ast.stmt)
 
     @override
-    def _get_kind(self) -> str: 
-        return self.node.__class__.__name__
+    def _get_kind(self) -> str:
+        return self.kind
 
     @override
     def get_raw_signature(self) -> str:
-        return ast.unparse(self.node)
+        return self.get_binary_file_content().decode(sys.getfilesystemencoding())
+
     @override
-    def _matches_kind(self, node:ASTNode) -> bool: 
-        return self.__kind == node.get_kind() or\
-            (self.__kind.endswith('_LITERAL') and node.get_kind()=='DECL_REF_EXPR') or\
-            (self.__kind=='DECL_REF_EXPR' and node.get_kind().endswith('_LITERAL'))\
+    def get_binary_file_content(self) -> bytes:
+        return self.translation_unit.content[self.offset:self.length] if self.translation_unit else ast.unparse(
+            self.node).encode(sys.getfilesystemencoding())
+
+    @override
+    def _matches_kind(self, node: ASTNode) -> bool:
+        return self.kind == node.get_kind()
 
     @override
     @cache
-    def _get_properties(self) -> dict[str, int|str]: 
-        result  =  {}
-        offsets = (self.get_containing_filename(), self.get_start_offset(), self.get_end_offset())
-        if self.get_kind() == 'BINARY_OPERATOR':
-            #TODO remove below code after clang release that supports the getOpCode() statement
-            children = self.get_children()
-            start_offset = children[0].get_start_offset() + children[0].get_length()
-            end_offset = children[1].get_start_offset()
-            operator = self.get_content(start_offset, end_offset)
-            result['operator'] = operator.strip()
-            # next statement works in C++ but not in Python (yet) will be released later
-            # result['operator'] =  self.node.getOpCode()
-        elif self.get_kind() == 'UNARY_OPERATOR':
-            #TODO remove below code after clang release that supports the getOpCode() statement
-            child = self.get_children()[0]
-            #list all attributes of self.node excluding the once starting with _
+    def _get_properties(self) -> dict[str, int | str]:
+        self.attributes
 
-            if child.get_start_offset() > self.get_start_offset():
-                start_offset = self.get_start_offset()
-                end_offset = child.get_start_offset()
-                prefix_operator = True
-            else:
-                start_offset = child.get_start_offset() + child.get_length()
-                end_offset = self.get_start_offset() + self.get_length()
-                prefix_operator = False
-
-            operator = self.get_content(start_offset, end_offset)
-            result['operator'] = operator.strip()
-            result['prefixOperator'] = prefix_operator
-            # next statement works in C++ but not in Python (yet) will be released later
-            # result['operator'] =  self.node.getOpCode()
-        elif self.get_kind().endswith('_LITERAL'):
-            self._addTokens(result, 'LITERAL')
-        elif self.get_kind() =='DECL_REF_EXPR':
-            self._addTokens(result, 'LITERAL')
-
-        is_all = { attr[len('is_'):]: True for attr in dir(self.node) if attr.startswith('is_') and  callable(getattr(self.node, attr) and getattr(self.node, attr)() == True)}
-        result.update(is_all)
-        return result
-    
     @override
     def _get_parent(self) -> Optional['PythonASTNode']:
-        return  self.parent
+        return self.parent
 
     @override
-    def _is_statement(self) ->bool:
+    def _is_statement(self) -> bool:
         return isinstance(self.node, ast.stmt)
-    
+
     @override
     @cache
     def _get_children(self):
         return self._children
+
+    @override
+    @cache
+    def _get_name(self):
+        return self.name
+
     @override
     @cache
     def _get_referenced_by(self) -> Sequence[ASTReference]:
@@ -303,49 +336,36 @@ class PythonASTNode(ASTNode):
             definition = self._get_function_definition()
             if definition:
                 ref_by = self.translation_unit._referenced_by.get(definition.node.hash, EMPTY_LIST)
-        return Stream(ref_by)\
-            .map(lambda ref: ASTReference(self.translation_unit._nodes[ref.node_id], ref.ref_kind, ref.properties)).to_list()
+        return Stream(ref_by) \
+            .map(
+            lambda ref: ASTReference(self.translation_unit._nodes[ref.node_id], ref.ref_kind, ref.properties)).to_list()
 
     def _get_function_definition(self):
-        if self.node.type.kind == TypeKind.FUNCTIONPROTO: # type: ignore
-            signature = self.node.displayname
-            semantic_parent = self.node.semantic_parent.hash
-            def has_body(node):
-               return  any(c.kind == CursorKind.COMPOUND_STMT for c in node.node.get_children())  # type: ignore
-            def is_match(node):
-                if node.__kind != self.__kind: return False
-                if node.node.type.kind != TypeKind.FUNCTIONPROTO: return False # type: ignore
-                if node.node.semantic_parent.hash != semantic_parent: return False
-                if node.node.displayname != signature: return False
-                return has_body(node)           
-            
-            if has_body(self):
-                return None
-            body = ASTFinder.find_all(self.root, is_match).find_first().or_else(None) # type: ignore
-            if isinstance(body, PythonASTNode):
-                return body
         return None
+
     @override
     def is_part_of_translation_unit(self) -> bool:
-        return True
+        return self.kind not in ['ImplicitNode']
+
     @override
     def get_indent(self) -> int:
+        # TODO
         return 0
+
     @override
     @cache
     def _get_references(self) -> Sequence[ASTReference]:
         self.translation_unit.lazy_create_references(self)
-        return Stream(self.translation_unit._references.get(self.node.hash, EMPTY_LIST))\
-            .map(lambda ref: ASTReference(self.translation_unit._nodes[ref.node_id], ref.ref_kind, ref.properties)).to_list()
+        return Stream(self.translation_unit._references.get(self.node.hash, EMPTY_LIST)) \
+            .map(
+            lambda ref: ASTReference(self.translation_unit._nodes[ref.node_id], ref.ref_kind, ref.properties)).to_list()
 
-
-    def _addTokens(self,  result: dict[str,str], *token_kind):
-            for token in self.node.get_tokens():
-                # find all attr of token that are of type str or int
-                kind = str(token.kind).split('.')[-1]
-                if kind in token_kind:
-                    result[kind] = token.spelling
-
+    def _addTokens(self, result: dict[str, str], *token_kind):
+        for token in self.node.get_tokens():
+            # find all attr of token that are of type str or int
+            kind = str(token.kind).split('.')[-1]
+            if kind in token_kind:
+                result[kind] = token.spelling
 
     @staticmethod
     def _is_reference(node):
@@ -362,69 +382,12 @@ class PythonASTNode(ASTNode):
     @staticmethod
     @cache
     def __is_property(key, value):
-        return callable(value) and any( key.startswith( tag) for tag in ['is_', 'get'] )
+        return callable(value) and any(key.startswith(tag) for tag in ['is_', 'get'])
 
     @staticmethod
     def _is_wrapped(cursor):
         return cursor.kind.is_unexposed() and len(list(cursor.get_children())) == 1
 
-class ReferenceHelper():
-    @staticmethod
-    def create_references(ast_node: PythonASTNode) -> None:
-        assert isinstance(ast_node, PythonASTNode), f'Expected PythonASTNode but got {type(ast_node)}'
-        references = []
-        node_id: str = ast_node.node.hash
-        ast_node.translation_unit._references[node_id] = references
-        ref_fields = ['referenced'] #, 'type.get_declaration()']
-        for field in ref_fields:
-            try:
-                element = eval('ast_node.node.' + field)
-                if element.kind.name == 'NO_DECL_FOUND':    
-                    continue
-                ref_id = element.hash
-                ref_kind = field.split(".")[0]
-                properties = {k:p for k, p in element.__dict__.items() if not k.startswith('_') and k != 'hash'}
-                if node_id == ref_id:
-                    return
-                reference = PythonASTReference(ref_id, ref_kind, properties)
-                referenced_by = PythonASTReference(node_id, ref_kind, {k:p for k, p in ast_node.node.__dict__.items() if k != 'hash'})
-                try:
-                    ast_node.translation_unit._referenced_by[ref_id].append(referenced_by)
-                except:
-                    ast_node.translation_unit._referenced_by[ref_id] = [referenced_by]
-                references.append(reference)
-            except:
-                pass
-
 
 if __name__ == "__main__":
     pass
-
-    @override
-    def get_raw_signature(self) -> str:
-        return ''
-
-def check_diagnostics(translation_unit, file_name: str) -> None:
-    has_error = False
-    errors = ''
-    for d in translation_unit.type_ignores:
-        if d.severity >= 3:
-            has_error = True
-            errors += f'{d.severity}: {d.spelling} at {d.location}\n'
-        print(f'{d.severity}: {d.spelling} at {d.location}')
-    if has_error:
-        raise Exception(f'Error parsing: {file_name} \n+ errors: {errors}')
-    # Function to visit all nodes
-def print_node_kind(node: ast.AST, depth=0):
-    if PRINT_ALL_NODES:
-        print(f"{' '*depth} Node: {ast.dump(node)}, Kind: {node.__class__.__name__}")
-        if 'body' in dir(node):
-            for child in node.body:
-                print_node_kind(child, depth+2)
-
-
-def save_get(target, key):
-    try:
-        return getattr(target,key)()
-    except:
-        return None

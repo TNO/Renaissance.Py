@@ -390,6 +390,7 @@ class _RewriteActions:
         for placeholder, nodes in all_placeholders.items():
             quoted_placeholder = re.escape(placeholder)
             raw_signature = self.__get_texts(nodes)
+            # replacement = replacement.replace(placeholder, raw_signature)
             while placeholder in replacement:
                 pattern = re.compile(r"( *)" + quoted_placeholder)
                 matcher = pattern.search(replacement)
@@ -400,7 +401,7 @@ class _RewriteActions:
                     index = replacement.index(placeholder)
                     # TODO a regex may be provided between backticks and the groups are used. This needs a better design
                     # A preferable solution is to pass a transformer function to the compose_replacement
-                    if replacement[index + place_holder_length] == "`":
+                    if index + place_holder_length < len(replacement) and replacement[index + place_holder_length] == "`":
                         # ` ` means get regex
                         end_index = replacement.index(
                             "`", index + place_holder_length + 1
@@ -415,6 +416,7 @@ class _RewriteActions:
                     indent_replacement = raw_signature.replace("\n", "\n" + spaces)
                     if (
                         PatternMatch.is_multi(placeholder)
+                        and index + place_holder_length < len(replacement)
                         and replacement[index + place_holder_length] == ";"
                     ):
                         place_holder_length += 1
