@@ -1,11 +1,18 @@
 import re
+from pathlib import Path
 from unittest import TestCase
 
 from parameterized import parameterized
-from syntax_tree import ASTFinder, ASTNode
+from syntax_tree import ASTFinder, ASTNode, ASTFactory
 
 from .factories import Factories
-from test.syntax_tree.model_loader import ModelLoader
+
+class ModelLoader():
+
+    @staticmethod
+    def load_model(factory:ASTFactory):
+        # note: make sure to load a corresponding model for the language
+        return  factory.create(Path(__file__).parent.parent.parent.parent / 'c/src/main.c')
 
 class TestFinder(TestCase):
     pass

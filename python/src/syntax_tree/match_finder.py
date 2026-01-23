@@ -56,6 +56,8 @@ class MatchUtils:
         if target != None :
             if isinstance(target, str):
                 return target.startswith("$$")
+            elif isinstance(target, int):
+                return False
             return MatchUtils.is_multi_wildcard(target.get_name())
         return False
     @staticmethod

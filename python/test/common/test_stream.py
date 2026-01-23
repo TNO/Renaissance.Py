@@ -1,3 +1,4 @@
+import unittest
 from typing import Iterable
 from unittest import TestCase, main
 from common import Stream
@@ -58,6 +59,7 @@ class TestStream(TestCase):
     a = A()
     b = BA() #b is a subclass of A
     c = C()
+
     @parameterized.expand([
         (([a,b,c]), A, [a,b]),
         (([a,b,c]), C, [c])
