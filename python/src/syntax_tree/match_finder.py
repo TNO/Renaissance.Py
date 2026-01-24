@@ -1,13 +1,19 @@
 from __future__ import annotations
+
+import ast
 from dataclasses import dataclass
 from functools import cache
 import re
 import sys
 from typing import Callable, Iterable, Iterator, Optional, Sequence
 
+from coverage.misc import isolate_module
+
 from common import Stream
 from collections import Counter
 
+from impl.python import MATCH_ONE
+from impl.python.python_ast_node import MATCH_ALL
 from .ast_node import ASTNode, ASTReference
 
 VERBOSE = False
@@ -19,54 +25,56 @@ class MatchUtils:
     EXACT_MATCH = "EXACT_MATCH"
 
     @staticmethod
-    def is_name_match(src: ASTNode, cmp: ASTNode) -> bool:
-        return MatchUtils.is_wildcard(cmp) or src.get_name() == cmp.get_name()
+    def is_match(src, cmp) -> bool:
+        if isinstance(cmp, ASTNode) and cmp.kind==MATCH_ONE:
+            return True
+        elif isinstance(src, ASTNode) and cmp.kind !=src.kind and src.expression :
+            return MatchUtils.is_match(src.expression, cmp)
+        elif isinstance(cmp, list):
+            match = True
+            for i in range(len(cmp)):
+                match &= MatchUtils.is_match(src[i], cmp[i])
+            return match
+        elif isinstance(cmp, dict):
+            for n in cmp:
+                if n not in src or not MatchUtils.is_match(src[n], cmp[n]):
+                    return False
+            return True
+        elif isinstance(cmp, str):
+            return src == cmp
+        elif isinstance(cmp, int):
+            return src == cmp
+        elif cmp ==None:
+            return src == None
+        else:
+            return (MatchUtils.is_match(src.expression, cmp.expression)
+                    and MatchUtils.is_match(src.properties, cmp.properties)
+                    and MatchUtils.is_match(src.children, cmp.children))
 
     @staticmethod
-    def is_match(src: ASTNode, cmp: ASTNode) -> bool:
-        name_and_kind_match = (
-            MatchUtils.is_name_match(src, cmp) and src.get_kind() == cmp.get_kind()
-        )
-        if name_and_kind_match:
-            properties_match = src.get_properties() == cmp.get_properties()
-            if not properties_match:
-                if VERBOSE:
-                    do_log(
-                        0,
-                        "FAILED on properties not matching",
-                        str(src.get_properties()),
-                        str(cmp.get_properties()),
-                    )
-            return properties_match
-        return False
-
-    @staticmethod
-    def _is_wildcard_match(src: ASTNode, pattern: ASTNode) -> bool:
-        return pattern.matches_kind(src)  # \
-        # and pattern.get_frozen_properties().issubset(src.get_frozen_properties())
-
-    @staticmethod
-    def is_wildcard(target: ASTNode | str) -> bool:
-        return MatchUtils.is_single_wildcard(target) or MatchUtils.is_multi_wildcard(
-            target
-        )
+    def is_wildcard(target: ASTNode | str, multiplicity=None) -> bool:
+        if (target == None):
+            return False
+        if isinstance(target, ASTNode) and (target.get_kind() == 'Name' or type(target.node.value) == ast.Name):
+            target = target.get_name()
+        if not isinstance(target, str):
+            return False
+        if(multiplicity=='single'):
+            second  = len(target)==1 or target[1] != '$'
+        if (multiplicity == 'multi'):
+            second = len(target)>1 and target[1] == '$'
+        else:
+            second = True
+        return target[0]=='$' and second
 
     @staticmethod
     def is_multi_wildcard(target: ASTNode | str) -> bool:
-        if target != None :
-            if isinstance(target, str):
-                return target.startswith("$$")
-            elif isinstance(target, int):
-                return False
-            return MatchUtils.is_multi_wildcard(target.get_name())
-        return False
+        MatchUtils.is_wildcard(target, 'multi')
+
     @staticmethod
     def is_single_wildcard(target: ASTNode | str) -> bool:
-        if target != None :
-            if isinstance(target, str):
-                return not MatchUtils.is_multi_wildcard(target) and target.startswith("$")
-            return MatchUtils.is_single_wildcard(target.get_name())
-        return False
+        return  MatchUtils.is_wildcard(target, 'single')
+
     @staticmethod
     def exclude_nodes_by_kind(
         exclude_kind: str, nodes: Sequence[ASTNode]
@@ -84,13 +92,8 @@ class MatchUtils:
     def exclude_nodes_by_kind_as_sequence(
         exclude_kind: str, nodes: Sequence[ASTNode]
     ) -> Sequence[ASTNode]:
-        if exclude_kind:
-            return [
-                node
-                for node in nodes
-                if re.search(exclude_kind, node.get_kind(), re.IGNORECASE) is None
-            ]
-        return nodes
+        return MatchUtils.exclude_nodes_by_kind(exclude_kind, nodes)
+
 
     @staticmethod
     def get_multi_wildcard_keys(
@@ -108,7 +111,7 @@ class MatchUtils:
             list: A list containing the names of all multi-wildcard patterns found in the input list.
         """
         for pattern in patterns:
-            if MatchUtils.is_multi_wildcard(pattern):
+            if pattern.kind == MATCH_ALL:
                 result.append(pattern.get_name())
             MatchUtils.get_multi_wildcard_keys(pattern.get_children(), result)
         return result
@@ -442,6 +445,25 @@ class MatchFinder:
         return MatchFinder.match_pattern(src1, src2, src_filter=src_filter) is not None
 
     @staticmethod
+    def find_all_py(
+        src_nodes: Sequence[ASTNode],
+        pattern: ASTNode
+    ) -> Iterator[PatternMatch]:
+        target_nodes = src_nodes
+        while target_nodes:
+            pattern_match = MatchFinder.match_pattern(target_nodes, pattern)
+            if pattern_match:
+                break  # only one match is needed
+
+            if pattern_match:
+                target_nodes = pattern_match._get_remaining_nodes()
+                yield pattern_match
+            else:
+                target_nodes = target_nodes[1:]  # skip the first node
+            for node in src_nodes:
+                children = node.get_children()
+                yield from MatchFinder.__find_all(children,pattern )
+    @staticmethod
     def __find_all(
         src_nodes: Sequence[ASTNode],
         patterns_list: Sequence[Sequence[ASTNode] | ConstrainedPattern],
@@ -482,6 +504,9 @@ class MatchFinder:
                     )
 
     @staticmethod
+    def py_match_pattern(src_nodes,        patterns):
+        return MatchFinder.__match_pattern(src_nodes, [patterns], 0, {}, None, lambda n: n)
+    @staticmethod
     def __match_pattern(
         src_nodes: Sequence[ASTNode],
         patterns: Sequence[ASTNode],
@@ -495,7 +520,7 @@ class MatchFinder:
 
         indent = depth * 4  # for logging purposes only
 
-        only_multi_wild_cards = all(MatchUtils.is_multi_wildcard(p) for p in patterns)
+        only_multi_wild_cards = all(p.kind == MATCH_ALL for p in patterns)
         # if there are no patterns left or only multi wildcards left and no source nodes, return the current match
         if len(patterns) == 0 or (only_multi_wild_cards and len(src_nodes) == 0):
             # only allow remaining srcNodes is this is the root level, depicted by depth == 0
@@ -532,7 +557,7 @@ class MatchFinder:
                 "\n",
             )
 
-        if MatchUtils.is_multi_wildcard(pattern_node):
+        if pattern_node.kind == MATCH_ALL:
             wildcard_match = pattern_match._query_create(pattern_node.get_name())
             greediness = multiplicity.get(pattern_node.get_name(), 0)
             if greediness <= len(wildcard_match.nodes) and len(patterns) > 1:
@@ -552,28 +577,13 @@ class MatchFinder:
             wildcard_match._add_node(src_node)
 
             if VERBOSE:
-                do_log(
-                    indent,
-                    "** $$WILDCARD **",
-                    pattern_node.get_text(),
-                    "** MATCHES **",
-                    raw(wildcard_match.nodes),
-                )
+                do_log( indent,"** $$WILDCARD **",pattern_node.get_text(),"** MATCHES **", raw(wildcard_match.nodes),)
+
             return MatchFinder.__match_pattern(
                 src_nodes[1:], patterns, depth, multiplicity, pattern_match, src_filter
             )
-        elif MatchUtils.is_single_wildcard(pattern_node) or MatchUtils.is_match(
-            src_node, pattern_node
-        ):
-            if pattern_node.is_statement() and not src_node.is_statement():  # type: ignore
-                return None
-            # if the pattern node has children then kind must match (to distinct for instance while and if)
-            if pattern_node.get_children() and (
-                not MatchUtils._is_wildcard_match(src_node, pattern_node)
-            ):
-                return None
-
-            if MatchUtils.is_single_wildcard(pattern_node):
+        elif MatchUtils.is_match( src_node, pattern_node):
+            if pattern_node.kind == MATCH_ONE:
                 wildcard_match = pattern_match._query_create(pattern_node.get_name())
                 # TODO check with pierre whether we should take the highest or the deepest match
                 # if not  wildcard_match.nodes:
@@ -582,12 +592,7 @@ class MatchFinder:
                 # store the exact match because it might be needed to determine the location of a multi wildcard match without nodes
                 pattern_match._query_create(MatchUtils.EXACT_MATCH)._add_node(src_node)
             if VERBOSE:
-                do_log(
-                    indent,
-                    pattern_node.get_text(),
-                    "** MATCHES **",
-                    src_node.get_text(),
-                )
+                do_log( indent, pattern_node.get_text(),"** MATCHES **",src_node.get_text())
 
             # the current match is found if the current pattern and src node match and their children match
             if pattern_node.get_children():
@@ -615,6 +620,7 @@ class MatchFinder:
                 pattern_match,
                 src_filter,
             )
+
         return None
 
 

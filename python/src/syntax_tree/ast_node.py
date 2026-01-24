@@ -216,7 +216,7 @@ class ASTNode(ABC):
         return node.get_kind() == self.get_kind()
 
     @abstractmethod
-    def _get_properties(self) -> dict[str, int | str]:
+    def _get_properties(self) -> dict[str, int | str |ASTNode]:
         pass
 
     @abstractmethod

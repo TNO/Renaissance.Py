@@ -102,7 +102,7 @@ class TestASTReference(TestCase):
         # disable failing tests
         # ('class A {}; class B: public A {};','cpp'),
         # ('class A {}; class B: private A {};','cpp'),
-        ('namespace NS {class A {}; class B: private A {};}','cpp'),
+        ('module NS class A: pass; class B(A): pass','py'),
         # ('struct A {}; class B: public A {};','cpp'),
         # ('struct A {}; struct B: private A {};','cpp'),
         ('namespace NS {struct A {}; class B: private A {};}','cpp'),
