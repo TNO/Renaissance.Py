@@ -217,14 +217,15 @@ else:
         self.assertEqual(2, len(results), )
         self.assertEqual(4, len(results[0]), )
 
+    # can only return one match
     def test_match_all_epression(self):
         factory = ASTFactory(PythonASTNode, [])
-        atu = factory.create_from_text('pa(55)\nif pa(55):\n  pa(55)\n  if pa(55):\n    pa(55)\n  pa=55', 'test.py')
+        atu = factory.create_from_text('pa(55)\npa(55)\nif pa(55):\n  pa(55)\n  if pa(55):\n    pa(55)\n  pa=55', 'test.py')
         # create a pattern factory atu is passed to the pattern factory for use of all # includes, #defines and declarations
         pattern_factory = PythonPatternFactory(factory, atu)
         simple = pattern_factory.create('pa(55)')
         results = MatchFinder.match_pattern( atu.get_children(), PythonASTNode(simple.node.value) )
-        self.assertEqual(5,len(results))
+        self.assertEqual(5,len(results.src_nodes))
 
     def test_match_all_statement(self):
         factory = ASTFactory(PythonASTNode, [])

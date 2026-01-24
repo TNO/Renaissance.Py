@@ -504,9 +504,6 @@ class MatchFinder:
                     )
 
     @staticmethod
-    def py_match_pattern(src_nodes,        patterns):
-        return MatchFinder.__match_pattern(src_nodes, [patterns], 0, {}, None, lambda n: n)
-    @staticmethod
     def __match_pattern(
         src_nodes: Sequence[ASTNode],
         patterns: Sequence[ASTNode],
@@ -594,23 +591,7 @@ class MatchFinder:
             if VERBOSE:
                 do_log( indent, pattern_node.get_text(),"** MATCHES **",src_node.get_text())
 
-            # the current match is found if the current pattern and src node match and their children match
-            if pattern_node.get_children():
-                src_child_nodes = src_filter(src_node.get_children())
-                pattern_child_nodes = src_filter(pattern_node.get_children())
-                found_match = MatchFinder.__match_pattern(
-                    src_child_nodes,
-                    pattern_child_nodes,
-                    depth + 1,
-                    multiplicity,
-                    pattern_match,
-                    src_filter,
-                )
-                if not found_match:
-                    return None
-                pattern_match = (
-                    found_match  # update the pattern match with the result of the child
-                )
+
             # invariant: a match is found if the current pattern and src node match and their successors match
             return MatchFinder.__match_pattern(
                 src_nodes[1:],
