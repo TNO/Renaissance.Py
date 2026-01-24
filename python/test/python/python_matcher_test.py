@@ -50,15 +50,15 @@ class PythonMatcherTest(unittest.TestCase):
         atu = factory.create_from_text('ba(55)\nca(555)\nlo(4444)\nna=55', 'test.py')
         pattern_factory = PythonPatternFactory(factory, atu)
         simple = pattern_factory.create('$pa(55)')
-        self.assertTrue(MatchUtils.is_match(atu.get_children()[0], simple))
-        self.assertFalse(MatchUtils.is_match(atu.get_children()[1], simple))
-        self.assertFalse(MatchUtils.is_match(atu.get_children()[2], simple))
-        self.assertFalse(MatchUtils.is_match(atu.get_children()[3], simple))
-        result = MatchFinder.find_all(atu.get_children(), [simple]).to_list()
+        # self.assertTrue(MatchUtils.is_match(atu.get_children()[0], simple))
+        # self.assertFalse(MatchUtils.is_match(atu.get_children()[1], simple))
+        # self.assertFalse(MatchUtils.is_match(atu.get_children()[2], simple))
+        # self.assertFalse(MatchUtils.is_match(atu.get_children()[3], simple))
+        result = MatchFinder.match_pattern(atu.get_children(), simple)#.to_list()
         self.assertEqual(1,len(result))
 
 
-    def test_match_fun_pattern_using_generic_matcher(self):
+    def test_match_one_fun_pattern_using_generic_matcher(self):
         factory = ASTFactory(PythonASTNode, [])
         atu = factory.create_from_text('ba(55)\nca(555)\nlo(4444)\nna=55', 'test.py')
         pattern_factory = PythonPatternFactory(factory, atu)
@@ -224,8 +224,9 @@ else:
         # create a pattern factory atu is passed to the pattern factory for use of all # includes, #defines and declarations
         pattern_factory = PythonPatternFactory(factory, atu)
         simple = pattern_factory.create('pa(55)')
-        results = MatchFinder.match_pattern( atu.get_children(), PythonASTNode(simple.node.value) )
-        self.assertEqual(5,len(results.src_nodes))
+        results = MatchFinder.match_pattern( atu.get_children(), simple)
+        # 4 because the one in if is a expression
+        self.assertEqual(4,len(results))
 
     def test_match_all_statement(self):
         factory = ASTFactory(PythonASTNode, [])

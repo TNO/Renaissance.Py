@@ -19,6 +19,14 @@ from .ast_node import ASTNode, ASTReference
 VERBOSE = False
 DEFAULT_EXCLUDE_KIND = "comment"
 
+expandArgList = {}
+expansionList = {}
+expansion = {}
+foundStatements = []
+def resetExpansions():
+    expansion.clear()
+    expansionList.clear()
+    foundStatements.clear()
 
 class MatchUtils:
 
@@ -28,11 +36,15 @@ class MatchUtils:
     def is_match(src, cmp) -> bool:
         if isinstance(cmp, ASTNode) and cmp.kind==MATCH_ONE:
             return True
-        elif isinstance(src, ASTNode) and cmp.kind !=src.kind and src.expression :
-            return MatchUtils.is_match(src.expression, cmp)
+        elif isinstance(src, ASTNode) and cmp.kind !=src.kind:
+            return False
         elif isinstance(cmp, list):
             match = True
-            for i in range(len(cmp)):
+            if len(cmp) > len(src):
+                return False
+            for i in range(len(src)):
+                if i >= len(cmp):
+                    return False
                 match &= MatchUtils.is_match(src[i], cmp[i])
             return match
         elif isinstance(cmp, dict):
@@ -418,21 +430,30 @@ class MatchFinder:
             )
         if isinstance(patterns, ASTNode):
             patterns = [patterns]
-        patterns = src_filter(patterns)  # exclude nodes by kind
-        keys = MatchUtils.get_multi_wildcard_keys(patterns)
-        multiplicity = {key: 0 for key, count in Counter(keys).items() if count > 1}
-        # remove the last item from multiplicity because it the last item is already greedy
-        if len(multiplicity) > 1:
-            multiplicity.popitem()
-        has_next_multiplicity = True
-        while has_next_multiplicity:
-            pattern_match = MatchFinder.__match_pattern(
-                src_nodes, patterns, 0, multiplicity, None, src_filter=src_filter
-            )
-            if pattern_match and eligible(pattern_match):
-                return pattern_match
-            has_next_multiplicity = MatchUtils.next_multiplicity(multiplicity)
-        return None
+
+
+            resetExpansions()
+            patterns = src_filter(patterns)  # exclude nodes by kind
+            keys = MatchUtils.get_multi_wildcard_keys(patterns)
+            multiplicity = {key: 0 for key, count in Counter(keys).items() if count > 1}
+            MatchFinder.__match_pattern(src_nodes, patterns, 0, multiplicity, None, src_filter=src_filter)
+
+            return foundStatements
+        # patterns = src_filter(patterns)  # exclude nodes by kind
+        # keys = MatchUtils.get_multi_wildcard_keys(patterns)
+        # multiplicity = {key: 0 for key, count in Counter(keys).items() if count > 1}
+        # # remove the last item from multiplicity because it the last item is already greedy
+        # if len(multiplicity) > 1:
+        #     multiplicity.popitem()
+        # has_next_multiplicity = True
+        # while has_next_multiplicity:
+        #     pattern_match = MatchFinder.__match_pattern(
+        #         src_nodes, patterns, 0, multiplicity, None, src_filter=src_filter
+        #     )
+        #     if pattern_match and eligible(pattern_match):
+        #         return pattern_match
+        #     has_next_multiplicity = MatchUtils.next_multiplicity(multiplicity)
+        # return None
 
     @staticmethod
     def is_match(
@@ -512,97 +533,168 @@ class MatchFinder:
         pattern_match: Optional[PatternMatch],
         src_filter: Callable[[Sequence[ASTNode]], Sequence[ASTNode]],
     ) -> Optional[PatternMatch]:
-        if pattern_match is None:
-            pattern_match = PatternMatch(src_nodes, patterns)
-
-        indent = depth * 4  # for logging purposes only
-
-        only_multi_wild_cards = all(p.kind == MATCH_ALL for p in patterns)
-        # if there are no patterns left or only multi wildcards left and no source nodes, return the current match
-        if len(patterns) == 0 or (only_multi_wild_cards and len(src_nodes) == 0):
-            # only allow remaining srcNodes is this is the root level, depicted by depth == 0
-            if len(src_nodes) > 0 and depth > 0:
-                return None
-            # we might end up with a multi wildcard at the end of the pattern list and no srcNodes left so add it
-            if only_multi_wild_cards and len(patterns) == 1:
-                pattern_match._query_create(patterns[0].get_name())
-
-            if MatchValidation.validate(pattern_match._key_matches):
-                # srcNodes that are not (yet) matched are stored in the pattern match
-                pattern_match._set_remaining_nodes(src_nodes)
-                # remove the non-matching from the source nodes
-                pattern_match.src_nodes = [
-                    n for n in pattern_match.src_nodes if n not in src_nodes
-                ]
-                return pattern_match
-            return None
-
-        # if patterns left but no source nodes, return None
-        if len(src_nodes) == 0:
-            return None
-
-        src_node = src_nodes[0]
-        pattern_node = patterns[0]
-
-        if VERBOSE:
-            do_log(
-                indent,
-                "\n** CHECKING **",
-                src_node.get_text(),
-                "** AGAINST **",
-                pattern_node.get_text(),
-                "\n",
-            )
-
-        if pattern_node.kind == MATCH_ALL:
-            wildcard_match = pattern_match._query_create(pattern_node.get_name())
-            greediness = multiplicity.get(pattern_node.get_name(), 0)
-            if greediness <= len(wildcard_match.nodes) and len(patterns) > 1:
-                # multiplicity of multi-wildcards is 0 so first try to match the next pattern with the current srcNodes
-                # a clone is needed to keep the current state of the match when the next match fails
-
-                next_match = MatchFinder.__match_pattern(
-                    src_nodes,
-                    patterns[1:],
+        # if pattern_match is None:
+        #     pattern_match = PatternMatch(src_nodes, patterns)
+        #
+        # indent = depth * 4  # for logging purposes only
+        #
+        # only_multi_wild_cards = all(p.kind == MATCH_ALL for p in patterns)
+        # # if there are no patterns left or only multi wildcards left and no source nodes, return the current match
+        # if len(patterns) == 0 or (only_multi_wild_cards and len(src_nodes) == 0):
+        #     # only allow remaining srcNodes is this is the root level, depicted by depth == 0
+        #     if len(src_nodes) > 0 and depth > 0:
+        #         return None
+        #     # we might end up with a multi wildcard at the end of the pattern list and no srcNodes left so add it
+        #     if only_multi_wild_cards and len(patterns) == 1:
+        #         pattern_match._query_create(patterns[0].get_name())
+        #
+        #     if MatchValidation.validate(pattern_match._key_matches):
+        #         # srcNodes that are not (yet) matched are stored in the pattern match
+        #         pattern_match._set_remaining_nodes(src_nodes)
+        #         # remove the non-matching from the source nodes
+        #         pattern_match.src_nodes = [
+        #             n for n in pattern_match.src_nodes if n not in src_nodes
+        #         ]
+        #         return pattern_match
+        #     return None
+        #
+        # # if patterns left but no source nodes, return None
+        # if len(src_nodes) == 0:
+        #     return None
+        #
+        # src_node = src_nodes[0]
+        # pattern_node = patterns[0]
+        #
+        # if VERBOSE:
+        #     do_log(
+        #         indent,
+        #         "\n** CHECKING **",
+        #         src_node.get_text(),
+        #         "** AGAINST **",
+        #         pattern_node.get_text(),
+        #         "\n",
+        #     )
+        #
+        # if pattern_node.kind == MATCH_ALL:
+        #     wildcard_match = pattern_match._query_create(pattern_node.get_name())
+        #     greediness = multiplicity.get(pattern_node.get_name(), 0)
+        #     if greediness <= len(wildcard_match.nodes) and len(patterns) > 1:
+        #         # multiplicity of multi-wildcards is 0 so first try to match the next pattern with the current srcNodes
+        #         # a clone is needed to keep the current state of the match when the next match fails
+        #
+        #         next_match = MatchFinder.__match_pattern(
+        #             src_nodes,
+        #             patterns[1:],
+        #             depth,
+        #             multiplicity,
+        #             pattern_match.clone(),
+        #             src_filter,
+        #         )
+        #         if next_match:
+        #             return next_match
+        #     wildcard_match._add_node(src_node)
+        #
+        #     if VERBOSE:
+        #         do_log( indent,"** $$WILDCARD **",pattern_node.get_text(),"** MATCHES **", raw(wildcard_match.nodes),)
+        #
+        #     return MatchFinder.__match_pattern( src_nodes[1:], patterns, depth, multiplicity, pattern_match, src_filter)
+        greedy = False
+        foundPosition = 0
+        foundPositionInExpandedList = 0
+        for i in range(len(src_nodes)):
+            node = src_nodes[i]
+            pattern =patterns[foundPosition]
+            if pattern == MATCH_ALL :
+                if foundPosition == 0:
+                    start = i
+                current_name = patterns[foundPosition].get_name()
+                if current_name in expansionList:
+                    if MatchUtils.is_match(expansionList[current_name][foundPositionInExpandedList], node):
+                        foundPositionInExpandedList = foundPositionInExpandedList + 1
+                        if (foundPositionInExpandedList == len(expansionList[current_name])):
+                            # found all match
+                            foundPositionInExpandedList = 0
+                            foundPosition = foundPosition + 1
+                    else:
+                        foundPosition = 0
+                else:
+                    foundPosition = foundPosition + 1
+                    foundPositionInExpandedList = 0
+                    expansion_start = i
+                    greedy = True
+            elif MatchUtils.is_match(node, pattern):
+                if foundPosition == 0:
+                    start = i
+                if greedy == True:
+                    greedy = False
+                    last_name = pattern[foundPosition - 1].get_name()
+                    if not last_name in expansionList:
+                        expansionList[last_name] = src_nodes[expansion_start:i]
+                        foundPositionInExpandedList = 0
+                foundPosition = foundPosition + 1
+            # elif node.expression and len(patterns)==1:
+            #     MatchFinder.__match_pattern(
+            #         [node.expression],
+            #         patterns,
+            #         depth,
+            #         multiplicity,
+            #         pattern_match,
+            #         src_filter,
+            #     )
+            elif node.get_children():
+                MatchFinder.__match_pattern(
+                    node.children,
+                    patterns,
                     depth,
                     multiplicity,
-                    pattern_match.clone(),
+                    pattern_match,
                     src_filter,
                 )
-                if next_match:
-                    return next_match
-            wildcard_match._add_node(src_node)
+                if node.orelse:
+                    MatchFinder.__match_pattern(
+                        node.orelse,
+                        patterns,
+                        depth,
+                        multiplicity,
+                        pattern_match,
+                        src_filter,
+                    )
+            if foundPosition == len(patterns):
+                end = i + 1
+                # pattern_match._query_create(MatchUtils.EXACT_MATCH)
+                foundStatements.append(src_nodes[start:end])
+                foundPosition = 0
 
-            if VERBOSE:
-                do_log( indent,"** $$WILDCARD **",pattern_node.get_text(),"** MATCHES **", raw(wildcard_match.nodes),)
-
-            return MatchFinder.__match_pattern(
-                src_nodes[1:], patterns, depth, multiplicity, pattern_match, src_filter
-            )
-        elif MatchUtils.is_match( src_node, pattern_node):
-            if pattern_node.kind == MATCH_ONE:
-                wildcard_match = pattern_match._query_create(pattern_node.get_name())
-                # TODO check with pierre whether we should take the highest or the deepest match
-                # if not  wildcard_match.nodes:
-                wildcard_match._add_node(src_node)
-            else:
-                # store the exact match because it might be needed to determine the location of a multi wildcard match without nodes
-                pattern_match._query_create(MatchUtils.EXACT_MATCH)._add_node(src_node)
-            if VERBOSE:
-                do_log( indent, pattern_node.get_text(),"** MATCHES **",src_node.get_text())
-
-
-            # invariant: a match is found if the current pattern and src node match and their successors match
-            return MatchFinder.__match_pattern(
-                src_nodes[1:],
-                patterns[1:],
-                depth,
-                multiplicity,
-                pattern_match,
-                src_filter,
-            )
-
-        return None
+        #
+        # current=0
+        # for i in range( len(src_nodes)):
+        #     src_node = src_nodes[i]
+        #     pattern_node = patterns[current]
+        #     if MatchUtils.is_match( src_node, pattern_node):
+        #         current += 1
+        #         if pattern_node.kind == MATCH_ONE:
+        #             wildcard_match = pattern_match._query_create(pattern_node.get_name())
+        #             # TODO check with pierre whether we should take the highest or the deepest match
+        #             # if not  wildcard_match.nodes:
+        #             wildcard_match._add_node(src_node)
+        #     else:
+        #         # store the exact match because it might be needed to determine the location of a multi wildcard match without nodes
+        #         pattern_match._query_create(MatchUtils.EXACT_MATCH)._add_node(src_node)
+        #     if VERBOSE:
+        #         do_log( indent, pattern_node.get_text(),"** MATCHES **",src_node.get_text())
+        #
+        #
+        #     # invariant: a match is found if the current pattern and src node match and their successors match
+        #     return MatchFinder.__match_pattern(
+        #         src_nodes[1:],
+        #         patterns[1:],
+        #         depth,
+        #         multiplicity,
+        #         pattern_match,
+        #         src_filter,
+        #     )
+        #
+        # return None
 
 
 class MatchValidation:
