@@ -148,23 +148,15 @@ class PythonASTNode(ASTNode):
         self.orelse = []
         self.properties={}
         self.expression=None
-
         if translation_unit:
             self.file_name = translation_unit.file_name
             self.translation_unit = translation_unit
+            self.derive_position(node, translation_unit)
         else:
-            self.file_name = None
-            self.translation_unit = None
-        # convert later
-        if (isinstance(node, ast.stmt) or isinstance(node, ast.expr)) and translation_unit and self.node.lineno:
-            self.offset = self.translation_unit.convert(self.node.lineno, self.node.col_offset)
-            self.length = self.translation_unit.convert(self.node.end_lineno, self.node.end_col_offset) - self.offset
-        elif isinstance(node, ast.Module) and translation_unit:
-            self.offset = 0
-            self.length = len(translation_unit.content)
-        else:
-            self.offset = 0
+            self.file_name = ''
             self.length = 0
+            self.offset = 0
+            self.translation_unit = None
 
         if (isinstance(node, str)):
             self.__kind = 'Name'
@@ -203,6 +195,17 @@ class PythonASTNode(ASTNode):
                                 self.properties[name] = child
             except AttributeError:
                 continue
+
+    def derive_position(self, node: ast.AST , translation_unit: PythonTranslationUnit):
+        if (isinstance(node, ast.stmt) or isinstance(node, ast.expr)) and translation_unit and self.node.lineno:
+            self.offset = self.translation_unit.convert(self.node.lineno, self.node.col_offset)
+            self.length = self.translation_unit.convert(self.node.end_lineno, self.node.end_col_offset) - self.offset
+        elif isinstance(node, ast.Module) and translation_unit:
+            self.offset = 0
+            self.length = len(translation_unit.content)
+        else:
+            self.offset = 0
+            self.length = 0
 
     def __repr__(self):
         raw_lines = self.text.splitlines()

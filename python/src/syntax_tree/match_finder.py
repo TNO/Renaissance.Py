@@ -23,7 +23,7 @@ expandArgList = {}
 expansionList = {}
 expansion = {}
 foundStatements = []
-def resetExpansions():
+def reset_expansions():
     expansion.clear()
     expansionList.clear()
     foundStatements.clear()
@@ -34,7 +34,8 @@ class MatchUtils:
 
     @staticmethod
     def is_match(src, cmp) -> bool:
-        if isinstance(cmp, ASTNode) and cmp.kind==MATCH_ONE:
+        if isinstance(cmp, ASTNode) and cmp.kind==MATCH_ONE and not src.kind=='Module':
+            expansion[cmp]=src
             return True
         elif isinstance(src, ASTNode) and cmp.kind !=src.kind:
             return False
@@ -394,7 +395,7 @@ class MatchFinder:
                 )
                 if node.is_part_of_translation_unit()
             ]
-
+        reset_expansions()
         return Stream(
             MatchFinder.__find_all(
                 src_nodes, patterns_list, recursive=recursive, src_filter=src_filter
@@ -430,15 +431,13 @@ class MatchFinder:
             )
         if isinstance(patterns, ASTNode):
             patterns = [patterns]
+        reset_expansions()
+        patterns = src_filter(patterns)  # exclude nodes by kind
+        keys = MatchUtils.get_multi_wildcard_keys(patterns)
+        multiplicity = {key: 0 for key, count in Counter(keys).items() if count > 1}
+        MatchFinder.__match_pattern(src_nodes, patterns, 0, multiplicity, None, src_filter=src_filter)
 
-
-            resetExpansions()
-            patterns = src_filter(patterns)  # exclude nodes by kind
-            keys = MatchUtils.get_multi_wildcard_keys(patterns)
-            multiplicity = {key: 0 for key, count in Counter(keys).items() if count > 1}
-            MatchFinder.__match_pattern(src_nodes, patterns, 0, multiplicity, None, src_filter=src_filter)
-
-            return foundStatements
+        return foundStatements
         # patterns = src_filter(patterns)  # exclude nodes by kind
         # keys = MatchUtils.get_multi_wildcard_keys(patterns)
         # multiplicity = {key: 0 for key, count in Counter(keys).items() if count > 1}
@@ -466,63 +465,49 @@ class MatchFinder:
         return MatchFinder.match_pattern(src1, src2, src_filter=src_filter) is not None
 
     @staticmethod
-    def find_all_py(
-        src_nodes: Sequence[ASTNode],
-        pattern: ASTNode
-    ) -> Iterator[PatternMatch]:
-        target_nodes = src_nodes
-        while target_nodes:
-            pattern_match = MatchFinder.match_pattern(target_nodes, pattern)
-            if pattern_match:
-                break  # only one match is needed
-
-            if pattern_match:
-                target_nodes = pattern_match._get_remaining_nodes()
-                yield pattern_match
-            else:
-                target_nodes = target_nodes[1:]  # skip the first node
-            for node in src_nodes:
-                children = node.get_children()
-                yield from MatchFinder.__find_all(children,pattern )
-    @staticmethod
     def __find_all(
         src_nodes: Sequence[ASTNode],
         patterns_list: Sequence[Sequence[ASTNode] | ConstrainedPattern],
         recursive: bool,
         src_filter: Callable[[Sequence[ASTNode]], Sequence[ASTNode]],
     ) -> Iterator[PatternMatch]:
-        src_nodes = src_filter(
-            src_nodes
-        )  # exclude nodes by kind and optionally is part of translation unit
-        target_nodes = src_nodes
+        found_matches = []
+        for patterns in patterns_list:
+            found_matches.extend(MatchFinder.match_pattern(src_nodes,patterns))
+        return foundStatements
 
-        while target_nodes:
-            pattern_match = None
-            for patterns in patterns_list:
-                pattern_match = MatchFinder.match_pattern(
-                    target_nodes, patterns, src_filter
-                )
-                if pattern_match:
-                    break  # only one match is needed
-
-            if pattern_match:
-                target_nodes = pattern_match._get_remaining_nodes()
-                if VERBOSE:
-                    do_log(0, "VALID MATCH FOUND")
-                yield pattern_match
-            else:
-                target_nodes = target_nodes[1:]  # skip the first node
-        # recursively evaluate all children
-        if recursive:
-            for node in src_nodes:
-                children = node.get_children()
-                if children:
-                    yield from MatchFinder.__find_all(
-                        children,
-                        patterns_list,
-                        recursive=recursive,
-                        src_filter=src_filter,
-                    )
+        # src_nodes = src_filter(
+        #     src_nodes
+        # )  # exclude nodes by kind and optionally is part of translation unit
+        # target_nodes = src_nodes
+        #
+        # while target_nodes:
+        #     pattern_match = None
+        #     for patterns in patterns_list:
+        #         pattern_match = MatchFinder.match_pattern(
+        #             target_nodes, patterns, src_filter
+        #         )
+        #         if pattern_match:
+        #             break  # only one match is needed
+        #
+        #     if pattern_match:
+        #         target_nodes = pattern_match._get_remaining_nodes()
+        #         if VERBOSE:
+        #             do_log(0, "VALID MATCH FOUND")
+        #         yield pattern_match
+        #     else:
+        #         target_nodes = target_nodes[1:]  # skip the first node
+        # # recursively evaluate all children
+        # if recursive:
+        #     for node in src_nodes:
+        #         children = node.get_children()
+        #         if children:
+        #             yield from MatchFinder.__find_all(
+        #                 children,
+        #                 patterns_list,
+        #                 recursive=recursive,
+        #                 src_filter=src_filter,
+        #             )
 
     @staticmethod
     def __match_pattern(
@@ -601,37 +586,55 @@ class MatchFinder:
         greedy = False
         foundPosition = 0
         foundPositionInExpandedList = 0
+        # this case does not really make sense
+        if len(patterns) ==1 and patterns[0].get_kind() ==MATCH_ALL:
+            foundStatements.append(src_nodes)
+            return
+        if not patterns or len(patterns) ==0:
+            return
+
         for i in range(len(src_nodes)):
             node = src_nodes[i]
-            pattern =patterns[foundPosition]
-            if pattern == MATCH_ALL :
-                if foundPosition == 0:
-                    start = i
-                current_name = patterns[foundPosition].get_name()
-                if current_name in expansionList:
-                    if MatchUtils.is_match(expansionList[current_name][foundPositionInExpandedList], node):
-                        foundPositionInExpandedList = foundPositionInExpandedList + 1
-                        if (foundPositionInExpandedList == len(expansionList[current_name])):
-                            # found all match
-                            foundPositionInExpandedList = 0
-                            foundPosition = foundPosition + 1
-                    else:
-                        foundPosition = 0
-                else:
-                    foundPosition = foundPosition + 1
-                    foundPositionInExpandedList = 0
-                    expansion_start = i
-                    greedy = True
-            elif MatchUtils.is_match(node, pattern):
+            pattern = patterns[foundPosition]
+            if pattern.kind == MATCH_ALL:
+                greedy = True
+                foundPosition += 1
+                pattern = patterns[foundPosition]
+                expansion_start = i
+                # if foundPosition == 0:
+                #     start = i
+                # current_name = patterns[foundPosition].get_name()
+                # if current_name in expansionList:
+                #     if MatchUtils.is_match(expansionList[current_name][foundPositionInExpandedList], node):
+                #         foundPositionInExpandedList = foundPositionInExpandedList + 1
+                #         if (foundPositionInExpandedList == len(expansionList[current_name])):
+                #             # found all match
+                #             foundPositionInExpandedList = 0
+                #             foundPosition += 1
+                #     else:
+                #         foundPosition = 0
+                # else:
+                #     foundPosition +=  1
+                #     foundPositionInExpandedList = 0
+                #     expansion_start = i
+                #     i -= 1
+                #     greedy = True
+            if MatchUtils.is_match(node, pattern):
                 if foundPosition == 0:
                     start = i
                 if greedy == True:
                     greedy = False
-                    last_name = pattern[foundPosition - 1].get_name()
+                    last_name = patterns[foundPosition - 1].get_name()
                     if not last_name in expansionList:
                         expansionList[last_name] = src_nodes[expansion_start:i]
                         foundPositionInExpandedList = 0
                 foundPosition = foundPosition + 1
+                if foundPosition == len(patterns):
+                    end = i + 1
+                    # pattern_match._query_create(MatchUtils.EXACT_MATCH)
+
+                    foundStatements.append(MatchResult(src_nodes[start:end], expansion, expansionList))
+                    foundPosition = 0
             # elif node.expression and len(patterns)==1:
             #     MatchFinder.__match_pattern(
             #         [node.expression],
@@ -641,7 +644,7 @@ class MatchFinder:
             #         pattern_match,
             #         src_filter,
             #     )
-            elif node.get_children():
+            if node.get_children():
                 MatchFinder.__match_pattern(
                     node.children,
                     patterns,
@@ -650,20 +653,16 @@ class MatchFinder:
                     pattern_match,
                     src_filter,
                 )
-                if node.orelse:
-                    MatchFinder.__match_pattern(
-                        node.orelse,
-                        patterns,
-                        depth,
-                        multiplicity,
-                        pattern_match,
-                        src_filter,
-                    )
-            if foundPosition == len(patterns):
-                end = i + 1
-                # pattern_match._query_create(MatchUtils.EXACT_MATCH)
-                foundStatements.append(src_nodes[start:end])
-                foundPosition = 0
+            if node.orelse:
+                MatchFinder.__match_pattern(
+                    node.orelse,
+                    patterns,
+                    depth,
+                    multiplicity,
+                    pattern_match,
+                    src_filter,
+                )
+
 
         #
         # current=0
@@ -786,3 +785,9 @@ def do_log(indent: int, *msgs: str):
 
 def raw(nodes: Sequence[ASTNode]):
     return " ".join([n.get_text() for n in nodes])
+
+class MatchResult:
+    def __init__(self, nodes, expansion, expansionList):
+        self.nodes = nodes
+        self.expansions = expansion
+        self.expansionLists = expansionList

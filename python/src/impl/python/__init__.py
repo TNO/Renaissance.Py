@@ -3,7 +3,7 @@ from _ast import Call
 
 from common import Stream
 
-from .python_ast_node import PythonASTNode, MATCH_ONE
+from .python_ast_node import PythonASTNode, MATCH_ONE, MATCH_ALL
 from .python_codebase import PythonCodebase
 from .python_pattern_factory import PythonPatternFactory
 
