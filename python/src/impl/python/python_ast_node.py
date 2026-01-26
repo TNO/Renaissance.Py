@@ -170,7 +170,7 @@ class PythonASTNode(ASTNode):
                             self.orelse.append(PythonASTNode(stmt, translation_unit))
                     case 'value'|'test':
                         if isinstance(child, ast.AST):
-                            self.expression = PythonASTNode(child)
+                            self.expression = PythonASTNode(child, translation_unit)
                         else:
                             self.properties[name] = child
                     case 'keywords'|'type_ignores':
@@ -188,12 +188,15 @@ class PythonASTNode(ASTNode):
                 continue
 
     def derive_position(self, node: ast.AST , translation_unit: PythonTranslationUnit):
-        if (isinstance(node, ast.stmt) or isinstance(node, ast.expr)) and translation_unit and self.node.lineno:
+        if hasattr(node, 'lineno'):
             self.offset = self.translation_unit.convert(self.node.lineno, self.node.col_offset)
             self.length = self.translation_unit.convert(self.node.end_lineno, self.node.end_col_offset) - self.offset
         elif isinstance(node, ast.Module) and translation_unit:
             self.offset = 0
             self.length = len(translation_unit.content)
+        elif isinstance(node, ast.Call):
+            self.offset = 0
+            self.length = 0
         else:
             self.offset = 0
             self.length = 0
@@ -216,8 +219,6 @@ class PythonASTNode(ASTNode):
     @override
     @staticmethod
     def load_from_text(text: str, file_name: str, extra_args: Sequence[str], working_dir: Path) -> "PythonASTNode":
-        # TODO: solve else where bug in matcher
-        text = text.replace('()()', '(  )')
         translation_unit = PythonTranslationUnit(text, file_name=str(file_name))
         translation_unit.check_diagnostics()
         root_node = PythonASTNode(translation_unit.atu, translation_unit, None)

@@ -9,6 +9,8 @@ from impl import PythonASTNode, PythonPatternFactory
 from syntax_tree import ASTShower, TextUtils, ASTFinder
 
 example_code = """
+
+
 from module import foo, bar, baz, quux
 ba(51)
 na(52)
@@ -43,7 +45,7 @@ def refactor_with_nested_compositions(args):
             if(isAOne):
                 $$stmts
             """)
-    pattern2replacement = '# changed function f1 to f2\nf2($a,c)'
+    pattern2replacement = '# changed function f1 to f2\nf2($a,c)\n'
 
     # show node and patterns enable include properties to show the properties of the nodes
     include_properties = True
@@ -58,13 +60,18 @@ def refactor_with_nested_compositions(args):
 
         # create a refactoring that use different replacement code for different patterns
         def refactor(match):
-            if match.patterns == pattern1:
-                return rewriter.replace(pattern1replacement, match)
-            return rewriter.replace(pattern2replacement, match)
+            repl2 = pattern2replacement
+            if match.nodes == pattern1:
+                return rewriter.replace(pattern1replacement, match.nodes)
+            for repl in match.expansions:
+                repl2 = repl2.replace(repl, match.expansions[repl].text)
+            for repl in match.expansion_lists:
+                repl2 = repl2.replace(repl, raw(match.expansion_lists[repl]))
+            return rewriter.replace(repl2, match.nodes)
 
         # search matches for pattern1 and pattern2 and replace them using the refactor function
         MatchFinder.find_all(atu, pattern1, pattern2). \
-            peek(lambda match: print('peek: ' + str(match.get_raw_signatures()))). \
+            peek(lambda match: print('peek: ' + str(match.nodes))). \
             for_each(refactor)
 
         # print the rewritten code
@@ -74,7 +81,11 @@ def refactor_with_nested_compositions(args):
         else:
             atu = None
     return result
-
+def raw(nodes):
+    res = ''
+    for node in nodes:
+        res += node.text
+    return res+'\n'
 
 if __name__ == "__main__":
     import sys

@@ -19,10 +19,6 @@ from .ast_node import ASTNode, ASTReference
 VERBOSE = False
 DEFAULT_EXCLUDE_KIND = "comment"
 
-foundStatements = []
-def reset_expansions():
-    foundStatements.clear()
-
 class MatchUtils:
 
     EXACT_MATCH = "EXACT_MATCH"
@@ -393,7 +389,7 @@ class MatchFinder:
                 )
                 if node.is_part_of_translation_unit()
             ]
-        reset_expansions()
+
         return Stream(
             MatchFinder.__find_all(
                 src_nodes, patterns_list, recursive=recursive, src_filter=src_filter
@@ -405,7 +401,7 @@ class MatchFinder:
         src_nodes: Sequence[ASTNode] | ASTNode,
         patterns: Sequence[ASTNode] | ConstrainedPattern,
         src_filter: Callable[[Sequence[ASTNode]], Sequence[ASTNode]] = lambda n: n,
-    ) -> Optional[PatternMatch]:
+    ) -> Sequence[PatternMatch]:
         """
         Matches a given source node or list of source nodes against a list of pattern nodes.
 
@@ -429,13 +425,12 @@ class MatchFinder:
             )
         if isinstance(patterns, ASTNode):
             patterns = [patterns]
-        reset_expansions()
+
         patterns = src_filter(patterns)  # exclude nodes by kind
         keys = MatchUtils.get_multi_wildcard_keys(patterns)
         multiplicity = {key: 0 for key, count in Counter(keys).items() if count > 1}
-        MatchFinder.__match_pattern(src_nodes, patterns, 0, multiplicity, None, src_filter=src_filter)
+        return MatchFinder.__match_pattern(src_nodes, patterns, 0, multiplicity, None, src_filter=src_filter)
 
-        return foundStatements
         # patterns = src_filter(patterns)  # exclude nodes by kind
         # keys = MatchUtils.get_multi_wildcard_keys(patterns)
         # multiplicity = {key: 0 for key, count in Counter(keys).items() if count > 1}
@@ -472,7 +467,7 @@ class MatchFinder:
         found_matches = []
         for patterns in patterns_list:
             found_matches.extend(MatchFinder.match_pattern(src_nodes,patterns))
-        return foundStatements
+        return found_matches
 
         # src_nodes = src_filter(
         #     src_nodes
@@ -515,7 +510,8 @@ class MatchFinder:
         multiplicity: dict[str, int],
         pattern_match: Optional[PatternMatch],
         src_filter: Callable[[Sequence[ASTNode]], Sequence[ASTNode]],
-    ) -> Optional[PatternMatch]:
+    ) -> Sequence[PatternMatch]:
+
         # if pattern_match is None:
         #     pattern_match = PatternMatch(src_nodes, patterns)
         #
@@ -558,40 +554,20 @@ class MatchFinder:
         #         "\n",
         #     )
         #
-        # if pattern_node.kind == MATCH_ALL:
-        #     wildcard_match = pattern_match._query_create(pattern_node.get_name())
-        #     greediness = multiplicity.get(pattern_node.get_name(), 0)
-        #     if greediness <= len(wildcard_match.nodes) and len(patterns) > 1:
-        #         # multiplicity of multi-wildcards is 0 so first try to match the next pattern with the current srcNodes
-        #         # a clone is needed to keep the current state of the match when the next match fails
-        #
-        #         next_match = MatchFinder.__match_pattern(
-        #             src_nodes,
-        #             patterns[1:],
-        #             depth,
-        #             multiplicity,
-        #             pattern_match.clone(),
-        #             src_filter,
-        #         )
-        #         if next_match:
-        #             return next_match
-        #     wildcard_match._add_node(src_node)
-        #
-        #     if VERBOSE:
-        #         do_log( indent,"** $$WILDCARD **",pattern_node.get_text(),"** MATCHES **", raw(wildcard_match.nodes),)
-        #
-        #     return MatchFinder.__match_pattern( src_nodes[1:], patterns, depth, multiplicity, pattern_match, src_filter)
+
         greedy = False
         foundPosition = 0
         foundPositionInExpandedList = 0
         expansion = {}
         expansionList = {}
+        foundStatements =[]
+
         # this case does not really make sense
         if len(patterns) ==1 and patterns[0].get_kind() ==MATCH_ALL:
             foundStatements.append(src_nodes)
-            return
+            return foundStatements
         if not patterns or len(patterns) ==0:
-            return
+            return foundStatements
 
         for i in range(len(src_nodes)):
             node = src_nodes[i]
@@ -613,22 +589,6 @@ class MatchFinder:
                     pattern = patterns[foundPosition]
                     expansion_start = i
                     foundPositionInExpandedList = 0
-                # if foundPosition == 0:
-                #     start = i
-                #     if MatchUtils.is_match(expansionList[current_name][foundPositionInExpandedList], node):
-                #         foundPositionInExpandedList = foundPositionInExpandedList + 1
-                #         if (foundPositionInExpandedList == len(expansionList[current_name])):
-                #             # found all match
-                #             foundPositionInExpandedList = 0
-                #             foundPosition += 1
-                #     else:
-                #         foundPosition = 0
-                # else:
-                #     foundPosition +=  1
-                #     foundPositionInExpandedList = 0
-                #     expansion_start = i
-                #     i -= 1
-                #     greedy = True
             if MatchUtils.is_match(node, pattern, expansion):
                 if foundPosition == 0:
                     start = i
@@ -647,35 +607,36 @@ class MatchFinder:
                     expansion={}
                     expansionList={}
                     foundPosition = 0
-            # elif node.expression and len(patterns)==1:
-            #     MatchFinder.__match_pattern(
-            #         [node.expression],
-            #         patterns,
-            #         depth,
-            #         multiplicity,
-            #         pattern_match,
-            #         src_filter,
-            #     )
             else:
+                if node.expression and len(patterns) == 1:
+                    foundStatements.extend(MatchFinder.__match_pattern(
+                        [node.expression],
+                        patterns,
+                        depth,
+                        multiplicity,
+                        pattern_match,
+                        src_filter,
+                    ))
                 if node.get_children():
-                    MatchFinder.__match_pattern(
+                    foundStatements.extend(MatchFinder.__match_pattern(
                         node.children,
                         patterns,
                         depth,
                         multiplicity,
                         pattern_match,
                         src_filter,
-                    )
+                    ))
                 if node.orelse:
-                    MatchFinder.__match_pattern(
+                    foundStatements.extend(MatchFinder.__match_pattern(
                         node.orelse,
                         patterns,
                         depth,
                         multiplicity,
                         pattern_match,
                         src_filter,
-                    )
+                    ))
 
+        return foundStatements
 
         #
         # current=0
@@ -696,17 +657,6 @@ class MatchFinder:
         #         do_log( indent, pattern_node.get_text(),"** MATCHES **",src_node.get_text())
         #
         #
-        #     # invariant: a match is found if the current pattern and src node match and their successors match
-        #     return MatchFinder.__match_pattern(
-        #         src_nodes[1:],
-        #         patterns[1:],
-        #         depth,
-        #         multiplicity,
-        #         pattern_match,
-        #         src_filter,
-        #     )
-        #
-        # return None
 
 
 class MatchValidation:
@@ -800,7 +750,7 @@ def raw(nodes: Sequence[ASTNode]):
     return " ".join([n.get_text() for n in nodes])
 
 class MatchResult:
-    def __init__(self, nodes, expansion, expansionList):
+    def __init__(self, nodes, expansion, expansion_list):
         self.nodes = nodes
         self.expansions = expansion
-        self.expansionLists = expansionList
+        self.expansion_lists = expansion_list

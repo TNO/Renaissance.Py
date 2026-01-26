@@ -1,14 +1,12 @@
 import ast
-import unittest
-from typing import Sequence
 import inspect
+import unittest
+from unittest.mock import patch
 
-import impl.python.python_ast_node
 from impl import PythonASTNode, PythonPatternFactory
-from impl.python import match_pattern, find_all, match, MATCH_ONE, MATCH_ALL
-from syntax_tree import ASTFactory, MatchFinder, ASTFinder
-from syntax_tree.match_finder import MatchUtils, reset_expansions, MatchResult
-from unittest.mock import patch, ANY
+from impl.python import match, MATCH_ONE, MATCH_ALL
+from syntax_tree import ASTFactory, MatchFinder
+from syntax_tree.match_finder import MatchUtils, MatchResult
 
 
 class PythonMatcherTest(unittest.TestCase):
@@ -308,8 +306,8 @@ na()
         res = results[0]
         self.assertIsInstance(res, MatchResult)
         self.assertEqual(2, len(res.nodes))
-        self.assertEqual(1, len(res.expansionLists))
-        self.assertEqual([], res.expansionLists['$$any'])
+        self.assertEqual(1, len(res.expansion_lists))
+        self.assertEqual([], res.expansion_lists['$$any'])
 
         def test_match_any_with_multiple(self):
             example_code = """
@@ -335,8 +333,8 @@ na()
             res = results[0]
             self.assertIsInstance(res, MatchResult)
             self.assertEqual(2, len(res.nodes))
-            self.assertEqual(1, len(res.expansionLists))
-            self.assertEqual([], res.expansionLists['$$any'])
+            self.assertEqual(1, len(res.expansion_lists))
+            self.assertEqual([], res.expansion_lists['$$any'])
 
 
 if __name__ == '__main__':
