@@ -96,15 +96,6 @@ class PythonTranslationUnit():
             return 0
         return sum(len(self.lines[i]) + 1 for i in range(line_nr - 1)) + col
 
-    @staticmethod
-    def _collect_expansions(translation_unit) -> set[tuple[str, int, int]]:
-        result: set[tuple[str, int, int]] = set()
-        for child in translation_unit.cursor.get_children():
-            if child.kind.name == 'MACRO_INSTANTIATION':
-                result.add((child.extent.start.file, child.extent.start.offset, child.extent.end.offset))
-        return result
-
-
 class ImplicitNode(ast.Name):
     def __init__(self, name, children):
         self.id = name

@@ -19,13 +19,8 @@ from .ast_node import ASTNode, ASTReference
 VERBOSE = False
 DEFAULT_EXCLUDE_KIND = "comment"
 
-expandArgList = {}
-expansionList = {}
-expansion = {}
 foundStatements = []
 def reset_expansions():
-    expansion.clear()
-    expansionList.clear()
     foundStatements.clear()
 
 class MatchUtils:
@@ -33,10 +28,13 @@ class MatchUtils:
     EXACT_MATCH = "EXACT_MATCH"
 
     @staticmethod
-    def is_match(src, cmp) -> bool:
+    def is_match(src, cmp,expansion={}) -> bool:
         if isinstance(cmp, ASTNode) and cmp.kind==MATCH_ONE and not src.kind=='Module':
-            expansion[cmp]=src
-            return True
+            if cmp.name in expansion:
+                return MatchUtils.is_match(src,expansion[cmp.name])
+            else:
+                expansion[cmp.name]=src
+                return True
         elif isinstance(src, ASTNode) and cmp.kind !=src.kind:
             return False
         elif isinstance(cmp, list):
@@ -46,11 +44,11 @@ class MatchUtils:
             for i in range(len(src)):
                 if i >= len(cmp):
                     return False
-                match &= MatchUtils.is_match(src[i], cmp[i])
+                match &= MatchUtils.is_match(src[i], cmp[i],expansion)
             return match
         elif isinstance(cmp, dict):
             for n in cmp:
-                if n not in src or not MatchUtils.is_match(src[n], cmp[n]):
+                if n not in src or not MatchUtils.is_match(src[n], cmp[n],expansion):
                     return False
             return True
         elif isinstance(cmp, str):
@@ -60,9 +58,9 @@ class MatchUtils:
         elif cmp ==None:
             return src == None
         else:
-            return (MatchUtils.is_match(src.expression, cmp.expression)
-                    and MatchUtils.is_match(src.properties, cmp.properties)
-                    and MatchUtils.is_match(src.children, cmp.children))
+            return (MatchUtils.is_match(src.expression, cmp.expression,expansion)
+                    and MatchUtils.is_match(src.properties, cmp.properties,expansion)
+                    and MatchUtils.is_match(src.children, cmp.children,expansion))
 
     @staticmethod
     def is_wildcard(target: ASTNode | str, multiplicity=None) -> bool:
@@ -586,6 +584,8 @@ class MatchFinder:
         greedy = False
         foundPosition = 0
         foundPositionInExpandedList = 0
+        expansion = {}
+        expansionList = {}
         # this case does not really make sense
         if len(patterns) ==1 and patterns[0].get_kind() ==MATCH_ALL:
             foundStatements.append(src_nodes)
@@ -597,14 +597,24 @@ class MatchFinder:
             node = src_nodes[i]
             pattern = patterns[foundPosition]
             if pattern.kind == MATCH_ALL:
-                greedy = True
-                foundPosition += 1
-                pattern = patterns[foundPosition]
-                expansion_start = i
+                current_name = patterns[foundPosition].get_name()
+                if current_name in expansionList:
+                    if MatchUtils.is_match(expansionList[current_name][foundPositionInExpandedList], node):
+                        foundPositionInExpandedList = foundPositionInExpandedList + 1
+                        if (foundPositionInExpandedList == len(expansionList[current_name])):
+                            # found all match
+                            foundPositionInExpandedList = 0
+                            foundPosition += 1
+                    else:
+                        foundPosition = 0
+                else:
+                    greedy = True
+                    foundPosition += 1
+                    pattern = patterns[foundPosition]
+                    expansion_start = i
+                    foundPositionInExpandedList = 0
                 # if foundPosition == 0:
                 #     start = i
-                # current_name = patterns[foundPosition].get_name()
-                # if current_name in expansionList:
                 #     if MatchUtils.is_match(expansionList[current_name][foundPositionInExpandedList], node):
                 #         foundPositionInExpandedList = foundPositionInExpandedList + 1
                 #         if (foundPositionInExpandedList == len(expansionList[current_name])):
@@ -619,7 +629,7 @@ class MatchFinder:
                 #     expansion_start = i
                 #     i -= 1
                 #     greedy = True
-            if MatchUtils.is_match(node, pattern):
+            if MatchUtils.is_match(node, pattern, expansion):
                 if foundPosition == 0:
                     start = i
                 if greedy == True:
@@ -628,12 +638,14 @@ class MatchFinder:
                     if not last_name in expansionList:
                         expansionList[last_name] = src_nodes[expansion_start:i]
                         foundPositionInExpandedList = 0
-                foundPosition = foundPosition + 1
+                foundPosition += 1
                 if foundPosition == len(patterns):
                     end = i + 1
                     # pattern_match._query_create(MatchUtils.EXACT_MATCH)
 
                     foundStatements.append(MatchResult(src_nodes[start:end], expansion, expansionList))
+                    expansion={}
+                    expansionList={}
                     foundPosition = 0
             # elif node.expression and len(patterns)==1:
             #     MatchFinder.__match_pattern(
@@ -644,24 +656,25 @@ class MatchFinder:
             #         pattern_match,
             #         src_filter,
             #     )
-            if node.get_children():
-                MatchFinder.__match_pattern(
-                    node.children,
-                    patterns,
-                    depth,
-                    multiplicity,
-                    pattern_match,
-                    src_filter,
-                )
-            if node.orelse:
-                MatchFinder.__match_pattern(
-                    node.orelse,
-                    patterns,
-                    depth,
-                    multiplicity,
-                    pattern_match,
-                    src_filter,
-                )
+            else:
+                if node.get_children():
+                    MatchFinder.__match_pattern(
+                        node.children,
+                        patterns,
+                        depth,
+                        multiplicity,
+                        pattern_match,
+                        src_filter,
+                    )
+                if node.orelse:
+                    MatchFinder.__match_pattern(
+                        node.orelse,
+                        patterns,
+                        depth,
+                        multiplicity,
+                        pattern_match,
+                        src_filter,
+                    )
 
 
         #

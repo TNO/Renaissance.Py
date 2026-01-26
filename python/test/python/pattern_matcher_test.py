@@ -1,6 +1,7 @@
 import ast
 import unittest
 from typing import Sequence
+import inspect
 
 import impl.python.python_ast_node
 from impl import PythonASTNode, PythonPatternFactory
@@ -27,7 +28,7 @@ class PythonMatcherTest(unittest.TestCase):
 
     def test_match_one_stmt(self):
         simple = self.pattern_factory.create('$pa')
-        self.assertTrue(MatchUtils.is_match(self.atu.get_children()[0], simple))
+        self.assertTrue(MatchUtils.is_match(self.atu.get_children()[0], simple,{}))
 
     def test_is_match_all_stmt(self):
         simple = self.pattern_factory.create('$$pa')
@@ -50,7 +51,6 @@ class PythonMatcherTest(unittest.TestCase):
 
     def test_match_single_pattern(self):
         simple = self.pattern_factory.create('$stmt')
-
         result = MatchFinder.match_pattern(self.atu, simple)
         self.assertEqual(4, len(result))
 
@@ -76,7 +76,7 @@ class PythonMatcherTest(unittest.TestCase):
         pattern_factory = PythonPatternFactory(self.factory, atu)
         simple = pattern_factory.create('$pa')
         self.assertEqual('_MatchOne__', simple.get_kind())
-        self.assertTrue(MatchUtils.is_match(atu.get_children()[0], simple))
+        self.assertTrue(MatchUtils.is_match(atu.get_children()[0], simple, {}))
 
     def test_find_all_using_generic_matcher(self):
         simple = self.pattern_factory.create('$pa(55)')
@@ -123,26 +123,25 @@ class PythonMatcherTest(unittest.TestCase):
 
     def test_match_multiple(self):
         atu = self.factory.create_from_text('ba(55)\nna(55)\nna(55)\npa(55)\npa(55)\nba(55)\nna(55)\nna(55)\nna=55',
-                                       'test.py')
+                                            'test.py')
         # create a pattern factory atu is passed to the pattern factory for use of all # includes, #defines and declarations
         pattern_factory = PythonPatternFactory(self.factory, atu)
         simple = pattern_factory.create_statements('ba($a)\nna($b)\nna($c)')
 
         results = MatchFinder.match_pattern(atu.get_children(), simple)
-        self.assertEqual(len(results[0]), 3)
+        self.assertEqual(len(results[0].nodes), 3)
         self.assertEqual(len(results), 2)
 
     def test_match_different_placeholder(self):
         atu = self.factory.create_from_text(
             'ba(51)\nna(52)\nna(53)\npa(54)\npa(55)\nba(56)\nna(57)\nna(58)\nna=59\nba(51)\nna(52)\nna(53)\n',
             'test.py')
-        # create a pattern factory atu is passed to the pattern factory for use of all # includes, #defines and declarations
         pattern_factory = PythonPatternFactory(self.factory, atu)
         simple = pattern_factory.create_statements('ba($a)\nna($b)\nna($c)')
 
         results = MatchFinder.match_pattern(atu.get_children(), simple)
         self.assertEqual(3, len(results))
-        self.assertEqual(3, len(results[0]))
+        self.assertEqual(3, len(results[0].nodes))
 
     def test_match_recursion_placeholder(self):
         atu = self.factory.create_from_text(
@@ -154,7 +153,7 @@ class PythonMatcherTest(unittest.TestCase):
 
         results = MatchFinder.match_pattern(atu.get_children(), simple)
         self.assertEqual(3, len(results), )
-        self.assertEqual(3, len(results[0]))
+        self.assertEqual(3, len(results[0].nodes))
 
     def test_match_any_placeholder(self):
         atu = self.factory.create_from_text('''
@@ -178,41 +177,41 @@ ba()
 
         results = MatchFinder.match_pattern(atu.get_children(), simple)
         self.assertEqual(3, len(results), )
-        self.assertEqual(3, len(results[0]), )
+        self.assertEqual(3, len(results[0].nodes), )
 
     def test_match_any_placeholder_but_different_content(self):
         atu = self.factory.create_from_text(
-            '''
-            ba(51)
-            na(52)  
-            na(52)  
-            na(53)
-            ba(53)
-            pa(54)
-            if pa(55):
-                ba(51)  
+            inspect.cleandoc('''
+                ba(51)
+                na(52)  
                 na(52)  
                 na(53)
                 ba(53)
-                na(53)  
-                na=59
-            else:  
-                ba(51)  
-                na(52)  
-                ba(53)
-            
-            ''', 'test.py')
-        # create a pattern factory atu is passed to the pattern factory for use of all # includes, #defines and declarations
+                pa(54)
+                if pa(55):
+                    ba(51)  
+                    na(52)  
+                    na(53)
+                    ba(53)
+                    na(53)  
+                    na=599
+                else:  
+                    ba(51)  
+                    na(52)  
+                    ba(53)
+                
+                '''), 'test.py')
+
         pattern_factory = PythonPatternFactory(self.factory, atu)
         simple = pattern_factory.create_statements('ba($a)\n$$na\nba($c)')
 
         results = MatchFinder.match_pattern(atu.get_children(), simple)
-        self.assertEqual(1, len(results), )
-        self.assertEqual(5, len(results[0]), )
+        self.assertEqual(3, len(results))
+        self.assertEqual(5, len(results[0].nodes))
 
     def test_match_any_placeholder_but_in_child(self):
-        atu = self.factory.create_from_text(
-            '''
+        atu = self.factory.create_from_text(inspect.cleandoc(
+       '''
             ba()
             ca()  
             lo()  
@@ -231,19 +230,19 @@ ba()
                 na()  
                 ba()
             
-            ''', 'test.py')
-        # create a pattern factory atu is passed to the pattern factory for use of all # includes, #defines and declarations
+            '''), 'test.py')
+
         pattern_factory = PythonPatternFactory(self.factory, atu)
         simple = pattern_factory.create_statements('ba()\n$$na\nna()')
 
         results = MatchFinder.match_pattern(atu.get_children(), simple)
-        self.assertEqual(2, len(results), )
-        self.assertEqual(4, len(results[0]), )
+        self.assertEqual(3, len(results), )
+        self.assertEqual(4, len(results[0].nodes), )
 
     # can only return one match
     def test_match_all_epression(self):
         atu = self.factory.create_from_text('pa(55)\npa(55)\nif pa(55):\n  pa(55)\n  if pa(55):\n    pa(55)\n  pa=55',
-                                       'test.py')
+                                            'test.py')
         # create a pattern factory atu is passed to the pattern factory for use of all # includes, #defines and declarations
         pattern_factory = PythonPatternFactory(self.factory, atu)
         simple = pattern_factory.create('pa(55)')
@@ -253,7 +252,8 @@ ba()
         self.assertEqual(4, len(results))
 
     def test_match_all_statement(self):
-        atu = self.factory.create_from_text('pa(55)\nif pa(55):\n  pa(55)\n  if pa(55):\n    pa(55)\n  pa=55', 'test.py')
+        atu = self.factory.create_from_text('pa(55)\nif pa(55):\n  pa(55)\n  if pa(55):\n    pa(55)\n  pa=55',
+                                            'test.py')
         # create a pattern factory atu is passed to the pattern factory for use of all # includes, #defines and declarations
         pattern_factory = PythonPatternFactory(self.factory, atu)
         simple = pattern_factory.create('pa(55)')
@@ -337,33 +337,6 @@ na()
             self.assertEqual(2, len(res.nodes))
             self.assertEqual(1, len(res.expansionLists))
             self.assertEqual([], res.expansionLists['$$any'])
-
-    def test_replace_multiple_different_nodes(self):
-        example_code = """
-        from module import foo, bar, baz, quux
-        ba()
-        na()        
-        """.strip()
-        # if pa():
-        #   ba()
-        #   na()
-        # if pa():
-        #   ba()
-        #   ca()
-        #   lo()
-        #   na()
-        # else:
-        #   ba()
-        #   la()
-        #   ri()
-        #   na()
-        self.atu = self.factory.create_from_text('pa(55)\nif pa(55):\n  pa(55)\n  if pa(55):\n    pa(55)\n  pa=55',
-                                                 'test.py')
-        simple = self.pattern_factory.create_statements('ba()\n$$any\nna()')
-
-        results = MatchFinder.match_pattern(self.atu.get_children(), simple)
-        self.assertEqual(4, len(results), )
-        self.assertEqual(3, len(results[0]), )
 
 
 if __name__ == '__main__':

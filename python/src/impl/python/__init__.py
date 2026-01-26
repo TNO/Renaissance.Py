@@ -18,8 +18,7 @@ def find_all(atu, pattern):
     return Stream(match_pattern(atu.get_children(), pattern))
 
 expandArgList = {}
-expansionList = {}
-expansion = {}
+
 foundStatements = []
 
 
