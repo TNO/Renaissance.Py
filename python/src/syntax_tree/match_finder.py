@@ -12,12 +12,12 @@ from coverage.misc import isolate_module
 from common import Stream
 from collections import Counter
 
-from impl.python import MATCH_ONE
-from impl.python.python_ast_node import MATCH_ALL
 from .ast_node import ASTNode, ASTReference
 
 VERBOSE = False
 DEFAULT_EXCLUDE_KIND = "comment"
+MATCH_ONE = '_MatchOne__'
+MATCH_ALL = '_MatchAll__'
 
 class MatchUtils:
 
