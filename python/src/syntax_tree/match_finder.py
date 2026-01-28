@@ -123,7 +123,7 @@ class PatternMatch:
         part_of_translation_unit: bool,
     ) -> Iterable[PatternMatch]:
         for n in self.src_nodes:
-            for ref in n.get_referenced_by:
+            for ref in n.referenced_by:
                 yield from MatchFinder.find_all_strict(
                     ref.get_node(),
                     patterns_list,
@@ -137,7 +137,7 @@ class PatternMatch:
         recursive: bool, exclude_kind: str, part_of_translation_unit: bool
     ) -> Iterable[PatternMatch]:
         for n in self.src_nodes:
-            for ref in n.get_references:
+            for ref in n.references:
                 yield from MatchFinder.find_all_strict(
                     [ref.get_node()],
                     patterns_list,

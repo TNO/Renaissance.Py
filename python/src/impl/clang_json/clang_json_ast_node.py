@@ -82,7 +82,7 @@ class ClangJsonASTNode(ASTNode):
         super().__init__(self if parent is None else parent.root)
         self.node: dict[str, Any] = node
         self._children: Optional[Sequence[ClangJsonASTNode]] = None
-        self.parent = parent
+        self._parent = parent
         self.translation_unit = translation_unit
         self._filename = translation_unit.filename
         self.inserted = insert_kind != None
@@ -666,7 +666,7 @@ class ReferenceHelper:
 
             for id, node in ast_node.translation_unit._nodes.items():
                 if node.kind == "CXXRecordDecl" and node.name == qual_type:
-                    parent = node.get_parent
+                    parent = node.parent
                     matches = True
                     for ns in namespaces:
                         if (
@@ -674,7 +674,7 @@ class ReferenceHelper:
                             or parent.kind != "NamespaceDecl"
                         ):
                             matches = False
-                        parent = parent.get_parent
+                        parent = parent.parent
                     if matches:
                         ids.append((node.kind, id))
                 if ctorType != EMPTY_STR and node.kind == "CXXConstructorDecl":

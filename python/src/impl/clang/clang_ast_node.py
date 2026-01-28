@@ -70,7 +70,7 @@ class ClangASTNode(ASTNode):
         super().__init__(self if parent is None else parent.root)
         self.node = node
         self._children = None
-        self.parent = parent
+        self._parent = parent
         self.translation_unit = translation_unit
         self.inserted = insert_kind != None
         self.show_props = False
@@ -283,9 +283,7 @@ class ClangASTNode(ASTNode):
                 return body
         return None
 
-    @override
-    @cache
-    def _get_references(self) -> Sequence[ASTReference]:
+    def get_references(self) -> Sequence[ASTReference]:
         self.translation_unit.lazy_create_references(self)
         return Stream(self.translation_unit._references.get(self.node.hash, EMPTY_LIST))\
             .map(lambda ref: ASTReference(self.translation_unit._nodes[ref.node_id], ref.ref_kind, ref.properties)).to_list()

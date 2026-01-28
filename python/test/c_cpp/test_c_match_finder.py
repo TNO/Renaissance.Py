@@ -220,8 +220,8 @@ class TestUseAtuToCreatePattern(TestCMatchFinder):
         # ASTShower.show_node(atu, include_properties=True)
         # ASTShower.show_node(statementsAtu, include_properties=True)
         result = MatchFinder.find_all([atu], [statements], recursive=True).\
-            filter(lambda match: match.nodes() == names).\
-            map(lambda match: match.src_nodes[0]).\
+            filter(lambda match: match.patterns() == names).\
+            map(lambda match: match.nodes[0]).\
             filter(ASTNode.is_part_of_translation_unit).\
             map(ASTNode.text).to_list()
         self.assertEqual(expected, result)

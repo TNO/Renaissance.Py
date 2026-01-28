@@ -48,6 +48,8 @@ class ASTNode(ABC):
         self.orelse=None
         self._properties = {}
         self._expression =None
+        self.references:Sequence[ASTReference] =[]
+        self.referenced_by:Sequence[ASTReference]=[]
 
     def __repr__(self):
         raw_lines = self.text.splitlines()
@@ -104,7 +106,7 @@ class ASTNode(ABC):
 
     @property
     def get_preceding_sibling(self) -> Optional[ASTNode]:
-        parent = self.get_parent
+        parent = self.parent
         if not parent:
             return None
         siblings = parent.children
@@ -113,7 +115,7 @@ class ASTNode(ABC):
 
     @property
     def get_next_sibling(self) -> Optional[ASTNode]:
-        parent = self.get_parent
+        parent = self.parent
         if not parent:
             return None
         siblings = parent.children
@@ -133,7 +135,7 @@ class ASTNode(ABC):
         return node.is_ancestor_of(self)
 
     def is_ancestor_of(self, descendant: ASTNode) -> bool:
-        parent = descendant.get_parent
+        parent = descendant.parent
         if parent == self:
             return True
         if not parent:
@@ -198,7 +200,7 @@ class ASTNode(ABC):
         return self._properties
 
     @property
-    def get_parent(self) -> Optional[ASTNode]:
+    def parent(self) -> Optional[ASTNode]:
         return self._parent
 
     @property
@@ -208,14 +210,6 @@ class ASTNode(ABC):
     @property
     def children(self) -> Sequence[ASTNode]:
         return self._children
-
-    @property
-    def get_references(self) -> Sequence[ASTReference]:
-        return self.references
-
-    @property
-    def get_referenced_by(self) -> Sequence[ASTReference]:
-        return self.referenced_by
 
     def process(self, function: Callable[[ASTNode], None]) -> None:
         function(self)

@@ -168,7 +168,7 @@ class _RewriteActions:
         )
         self.encoding = encoding
         self.content = self.nodes[0].root.get_binary_file_content()[
-            self.nodes[0].offset: self.nodes[-1].get_extended_end_offset
+            self.nodes[0].offset: self.nodes[-1].extended_end_offset
         ]
         self.correct_indent = correct_indent
 
@@ -492,7 +492,7 @@ class _RewriteActions:
     def _get_parent_statement(node : ASTNode):
         parent = node
         while parent and not parent.is_statement:
-            parent = parent.get_parent
+            parent = parent.parent
         return parent
 
     @staticmethod
@@ -504,15 +504,15 @@ class _RewriteActions:
         nodes: Sequence[ASTNode],
     ):
         start_offset = nodes[0].offset - offset
-        end_offset = nodes[-1].get_extended_end_offset - offset
+        end_offset = nodes[-1].extended_end_offset - offset
         if include_comments:
             preceding_node = nodes[0].get_preceding_sibling
-            parent = nodes[0].get_parent
+            parent = nodes[0].parent
             start_comment_location = 0
             if preceding_node:
                 # start after the comment of the preceding node
                 start_comment_location = (
-                        preceding_node.get_extended_end_offset - offset
+                        preceding_node.extended_end_offset - offset
                 )
                 preceding_end_offset = _RewriteActions.__get_comment_after_location(
                     start_comment_location, start_offset, content
@@ -614,9 +614,9 @@ class _RewriteActions:
     @staticmethod
     def __get_depth(node: ASTNode) -> int:
         depth = 0
-        parent = node.get_parent
+        parent = node.parent
         while parent:
             if ASTFinder.matches_kind(parent, "(?i)Compound_?Stmt"):
                 depth += 1
-            parent = parent.get_parent
+            parent = parent.parent
         return depth
