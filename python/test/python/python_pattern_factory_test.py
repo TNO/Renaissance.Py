@@ -7,37 +7,27 @@ from impl.python.python_pattern_factory import PythonPatternFactory
 
 class PythonFactoryTestCase(unittest.TestCase):
 
+    # Statements patterns
     @parameterized.expand(Factories.extend([
         ('x = 10', ...),
         ('x += y', ...),
         ('name = \'John\'', ...),
-        #('a, b, c = 1, 2, 3', ...)
+        ('a, b, c = (1, 2, 3)', ...)
     ]))
     def test_statement(self, _, factory, statement, *args):
         """
         Test the creation of a statement in Python
         """
         pattern_factory = PythonPatternFactory(factory)
-        node = pattern_factory.create_statement(statement)
+        node = pattern_factory.create_python_pattern(statement)
         self.assertTrue(node.is_statement())
-        #print(node.get_text())
         self.assertEqual(statement, node.get_text())
-
-    @parameterized.expand(Factories.extend([
-        ('5 > 3', ...),
-        #('list(map(lambda x: x**2, [1, 2, 3, 4]))', ...),
-        #('long_expression = component_one + component_two + component_three + component_four + component_five', ...),
-    ]))
-    def test_compareExpr(self, _, factory, expr, *args):
-        pattern_factory = PythonPatternFactory(factory)
-        node = pattern_factory.create_compare(expr)
-        self.assertEqual(expr, node.get_text())
 
     @parameterized.expand(Factories.factories)
     def test_import(self, _, factory):
         imp = 'from module import foo, bar'
         pattern_factory = PythonPatternFactory(factory)
-        node = pattern_factory.create_import(imp)
+        node = pattern_factory.create_python_pattern(imp)
         self.assertEqual(node.get_kind(), ast.ImportFrom.__name__)
         self.assertEqual(imp, node.get_raw_signature())
 
@@ -47,7 +37,7 @@ class PythonFactoryTestCase(unittest.TestCase):
     ]))
     def test_if_else(self, _, factory, statement, *args):
         pattern_factory = PythonPatternFactory(factory)
-        node = pattern_factory.create_if_statement(statement)
+        node = pattern_factory.create_python_pattern(statement)
         self.assertEqual(node.get_kind(), ast.If.__name__)
         self.assertEqual(statement, node.get_text())
 
@@ -57,9 +47,160 @@ class PythonFactoryTestCase(unittest.TestCase):
     ]))
     def test_try_statement(self, _, factory, statement, *args):
         pattern_factory = PythonPatternFactory(factory)
-        node = pattern_factory.create_try_statement(statement)
+        node = pattern_factory.create_python_pattern(statement)
         self.assertEqual(node.get_kind(), ast.Try.__name__)
         self.assertEqual(statement, node.get_text())
+
+    @parameterized.expand(Factories.extend([
+        ('for i in range(2, 11, 2):\n    print(i)', ...),
+        ('for index, color in enumerate(colors):\n    print(f\'Index {index}: {color}\')', ...),
+        ('for i in range(5):\n    print(i)', ...)
+    ]))
+    def test_for_loop(self, _, factory, statement, *args):
+        pattern_factory = PythonPatternFactory(factory)
+        node = pattern_factory.create_python_pattern(statement)
+        self.assertEqual(node.get_kind(), ast.For.__name__)
+        self.assertEqual(statement, node.get_text())
+
+    @parameterized.expand(Factories.extend([
+        ('while True:\n    print(count)', ...),
+        ('while count < 3:\n    print(count)\nelse:\n    print(count)', ...),
+    ]))
+    def test_while_loop(self, _, factory, statement, *args):
+        pattern_factory = PythonPatternFactory(factory)
+        node = pattern_factory.create_python_pattern(statement)
+        self.assertEqual(node.get_kind(), ast.While.__name__)
+        self.assertEqual(statement, node.get_text())
+
+    @parameterized.expand(Factories.extend([
+        ('with MyContextManager(\'test\') as cm:\n    print(\'Inside the context block\')', ...),
+        ('with open(\'example.txt\', \'r\') as file:\n    content = file.read()', ...),
+    ]))
+    def test_with_statement(self, _, factory, statement, *args):
+        pattern_factory = PythonPatternFactory(factory)
+        node = pattern_factory.create_python_pattern(statement)
+        self.assertEqual(node.get_kind(), ast.With.__name__)
+        self.assertEqual(statement, node.get_text())
+
+    @parameterized.expand(Factories.extend([
+        ('def greet():\n    print(\'Hello, World!\')', ...),
+        ('def multiply(x, y):\n    return x * y', ...),
+        ('def outer_function(x):\n\n    def inner_function(y):\n        return y * 2\n    return inner_function(x) + 5', ...),
+    ]))
+    def test_func_def(self, _, factory, code, *args):
+        pattern_factory = PythonPatternFactory(factory)
+        node = pattern_factory.create_python_pattern(code)
+        self.assertEqual(node.get_kind(), ast.FunctionDef.__name__)
+        self.assertEqual(code, node.get_text())
+
+    @parameterized.expand(Factories.extend([
+        ('class Person:\n\n    def __init__(self, name, age):\n        self.name = name\n        self.age = age', ...),
+        ('class MathHelper:\n    pi = 3.14159', ...),
+        ('class Dog(Animal):\n\n    def speak(self):\n        return f\'{self.name} says Woof!\'',
+         ...),
+    ]))
+    def test_class_def(self, _, factory, code, *args):
+        pattern_factory = PythonPatternFactory(factory)
+        node = pattern_factory.create_python_pattern(code)
+        self.assertEqual(node.get_kind(), ast.ClassDef.__name__)
+        self.assertEqual(code, node.get_text())
+
+    @parameterized.expand(Factories.extend([
+        ('return a + b', ...),
+        ('return (length, width, height)', ...),
+        ('return \'Eligible to vote\'', ...),
+    ]))
+    def test_return_statement(self, _, factory, code, *args):
+        pattern_factory = PythonPatternFactory(factory)
+        node = pattern_factory.create_python_pattern(code)
+        self.assertEqual(node.get_kind(), ast.Return.__name__)
+        self.assertEqual(code, node.get_text())
+
+    @parameterized.expand(Factories.extend([
+        ('assert length > 0, \'Length must be positive\'', ...),
+        ('assert 10 <= value <= 20, \'Value must be between 10 and 20\'', ...),
+    ]))
+    def test_assert_statement(self, _, factory, code, *args):
+        pattern_factory = PythonPatternFactory(factory)
+        node = pattern_factory.create_python_pattern(code)
+        self.assertEqual(node.get_kind(), ast.Assert.__name__)
+        self.assertEqual(code, node.get_text())
+
+    @parameterized.expand(Factories.extend([
+        ('del x', ...),
+        ('del my_set[0]', ...),
+    ]))
+    def test_delete_statement(self, _, factory, code, *args):
+        pattern_factory = PythonPatternFactory(factory)
+        node = pattern_factory.create_python_pattern(code)
+        self.assertEqual(node.get_kind(), ast.Delete.__name__)
+        self.assertEqual(code, node.get_text())
+
+    @parameterized.expand(Factories.factories)
+    def test_pass(self, _, factory):
+        code = 'pass'
+        pattern_factory = PythonPatternFactory(factory)
+        node = pattern_factory.create_python_pattern(code)
+        self.assertEqual(node.get_kind(), ast.Pass.__name__)
+        self.assertEqual(code, node.get_raw_signature())
+
+    @parameterized.expand(Factories.factories)
+    def test_break_statement(self, _, factory):
+        code = 'break'
+        pattern_factory = PythonPatternFactory(factory)
+        node = pattern_factory.create_python_pattern(code)
+        self.assertEqual(node.get_kind(), ast.Break.__name__)
+        self.assertEqual(code, node.get_raw_signature())
+
+    @parameterized.expand(Factories.factories)
+    def test_cont_statement(self, _, factory):
+        code = 'continue'
+        pattern_factory = PythonPatternFactory(factory)
+        node = pattern_factory.create_python_pattern(code)
+        self.assertEqual(node.get_kind(), ast.Continue.__name__)
+        self.assertEqual(code, node.get_raw_signature())
+
+    @parameterized.expand(Factories.extend([
+        ('del x', ...),
+        ('del my_set[0]', ...),
+    ]))
+    def test_variable_ref(self, _, factory, code, *args):
+        pattern_factory = PythonPatternFactory(factory)
+        node = pattern_factory.create_python_pattern(code)
+        self.assertEqual(node.get_kind(), ast.Delete.__name__)
+        self.assertEqual(code, node.get_raw_signature())
+
+    ### Expressions patterns
+    @parameterized.expand(Factories.extend([
+        ('a', ...),
+        ('x', ...),
+    ]))
+    def test_variable(self, _, factory, code, *args):
+        pattern_factory = PythonPatternFactory(factory)
+        node = pattern_factory.create_python_pattern(code)
+        self.assertEqual(node.get_kind(), ast.Expr.__name__)
+        self.assertEqual(code, node.get_raw_signature())
+
+    @parameterized.expand(Factories.extend([
+        ('Literal[\'left\', \'center\', \'right\']', ...),
+        ('(\'left\', \'center\', \'right\')', ...),
+        ('Final', ...),
+        ('5 > 3', ...),
+        ('str', ...),
+        ('a + b', ...),
+        ('not a', ...),
+        ('a or b', ...),
+        ('Person(name=\'Bob\', age=25, job=\'Designer\')', ...),
+        ('a.attr', ...),
+        ('a[b]', ...),
+        ('a if b else c', ...),
+    ]))
+    def test_expr(self, _, factory, code, *args):
+        pattern_factory = PythonPatternFactory(factory)
+        node = pattern_factory.create_python_pattern(code)
+        self.assertEqual(node.get_kind(), ast.Expr.__name__)
+        self.assertEqual(code, node.get_raw_signature())
+
 
 if __name__ == '__main__':
     unittest.main()
