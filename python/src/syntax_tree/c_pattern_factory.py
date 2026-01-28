@@ -9,7 +9,7 @@ from .ast_shower import ASTShower
 from .ast_factory import ASTFactory
 from .ast_finder import ASTFinder
 
-SHOW_NODE = False
+SHOW_NODE = True
 
 
 class CPatternFactory:
@@ -27,7 +27,7 @@ class CPatternFactory:
         # collect includes #defines  and var decl from the refNode
         if ref_node:
             offset = (
-                Stream(ref_node.get_children())
+                Stream(ref_node.children)
                 .filter(ASTNode.is_part_of_translation_unit)
                 .filter(
                     lambda c: not ASTFinder.matches_kind(
@@ -44,7 +44,7 @@ class CPatternFactory:
                 CPatternFactory.remove_indent(ref_node.get_content(0, offset)) + "\n"
             )
             self.header += (
-                Stream(ref_node.get_children())
+                Stream(ref_node.children)
                 .filter(ASTNode.is_part_of_translation_unit)
                 .filter(
                     lambda c: ASTFinder.matches_kind(
@@ -86,11 +86,11 @@ class CPatternFactory:
         root = self._create(full_text)
         # return the first expression found in the tree as a ASTNode
         return (
-            ASTFinder.find_kind(root.get_children()[-1], "(?i)PAREN_?EXPR")
+            ASTFinder.find_kind(root.children[-1], "(?i)PAREN_?EXPR")
             .filter(ASTNode.is_part_of_translation_unit)
             .find_last()
             .get()
-            .get_children()[0]
+            .children[0]
         )
 
     def create_declarations(
@@ -160,7 +160,7 @@ class CPatternFactory:
             self.header + text, "test." + self.language
         )
         if kind:
-            return ASTFinder.find_kind(root.get_children()[-1], kind).find_first().get()
+            return ASTFinder.find_kind(root.children[-1], kind).find_first().get()
         return root
 
     def create_statement(
@@ -195,10 +195,10 @@ class CPatternFactory:
 
         return (
             Stream(
-                ASTFinder.find_kind(root.get_children()[-1], "(?i)COMPOUND_?STMT")
+                ASTFinder.find_kind(root.children[-1], "(?i)COMPOUND_?STMT")
                 .find_first()
                 .get()
-                .get_children()
+                .children
             )
             .filter(ASTNode.is_part_of_translation_unit)
             .map(lambda n: ASTFinder.find_kind(n, kind).find_first().get())
@@ -274,7 +274,7 @@ class CPPPatternFactory(CPatternFactory):
            }};
         """
         root: ASTNode = self.factory.create_from_text(code, "test." + self.language)
-        target_class = root.get_children()[-1]
+        target_class = root.children[-1]
         # this should yield something like:
         # (TYPE_REF, $var, test.cpp[237:241]): |$var|
         # (CALL_EXPR, , test.cpp[237:266]): |$var($container,$headerCount)|

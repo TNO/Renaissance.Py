@@ -100,13 +100,23 @@ def refactor_with_nested_compositions(args):
     while atu:
         #create an ASTRewriter
         rewriter = ASTRewriter(atu)
-
+        def raw(nodes):
+            res = ''
+            for node in nodes:
+                res += node.text
+            return res + '\n'
         # create a refactoring that use different replacement code for different patterns
         def refactor(match):
-            if match.patterns == pattern1:
-                return rewriter.replace(pattern1replacement, match)
-            return rewriter.replace(pattern2replacement, match)
-            
+            repl2 = pattern2replacement
+            if match.nodes == pattern1:
+                return rewriter.replace(pattern1replacement, match.nodes)
+            for repl in match.expansions:
+                repl2 = repl2.replace(repl, match.expansions[repl].name)
+            for repl in match.expansion_lists:
+                repl2 = repl2.replace(repl, raw(match.expansion_lists[repl]))
+            return rewriter.replace(repl2, match.nodes)
+
+
         # search matches for pattern1 and pattern2 and replace them using the refactor function
         MatchFinder.find_all(atu, pattern1, pattern2).\
             peek(lambda match: print('peek: ' +str(match.get_raw_signatures()))).\

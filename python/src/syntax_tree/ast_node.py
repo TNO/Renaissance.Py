@@ -45,6 +45,12 @@ class ASTNode(ABC):
         super().__init__()
         self.root: ASTNode = root
         self.cache: dict[str, bytes] = {}
+        self.orelse=None
+        self.properties = {}
+
+    @property
+    def expression(self):
+        return self._expression
 
     def is_part_of_translation_unit(self) -> bool:
         return self.get_containing_filename() == self.root.get_containing_filename()
@@ -89,7 +95,7 @@ class ASTNode(ABC):
         parent = self.get_parent()
         if not parent:
             return None
-        siblings = parent.get_children()
+        siblings = parent.children
         index = siblings.index(self)
         return siblings[index - 1] if index > 0 else None
 
@@ -97,7 +103,7 @@ class ASTNode(ABC):
         parent = self.get_parent()
         if not parent:
             return None
-        siblings = parent.get_children()
+        siblings = parent.children
         index = siblings.index(self)
         return siblings[index + 1] if index < len(siblings) - 1 else None
 
@@ -106,7 +112,7 @@ class ASTNode(ABC):
         parent = self._get_parent()
         if not parent:
             return None
-        if pattern.match(parent.get_kind()):
+        if pattern.match(parent.kind):
             return parent
         return parent.get_ancestor(pattern)
 
@@ -135,8 +141,9 @@ class ASTNode(ABC):
     ) -> ASTNode:
         pass
 
-    def get_name(self) -> str:
-        return self._get_name()
+    @property
+    def name(self) -> str:
+        return self._name
 
     def get_containing_filename(self) -> str:
         return self._get_containing_filename()
@@ -147,8 +154,9 @@ class ASTNode(ABC):
     def get_length(self) -> int:
         return self._get_length()
 
-    def get_kind(self) -> str:
-        return self._get_kind()
+    @property
+    def kind(self) -> str:
+        return self._kind
 
     def matches_kind(self, node: ASTNode) -> bool:
         return self._matches_kind(node)
@@ -179,18 +187,15 @@ class ASTNode(ABC):
     def is_statement(self) -> bool:
         return self._is_statement()
 
-    def get_children(self) -> Sequence[ASTNode]:
-        return self._get_children()
+    @property
+    def children(self) -> Sequence[ASTNode]:
+        return self._children
 
     def get_references(self) -> Sequence[ASTReference]:
         return self._get_references()
 
     def get_referenced_by(self) -> Sequence[ASTReference]:
         return self._get_referenced_by()
-
-    @abstractmethod
-    def _get_name(self) -> str:
-        pass
 
     @abstractmethod
     def _get_containing_filename(self) -> str:
@@ -208,12 +213,8 @@ class ASTNode(ABC):
     def _get_length(self) -> int:
         pass
 
-    @abstractmethod
-    def _get_kind(self) -> str:
-        pass
-
     def _matches_kind(self, node: ASTNode) -> bool:
-        return node.get_kind() == self.get_kind()
+        return node.kind == self.kind
 
     @abstractmethod
     def _get_properties(self) -> dict[str, int | str |ASTNode]:
@@ -228,10 +229,6 @@ class ASTNode(ABC):
         pass
 
     @abstractmethod
-    def _get_children(self) -> Sequence[ASTNode]:
-        pass
-
-    @abstractmethod
     def _get_references(self) -> Sequence[ASTReference]:
         pass
 
@@ -241,7 +238,7 @@ class ASTNode(ABC):
 
     def process(self, function: Callable[[ASTNode], None]) -> None:
         function(self)
-        for child in self.get_children():
+        for child in self.children:
             child.process(function)
 
     def accept(self, function: Callable[[ASTNode], VisitorResult]) -> None:
@@ -255,7 +252,7 @@ class ASTNode(ABC):
             None
         """
         if function(self) == VisitorResult.CONTINUE:
-            for child in self.get_children():
+            for child in self.children:
                 child.accept(function)
 
     def get_indent(self) -> int:

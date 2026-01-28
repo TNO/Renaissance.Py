@@ -25,13 +25,13 @@ class TestASTReference(TestCase):
         self.assertGreater(len(refs), 0)
         for ref in refs:
             ref_node = ref.get_node()
-            self.assertEqual(ref_node.get_name().lower(), 'a')
+            self.assertEqual(ref_node.name.lower(), 'a')
             referenced_by = ref_node.get_referenced_by()
             self.assertGreater(len(referenced_by), 0)  # clang python return 2 references, clang json 1
             #clang python has a crosse reference to call clang json to the DeclRefExpr child of the call
-            self.assertTrue(call in [r.get_node() for r in referenced_by] or call.get_children()[0] in [r.get_node() for r in referenced_by])
+            self.assertTrue(call in [r.get_node() for r in referenced_by] or call.children[0] in [r.get_node() for r in referenced_by])
         declarations = ASTFinder.find_kind(ast, '.*(Constructor|Function_?Decl).*').\
-            filter(lambda f: f.get_name()!='f').\
+            filter(lambda f: f.name != 'f').\
             to_list()
         self.assertGreater(len(declarations), 0)
 
@@ -45,7 +45,7 @@ class TestASTReference(TestCase):
         ref = refs[0]
         ref_node = ref.get_node()
         self.assertEqual(ASTFinder.matches_kind(ref_node, 'Function_?Decl'), True)
-        self.assertEqual(ref_node.get_name(), 'f')
+        self.assertEqual(ref_node.name, 'f')
         referenced_by = ref_node.get_referenced_by()
         self.assertGreater(len(referenced_by), 0)  # clang python return 2 references, clang json 1
         self.assertTrue(call in [r.get_node() for r in referenced_by])
@@ -117,7 +117,7 @@ class TestASTReference(TestCase):
         using = ASTFinder.find_kind(ast, '(Type)_?Ref').find_first().or_else(None)
         if not using:
             using = ASTFinder.find_kind(ast, '(CXX_?Record)_?Decl').\
-                filter(lambda n: n.get_name() == 'B').\
+                filter(lambda n: n.name == 'B').\
                 find_first().get()
         assert isinstance(using, ASTNode)
         ASTShower.show_node(using)

@@ -86,8 +86,8 @@ class MatchUtilsTest(TestCase):
     ) -> list[str]:
         for pattern in patterns:
             if MatchUtils.is_multi_wildcard(pattern):
-                result.append(pattern.get_name())
-            MatchUtils.get_multi_wildcard_keys(pattern.get_children(), result)
+                result.append(pattern.name)
+            MatchUtils.get_multi_wildcard_keys(pattern.children, result)
         return result
 
 #     def next_multiplicity(multiplicity: dict[str, int]):

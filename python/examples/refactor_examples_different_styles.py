@@ -83,7 +83,7 @@ def example_replace_old_by_fancy_new(factory, pattern_factory):
 
     # a example of how to use a function iso of lambda to filter the nodes
     def matches_old(node):
-        if node.get_name() == 'old':
+        if node.name == 'old':
             return True
         return False
     
@@ -107,7 +107,7 @@ def example_use_ast_kind_finder(factory, _):
 
     # Find all nodes of kind TYPE_REF (case insensitive) and filter those with name 'old'
     ASTFinder.find_kind(atu, '(?i)TYPE.?REF').\
-        filter(lambda node: node.get_name()=='old').\
+        filter(lambda node: node.name == 'old').\
         for_each(lambda node: rewriter.replace('fancy_new', node))
     
     # Print the results after replacing the old type by fancy_new
@@ -126,7 +126,7 @@ def example_use_ast_function_finder(factory, _):
 
     # Define a match function to find nodes of kind TYPE_REF with name 'old'
     def match(node):
-        result =  ASTFinder.matches_kind(node, 'TYPE_?REF') and node.get_name() == 'old'
+        result = ASTFinder.matches_kind(node, 'TYPE_?REF') and node.name == 'old'
         return result
 
     # Use ASTFinder to find all matching nodes and replace 'old' with 'fancy_new'

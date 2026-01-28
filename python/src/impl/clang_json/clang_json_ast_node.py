@@ -317,7 +317,7 @@ class ClangJsonASTNode(ASTNode):
             # "f(x,y);" and "a = f(3);" that are according to clang NOT statements,
             # but expressions (without the semicolon)
             if (not self._is_statement_or_declaration()) and (
-                self.parent and self.parent.get_kind() in STMT_PARENTS
+                    self.parent and self.parent.kind in STMT_PARENTS
             ):
                 content = self.root.get_binary_file_content()
                 while (
@@ -329,16 +329,12 @@ class ClangJsonASTNode(ASTNode):
             return 0
 
     def _is_statement_or_declaration(self):
-        return re.match("(?i).*(Stmt|Decl)", self.get_kind())
-
-    @override
-    def _get_kind(self) -> str:
-        return self._kind
+        return re.match("(?i).*(Stmt|Decl)", self.kind)
 
     @override
     def _matches_kind(self, node: ASTNode) -> bool:
-        self_kind = self._get_kind()
-        node_kind = node.get_kind()
+        self_kind = self._kind
+        node_kind = node.kind
         return (
             self_kind == node_kind
             or (self_kind.endswith("Literal") and node_kind == "DeclRefExpr")
@@ -432,7 +428,7 @@ class ClangJsonASTNode(ASTNode):
     @override
     def _is_statement(self) -> bool:
         return (
-            self.parent != None and self.parent.get_kind() in STMT_PARENTS
+                self.parent != None and self.parent.kind in STMT_PARENTS
         )  # TODO: Why look at the kind of your parent and not at your own kind?
 
     @override
@@ -449,9 +445,6 @@ class ClangJsonASTNode(ASTNode):
             ]
         return self._children
 
-    @override
-    def _get_name(self) -> str:
-        return self._name
 
     def _derive_name(self) -> str:
         name = self.node.get("name")
@@ -588,8 +581,8 @@ class ReferenceHelper:
 
         # to make clang json compatible with clang python, we add the reference of the DeclRefExpr child to the CallExpr
         if ast_node._kind == "CallExpr":
-            for n in ast_node.get_children():
-                if n.get_kind() == "DeclRefExpr":
+            for n in ast_node.children:
+                if n.kind == "DeclRefExpr":
                     refChild = {
                         k: v
                         for k, v in n.node.items()
@@ -671,27 +664,27 @@ class ReferenceHelper:
             qual_type = tp["qualType"]
             ids = []
             ctorType = EMPTY_STR
-            if ast_node.get_kind() == "CXXConstructExpr":
+            if ast_node.kind == "CXXConstructExpr":
                 ctorType = ast_node._get(["ctorType", "qualType"], EMPTY_STR)
 
             for id, node in ast_node.translation_unit._nodes.items():
-                if node.get_kind() == "CXXRecordDecl" and node.get_name() == qual_type:
+                if node.kind == "CXXRecordDecl" and node.name == qual_type:
                     parent = node.get_parent()
                     matches = True
                     for ns in namespaces:
                         if (
-                            ns != parent.get_name()
-                            or parent.get_kind() != "NamespaceDecl"
+                            ns != parent.name
+                            or parent.kind != "NamespaceDecl"
                         ):
                             matches = False
                         parent = parent.get_parent()
                     if matches:
-                        ids.append((node.get_kind(), id))
-                if ctorType != EMPTY_STR and node.get_kind() == "CXXConstructorDecl":
+                        ids.append((node.kind, id))
+                if ctorType != EMPTY_STR and node.kind == "CXXConstructorDecl":
                     # link all matching
                     matches = node._get(["type", "qualType"], EMPTY_STR) == ctorType
                     if matches:
-                        ids.append((node.get_kind(), id))
+                        ids.append((node.kind, id))
             return ids
         except:
             pass

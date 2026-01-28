@@ -31,5 +31,5 @@ class ASTShower:
         if node.is_part_of_translation_unit():
             node.indent = indent
             output.write(str(node))
-        for child in node.get_children():
+        for child in node.children:
             ASTShower._process_node(output, indent + "  ", child, include_properties)
