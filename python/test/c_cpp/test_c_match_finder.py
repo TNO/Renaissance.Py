@@ -43,11 +43,11 @@ class TestCMatchFinder(TestCase):
             filter(lambda match: match.nodes[0].is_part_of_translation_unit()).to_list()
         if debug_mismatches:
             for match in matches:
-                print(f'\nmatch({[compress(p.get_text()) for p in match.patterns]})'+'{')
-                print(f"  start node: {compress(match.nodes[0].get_text())}")
+                print(f'\nmatch({[compress(p.text) for p in match.patterns]})' + '{')
+                print(f"  start node: {compress(match.nodes[0].text)}")
                 for k, vs in match.nodes().items():
                     # right align the key
-                    print(f"{k.rjust(12)}: {[compress(v.get_text()) for v in vs]}")
+                    print(f"{k.rjust(12)}: {[compress(v.text) for v in vs]}")
                 print('}')
             print('    expected dict should look like:')
             print(f'      {[to_string(match.nodes()) for match in matches]}')
@@ -88,7 +88,7 @@ class TestExpressions(TestCMatchFinder):
     def test(self, _, factory, expression, expected_full_matches: list[str], expected_dicts_per_match: list[dict[str, list[str]]]):
         exprNode = CPatternFactory(factory).create_expression(expression)
         matches = self.do_test(factory, TestStatements.SIMPLE_CPP, [exprNode], recursive=True)
-        self.assertEqual(expected_full_matches, [compress(match.nodes[0].get_text()) for match in matches])
+        self.assertEqual(expected_full_matches, [compress(match.nodes[0].text) for match in matches])
         self.assert_matches(expected_dicts_per_match, matches)
 
 class TestStatements(TestCMatchFinder):
@@ -223,5 +223,5 @@ class TestUseAtuToCreatePattern(TestCMatchFinder):
             filter(lambda match: match.nodes() == names).\
             map(lambda match: match.src_nodes[0]).\
             filter(ASTNode.is_part_of_translation_unit).\
-            map(ASTNode.get_text).to_list() 
+            map(ASTNode.text).to_list()
         self.assertEqual(expected, result)

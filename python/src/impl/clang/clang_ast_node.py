@@ -198,14 +198,14 @@ class ClangASTNode(ASTNode):
     @cache
     def _derive_properties(self) -> dict[str, int|str]:
         result  =  {}
-        offsets = (self.get_containing_filename, self.offset, self.end_offset)
+        offsets = (self.filename, self.offset, self.end_offset)
         if offsets in self.translation_unit.macro_expansions:
-            result['macro_expansion'] = self.get_text()
+            result['macro_expansion'] = self.text
 
         if self.kind == 'BINARY_OPERATOR':
             #TODO remove below code after clang release that supports the getOpCode() statement
             children = self.children
-            start_offset = children[0].offset + children[0].get_length
+            start_offset = children[0].offset + children[0].length
             end_offset = children[1].offset
             operator = self.get_content(start_offset, end_offset)
             result['operator'] = operator.strip()
@@ -221,8 +221,8 @@ class ClangASTNode(ASTNode):
                 end_offset = child.offset
                 prefix_operator = True
             else:
-                start_offset = child.offset + child.get_length
-                end_offset = self.offset + self.get_length
+                start_offset = child.offset + child.length
+                end_offset = self.offset + self.length
                 prefix_operator = False
 
             operator = self.get_content(start_offset, end_offset)

@@ -28,9 +28,9 @@ class ASTRewriter:
     ) -> None:
         self.__rewrites = _RewriteActions(nodes, encoding, correct_indent=correct_indent)
         self.__filename = (
-            nodes[0].root.get_containing_filename
+            nodes[0].root.filename
             if isinstance(nodes, Sequence)
-            else nodes.root.get_containing_filename
+            else nodes.root.filename
         )
 
     def get_filename(self) -> str:
@@ -439,7 +439,7 @@ class _RewriteActions:
         rewriter = ASTRewriter(nodes, self.encoding, correct_indent=False)
         for node in nodes:
             rs = self.__get_text(node)
-            org_rs = node.get_text()
+            org_rs = node.text
             if rs != org_rs:
                 rewriter.replace(rs, node)
         result = rewriter.apply_to_string()
@@ -451,7 +451,7 @@ class _RewriteActions:
             return ""
 
         if node == self.nodes[0]:
-            return node.get_text()
+            return node.text
         # the descendants may need to be rewritten as well
         #        rewrites = [rewrite for rewrite in self.rewrites if any(node.is_ancestor_of(rewrite_node) for rewrite_node in rewrite.nodes)]
         rewrites = [
@@ -464,7 +464,7 @@ class _RewriteActions:
                 node, self.encoding, self.correct_indent, rewrites
             )
             return rewriter.apply_to_string()
-        return node.get_text()
+        return node.text
 
     def __prepare_replacement_content(
         self, new_content: str, target: PatternMatch | ASTNode | Sequence[ASTNode]

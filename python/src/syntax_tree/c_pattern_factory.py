@@ -38,7 +38,7 @@ class CPatternFactory:
                 .reduce(min)
                 .or_else(0)
             )
-            self.language = ref_node.get_containing_filename.split(".")[-1]
+            self.language = ref_node.filename.split(".")[-1]
 
             self.header = (
                 CPatternFactory.remove_indent(ref_node.get_content(0, offset)) + "\n"
@@ -54,7 +54,7 @@ class CPatternFactory:
                 .filter(
                     lambda c: ASTFinder.find_kind(c, "(?i)Compound_?Stmt").count() == 0
                 )
-                .map(lambda c: c.get_text() + ";")
+                .map(lambda c: c.text + ";")
                 .collect(lambda n: "\n".join(n))
                 + "\n"
             )

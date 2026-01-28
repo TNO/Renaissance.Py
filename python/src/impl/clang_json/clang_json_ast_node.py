@@ -302,7 +302,7 @@ class ClangJsonASTNode(ASTNode):
             return ""
         # not included and no file location so it is the same as the parent
         if self.parent:
-            return self.parent.get_containing_filename
+            return self.parent.filename
         return EMPTY_STR
 
     @override
@@ -363,7 +363,7 @@ class ClangJsonASTNode(ASTNode):
         if (
             self._get(["range", "end", "expansionLoc", "offset"], -1) != -1
         ):  # dealing with a macro expansion
-            properties["macro_expansion"] = self.get_text()
+            properties["macro_expansion"] = self.text
         return properties
 
     @override
@@ -473,7 +473,7 @@ class ClangJsonASTNode(ASTNode):
 
     def __derive_end_offset(self) -> int:
         if self.__derive_kind() == "TranslationUnitDecl":
-            return len(self.get_binary_file_content(self.get_containing_filename))
+            return len(self.get_binary_file_content(self.filename))
         offset = self._get(["range", "end", "offset"], default=-1)
         tokLen = self._get(["range", "end", "tokLen"], default=-1)
         if offset == -1:

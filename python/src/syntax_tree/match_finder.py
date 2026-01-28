@@ -455,5 +455,5 @@ def do_log(indent: int, *msgs: str):
 
 
 def raw(nodes: Sequence[ASTNode]):
-    return " ".join([n.get_text() for n in nodes])
+    return " ".join([n.text for n in nodes])
 

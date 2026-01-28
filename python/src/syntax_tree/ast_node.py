@@ -52,28 +52,29 @@ class ASTNode(ABC):
     def __repr__(self):
         raw_lines = self.text.splitlines()
         properties_text = '' if not self.show_props else self.get_properties()
-        prefix = " " if len(raw_lines) < 2 else f"\n{self.indent}"
+        prefix = " " if len(raw_lines) < 2 else f"\n    {self.indent}"
         formatted_lines = [f"{prefix}|{line}|" for line in raw_lines]
-        return f"{self.indent}({self.kind}, {self.name}, {self.file_name}[{self.offset}:{self.offset+self.length}]){properties_text}: {''.join(formatted_lines)}\n"
+        return f"{self.indent}({self.kind}, {self.name}, {self.filename}[{self.offset}:{self.offset+self.length}]){properties_text}:{''.join(formatted_lines)}\n"
 
     @property
     def expression(self):
         return self._expression
 
     def is_part_of_translation_unit(self) -> bool:
-        return self.get_containing_filename == self.root.get_containing_filename
+        return self.filename == self.root.filename
 
     def get_raw_signature(self) -> str:
         start = self.offset
         end = self.extended_end_offset
         if start == end:
             return ""
-        file = self.get_containing_filename
+        file = self.filename
         if not file:
             return ""
         return self.get_content(start, end)
 
-    def get_text(self) -> str:
+    @property
+    def text(self) -> str:
         return TextUtils.shift_left(
             self.get_raw_signature(), self.get_indent, start_line=1
         )
@@ -84,7 +85,7 @@ class ASTNode(ABC):
 
     def get_binary_file_content(self, file_path: Optional[str] = None) -> bytes:
         if not file_path:
-            file_path = self.root.get_containing_filename
+            file_path = self.root.filename
         try:
             return ASTNode.cache[file_path]
         except Exception:
@@ -95,7 +96,7 @@ class ASTNode(ABC):
 
     @property
     def end_offset(self) -> int:
-        return self.offset + self.get_length
+        return self.offset + self.length
 
     @property
     def extended_end_offset(self) -> int:
@@ -158,7 +159,7 @@ class ASTNode(ABC):
         return self._name
 
     @property
-    def get_containing_filename(self) -> str:
+    def filename(self) -> str:
         return self._filename
 
     @property
@@ -166,7 +167,7 @@ class ASTNode(ABC):
         return self._offset
 
     @property
-    def get_length(self) -> int:
+    def length(self) -> int:
         return self._length
 
     @property
