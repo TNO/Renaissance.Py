@@ -116,8 +116,6 @@ class PythonASTNode(ASTNode):
         'parent',
         'offset',
         'length',
-        'kind',
-        'name'
         'offset',
     )
     _fields = ('expresion', 'children', 'orelse', 'properties')
@@ -130,15 +128,15 @@ class PythonASTNode(ASTNode):
         self.node = node
         self.parent = parent
         cls = type(node)
-        self.kind = cls.__name__
+        self._kind = cls.__name__
         self.indent = ''
-        self.name = self._derive_name()
+        self._name = self._derive_name()
         self.text = ast.unparse(self.node)
         self.show_props =False
-        self.children = []
+        self._children = []
         self.orelse = []
         self.properties={}
-        self.expression=None
+        self._expression=None
         if translation_unit:
             self.file_name = translation_unit.file_name
             self.translation_unit = translation_unit
@@ -274,10 +272,6 @@ class PythonASTNode(ASTNode):
         return isinstance(self.node, ast.stmt)
 
     @override
-    def _get_kind(self) -> str:
-        return self.kind
-
-    @override
     def get_raw_signature(self) -> str:
         return self.get_binary_file_content().decode(sys.getfilesystemencoding())
 
@@ -288,7 +282,7 @@ class PythonASTNode(ASTNode):
 
     @override
     def _matches_kind(self, node: ASTNode) -> bool:
-        return self.kind == node.get_kind()
+        return self.kind == node.kind
 
     @override
     @cache
@@ -302,16 +296,6 @@ class PythonASTNode(ASTNode):
     @override
     def _is_statement(self) -> bool:
         return isinstance(self.node, ast.stmt)
-
-    @override
-    @cache
-    def _get_children(self):
-        return self.children
-
-    @override
-    @cache
-    def _get_name(self):
-        return self.name
 
     @override
     @cache

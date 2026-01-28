@@ -21,12 +21,12 @@ class ASTRefactorActions:
 
     def replace_expr(self, name: str, replacement: str, kind: Optional[str] = None):
         def test(n: "ASTNode"):
-            if (kind and ASTFinder.matches_kind(n, kind)) and n.get_name() == name:
+            if (kind and ASTFinder.matches_kind(n, kind)) and n.name == name:
                 yield n
 
         self.processor.find_all(test).for_each(
             lambda n: self.processor.replace(
-                n.get_text().replace(n.get_name(), replacement, 1), n
+                n.get_text().replace(n.name, replacement, 1), n
             )
         )
 
@@ -39,14 +39,14 @@ class ASTRefactorActions:
     ):
         matches_name: Callable[[Optional["ASTNode"]], bool] = (
             lambda n: (not kind or ASTFinder.matches_kind(n, kind))
-            and (not skip_kind or not ASTFinder.matches_kind(n, skip_kind))
-            and n.get_name() == name        # TODO: prevent get_name on None
+                      and (not skip_kind or not ASTFinder.matches_kind(n, skip_kind))
+                      and n.name == name        # TODO: prevent get_name on None
         )
         self.processor.find_all(matches_name).filter(
             lambda n: not n.get_start_offset() in self.replaced
         ).action(lambda n: self.replaced.add(n.get_start_offset())).for_each(
             lambda n: self.processor.replace(
-                n.get_text().replace(n.get_name(), replacement, 1), n
+                n.get_text().replace(n.name, replacement, 1), n
             )
         )
 

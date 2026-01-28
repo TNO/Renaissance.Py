@@ -1,7 +1,6 @@
 import ast
 
 from common import Stream
-from impl.python import find_all
 #This script demonstrates the use of the syntax_tree library to parse and rewrite C code.
 #It specifically showcases nested replacements and multiple patterns.
 from syntax_tree import ASTFactory, CPatternFactory, MatchFinder, ASTRewriter
@@ -58,6 +57,11 @@ def refactor_with_nested_compositions(args):
         # create an ASTRewriter
         rewriter = ASTRewriter(atu)
 
+        def raw(nodes):
+            res = ''
+            for node in nodes:
+                res += node.text
+            return res + '\n'
         # create a refactoring that use different replacement code for different patterns
         def refactor(match):
             repl2 = pattern2replacement
@@ -81,11 +85,7 @@ def refactor_with_nested_compositions(args):
         else:
             atu = None
     return result
-def raw(nodes):
-    res = ''
-    for node in nodes:
-        res += node.text
-    return res+'\n'
+
 
 if __name__ == "__main__":
     import sys

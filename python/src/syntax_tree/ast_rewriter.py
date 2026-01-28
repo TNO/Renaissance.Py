@@ -136,10 +136,10 @@ class _RewriteAction:
         if isinstance(target, ASTNode):
             return [target]
         if isinstance(target, PatternMatch):
-            return target.src_nodes
+            return target.nodes
         assert isinstance(
             target, Sequence
-        ), "type of target violates its type requirements " + type(target)
+        ), "type of target violates its type requirements " + type(target).__name__
         if len(target) > 0:
             if isinstance(target[0], ASTNode):
                 return [n for n in target if isinstance(n, ASTNode)]
@@ -283,6 +283,8 @@ class _RewriteActions:
                 nodes,
             )
         )
+        start_offset =nodes[0].get_start_offset()
+        end_offset =nodes[-1].get_start_offset()+nodes[-1].get_length()+1
         indent = nodes[0].get_indent()
         if self.correct_indent:
             new_content = TextUtils.shift_right(new_content, indent, start_line=1)
@@ -469,7 +471,7 @@ class _RewriteActions:
     ) -> tuple[str, Sequence[ASTNode]]:
         if isinstance(target, PatternMatch):
             new_content = self.__compose_replacement(new_content, [target])
-            node_list = target.src_nodes
+            node_list = target.nodes
         else:
             node_list = (
                 [target] if isinstance(target, ASTNode) else target

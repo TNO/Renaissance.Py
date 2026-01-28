@@ -46,7 +46,7 @@ class CcppShowerTest(unittest.TestCase):
          ', (FUNCTION_DECL, lo, test.c[59:75]): |void lo(int i){}|\n'
          ', (VAR_DECL, na, test.c[84:95]): |int na = 55|\n'
          ']'))
-        real_children = list(filter(lambda n: n.get_kind()!='MACRO_DEFINITION', self.atu.get_children()))
+        real_children = list(filter(lambda n: n.kind != 'MACRO_DEFINITION', self.atu.children))
         self.assertEqual(expected, str(real_children))
 
     def test_show_ast_filter_implicite_Node(self):
@@ -110,7 +110,7 @@ else
 }    
 }
 ''', 'test.c')
-        real_children = list(filter(lambda n: n.get_kind() != 'MACRO_DEFINITION', atu.get_children()))[1]
+        real_children = list(filter(lambda n: n.kind != 'MACRO_DEFINITION', atu.children))[1]
 
         # expect this to work
         # ifstmt = ASTFinder.find_kind(real_children, 'IF_STMT').to_list()[0]
