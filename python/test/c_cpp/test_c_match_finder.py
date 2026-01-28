@@ -1,6 +1,8 @@
 import logging
 from unittest import TestCase
 from parameterized import parameterized
+
+from impl import ClangASTNode
 from syntax_tree import ASTFactory, ASTFinder, ASTShower, ASTNode, MatchFinder, CPatternFactory
 from test.utils_for_tests import to_string, compress, show_node
 from test.c_cpp.factories import Factories
@@ -51,13 +53,25 @@ class TestCMatchFinder(TestCase):
             print(f'      {[to_string(match.nodes()) for match in matches]}')
         return matches
 
-    def assert_matches(self, matches, expected_dicts_per_match):
+    def assert_matches(self, expected_dicts_per_match, matches):
         for match, expected_dict in zip(matches, expected_dicts_per_match):
-            self.assertDictEqual(to_string(match.get_nodes()), expected_dict)
+            self.assertDictEqual(to_string(match.expansions), expected_dict)
         self.assertEqual(len(matches), len(expected_dicts_per_match))
 
 class TestExpressions(TestCMatchFinder):
-        
+    def test_match_expr(self):
+        factory = ASTFactory(ClangASTNode, [])
+        exprNode = CPatternFactory(factory).create_expression('a == $x')
+
+        atu = factory.create_from_text('void fun(){int a,b;\na==3;\na==4;\nb==5;}', "test.c")
+
+        show_node(atu, "CPP code")
+        #find all if and while statements
+        matches = MatchFinder.find_all(atu,exprNode).\
+            filter(lambda match: match.nodes[0].is_part_of_translation_unit()).to_list()
+        self.assertEqual(2, len(matches))
+
+
     @parameterized.expand(Factories.extend([
     ('a == 3',['a==3'], [{}]),   
     ('a == $x',['a==3', 'a==4'], [{'$x':['3']},{'$x':['4']}]),

@@ -22,9 +22,9 @@ MATCH_ALL = '_MatchAll__'
 def is_match(src, cmp,expansion={}) -> bool:
     if isinstance(cmp, ASTNode) and cmp.kind==MATCH_ONE and not src.kind=='Module':
         if cmp.name in expansion:
-            return is_match(src,expansion[cmp.name])
+            return is_match(src,expansion[cmp.name][0])
         else:
-            expansion[cmp.name]=src
+            expansion[cmp.name]=[src]
             return True
     elif isinstance(src, ASTNode) and cmp.kind !=src.kind:
         return False
@@ -52,8 +52,8 @@ def is_match(src, cmp,expansion={}) -> bool:
     elif cmp ==None:
         return src == None
     elif isinstance(cmp, ASTNode):
-        return (is_match(src.kind, cmp.kind,expansion)
-                and is_match(src.expression, cmp.expression,expansion)
+        return ( is_match(src.expression, cmp.expression,expansion)
+                and is_match(src.name, cmp.name, expansion)
                 and is_match(src.properties, cmp.properties,expansion)
                 and is_match(src.children, cmp.children,expansion))
     else:
@@ -75,10 +75,9 @@ def exclude_nodes_by_kind_as_sequence(
     return exclude_nodes_by_kind(exclude_kind, nodes)
 
 class PatternMatch:
-    def __init__(self, nodes, expansion, expansion_list, patterns):
+    def __init__(self, nodes, expansions, patterns):
         self.nodes = nodes
-        self.expansions = expansion
-        self.expansion_lists = expansion_list
+        self.expansions = expansions
         self.patterns = patterns
         self._remaining_nodes: list[ASTNode] = []
     def __str__(self):
@@ -287,8 +286,7 @@ class MatchFinder:
         greedy = False
         foundPosition = 0
         foundPositionInExpandedList = 0
-        expansion = {}
-        expansionList = {}
+        expansions = {}
         foundStatements =[]
 
         # this case does not really make sense
@@ -303,10 +301,10 @@ class MatchFinder:
             pattern = patterns[foundPosition]
             if pattern.kind == MATCH_ALL:
                 current_name = patterns[foundPosition].name
-                if current_name in expansionList:
-                    if is_match(expansionList[current_name][foundPositionInExpandedList], node):
+                if current_name in expansions:
+                    if is_match(expansions[current_name][foundPositionInExpandedList], node):
                         foundPositionInExpandedList = foundPositionInExpandedList + 1
-                        if (foundPositionInExpandedList == len(expansionList[current_name])):
+                        if (foundPositionInExpandedList == len(expansions[current_name])):
                             # found all match
                             foundPositionInExpandedList = 0
                             foundPosition += 1
@@ -318,23 +316,22 @@ class MatchFinder:
                     pattern = patterns[foundPosition]
                     expansion_start = i
                     foundPositionInExpandedList = 0
-            if is_match(node, pattern, expansion):
+            if is_match(node, pattern, expansions):
                 if foundPosition == 0:
                     start = i
                 if greedy == True:
                     greedy = False
                     last_name = patterns[foundPosition - 1].name
-                    if not last_name in expansionList:
-                        expansionList[last_name] = src_nodes[expansion_start:i]
+                    if not last_name in expansions:
+                        expansions[last_name] = src_nodes[expansion_start:i]
                         foundPositionInExpandedList = 0
                 foundPosition += 1
                 if foundPosition == len(patterns):
                     end = i + 1
                     # pattern_match._query_create(MatchUtils.EXACT_MATCH)
 
-                    foundStatements.append(PatternMatch(src_nodes[start:end], expansion, expansionList, patterns))
-                    expansion={}
-                    expansionList={}
+                    foundStatements.append(PatternMatch(src_nodes[start:end], expansions, patterns))
+                    expansions={}
                     foundPosition = 0
             else:
                 if node.expression and len(patterns) == 1:

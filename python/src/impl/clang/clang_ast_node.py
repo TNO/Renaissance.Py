@@ -25,6 +25,7 @@ class ClangASTReference():
 
 
 class ClangTranslationUnit():
+    cache=[]
     def __init__(self, clang_atu:TranslationUnit, file_name:str):
         self.clang_atu = clang_atu
         self.file_name = file_name
@@ -74,15 +75,15 @@ class ClangASTNode(ASTNode):
         self.inserted = insert_kind != None
         self.show_props = False
         self.indent = ''
+        self._filename = self._get_containing_filename()
         self._name = self._derive_name()
-        self._properties = self._derive_properties()
         # if the node has not been added to the translation unit, add it
         # a node might already be added if it is split into multiple nodes
         # an example is for base types like int, char, etc. which are split into multiple nodes
         if self.node.hash not in self.translation_unit._nodes:
             self.translation_unit._nodes[node.hash] = self
-        self.__start_offset = start_offset if start_offset!=None else self.__derive_start_offset()
-        self.__length = length if length != None else self.__derive_length()
+        self._offset = start_offset if start_offset != None else self.__derive_start_offset()
+        self._length = length if length != None else self.__derive_length()
         self._kind = insert_kind if insert_kind != None else self.__derive_kind()
 
         # an fake child is introduced to handle the case where the type of a declaration is not found
@@ -98,7 +99,7 @@ class ClangASTNode(ASTNode):
             if self.node.type.get_declaration().kind is CursorKind.NO_DECL_FOUND: # type: ignore
                 type = self.node.type if self.node.result_type.kind == TypeKind.INVALID else self.node.result_type # type: ignore
                 length_ref = len(type.spelling.encode(sys.getdefaultencoding()))
-                insert_child = ClangASTNode(self.node, self.translation_unit, self, self.__start_offset, length_ref, CursorKind.TYPE_REF.name)  # type: ignore
+                insert_child = ClangASTNode(self.node, self.translation_unit, self, self._offset, length_ref, CursorKind.TYPE_REF.name)  # type: ignore
                 insert_child._children = []
                 self.__inserted_children.append(insert_child)
 
@@ -108,13 +109,9 @@ class ClangASTNode(ASTNode):
         for n in self.node.get_children():
             if not (n.kind.name == 'MACRO_DEFINITION' and n.displayname.startswith('__')):
                 self._children.append(ClangASTNode(ClangASTNode.remove_wrapper(n), self.translation_unit, self) )
-    def __repr__(self):
-        text = self.get_text()
-        raw_lines = text.splitlines()
-        properties_text = '' if not self.show_props else self.get_properties()
-        prefix = " " if len(raw_lines) < 2 else f"\n    {self.indent}"
-        formatted_lines = [f"{prefix}|{line}|" for line in raw_lines]
-        return f"{self.indent}({self.kind}, {self.name}, {self.get_containing_filename}[{self.get_start_offset}:{self.get_start_offset + self.get_length}]){properties_text}:{''.join(formatted_lines)}\n"
+
+        self._properties = self._derive_properties()
+
 
 
     @override
@@ -129,13 +126,13 @@ class ClangASTNode(ASTNode):
     @override
     @staticmethod
     def load_from_text(text: str, file_name: str, extra_args:Sequence[str], working_dir:Path) -> "ClangASTNode":
-        translation_unit: TranslationUnit = ClangASTNode.index.parse(file_name, unsaved_files=[(file_name, text)],  args=[*ClangASTNode.parse_args,*extra_args])
-        ClangASTNode.check_diagnostics(translation_unit, file_name)
-        root_node =  ClangASTNode(translation_unit.cursor, ClangTranslationUnit(translation_unit, file_name=str(file_name)), None)
         # Convert file_content to bytes
         file_content_bytes = text.encode(sys.getfilesystemencoding())
         # add to cache to avoid reading the file again
-        root_node.cache[file_name] = file_content_bytes
+        ASTNode.cache[file_name] = file_content_bytes
+        translation_unit: TranslationUnit = ClangASTNode.index.parse(file_name, unsaved_files=[(file_name, text)],  args=[*ClangASTNode.parse_args,*extra_args])
+        ClangASTNode.check_diagnostics(translation_unit, file_name)
+        root_node =  ClangASTNode(translation_unit.cursor, ClangTranslationUnit(translation_unit, file_name=str(file_name)), None)
         ClangASTNode.check_diagnostics(translation_unit, file_name)
         return root_node
 
@@ -175,19 +172,11 @@ class ClangASTNode(ASTNode):
         except:
             return EMPTY_STR
 
-    @override
-    def _get_start_offset(self) -> int: 
-        return self.__start_offset
 
     @override
-    def _get_length(self) -> int: 
-        return self.__length
-
-    @override
-    @cache
-    def _get_extended_end_offset(self) -> int: 
+    def _get_extended_end_offset(self) -> int:
         try: 
-            endOffset =  self.__start_offset + self.__length
+            endOffset = self._offset + self._length
             if (not self._is_statement_or_declaration()) and (self.parent and self.parent.kind in STMT_PARENTS):
                 content = self.root.get_binary_file_content()
                 while endOffset < len(content) and not content[endOffset-1] in b';':
@@ -209,15 +198,15 @@ class ClangASTNode(ASTNode):
     @cache
     def _derive_properties(self) -> dict[str, int|str]:
         result  =  {}
-        offsets = (self.get_containing_filename, self.get_start_offset, self.get_end_offset)
+        offsets = (self.get_containing_filename, self.offset, self.end_offset)
         if offsets in self.translation_unit.macro_expansions:
             result['macro_expansion'] = self.get_text()
 
         if self.kind == 'BINARY_OPERATOR':
             #TODO remove below code after clang release that supports the getOpCode() statement
             children = self.children
-            start_offset = children[0].get_start_offset + children[0].get_length
-            end_offset = children[1].get_start_offset
+            start_offset = children[0].offset + children[0].get_length
+            end_offset = children[1].offset
             operator = self.get_content(start_offset, end_offset)
             result['operator'] = operator.strip()
             # next statement works in C++ but not in Python (yet) will be released later
@@ -227,13 +216,13 @@ class ClangASTNode(ASTNode):
             child = self.children[0]
             #list all attributes of self.node excluding the once starting with _
 
-            if child.get_start_offset > self.get_start_offset:
-                start_offset = self.get_start_offset
-                end_offset = child.get_start_offset
+            if child.offset > self.offset:
+                start_offset = self.offset
+                end_offset = child.offset
                 prefix_operator = True
             else:
-                start_offset = child.get_start_offset + child.get_length
-                end_offset = self.get_start_offset + self.get_length
+                start_offset = child.offset + child.get_length
+                end_offset = self.offset + self.get_length
                 prefix_operator = False
 
             operator = self.get_content(start_offset, end_offset)

@@ -36,6 +36,7 @@ class ASTReference:
 
 # To make usage of the concrete class methods easier, ASTNode MUST NOT have ABSTRACT public classes!!
 class ASTNode(ABC):
+    cache: dict[str, bytes] = {}
     """
     The base class to represent an AST node.
     It is an abstract class that should be inherited by concrete classes that represent specific AST nodes.
@@ -44,10 +45,16 @@ class ASTNode(ABC):
     def __init__(self, root: ASTNode) -> None:
         super().__init__()
         self.root: ASTNode = root
-        self.cache: dict[str, bytes] = {}
         self.orelse=None
-        self.properties = {}
+        self._properties = {}
         self._expression =None
+
+    def __repr__(self):
+        raw_lines = self.text.splitlines()
+        properties_text = '' if not self.show_props else self.get_properties()
+        prefix = " " if len(raw_lines) < 2 else f"\n{self.indent}"
+        formatted_lines = [f"{prefix}|{line}|" for line in raw_lines]
+        return f"{self.indent}({self.kind}, {self.name}, {self.file_name}[{self.offset}:{self.offset+self.length}]){properties_text}: {''.join(formatted_lines)}\n"
 
     @property
     def expression(self):
@@ -57,8 +64,8 @@ class ASTNode(ABC):
         return self.get_containing_filename == self.root.get_containing_filename
 
     def get_raw_signature(self) -> str:
-        start = self.get_start_offset
-        end = self.get_extended_end_offset
+        start = self.offset
+        end = self.extended_end_offset
         if start == end:
             return ""
         file = self.get_containing_filename
@@ -79,19 +86,19 @@ class ASTNode(ABC):
         if not file_path:
             file_path = self.root.get_containing_filename
         try:
-            return self.cache[file_path]
+            return ASTNode.cache[file_path]
         except Exception:
             with open(file_path, "rb") as f:
                 content = f.read()
-                self.cache[file_path] = content
+                ASTNode.cache[file_path] = content
                 return content
 
     @property
-    def get_end_offset(self) -> int:
-        return self.get_start_offset + self.get_length
+    def end_offset(self) -> int:
+        return self.offset + self.get_length
 
     @property
-    def get_extended_end_offset(self) -> int:
+    def extended_end_offset(self) -> int:
         return self._get_extended_end_offset()
 
     @property
@@ -152,15 +159,15 @@ class ASTNode(ABC):
 
     @property
     def get_containing_filename(self) -> str:
-        return self._get_containing_filename()
+        return self._filename
 
     @property
-    def get_start_offset(self) -> int:
-        return self._get_start_offset()
+    def offset(self) -> int:
+        return self._offset
 
     @property
     def get_length(self) -> int:
-        return self._get_length()
+        return self._length
 
     @property
     def kind(self) -> str:
@@ -169,7 +176,6 @@ class ASTNode(ABC):
     def matches_kind(self, node: ASTNode) -> bool:
         return self._matches_kind(node)
 
-    @cache
     def get_frozen_properties(self) -> frozenset[tuple[str, Any]]:
         # TODO How to get type correct? How to get right of pyright: ignore comments?
         def freeze(value: Any) -> Any:
@@ -192,11 +198,11 @@ class ASTNode(ABC):
 
     @property
     def get_parent(self) -> Optional[ASTNode]:
-        return self._get_parent()
+        return self._parent
 
     @property
     def is_statement(self) -> bool:
-        return self._is_statement()
+        return self._is_statement
 
     @property
     def children(self) -> Sequence[ASTNode]:
@@ -204,11 +210,11 @@ class ASTNode(ABC):
 
     @property
     def get_references(self) -> Sequence[ASTReference]:
-        return self._get_references()
+        return self.references
 
     @property
     def get_referenced_by(self) -> Sequence[ASTReference]:
-        return self._get_referenced_by()
+        return self.referenced_by
 
     def process(self, function: Callable[[ASTNode], None]) -> None:
         function(self)
@@ -234,5 +240,5 @@ class ASTNode(ABC):
         if not self.is_part_of_translation_unit():
             return 0
         content = self.root.get_binary_file_content()
-        offset = self.get_start_offset
+        offset = self.offset
         return TextUtils.get_indent(content, offset)

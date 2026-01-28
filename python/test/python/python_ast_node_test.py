@@ -213,7 +213,7 @@ def outer():
         factory = ASTFactory(PythonASTNode, [])
         atu = factory.create_from_text('ba(55)\nca(555)\nlo(4444)\nna=55', 'apple.py')
         second_stmt = atu.children()[1]
-        self.assertEqual(7, second_stmt.get_start_offset)
+        self.assertEqual(7, second_stmt.offset)
         self.assertEqual(7, second_stmt.get_length)
         self.assertEqual('apple.py', second_stmt.get_containing_filename)
         self.assertEqual(atu.translation_unit, second_stmt.translation_unit)

@@ -314,7 +314,7 @@ class ClangJsonASTNode(ASTNode):
         return self._length
 
     @override
-    def get_end_offset(self) -> int:
+    def end_offset(self) -> int:
         return self._end_offset
 
     @override

@@ -34,7 +34,7 @@ class CPatternFactory:
                         c, "(?i)Macro.*|Inclusion_?Directive"
                     )
                 )
-                .map(ASTNode.get_start_offset)
+                .map(lambda n: n.offset)
                 .reduce(min)
                 .or_else(0)
             )
