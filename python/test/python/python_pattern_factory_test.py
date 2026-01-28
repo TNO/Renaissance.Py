@@ -20,7 +20,7 @@ class PythonFactoryTestCase(unittest.TestCase):
         """
         pattern_factory = PythonPatternFactory(factory)
         node = pattern_factory.create_python_pattern(statement)
-        self.assertTrue(node.is_statement())
+        self.assertTrue(node.is_statement)
         self.assertEqual(statement, node.get_text())
 
     @parameterized.expand(Factories.factories)

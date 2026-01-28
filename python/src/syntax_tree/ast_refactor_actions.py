@@ -43,8 +43,8 @@ class ASTRefactorActions:
                       and n.name == name        # TODO: prevent get_name on None
         )
         self.processor.find_all(matches_name).filter(
-            lambda n: not n.get_start_offset() in self.replaced
-        ).action(lambda n: self.replaced.add(n.get_start_offset())).for_each(
+            lambda n: not n.get_start_offset in self.replaced
+        ).action(lambda n: self.replaced.add(n.get_start_offset)).for_each(
             lambda n: self.processor.replace(
                 n.get_text().replace(n.name, replacement, 1), n
             )
@@ -63,8 +63,8 @@ class ASTRefactorActions:
             and n.get_text() == text      # TODO: prevent get_text on None
         )
         self.processor.find_all(matches_text).filter(
-            lambda n: not n.get_start_offset() in self.replaced
-        ).action(lambda n: self.replaced.add(n.get_start_offset())).for_each(
+            lambda n: not n.get_start_offset in self.replaced
+        ).action(lambda n: self.replaced.add(n.get_start_offset)).for_each(
             lambda n: self.processor.replace(replacement, n)
         )
 

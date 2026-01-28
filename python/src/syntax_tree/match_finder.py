@@ -52,7 +52,8 @@ def is_match(src, cmp,expansion={}) -> bool:
     elif cmp ==None:
         return src == None
     elif isinstance(cmp, ASTNode):
-        return (is_match(src.expression, cmp.expression,expansion)
+        return (is_match(src.kind, cmp.kind,expansion)
+                and is_match(src.expression, cmp.expression,expansion)
                 and is_match(src.properties, cmp.properties,expansion)
                 and is_match(src.children, cmp.children,expansion))
     else:
@@ -123,7 +124,7 @@ class PatternMatch:
         part_of_translation_unit: bool,
     ) -> Iterable[PatternMatch]:
         for n in self.src_nodes:
-            for ref in n.get_referenced_by():
+            for ref in n.get_referenced_by:
                 yield from MatchFinder.find_all_strict(
                     ref.get_node(),
                     patterns_list,
@@ -137,7 +138,7 @@ class PatternMatch:
         recursive: bool, exclude_kind: str, part_of_translation_unit: bool
     ) -> Iterable[PatternMatch]:
         for n in self.src_nodes:
-            for ref in n.get_references():
+            for ref in n.get_references:
                 yield from MatchFinder.find_all_strict(
                     [ref.get_node()],
                     patterns_list,

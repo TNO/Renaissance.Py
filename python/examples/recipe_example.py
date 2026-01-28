@@ -226,7 +226,7 @@ class MyRefactor:
                 # and then search for the referenced by calls to the constructor
                 for constructor_call in constructor_match.match_referenced_by([constructor_call_pattern]).to_iterable():
                     var_node = constructor_call.get_nodes()['$var'][0]
-                    parent = var_node.get_parent()
+                    parent = var_node.get_parent
                     assert isinstance(parent, ASTNode), f'{parent} is not an ASTNode'
                     header_count = constructor_call.get_as_int('$headerCount')
                     # remove the count argument from the constructor call
@@ -245,7 +245,7 @@ class MyRefactor:
                         # replace the constructor call with a ListViewCustom object
                         ast_processor.replace(f"ListViewCustom {var}({container});",parent)
                         # find reference to the declaration
-                        size_match = Stream(parent.get_referenced_by()).\
+                        size_match = Stream(parent.get_referenced_by).\
                             map(lambda r: r.get_node()).\
                             map(lambda n: n.get_ancestor('Call_?Expr')).\
                             find_last().or_else(None)

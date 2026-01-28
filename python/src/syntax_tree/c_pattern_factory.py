@@ -28,7 +28,7 @@ class CPatternFactory:
         if ref_node:
             offset = (
                 Stream(ref_node.children)
-                .filter(ASTNode.is_part_of_translation_unit)
+                .filter(lambda n : n.is_part_of_translation_unit)
                 .filter(
                     lambda c: not ASTFinder.matches_kind(
                         c, "(?i)Macro.*|Inclusion_?Directive"
@@ -38,7 +38,7 @@ class CPatternFactory:
                 .reduce(min)
                 .or_else(0)
             )
-            self.language = ref_node.get_containing_filename().split(".")[-1]
+            self.language = ref_node.get_containing_filename.split(".")[-1]
 
             self.header = (
                 CPatternFactory.remove_indent(ref_node.get_content(0, offset)) + "\n"
@@ -291,7 +291,7 @@ class CPPPatternFactory(CPatternFactory):
         )
         # include the preceding typeref
         assert isinstance(call_expr, ASTNode), "No call expression found"
-        type_ref = call_expr.get_preceding_sibling()
+        type_ref = call_expr.get_preceding_sibling
         assert isinstance(type_ref, ASTNode), "No type ref found"
         # return the constrained pattern where the first node must be of type TypeRef
         # return ConstrainedPattern([type_ref, call_expr], lambda m: ASTFinder.matches_kind(m.src_nodes[0], 'TypeRef'))

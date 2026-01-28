@@ -28,9 +28,9 @@ class ASTRewriter:
     ) -> None:
         self.__rewrites = _RewriteActions(nodes, encoding, correct_indent=correct_indent)
         self.__filename = (
-            nodes[0].root.get_containing_filename()
+            nodes[0].root.get_containing_filename
             if isinstance(nodes, Sequence)
-            else nodes.root.get_containing_filename()
+            else nodes.root.get_containing_filename
         )
 
     def get_filename(self) -> str:
@@ -168,7 +168,7 @@ class _RewriteActions:
         )
         self.encoding = encoding
         self.content = self.nodes[0].root.get_binary_file_content()[
-            self.nodes[0].get_start_offset() : self.nodes[-1].get_extended_end_offset()
+            self.nodes[0].get_start_offset: self.nodes[-1].get_extended_end_offset
         ]
         self.correct_indent = correct_indent
 
@@ -276,16 +276,16 @@ class _RewriteActions:
             return
         start_offset, end_offset = (
             _RewriteActions.__correct_for_comments_and_whitespace(
-                self.nodes[0].get_start_offset(),
+                self.nodes[0].get_start_offset,
                 self.content,
                 include_whitespace,
                 include_comments,
                 nodes,
             )
         )
-        start_offset =nodes[0].get_start_offset()
-        end_offset =nodes[-1].get_start_offset()+nodes[-1].get_length()+1
-        indent = nodes[0].get_indent()
+        # start_offset =nodes[0].get_start_offset()
+        # end_offset =nodes[-1].get_start_offset()+nodes[-1].get_length()+1
+        indent = nodes[0].get_indent
         if self.correct_indent:
             new_content = TextUtils.shift_right(new_content, indent, start_line=1)
         self.__replace_bytes(rewriter, start_offset, end_offset, new_content)
@@ -310,10 +310,10 @@ class _RewriteActions:
         """
         if not nodes:
             return
-        indent = nodes[0].get_indent()
+        indent = nodes[0].get_indent
         start_offset, end_offset = (
             _RewriteActions.__correct_for_comments_and_whitespace(
-                self.nodes[0].get_start_offset(),
+                self.nodes[0].get_start_offset,
                 self.content,
                 include_whitespace,
                 include_comments,
@@ -343,12 +343,12 @@ class _RewriteActions:
         if not nodes:
             return
         content = self.content
-        indent = TextUtils.get_spaces_before(content, nodes[0].get_start_offset())
+        indent = TextUtils.get_spaces_before(content, nodes[0].get_start_offset)
         spaces = " " * indent
         # if flattened_nodes[-1] has a new line after white space then we need to add a new line:
         ext_start_offset, ext_end_offset = (
             _RewriteActions.__correct_for_comments_and_whitespace(
-                self.nodes[0].get_start_offset(),
+                self.nodes[0].get_start_offset,
                 self.content,
                 include_whitespace,
                 include_comments,
@@ -443,7 +443,7 @@ class _RewriteActions:
             if rs != org_rs:
                 rewriter.replace(rs, node)
         result = rewriter.apply_to_string()
-        indent = nodes[0].get_indent()
+        indent = nodes[0].get_indent
         return TextUtils.shift_left(result, indent, start_line=1)
 
     def __get_text(self, node: ASTNode) -> str:
@@ -491,8 +491,8 @@ class _RewriteActions:
     @staticmethod
     def _get_parent_statement(node : ASTNode):
         parent = node
-        while parent and not parent.is_statement():
-            parent = parent.get_parent()
+        while parent and not parent.is_statement:
+            parent = parent.get_parent
         return parent
 
     @staticmethod
@@ -503,16 +503,16 @@ class _RewriteActions:
         include_comments: bool,
         nodes: Sequence[ASTNode],
     ):
-        start_offset = nodes[0].get_start_offset() - offset
-        end_offset = nodes[-1].get_extended_end_offset() - offset
+        start_offset = nodes[0].get_start_offset - offset
+        end_offset = nodes[-1].get_extended_end_offset - offset
         if include_comments:
-            preceding_node = nodes[0].get_preceding_sibling()
-            parent = nodes[0].get_parent()
+            preceding_node = nodes[0].get_preceding_sibling
+            parent = nodes[0].get_parent
             start_comment_location = 0
             if preceding_node:
                 # start after the comment of the preceding node
                 start_comment_location = (
-                    preceding_node.get_extended_end_offset() - offset
+                        preceding_node.get_extended_end_offset - offset
                 )
                 preceding_end_offset = _RewriteActions.__get_comment_after_location(
                     start_comment_location, start_offset, content
@@ -520,18 +520,18 @@ class _RewriteActions:
                 if preceding_end_offset != (-1, -1):
                     start_comment_location = preceding_end_offset[1]
             elif parent:
-                start_comment_location = parent.get_start_offset() - offset
+                start_comment_location = parent.get_start_offset - offset
             # get the comment belonging to the preceding node
             extended_location = _RewriteActions._get_comment_location(
                 start_comment_location, start_offset, content
             )
             if extended_location != (-1, -1):
                 start_offset = extended_location[0]
-            next_sibling = nodes[-1].get_next_sibling()
+            next_sibling = nodes[-1].get_next_sibling
             end_comment_location = (
-                next_sibling.get_start_offset() - offset
+                next_sibling.get_start_offset - offset
                 if next_sibling
-                else parent.get_end_offset() - offset if parent else len(content)
+                else parent.get_end_offset - offset if parent else len(content)
             )
             location_after_comment = _RewriteActions.__get_comment_after_location(
                 end_offset, end_comment_location, content
@@ -543,7 +543,7 @@ class _RewriteActions:
         return start_offset, end_offset
 
     def cor_offset(self, offset: int):
-        return offset - self.nodes[0].get_start_offset()
+        return offset - self.nodes[0].get_start_offset
 
     @staticmethod
     def _get_comment_location(
@@ -614,9 +614,9 @@ class _RewriteActions:
     @staticmethod
     def __get_depth(node: ASTNode) -> int:
         depth = 0
-        parent = node.get_parent()
+        parent = node.get_parent
         while parent:
             if ASTFinder.matches_kind(parent, "(?i)Compound_?Stmt"):
                 depth += 1
-            parent = parent.get_parent()
+            parent = parent.get_parent
         return depth

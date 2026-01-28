@@ -1,12 +1,8 @@
 import ast
 import unittest
-from typing import Sequence
 
-import impl.python.python_ast_node
 from impl import PythonASTNode, PythonPatternFactory
-from impl.python import match_pattern, find_all, match
 from syntax_tree import ASTFactory, MatchFinder
-from syntax_tree.match_finder import MatchUtils
 
 
 class PythonMatcherTest(unittest.TestCase):

@@ -2,11 +2,11 @@ from unittest import TestCase
 from parameterized import parameterized
 from syntax_tree import ASTRewriter, CPatternFactory, MatchFinder, ASTFactory, ASTNode, ASTShower
 from typing import Callable, Sequence
-from test.utils_for_tests import compress
+from utils_for_tests import compress
 
 from syntax_tree.ast_processor import ASTProcessor
 
-from test.c_cpp.factories import Factories
+from c_cpp.factories import Factories
 
 VERBOSE = False
 AST_SHOWER = False
@@ -36,7 +36,7 @@ class TestRewrites(TestCase):
         patternFactory = CPatternFactory(factory)
         declaration_pattern = patternFactory.create_declaration('int a=3;')
         rewriter = ASTRewriter(atu)
-        for match in MatchFinder.find_all(atu, [declaration_pattern]).map(lambda m: m.src_nodes).to_iterable():
+        for match in MatchFinder.find_all(atu, [declaration_pattern]).map(lambda m: m.nodes).to_iterable():
             action(rewriter,replacement, match, include_whitespace, include_comments)
         expected_result = factory.create_from_text(expected, 'test.cpp')
         actual = rewriter.apply_to_string()

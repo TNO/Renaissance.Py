@@ -1,10 +1,8 @@
-import ast
 import unittest
-from parameterized import parameterized
-from impl import PythonASTNode, PythonPatternFactory, ClangASTNode
-from impl.python import find_all
-from syntax_tree import ASTFactory, MatchFinder, ASTShower, ASTFinder
-import astpretty
+
+from impl import PythonASTNode
+from syntax_tree import ASTFactory
+
 
 def walk(node):
     from collections import deque

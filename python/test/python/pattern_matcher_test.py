@@ -4,9 +4,8 @@ import unittest
 from unittest.mock import patch
 
 from impl import PythonASTNode, PythonPatternFactory
-from impl.python import match, MATCH_ONE, MATCH_ALL
 from syntax_tree import ASTFactory, MatchFinder
-from syntax_tree.match_finder import MatchUtils, MatchResult
+from syntax_tree.match_finder import MATCH_ONE
 
 
 class PythonMatcherTest(unittest.TestCase):

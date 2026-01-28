@@ -73,7 +73,7 @@ class TestStatements(TestCPatternFactory):
         self.assertEqual(len(created_statements), expected_stmts)
         self.assertEqual(count_refs, expected_refs)
         for stmt in created_statements:
-            self.assertTrue(stmt.is_statement())
+            self.assertTrue(stmt.is_statement)
 
 
 class TestUseAtuToCreatePatterns(TestCPatternFactory):
@@ -121,5 +121,5 @@ class TestUseAtuToCreatePatterns(TestCPatternFactory):
         pattern_root = patternFactory.create(statementText)
 
         # the user must pick it's own pattern in this case the last statement
-        self.assertTrue(pattern_root.children[-1].is_statement())
+        self.assertTrue(pattern_root.children[-1].is_statement)
         self.assertEqual(pattern_root.children[-1].get_raw_signature() + ';', statementText)

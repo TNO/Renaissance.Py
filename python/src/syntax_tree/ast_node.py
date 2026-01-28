@@ -47,27 +47,28 @@ class ASTNode(ABC):
         self.cache: dict[str, bytes] = {}
         self.orelse=None
         self.properties = {}
+        self._expression =None
 
     @property
     def expression(self):
         return self._expression
 
     def is_part_of_translation_unit(self) -> bool:
-        return self.get_containing_filename() == self.root.get_containing_filename()
+        return self.get_containing_filename == self.root.get_containing_filename
 
     def get_raw_signature(self) -> str:
-        start = self.get_start_offset()
-        end = self.get_extended_end_offset()
+        start = self.get_start_offset
+        end = self.get_extended_end_offset
         if start == end:
             return ""
-        file = self.get_containing_filename()
+        file = self.get_containing_filename
         if not file:
             return ""
         return self.get_content(start, end)
 
     def get_text(self) -> str:
         return TextUtils.shift_left(
-            self.get_raw_signature(), self.get_indent(), start_line=1
+            self.get_raw_signature(), self.get_indent, start_line=1
         )
 
     def get_content(self, start: int, end: int) -> str:
@@ -76,7 +77,7 @@ class ASTNode(ABC):
 
     def get_binary_file_content(self, file_path: Optional[str] = None) -> bytes:
         if not file_path:
-            file_path = self.root.get_containing_filename()
+            file_path = self.root.get_containing_filename
         try:
             return self.cache[file_path]
         except Exception:
@@ -85,22 +86,26 @@ class ASTNode(ABC):
                 self.cache[file_path] = content
                 return content
 
+    @property
     def get_end_offset(self) -> int:
-        return self.get_start_offset() + self.get_length()
+        return self.get_start_offset + self.get_length
 
+    @property
     def get_extended_end_offset(self) -> int:
         return self._get_extended_end_offset()
 
+    @property
     def get_preceding_sibling(self) -> Optional[ASTNode]:
-        parent = self.get_parent()
+        parent = self.get_parent
         if not parent:
             return None
         siblings = parent.children
         index = siblings.index(self)
         return siblings[index - 1] if index > 0 else None
 
+    @property
     def get_next_sibling(self) -> Optional[ASTNode]:
-        parent = self.get_parent()
+        parent = self.get_parent
         if not parent:
             return None
         siblings = parent.children
@@ -120,7 +125,7 @@ class ASTNode(ABC):
         return node.is_ancestor_of(self)
 
     def is_ancestor_of(self, descendant: ASTNode) -> bool:
-        parent = descendant.get_parent()
+        parent = descendant.get_parent
         if parent == self:
             return True
         if not parent:
@@ -145,12 +150,15 @@ class ASTNode(ABC):
     def name(self) -> str:
         return self._name
 
+    @property
     def get_containing_filename(self) -> str:
         return self._get_containing_filename()
 
+    @property
     def get_start_offset(self) -> int:
         return self._get_start_offset()
 
+    @property
     def get_length(self) -> int:
         return self._get_length()
 
@@ -178,12 +186,15 @@ class ASTNode(ABC):
 
         return frozenset(freeze(self._get_properties()))
 
-    def get_properties(self) -> dict[str, int | str]:
-        return self._get_properties()
+    @property
+    def properties(self) -> dict[str, int | str]:
+        return self._properties
 
+    @property
     def get_parent(self) -> Optional[ASTNode]:
         return self._get_parent()
 
+    @property
     def is_statement(self) -> bool:
         return self._is_statement()
 
@@ -191,50 +202,13 @@ class ASTNode(ABC):
     def children(self) -> Sequence[ASTNode]:
         return self._children
 
+    @property
     def get_references(self) -> Sequence[ASTReference]:
         return self._get_references()
 
+    @property
     def get_referenced_by(self) -> Sequence[ASTReference]:
         return self._get_referenced_by()
-
-    @abstractmethod
-    def _get_containing_filename(self) -> str:
-        pass
-
-    @abstractmethod
-    def _get_start_offset(self) -> int:
-        pass
-
-    @abstractmethod
-    def _get_extended_end_offset(self) -> int:
-        pass
-
-    @abstractmethod
-    def _get_length(self) -> int:
-        pass
-
-    def _matches_kind(self, node: ASTNode) -> bool:
-        return node.kind == self.kind
-
-    @abstractmethod
-    def _get_properties(self) -> dict[str, int | str |ASTNode]:
-        pass
-
-    @abstractmethod
-    def _get_parent(self) -> Optional[ASTNode]:
-        pass
-
-    @abstractmethod
-    def _is_statement(self) -> bool:
-        pass
-
-    @abstractmethod
-    def _get_references(self) -> Sequence[ASTReference]:
-        pass
-
-    @abstractmethod
-    def _get_referenced_by(self) -> Sequence[ASTReference]:
-        pass
 
     def process(self, function: Callable[[ASTNode], None]) -> None:
         function(self)
@@ -255,9 +229,10 @@ class ASTNode(ABC):
             for child in self.children:
                 child.accept(function)
 
+    @property
     def get_indent(self) -> int:
         if not self.is_part_of_translation_unit():
             return 0
         content = self.root.get_binary_file_content()
-        offset = self.get_start_offset()
+        offset = self.get_start_offset
         return TextUtils.get_indent(content, offset)

@@ -5,7 +5,7 @@ from unittest import TestCase
 from unittest.mock import Mock
 
 from syntax_tree import ASTNode
-from syntax_tree.match_finder import MatchUtils
+
 
 VERBOSE = False
 DEFAULT_EXCLUDE_KIND = "comment"

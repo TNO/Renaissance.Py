@@ -159,6 +159,15 @@ class ClangJsonASTNode(ASTNode):
                     self.__inserted_children.append(insert_child)
             # add the declaration as node
             # deep clone the type node and remove the parentheses
+        self._children = self.__inserted_children + [
+            ClangJsonASTNode(
+                ClangJsonASTNode._remove_wrapper(n),
+                translation_unit=self.translation_unit,
+                parent=self,
+            )
+            for n in self.node.get("inner", [])
+            if not n.get("isImplicit", False)
+        ]
 
     @override
     @staticmethod
@@ -293,7 +302,7 @@ class ClangJsonASTNode(ASTNode):
             return ""
         # not included and no file location so it is the same as the parent
         if self.parent:
-            return self.parent.get_containing_filename()
+            return self.parent.get_containing_filename
         return EMPTY_STR
 
     @override
@@ -431,20 +440,6 @@ class ClangJsonASTNode(ASTNode):
                 self.parent != None and self.parent.kind in STMT_PARENTS
         )  # TODO: Why look at the kind of your parent and not at your own kind?
 
-    @override
-    def _get_children(self) -> Sequence[ClangJsonASTNode]:
-        if self._children is None:
-            self._children = self.__inserted_children + [
-                ClangJsonASTNode(
-                    ClangJsonASTNode._remove_wrapper(n),
-                    translation_unit=self.translation_unit,
-                    parent=self,
-                )
-                for n in self.node.get("inner", [])
-                if not n.get("isImplicit", False)
-            ]
-        return self._children
-
 
     def _derive_name(self) -> str:
         name = self.node.get("name")
@@ -478,7 +473,7 @@ class ClangJsonASTNode(ASTNode):
 
     def __derive_end_offset(self) -> int:
         if self.__derive_kind() == "TranslationUnitDecl":
-            return len(self.get_binary_file_content(self.get_containing_filename()))
+            return len(self.get_binary_file_content(self.get_containing_filename))
         offset = self._get(["range", "end", "offset"], default=-1)
         tokLen = self._get(["range", "end", "tokLen"], default=-1)
         if offset == -1:
@@ -669,7 +664,7 @@ class ReferenceHelper:
 
             for id, node in ast_node.translation_unit._nodes.items():
                 if node.kind == "CXXRecordDecl" and node.name == qual_type:
-                    parent = node.get_parent()
+                    parent = node.get_parent
                     matches = True
                     for ns in namespaces:
                         if (
@@ -677,7 +672,7 @@ class ReferenceHelper:
                             or parent.kind != "NamespaceDecl"
                         ):
                             matches = False
-                        parent = parent.get_parent()
+                        parent = parent.get_parent
                     if matches:
                         ids.append((node.kind, id))
                 if ctorType != EMPTY_STR and node.kind == "CXXConstructorDecl":

@@ -4,7 +4,6 @@ from _ast import AST
 from typing import Sequence
 
 from impl import PythonASTNode, PythonPatternFactory, ClangASTNode
-from impl.python import match_pattern, find_all, match
 from syntax_tree import ASTFactory, MatchFinder, ASTShower, CPatternFactory, ASTFinder
 
 
