@@ -118,7 +118,6 @@ class PythonASTNode(ASTNode):
         'length',
         'offset',
     )
-    _fields = ('expresion', 'children', 'orelse', 'properties')
 
     def __init__(self, node: ast.AST, translation_unit: PythonTranslationUnit = None, parent=None,
                  start_offset: Optional[int] = None, length: Optional[int] = None, insert_kind: Optional[str] = None):
@@ -148,27 +147,27 @@ class PythonASTNode(ASTNode):
             self.translation_unit = None
 
         if (isinstance(node, str)):
-            self.__kind = 'Name'
+            self._kind = 'Name'
             return
         if (isinstance(node, ast.Expr) and isinstance(node.value, ast.Name) ) or isinstance(node, ast.Name):
                 id = node.id if isinstance(node, ast.Name) else node.value.id
                 if id.startswith(MATCH_ONE):
-                    self.kind = MATCH_ONE
+                    self._kind = MATCH_ONE
                 elif id.startswith(MATCH_ALL):
-                    self.kind = MATCH_ALL
+                    self._kind = MATCH_ALL
         for name in node._fields:
             try:
                 child = getattr(node, name)
                 match name:
                     case 'body'|'args'|'targets':
                         for stmt in child:
-                            self.children.append(PythonASTNode(stmt, translation_unit))
+                            self._children.append(PythonASTNode(stmt, translation_unit))
                     case 'orelse':
                         for stmt in child:
                             self.orelse.append(PythonASTNode(stmt, translation_unit))
                     case 'value'|'test':
                         if isinstance(child, ast.AST):
-                            self.expression = PythonASTNode(child, translation_unit)
+                            self._expression = PythonASTNode(child, translation_unit)
                         else:
                             self.properties[name] = child
                     case 'keywords'|'type_ignores':
@@ -177,12 +176,13 @@ class PythonASTNode(ASTNode):
                         match child:
                             case list():  # Matches any list
                                 for n in child:
-                                    self.children.append(PythonASTNode(n, translation_unit))
+                                    self._children.append(PythonASTNode(n, translation_unit))
                             case ast.AST():
                                 self.properties[name] = PythonASTNode(child, translation_unit)
                             case str()| int():  # Matches any list
                                 self.properties[name] = child
-            except AttributeError:
+            except AttributeError as e:
+                print(e)
                 continue
 
     def derive_position(self, node: ast.AST , translation_unit: PythonTranslationUnit):

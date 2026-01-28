@@ -33,7 +33,10 @@ def is_match(src, cmp,expansion={}) -> bool:
         if len(cmp) > len(src):
             return False
         for i in range(len(src)):
-            if i >= len(cmp):
+            if len(cmp)==1 and cmp[0].kind==MATCH_ALL:
+                expansion[cmp[0].name] = src
+                return True
+            elif i >= len(cmp):
                 return False
             match &= is_match(src[i], cmp[i],expansion)
         return match
