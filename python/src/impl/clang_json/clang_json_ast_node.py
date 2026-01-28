@@ -43,7 +43,7 @@ class ClangJsonASTReference:
 class ClangJsonTranslationUnit:
     def __init__(self, json_root: dict[str, Any], file_name: str):
         self.json_root = json_root
-        self.file_name = file_name
+        self.filename = file_name
         self.references_initialized = False
         # references are used as a cache to store the references of a node
         # the are stored as id for lazy creation
@@ -84,21 +84,23 @@ class ClangJsonASTNode(ASTNode):
         self._children: Optional[Sequence[ClangJsonASTNode]] = None
         self.parent = parent
         self.translation_unit = translation_unit
+        self._filename = translation_unit.filename
         self.inserted = insert_kind != None
+        self.show_props = False
         # if the node has not been added to the translation unit, add it
         # a node might already be added if it is split into multiple nodes
         # an example is for base types like int, char, etc. which are split into multiple nodes
         if "id" in node and self.translation_unit._nodes.get(node["id"]) == None:
             self.translation_unit._nodes[node["id"]] = self
-        self._start_offset = (
+        self._offset = (
             start_offset if start_offset != None else self.__derive_start_offset()
         )
         self._end_offset = (
-            self._start_offset + length
+            self._offset + length
             if length != None
             else self.__derive_end_offset()
         )
-        self._length = self._end_offset - self._start_offset
+        self._length = self._end_offset - self._offset
         self._kind = insert_kind if insert_kind != None else self.__derive_kind()
         self._name = insert_name if insert_name != None else self._derive_name()
         # an fake child is introduced to handle the case where the type of a declaration is not found
@@ -150,7 +152,7 @@ class ClangJsonASTNode(ASTNode):
                         self.node,
                         self.translation_unit,
                         self,
-                        self._start_offset,
+                        self._offset,
                         length_ref,
                         "TypeRef",
                         declared_type,
@@ -307,7 +309,7 @@ class ClangJsonASTNode(ASTNode):
 
     @override
     def _get_start_offset(self) -> int:
-        return self._start_offset
+        return self._offset
 
     @override
     def _get_length(self) -> int:
