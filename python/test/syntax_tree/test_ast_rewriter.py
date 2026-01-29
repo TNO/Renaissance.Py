@@ -1,5 +1,7 @@
 from unittest import TestCase
 from parameterized import parameterized
+
+from impl import ClangJsonASTNode, ClangASTNode
 from syntax_tree import ASTRewriter, CPatternFactory, MatchFinder, ASTFactory, ASTNode, ASTShower
 from typing import Callable, Sequence
 from utils_for_tests import compress
@@ -30,14 +32,46 @@ class TestCommentLocation(TestCase):
 
 
 class TestRewrites(TestCase):
+    def test_passing_case_in_clang(self):
+        # action: Callable[[ASTRewriter, str, Sequence[ASTNode], bool, bool], None],
+        # factory: ASTFactory,code: str, replacement: str, include_whitespace: bool, include_comments: bool, expected: str):
+        factory = ASTFactory(ClangASTNode, [])
+        atu = factory.create_from_text("void f() { /* c1 */ /* c2 */ int a=3;\n}", 'test.cpp')
+        patternFactory = CPatternFactory(factory)
+        declaration_pattern = patternFactory.create_declaration('int a=3;')
+        found = MatchFinder.find_all(atu, [declaration_pattern]).to_list()
+
+        rewriter = ASTRewriter(atu)
+        for match in found:  # .map(lambda m: m.nodes).to_iterable():
+            nodes = match.nodes
+            rewriter.insert_before('int b=4;int c=5;', nodes, True, True)
+        self.assertEqual('void f() { /* c1 */ int b=4;int c=5;\n /* c2 */ int a=3;\n}', rewriter.apply_to_string())
+
+    def test_failing_case(self):
+        # action: Callable[[ASTRewriter, str, Sequence[ASTNode], bool, bool], None],
+        # factory: ASTFactory,code: str, replacement: str, include_whitespace: bool, include_comments: bool, expected: str):
+        factory = ASTFactory(ClangJsonASTNode, [])
+        atu = factory.create_from_text("void f() { /* c1 */ /* c2 */ int a=3;\n}", 'test.cpp')
+        patternFactory = CPatternFactory(factory)
+        declaration_pattern = patternFactory.create_declaration('int a=3;')
+        found = MatchFinder.find_all(atu, [declaration_pattern]).to_list()
+
+        rewriter = ASTRewriter(atu)
+        for match in found:  # .map(lambda m: m.nodes).to_iterable():
+            nodes = match.nodes
+            rewriter.insert_before('int b=4;int c=5;', nodes, True, True)
+        self.assertEqual('void f() { /* c1 */ int b=4;int c=5;\n /* c2 */ int a=3;\n}', rewriter.apply_to_string())
 
     def do_test(self, action: Callable[[ASTRewriter, str, Sequence[ASTNode],bool, bool], None], factory: ASTFactory, code: str, replacement:str, include_whitespace: bool, include_comments: bool, expected: str):
         atu = factory.create_from_text(code, 'test.cpp')
         patternFactory = CPatternFactory(factory)
         declaration_pattern = patternFactory.create_declaration('int a=3;')
         rewriter = ASTRewriter(atu)
-        for match in MatchFinder.find_all(atu, [declaration_pattern]).map(lambda m: m.nodes).to_iterable():
-            action(rewriter,replacement, match, include_whitespace, include_comments)
+        found =MatchFinder.find_all(atu, [declaration_pattern]).to_list()
+
+        for match in found: # .map(lambda m: m.nodes).to_iterable():
+            nodes = match.nodes
+            action(rewriter,replacement, nodes, include_whitespace, include_comments)
         expected_result = factory.create_from_text(expected, 'test.cpp')
         actual = rewriter.apply_to_string()
         actual_result = factory.create_from_text(rewriter.apply_to_string(), 'test.cpp')

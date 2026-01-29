@@ -307,17 +307,6 @@ class ClangJsonASTNode(ASTNode):
             return self.parent.filename
         return EMPTY_STR
 
-    @override
-    def _get_start_offset(self) -> int:
-        return self._offset
-
-    @override
-    def _get_length(self) -> int:
-        return self._length
-
-    @override
-    def end_offset(self) -> int:
-        return self._end_offset
 
     @override
     @cache
@@ -432,9 +421,6 @@ class ClangJsonASTNode(ASTNode):
             .to_list()
         )
 
-    @override
-    def _get_parent(self) -> Optional[ClangJsonASTNode]:
-        return self.parent
 
     @override
     def _is_statement(self) -> bool:
