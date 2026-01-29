@@ -142,7 +142,7 @@ def outer():
     ])
     def test_comperator_operator(self, raw, kind):
         it = self.pattern_factory.create_expression(raw)
-        self.assertEqual(kind, it.children[1].children[0].kind)
+        self.assertEqual(kind, it.children[0].kind)
 
     @parameterized.expand([
         ('case None: return "No data"', 'MatchSingleton'),
@@ -186,7 +186,7 @@ def outer():
     ])
     def test_binary_operator(self, raw, kind):
         it = self.pattern_factory.create_expression(raw)
-        self.assertEqual(kind, it.children()[1].kind)
+        self.assertEqual(kind, it.properties['op'].kind)
 
     # @parameterized.expand([
     #     ('x = some_undefined_var', 'type_ignore'),

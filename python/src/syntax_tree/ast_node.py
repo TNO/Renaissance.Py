@@ -52,7 +52,7 @@ class ASTNode(ABC):
         self.referenced_by:Sequence[ASTReference]=[]
 
     def __repr__(self):
-        raw_lines = self.text.splitlines()
+        raw_lines = self.get_raw_signature().splitlines()
         properties_text = '' if not self.show_props else self.get_properties()
         prefix = " " if len(raw_lines) < 2 else f"\n    {self.indent}"
         formatted_lines = [f"{prefix}|{line}|" for line in raw_lines]

@@ -32,7 +32,7 @@ class PythonPatternFactory:
                         c, "(?i)Macro.*|Inclusion_?Directive"
                     )
                 )
-                .map(ASTNode.offset)
+                .map(lambda n: n.offset)
                 .reduce(min)
                 .or_else(0)
             )
@@ -173,7 +173,7 @@ class PythonPatternFactory:
         atu = self.factory.create_from_text(text, "test.py")
         if SHOW_NODE:
             ASTShower.show_node(atu)
-        return atu
+        return atu.children[0]
 
     @staticmethod
     def _get_keywords_from_text(text: str) -> Sequence[str]:

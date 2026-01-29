@@ -125,25 +125,25 @@ class PythonASTNode(ASTNode):
         if(isinstance(node, str)):
             pass
         self.node = node
-        self.parent = parent
+        self._parent = parent
         cls = type(node)
         self._kind = cls.__name__
         self.indent = ''
         self._name = self._derive_name()
-        self.text = ast.unparse(self.node)
+
         self.show_props =False
         self._children = []
         self.orelse = []
-        self.properties={}
+        self._properties={}
         self._expression=None
         if translation_unit:
-            self.file_name = translation_unit.file_name
+            self._filename = translation_unit.file_name
             self.translation_unit = translation_unit
             self.derive_position(node, translation_unit)
         else:
-            self.file_name = ''
-            self.length = 0
-            self.offset = 0
+            self._filename = ''
+            self._length = 0
+            self._offset = 0
             self.translation_unit = None
 
         if (isinstance(node, str)):
@@ -165,7 +165,7 @@ class PythonASTNode(ASTNode):
                     case 'orelse':
                         for stmt in child:
                             self.orelse.append(PythonASTNode(stmt, translation_unit))
-                    case 'value'|'test':
+                    case 'value'|'test'|'func'|'id':
                         if isinstance(child, ast.AST):
                             self._expression = PythonASTNode(child, translation_unit)
                         else:
@@ -185,19 +185,31 @@ class PythonASTNode(ASTNode):
                 print(e)
                 continue
 
+    def __eq__(self, other):
+        if not other:
+            return False
+        if self.expression != other.expression:
+            return False
+        for i,child in enumerate(self._children):
+            if child != other.children[i]:
+                return False
+        for prop in self.properties:
+            if self.properties[prop] != other.properties[prop]:
+                return False
+        return True
     def derive_position(self, node: ast.AST , translation_unit: PythonTranslationUnit):
         if hasattr(node, 'lineno'):
-            self.offset = self.translation_unit.convert(self.node.lineno, self.node.col_offset)
-            self.length = self.translation_unit.convert(self.node.end_lineno, self.node.end_col_offset) - self.offset
+            self._offset = self.translation_unit.convert(self.node.lineno, self.node.col_offset)
+            self._length = self.translation_unit.convert(self.node.end_lineno, self.node.end_col_offset) - self.offset
         elif isinstance(node, ast.Module) and translation_unit:
-            self.offset = 0
-            self.length = len(translation_unit.content)
+            self._offset = 0
+            self._length = len(translation_unit.content)
         elif isinstance(node, ast.Call):
-            self.offset = 0
-            self.length = 0
+            self._offset = 0
+            self._length = 0
         else:
-            self.offset = 0
-            self.length = 0
+            self._offset = 0
+            self._length = 0
 
 
     @override
