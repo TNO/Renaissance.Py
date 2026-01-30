@@ -158,7 +158,7 @@ class PythonFactoryTestCase(unittest.TestCase):
         pattern_factory = PythonPatternFactory(factory)
         node = pattern_factory.create_python_pattern(code)
         self.assertEqual(node.kind, ast.Continue.__name__)
-        self.assertEqual(code, node.raw_signature())
+        self.assertEqual(code, node.raw_signature)
 
     @parameterized.expand(Factories.extend([
         ('del x', ...),
@@ -168,7 +168,7 @@ class PythonFactoryTestCase(unittest.TestCase):
         pattern_factory = PythonPatternFactory(factory)
         node = pattern_factory.create_python_pattern(code)
         self.assertEqual(node.kind, ast.Delete.__name__)
-        self.assertEqual(code, node.raw_signature())
+        self.assertEqual(code, node.raw_signature)
 
     ### Expressions patterns
     @parameterized.expand(Factories.extend([
@@ -179,7 +179,7 @@ class PythonFactoryTestCase(unittest.TestCase):
         pattern_factory = PythonPatternFactory(factory)
         node = pattern_factory.create_python_pattern(code)
         self.assertEqual(node.kind, ast.Expr.__name__)
-        self.assertEqual(code, node.raw_signature())
+        self.assertEqual(code, node.raw_signature)
 
     @parameterized.expand(Factories.extend([
         ('Literal[\'left\', \'center\', \'right\']', ...),
@@ -199,7 +199,7 @@ class PythonFactoryTestCase(unittest.TestCase):
         pattern_factory = PythonPatternFactory(factory)
         node = pattern_factory.create_python_pattern(code)
         self.assertEqual(node.kind, ast.Expr.__name__)
-        self.assertEqual(code, node.raw_signature())
+        self.assertEqual(code, node.raw_signature)
 
 
 if __name__ == '__main__':
