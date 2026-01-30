@@ -248,10 +248,10 @@ class MatchFinder:
 
     @staticmethod
     def match_pattern(
-        src_nodes: Sequence[ASTNode] | ASTNode,
-        patterns: Sequence[ASTNode] | ConstrainedPattern,
-        src_filter: Callable[[Sequence[ASTNode]], Sequence[ASTNode]] = lambda n: n,
-    ) -> Sequence[PatternMatch]:
+        src_nodes: [ASTNode] | ASTNode,
+        patterns: [ASTNode] | ConstrainedPattern,
+        src_filter: Callable[[Sequence[ASTNode]], [ASTNode]] = lambda n: n,
+    ) -> [PatternMatch]:
         """
         Matches a given source node or list of source nodes against a list of pattern nodes.
 

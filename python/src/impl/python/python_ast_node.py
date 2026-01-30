@@ -96,6 +96,7 @@ class PythonTranslationUnit():
             return 0
         return sum(len(self.lines[i]) + 1 for i in range(line_nr - 1)) + col
 
+
 class ImplicitNode(ast.Name):
     def __init__(self, name, children):
         self.id = name
@@ -111,14 +112,6 @@ class ImplicitNode(ast.Name):
 
 
 class PythonASTNode(ASTNode):
-    _attributes = (
-        'translation_unit',
-        'parent',
-        'offset',
-        'length',
-        'offset',
-    )
-
     def __init__(self, node: ast.AST, translation_unit: PythonTranslationUnit = None, parent=None,
                  start_offset: Optional[int] = None, length: Optional[int] = None, insert_kind: Optional[str] = None):
         super().__init__(self if parent is None else parent.root)
@@ -167,7 +160,7 @@ class PythonASTNode(ASTNode):
                         else:
                             self._children.append(PythonASTNode(ImplicitNode(name,child), translation_unit))
                     case ast.AST():
-                        if name not in ['Load', 'Store']:
+                        if name not in ['ctx', 'ctx']:
                             self._children.append(PythonASTNode(child, translation_unit))
                     case _:
                         if name not in ['None']:
@@ -250,19 +243,6 @@ class PythonASTNode(ASTNode):
     def _get_containing_filename(self) -> str:
         return self.translation_unit.file_name if self.translation_unit else ""
 
-    @override
-    def _get_start_offset(self) -> int:
-        return self.offset
-
-    @override
-    def _get_length(self) -> int:
-        return self.length
-
-    @override
-    @cache
-    def _get_extended_end_offset(self) -> int:
-        return self.offset + self.length
-
     def _is_statement_or_declaration(self):
         return isinstance(self.node, ast.stmt)
 
@@ -273,17 +253,12 @@ class PythonASTNode(ASTNode):
 
     @override
     def binary_file_content(self) -> bytes:
-        return self.translation_unit.content[self.offset:self.length] if self.translation_unit else ast.unparse(
+        return self.translation_unit.content[self.offset:self.end_offset] if self.translation_unit else ast.unparse(
             self.node).encode(sys.getfilesystemencoding())
 
     @override
     def _matches_kind(self, node: ASTNode) -> bool:
         return self.kind == node.kind
-
-    @override
-    @cache
-    def _get_properties(self) -> dict[str, int | str]:
-        self.attributes
 
     @override
     def _get_parent(self) -> Optional['PythonASTNode']:
@@ -293,10 +268,6 @@ class PythonASTNode(ASTNode):
     def _is_statement(self) -> bool:
         return isinstance(self.node, ast.stmt)
 
-    @override
-    @cache
-    def _get_properties(self) -> dict[str, int | str |ASTNode]:
-        return self.properties
     @override
     @cache
     def _get_referenced_by(self) -> Sequence[ASTReference]:
@@ -320,11 +291,6 @@ class PythonASTNode(ASTNode):
     @override
     def is_part_of_translation_unit(self) -> bool:
         return self.kind not in ['ImplicitNode']
-
-    @override
-    def indent(self) -> int:
-        # TODO
-        return 0
 
     @override
     @cache
