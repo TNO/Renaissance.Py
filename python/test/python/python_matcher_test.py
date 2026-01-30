@@ -8,13 +8,14 @@ from syntax_tree.match_finder import is_match
 
 class PythonMatcherTest(unittest.TestCase):
 
+    # @unittest.skip("works in isolation")
     def test_generic_is_match_any_stmt(self):
         factory = ASTFactory(PythonASTNode, [])
         atu = factory.create_from_text('ba(55)', 'test.py')
         pattern_factory = PythonPatternFactory(factory, atu)
         simple = pattern_factory.create('$pa(55)')
         self.assertEqual('Expr', simple.kind)
-        self.assertTrue(is_match(atu.children[0], simple))
+        self.assertTrue(is_match(atu.children[0], simple,{}))
 
     def test_generic_is_match_any_assignment(self):
         factory = ASTFactory(PythonASTNode, [])
@@ -22,7 +23,7 @@ class PythonMatcherTest(unittest.TestCase):
         pattern_factory = PythonPatternFactory(factory, atu)
         simple = pattern_factory.create('$pa')
         self.assertEqual('_MatchOne__', simple.kind)
-        self.assertTrue(is_match(atu.children[0], simple))
+        self.assertTrue(is_match(atu.children[0], simple,{}))
 
     def test_match_stmt_using_generic_matcher(self):
         factory = ASTFactory(PythonASTNode, [])
