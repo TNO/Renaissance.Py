@@ -250,14 +250,14 @@ else:
         atu = factory.create_from_text('pa(55)\nif pa(55):\n  pa(55)\n  pa=55', 'test.py')
         pattern_factory = PythonPatternFactory(factory, atu)
         simple = pattern_factory.create('pa(55)')
-        self.assertTrue(match(simple.node, atu.children[0].node))
+        self.assertTrue(simple == atu.children[0])
 
     def test_equal_nodes_different_args(self):
         factory = ASTFactory(PythonASTNode, [])
         atu = factory.create_from_text('pa(55)\nif pa(55):\n  pa(55)\n  pa=55', 'test.py')
         pattern_factory = PythonPatternFactory(factory, atu)
         simple = pattern_factory.create('pa(66)')
-        self.assertFalse(match(simple, atu.children[0]))
+        self.assertFalse(simple == atu.children[0])
 
     def test_call_has_args_as_children(self):
         factory = ASTFactory(PythonASTNode, [])

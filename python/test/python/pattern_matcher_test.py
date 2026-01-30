@@ -6,7 +6,7 @@ from unittest.mock import patch
 from impl import PythonASTNode, PythonPatternFactory
 from impl.python import MATCH_ALL
 from syntax_tree import ASTFactory, MatchFinder
-from syntax_tree.match_finder import MATCH_ONE, is_match
+from syntax_tree.match_finder import MATCH_ONE, is_match, PatternMatch
 
 
 class PythonMatcherTest(unittest.TestCase):
@@ -291,13 +291,13 @@ ba()
         atu = self.factory.create_from_text('pa(55)\nif pa(55):\n  pa(55)\n  pa=55', 'test.py')
         pattern_factory = PythonPatternFactory(self.factory, atu)
         simple = pattern_factory.create('pa(66,77,88)')
-        self.assertEqual(len(simple.expression.children), 3)
+        self.assertEqual(len(simple.children[0].children[1].children), 3)
 
     def test_not_equal_nodes(self):
         self.atu = self.factory.create_from_text('pap(55)\nif pa(55):\n  pa(55)\n  pa=55', 'test.py')
         pattern_factory = PythonPatternFactory(self.factory, self.atu)
         simple = pattern_factory.create('ma(55)')
-        self.assertFalse(match(simple, self.atu.children[0]))
+        self.assertFalse(simple == self.atu.children[0])
 
     def test_match_any_with_empty(self):
         example_code = """
@@ -310,10 +310,10 @@ na()
         results = MatchFinder.match_pattern(self.atu.children, simple)
         self.assertEqual(1, len(results), )
         res = results[0]
-        self.assertIsInstance(res, MatchResult)
+        self.assertIsInstance(res, PatternMatch)
         self.assertEqual(2, len(res.nodes))
-        self.assertEqual(1, len(res.expansion_lists))
-        self.assertEqual([], res.expansion_lists['$$any'])
+        self.assertEqual(1, len(res.expansions))
+        self.assertEqual([], res.expansions['$$any'])
 
         def test_match_any_with_multiple(self):
             example_code = """
@@ -337,7 +337,7 @@ na()
             results = MatchFinder.match_pattern(self.atu.children, simple)
             self.assertEqual(1, len(results), )
             res = results[0]
-            self.assertIsInstance(res, MatchResult)
+            self.assertIsInstance(res, PatternMatch)
             self.assertEqual(2, len(res.nodes))
             self.assertEqual(1, len(res.expansion_lists))
             self.assertEqual([], res.expansion_lists['$$any'])

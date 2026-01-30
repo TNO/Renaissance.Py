@@ -79,10 +79,8 @@ def is_match(src, cmp, expansions={}) -> bool:
     elif cmp ==None:
         return src == None
     elif isinstance(cmp, ASTNode):
-        return (is_match(src.expression, cmp.expression, expansions)
-                and is_match(src.name, cmp.name, expansions)
-                and is_match(src.properties, cmp.properties, expansions)
-                and is_match(src.children, cmp.children, expansions))
+        return ( is_match(src.properties, cmp.properties, expansions)
+            and  is_match(src.children, cmp.children, expansions))
     else:
         src==cmp
 
@@ -361,15 +359,7 @@ class MatchFinder:
                     expansions={}
                     foundPosition = 0
             else:
-                if node.expression and len(patterns) == 1:
-                    foundStatements.extend(MatchFinder.__match_pattern(
-                        [node.expression],
-                        patterns,
-                        depth,
-                        multiplicity,
-                        pattern_match,
-                        src_filter,
-                    ))
+
                 if node.children:
                     foundStatements.extend(MatchFinder.__match_pattern(
                         node.children,
@@ -379,15 +369,7 @@ class MatchFinder:
                         pattern_match,
                         src_filter,
                     ))
-                if node.orelse:
-                    foundStatements.extend(MatchFinder.__match_pattern(
-                        node.orelse,
-                        patterns,
-                        depth,
-                        multiplicity,
-                        pattern_match,
-                        src_filter,
-                    ))
+
 
         return foundStatements
 

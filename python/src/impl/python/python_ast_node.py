@@ -167,7 +167,8 @@ class PythonASTNode(ASTNode):
                         else:
                             self._children.append(PythonASTNode(ImplicitNode(name,child), translation_unit))
                     case ast.AST():
-                        self._children.append(PythonASTNode(child, translation_unit))
+                        if name not in ['Load', 'Store']:
+                            self._children.append(PythonASTNode(child, translation_unit))
                     case _:
                         if name not in ['None']:
                             self.properties[name] = child
@@ -175,10 +176,8 @@ class PythonASTNode(ASTNode):
                 print(e)
                 continue
 
-    def __eq__(self, other):
+    def __eq__(self, other:ASTNode):
         if not other:
-            return False
-        if self.expression != other.expression:
             return False
         for i,child in enumerate(self._children):
             if child != other.children[i]:
