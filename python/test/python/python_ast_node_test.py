@@ -46,7 +46,7 @@ class PythonNodeTest(unittest.TestCase):
         ('while True: pass', 'While'),
     ])
     def test_stmt_kind(self, raw, kind):
-        it = self.pattern_factory.create(raw).children[0]
+        it = self.pattern_factory.create(raw)
         self.assertEqual(kind, it.kind)
 
     @parameterized.expand([
@@ -109,11 +109,11 @@ def outer():
     def test_NamedExpr(self):
         it = self.pattern_factory.create('if n:= len(items): pass')
         result = ASTShower.get_node(it)
-        self.assertEqual('NamedExpr', it.children[0].children[0].kind)
+        self.assertEqual('NamedExpr', it.children[0].kind)
 
     def test_Starred(self):
         it = self.pattern_factory.create('*x =[1,2]')
-        self.assertEqual('Starred', it.children[0].children[0].children[0].kind)
+        self.assertEqual('Starred', it.children[0].children[0].kind)
 
     def test_FormattedValue(self):
         it = self.pattern_factory.create_expression('f"{one}two"')
@@ -121,8 +121,7 @@ def outer():
 
     def test_ExceptHandler(self):
         it = self.pattern_factory.create('try: pass\nexcept NameError:pass')
-        result = ASTShower.show_node(it)
-        self.assertEqual('ExceptHandler', it.children[0].children[1].kind)
+        self.assertEqual('ExceptHandler', it.children[1].children[0].kind)
 
     @parameterized.expand([
         ('a == b', 'Eq'),
@@ -138,7 +137,7 @@ def outer():
     ])
     def test_comperator_operator(self, raw, kind):
         it = self.pattern_factory.create_expression(raw)
-        self.assertEqual(kind, it.children[1].kind)
+        self.assertEqual(kind, it.children[1].children[0].kind)
 
     @parameterized.expand([
         ('case None: return "No data"', 'MatchSingleton'),
@@ -157,17 +156,15 @@ def outer():
     def test_match_patterns(self, raw, kind):
         sample_code = f"match data:\n  {raw}\n  case _: pass"
         stmt = self.pattern_factory.create(sample_code)
-        self.assertEqual(kind, stmt.children[0].children[1].children[0].kind)
+        self.assertEqual(kind, stmt.children[1].children[0].children[0].kind)
 
     def test_match_stmt(self):
         sample_code = 'match data:\n  case [first, *rest]: return f"List with first element {first} and {len(rest)} more items"\n  case _: pass'
         stmt = self.pattern_factory.create(sample_code)
         self.assertEqual('Match', stmt.kind)
         self.assertEqual('match_case', stmt.children[1].children[0].kind)
-        self.assertEqual('MatchStar',
-                         stmt.children[1].children[0].children[0].children[0].children[
-                             1].kind)
-        self.assertEqual('MatchAs', stmt.children[1].children()[1].children()[0].kind)
+        self.assertEqual('MatchStar', stmt.children[1].children[0].children[0].children[1].kind)
+        self.assertEqual('MatchAs',   stmt.children[1].children[0].children[0].children[0].kind)
 
     @parameterized.expand([
         ('a % b', 'Mod'),
@@ -208,7 +205,7 @@ def outer():
     def test_show_call(self):
         factory = ASTFactory(PythonASTNode, [])
         atu = factory.create_from_text('ba(55)\nca(555)\nlo(4444)\nna=55', 'apple.py')
-        second_stmt = atu.children()[1]
+        second_stmt = atu.children[1]
         self.assertEqual(7, second_stmt.offset)
         self.assertEqual(7, second_stmt.length)
         self.assertEqual('apple.py', second_stmt.filename)
