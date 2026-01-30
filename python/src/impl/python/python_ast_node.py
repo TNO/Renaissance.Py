@@ -278,11 +278,11 @@ class PythonASTNode(ASTNode):
         return isinstance(self.node, ast.stmt)
 
     @override
-    def get_raw_signature(self) -> str:
-        return self.get_binary_file_content().decode(sys.getfilesystemencoding())
+    def raw_signature(self) -> str:
+        return self.binary_file_content().decode(sys.getfilesystemencoding())
 
     @override
-    def get_binary_file_content(self) -> bytes:
+    def binary_file_content(self) -> bytes:
         return self.translation_unit.content[self.offset:self.length] if self.translation_unit else ast.unparse(
             self.node).encode(sys.getfilesystemencoding())
 
@@ -332,7 +332,7 @@ class PythonASTNode(ASTNode):
         return self.kind not in ['ImplicitNode']
 
     @override
-    def get_indent(self) -> int:
+    def indent(self) -> int:
         # TODO
         return 0
 

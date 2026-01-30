@@ -9,7 +9,7 @@ from test.c_cpp.factories import Factories
 
 logger = logging.getLogger(__name__)
 
-debug_mismatches = False
+debug_mismatches = True
 
 class TestCMatchFinder(TestCase):
 
@@ -30,6 +30,15 @@ class TestCMatchFinder(TestCase):
             }
         }
         """
+    def test_simple_pattern(self):
+
+        factory = ASTFactory(ClangASTNode, [])
+        patterns = [CPatternFactory(factory).create_statement('b--;')]
+
+        atu = factory.create_from_text('void fun(){int a,b;\nb--;\na==4;\nb==5;}', "test.c")
+        matches = MatchFinder.find_all([atu], patterns, recursive=False).to_list()
+        self.assertEqual(1, len(matches))
+
 
     def do_test(self, factory: ASTFactory, cpp_code, patterns:list[ASTNode], recursive: bool):
         for idx, pattern in enumerate(patterns):
@@ -45,18 +54,20 @@ class TestCMatchFinder(TestCase):
             for match in matches:
                 print(f'\nmatch({[compress(p.text) for p in match.patterns]})' + '{')
                 print(f"  start node: {compress(match.nodes[0].text)}")
-                for k, vs in match.nodes().items():
+                for k, vs in match.expansions.items():
                     # right align the key
                     print(f"{k.rjust(12)}: {[compress(v.text) for v in vs]}")
                 print('}')
             print('    expected dict should look like:')
-            print(f'      {[to_string(match.nodes()) for match in matches]}')
+            print(f'      {[to_string(match.expansions) for match in matches]}')
         return matches
 
-    def assert_matches(self, expected_dicts_per_match, matches):
-        for match, expected_dict in zip(matches, expected_dicts_per_match):
-            self.assertDictEqual(to_string(match.expansions), expected_dict)
-        self.assertEqual(len(matches), len(expected_dicts_per_match))
+    def assert_matches(self, expected_dicts_per_match, actual_matches):
+        for actual, expected_dict in zip(actual_matches, expected_dicts_per_match):
+            for k, v in actual.expansions.items():
+                for i,n in enumerate(v):
+                    self.assertEqual(n.text,expected_dict[k][i])
+        self.assertEqual(len(actual_matches), len(expected_dicts_per_match))
 
 class TestExpressions(TestCMatchFinder):
     def test_match_expr(self):
@@ -73,7 +84,7 @@ class TestExpressions(TestCMatchFinder):
 
 
     @parameterized.expand(Factories.extend([
-    ('a == 3',['a==3'], [{}]),   
+    ('a == 3',['a==3'], [{}]),
     ('a == $x',['a==3', 'a==4'], [{'$x':['3']},{'$x':['4']}]),
     ('$y == $x',['a==3', 'a==4', 'b==5'], [{'$y':['a'], '$x':['3']},{'$y':['a'], '$x':['4']},{'$y':['b'], '$x':['5']}]),
     ('b--',['b--;'], [{}]),

@@ -261,7 +261,7 @@ class ClangJsonASTNode(ASTNode):
                 with open(working_dir / file_path, "rb") as f:
                     atu.cache[str(file_path)] = f.read()
             # cache the result of the temp file before deleting it
-            atu.get_content(0, 0)
+            atu.content(0, 0)
             return atu
 
         except Exception as e:
@@ -319,7 +319,7 @@ class ClangJsonASTNode(ASTNode):
             if (not self._is_statement_or_declaration()) and (
                     self.parent and self.parent.kind in STMT_PARENTS
             ):
-                content = self.root.get_binary_file_content()
+                content = self.root.binary_file_content()
                 while (
                     endOffset < len(content) and not content[endOffset - 1] in b";"
                 ):  # Why use 'in' when list has one element, i.e. ';'?
@@ -461,7 +461,7 @@ class ClangJsonASTNode(ASTNode):
 
     def __derive_end_offset(self) -> int:
         if self.__derive_kind() == "TranslationUnitDecl":
-            return len(self.get_binary_file_content(self.filename))
+            return len(self.binary_file_content(self.filename))
         offset = self._get(["range", "end", "offset"], default=-1)
         tokLen = self._get(["range", "end", "tokLen"], default=-1)
         if offset == -1:

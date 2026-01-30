@@ -1,61 +1,88 @@
 from __future__ import annotations
 
-import ast
-from dataclasses import dataclass
-from functools import cache
 import re
-import sys
+from collections import Counter
+from dataclasses import dataclass
 from typing import Callable, Iterable, Iterator, Optional, Sequence
 
-from coverage.misc import isolate_module
-
 from common import Stream
-from collections import Counter
-
-from .ast_node import ASTNode, ASTReference
+from .ast_node import ASTNode
 
 VERBOSE = False
 DEFAULT_EXCLUDE_KIND = "comment"
 MATCH_ONE = '_MatchOne__'
 MATCH_ALL = '_MatchAll__'
 
-def is_match(src, cmp,expansion={}) -> bool:
+
+def is_match_tree(src, cmp, expansions=[]):
+    foundPosition = 0
+    greedy=False
+    for i in range(len(src)):
+        node = src[i]
+        pattern = cmp[foundPosition]
+        if pattern.kind == MATCH_ALL:
+            current_name = cmp[foundPosition].name
+            if current_name in expansions:
+                if is_match(expansions[current_name], src):
+                    pass
+                else:
+                    foundPosition = 0
+            else:
+                greedy = True
+                foundPosition += 1
+                if foundPosition == len(cmp):
+                    expansions[current_name] = src[i:-1]
+                    return True
+                else:
+                    pattern = cmp[foundPosition]
+                    expansion_start = i
+        if is_match(node, pattern, expansions):
+            if greedy == True:
+                greedy = False
+                last_name = cmp[foundPosition - 1].name
+                if not last_name in expansions:
+                    expansions[last_name] = src[expansion_start:i]
+                    foundPositionInExpandedList = 0
+            foundPosition += 1
+            if foundPosition == len(cmp):
+                return True
+    if foundPosition <len(cmp):
+        if foundPosition == len(cmp)-1 and cmp[foundPosition].kind == MATCH_ALL:
+            if cmp[foundPosition].name in expansions:
+                return expansions[cmp[foundPosition].name] == []
+            else:
+                expansions[cmp[foundPosition].name] = []
+                return True
+        return False
+    return True
+def is_match(src, cmp, expansions={}) -> bool:
     if isinstance(cmp, ASTNode) and cmp.kind==MATCH_ONE and not src.kind=='Module':
-        if cmp.name in expansion:
-            return is_match(src,expansion[cmp.name][0])
+        if cmp.name in expansions:
+            return is_match(src, expansions[cmp.name][0])
         else:
-            expansion[cmp.name]=[src]
+            expansions[cmp.name]=[src]
             return True
     elif isinstance(src, ASTNode) and cmp.kind !=src.kind:
         return False
     elif isinstance(cmp, list):
-        match = True
-        if len(cmp) > len(src):
-            return False
-        for i in range(len(src)):
-            if len(cmp)==1 and cmp[0].kind==MATCH_ALL:
-                expansion[cmp[0].name] = src
-                return True
-            elif i >= len(cmp):
-                return False
-            match &= is_match(src[i], cmp[i],expansion)
-        return match
+        return is_match_tree(src,cmp,expansions)
+
     elif isinstance(cmp, dict):
         for n in cmp:
-            if n not in src or not is_match(src[n], cmp[n],expansion):
+            if n not in src or not is_match(src[n], cmp[n], expansions):
                 return False
         return True
     elif isinstance(cmp, str):
-        return src == cmp
+        return cmp.startswith('$') or src == cmp
     elif isinstance(cmp, int):
         return src == cmp
     elif cmp ==None:
         return src == None
     elif isinstance(cmp, ASTNode):
-        return ( is_match(src.expression, cmp.expression,expansion)
-                and is_match(src.name, cmp.name, expansion)
-                and is_match(src.properties, cmp.properties,expansion)
-                and is_match(src.children, cmp.children,expansion))
+        return (is_match(src.expression, cmp.expression, expansions)
+                and is_match(src.name, cmp.name, expansions)
+                and is_match(src.properties, cmp.properties, expansions)
+                and is_match(src.children, cmp.children, expansions))
     else:
         src==cmp
 
@@ -83,7 +110,7 @@ class PatternMatch:
     def __str__(self):
         res = ''
         for node in self.nodes:
-            res += node.get_raw_signature()
+            res += node.raw_signature
         return res
     def get_raw_signatures(self):
         return str(self)
@@ -125,7 +152,7 @@ class PatternMatch:
         for n in self.src_nodes:
             for ref in n.referenced_by:
                 yield from MatchFinder.find_all_strict(
-                    ref.get_node(),
+                    ref.node,
                     patterns_list,
                     recursive,
                     exclude_kind,
@@ -139,7 +166,7 @@ class PatternMatch:
         for n in self.src_nodes:
             for ref in n.references:
                 yield from MatchFinder.find_all_strict(
-                    [ref.get_node()],
+                    [ref.node],
                     patterns_list,
                     recursive,
                     exclude_kind,

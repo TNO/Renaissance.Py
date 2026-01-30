@@ -246,7 +246,7 @@ class MyRefactor:
                         ast_processor.replace(f"ListViewCustom {var}({container});",parent)
                         # find reference to the declaration
                         size_match = Stream(parent.referenced_by).\
-                            map(lambda r: r.get_node()).\
+                            map(lambda r: r.node).\
                             map(lambda n: n.get_ancestor('Call_?Expr')).\
                             find_last().or_else(None)
                         

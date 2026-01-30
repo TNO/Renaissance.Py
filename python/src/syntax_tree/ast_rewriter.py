@@ -167,7 +167,7 @@ class _RewriteActions:
             else nodes.src_nodes if isinstance(nodes, PatternMatch) else [nodes]
         )
         self.encoding = encoding
-        self.content = self.nodes[0].root.get_binary_file_content()[
+        self.content = self.nodes[0].root.binary_file_content()[
             self.nodes[0].offset: self.nodes[-1].extended_end_offset
         ]
         self.correct_indent = correct_indent
@@ -285,7 +285,7 @@ class _RewriteActions:
         )
         # start_offset =nodes[0].get_start_offset()
         # end_offset =nodes[-1].get_start_offset()+nodes[-1].get_length()+1
-        indent = nodes[0].get_indent
+        indent = nodes[0].indent
         if self.correct_indent:
             new_content = TextUtils.shift_right(new_content, indent, start_line=1)
         self.__replace_bytes(rewriter, start_offset, end_offset, new_content)
@@ -310,7 +310,7 @@ class _RewriteActions:
         """
         if not nodes:
             return
-        indent = nodes[0].get_indent
+        indent = nodes[0].indent
         start_offset, end_offset = (
             _RewriteActions.__correct_for_comments_and_whitespace(
                 self.nodes[0].offset,
@@ -443,7 +443,7 @@ class _RewriteActions:
             if rs != org_rs:
                 rewriter.replace(rs, node)
         result = rewriter.apply_to_string()
-        indent = nodes[0].get_indent
+        indent = nodes[0].indent
         return TextUtils.shift_left(result, indent, start_line=1)
 
     def __get_text(self, node: ASTNode) -> str:
@@ -506,7 +506,7 @@ class _RewriteActions:
         start_offset = nodes[0].offset - offset
         end_offset = nodes[-1].extended_end_offset - offset
         if include_comments:
-            preceding_node = nodes[0].get_preceding_sibling
+            preceding_node = nodes[0].preceding_sibling
             parent = nodes[0].parent
             start_comment_location = 0
             if preceding_node:
@@ -527,7 +527,7 @@ class _RewriteActions:
             )
             if extended_location != (-1, -1):
                 start_offset = extended_location[0]
-            next_sibling = nodes[-1].get_next_sibling
+            next_sibling = nodes[-1].next_sibling
             end_comment_location = (
                 next_sibling.offset - offset
                 if next_sibling

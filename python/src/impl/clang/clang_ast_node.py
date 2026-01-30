@@ -4,7 +4,7 @@ import re
 import sys
 from typing import Any, Optional, Sequence
 from common import Stream
-from syntax_tree import ASTNode, ASTReference, ASTFinder
+from syntax_tree import ASTNode, ASTReference, ASTFinder, TextUtils
 from typing_extensions import override
 
 from clang.cindex import TranslationUnit, Index, Config, CursorKind, TypeKind
@@ -74,7 +74,6 @@ class ClangASTNode(ASTNode):
         self.translation_unit = translation_unit
         self.inserted = insert_kind != None
         self.show_props = False
-        self.indent = ''
         self._filename = self._get_containing_filename()
         self._name = self._derive_name()
         # if the node has not been added to the translation unit, add it
@@ -85,6 +84,8 @@ class ClangASTNode(ASTNode):
         self._offset = start_offset if start_offset != None else self.__derive_start_offset()
         self._length = length if length != None else self.__derive_length()
         self._kind = insert_kind if insert_kind != None else self.__derive_kind()
+        self.indent = ''
+        # TODO: TextUtils.get_indent(self.content, self._offset)
 
         # an fake child is introduced to handle the case where the type of a declaration is not found
         # for example in the case of a base type. 
@@ -149,7 +150,6 @@ class ClangASTNode(ASTNode):
             raise Exception(f'Error parsing: {file_name} \n+ errors: {errors}')
     
     @override
-    @cache
     def _derive_name(self) -> str:
         try:
             if self.node.type.kind == TypeKind.RECORD: # type: ignore
@@ -178,7 +178,7 @@ class ClangASTNode(ASTNode):
         try: 
             endOffset = self._offset + self._length
             if (not self._is_statement_or_declaration()) and (self.parent and self.parent.kind in STMT_PARENTS):
-                content = self.root.get_binary_file_content()
+                content = self.root.binary_file_content()
                 while endOffset < len(content) and not content[endOffset-1] in b';':
                     endOffset += 1
             return endOffset
@@ -207,7 +207,7 @@ class ClangASTNode(ASTNode):
             children = self.children
             start_offset = children[0].offset + children[0].length
             end_offset = children[1].offset
-            operator = self.get_content(start_offset, end_offset)
+            operator = self.content(start_offset, end_offset)
             result['operator'] = operator.strip()
             # next statement works in C++ but not in Python (yet) will be released later
             # result['operator'] =  self.node.getOpCode()
@@ -225,7 +225,7 @@ class ClangASTNode(ASTNode):
                 end_offset = self.offset + self.length
                 prefix_operator = False
 
-            operator = self.get_content(start_offset, end_offset)
+            operator = self.content(start_offset, end_offset)
             result['operator'] = operator.strip()
             result['prefixOperator'] = prefix_operator
             # next statement works in C++ but not in Python (yet) will be released later
@@ -240,16 +240,12 @@ class ClangASTNode(ASTNode):
         return result
     
     @override
-    def _get_parent(self) -> Optional['ClangASTNode']: 
-        return  self.parent
-
-    @override
     def _is_statement(self) ->bool:
         return self.parent is not None and self.parent.kind in STMT_PARENTS
     
     @override
-    @cache
-    def _get_referenced_by(self) -> Sequence[ASTReference]:
+    @property
+    def referenced_by(self) -> [ASTReference]:
         self.translation_unit.lazy_create_references(self)
         node_id = self.node.hash
         ref_by = self.translation_unit._referenced_by.get(node_id, EMPTY_LIST)
@@ -283,7 +279,9 @@ class ClangASTNode(ASTNode):
                 return body
         return None
 
-    def get_references(self) -> Sequence[ASTReference]:
+    @override
+    @property
+    def references(self) -> [ASTReference]:
         self.translation_unit.lazy_create_references(self)
         return Stream(self.translation_unit._references.get(self.node.hash, EMPTY_LIST))\
             .map(lambda ref: ASTReference(self.translation_unit._nodes[ref.node_id], ref.ref_kind, ref.properties)).to_list()

@@ -122,4 +122,4 @@ class TestUseAtuToCreatePatterns(TestCPatternFactory):
 
         # the user must pick it's own pattern in this case the last statement
         self.assertTrue(pattern_root.children[-1].is_statement)
-        self.assertEqual(pattern_root.children[-1].get_raw_signature() + ';', statementText)
+        self.assertEqual(pattern_root.children[-1].raw_signature + ';', statementText)
