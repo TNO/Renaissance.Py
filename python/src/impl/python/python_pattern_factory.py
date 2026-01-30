@@ -151,13 +151,13 @@ class PythonPatternFactory:
         extra_declarations: Sequence[str],
         kind: str,
     ) -> list[ASTNode]:
-        # full_text = (
-        #      self.header + "\n".join(PythonPatternFactory._to_typedef(types)) + "\n"
-        #      "\n".join(PythonPatternFactory._to_declaration(parameters)) + "\n"
-        #      "\n".join(extra_declarations) + "\n"
-        #      "\nvoid " + PythonPatternFactory.reserved_function_name + "(){\n" + text + "\n}"
-        # )
-        root = self._create(text)
+        full_text = (
+            self.header + "\n".join(PythonPatternFactory._to_typedef(types)) + "\n"
+            "\n".join(PythonPatternFactory._to_declaration(parameters)) + "\n"
+            "\n".join(extra_declarations) + "\n"
+            "\nvoid " + PythonPatternFactory.reserved_function_name + "(){\n" + text + "\n}"
+        )
+        root = self._create(full_text)
 
         # from the children of the compound statement that contains the text, get for each child the first
         # node of the specified kind
