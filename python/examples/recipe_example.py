@@ -240,7 +240,7 @@ class MyRefactor:
                         repl = ",\n    ".join(f"std:make_unique<ListViewHeader>(*this)" for _ in range(header_count))    
                         ast_processor.insert_after(", m_headers {" +repl+"}", constructor_call, True, False)
                     else:
-                        var = parent.get_name()
+                        var = parent.name
                         container = constructor_call.get_name('$container') 
                         # replace the constructor call with a ListViewCustom object
                         ast_processor.replace(f"ListViewCustom {var}({container});",parent)

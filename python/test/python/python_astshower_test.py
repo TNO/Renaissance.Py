@@ -30,7 +30,7 @@ class PythonShowerTest(unittest.TestCase):
          ',   (Assign, na = 55, test.py[24:29]):  |na = 55|\n'
          ']')
 
-        self.assertEqual(expected, str(self.atu.get_children()))
+        self.assertEqual(expected, str(self.atu.children))
 
     @unittest.skip("compare two impl")
     def test_show_ast_a_b(self):
@@ -79,7 +79,7 @@ else:
     y=1
     call(y)    
 ''', 'test.py')
-        text = ASTShower.get_node(atu.get_children()[0])
+        text = ASTShower.get_node(atu.children[0])
         self.assertEqual(('(If, If, test.py[1:56]): \n'
  '|if x > y:|\n'
  '|    x = 1|\n'

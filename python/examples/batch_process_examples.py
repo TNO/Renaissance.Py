@@ -135,7 +135,7 @@ class AnalysisRecipe:
     def _add_function_call(call: ASTNode, calls: list[Call]):
         callee = call.get_ancestor('(?i)Function_?Decl')
         if callee:
-            calls.append(Call(callee.get_name(), call.get_children()[0].get_name()))
+            calls.append(Call(callee.name, call.children[0].name))
 
 def batch_recipe_example():
     print('example batch analysis using recipe:\n')

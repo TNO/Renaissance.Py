@@ -23,7 +23,7 @@ class ASTFinder:
         # get kind of the ast_node with only word characters
         if ast_node is None:
             return False
-        ast_kind = ASTFinder.KIND_MATCH.sub('', ast_node.get_kind()).lower()
+        ast_kind = ASTFinder.KIND_MATCH.sub('', ast_node.kind).lower()
         pattern = kind if isinstance(kind, re.Pattern) else re.compile(kind, re.IGNORECASE)
         return pattern.fullmatch(ast_kind) is not None
 
@@ -34,17 +34,17 @@ class ASTFinder:
             yield ast_node
         elif isinstance(result, Iterator):
             yield from result
-        for child in ast_node.get_children():
+        for child in ast_node.children:
             yield from ASTFinder.__find_all(child, function)
 
     @staticmethod
     def __matches_kind(ast_node: ASTNode, kind:str|re.Pattern[str])-> Iterator[ASTNode]:
         pattern = kind if isinstance(kind, re.Pattern) else re.compile(kind, re.IGNORECASE)
-        ast_kind = ASTFinder.KIND_MATCH.sub('', ast_node.get_kind()).lower()
+        ast_kind = ASTFinder.KIND_MATCH.sub('', ast_node.kind).lower()
 
         if pattern.fullmatch(ast_kind):
             yield ast_node
-        for child in ast_node.get_children():
+        for child in ast_node.children:
             assert isinstance(child, type(ast_node)), f'Expected {type(ast_node)} but got {type(child)}'
             yield from ASTFinder.__matches_kind(child, pattern) 
 

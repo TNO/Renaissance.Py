@@ -1,6 +1,7 @@
 from typing import Any, Dict, Generator, List, Optional
 
 
+
 class LSTNode:
     def __init__(
         self,
@@ -8,8 +9,8 @@ class LSTNode:
         attributes: Dict[str, Any],
         signature: str,
         offset: Optional[int] = None,
-        children: Optional[List[LSTNode]] = None,
-        parent: Optional[LSTNode] = None,
+        children: Optional[List['LSTNode']] = None,
+        parent: Optional['LSTNode'] = None,
     ):
         self.node_type = node_type
         self.attributes = attributes
@@ -18,7 +19,7 @@ class LSTNode:
         self.children = children if children else []
         self.parent = parent
 
-    def add_child(self, child: LSTNode):
+    def add_child(self, child): # LSTNode):
         self.children.append(child)
         child.parent = self
 

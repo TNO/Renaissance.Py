@@ -74,7 +74,7 @@ class ClangASTNode(ASTNode):
         self.inserted = insert_kind != None
         self.show_props = False
         self.indent = ''
-
+        self._name = self._derive_name(node)
         # if the node has not been added to the translation unit, add it
         # a node might already be added if it is split into multiple nodes
         # an example is for base types like int, char, etc. which are split into multiple nodes
@@ -82,7 +82,8 @@ class ClangASTNode(ASTNode):
             self.translation_unit._nodes[node.hash] = self
         self.__start_offset = start_offset if start_offset!=None else self.__derive_start_offset()
         self.__length = length if length != None else self.__derive_length()
-        self.__kind = insert_kind if insert_kind != None else self.__derive_kind()
+        self._kind = insert_kind if insert_kind != None else self.__derive_kind()
+
         # an fake child is introduced to handle the case where the type of a declaration is not found
         # for example in the case of a base type. 
         # without the fake child pattern matching on types will be difficult
@@ -106,7 +107,7 @@ class ClangASTNode(ASTNode):
         properties_text = '' if not self.show_props else self.get_properties()
         prefix = " " if len(raw_lines) < 2 else f"\n    {self.indent}"
         formatted_lines = [f"{prefix}|{line}|" for line in raw_lines]
-        return f"{self.indent}({self.get_kind()}, {self.get_name()}, {self.get_containing_filename()}[{self.get_start_offset()}:{self.get_start_offset()+self.get_length()}]){properties_text}:{''.join(formatted_lines)}\n"
+        return f"{self.indent}({self.kind}, {self.name}, {self.get_containing_filename()}[{self.get_start_offset()}:{self.get_start_offset() + self.get_length()}]){properties_text}:{''.join(formatted_lines)}\n"
 
 
     @override
@@ -145,7 +146,7 @@ class ClangASTNode(ASTNode):
     
     @override
     @cache
-    def _get_name(self) -> str:
+    def _derive_name(self) -> str:
         try:
             if self.node.type.kind == TypeKind.RECORD: # type: ignore
                 return self.node.type.spelling
@@ -180,7 +181,7 @@ class ClangASTNode(ASTNode):
     def _get_extended_end_offset(self) -> int: 
         try: 
             endOffset =  self.__start_offset + self.__length
-            if (not self._is_statement_or_declaration()) and (self.parent and self.parent.get_kind() in STMT_PARENTS):  
+            if (not self._is_statement_or_declaration()) and (self.parent and self.parent.kind in STMT_PARENTS):
                 content = self.root.get_binary_file_content()
                 while endOffset < len(content) and not content[endOffset-1] in b';':
                     endOffset += 1
@@ -189,17 +190,13 @@ class ClangASTNode(ASTNode):
             return 0
 
     def _is_statement_or_declaration(self):
-        return re.match('.*(_STMT|_DECL|CXX_METHOD)', self.get_kind())
-
-    @override
-    def _get_kind(self) -> str: 
-        return self.__kind
+        return re.match('.*(_STMT|_DECL|CXX_METHOD)', self.kind)
 
     @override
     def _matches_kind(self, node:ASTNode) -> bool: 
-        return self.__kind == node.get_kind() or\
-            (self.__kind.endswith('_LITERAL') and node.get_kind()=='DECL_REF_EXPR') or\
-            (self.__kind=='DECL_REF_EXPR' and node.get_kind().endswith('_LITERAL'))\
+        return self._kind == node.kind or\
+            (self._kind.endswith('_LITERAL') and node.kind == 'DECL_REF_EXPR') or\
+            (self._kind =='DECL_REF_EXPR' and node.kind.endswith('_LITERAL'))\
 
     @override
     @cache
@@ -209,18 +206,18 @@ class ClangASTNode(ASTNode):
         if offsets in self.translation_unit.macro_expansions:
             result['macro_expansion'] = self.get_text()
 
-        if self.get_kind() == 'BINARY_OPERATOR':
+        if self.kind == 'BINARY_OPERATOR':
             #TODO remove below code after clang release that supports the getOpCode() statement
-            children = self.get_children()
+            children = self.children
             start_offset = children[0].get_start_offset() + children[0].get_length()
             end_offset = children[1].get_start_offset()
             operator = self.get_content(start_offset, end_offset)
             result['operator'] = operator.strip()
             # next statement works in C++ but not in Python (yet) will be released later
             # result['operator'] =  self.node.getOpCode()
-        elif self.get_kind() == 'UNARY_OPERATOR':
+        elif self.kind == 'UNARY_OPERATOR':
             #TODO remove below code after clang release that supports the getOpCode() statement
-            child = self.get_children()[0]
+            child = self.children[0]
             #list all attributes of self.node excluding the once starting with _
 
             if child.get_start_offset() > self.get_start_offset():
@@ -237,9 +234,9 @@ class ClangASTNode(ASTNode):
             result['prefixOperator'] = prefix_operator
             # next statement works in C++ but not in Python (yet) will be released later
             # result['operator'] =  self.node.getOpCode()
-        elif self.get_kind().endswith('_LITERAL'):
+        elif self.kind.endswith('_LITERAL'):
             self._addTokens(result, 'LITERAL')
-        elif self.get_kind() =='DECL_REF_EXPR':
+        elif self.kind == 'DECL_REF_EXPR':
             self._addTokens(result, 'LITERAL')
 
         is_all = { attr[len('is_'):]: True for attr in dir(self.node) if attr.startswith('is_') and  callable(getattr(self.node, attr) and getattr(self.node, attr)() == True)}
@@ -252,7 +249,7 @@ class ClangASTNode(ASTNode):
 
     @override
     def _is_statement(self) ->bool:
-        return self.parent is not None and self.parent.get_kind() in STMT_PARENTS
+        return self.parent is not None and self.parent.kind in STMT_PARENTS
     
     @override
     @cache
@@ -284,7 +281,7 @@ class ClangASTNode(ASTNode):
             def has_body(node):
                return  any(c.kind == CursorKind.COMPOUND_STMT for c in node.node.get_children())  # type: ignore
             def is_match(node):
-                if node.__kind != self.__kind: return False
+                if node._kind != self._kind: return False
                 if node.node.type.kind != TypeKind.FUNCTIONPROTO: return False # type: ignore
                 if node.node.semantic_parent.hash != semantic_parent: return False
                 if node.node.displayname != signature: return False
@@ -325,8 +322,17 @@ class ClangASTNode(ASTNode):
         except:
             return 0
 
-    def __derive_kind(self) -> str: 
+    def __derive_kind(self) -> str:
+        MATCH_ONE = '_MatchOne__'
+        MATCH_ALL = '_MatchAll__'
         try:
+            if self.node.kind.name == 'MACRO_DEFINITION':
+                return str(self.node.kind.name)
+            elif self.node.kind.name in ['UNEXPOSED_EXPR','VAR_DECL']:
+                if self.node.displayname.startswith('$$'):
+                    return MATCH_ALL
+                elif self.node.displayname.startswith('$'):
+                    return MATCH_ONE
             return str(self.node.kind.name)
         except Exception as e:
             return EMPTY_STR
@@ -335,7 +341,7 @@ class ClangASTNode(ASTNode):
     def remove_wrapper(cursor):
         try:
             if ClangASTNode._is_wrapped(cursor):
-                return  ClangASTNode.remove_wrapper(list(cursor.get_children())[0])
+                return  ClangASTNode.remove_wrapper(list(cursor.children)[0])
         except:
             pass
         return cursor
@@ -359,7 +365,7 @@ class ClangASTNode(ASTNode):
 
     @staticmethod
     def _is_wrapped(cursor):
-        return cursor.kind.is_unexposed() and len(list(cursor.get_children())) == 1
+        return cursor.kind.is_unexposed() and len(list(cursor.children)) == 1
 
 class ReferenceHelper():
     @staticmethod
@@ -404,7 +410,7 @@ if __name__ == "__main__":
     #     while parent:
     #         depth += 1
     #         parent = parent.get_parent()
-    #     print(str('  ' * depth) + astNode.get_kind())
+    #     print(str('  ' * depth) + astNode.kind)
 
     # # root.process(visitFunction)
 
@@ -416,7 +422,7 @@ def print_node_kind(node, depth=0):
     if PRINT_ALL_NODES:
         print(f"{' '*depth} Node: {node.spelling}, Kind: {node.kind}")
         
-        for child in node.get_children():
+        for child in node.children:
             print_node_kind(child, depth+2)
 
 

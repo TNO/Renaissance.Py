@@ -13,7 +13,7 @@ def walk(node):
     todo = deque([node])
     while todo:
         node = todo.popleft()
-        todo.extend(node.get_children())
+        todo.extend(node.children)
         yield node
 
 content = """

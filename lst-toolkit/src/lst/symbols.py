@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Optional, Dict, List
-from src.lst import LSTNode
+
+from lst.lst import LSTNode
 
 
 @dataclass

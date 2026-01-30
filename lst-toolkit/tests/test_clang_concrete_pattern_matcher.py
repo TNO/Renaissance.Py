@@ -1,10 +1,16 @@
 import unittest
 from pathlib import Path
-from src.clang_adapter import ClangAdapter
-from src.pattern_matcher import MatchResult
-from src.match import Match
-from src.extractor import PatternMatcherInterfaceExtended
-from src.extractor import Extractor
+
+from adapters.clang_adapter import ClangAdapter
+from extractors.extractor import PatternMatcherInterfaceExtended, Extractor
+
+
+# from pathlib import Path
+# from clang_adapter import ClangAdapter
+# from pattern_matcher import MatchResult
+# from match import Match
+# from extractor import PatternMatcherInterfaceExtended
+# from extractor import Extractor
 
 
 class TestClangConcretePatterns(unittest.TestCase):

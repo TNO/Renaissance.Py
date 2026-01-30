@@ -12,7 +12,7 @@ class ModelLoader():
     @staticmethod
     def load_model(factory:ASTFactory):
         # note: make sure to load a corresponding model for the language
-        return  factory.create(Path(__file__).parent.parent.parent.parent / 'c/src/main.c')
+        return  factory.create(Path(__file__).parent.parent.parent.parent / 'examples/c/src/main.c')
 
 class TestFinder(TestCase):
     pass
@@ -39,7 +39,7 @@ class TestAllFinder(TestFinder):
     def test_find_all_bogus(self, _, factory):
         model = ModelLoader.load_model(factory)
         def isBogus(node: ASTNode):
-            if 'Bogus' in node.get_kind(): yield node
+            if 'Bogus' in node.kind: yield node
         total = ASTFinder.find_all(model, isBogus).count()
         self.assertEqual( total, 0)
         print( total)
@@ -48,7 +48,7 @@ class TestAllFinder(TestFinder):
     def test_find_all_expr(self, _, factory):
         model = ModelLoader.load_model(factory)
         def isBinaryOperator(node: ASTNode):
-            if re.fullmatch('(?i).*binary_?operator',node.get_kind()) : yield node
+            if re.fullmatch('(?i).*binary_?operator', node.kind) : yield node
         total = ASTFinder.find_all(model, isBinaryOperator).count()
         self.assertGreater( total, 0)
         print( total)

@@ -1,7 +1,7 @@
 import ast
+from selectors import SelectSelector
 
 from common import Stream
-from impl.python import find_all
 #This script demonstrates the use of the syntax_tree library to parse and rewrite C code.
 #It specifically showcases nested replacements and multiple patterns.
 from syntax_tree import ASTFactory, CPatternFactory, MatchFinder, ASTRewriter
@@ -17,8 +17,7 @@ pa(54)
 if pa():
   ba()
 pa(54)  
-""".strip()
-
+"""
 
 def refactor_with_nested_compositions(args):
     # the first argument is the code to be parsed
@@ -40,10 +39,11 @@ def refactor_with_nested_compositions(args):
     # the replacement code strip indent is used to be agnostic to the indentation of the replacement
     pattern1replacement = TextUtils.strip_indent("""
             # changed if expr to const
+            isAOne=True
             if(isAOne):
                 $$stmts
             """)
-    pattern2replacement = '# changed function f1 to f2\nf2($a,c)'
+    pattern2replacement = '# changed function f1 to f2\nf2($a,123456)\n'
 
     # show node and patterns enable include properties to show the properties of the nodes
     include_properties = True
@@ -56,15 +56,29 @@ def refactor_with_nested_compositions(args):
         # create an ASTRewriter
         rewriter = ASTRewriter(atu)
 
+        def raw(nodes):
+            res = ''
+            for node in nodes:
+                res += node.text
+            return res + '\n'
         # create a refactoring that use different replacement code for different patterns
         def refactor(match):
             if match.patterns == pattern1:
-                return rewriter.replace(pattern1replacement, match)
-            return rewriter.replace(pattern2replacement, match)
+                replment_text = pattern1replacement
+            else:
+                replment_text = pattern2replacement
+            for repl_snippet in match.expansions:
+                if(isinstance(match.expansions[repl_snippet],list)):
+                    replment_text = replment_text.replace(repl_snippet, raw(match.expansions[repl_snippet]))
+                else:
+                    replment_text = replment_text.replace(repl_snippet, match.expansions[repl_snippet].text)
+            for repl_snippet in match.expansion_lists:
+                replment_text = replment_text.replace(repl_snippet, raw(match.expansion_lists[repl_snippet]))
+            return rewriter.replace(replment_text, match.nodes)
 
         # search matches for pattern1 and pattern2 and replace them using the refactor function
         MatchFinder.find_all(atu, pattern1, pattern2). \
-            peek(lambda match: print('peek: ' + str(match.get_raw_signatures()))). \
+            peek(lambda match: print('peek: ' + str(match.nodes))). \
             for_each(refactor)
 
         # print the rewritten code

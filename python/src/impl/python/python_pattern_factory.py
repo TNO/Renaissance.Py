@@ -15,11 +15,6 @@ SHOW_NODE = False
 
 class PythonPatternFactory:
 
-    # RENAISSANCE
-    RESERVED_KEYWORDS = ['class', 'in', 'def']
-    reserved_function_name = "__rejuvenation__reserved__function__name__"
-    reserved_variable_name = "__rejuvenation__reserved__variable__name__"
-
     def __init__(
         self,
         factory: ASTFactory,
@@ -30,7 +25,7 @@ class PythonPatternFactory:
         # collect includes #defines  and var decl from the refNode
         if ref_node:
             offset = (
-                Stream(ref_node.get_children())
+                Stream(ref_node.children)
                 .filter(ASTNode.is_part_of_translation_unit)
                 .filter(
                     lambda c: not ASTFinder.matches_kind(
@@ -164,10 +159,10 @@ class PythonPatternFactory:
 
         return (
             Stream(
-                ASTFinder.find_kind(root.get_children()[-1], "(?i)COMPOUND_?STMT")
+                ASTFinder.find_kind(root.children[-1], "(?i)COMPOUND_?STMT")
                 .find_first()
                 .get()
-                .get_children()
+                .children
             )
             .filter(ASTNode.is_part_of_translation_unit)
             .map(lambda n: ASTFinder.find_kind(n, kind).find_first().get())
