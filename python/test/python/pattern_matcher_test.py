@@ -4,6 +4,7 @@ import unittest
 from unittest.mock import patch
 
 from impl import PythonASTNode, PythonPatternFactory
+from impl.python import MATCH_ALL
 from syntax_tree import ASTFactory, MatchFinder
 from syntax_tree.match_finder import MATCH_ONE, is_match
 

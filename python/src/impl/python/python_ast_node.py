@@ -158,29 +158,17 @@ class PythonASTNode(ASTNode):
         for name in node._fields:
             try:
                 child = getattr(node, name)
-                match name:
-                    case 'body'|'args'|'targets':
-                        for stmt in child:
-                            self._children.append(PythonASTNode(stmt, translation_unit))
-                    case 'orelse':
-                        for stmt in child:
-                            self.orelse.append(PythonASTNode(stmt, translation_unit))
-                    case 'value'|'test'|'func'|'id':
-                        if isinstance(child, ast.AST):
-                            self._expression = PythonASTNode(child, translation_unit)
-                        else:
-                            self.properties[name] = child
-                    case 'keywords'|'type_ignores':
-                        continue
-                    case _:
-                        match child:
-                            case list():  # Matches any list
-                                for n in child:
-                                    self._children.append(PythonASTNode(n, translation_unit))
-                            case ast.AST():
-                                self.properties[name] = PythonASTNode(child, translation_unit)
-                            case str()| int():  # Matches any list
-                                self.properties[name] = child
+
+                match child:
+                    case ImplicitNode():
+                        for n in child:
+                            self._children.append(PythonASTNode(n, translation_unit))
+                    case list():  # Matches any list
+                        self._children.append(PythonASTNode(ImplicitNode(name,child), translation_unit))
+                    case ast.AST():
+                        self._children.append(PythonASTNode(child, translation_unit))
+                    case _: #str()| int():  # Matches any list
+                        self.properties[name] = child
             except AttributeError as e:
                 print(e)
                 continue
@@ -278,6 +266,7 @@ class PythonASTNode(ASTNode):
         return isinstance(self.node, ast.stmt)
 
     @override
+    @property
     def raw_signature(self) -> str:
         return self.binary_file_content().decode(sys.getfilesystemencoding())
 
