@@ -118,6 +118,7 @@ class PythonPatternFactory:
         # create python node from string
         # the output could be different, the comments are removed
         # Return PythonASTNode
+        text = text.replace('$$', MATCH_ALL).replace('$', MATCH_ONE)
         return PythonASTNode(ast.parse(text).body[0])
 
     def create(self, text: str, kind: Optional[str] = None) -> ASTNode:
