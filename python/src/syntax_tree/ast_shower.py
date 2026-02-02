@@ -2,7 +2,7 @@ from io import StringIO
 import io
 from .ast_node import ASTNode
 
-
+IMPLICIT = ['ImplicitNode']
 class ASTShower:
     @staticmethod
     def show_node(ast_node: ASTNode, include_properties: bool = False) -> None:
@@ -28,7 +28,7 @@ class ASTShower:
     def _process_node(
             output: StringIO, indent: str, node: ASTNode, include_properties: bool
     ) -> None:
-        if node.is_part_of_translation_unit():
+        if node.is_part_of_translation_unit() and node.kind not in IMPLICIT:
             node.indent = indent
             output.write(str(node))
         if node.children:

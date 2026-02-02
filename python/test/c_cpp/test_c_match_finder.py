@@ -4,6 +4,7 @@ from parameterized import parameterized
 
 from impl import ClangASTNode, ClangJsonASTNode
 from syntax_tree import ASTFactory, ASTFinder, ASTShower, ASTNode, MatchFinder, CPatternFactory
+from syntax_tree.match_finder import remove_comment_macro
 from utils_for_tests import to_string, compress, show_node
 from c_cpp.factories import Factories
 
@@ -62,12 +63,36 @@ class TestCMatchFinder(TestCase):
             print(f'      {[to_string(match.expansions) for match in matches]}')
         return matches
 
+
+    def do_test_fun_body(self, factory: ASTFactory, cpp_code, patterns:list[ASTNode], recursive: bool):
+        for idx, pattern in enumerate(patterns):
+            show_node(pattern, f"Pattern[{idx}]")
+
+        atu = factory.create_from_text(cpp_code, "test.c")
+
+        show_node(atu, "CPP code")
+        #find all if and while statements
+        func_body = remove_comment_macro(atu.children)[0].children[2]
+        matches = MatchFinder.find_all( func_body.children,patterns,recursive=recursive).\
+            filter(lambda match: match.nodes[0].is_part_of_translation_unit()).to_list()
+        if debug_mismatches:
+            for match in matches:
+                print(f'\nmatch({[compress(p.text) for p in match.patterns]})' + '{')
+                print(f"  start node: {compress(match.nodes[0].text)}")
+                for k, vs in match.expansions.items():
+                    # right align the key
+                    print(f"{k.rjust(12)}: {[compress(v.text) for v in vs]}")
+                print('}')
+            print('    expected dict should look like:')
+            print(f'      {[to_string(match.expansions) for match in matches]}')
+        return matches
+
     def assert_matches(self, expected_dicts_per_match, actual_matches):
         for actual, expected_dict in zip(actual_matches, expected_dicts_per_match):
             for k, v in actual.expansions.items():
                 for i,n in enumerate(v):
                     self.assertEqual(n.text,expected_dict[k][i])
-        self.assertEqual(len(actual_matches), len(expected_dicts_per_match))
+        self.assertEqual(len(expected_dicts_per_match),len(actual_matches))
 
 class TestExpressions(TestCMatchFinder):
     def test_match_expr(self):
@@ -105,15 +130,15 @@ class TestExpressions(TestCMatchFinder):
 class TestStatements(TestCMatchFinder):
         
     @parameterized.expand(Factories.extend([
-    ('$x;$y;',[{'$x': ['int a=3;'], '$y': ['int b=4;']}, {'$x': ['if(a==3){b=5;}else{b--;}'], '$y': ['while(a!=3){if(a==4&&b==5){b=a;}}']}]),   
-    ('if($x){$$stmts;}',[{'$x': ['a==4&&b==5'], '$$stmts': ['b=a;']}]),
-    ('if($x){$$stmts;}else{$single;$$multi;}',[{'$x': ['a==3'], '$$stmts': ['b=5;'], '$single': ['b--;'], '$$multi': []}]),
-    ('if($x){$$stmts;}else{$$multi;$single;}',[{'$x': ['a==3'], '$$stmts': ['b=5;'], '$single': ['b--;'], '$$multi': []}]),
-    ('while(a!=$x){$$stmts;}',[{'$x': ['3'], '$$stmts': ['if(a==4&&b==5){b=a;}']}]),
+    ('$x;$y;',[{'$x': ['int a = 3;'], '$y': ['int b = 4;']}, {'$x': ['if(a == 3){\n                b=5;\n            }\n            else{\n                b--;\n            }'], '$y': ['while(a != 3){\n                if  (a == 4 && b == 5){\n                    b = a;\n                }\n            }']}]),
+    ('if($x){$$stmts;}',[{'$x': ['a == 4 && b == 5'], '$$stmts': ['b = a;']}]),
+    ('if($x){$$stmts;}else{$single;$$multi;}',[{'$x': ['a == 3'], '$$stmts': ['b = 5;'], '$single': ['b--;'], '$$multi': []}]),
+    ('if($x){$$stmts;}else{$$multi;$single;}',[{'$x': ['a == 3'], '$$stmts': ['b = 5;'], '$single': ['b--;'], '$$multi': []}]),
+    ('while(a!=$x){$$stmts;}',[{'$x': ['3'], '$$stmts': ['if(a == 4 && b == 5){b=a;}']}]),
 ]))
     def test(self, _, factory, statements, expected_dicts_per_match: list[dict[str, list[str]]]):
         stmtNodes = CPatternFactory(factory).create_statements(statements)
-        matches = self.do_test(factory, TestStatements.SIMPLE_CPP, stmtNodes, recursive=True)  # type: ignore
+        matches = self.do_test_fun_body(factory, TestStatements.SIMPLE_CPP, stmtNodes, recursive=True)  # type: ignore
         self.assert_matches( expected_dicts_per_match,matches)
 
 class TestFunctionCallStatements(TestCMatchFinder):
@@ -205,7 +230,6 @@ class TestUseAtuToCreatePattern(TestCMatchFinder):
     ]))
     def test(self, _, factory, statements, pattern_type, expected, names):
         code = """
-        #include <stdio.h>
         #define FOO "foo"
         #define BAR "bar"
         #define SAME "bar"
@@ -214,7 +238,8 @@ class TestUseAtuToCreatePattern(TestCMatchFinder):
             int b;
         } A;
         int some_decl = 1; 
-
+        int printf(char* a,char* b,char* c, char* d){
+        }
         void f(){
             A a = {};
             const char* foo = FOO;

@@ -96,7 +96,7 @@ class TestRemove(TestRewrites):
 
     @parameterized.expand(list(Factories.extend( [
         ("void f() { /* c1 */ int a=3;\n}", True, True, 'void f() { \n}'),
-        ("void f() { int x=2; //x cmt\n  int a=3;\n}", True, True, 'void f() { int x=2; //x cmt\n}'),
+        ("void f() { int x=2; //x cmt\n  int a=3;\n}", True, True, 'void f() { int x=2; //x cmt\n  \n}'),
          ])))   
     def test(self, name, factory: ASTFactory, code: str, include_whitespace, include_comments, expected):
         

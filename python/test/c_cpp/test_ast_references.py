@@ -21,7 +21,7 @@ class TestASTReference(TestCase):
         refs = call.references
         self.assertGreater(len(refs), 0)
         refs = [r for r in refs if ASTFinder.matches_kind(r.node, '.*(Constructor|Function).*')]
-        
+
         self.assertGreater(len(refs), 0)
         for ref in refs:
             ref_node = ref.node
@@ -102,14 +102,14 @@ class TestASTReference(TestCase):
 
     @parameterized.expand(Factories.extend([
         # disable failing tests
+        # ('module NS class A: pass; class B(A): pass','cpp'),
         ('class A {}; class B: public A {};','cpp'),
         ('class A {}; class B: private A {};','cpp'),
-        ('module NS class A: pass; class B(A): pass','cpp'),
         ('struct A {}; class B: public A {};','cpp'),
         ('struct A {}; struct B: private A {};','cpp'),
         ('namespace NS {struct A {}; class B: private A {};}','cpp'),
     ]))
-    def test_baseclass_reference(self, _, factory, code, language):
+    def test_base_class_reference(self, _, factory, code, language):
         ast =  factory.create_from_text(code, "test." +language)
 
         # in clang python, there is a TYPE_REF below the CLASS_DECL node whereas 

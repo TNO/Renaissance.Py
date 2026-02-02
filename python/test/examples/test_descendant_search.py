@@ -6,6 +6,7 @@ from descendant_search import find_descendant_match
 
 
 from syntax_tree import CPatternFactory, ASTFactory, MatchFinder
+from syntax_tree.match_finder import is_match
 
 
 class TestFindDescendantMatch(TestCase):
@@ -91,19 +92,19 @@ class TestBasic(TestCase):
     def test_is_match_expression(self, _: str, factory: ASTFactory):
         pattern_factory = CPatternFactory(factory)
         expression1_pattern = pattern_factory.create_expression("f()", ["int f();"])
-        assert MatchFinder.is_match(expression1_pattern, expression1_pattern), "An expression matches itself"
+        assert is_match(expression1_pattern, expression1_pattern,{}), "An expression matches itself"
         
         expression2_pattern = pattern_factory.create_expression("f()", ["int f();"])
-        assert MatchFinder.is_match(expression1_pattern, expression2_pattern), "Identical expressions match"
+        assert is_match(expression1_pattern, expression2_pattern,{}), "Identical expressions match"
         
         statement_pattern = pattern_factory.create_statement("f();", extra_declarations=["int f();"])
-        assert not MatchFinder.is_match(expression1_pattern, statement_pattern), "An expression doesn't match a statement"
+        assert not is_match(expression1_pattern, statement_pattern,{}), "An expression doesn't match a statement"
         
     @parameterized.expand(Factories.factories)
     def test_is_match_statement(self, _: str, factory: ASTFactory):
         pattern_factory = CPatternFactory(factory)
         statement1_pattern = pattern_factory.create_statement("f();", extra_declarations=["int f();"])
-        self.assertTrue( MatchFinder.is_match(statement1_pattern, statement1_pattern), "A statement matches itself")
+        self.assertTrue( is_match(statement1_pattern, statement1_pattern,{}), "A statement matches itself")
         
         statement2_pattern = pattern_factory.create_statement("f ( ) ;", extra_declarations=["int f();"])
         self.assertTrue(  MatchFinder.is_match(statement1_pattern, statement2_pattern), "Identical statements match")

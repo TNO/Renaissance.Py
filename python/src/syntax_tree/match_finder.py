@@ -16,7 +16,7 @@ MATCH_ALL = '_MatchAll__'
 
 def is_match_tree(src, cmp, expansions=[]):
     foundPosition = 0
-    greedy=False
+    greedy = False
     for i in range(len(src)):
         node = src[i]
         pattern = cmp[foundPosition]
@@ -45,17 +45,17 @@ def is_match_tree(src, cmp, expansions=[]):
                     if pattern.kind != MATCH_ONE:
                         expansions[last_name] = src[expansion_start:i]
                     else:
-                        if foundPosition+1 == len(cmp):
-                            current_name=cmp[foundPosition].name
-                            end=len(src)
-                            expansions[last_name] = src[expansion_start:end-1]
-                            expansions[current_name] = src[end-1:]
+                        if foundPosition + 1 == len(cmp):
+                            current_name = cmp[foundPosition].name
+                            end = len(src)
+                            expansions[last_name] = src[expansion_start:end - 1]
+                            expansions[current_name] = src[end - 1:]
                             return True
             foundPosition += 1
             if foundPosition == len(cmp):
-                return i+1 == len(src)
-    if foundPosition <len(cmp):
-        if foundPosition == len(cmp)-1 and cmp[foundPosition].kind == MATCH_ALL:
+                return i + 1 == len(src)
+    if foundPosition < len(cmp):
+        if foundPosition == len(cmp) - 1 and cmp[foundPosition].kind == MATCH_ALL:
             if cmp[foundPosition].name in expansions:
                 return expansions[cmp[foundPosition].name] == []
             else:
@@ -66,38 +66,43 @@ def is_match_tree(src, cmp, expansions=[]):
                 expansions.pop(p.name)
         return False
     return True
+
+
 def is_match(src, cmp, expansions={}) -> bool:
-    if isinstance(cmp, ASTNode) and cmp.kind==MATCH_ONE and not src.kind=='Module':
+    if isinstance(cmp, ASTNode) and cmp.kind == MATCH_ONE and src.kind not in ['Module', 'FUNCTION_DECL','TRANSLATION_UNIT']:
         if cmp.name in expansions:
             return is_match(src, expansions[cmp.name][0])
         else:
-            expansions[cmp.name]=[src]
+            expansions[cmp.name] = [src]
             return True
-    elif isinstance(src, ASTNode) and (cmp.kind !=src.kind or not src.is_part_of_translation_unit()):
+    elif isinstance(src, ASTNode) and (cmp.kind != src.kind or not src.is_part_of_translation_unit()):
         return False
     elif isinstance(cmp, list):
-        return is_match_tree(src, cmp,expansions)
+        return is_match_tree(src, cmp, expansions)
     elif isinstance(cmp, dict):
-        return is_match_dict(src,cmp, expansions)
+        return is_match_dict(src, cmp, expansions)
     elif isinstance(cmp, str):
         return cmp.startswith('$') or src == cmp
     elif isinstance(cmp, int):
         return src == cmp
-    elif cmp ==None:
+    elif cmp == None:
         return src == None
     elif isinstance(cmp, ASTNode):
-        return ( is_match_dict(src.properties, cmp.properties, expansions)
-            and  is_match_tree(remove_comment(src.children),   cmp.children,   expansions))
+        return (is_match_dict(src.properties, cmp.properties, expansions)
+                and is_match_tree(remove_comment_macro(src.children), cmp.children, expansions))
     else:
-        return src==cmp
+        return src == cmp
 
-def remove_comment(src: list[ASTNode])->list[ASTNode]:
-    csrc=[]
+
+def remove_comment_macro(src: list[ASTNode]) -> list[ASTNode]:
+    csrc = []
     for c in src:
-        if not c.kind in ['FullComment']:
+        if not c.kind in ['FullComment', 'MACRO_DEFINITION']:
             csrc.append(c)
     return csrc
-def is_match_dict(src, cmp, expansions ) -> bool:
+
+
+def is_match_dict(src, cmp, expansions) -> bool:
     for n in cmp:
         if n not in src or not is_match(src[n], cmp[n], expansions):
             return False
@@ -114,10 +119,12 @@ def exclude_nodes_by_kind(exclude_kind: str, nodes: Sequence[ASTNode]) -> Sequen
         # return filter(lambda node: re.search(exclude_kind,node.kind, re.IGNORECASE)==None, nodes)
     return nodes
 
+
 def exclude_nodes_by_kind_as_sequence(
-    exclude_kind: str, nodes: Sequence[ASTNode]
+        exclude_kind: str, nodes: Sequence[ASTNode]
 ) -> Sequence[ASTNode]:
     return exclude_nodes_by_kind(exclude_kind, nodes)
+
 
 class PatternMatch:
     def __init__(self, nodes, expansions, patterns):
@@ -125,21 +132,22 @@ class PatternMatch:
         self.expansions = expansions
         self.patterns = patterns
         self._remaining_nodes: list[ASTNode] = []
+
     def __str__(self):
         res = ''
         for node in self.nodes:
             res += node.raw_signature
         return res
+
     def get_raw_signatures(self):
         return str(self)
 
-
     def match_referenced_by(
-        self,
-        *patterns_list: Sequence[ASTNode]|ConstrainedPattern,
-        recursive: bool = True,
-        exclude_kind: str = DEFAULT_EXCLUDE_KIND,
-        part_of_translation_unit: bool = True,
+            self,
+            *patterns_list: Sequence[ASTNode] | ConstrainedPattern,
+            recursive: bool = True,
+            exclude_kind: str = DEFAULT_EXCLUDE_KIND,
+            part_of_translation_unit: bool = True,
     ) -> Stream[PatternMatch]:
         return Stream(
             self._match_referenced_by(
@@ -148,11 +156,11 @@ class PatternMatch:
         )
 
     def match_references(
-        self,
-        *patterns_list: Sequence[ASTNode]|ConstrainedPattern,
-        recursive: bool = True,
-        exclude_kind: str = DEFAULT_EXCLUDE_KIND,
-        part_of_translation_unit: bool = True,
+            self,
+            *patterns_list: Sequence[ASTNode] | ConstrainedPattern,
+            recursive: bool = True,
+            exclude_kind: str = DEFAULT_EXCLUDE_KIND,
+            part_of_translation_unit: bool = True,
     ) -> Stream[PatternMatch]:
         return Stream(
             self._match_references(
@@ -161,11 +169,11 @@ class PatternMatch:
         )
 
     def _match_referenced_by(
-        self,
-        patterns_list: Sequence[Sequence[ASTNode]|ConstrainedPattern],
-        recursive: bool,
-        exclude_kind: str,
-        part_of_translation_unit: bool,
+            self,
+            patterns_list: Sequence[Sequence[ASTNode] | ConstrainedPattern],
+            recursive: bool,
+            exclude_kind: str,
+            part_of_translation_unit: bool,
     ) -> Iterable[PatternMatch]:
         for n in self.src_nodes:
             for ref in n.referenced_by:
@@ -178,8 +186,8 @@ class PatternMatch:
                 ).to_iterable()
 
     def _match_references(
-        self, patterns_list : Sequence[Sequence[ASTNode]|ConstrainedPattern], 
-        recursive: bool, exclude_kind: str, part_of_translation_unit: bool
+            self, patterns_list: Sequence[Sequence[ASTNode] | ConstrainedPattern],
+            recursive: bool, exclude_kind: str, part_of_translation_unit: bool
     ) -> Iterable[PatternMatch]:
         for n in self.src_nodes:
             for ref in n.references:
@@ -192,25 +200,23 @@ class PatternMatch:
                 ).to_iterable()
 
 
-
-#TODO: do we want to merge the filter functionality with the find pattern?
+# TODO: do we want to merge the filter functionality with the find pattern?
 @dataclass(frozen=True)
 class ConstrainedPattern:
-    patterns: Sequence[ASTNode] | ASTNode       # TODO Why plural, i.e., patterns?
+    patterns: Sequence[ASTNode] | ASTNode  # TODO Why plural, i.e., patterns?
     eligible: Callable[[PatternMatch], bool]
 
 
 class MatchFinder:
-
     DEFAULT_EXCLUDE_KIND = "comment"
 
     @staticmethod
     def find_all(
-        src_nodes: Sequence[ASTNode] | ASTNode,
-        *patterns_list: Sequence[ASTNode] | ConstrainedPattern,
-        recursive: bool = True,
-        exclude_kind: str = DEFAULT_EXCLUDE_KIND,
-        part_of_translation_unit: bool = True,
+            src_nodes: Sequence[ASTNode] | ASTNode,
+            *patterns_list: Sequence[ASTNode] | ConstrainedPattern,
+            recursive: bool = True,
+            exclude_kind: str = DEFAULT_EXCLUDE_KIND,
+            part_of_translation_unit: bool = True,
     ) -> Stream[PatternMatch]:
         return MatchFinder.find_all_strict(
             src_nodes,
@@ -220,19 +226,19 @@ class MatchFinder:
             part_of_translation_unit=part_of_translation_unit,
         )
 
-    #TODO: Why don't we define types for X | Sequence[X]?
-    #TODO: Why don't we enforce that input is always a sequence of ASTNodes (so just use [] around a single ASTNode)?
-    #TODO: Why don't we define a type for a pattern: Sequence[ASTNode] | ConstrainedPattern
-    #TODO: Why don't we introduce a Pattern class (with multiple constructors for the different cases)?
+    # TODO: Why don't we define types for X | Sequence[X]?
+    # TODO: Why don't we enforce that input is always a sequence of ASTNodes (so just use [] around a single ASTNode)?
+    # TODO: Why don't we define a type for a pattern: Sequence[ASTNode] | ConstrainedPattern
+    # TODO: Why don't we introduce a Pattern class (with multiple constructors for the different cases)?
 
-    #TODO: why is the type of patterns_list different from find_all (directly above)?
+    # TODO: why is the type of patterns_list different from find_all (directly above)?
     @staticmethod
     def find_all_strict(
-        src_nodes: Sequence[ASTNode] | ASTNode,
-        patterns_list: Sequence[Sequence[ASTNode] | ConstrainedPattern],
-        recursive: bool = True,
-        exclude_kind: str = DEFAULT_EXCLUDE_KIND,
-        part_of_translation_unit: bool = True,
+            src_nodes: Sequence[ASTNode] | ASTNode,
+            patterns_list: Sequence[Sequence[ASTNode] | ConstrainedPattern],
+            recursive: bool = True,
+            exclude_kind: str = DEFAULT_EXCLUDE_KIND,
+            part_of_translation_unit: bool = True,
     ) -> Stream[PatternMatch]:
         """
         Finds all pattern matches in the given source nodes.
@@ -268,9 +274,9 @@ class MatchFinder:
 
     @staticmethod
     def match_pattern(
-        src_nodes: [ASTNode] | ASTNode,
-        patterns: [ASTNode] | ConstrainedPattern,
-        src_filter: Callable[[Sequence[ASTNode]], [ASTNode]] = lambda n: n,
+            src_nodes: [ASTNode] | ASTNode,
+            patterns: [ASTNode] | ConstrainedPattern,
+            src_filter: Callable[[Sequence[ASTNode]], [ASTNode]] = lambda n: n,
     ) -> [PatternMatch]:
         """
         Matches a given source node or list of source nodes against a list of pattern nodes.
@@ -301,18 +307,16 @@ class MatchFinder:
         multiplicity = {key: 0 for key, count in Counter(keys).items() if count > 1}
         return MatchFinder.__match_pattern(src_nodes, patterns, 0, multiplicity, None, src_filter=src_filter)
 
-
-
     @staticmethod
     def __find_all(
-        src_nodes: Sequence[ASTNode],
-        patterns_list: Sequence[Sequence[ASTNode] | ConstrainedPattern],
-        recursive: bool,
-        src_filter: Callable[[Sequence[ASTNode]], Sequence[ASTNode]],
+            src_nodes: Sequence[ASTNode],
+            patterns_list: Sequence[Sequence[ASTNode] | ConstrainedPattern],
+            recursive: bool,
+            src_filter: Callable[[Sequence[ASTNode]], Sequence[ASTNode]],
     ) -> Iterator[PatternMatch]:
         found_matches = []
         for patterns in patterns_list:
-            found_matches.extend(MatchFinder.match_pattern(src_nodes,patterns))
+            found_matches.extend(MatchFinder.match_pattern(src_nodes, patterns))
         return found_matches
 
         # src_nodes = src_filter(
@@ -321,24 +325,24 @@ class MatchFinder:
 
     @staticmethod
     def __match_pattern(
-        src_nodes: Sequence[ASTNode],
-        patterns: Sequence[ASTNode],
-        depth: int,
-        multiplicity: dict[str, int],
-        pattern_match: Optional[PatternMatch],
-        src_filter: Callable[[Sequence[ASTNode]], Sequence[ASTNode]],
+            src_nodes: Sequence[ASTNode],
+            patterns: Sequence[ASTNode],
+            depth: int,
+            multiplicity: dict[str, int],
+            pattern_match: Optional[PatternMatch],
+            src_filter: Callable[[Sequence[ASTNode]], Sequence[ASTNode]],
     ) -> Sequence[PatternMatch]:
         greedy = False
         foundPosition = 0
         foundPositionInExpandedList = 0
         expansions = {}
-        foundStatements =[]
+        foundStatements = []
 
         # this case does not really make sense
-        if len(patterns) ==1 and patterns[0].kind ==MATCH_ALL:
+        if len(patterns) == 1 and patterns[0].kind == MATCH_ALL:
             foundStatements.append(src_nodes)
             return foundStatements
-        if not patterns or len(patterns) ==0:
+        if not patterns or len(patterns) == 0:
             return foundStatements
 
         for i in range(len(src_nodes)):
@@ -373,16 +377,14 @@ class MatchFinder:
                 foundPosition += 1
                 if foundPosition == len(patterns):
                     end = i + 1
-                    # pattern_match._query_create(MatchUtils.EXACT_MATCH)
 
                     foundStatements.append(PatternMatch(src_nodes[start:end], expansions, patterns))
-                    expansions={}
+                    expansions = {}
                     foundPosition = 0
             else:
-
                 if node.children:
                     foundStatements.extend(MatchFinder.__match_pattern(
-                        node.children,
+                        remove_comment_macro(node.children),
                         patterns,
                         depth,
                         multiplicity,
@@ -390,10 +392,9 @@ class MatchFinder:
                         src_filter,
                     ))
 
-
         return foundStatements
 
-        #             # TODO check with pierre whether we should take the highest or the deepest match
+        # TODO check with pierre whether we should take the highest or the deepest match
 
 
 # class MatchValidation:
@@ -480,9 +481,8 @@ class MatchFinder:
 
 def do_log(indent: int, *msgs: str):
     text = "\n".join(msgs)
-    print(" ".join(f'{" "*indent}{l}' for l in text.splitlines()))
+    print(" ".join(f'{" " * indent}{l}' for l in text.splitlines()))
 
 
 def raw(nodes: Sequence[ASTNode]):
     return " ".join([n.text for n in nodes])
-

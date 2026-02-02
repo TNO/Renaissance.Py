@@ -107,6 +107,7 @@ class ImplicitNode(ast.Name):
         self.end_col_offset = 0
 
     _fields = (
+        'id',
         'body',
     )
 
@@ -156,12 +157,12 @@ class PythonASTNode(ASTNode):
                     case list():  # Matches any list
                         if isinstance(node, ImplicitNode) or isinstance(node, ast.Module) or len(node._fields)==1:
                             for n in child:
-                                self._children.append(PythonASTNode(n, translation_unit))
+                                self._children.append(PythonASTNode(n, translation_unit,self))
                         else:
-                            self._children.append(PythonASTNode(ImplicitNode(name,child), translation_unit))
+                            self._children.append(PythonASTNode(ImplicitNode(name,child), translation_unit,self))
                     case ast.AST():
                         if name not in ['ctx', 'ctx']:
-                            self._children.append(PythonASTNode(child, translation_unit))
+                            self._children.append(PythonASTNode(child, translation_unit,self))
                     case _:
                         if name not in ['None']:
                             self.properties[name] = child
@@ -287,10 +288,6 @@ class PythonASTNode(ASTNode):
 
     def _get_function_definition(self):
         return None
-
-    @override
-    def is_part_of_translation_unit(self) -> bool:
-        return self.kind not in ['ImplicitNode']
 
     @override
     @cache

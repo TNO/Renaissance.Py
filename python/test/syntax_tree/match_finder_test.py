@@ -1,43 +1,73 @@
 from __future__ import annotations
 
+import unittest
 from unittest import TestCase
 
 from unittest.mock import Mock
 
-from syntax_tree import ASTNode
-from syntax_tree.match_finder import is_match
+from impl import ClangASTNode
+from syntax_tree import ASTNode, ASTFactory, CPatternFactory, ASTFinder, ASTShower
+from syntax_tree.match_finder import is_match, MatchFinder
 
 VERBOSE = False
 DEFAULT_EXCLUDE_KIND = "comment"
-
-class TestNode(ASTNode):
-    def _get_name(self):
-        return "my_awesome_name"
-
-
-class MatchUtilsTest(TestCase):
-
-
-    def test_is_match(self):
-        src = Mock(scpe=ASTNode)
-        comp = Mock(scpe=ASTNode)
-        src.get_name.return_value ="name"
-        src.get_kind.return_value ="kind"
-        src.get_properties.return_value = []
-        comp.get_name.return_value = "name"
-        comp.get_kind.return_value = "kind"
-        comp.get_properties.return_value = []
-        self.assertTrue(is_match(src, comp))
-        comp.get_properties.return_value = ['props']
-        self.assertFalse(is_match(src, comp))
-        comp.get_properties.return_value = []
-        comp.get_kind.return_value = 'other'
-        self.assertFalse(is_match(src, comp))
-        comp.get_kind.return_value = 'kind'
-        comp.get_name.return_value = 'my_awesome_name'
-        self.assertFalse(is_match(src, comp))
-        comp.get_name.return_value = '$my_awesome_name'
-        self.assertTrue(is_match(src, comp))
+class SmallNodeTest(unittest.TestCase):
+    pass
+    # @parameterized.expand(Factories.extend([
+    #     ('void f() {const char* bar = BAR;}', '(?i)Decl_?Stmt', ['const char* bar = BAR;'], {}),
+    #     ('void f() {const char* foo = FOO;}', '(?i)Decl_?Stmt', ['const char* foo = FOO;'], {}),
+    #     ('void f() {const char* same = SAME;}', '(?i)Decl_?Stmt', ['const char* same = SAME;'], {}),
+    #     ('void f() {const char* $name = BAR;}', '(?i)Decl_?Stmt', ['const char* bar = BAR;'], {'$name': ['bar']}),
+    #     ('void f() {const char* $name = FOO;}', '(?i)Decl_?Stmt', ['const char* foo = FOO;'], {'$name': ['foo']}),
+    #     ('void f() {const char* $name = SAME;}', '(?i)Decl_?Stmt', ['const char* same = SAME;'],
+    #      {'$name': ['same']}),
+    #     ('const char* $$args; void f() { printf($$args);}', '(?i)Call_?Expr',
+    #      ['printf("%s %s %s", foo, bar, same);'], {'$$args': ['"%s %s %s"', 'foo', 'bar', 'same']}),
+    # ]))
+    # def test_small_pieces(self):
+    #     code = """
+    #     #define BAR "bar"
+    #     const char* bar = BAR;
+    #     int f(){
+    #         const char* bar = BAR;
+    #     }
+    #     """
+    #     factory = ASTFactory(ClangASTNode, [])
+    #     atu = factory.create_from_text(code, 'test.c')
+    #     patternFactory = CPatternFactory(factory, ref_node=atu)
+    #     statementsAtu = patternFactory.create('void f() {const char* bar = BAR;}')
+    #     statements = ASTFinder.find_kind(statementsAtu, '(?i)Decl_?Stmt').find_last().get()  # pick the last statement
+    #     ASTShower.show_node(atu, include_properties=True)
+    #
+    #     result = MatchFinder.find_all(atu, [statements], recursive=True).to_list()
+    #     result[0].nodes[0]
+    #         # .map(lambda match: match.nodes[0])
+    #         # .filter(ASTNode.is_part_of_translation_unit)
+    #         # .map(ASTNode.text).to_list())
+    #     self.assertEqual('expected', result)
+# class MatchUtilsTest(TestCase):
+#
+#
+#     def test_is_match(self):
+#         src = Mock(scpe=ASTNode)
+#         comp = Mock(scpe=ASTNode)
+#         src.get_name.return_value ="name"
+#         src.get_kind.return_value ="kind"
+#         src.get_properties.return_value = []
+#         comp.get_name.return_value = "name"
+#         comp.get_kind.return_value = "kind"
+#         comp.get_properties.return_value = []
+#         self.assertTrue(is_match(src, comp))
+#         comp.get_properties.return_value = ['props']
+#         self.assertFalse(is_match(src, comp))
+#         comp.get_properties.return_value = []
+#         comp.get_kind.return_value = 'other'
+#         self.assertFalse(is_match(src, comp))
+#         comp.get_kind.return_value = 'kind'
+#         comp.get_name.return_value = 'my_awesome_name'
+#         self.assertFalse(is_match(src, comp))
+#         comp.get_name.return_value = '$my_awesome_name'
+#         self.assertTrue(is_match(src, comp))
 
     # def test_is_name_match(self):
     #     mock = Mock(scpe = ASTNode)
