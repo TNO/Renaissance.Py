@@ -75,6 +75,10 @@ def is_match(src, cmp, expansions={}) -> bool:
             return True
     elif isinstance(src, ASTNode) and (cmp.kind !=src.kind or not src.is_part_of_translation_unit()):
         return False
+    elif isinstance(cmp, list):
+        return is_match_tree(src, cmp,expansions)
+    elif isinstance(cmp, dict):
+        return is_match_dict(src,cmp, expansions)
     elif isinstance(cmp, str):
         return cmp.startswith('$') or src == cmp
     elif isinstance(cmp, int):
@@ -85,7 +89,7 @@ def is_match(src, cmp, expansions={}) -> bool:
         return ( is_match_dict(src.properties, cmp.properties, expansions)
             and  is_match_tree(src.children,   cmp.children,   expansions))
     else:
-        src==cmp
+        return src==cmp
 
 
 def is_match_dict(src, cmp, expansions ) -> bool:

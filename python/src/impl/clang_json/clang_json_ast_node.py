@@ -9,12 +9,14 @@ import re
 import sys
 import tempfile
 from common import Stream
+from impl.python import MATCH_ONE
 from syntax_tree import ASTNode, ASTReference, CPPUtils
 from typing import Any, Optional, Sequence
 from typing_extensions import override
 import subprocess
 
-
+MATCH_ONE = '_MatchOne__'
+MATCH_ALL = '_MatchAll__'
 EMPTY_DICT = {}
 EMPTY_STR = ""
 EMPTY_LIST: list[ClangJsonASTReference] = []
@@ -161,6 +163,13 @@ class ClangJsonASTNode(ASTNode):
                     self.__inserted_children.append(insert_child)
             # add the declaration as node
             # deep clone the type node and remove the parentheses
+        elif self._kind in ['DeclRefExpr']:
+            if self.name.startswith("$$"):
+                self._kind = MATCH_ALL
+            elif self.name.startswith("$"):
+                self._kind = MATCH_ONE
+
+
         self._children = self.__inserted_children + [
             ClangJsonASTNode(
                 ClangJsonASTNode._remove_wrapper(n),
@@ -351,10 +360,11 @@ class ClangJsonASTNode(ASTNode):
             if ClangJsonASTNode.__is_property(k)
             and not ClangJsonASTNode._is_reference(v) == None
         }
-        if (
-            self._get(["range", "end", "expansionLoc", "offset"], -1) != -1
-        ):  # dealing with a macro expansion
+        if self._get(["range", "end", "expansionLoc", "offset"], -1) != -1:  # dealing with a macro expansion
             properties["macro_expansion"] = self.text
+        # matching name through props
+        properties['name'] = self.name
+
         return properties
 
     @override

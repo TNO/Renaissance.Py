@@ -2,7 +2,7 @@ import logging
 from unittest import TestCase
 from parameterized import parameterized
 
-from impl import ClangASTNode
+from impl import ClangASTNode, ClangJsonASTNode
 from syntax_tree import ASTFactory, ASTFinder, ASTShower, ASTNode, MatchFinder, CPatternFactory
 from utils_for_tests import to_string, compress, show_node
 from c_cpp.factories import Factories
@@ -71,10 +71,10 @@ class TestCMatchFinder(TestCase):
 
 class TestExpressions(TestCMatchFinder):
     def test_match_expr(self):
-        factory = ASTFactory(ClangASTNode, [])
+        factory = ASTFactory(ClangJsonASTNode, [])
         exprNode = CPatternFactory(factory).create_expression('a == $x')
-        show_node(exprNode, "CPP pattern")
-        atu = factory.create_from_text('void fun(){int a,b;\na==3;\na==4;\nb==5;}', "test.c")
+        ASTShower.show_node(exprNode)
+        atu = factory.create_from_text('void fun(){int a,b;\nb==5;\na==3;\na==4;}', "test.c")
 
         show_node(atu, "CPP code")
         #find all if and while statements

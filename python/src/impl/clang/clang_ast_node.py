@@ -112,6 +112,7 @@ class ClangASTNode(ASTNode):
                 self._children.append(ClangASTNode(ClangASTNode.remove_wrapper(n), self.translation_unit, self) )
 
         self._properties = self._derive_properties()
+        self._properties['name'] = self._name
 
 
 
