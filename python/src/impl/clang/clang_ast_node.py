@@ -175,7 +175,8 @@ class ClangASTNode(ASTNode):
 
 
     @override
-    def _get_extended_end_offset(self) -> int:
+    @property
+    def extended_end_offset(self) -> int:
         try: 
             endOffset = self._offset + self._length
             if (not self._is_statement_or_declaration()) and (self.parent and self.parent.kind in STMT_PARENTS):

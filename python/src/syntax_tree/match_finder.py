@@ -87,11 +87,16 @@ def is_match(src, cmp, expansions={}) -> bool:
         return src == None
     elif isinstance(cmp, ASTNode):
         return ( is_match_dict(src.properties, cmp.properties, expansions)
-            and  is_match_tree(src.children,   cmp.children,   expansions))
+            and  is_match_tree(remove_comment(src.children),   cmp.children,   expansions))
     else:
         return src==cmp
 
-
+def remove_comment(src: list[ASTNode])->list[ASTNode]:
+    csrc=[]
+    for c in src:
+        if not c.kind in ['FullComment']:
+            csrc.append(c)
+    return csrc
 def is_match_dict(src, cmp, expansions ) -> bool:
     for n in cmp:
         if n not in src or not is_match(src[n], cmp[n], expansions):

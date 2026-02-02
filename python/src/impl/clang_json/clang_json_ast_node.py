@@ -318,8 +318,8 @@ class ClangJsonASTNode(ASTNode):
 
 
     @override
-    @cache
-    def _get_extended_end_offset(self) -> int:
+    @property
+    def extended_end_offset(self) -> int:
         try:
             endOffset = self._end_offset
             # TODO: Do I correctly assume this is for Expression Statements like

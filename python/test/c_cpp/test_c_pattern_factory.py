@@ -50,8 +50,8 @@ class TestDeclaration(TestCPatternFactory):
             print('*'*80)
             ASTShower.show_node(decl)
             print('*'*80)
-        self.assertEqual(count_vars, expected_vars)
-        self.assertEqual(count_refs, expected_refs)
+        self.assertEqual(expected_vars,count_vars )
+        self.assertEqual( expected_refs, count_refs)
 
 class TestStatements(TestCPatternFactory):
 

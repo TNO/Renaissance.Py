@@ -285,7 +285,7 @@ class _RewriteActions:
         )
         # start_offset =nodes[0].get_start_offset()
         # end_offset =nodes[-1].get_start_offset()+nodes[-1].get_length()+1
-        indent = nodes[0].indent
+        indent = len(nodes[0].indent)
         if self.correct_indent:
             new_content = TextUtils.shift_right(new_content, indent, start_line=1)
         self.__replace_bytes(rewriter, start_offset, end_offset, new_content)
@@ -310,7 +310,7 @@ class _RewriteActions:
         """
         if not nodes:
             return
-        indent = nodes[0].indent
+        indent = len(nodes[0].indent)
         start_offset, end_offset = (
             _RewriteActions.__correct_for_comments_and_whitespace(
                 self.nodes[0].offset,

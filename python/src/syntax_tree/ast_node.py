@@ -83,7 +83,7 @@ class ASTNode(ABC):
     @property
     def text(self) -> str:
         return TextUtils.shift_left(
-            self.raw_signature, self.indent, start_line=1
+            self.raw_signature, len(self.indent), start_line=1
         )
 
     def content(self, start: int, end: int) -> str:
@@ -107,7 +107,7 @@ class ASTNode(ABC):
 
     @property
     def extended_end_offset(self) -> int:
-        return self._get_extended_end_offset()
+        pass
 
     @property
     def preceding_sibling(self) -> ASTNode | None:
