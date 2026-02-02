@@ -91,7 +91,7 @@ def example_replace_old_by_fancy_new(factory, pattern_factory):
     rewriter = ASTRewriter(atu)
 
     MatchFinder.find_all(atu, *patterns_list).\
-        map(lambda match: match.get_nodes()['$old'][0]).\
+        map(lambda match: match.expansions['$old'][0]).\
         filter(matches_old).\
         for_each(lambda node: rewriter.replace('fancy_new',node))
     print('results after replacing the old type by fancy_new using MatchFinder:')

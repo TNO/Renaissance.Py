@@ -316,9 +316,9 @@ class ClangASTNode(ASTNode):
             if self.node.kind.name == 'MACRO_DEFINITION':
                 return str(self.node.kind.name)
             elif self.node.kind.name in ['UNEXPOSED_EXPR','VAR_DECL','DECL_REF_EXPR']:
-                if self.node.displayname.startswith('$$'):
+                if self.node.displayname.startswith('$$') and ' ' not in self.node.displayname:
                     return MATCH_ALL
-                elif self.node.displayname.startswith('$'):
+                elif self.node.displayname.startswith('$') and ' ' not in self.node.displayname:
                     return MATCH_ONE
             return str(self.node.kind.name)
         except Exception as e:

@@ -69,7 +69,7 @@ class TestASTReference(TestCase):
         self.assertEqual(ASTFinder.matches_kind(ref_node, '(Parm)?(Var)?_?Decl'), True)
         referenced_by = ref_node.referenced_by
         self.assertGreater(len(referenced_by), 0)  # clang python return 2 references, clang json 1
-        self.assertTrue(using in [r.node for r in referenced_by])
+        self.assertTrue(using.text in [r.node.text for r in referenced_by])
 
 
 
@@ -98,7 +98,7 @@ class TestASTReference(TestCase):
         self.assertEqual(ASTFinder.matches_kind(ref_node, '(CXXRecord|Typedef|Class)?_?Decl'), True)
         referenced_by = ref_node.referenced_by
         self.assertGreater(len(referenced_by), 0)  # clang python returns 2 references, clang json 1
-        self.assertTrue(using in [r.node for r in referenced_by])
+        self.assertTrue(using.text in [r.node.text for r in referenced_by])
 
     @parameterized.expand(Factories.extend([
         # disable failing tests

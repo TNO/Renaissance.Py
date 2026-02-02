@@ -388,7 +388,7 @@ class _RewriteActions:
     def __compose_replacement(
         self, replacement: str, matches: Sequence[PatternMatch]
     ) -> str:
-        all_placeholders = {p: n for m in matches for p, n in m.get_nodes().items()}
+        all_placeholders = {p: n for m in matches for p, n in m.expansions.items()}
         for placeholder, nodes in all_placeholders.items():
             quoted_placeholder = re.escape(placeholder)
             raw_signature = self.__get_texts(nodes)
