@@ -119,12 +119,12 @@ class ASTNode(ABC):
         return siblings[index - 1] if index > 0 else None
 
     @property
-    def references(self) -> ASTNode | None:
-        self._get_references()
+    def references(self) -> [ASTNode] | None:
+        pass
 
     @property
-    def reference_by(self) -> ASTNode | None:
-        self._get_reference_by()
+    def referenced_by(self) -> [ASTNode] | None:
+        pass
 
     @property
     def next_sibling(self) -> ASTNode | None:

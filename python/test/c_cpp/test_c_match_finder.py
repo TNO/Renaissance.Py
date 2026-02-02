@@ -73,7 +73,7 @@ class TestExpressions(TestCMatchFinder):
     def test_match_expr(self):
         factory = ASTFactory(ClangASTNode, [])
         exprNode = CPatternFactory(factory).create_expression('a == $x')
-
+        show_node(exprNode, "CPP pattern")
         atu = factory.create_from_text('void fun(){int a,b;\na==3;\na==4;\nb==5;}', "test.c")
 
         show_node(atu, "CPP code")

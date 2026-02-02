@@ -73,9 +73,7 @@ def is_match(src, cmp, expansions={}) -> bool:
         else:
             expansions[cmp.name]=[src]
             return True
-    elif isinstance(src, ASTNode) and cmp.kind !=src.kind:
-        return False
-    if not src.is_part_of_translation_unit():
+    elif isinstance(src, ASTNode) and (cmp.kind !=src.kind or not src.is_part_of_translation_unit()):
         return False
     elif isinstance(cmp, str):
         return cmp.startswith('$') or src == cmp
