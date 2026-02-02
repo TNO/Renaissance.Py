@@ -4,8 +4,8 @@ from parameterized import parameterized
 
 from impl import ClangASTNode
 from syntax_tree import ASTFactory, ASTFinder, ASTShower, ASTNode, MatchFinder, CPatternFactory
-from test.utils_for_tests import to_string, compress, show_node
-from test.c_cpp.factories import Factories
+from utils_for_tests import to_string, compress, show_node
+from c_cpp.factories import Factories
 
 logger = logging.getLogger(__name__)
 
@@ -139,7 +139,7 @@ class TestFunctionCallStatements(TestCMatchFinder):
         
         stmtNodes = CPatternFactory(factory).create_statements(statements, extra_declarations=extra_declarations)
         matches = self.do_test(factory, code, stmtNodes, recursive=True) # type: ignore
-        self.assert_matches(matches, expected_dicts_per_match)
+        self.assert_matches(expected_dicts_per_match, matches)
 
 class TestMultiAssignments(TestCMatchFinder):
 
@@ -162,7 +162,7 @@ class TestMultiAssignments(TestCMatchFinder):
         
         stmtNodes = CPatternFactory(factory).create_statements(statements, extra_declarations=extra_declarations)
         matches = self.do_test(factory, code, stmtNodes, recursive=True) # type: ignore
-        self.assert_matches(matches, expected_dicts_per_match)
+        self.assert_matches(expected_dicts_per_match, matches)
 
     @parameterized.expand(Factories.extend([
     ('if ($c) {$$before; $true; $$after;} else {$$before; $false; $$after;}',[],[{'$c': ['1'], '$$before': ['a=1;', 'b=2;'], '$true': ['c=3;'], '$$after': ['d=4;', 'e=5;'], '$false': ['c=6;']}]),   
@@ -228,8 +228,8 @@ class TestUseAtuToCreatePattern(TestCMatchFinder):
         patternFactory = CPatternFactory(factory, ref_node=atu) 
         statementsAtu = patternFactory.create(statements)
         statements = ASTFinder.find_kind(statementsAtu, pattern_type).find_last().get()  # pick the last statement
-        # ASTShower.show_node(atu, include_properties=True)
-        # ASTShower.show_node(statementsAtu, include_properties=True)
+        ASTShower.show_node(atu, include_properties=True)
+        ASTShower.show_node(statementsAtu, include_properties=True)
         result = MatchFinder.find_all([atu], [statements], recursive=True).\
             filter(lambda match: match.patterns == names).\
             map(lambda match: match.nodes[0]).\

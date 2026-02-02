@@ -4,7 +4,7 @@ from syntax_tree.ast_node import ASTNode
 from syntax_tree.ast_shower import ASTShower
 
 
-VERBOSE = False
+VERBOSE = True
 def to_string(d:dict[str, Sequence[ASTNode]]):
     return {k: [compress(v.text if isinstance(v, ASTNode) else v) for v in vs] for k, vs in d.items()}
 

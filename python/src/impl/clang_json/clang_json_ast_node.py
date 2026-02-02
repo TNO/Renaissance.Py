@@ -342,8 +342,8 @@ class ClangJsonASTNode(ASTNode):
         )
 
     @override
-    @cache
-    def _get_properties(self) -> dict[str, Any]:
+    @property
+    def properties(self) -> dict[str, Any]:
         # get all the attributes of self.node except the inner  nodes, id, location, range, kind and name and all reference nodes (that is children with 'id)
         properties = {
             k: ClangJsonASTNode._remove_ids(v)
@@ -358,8 +358,8 @@ class ClangJsonASTNode(ASTNode):
         return properties
 
     @override
-    @cache
-    def _get_referenced_by(self) -> Sequence[ASTReference]:
+    @property
+    def referenced_by(self) -> Sequence[ASTReference]:
         if self.inserted:
             return []
         self.translation_unit.lazy_create_references(self)
@@ -391,7 +391,7 @@ class ClangJsonASTNode(ASTNode):
         return None
 
     @override
-    @cache
+    @property
     def _get_references(self) -> Sequence[ASTReference]:
         if self.inserted:
             return []

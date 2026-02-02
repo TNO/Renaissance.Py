@@ -36,16 +36,24 @@ def is_match_tree(src, cmp, expansions=[]):
                 else:
                     pattern = cmp[foundPosition]
                     expansion_start = i
+
         if is_match(node, pattern, expansions):
             if greedy == True:
                 greedy = False
                 last_name = cmp[foundPosition - 1].name
                 if not last_name in expansions:
-                    expansions[last_name] = src[expansion_start:i]
-                    foundPositionInExpandedList = 0
+                    if pattern.kind != MATCH_ONE:
+                        expansions[last_name] = src[expansion_start:i]
+                    else:
+                        if foundPosition+1 == len(cmp):
+                            current_name=cmp[foundPosition].name
+                            end=len(src)
+                            expansions[last_name] = src[expansion_start:end-1]
+                            expansions[current_name] = src[end-1:]
+                            return True
             foundPosition += 1
             if foundPosition == len(cmp):
-                return True
+                return i+1 == len(src)
     if foundPosition <len(cmp):
         if foundPosition == len(cmp)-1 and cmp[foundPosition].kind == MATCH_ALL:
             if cmp[foundPosition].name in expansions:
@@ -53,6 +61,9 @@ def is_match_tree(src, cmp, expansions=[]):
             else:
                 expansions[cmp[foundPosition].name] = []
                 return True
+        for p in cmp:
+            if p.name in expansions:
+                expansions.pop(p.name)
         return False
     return True
 def is_match(src, cmp, expansions={}) -> bool:
@@ -64,14 +75,8 @@ def is_match(src, cmp, expansions={}) -> bool:
             return True
     elif isinstance(src, ASTNode) and cmp.kind !=src.kind:
         return False
-    elif isinstance(cmp, list):
-        return is_match_tree(src,cmp,expansions)
-
-    elif isinstance(cmp, dict):
-        for n in cmp:
-            if n not in src or not is_match(src[n], cmp[n], expansions):
-                return False
-        return True
+    if not src.is_part_of_translation_unit():
+        return False
     elif isinstance(cmp, str):
         return cmp.startswith('$') or src == cmp
     elif isinstance(cmp, int):
@@ -79,10 +84,18 @@ def is_match(src, cmp, expansions={}) -> bool:
     elif cmp ==None:
         return src == None
     elif isinstance(cmp, ASTNode):
-        return ( is_match(src.properties, cmp.properties, expansions)
-            and  is_match(src.children, cmp.children, expansions))
+        return ( is_match_dict(src.properties, cmp.properties, expansions)
+            and  is_match_tree(src.children,   cmp.children,   expansions))
     else:
         src==cmp
+
+
+def is_match_dict(src, cmp, expansions ) -> bool:
+    for n in cmp:
+        if n not in src or not is_match(src[n], cmp[n], expansions):
+            return False
+    return True
+
 
 def exclude_nodes_by_kind(exclude_kind: str, nodes: Sequence[ASTNode]) -> Sequence[ASTNode]:
     if exclude_kind:

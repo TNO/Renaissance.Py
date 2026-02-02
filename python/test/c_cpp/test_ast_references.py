@@ -18,7 +18,7 @@ class TestASTReference(TestCase):
         ASTShower.store_node('c:/temp/c0.txt', ast)
         call = ASTFinder.find_kind(ast, '(Call|CXXConstruct)Expr').find_first().get()
         assert isinstance(call, ASTNode)
-        refs = call.get_references()
+        refs = call.references
         self.assertGreater(len(refs), 0)
         refs = [r for r in refs if ASTFinder.matches_kind(r.node, '.*(Constructor|Function).*')]
         
