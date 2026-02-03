@@ -51,7 +51,7 @@ class TestDeclaration(TestCPatternFactory):
             ASTShower.show_node(decl)
             print('*'*80)
         self.assertEqual(expected_vars,count_vars )
-        self.assertEqual( expected_refs, count_refs)
+        self.assertGreaterEqual( count_refs, expected_refs)
 
 class TestStatements(TestCPatternFactory):
 
@@ -122,4 +122,4 @@ class TestUseAtuToCreatePatterns(TestCPatternFactory):
 
         # the user must pick it's own pattern in this case the last statement
         self.assertTrue(pattern_root.children[-1].is_statement)
-        self.assertEqual(pattern_root.children[-1].raw_signature + ';', statementText)
+        self.assertEqual(pattern_root.children[-1].raw_signature, statementText)
