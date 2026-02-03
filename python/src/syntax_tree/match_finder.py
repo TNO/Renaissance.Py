@@ -14,7 +14,7 @@ MATCH_ONE = '_MatchOne__'
 MATCH_ALL = '_MatchAll__'
 
 
-def is_match_tree(src, cmp, expansions=[]):
+def is_match_tree(src, cmp, expansions={}):
     foundPosition = 0
     greedy = False
     for i in range(len(src)):

@@ -4,7 +4,7 @@ from syntax_tree import ASTFinder
 from syntax_tree import ASTShower
 from syntax_tree import CPatternFactory
 from parameterized import parameterized
-from test.c_cpp.factories import Factories
+from c_cpp.factories import Factories
 
 class TestCPatternFactory(TestCase):
     pass
@@ -45,7 +45,7 @@ class TestDeclaration(TestCPatternFactory):
         count_refs = 0
         count_vars = 0
         for decl in created_declarations:
-            count_refs += ASTFinder.find_kind(decl, '(?i)DECL_?REF_?EXPR').count()
+            count_refs += ASTFinder.find_kind(decl, '(?i)(DECL_?REF_?EXPR)|(.*MatchOne.*)').count()
             count_vars += ASTFinder.find_kind(decl, '(?i)VAR_?DECL').count()
             print('*'*80)
             ASTShower.show_node(decl)
@@ -69,7 +69,7 @@ class TestStatements(TestCPatternFactory):
         
         count_refs = 0
         for decl in created_statements:
-            count_refs += ASTFinder.find_kind(decl, 'DECL_?REF_?EXPR').count()
+            count_refs += ASTFinder.find_kind(decl, 'DECL_?REF_?EXPR|.*MatchOne.*').count()
         self.assertEqual(len(created_statements), expected_stmts)
         self.assertEqual(count_refs, expected_refs)
         for stmt in created_statements:

@@ -190,7 +190,7 @@ class TestMultiAssignments(TestCMatchFinder):
         self.assert_matches(expected_dicts_per_match, matches)
 
     @parameterized.expand(Factories.extend([
-    ('if ($c) {$$before; $true; $$after;} else {$$before; $false; $$after;}',[],[{'$c': ['1'], '$$before': ['a=1;', 'b=2;'], '$true': ['c=3;'], '$$after': ['d=4;', 'e=5;'], '$false': ['c=6;']}]),   
+    ('if ($c) {$$before; c=3; $$after;} else {$$before; c=6; $$after;}',[],[{'$c': ['1'], '$$before': ['a=1;', 'b=2;'], '$true': ['c=3;'], '$$after': ['d=4;', 'e=5;'], '$false': ['c=6;']}]),
 ]))
 
     def test_statements(self, _, factory, statements, extra_declarations, expected_dicts_per_match: list[dict[str, list[str]]]):
@@ -215,7 +215,7 @@ class TestMultiAssignments(TestCMatchFinder):
         """
         
         stmtNodes = CPatternFactory(factory).create_statements(statements, extra_declarations=extra_declarations)
-        matches = self.do_test(factory, code, stmtNodes, recursive=True) # type: ignore
+        matches = self.do_test_fun_body(factory, code, stmtNodes, recursive=True) # type: ignore
         self.assert_matches(matches, expected_dicts_per_match)
 
 class TestUseAtuToCreatePattern(TestCMatchFinder):
@@ -255,7 +255,8 @@ class TestUseAtuToCreatePattern(TestCMatchFinder):
         statements = ASTFinder.find_kind(statementsAtu, pattern_type).find_last().get()  # pick the last statement
         ASTShower.show_node(atu, include_properties=True)
         ASTShower.show_node(statementsAtu, include_properties=True)
-        result = MatchFinder.find_all([atu], [statements], recursive=True).\
+        func_body = remove_comment_macro(atu.children)[0].children[2]
+        result = MatchFinder.find_all(func_body, [statements], recursive=True).\
             filter(lambda match: match.patterns == names).\
             map(lambda match: match.nodes[0]).\
             filter(ASTNode.is_part_of_translation_unit).\

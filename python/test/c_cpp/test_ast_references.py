@@ -101,8 +101,6 @@ class TestASTReference(TestCase):
         self.assertTrue(using.text in [r.node.text for r in referenced_by])
 
     @parameterized.expand(Factories.extend([
-        # disable failing tests
-        # ('module NS class A: pass; class B(A): pass','cpp'),
         ('class A {}; class B: public A {};','cpp'),
         ('class A {}; class B: private A {};','cpp'),
         ('struct A {}; class B: public A {};','cpp'),
