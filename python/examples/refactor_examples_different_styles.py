@@ -46,7 +46,7 @@ def example_add_comment_and_commit(factory, pattern_factory):
     # create a pattern that matches the declaration of old 
     # please note that we need to help by telling the old is a type and $value is a variable
     pattern1 = pattern_factory.create_declarations('old $name = $value;', extra_declarations=['typedef int old;'], parameters=['$value'])
-    pattern2 = pattern_factory.create_declarations('old $name();', extra_declarations=['typedef int old;'], parameters=['$value'])
+    pattern2 = pattern_factory.create_declarations('old $name;', extra_declarations=['typedef int old;'], parameters=['$value'])
     #put the patterns in a matrix because we want to find both statements in one go and not a sequence
     patterns_list =[pattern1, pattern2]
 

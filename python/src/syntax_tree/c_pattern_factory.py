@@ -9,7 +9,7 @@ from .ast_shower import ASTShower
 from .ast_factory import ASTFactory
 from .ast_finder import ASTFinder
 
-SHOW_NODE = True
+SHOW_NODE = False
 
 
 class CPatternFactory:
