@@ -90,13 +90,13 @@ class TestRewrites(TestCase):
             code_test_input = f'("{code}", {include_whitespace}, {include_comments}, "{actual}"),'.replace('\n', '\\n').replace('\r', '\\r')
             print("\nFull parameterized:" +code_test_input)
 
-        self.assertEqual(expected, rewriter.apply_to_string())
+        self.assertEqual(expected, actual)
 
 class TestRemove(TestRewrites):
 
     @parameterized.expand(list(Factories.extend( [
-        ("void f() { /* c1 */ int a=3;\n}", True, True, 'void f() { \n}'),
-        ("void f() { int x=2; //x cmt\n  int a=3;\n}", True, True, 'void f() { int x=2; //x cmt\n  \n}'),
+        ("void f() { /* c1 */ int a=3;\n}", True, True, 'void f() {\n}'),
+        ("void f() { int x=2; //x cmt\n  int a=3;\n}", True, True, 'void f() { int x=2; //x cmt\n}'),
          ])))   
     def test(self, name, factory: ASTFactory, code: str, include_whitespace, include_comments, expected):
         

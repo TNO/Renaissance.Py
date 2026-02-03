@@ -62,5 +62,5 @@ class TestExamplesDifferentStyles(TestCase):
         pattern_factory = CPatternFactory(factory)
         result, expected = method(factory, pattern_factory)
         assert result
-        self.assertMultiLineEqual(result, expected)
+        self.assertEqual(result, expected)
 

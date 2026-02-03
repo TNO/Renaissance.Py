@@ -1,7 +1,7 @@
 from unittest import TestCase
 
 from impl import ClangASTNode
-from syntax_tree import ASTFactory, ASTFinder, MatchFinder, CPatternFactory
+from syntax_tree import ASTFactory, ASTFinder, MatchFinder, CPatternFactory, ASTShower
 from syntax_tree.match_finder import remove_comment_macro
 
 
@@ -27,3 +27,12 @@ class ClangMatchFinderTest(TestCase):
         self.assertEqual(1, len(result))
         # self.assertEqual(expected, result[0].nodes[0].text)
 
+def test_typedef_inpattern(factory, pattern_factory):
+    factory = ASTFactory(ClangASTNode, [])
+    atu = factory.create_from_text('int f(){return 0;}', 'test.c')
+    pattern_factory = CPatternFactory(factory)
+    pattern1 = pattern_factory.create_declarations('old $name = $value;', extra_declarations=['typedef int old;'], parameters=['$value'])
+    pattern2 = pattern_factory.create_declarations('old $name();', extra_declarations=['typedef int old;'], parameters=['$value'])
+
+    ASTShower.show_node(pattern1)
+    ASTShower.show_node(pattern2)
