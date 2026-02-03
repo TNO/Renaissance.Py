@@ -128,5 +128,9 @@ class TestASTReference(TestCase):
         self.assertEqual(ASTFinder.matches_kind(ref_node, '(CXX_?Record|Class|Struct)_?Decl'), True)
         referenced_by = ref_node.referenced_by
         self.assertGreater(len(referenced_by), 0)  # clang python return 2 references, clang json 1
-        self.assertEqual(using.name,referenced_by[0].node.children[0].name)
+        if(len(referenced_by[0].node.children)):
+            name = referenced_by[0].node.children[0].name
+        else:
+            name = referenced_by[0].node.name
+        self.assertEqual(using.name,name)
         # self.assertTrue(using in [r.node for r in referenced_by])

@@ -101,11 +101,14 @@ def remove_comment_macro(src: list[ASTNode]) -> list[ASTNode]:
             csrc.append(c)
     return csrc
 
-
+IRRELEVANT_PROPS=['macro_expansion']
 def is_match_dict(src, cmp, expansions) -> bool:
     for n in cmp:
-        if n not in src or not is_match(src[n], cmp[n], expansions):
-            return False
+        if n in IRRELEVANT_PROPS:
+            continue
+        else:
+            if n not in src or not is_match(src[n], cmp[n], expansions):
+                return False
     return True
 
 
