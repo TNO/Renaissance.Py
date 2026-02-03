@@ -60,11 +60,6 @@ class ClangJsonTranslationUnit:
         node.root.process(ReferenceHelper.create_references)
         node.root.process(ReferenceHelper.add_record_references)
         self.references_initialized = True
-    # def find_by_type(self, name):
-    #     for id, node in self._nodes.items():
-    #         if node.name==name:
-    #             return node.node
-
 
 class ClangJsonASTNode(ASTNode):
     parse_args = [
@@ -576,9 +571,6 @@ class ReferenceHelper:
         for k in [k for k in ast_node.node.keys() if k in ON_NODE_ID_TAGS]:
             refs[k] = ast_node.node
             # add the node if it contains a reference for example in case of previousDecl
-        # if 'bases' in ast_node.node:
-        #     for base in ast_node.node['bases']:
-        #             refs['inherit'] = ast_node.translation_unit.find_by_type(base['type']['qualType'])
 
         # to make clang json compatible with clang python, we add the reference of the DeclRefExpr child to the CallExpr
         if ast_node._kind == "CallExpr":
@@ -662,8 +654,11 @@ class ReferenceHelper:
     def _get_record_decl(ast_node, base) -> Sequence[str]:
         try:
             tp = base["type"]
-            # split desugaredQualType to derive the parent namespaces
-            namespaces = tp["desugaredQualType"].split("::")[:-1][::-1]
+            if 'desugaredQualType' in tp and '::' in tp['desugaredQualType']:
+                # split desugaredQualType to derive the parent namespaces
+                namespaces = tp["desugaredQualType"].split("::")[:-1][::-1]
+            else:
+                namespaces = []
             qual_type = tp["qualType"]
             ids = []
             ctorType = EMPTY_STR
