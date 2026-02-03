@@ -62,8 +62,8 @@ def example_add_comment_and_commit(factory, pattern_factory):
     #create an ASTRewriter
     rewriter = ASTRewriter(atu)
     # search matches and replace them
-    MatchFinder.find_all(atu, *patterns_list).\
-        for_each(lambda match: rewriter.insert_before('// old has become obsolete',match))
+    result = MatchFinder.find_all(atu, *patterns_list)
+    result.for_each(lambda match: rewriter.insert_before('// old has become obsolete',match))
     
     #commit
     atu, rewriter = ASTUtils.commit(rewriter, factory, in_memory=True)

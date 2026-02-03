@@ -285,7 +285,7 @@ class _RewriteActions:
         )
         # start_offset =nodes[0].get_start_offset()
         # end_offset =nodes[-1].get_start_offset()+nodes[-1].get_length()+1
-        indent = len(nodes[0].indent)
+        indent = self.derive_indent(start_offset)
         if self.correct_indent:
             new_content = TextUtils.shift_right(new_content, indent, start_line=1)
         self.__replace_bytes(rewriter, start_offset, end_offset, new_content)
@@ -310,7 +310,7 @@ class _RewriteActions:
         """
         if not nodes:
             return
-        indent = len(nodes[0].indent)
+
         start_offset, end_offset = (
             _RewriteActions.__correct_for_comments_and_whitespace(
                 self.nodes[0].offset,
@@ -320,6 +320,7 @@ class _RewriteActions:
                 nodes,
             )
         )
+        indent = self.derive_indent(start_offset)
         # remove the indent in front of it
         start_offset -= indent
         # remove the line if it is empty
@@ -330,6 +331,12 @@ class _RewriteActions:
         ):
             start_offset -= 1
         self.__replace_bytes(rewriter, start_offset, end_offset, "")
+
+    def derive_indent(self, start_offset: int) -> int:
+        indent = 0  # len(nodes[0].indent)
+        while self.content[start_offset - indent - 1] in [32]:
+            indent += 1
+        return indent
 
     def __insert(
         self,
@@ -443,7 +450,7 @@ class _RewriteActions:
             if rs != org_rs:
                 rewriter.replace(rs, node)
         result = rewriter.apply_to_string()
-        indent = nodes[0].indent
+        indent = self.derive_indent(nodes[0].start_offset)
         return TextUtils.shift_left(result, indent, start_line=1)
 
     def __get_text(self, node: ASTNode) -> str:
