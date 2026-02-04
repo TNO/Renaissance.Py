@@ -5,3 +5,8 @@ libclang
 parameterized
 coverage
 pyperclip
+pytest-bdd
+pytest-cov
+pytest-mock
+pytest-black
+pytest-profiling
