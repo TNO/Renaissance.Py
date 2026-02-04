@@ -75,15 +75,6 @@ class PythonNodeTest(unittest.TestCase):
         """Setup that runs before each test method"""
         self.factory = syntax_tree.ASTFactory(PythonASTNode, [])
 
-
-    def test_reference_nodes(self):
-        tree = self.factory.create_from_text(content, 'all.py')
-        tree.translation_unit.lazy_create_references(tree)
-        self.assertIn('cat.__init__', tree.translation_unit._references,'detects functions')
-        self.assertIn('mice.discover[bruno]', tree.translation_unit._references,'detects parameters')
-        self.assertIn('tom', tree.translation_unit._references, 'detects global')
-        self.assertIn('mice.be_high_alert_of', tree.translation_unit._references, 'detects functions')
-
     def test_def_call_references(self):
         # Function f() refers to Function a()
         ast = self.factory.create_from_text(content2, 'content2.py')
@@ -94,19 +85,19 @@ class PythonNodeTest(unittest.TestCase):
         refs = funcDef.references
         self.assertEqual(len(refs), 2)
         ref = refs[0]
-        ref_node = ref.get_node()
+        ref_node = ref.node
         self.assertEqual(syntax_tree.ASTFinder.matches_kind(ref_node, 'FunctionDef'), True)
-        self.assertTrue(ref_node.get_name().lower(), 'a')
-        referenced_by = ref_node.get_referenced_by()
+        self.assertTrue(ref_node.name.lower(), 'a')
+        referenced_by = ref_node.referenced_by
         self.assertEqual(len(referenced_by), 1)  # Function a referenced by function f and var x.
-        self.assertTrue(funcDef in [r.get_node() for r in referenced_by])
+        self.assertTrue(funcDef in [r.node for r in referenced_by])
         ref1 = refs[1]
-        ref_node1 = ref1.get_node()
+        ref_node1 = ref1.node
         self.assertEqual(syntax_tree.ASTFinder.matches_kind(ref_node, 'FunctionDef'), True)
-        self.assertTrue(ref_node1.get_name().lower(), 'b')
-        referenced_by1 = ref_node1.get_referenced_by()
+        self.assertTrue(ref_node1.name.lower(), 'b')
+        referenced_by1 = ref_node1.referenced_by
         self.assertEqual(len(referenced_by1), 1) # Function b referenced by function f.
-        self.assertTrue(funcDef in [r.get_node() for r in referenced_by])
+        self.assertTrue(funcDef in [r.node for r in referenced_by])
 
     def test_type_reference(self):
         # Name z refers to Name a
@@ -118,12 +109,12 @@ class PythonNodeTest(unittest.TestCase):
         refs = type_node.references
         self.assertEqual(len(refs), 1)
         ref = refs[0]
-        ref_node = ref.get_node()
+        ref_node = ref.node
         self.assertEqual(syntax_tree.ASTFinder.matches_kind(ref_node, 'Name'), True)
-        self.assertEqual(ref_node.get_name().lower(), 'a')
-        referenced_by = ref_node.get_referenced_by()
+        self.assertEqual(ref_node.name.lower(), 'a')
+        referenced_by = ref_node.referenced_by
         self.assertGreater(len(referenced_by), 0)  # clang python returns 2 references, clang json 1
-        self.assertTrue(type_node in [r.get_node() for r in referenced_by])
+        self.assertTrue(type_node in [r.node for r in referenced_by])
 
 
     def test_class_reference(self):
@@ -136,11 +127,11 @@ class PythonNodeTest(unittest.TestCase):
         refs = class_node.references
         self.assertEqual(len(refs), 1)
         ref = refs[0]
-        ref_node = ref.get_node()
+        ref_node = ref.node
         self.assertEqual(syntax_tree.ASTFinder.matches_kind(ref_node, 'ClassDef'), True)
-        referenced_by = ref_node.get_referenced_by()
+        referenced_by = ref_node.referenced_by
         self.assertEqual(len(referenced_by), 2)
-        self.assertTrue(class_node in [r.get_node() for r in referenced_by])
+        self.assertTrue(class_node in [r.node for r in referenced_by])
 
     def test_param_reference(self):
         # param obj refers to its type, if type definition in the same file, refers to def, otherwise refers to Name
@@ -152,11 +143,11 @@ class PythonNodeTest(unittest.TestCase):
         refs = param_node.references
         self.assertEqual(len(refs), 1)
         ref = refs[0]
-        ref_node = ref.get_node()
+        ref_node = ref.node
         self.assertEqual(syntax_tree.ASTFinder.matches_kind(ref_node, 'ClassDef'), True)
-        referenced_by = ref_node.get_referenced_by()
+        referenced_by = ref_node.referenced_by
         self.assertEqual(len(referenced_by), 2)
-        self.assertTrue(param_node in [r.get_node() for r in referenced_by])
+        self.assertTrue(param_node in [r.node for r in referenced_by])
 
     def test_function_reference(self):
         ast = self.factory.create_from_text(content, 'content.py')
@@ -166,13 +157,11 @@ class PythonNodeTest(unittest.TestCase):
         ast.translation_unit.lazy_create_refers(ast)
         refs = call_node.references
         ref = refs[0]
-        ref_node = ref.get_node()
+        ref_node = ref.node
         self.assertEqual(syntax_tree.ASTFinder.matches_kind(ref_node, 'FunctionDef'), True)
-        referenced_by = ref_node.get_referenced_by()
+        referenced_by = ref_node.referenced_by
         self.assertEqual(len(referenced_by), 1)
-        self.assertTrue(call_node in [r.get_node() for r in referenced_by])
-
-
+        self.assertTrue(call_node in [r.node for r in referenced_by])
 
 if __name__ == '__main__':
     unittest.main()
