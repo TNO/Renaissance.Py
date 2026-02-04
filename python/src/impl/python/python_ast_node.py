@@ -137,7 +137,6 @@ class PythonASTNode(ASTNode):
             pass
         self.node = node
         self._parent = parent
-        self.parent = parent
         self.translation_unit = translation_unit
         cls = type(node)
         self._kind = cls.__name__
@@ -171,7 +170,6 @@ class PythonASTNode(ASTNode):
         for name in node._fields:
             try:
                 child = getattr(node, name)
-
                 match child:
                     case list():  # Matches any list
                         if isinstance(node, ImplicitNode) or isinstance(node, ast.Module) or len(node._fields)==1:
@@ -212,50 +210,50 @@ class PythonASTNode(ASTNode):
         else:
             self._offset = 0
             self._length = 0
-
-        if (isinstance(node, str)):
-            self.name = node
-            self.__kind = 'Name'
-            return
-        if (isinstance(node, ast.Assign)):
-            self.node = node
-        for name in node._fields:
-            try:
-                child = getattr(node, name)
-            except AttributeError:
-                keywords = True
-                continue
-            if child is None and getattr(cls, name, ...) is None:
-                keywords = True
-                continue
-            match child:
-                case ast.AST():
-                    if type(child) not in [ast.Load, ast.Store]:
-                        self._children.append(PythonASTNode(child, translation_unit, self))
-                case list():  # Matches any list
-                    if isinstance(node, ImplicitNode) or isinstance(node, ast.Module):
-                        for n in child:
-                            if not isinstance(n, ast.AST):
-                                n = ImplicitNode(n, None)
-                            self._children.append(PythonASTNode(n, translation_unit, self))
-                    elif not name in ['keywords', 'type_ignores'] and child:
-                        self._children.append(PythonASTNode(ImplicitNode(name, child), translation_unit, self))
-                case str():
-                    if name == 'id':
-                        self.name = child
-                case int():
-                    if name == 'value':
-                        self.name = str(child)
-                case _:
-                    pass
-            self.attributes = {}
-            try:
-                value = getattr(node, name)
-            except AttributeError:
-                continue
-            if value is None and getattr(cls, name, ...) is None:
-                continue
-            self.attributes[name] = value
+        #
+        # if (isinstance(node, str)):
+        #     self.name = node
+        #     self.__kind = 'Name'
+        #     return
+        # if (isinstance(node, ast.Assign)):
+        #     self.node = node
+        # for name in node._fields:
+        #     try:
+        #         child = getattr(node, name)
+        #     except AttributeError:
+        #         keywords = True
+        #         continue
+        #     if child is None and getattr(self.node, name, ...) is None:
+        #         keywords = True
+        #         continue
+        #     match child:
+        #         case ast.AST():
+        #             if type(child) not in [ast.Load, ast.Store]:
+        #                 self._children.append(PythonASTNode(child, translation_unit, self))
+        #         case list():  # Matches any list
+        #             if isinstance(node, ImplicitNode) or isinstance(node, ast.Module):
+        #                 for n in child:
+        #                     if not isinstance(n, ast.AST):
+        #                         n = ImplicitNode(n, None)
+        #                     self._children.append(PythonASTNode(n, translation_unit, self))
+        #             elif not name in ['keywords', 'type_ignores'] and child:
+        #                 self._children.append(PythonASTNode(ImplicitNode(name, child), translation_unit, self))
+        #         case str():
+        #             if name == 'id':
+        #                 self._name = child
+        #         case int():
+        #             if name == 'value':
+        #                 self._name = str(child)
+        #         case _:
+        #             pass
+        #     self.attributes = {}
+        #     try:
+        #         value = getattr(node, name)
+        #     except AttributeError:
+        #         continue
+        #     if value is None and getattr(self.node, name, ...) is None:
+        #         continue
+        #     self.attributes[name] = value
 
     @override
     @staticmethod
@@ -332,8 +330,8 @@ class PythonASTNode(ASTNode):
         return isinstance(self.node, ast.stmt)
 
     @override
-    @cache
-    def _get_referenced_by(self) -> Sequence[ASTReference]:
+    @property
+    def referenced_by(self) -> Sequence[ASTReference]:
         self.translation_unit.lazy_create_references(self)
         node_id = self.node.name if hasattr(self.node, 'name') else self.node.id
         ref_by = self.translation_unit._referenced_by.get(node_id, EMPTY_LIST)
@@ -352,11 +350,11 @@ class PythonASTNode(ASTNode):
         return None
 
     @override
-    @cache
-    def _get_references(self) -> Sequence[ASTReference]:
+    @property
+    def references(self) -> Sequence[ASTReference]:
         self.translation_unit.lazy_create_references(self)
         node_id = ''
-        match self.get_kind():
+        match self.kind:
             case 'FunctionDef':
                 node_id = self.name
             case 'Call':
