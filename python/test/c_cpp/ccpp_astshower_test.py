@@ -112,7 +112,6 @@ else
         real_children = list(filter(lambda n: n.kind != 'MACRO_DEFINITION', atu.children))[1]
 
         # expect this to work
-        # ifstmt = ASTFinder.find_kind(real_children, 'IF_STMT').to_list()[0]
         ifstmt = ASTFinder.find_kind(real_children, 'ifstmt').to_list()[0]
 
         text = ASTShower.get_node(ifstmt)
@@ -128,21 +127,23 @@ else
  '    |    call(y);|\n'
  '    |}|\n'
  '  (BINARY_OPERATOR, , test.c[51:55]): |x >y|\n'
- '    (DECL_REF_EXPR, x, test.c[51:52]): |x|\n'
-# missing an operator                           
- '    (DECL_REF_EXPR, y, test.c[54:55]): |y|\n'
+ '    (UNEXPOSED_EXPR, x, test.c[51:52]): |x|\n'
+ '      (DECL_REF_EXPR, x, test.c[51:52]): |x|\n'
+ '    (UNEXPOSED_EXPR, y, test.c[54:55]): |y|\n'
+ '      (DECL_REF_EXPR, y, test.c[54:55]): |y|\n'
  '  (COMPOUND_STMT, , test.c[57:82]):\n'
  '      |{|\n'
  '      |    x=1;|\n'
  '      |    call(x);|\n'
  '      |}|\n'
-#expect assingment                           
  '    (BINARY_OPERATOR, , test.c[63:66]): |x=1;|\n'
  '      (DECL_REF_EXPR, x, test.c[63:64]): |x|\n'
  '      (INTEGER_LITERAL, , test.c[65:66]): |1|\n'
  '    (CALL_EXPR, call, test.c[72:79]): |call(x);|\n'
- '      (DECL_REF_EXPR, call, test.c[72:76]): |call|\n'
- '      (DECL_REF_EXPR, x, test.c[77:78]): |x|\n'
+ '      (UNEXPOSED_EXPR, call, test.c[72:76]): |call|\n'
+ '        (DECL_REF_EXPR, call, test.c[72:76]): |call|\n'
+ '      (UNEXPOSED_EXPR, x, test.c[77:78]): |x|\n'
+ '        (DECL_REF_EXPR, x, test.c[77:78]): |x|\n'
  '  (COMPOUND_STMT, , test.c[88:113]):\n'
  '      |{|\n'
  '      |    y=1;|\n'
@@ -152,8 +153,10 @@ else
  '      (DECL_REF_EXPR, y, test.c[94:95]): |y|\n'
  '      (INTEGER_LITERAL, , test.c[96:97]): |1|\n'
  '    (CALL_EXPR, call, test.c[103:110]): |call(y);|\n'
- '      (DECL_REF_EXPR, call, test.c[103:107]): |call|\n'
- '      (DECL_REF_EXPR, y, test.c[108:109]): |y|\n'), text)
+ '      (UNEXPOSED_EXPR, call, test.c[103:107]): |call|\n'
+ '        (DECL_REF_EXPR, call, test.c[103:107]): |call|\n'
+ '      (UNEXPOSED_EXPR, y, test.c[108:109]): |y|\n'
+ '        (DECL_REF_EXPR, y, test.c[108:109]): |y|\n'), text)
 
 
 if __name__ == '__main__':

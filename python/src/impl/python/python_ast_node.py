@@ -113,6 +113,7 @@ class PythonTranslationUnit():
             return 0
         return sum(len(self.lines[i]) + 1 for i in range(line_nr - 1)) + col
 
+
 class ImplicitNode(ast.Name):
     def __init__(self, name, children):
         self.id = name
@@ -123,46 +124,39 @@ class ImplicitNode(ast.Name):
         self.end_col_offset = 0
 
     _fields = (
+        'id',
         'body',
     )
 
 
 class PythonASTNode(ASTNode):
-    _attributes = (
-        'translation_unit',
-        'parent',
-        'offset',
-        'length',
-        'offset',
-    )
-
     def __init__(self, node: ast.AST, translation_unit: PythonTranslationUnit = None, parent=None,
                  start_offset: Optional[int] = None, length: Optional[int] = None, insert_kind: Optional[str] = None):
         super().__init__(self if parent is None else parent.root)
         if(isinstance(node, str)):
             pass
         self.node = node
+        self._parent = parent
         self.parent = parent
         self.translation_unit = translation_unit
         cls = type(node)
         self._kind = cls.__name__
         self.indent = ''
-        self.name = self._derive_name()
-        self.add_node()
-        self.text = ast.unparse(self.node)
+        self._name = self._derive_name()
+
         self.show_props =False
         self._children = []
         self.orelse = []
-        self.properties={}
+        self._properties={}
         self._expression=None
         if translation_unit:
-            self.file_name = translation_unit.file_name
+            self._filename = translation_unit.file_name
             self.translation_unit = translation_unit
             self.derive_position(node, translation_unit)
         else:
-            self.file_name = ''
-            self.length = 0
-            self.offset = 0
+            self._filename = ''
+            self._length = 0
+            self._offset = 0
             self.translation_unit = None
 
         if (isinstance(node, str)):
@@ -177,46 +171,47 @@ class PythonASTNode(ASTNode):
         for name in node._fields:
             try:
                 child = getattr(node, name)
-                match name:
-                    case 'body'|'args'|'targets':
-                        for stmt in child:
-                            self._children.append(PythonASTNode(stmt, translation_unit))
-                    case 'orelse':
-                        for stmt in child:
-                            self.orelse.append(PythonASTNode(stmt, translation_unit))
-                    case 'value'|'test':
-                        if isinstance(child, ast.AST):
-                            self._expression = PythonASTNode(child, translation_unit)
+
+                match child:
+                    case list():  # Matches any list
+                        if isinstance(node, ImplicitNode) or isinstance(node, ast.Module) or len(node._fields)==1:
+                            for n in child:
+                                self._children.append(PythonASTNode(n, translation_unit,self))
                         else:
-                            self.properties[name] = child
-                    case 'keywords'|'type_ignores':
-                        continue
+                            self._children.append(PythonASTNode(ImplicitNode(name,child), translation_unit,self))
+                    case ast.AST():
+                        if name not in ['ctx', 'ctx']:
+                            self._children.append(PythonASTNode(child, translation_unit,self))
                     case _:
-                        match child:
-                            case list():  # Matches any list
-                                for n in child:
-                                    self._children.append(PythonASTNode(n, translation_unit))
-                            case ast.AST():
-                                self.properties[name] = PythonASTNode(child, translation_unit)
-                            case str()| int():  # Matches any list
-                                self.properties[name] = child
+                        if name not in ['None']:
+                            self.properties[name] = child
             except AttributeError as e:
                 print(e)
                 continue
 
+    def __eq__(self, other:ASTNode):
+        if not other:
+            return False
+        for i,child in enumerate(self._children):
+            if child != other.children[i]:
+                return False
+        for prop in self.properties:
+            if self.properties[prop] != other.properties[prop]:
+                return False
+        return True
     def derive_position(self, node: ast.AST , translation_unit: PythonTranslationUnit):
         if hasattr(node, 'lineno'):
-            self.offset = self.translation_unit.convert(self.node.lineno, self.node.col_offset)
-            self.length = self.translation_unit.convert(self.node.end_lineno, self.node.end_col_offset) - self.offset
+            self._offset = self.translation_unit.convert(self.node.lineno, self.node.col_offset)
+            self._length = self.translation_unit.convert(self.node.end_lineno, self.node.end_col_offset) - self.offset
         elif isinstance(node, ast.Module) and translation_unit:
-            self.offset = 0
-            self.length = len(translation_unit.content)
+            self._offset = 0
+            self._length = len(translation_unit.content)
         elif isinstance(node, ast.Call):
-            self.offset = 0
-            self.length = 0
+            self._offset = 0
+            self._length = 0
         else:
-            self.offset = 0
-            self.length = 0
+            self._offset = 0
+            self._length = 0
 
         if (isinstance(node, str)):
             self.name = node
@@ -261,12 +256,6 @@ class PythonASTNode(ASTNode):
             if value is None and getattr(cls, name, ...) is None:
                 continue
             self.attributes[name] = value
-    def __repr__(self):
-        raw_lines = self.text.splitlines()
-        properties_text = '' if not self.show_props else self.get_properties()
-        prefix = " " if len(raw_lines) < 2 else f"\n{self.indent}"
-        formatted_lines = [f"{prefix}|{line}|" for line in raw_lines]
-        return f"{self.indent}({self.kind}, {self.name}, {self.file_name}[{self.offset}:{self.offset+self.length}]){properties_text}: {''.join(formatted_lines)}\n"
 
     @override
     @staticmethod
@@ -317,39 +306,22 @@ class PythonASTNode(ASTNode):
     def _get_containing_filename(self) -> str:
         return self.translation_unit.file_name if self.translation_unit else ""
 
-    @override
-    def _get_start_offset(self) -> int:
-        return self.offset
-
-    @override
-    def _get_length(self) -> int:
-        return self.length
-
-    @override
-    @cache
-    def _get_extended_end_offset(self) -> int:
-        return self.offset + self.length
-
     def _is_statement_or_declaration(self):
         return isinstance(self.node, ast.stmt)
 
     @override
-    def get_raw_signature(self) -> str:
-        return self.get_binary_file_content().decode(sys.getfilesystemencoding())
+    @property
+    def raw_signature(self) -> str:
+        return self.binary_file_content().decode(sys.getfilesystemencoding())
 
     @override
-    def get_binary_file_content(self) -> bytes:
-        return self.translation_unit.content[self.offset:self.length] if self.translation_unit else ast.unparse(
+    def binary_file_content(self) -> bytes:
+        return self.translation_unit.content[self.offset:self.end_offset] if self.translation_unit else ast.unparse(
             self.node).encode(sys.getfilesystemencoding())
 
     @override
     def _matches_kind(self, node: ASTNode) -> bool:
         return self.kind == node.kind
-
-    @override
-    @cache
-    def _get_properties(self) -> dict[str, int | str]:
-        self.attributes
 
     @override
     def _get_parent(self) -> Optional['PythonASTNode']:
@@ -359,10 +331,6 @@ class PythonASTNode(ASTNode):
     def _is_statement(self) -> bool:
         return isinstance(self.node, ast.stmt)
 
-    @override
-    @cache
-    def _get_properties(self) -> dict[str, int | str |ASTNode]:
-        return self.properties
     @override
     @cache
     def _get_referenced_by(self) -> Sequence[ASTReference]:
@@ -382,15 +350,6 @@ class PythonASTNode(ASTNode):
 
     def _get_function_definition(self):
         return None
-
-    @override
-    def is_part_of_translation_unit(self) -> bool:
-        return self.kind not in ['ImplicitNode']
-
-    @override
-    def get_indent(self) -> int:
-        # TODO
-        return 0
 
     @override
     @cache

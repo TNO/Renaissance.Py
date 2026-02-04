@@ -4,8 +4,9 @@ import unittest
 from unittest.mock import patch
 
 from impl import PythonASTNode, PythonPatternFactory
+from impl.python import MATCH_ALL
 from syntax_tree import ASTFactory, MatchFinder
-from syntax_tree.match_finder import MATCH_ONE
+from syntax_tree.match_finder import MATCH_ONE, is_match, PatternMatch
 
 
 class PythonMatcherTest(unittest.TestCase):
@@ -25,7 +26,7 @@ class PythonMatcherTest(unittest.TestCase):
 
     def test_match_one_stmt(self):
         simple = self.pattern_factory.create('$pa')
-        self.assertTrue(MatchUtils.is_match(self.atu.children[0], simple, {}))
+        self.assertTrue(is_match(self.atu.children[0], simple, {}))
 
     def test_is_match_all_stmt(self):
         simple = self.pattern_factory.create('$$pa')
@@ -33,7 +34,7 @@ class PythonMatcherTest(unittest.TestCase):
 
     def test_is_exact_match(self):
         simple = self.pattern_factory.create('ba(55)')
-        self.assertTrue(MatchUtils.is_match(self.atu.children[0], simple))
+        self.assertTrue(is_match(self.atu.children[0], simple))
 
     def test_match_exact_pattern(self):
         simple = self.pattern_factory.create('ba(55)')
@@ -73,15 +74,15 @@ class PythonMatcherTest(unittest.TestCase):
         pattern_factory = PythonPatternFactory(self.factory, atu)
         simple = pattern_factory.create('$pa')
         self.assertEqual('_MatchOne__', simple.kind)
-        self.assertTrue(MatchUtils.is_match(atu.children[0], simple, {}))
+        self.assertTrue(is_match(atu.children[0], simple, {}))
 
     def test_find_all_using_generic_matcher(self):
         simple = self.pattern_factory.create('$pa(55)')
 
-        self.assertTrue(MatchUtils.is_match(self.atu.children[0], simple))
-        self.assertFalse(MatchUtils.is_match(self.atu.children[1], simple))
-        self.assertFalse(MatchUtils.is_match(self.atu.children[2], simple))
-        self.assertFalse(MatchUtils.is_match(self.atu.children[3], simple))
+        self.assertTrue(is_match(self.atu.children[0], simple))
+        self.assertFalse(is_match(self.atu.children[1], simple))
+        self.assertFalse(is_match(self.atu.children[2], simple))
+        self.assertFalse(is_match(self.atu.children[3], simple))
 
         result = MatchFinder.match_pattern(self.atu.children, simple)  # .to_list()
         self.assertEqual(1, len(result))
@@ -268,29 +269,35 @@ ba()
         simple = ast.parse('pa(55)').body[0]
         assert (simple.value.func.id == 'pa')
 
-    def test_equal_nodes(self):
+    def test_eq_nodes(self):
         atu = self.factory.create_from_text('pa(55)\nif pa(55):\n  pa(55)\n  pa=55', 'test.py')
         pattern_factory = PythonPatternFactory(self.factory, atu)
         simple = pattern_factory.create('pa(55)')
-        self.assertTrue(match(simple.node, atu.children[0].node))
+        self.assertTrue(simple == atu.children[0])
+
+    def test_not_eq_nodes(self):
+        atu = self.factory.create_from_text('pa(55)\nif pa(55):\n  pa(55)\n  pa=55', 'test.py')
+        pattern_factory = PythonPatternFactory(self.factory, atu)
+        simple = pattern_factory.create('ma(55)')
+        self.assertFalse(simple == atu.children[0])
 
     def test_nodes_is_not_matching_when_different_args(self):
         atu = self.factory.create_from_text('pa(55)\nif pa(55):\n  pa(55)\n  pa=55', 'test.py')
         pattern_factory = PythonPatternFactory(self.factory, atu)
         simple = pattern_factory.create('pa(66)')
-        self.assertFalse(MatchUtils.is_match(simple, atu.children[0]))
+        self.assertFalse(simple == atu.children[0])
 
     def test_call_has_args_as_children(self):
         atu = self.factory.create_from_text('pa(55)\nif pa(55):\n  pa(55)\n  pa=55', 'test.py')
         pattern_factory = PythonPatternFactory(self.factory, atu)
-        simple = pattern_factory.create('pa(66)')
-        self.assertGreater(len(simple.expression.children), 0)
+        simple = pattern_factory.create('pa(66,77,88)')
+        self.assertEqual(len(simple.children[0].children[1].children), 3)
 
     def test_not_equal_nodes(self):
         self.atu = self.factory.create_from_text('pap(55)\nif pa(55):\n  pa(55)\n  pa=55', 'test.py')
         pattern_factory = PythonPatternFactory(self.factory, self.atu)
         simple = pattern_factory.create('ma(55)')
-        self.assertFalse(match(simple, self.atu.children[0]))
+        self.assertFalse(simple == self.atu.children[0])
 
     def test_match_any_with_empty(self):
         example_code = """
@@ -303,10 +310,10 @@ na()
         results = MatchFinder.match_pattern(self.atu.children, simple)
         self.assertEqual(1, len(results), )
         res = results[0]
-        self.assertIsInstance(res, MatchResult)
+        self.assertIsInstance(res, PatternMatch)
         self.assertEqual(2, len(res.nodes))
-        self.assertEqual(1, len(res.expansion_lists))
-        self.assertEqual([], res.expansion_lists['$$any'])
+        self.assertEqual(1, len(res.expansions))
+        self.assertEqual([], res.expansions['$$any'])
 
         def test_match_any_with_multiple(self):
             example_code = """
@@ -330,7 +337,7 @@ na()
             results = MatchFinder.match_pattern(self.atu.children, simple)
             self.assertEqual(1, len(results), )
             res = results[0]
-            self.assertIsInstance(res, MatchResult)
+            self.assertIsInstance(res, PatternMatch)
             self.assertEqual(2, len(res.nodes))
             self.assertEqual(1, len(res.expansion_lists))
             self.assertEqual([], res.expansion_lists['$$any'])

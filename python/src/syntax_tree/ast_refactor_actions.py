@@ -26,7 +26,7 @@ class ASTRefactorActions:
 
         self.processor.find_all(test).for_each(
             lambda n: self.processor.replace(
-                n.get_text().replace(n.name, replacement, 1), n
+                n.text.replace(n.name, replacement, 1), n
             )
         )
 
@@ -43,10 +43,10 @@ class ASTRefactorActions:
                       and n.name == name        # TODO: prevent get_name on None
         )
         self.processor.find_all(matches_name).filter(
-            lambda n: not n.get_start_offset in self.replaced
-        ).action(lambda n: self.replaced.add(n.get_start_offset)).for_each(
+            lambda n: not n.offset in self.replaced
+        ).action(lambda n: self.replaced.add(n.offset)).for_each(
             lambda n: self.processor.replace(
-                n.get_text().replace(n.name, replacement, 1), n
+                n.text.replace(n.name, replacement, 1), n
             )
         )
 
@@ -59,12 +59,12 @@ class ASTRefactorActions:
     ):
         matches_text: Callable[[Optional["ASTNode"]], bool] = (
             lambda n: (not kind or ASTFinder.matches_kind(n, kind))
-            and (not skip_kind or not ASTFinder.matches_kind(n, skip_kind))
-            and n.get_text() == text      # TODO: prevent get_text on None
+                      and (not skip_kind or not ASTFinder.matches_kind(n, skip_kind))
+                      and n.text == text      # TODO: prevent get_text on None
         )
         self.processor.find_all(matches_text).filter(
-            lambda n: not n.get_start_offset in self.replaced
-        ).action(lambda n: self.replaced.add(n.get_start_offset)).for_each(
+            lambda n: not n.offset in self.replaced
+        ).action(lambda n: self.replaced.add(n.offset)).for_each(
             lambda n: self.processor.replace(replacement, n)
         )
 

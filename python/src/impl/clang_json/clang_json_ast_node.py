@@ -9,12 +9,14 @@ import re
 import sys
 import tempfile
 from common import Stream
+from impl.python import MATCH_ONE
 from syntax_tree import ASTNode, ASTReference, CPPUtils
 from typing import Any, Optional, Sequence
 from typing_extensions import override
 import subprocess
 
-
+MATCH_ONE = '_MatchOne__'
+MATCH_ALL = '_MatchAll__'
 EMPTY_DICT = {}
 EMPTY_STR = ""
 EMPTY_LIST: list[ClangJsonASTReference] = []
@@ -43,7 +45,7 @@ class ClangJsonASTReference:
 class ClangJsonTranslationUnit:
     def __init__(self, json_root: dict[str, Any], file_name: str):
         self.json_root = json_root
-        self.file_name = file_name
+        self.filename = file_name
         self.references_initialized = False
         # references are used as a cache to store the references of a node
         # the are stored as id for lazy creation
@@ -58,7 +60,6 @@ class ClangJsonTranslationUnit:
         node.root.process(ReferenceHelper.create_references)
         node.root.process(ReferenceHelper.add_record_references)
         self.references_initialized = True
-
 
 class ClangJsonASTNode(ASTNode):
     parse_args = [
@@ -82,23 +83,25 @@ class ClangJsonASTNode(ASTNode):
         super().__init__(self if parent is None else parent.root)
         self.node: dict[str, Any] = node
         self._children: Optional[Sequence[ClangJsonASTNode]] = None
-        self.parent = parent
+        self._parent = parent
         self.translation_unit = translation_unit
+        self._filename = translation_unit.filename
         self.inserted = insert_kind != None
+        self.show_props = False
         # if the node has not been added to the translation unit, add it
         # a node might already be added if it is split into multiple nodes
         # an example is for base types like int, char, etc. which are split into multiple nodes
         if "id" in node and self.translation_unit._nodes.get(node["id"]) == None:
             self.translation_unit._nodes[node["id"]] = self
-        self._start_offset = (
+        self._offset = (
             start_offset if start_offset != None else self.__derive_start_offset()
         )
         self._end_offset = (
-            self._start_offset + length
+            self._offset + length
             if length != None
             else self.__derive_end_offset()
         )
-        self._length = self._end_offset - self._start_offset
+        self._length = self._end_offset - self._offset
         self._kind = insert_kind if insert_kind != None else self.__derive_kind()
         self._name = insert_name if insert_name != None else self._derive_name()
         # an fake child is introduced to handle the case where the type of a declaration is not found
@@ -150,7 +153,7 @@ class ClangJsonASTNode(ASTNode):
                         self.node,
                         self.translation_unit,
                         self,
-                        self._start_offset,
+                        self._offset,
                         length_ref,
                         "TypeRef",
                         declared_type,
@@ -159,6 +162,13 @@ class ClangJsonASTNode(ASTNode):
                     self.__inserted_children.append(insert_child)
             # add the declaration as node
             # deep clone the type node and remove the parentheses
+        elif self._kind in ['DeclRefExpr']:
+            if self.name.startswith("$$"):
+                self._kind = MATCH_ALL
+            elif self.name.startswith("$"):
+                self._kind = MATCH_ONE
+
+
         self._children = self.__inserted_children + [
             ClangJsonASTNode(
                 ClangJsonASTNode._remove_wrapper(n),
@@ -259,7 +269,7 @@ class ClangJsonASTNode(ASTNode):
                 with open(working_dir / file_path, "rb") as f:
                     atu.cache[str(file_path)] = f.read()
             # cache the result of the temp file before deleting it
-            atu.get_content(0, 0)
+            atu.content(0, 0)
             return atu
 
         except Exception as e:
@@ -302,24 +312,13 @@ class ClangJsonASTNode(ASTNode):
             return ""
         # not included and no file location so it is the same as the parent
         if self.parent:
-            return self.parent.get_containing_filename
+            return self.parent.filename
         return EMPTY_STR
 
-    @override
-    def _get_start_offset(self) -> int:
-        return self._start_offset
 
     @override
-    def _get_length(self) -> int:
-        return self._length
-
-    @override
-    def get_end_offset(self) -> int:
-        return self._end_offset
-
-    @override
-    @cache
-    def _get_extended_end_offset(self) -> int:
+    @property
+    def extended_end_offset(self) -> int:
         try:
             endOffset = self._end_offset
             # TODO: Do I correctly assume this is for Expression Statements like
@@ -328,7 +327,7 @@ class ClangJsonASTNode(ASTNode):
             if (not self._is_statement_or_declaration()) and (
                     self.parent and self.parent.kind in STMT_PARENTS
             ):
-                content = self.root.get_binary_file_content()
+                content = self.root.binary_file_content()
                 while (
                     endOffset < len(content) and not content[endOffset - 1] in b";"
                 ):  # Why use 'in' when list has one element, i.e. ';'?
@@ -351,8 +350,8 @@ class ClangJsonASTNode(ASTNode):
         )
 
     @override
-    @cache
-    def _get_properties(self) -> dict[str, Any]:
+    @property
+    def properties(self) -> dict[str, Any]:
         # get all the attributes of self.node except the inner  nodes, id, location, range, kind and name and all reference nodes (that is children with 'id)
         properties = {
             k: ClangJsonASTNode._remove_ids(v)
@@ -360,15 +359,16 @@ class ClangJsonASTNode(ASTNode):
             if ClangJsonASTNode.__is_property(k)
             and not ClangJsonASTNode._is_reference(v) == None
         }
-        if (
-            self._get(["range", "end", "expansionLoc", "offset"], -1) != -1
-        ):  # dealing with a macro expansion
-            properties["macro_expansion"] = self.get_text()
+        if self._get(["range", "end", "expansionLoc", "offset"], -1) != -1:  # dealing with a macro expansion
+            properties["macro_expansion"] = self.text
+        # matching name through props
+        properties['name'] = self.name
+
         return properties
 
     @override
-    @cache
-    def _get_referenced_by(self) -> Sequence[ASTReference]:
+    @property
+    def referenced_by(self) -> Sequence[ASTReference]:
         if self.inserted:
             return []
         self.translation_unit.lazy_create_references(self)
@@ -400,8 +400,8 @@ class ClangJsonASTNode(ASTNode):
         return None
 
     @override
-    @cache
-    def _get_references(self) -> Sequence[ASTReference]:
+    @property
+    def references(self) -> Sequence[ASTReference]:
         if self.inserted:
             return []
         self.translation_unit.lazy_create_references(self)
@@ -430,9 +430,6 @@ class ClangJsonASTNode(ASTNode):
             .to_list()
         )
 
-    @override
-    def _get_parent(self) -> Optional[ClangJsonASTNode]:
-        return self.parent
 
     @override
     def _is_statement(self) -> bool:
@@ -473,7 +470,7 @@ class ClangJsonASTNode(ASTNode):
 
     def __derive_end_offset(self) -> int:
         if self.__derive_kind() == "TranslationUnitDecl":
-            return len(self.get_binary_file_content(self.get_containing_filename))
+            return len(self.binary_file_content(self.filename))
         offset = self._get(["range", "end", "offset"], default=-1)
         tokLen = self._get(["range", "end", "tokLen"], default=-1)
         if offset == -1:
@@ -551,6 +548,8 @@ class ClangJsonASTNode(ASTNode):
             return default
 
 
+
+
 class ReferenceHelper:
 
     @staticmethod
@@ -570,9 +569,8 @@ class ReferenceHelper:
             and ClangJsonASTNode._is_reference(v)
         }
         for k in [k for k in ast_node.node.keys() if k in ON_NODE_ID_TAGS]:
-            refs[k] = (
-                ast_node.node
-            )  # add the node if it contains a reference for example in case of previousDecl
+            refs[k] = ast_node.node
+            # add the node if it contains a reference for example in case of previousDecl
 
         # to make clang json compatible with clang python, we add the reference of the DeclRefExpr child to the CallExpr
         if ast_node._kind == "CallExpr":
@@ -604,6 +602,8 @@ class ReferenceHelper:
                 except:
                     ast_node.translation_unit._referenced_by[ref_id] = [referenced_by]
                 references.append(reference)
+
+
 
     @staticmethod
     def add_record_references(ast_node: ClangJsonASTNode) -> None:
@@ -654,8 +654,11 @@ class ReferenceHelper:
     def _get_record_decl(ast_node, base) -> Sequence[str]:
         try:
             tp = base["type"]
-            # split desugaredQualType to derive the parent namespaces
-            namespaces = tp["desugaredQualType"].split("::")[:-1][::-1]
+            if 'desugaredQualType' in tp and '::' in tp['desugaredQualType']:
+                # split desugaredQualType to derive the parent namespaces
+                namespaces = tp["desugaredQualType"].split("::")[:-1][::-1]
+            else:
+                namespaces = []
             qual_type = tp["qualType"]
             ids = []
             ctorType = EMPTY_STR
@@ -664,7 +667,7 @@ class ReferenceHelper:
 
             for id, node in ast_node.translation_unit._nodes.items():
                 if node.kind == "CXXRecordDecl" and node.name == qual_type:
-                    parent = node.get_parent
+                    parent = node.parent
                     matches = True
                     for ns in namespaces:
                         if (
@@ -672,7 +675,7 @@ class ReferenceHelper:
                             or parent.kind != "NamespaceDecl"
                         ):
                             matches = False
-                        parent = parent.get_parent
+                        parent = parent.parent
                     if matches:
                         ids.append((node.kind, id))
                 if ctorType != EMPTY_STR and node.kind == "CXXConstructorDecl":

@@ -47,7 +47,6 @@ class PythonNodeTest(unittest.TestCase):
     ])
     def test_stmt_kind(self, raw, kind):
         it = self.pattern_factory.create(raw)
-        result = ASTShower.get_node(it)
         self.assertEqual(kind, it.kind)
 
     @parameterized.expand([
@@ -100,7 +99,6 @@ def outer():
     ])
     def test_expr_kind(self, raw, kind):
         it = self.pattern_factory.create_expression(raw)
-        result = ASTShower.get_node(it)
         self.assertEqual(kind, it.kind)
 
     def test_Slice(self):
@@ -115,17 +113,14 @@ def outer():
 
     def test_Starred(self):
         it = self.pattern_factory.create('*x =[1,2]')
-        result = ASTShower.show_node(it)
         self.assertEqual('Starred', it.children[0].children[0].kind)
 
     def test_FormattedValue(self):
         it = self.pattern_factory.create_expression('f"{one}two"')
-        result = ASTShower.show_node(it)
-        self.assertEqual('FormattedValue', it.children[0].children[0].kind)
+        self.assertEqual('FormattedValue', it.children[0].kind)
 
     def test_ExceptHandler(self):
         it = self.pattern_factory.create('try: pass\nexcept NameError:pass')
-        result = ASTShower.show_node(it)
         self.assertEqual('ExceptHandler', it.children[1].children[0].kind)
 
     @parameterized.expand([
@@ -168,10 +163,8 @@ def outer():
         stmt = self.pattern_factory.create(sample_code)
         self.assertEqual('Match', stmt.kind)
         self.assertEqual('match_case', stmt.children[1].children[0].kind)
-        self.assertEqual('MatchStar',
-                         stmt.children[1].children[0].children[0].children[0].children[
-                             1].kind)
-        self.assertEqual('MatchAs', stmt.children[1].children()[1].children()[0].kind)
+        self.assertEqual('MatchStar', stmt.children[1].children[0].children[0].children[1].kind)
+        self.assertEqual('MatchAs',   stmt.children[1].children[0].children[0].children[0].kind)
 
     @parameterized.expand([
         ('a % b', 'Mod'),
@@ -186,7 +179,7 @@ def outer():
     ])
     def test_binary_operator(self, raw, kind):
         it = self.pattern_factory.create_expression(raw)
-        self.assertEqual(kind, it.children()[1].kind)
+        self.assertEqual(kind, it.children[1].kind)
 
     # @parameterized.expand([
     #     ('x = some_undefined_var', 'type_ignore'),
@@ -207,15 +200,15 @@ def outer():
     ])
     def test_unary_operator(self, raw, kind):
         it = self.pattern_factory.create_expression(raw)
-        self.assertEqual(kind, it.children()[0].kind)
+        self.assertEqual(kind, it.children[0].kind)
 
     def test_show_call(self):
         factory = ASTFactory(PythonASTNode, [])
         atu = factory.create_from_text('ba(55)\nca(555)\nlo(4444)\nna=55', 'apple.py')
-        second_stmt = atu.children()[1]
-        self.assertEqual(7, second_stmt.get_start_offset)
-        self.assertEqual(7, second_stmt.get_length)
-        self.assertEqual('apple.py', second_stmt.get_containing_filename)
+        second_stmt = atu.children[1]
+        self.assertEqual(7, second_stmt.offset)
+        self.assertEqual(7, second_stmt.length)
+        self.assertEqual('apple.py', second_stmt.filename)
         self.assertEqual(atu.translation_unit, second_stmt.translation_unit)
 
     # def test_show_call_btween_c_and_python(self):

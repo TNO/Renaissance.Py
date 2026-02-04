@@ -6,7 +6,7 @@ from syntax_tree.ast_shower import ASTShower
 
 VERBOSE = False
 def to_string(d:dict[str, Sequence[ASTNode]]):
-    return {k: [compress(v.get_text()) for v in vs] for k, vs in d.items()}
+    return {k: [compress(v.text if isinstance(v, ASTNode) else v) for v in vs] for k, vs in d.items()}
 
 def compress(s:str):
     skip_whitespace =  re.sub(r'\s+', ' ',s.replace('\n',''))

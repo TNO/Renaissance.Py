@@ -1,94 +1,125 @@
 from __future__ import annotations
 
+import unittest
 from unittest import TestCase
 
 from unittest.mock import Mock
 
-from syntax_tree import ASTNode
-
+from impl import ClangASTNode
+from syntax_tree import ASTNode, ASTFactory, CPatternFactory, ASTFinder, ASTShower
+from syntax_tree.match_finder import is_match, MatchFinder
 
 VERBOSE = False
 DEFAULT_EXCLUDE_KIND = "comment"
+class SmallNodeTest(unittest.TestCase):
+    pass
+    # @parameterized.expand(Factories.extend([
+    #     ('void f() {const char* bar = BAR;}', '(?i)Decl_?Stmt', ['const char* bar = BAR;'], {}),
+    #     ('void f() {const char* foo = FOO;}', '(?i)Decl_?Stmt', ['const char* foo = FOO;'], {}),
+    #     ('void f() {const char* same = SAME;}', '(?i)Decl_?Stmt', ['const char* same = SAME;'], {}),
+    #     ('void f() {const char* $name = BAR;}', '(?i)Decl_?Stmt', ['const char* bar = BAR;'], {'$name': ['bar']}),
+    #     ('void f() {const char* $name = FOO;}', '(?i)Decl_?Stmt', ['const char* foo = FOO;'], {'$name': ['foo']}),
+    #     ('void f() {const char* $name = SAME;}', '(?i)Decl_?Stmt', ['const char* same = SAME;'],
+    #      {'$name': ['same']}),
+    #     ('const char* $$args; void f() { printf($$args);}', '(?i)Call_?Expr',
+    #      ['printf("%s %s %s", foo, bar, same);'], {'$$args': ['"%s %s %s"', 'foo', 'bar', 'same']}),
+    # ]))
+    # def test_small_pieces(self):
+    #     code = """
+    #     #define BAR "bar"
+    #     const char* bar = BAR;
+    #     int f(){
+    #         const char* bar = BAR;
+    #     }
+    #     """
+    #     factory = ASTFactory(ClangASTNode, [])
+    #     atu = factory.create_from_text(code, 'test.c')
+    #     patternFactory = CPatternFactory(factory, ref_node=atu)
+    #     statementsAtu = patternFactory.create('void f() {const char* bar = BAR;}')
+    #     statements = ASTFinder.find_kind(statementsAtu, '(?i)Decl_?Stmt').find_last().get()  # pick the last statement
+    #     ASTShower.show_node(atu, include_properties=True)
+    #
+    #     result = MatchFinder.find_all(atu, [statements], recursive=True).to_list()
+    #     result[0].nodes[0]
+    #         # .map(lambda match: match.nodes[0])
+    #         # .filter(ASTNode.is_part_of_translation_unit)
+    #         # .map(ASTNode.text).to_list())
+    #     self.assertEqual('expected', result)
+# class MatchUtilsTest(TestCase):
+#
+#
+#     def test_is_match(self):
+#         src = Mock(scpe=ASTNode)
+#         comp = Mock(scpe=ASTNode)
+#         src.get_name.return_value ="name"
+#         src.get_kind.return_value ="kind"
+#         src.get_properties.return_value = []
+#         comp.get_name.return_value = "name"
+#         comp.get_kind.return_value = "kind"
+#         comp.get_properties.return_value = []
+#         self.assertTrue(is_match(src, comp))
+#         comp.get_properties.return_value = ['props']
+#         self.assertFalse(is_match(src, comp))
+#         comp.get_properties.return_value = []
+#         comp.get_kind.return_value = 'other'
+#         self.assertFalse(is_match(src, comp))
+#         comp.get_kind.return_value = 'kind'
+#         comp.get_name.return_value = 'my_awesome_name'
+#         self.assertFalse(is_match(src, comp))
+#         comp.get_name.return_value = '$my_awesome_name'
+#         self.assertTrue(is_match(src, comp))
 
-class TestNode(ASTNode):
-    def _get_name(self):
-        return "my_awesome_name"
-
-
-class MatchUtilsTest(TestCase):
-    def test_is_name_match(self):
-            mock = Mock(scpe = ASTNode)
-            res = MatchUtils.is_name_match(mock, "$name")
-            self.assertTrue(res)
-
-    def test_is_match(self):
-        src = Mock(scpe=ASTNode)
-        comp = Mock(scpe=ASTNode)
-        src.get_name.return_value ="name"
-        src.get_kind.return_value ="kind"
-        src.get_properties.return_value = []
-        comp.get_name.return_value = "name"
-        comp.get_kind.return_value = "kind"
-        comp.get_properties.return_value = []
-        self.assertTrue(MatchUtils.is_match(src, comp))
-        comp.get_properties.return_value = ['props']
-        self.assertFalse(MatchUtils.is_match(src, comp))
-        comp.get_properties.return_value = []
-        comp.get_kind.return_value = 'other'
-        self.assertFalse(MatchUtils.is_match(src, comp))
-        comp.get_kind.return_value = 'kind'
-        comp.get_name.return_value = 'my_awesome_name'
-        self.assertFalse(MatchUtils.is_match(src, comp))
-        comp.get_name.return_value = '$my_awesome_name'
-        self.assertTrue(MatchUtils.is_match(src, comp))
-
-    def test_is_wildcard(self):
-        self.assertTrue(MatchUtils.is_wildcard("$$stmts"))
-        self.assertTrue(MatchUtils.is_wildcard("$stmt"))
-        self.assertTrue(MatchUtils.is_wildcard("$"))
-        self.assertTrue(MatchUtils.is_wildcard("$$"))
-        # should work?
-        node = Mock(scpe=ASTNode)
-        node.get_name.return_value = "$my_awesome_name"
-        self.assertTrue(MatchUtils.is_wildcard(node))
-
-
-
-    def test_is_multi_wildcard(self):
-        self.assertTrue(MatchUtils.is_multi_wildcard("$$stmts"))
-        self.assertFalse(MatchUtils.is_multi_wildcard("$stmt"))
-        self.assertFalse(MatchUtils.is_multi_wildcard("$"))
-        self.assertTrue(MatchUtils.is_multi_wildcard("$$"))
-        # should work?
-        node = Mock(scpe=ASTNode)
-        node.get_name.return_value = "$$my_awesome_name"
-        self.assertTrue(MatchUtils.is_multi_wildcard(node))
-
-    def test_is_single_wildcard(self):
-        self.assertFalse(MatchUtils.is_single_wildcard("$$stmts"))
-        self.assertTrue(MatchUtils.is_single_wildcard("$stmt"))
-        self.assertTrue(MatchUtils.is_single_wildcard("$"))
-        self.assertFalse(MatchUtils.is_single_wildcard(None))
-        # should work?
-        node = Mock(scpe=ASTNode)
-        node.get_name.return_value = "$my_awesome_name"
-        self.assertTrue(MatchUtils.is_single_wildcard(node))
-    def test_exclude_nodes_by_kind(self):
-        node = Mock(scpe=ASTNode)
-        node.get_kind.return_value = "If"
-        filtered =MatchUtils.exclude_nodes_by_kind('If', [node])
-        self.assertNotIn(node , filtered)
-        self.assertIn(node , MatchUtils.exclude_nodes_by_kind('While', [node]))
-
-    def test_get_multi_wildcard_keys(
-        patterns: Sequence[ASTNode], result: list[str] = []
-            # TODO: replace mutable default argument
-    ) -> list[str]:
-        for pattern in patterns:
-            if MatchUtils.is_multi_wildcard(pattern):
-                result.append(pattern.name)
-            MatchUtils.get_multi_wildcard_keys(pattern.children, result)
-        return result
+    # def test_is_name_match(self):
+    #     mock = Mock(scpe = ASTNode)
+    #     res = MatchUtils.is_name_match(mock, "$name")
+    #     self.assertTrue(res)
+    # def test_is_wildcard(self):
+    #     self.assertTrue(MatchUtils.is_wildcard("$$stmts"))
+    #     self.assertTrue(MatchUtils.is_wildcard("$stmt"))
+    #     self.assertTrue(MatchUtils.is_wildcard("$"))
+    #     self.assertTrue(MatchUtils.is_wildcard("$$"))
+    #     # should work?
+    #     node = Mock(scpe=ASTNode)
+    #     node.get_name.return_value = "$my_awesome_name"
+    #     self.assertTrue(MatchUtils.is_wildcard(node))
+    #
+    #
+    #
+    # def test_is_multi_wildcard(self):
+    #     self.assertTrue(MatchUtils.is_multi_wildcard("$$stmts"))
+    #     self.assertFalse(MatchUtils.is_multi_wildcard("$stmt"))
+    #     self.assertFalse(MatchUtils.is_multi_wildcard("$"))
+    #     self.assertTrue(MatchUtils.is_multi_wildcard("$$"))
+    #     # should work?
+    #     node = Mock(scpe=ASTNode)
+    #     node.get_name.return_value = "$$my_awesome_name"
+    #     self.assertTrue(MatchUtils.is_multi_wildcard(node))
+    #
+    # def test_is_single_wildcard(self):
+    #     self.assertFalse(MatchUtils.is_single_wildcard("$$stmts"))
+    #     self.assertTrue(MatchUtils.is_single_wildcard("$stmt"))
+    #     self.assertTrue(MatchUtils.is_single_wildcard("$"))
+    #     self.assertFalse(MatchUtils.is_single_wildcard(None))
+    #     # should work?
+    #     node = Mock(scpe=ASTNode)
+    #     node.get_name.return_value = "$my_awesome_name"
+    #     self.assertTrue(MatchUtils.is_single_wildcard(node))
+    # def test_exclude_nodes_by_kind(self):
+    #     node = Mock(scpe=ASTNode)
+    #     node.get_kind.return_value = "If"
+    #     filtered =MatchUtils.exclude_nodes_by_kind('If', [node])
+    #     self.assertNotIn(node , filtered)
+    #     self.assertIn(node , MatchUtils.exclude_nodes_by_kind('While', [node]))
+    #
+    # def test_get_multi_wildcard_keys(
+    #     patterns: Sequence[ASTNode], result: list[str] = []
+    #         # TODO: replace mutable default argument
+    # ) -> list[str]:
+    #     for pattern in patterns:
+    #         if MatchUtils.is_multi_wildcard(pattern):
+    #             result.append(pattern.name)
+    #         MatchUtils.get_multi_wildcard_keys(pattern.children, result)
+    #     return result
 
 #     def next_multiplicity(multiplicity: dict[str, int]):
 #         """

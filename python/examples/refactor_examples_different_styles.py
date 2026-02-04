@@ -48,7 +48,7 @@ def example_add_comment_and_commit(factory, pattern_factory):
     pattern1 = pattern_factory.create_declarations('old $name = $value;', extra_declarations=['typedef int old;'], parameters=['$value'])
     pattern2 = pattern_factory.create_declarations('old $name;', extra_declarations=['typedef int old;'], parameters=['$value'])
     #put the patterns in a matrix because we want to find both statements in one go and not a sequence
-    patterns_list =[pattern1, pattern2] 
+    patterns_list =[pattern1, pattern2]
 
     ASTShower.show_node(pattern1[0])
     # if you want to find both statements in one go, you should pass a list of patterns
@@ -62,8 +62,8 @@ def example_add_comment_and_commit(factory, pattern_factory):
     #create an ASTRewriter
     rewriter = ASTRewriter(atu)
     # search matches and replace them
-    MatchFinder.find_all(atu, *patterns_list).\
-        for_each(lambda match: rewriter.insert_before('// old has become obsolete',match))
+    result = MatchFinder.find_all(atu, *patterns_list)
+    result.for_each(lambda match: rewriter.insert_before('// old has become obsolete',match))
     
     #commit
     atu, rewriter = ASTUtils.commit(rewriter, factory, in_memory=True)
@@ -90,10 +90,11 @@ def example_replace_old_by_fancy_new(factory, pattern_factory):
     atu = factory.create_from_text(example_code, 'test.c')
     rewriter = ASTRewriter(atu)
 
-    MatchFinder.find_all(atu, *patterns_list).\
-        map(lambda match: match.get_nodes()['$old'][0]).\
+    matches=MatchFinder.find_all(atu, *patterns_list)
+    (matches.\
+        map(lambda match: match.expansions['$old'][0]).\
         filter(matches_old).\
-        for_each(lambda node: rewriter.replace('fancy_new',node))
+        for_each(lambda node: rewriter.replace('fancy_new',node)))
     print('results after replacing the old type by fancy_new using MatchFinder:')
     result = rewriter.apply_to_string().strip()
     print(result)

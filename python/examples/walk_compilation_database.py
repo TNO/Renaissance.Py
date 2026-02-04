@@ -18,7 +18,7 @@ def main(args):
             #do something with the factory and atu
             ast_refactor = ASTProcessor(atu,factory, in_memory=True)
             ast_refactor.find_kind('(?i)Function_?Decl').\
-                map(ASTNode.get_text).\
+                map(ASTNode.text).\
                 for_each(print)
 
 if __name__ == "__main__":

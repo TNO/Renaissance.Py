@@ -3,7 +3,7 @@ from parameterized import parameterized
 from refactoring import CleanupRefactoring
 from syntax_tree import ASTShower, ASTFactory, ASTProcessor, ASTNode
 
-from test.c_cpp.factories import Factories
+from c_cpp.factories import Factories
 
 class TestCleanupRefactoring(unittest.TestCase):
 

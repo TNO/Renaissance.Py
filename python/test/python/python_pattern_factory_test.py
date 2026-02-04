@@ -21,7 +21,7 @@ class PythonFactoryTestCase(unittest.TestCase):
         pattern_factory = PythonPatternFactory(factory)
         node = pattern_factory.create_python_pattern(statement)
         self.assertTrue(node.is_statement)
-        self.assertEqual(statement, node.get_text())
+        self.assertEqual(statement, node.raw_signature)
 
     @parameterized.expand(Factories.factories)
     def test_import(self, _, factory):
@@ -29,7 +29,7 @@ class PythonFactoryTestCase(unittest.TestCase):
         pattern_factory = PythonPatternFactory(factory)
         node = pattern_factory.create_python_pattern(imp)
         self.assertEqual(node.kind, ast.ImportFrom.__name__)
-        self.assertEqual(imp, node.get_raw_signature())
+        self.assertEqual(imp, node.raw_signature)
 
     @parameterized.expand(Factories.extend([
         ('if a:\n    pass\nelse:\n    pass', ...),
@@ -39,7 +39,7 @@ class PythonFactoryTestCase(unittest.TestCase):
         pattern_factory = PythonPatternFactory(factory)
         node = pattern_factory.create_python_pattern(statement)
         self.assertEqual(node.kind, ast.If.__name__)
-        self.assertEqual(statement, node.get_text())
+        self.assertEqual(statement, node.raw_signature)
 
     @parameterized.expand(Factories.extend([
         ('try:\n    pass\nexcept SomeException:\n    print(\'An error occurred.\')', ...),
@@ -49,7 +49,7 @@ class PythonFactoryTestCase(unittest.TestCase):
         pattern_factory = PythonPatternFactory(factory)
         node = pattern_factory.create_python_pattern(statement)
         self.assertEqual(node.kind, ast.Try.__name__)
-        self.assertEqual(statement, node.get_text())
+        self.assertEqual(statement, node.raw_signature)
 
     @parameterized.expand(Factories.extend([
         ('for i in range(2, 11, 2):\n    print(i)', ...),
@@ -60,7 +60,7 @@ class PythonFactoryTestCase(unittest.TestCase):
         pattern_factory = PythonPatternFactory(factory)
         node = pattern_factory.create_python_pattern(statement)
         self.assertEqual(node.kind, ast.For.__name__)
-        self.assertEqual(statement, node.get_text())
+        self.assertEqual(statement, node.raw_signature)
 
     @parameterized.expand(Factories.extend([
         ('while True:\n    print(count)', ...),
@@ -70,7 +70,7 @@ class PythonFactoryTestCase(unittest.TestCase):
         pattern_factory = PythonPatternFactory(factory)
         node = pattern_factory.create_python_pattern(statement)
         self.assertEqual(node.kind, ast.While.__name__)
-        self.assertEqual(statement, node.get_text())
+        self.assertEqual(statement, node.raw_signature)
 
     @parameterized.expand(Factories.extend([
         ('with MyContextManager(\'test\') as cm:\n    print(\'Inside the context block\')', ...),
@@ -80,7 +80,7 @@ class PythonFactoryTestCase(unittest.TestCase):
         pattern_factory = PythonPatternFactory(factory)
         node = pattern_factory.create_python_pattern(statement)
         self.assertEqual(node.kind, ast.With.__name__)
-        self.assertEqual(statement, node.get_text())
+        self.assertEqual(statement, node.raw_signature)
 
     @parameterized.expand(Factories.extend([
         ('def greet():\n    print(\'Hello, World!\')', ...),
@@ -91,7 +91,7 @@ class PythonFactoryTestCase(unittest.TestCase):
         pattern_factory = PythonPatternFactory(factory)
         node = pattern_factory.create_python_pattern(code)
         self.assertEqual(node.kind, ast.FunctionDef.__name__)
-        self.assertEqual(code, node.get_text())
+        self.assertEqual(code, node.raw_signature)
 
     @parameterized.expand(Factories.extend([
         ('class Person:\n\n    def __init__(self, name, age):\n        self.name = name\n        self.age = age', ...),
@@ -103,7 +103,7 @@ class PythonFactoryTestCase(unittest.TestCase):
         pattern_factory = PythonPatternFactory(factory)
         node = pattern_factory.create_python_pattern(code)
         self.assertEqual(node.kind, ast.ClassDef.__name__)
-        self.assertEqual(code, node.get_text())
+        self.assertEqual(code, node.raw_signature)
 
     @parameterized.expand(Factories.extend([
         ('return a + b', ...),
@@ -114,7 +114,7 @@ class PythonFactoryTestCase(unittest.TestCase):
         pattern_factory = PythonPatternFactory(factory)
         node = pattern_factory.create_python_pattern(code)
         self.assertEqual(node.kind, ast.Return.__name__)
-        self.assertEqual(code, node.get_text())
+        self.assertEqual(code, node.raw_signature)
 
     @parameterized.expand(Factories.extend([
         ('assert length > 0, \'Length must be positive\'', ...),
@@ -124,7 +124,7 @@ class PythonFactoryTestCase(unittest.TestCase):
         pattern_factory = PythonPatternFactory(factory)
         node = pattern_factory.create_python_pattern(code)
         self.assertEqual(node.kind, ast.Assert.__name__)
-        self.assertEqual(code, node.get_text())
+        self.assertEqual(code, node.raw_signature)
 
     @parameterized.expand(Factories.extend([
         ('del x', ...),
@@ -134,7 +134,7 @@ class PythonFactoryTestCase(unittest.TestCase):
         pattern_factory = PythonPatternFactory(factory)
         node = pattern_factory.create_python_pattern(code)
         self.assertEqual(node.kind, ast.Delete.__name__)
-        self.assertEqual(code, node.get_text())
+        self.assertEqual(code, node.raw_signature)
 
     @parameterized.expand(Factories.factories)
     def test_pass(self, _, factory):
@@ -142,7 +142,7 @@ class PythonFactoryTestCase(unittest.TestCase):
         pattern_factory = PythonPatternFactory(factory)
         node = pattern_factory.create_python_pattern(code)
         self.assertEqual(node.kind, ast.Pass.__name__)
-        self.assertEqual(code, node.get_raw_signature())
+        self.assertEqual(code, node.raw_signature)
 
     @parameterized.expand(Factories.factories)
     def test_break_statement(self, _, factory):
@@ -150,7 +150,7 @@ class PythonFactoryTestCase(unittest.TestCase):
         pattern_factory = PythonPatternFactory(factory)
         node = pattern_factory.create_python_pattern(code)
         self.assertEqual(node.kind, ast.Break.__name__)
-        self.assertEqual(code, node.get_raw_signature())
+        self.assertEqual(code, node.raw_signature)
 
     @parameterized.expand(Factories.factories)
     def test_cont_statement(self, _, factory):
@@ -158,7 +158,7 @@ class PythonFactoryTestCase(unittest.TestCase):
         pattern_factory = PythonPatternFactory(factory)
         node = pattern_factory.create_python_pattern(code)
         self.assertEqual(node.kind, ast.Continue.__name__)
-        self.assertEqual(code, node.get_raw_signature())
+        self.assertEqual(code, node.raw_signature)
 
     @parameterized.expand(Factories.extend([
         ('del x', ...),
@@ -168,7 +168,7 @@ class PythonFactoryTestCase(unittest.TestCase):
         pattern_factory = PythonPatternFactory(factory)
         node = pattern_factory.create_python_pattern(code)
         self.assertEqual(node.kind, ast.Delete.__name__)
-        self.assertEqual(code, node.get_raw_signature())
+        self.assertEqual(code, node.raw_signature)
 
     ### Expressions patterns
     @parameterized.expand(Factories.extend([
@@ -179,7 +179,7 @@ class PythonFactoryTestCase(unittest.TestCase):
         pattern_factory = PythonPatternFactory(factory)
         node = pattern_factory.create_python_pattern(code)
         self.assertEqual(node.kind, ast.Expr.__name__)
-        self.assertEqual(code, node.get_raw_signature())
+        self.assertEqual(code, node.raw_signature)
 
     @parameterized.expand(Factories.extend([
         ('Literal[\'left\', \'center\', \'right\']', ...),
@@ -199,7 +199,7 @@ class PythonFactoryTestCase(unittest.TestCase):
         pattern_factory = PythonPatternFactory(factory)
         node = pattern_factory.create_python_pattern(code)
         self.assertEqual(node.kind, ast.Expr.__name__)
-        self.assertEqual(code, node.get_raw_signature())
+        self.assertEqual(code, node.raw_signature)
 
 
 if __name__ == '__main__':

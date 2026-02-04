@@ -112,11 +112,11 @@ class BatchASTProcessor:
 
     def _replace_if_in_memory(self, item: AST_FACTORY_AND_ATU) -> AST_FACTORY_AND_ATU:
         if self.in_memory and self.in_memory_files.get(
-                item[1].get_containing_filename
+                item[1].filename
         ):
             return item[0], item[0].create_from_text(
-                self.in_memory_files[item[1].get_containing_filename],
-                item[1].get_containing_filename,
+                self.in_memory_files[item[1].filename],
+                item[1].filename,
             )
         return item
 
@@ -126,7 +126,7 @@ class BatchASTProcessor:
     ) -> bool:
         return (
                 file_filter is None
-                or file_filter.match(item[1].get_containing_filename) is not None
+                or file_filter.match(item[1].filename) is not None
         )
 
 

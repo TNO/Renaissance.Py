@@ -9,7 +9,7 @@ from .ast_shower import ASTShower
 from .ast_factory import ASTFactory
 from .ast_finder import ASTFinder
 
-SHOW_NODE = True
+SHOW_NODE = False
 
 
 class CPatternFactory:
@@ -34,14 +34,14 @@ class CPatternFactory:
                         c, "(?i)Macro.*|Inclusion_?Directive"
                     )
                 )
-                .map(ASTNode.get_start_offset)
+                .map(lambda n: n.offset)
                 .reduce(min)
                 .or_else(0)
             )
-            self.language = ref_node.get_containing_filename.split(".")[-1]
+            self.language = ref_node.filename.split(".")[-1]
 
             self.header = (
-                CPatternFactory.remove_indent(ref_node.get_content(0, offset)) + "\n"
+                    CPatternFactory.remove_indent(ref_node.content(0, offset)) + "\n"
             )
             self.header += (
                 Stream(ref_node.children)
@@ -54,7 +54,7 @@ class CPatternFactory:
                 .filter(
                     lambda c: ASTFinder.find_kind(c, "(?i)Compound_?Stmt").count() == 0
                 )
-                .map(lambda c: c.get_text() + ";")
+                .map(lambda c: c.text + ";")
                 .collect(lambda n: "\n".join(n))
                 + "\n"
             )
@@ -291,7 +291,7 @@ class CPPPatternFactory(CPatternFactory):
         )
         # include the preceding typeref
         assert isinstance(call_expr, ASTNode), "No call expression found"
-        type_ref = call_expr.get_preceding_sibling
+        type_ref = call_expr.preceding_sibling
         assert isinstance(type_ref, ASTNode), "No type ref found"
         # return the constrained pattern where the first node must be of type TypeRef
         # return ConstrainedPattern([type_ref, call_expr], lambda m: ASTFinder.matches_kind(m.src_nodes[0], 'TypeRef'))
