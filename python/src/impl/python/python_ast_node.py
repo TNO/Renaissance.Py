@@ -58,31 +58,6 @@ class PythonTranslationUnit():
         node.root.process(ReferenceHelper.create_references)
         self.references_initialized = True
 
-    def lazy_create_references(self, atu) -> None:
-        if self._references:
-            return
-        globals = {}
-        for var in ASTFinder.find(atu, 'Assign'):
-            for n in var.node.targets:
-                if isinstance(n, ast.Name) and isinstance(var.node.value, ast.Call):
-                    if isinstance(n, ast.Name) and isinstance(var.node.value.func, ast.Name):
-                        globals[n.id] = var.node.value.func.id
-                        ref = PythonASTReference(var.node.value.func.id, n.id, {})
-                        self.append_to_source(n.id, ref)
-        for cls in ASTFinder.find(atu, 'ClassDef'):
-            for fun in ASTFinder.find(cls, 'FunctionDef'):
-                for call in ASTFinder.find(fun, 'Attribute'):
-                    target = self.derive_target_name(call, cls, fun, globals)
-                    self.add_reference(call, cls, fun, target)
-        for var in ASTFinder.find(atu, 'AnnAssign'):
-            target = var.node.target
-            if isinstance(target, ast.Name) and isinstance(var.node.value, ast.Call):
-                if isinstance(target, ast.Name) and isinstance(var.node.value.func, ast.Name):
-                    globals[target.id] = var.node.value.func.id
-                    ref = PythonASTReference(var.node.value.func.id, target.id, {})
-                    self.append_to_source(target.id, ref)
-        self.references_initialized = True
-
     def derive_target_name(self, call, cls, fun, globals: dict[Any, Any]) -> Any:
         if hasattr(call.node.value, 'id'):
             target = call.node.value.id.replace('self', cls.name)
@@ -152,6 +127,7 @@ class PythonASTNode(ASTNode):
             self._filename = translation_unit.file_name
             self.translation_unit = translation_unit
             self.derive_position(node, translation_unit)
+            self.add_node()
         else:
             self._filename = ''
             self._length = 0
@@ -332,7 +308,7 @@ class PythonASTNode(ASTNode):
     @override
     @property
     def referenced_by(self) -> Sequence[ASTReference]:
-        self.translation_unit.lazy_create_references(self)
+        self.translation_unit.lazy_create_refers(self)
         node_id = self.node.name if hasattr(self.node, 'name') else self.node.id
         ref_by = self.translation_unit._referenced_by.get(node_id, EMPTY_LIST)
         # if both the function declaration and function definition are avaible 
@@ -352,7 +328,7 @@ class PythonASTNode(ASTNode):
     @override
     @property
     def references(self) -> Sequence[ASTReference]:
-        self.translation_unit.lazy_create_references(self)
+        self.translation_unit.lazy_create_refers(self)
         node_id = ''
         match self.kind:
             case 'FunctionDef':
@@ -377,7 +353,7 @@ class PythonASTNode(ASTNode):
 
     def add_node(self):
         # add node to the node list for references
-        match self.get_kind():
+        match self.kind:
             case 'Name':
                 if self.node.id not in self.translation_unit._nodes and self.node.id not in types:
                     self.translation_unit._nodes[self.node.id] = self
@@ -432,7 +408,7 @@ class ReferenceHelper:
     def create_references(ast_node: PythonASTNode) -> None:
         assert isinstance(ast_node, PythonASTNode), f'Expected PythonASTNode but got {type(ast_node)}'
         try:
-            match ast_node.get_kind():
+            match ast_node.kind:
                 case 'Name':
                     if ref_id not in types:
                         node_id = ast_node.id
