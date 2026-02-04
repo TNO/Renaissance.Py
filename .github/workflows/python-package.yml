@@ -5,7 +5,7 @@ name: Python package
 
 on:
   push:
-    branches: [ "cge-main", "cicd_setup" ]
+    branches: [ "cge-main" ]
   pull_request:
     branches: [ "cge-main" ]
 
@@ -41,7 +41,7 @@ jobs:
         # flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
       run: |
-        # pytest ./python
+        pytest ./python
 
     - name: Build release distributions
       run: |
