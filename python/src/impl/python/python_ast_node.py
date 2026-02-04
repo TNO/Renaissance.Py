@@ -117,7 +117,6 @@ class PythonASTNode(ASTNode):
         self._kind = cls.__name__
         self.indent = ''
         self._name = self._derive_name()
-        self.add_node()
 
         self.show_props =False
         self._children = []
@@ -128,6 +127,7 @@ class PythonASTNode(ASTNode):
             self._filename = translation_unit.file_name
             self.translation_unit = translation_unit
             self.derive_position(node, translation_unit)
+            self.add_node()
         else:
             self._filename = ''
             self._length = 0
