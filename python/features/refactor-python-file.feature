@@ -1,7 +1,7 @@
 Feature: Ast based changes
   Scenario: python code
     Given 'python' programming language
-    And 'example/demo.py' file written in that programming language
+    And 'examples/demo.py' file written in that programming language
     And an AST extracted from that source file without errors
     And node 'some_old_fun' exits within that AST
     And a sequence of descendant nodes of that node
