@@ -4,6 +4,7 @@ import re
 import sys
 from typing import Any, Optional, Sequence
 from common import Stream
+from impl import MATCH_ALL, MATCH_ONE
 from syntax_tree import ASTNode, ASTReference, ASTFinder, TextUtils
 from typing_extensions import override
 
@@ -191,7 +192,7 @@ class ClangASTNode(ASTNode):
         return re.match('.*(_STMT|_DECL|CXX_METHOD)', self.kind)
 
     @override
-    def _matches_kind(self, node:ASTNode) -> bool: 
+    def matches_kind(self, node:ASTNode) -> bool:
         return self._kind == node.kind or\
             (self._kind.endswith('_LITERAL') and node.kind == 'DECL_REF_EXPR') or\
             (self._kind =='DECL_REF_EXPR' and node.kind.endswith('_LITERAL'))\
@@ -242,7 +243,8 @@ class ClangASTNode(ASTNode):
         return result
     
     @override
-    def _is_statement(self) ->bool:
+    @property
+    def is_statement(self) ->bool:
         return self.parent is not None and self.parent.kind in STMT_PARENTS
     
     @override
@@ -310,8 +312,6 @@ class ClangASTNode(ASTNode):
             return 0
 
     def __derive_kind(self) -> str:
-        MATCH_ONE = '_MatchOne__'
-        MATCH_ALL = '_MatchAll__'
         try:
             if self.node.kind.name == 'MACRO_DEFINITION':
                 return str(self.node.kind.name)

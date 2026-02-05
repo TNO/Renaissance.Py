@@ -78,7 +78,7 @@ class TestLanguages(unittest.TestCase):
         (tscpp,  "float pi = 3.14f;"),
     ])
     def test_language_parsing(self, lang, code):
-        adapter = TreeSitterAdapter(tspython)
+        adapter = TreeSitterAdapter(lang)
         tree = adapter.parse_code(code)
         lst = adapter.to_lst(code, tree)
         self.assertIsInstance(lst, LST)

@@ -1,18 +1,18 @@
 import ast
+import sys
 from functools import cache
 from pathlib import Path
-import sys
 from typing import Any, Optional, Sequence
-from common import Stream
 
-from syntax_tree import ASTNode, ASTReference, ASTFinder
 from typing_extensions import override
+
+from common import Stream
+from impl import MATCH_ONE, MATCH_ALL
+from syntax_tree import ASTNode, ASTReference
 
 EMPTY_DICT = {}
 EMPTY_STR = ''
 EMPTY_LIST = []
-MATCH_ONE = '_MatchOne__'
-MATCH_ALL = '_MatchAll__'
 
 
 class PythonASTReference():
@@ -41,47 +41,20 @@ class PythonTranslationUnit():
         self._nodes: dict[str, 'PythonASTNode'] = {}
 
     def check_diagnostics(self) -> None:
-        has_error = False
+        msg = None
         errors = ''
         for d in self.atu.type_ignores:
-            if d.severity >= 3:
-                has_error = True
-                errors += f'{d.severity}: {d.spelling} at {d.location}\n'
-            print(f'{d.severity}: {d.spelling} at {d.location}')
-        if has_error:
+            msg  = f'type ignored: {d.tag} at {d.lineno}\n'
+            errors += msg
+            print(msg)
+        if msg:
             raise Exception(f'Error parsing: {self.file_name} \n+ errors: {errors}')
-        # Function to visit all nodes
 
-    def lazy_create_refers(self, node: 'PythonASTNode') -> None:
+    def lazy_create_refers(self, node: 'ASTNode') -> None:
         if self.references_initialized:
             return
         node.root.process(ReferenceHelper.create_references)
         self.references_initialized = True
-
-    def derive_target_name(self, call, cls, fun, globals: dict[Any, Any]) -> Any:
-        if hasattr(call.node.value, 'id'):
-            target = call.node.value.id.replace('self', cls.name)
-        if hasattr(call.node.value, 'func'):
-            target = call.node.value.func.id.replace('self', fun.name)
-        for arg in fun.node.args.args:
-            if arg.annotation:
-                self._references[f"{cls.name}.{fun.name}[{arg.arg}]"] = PythonASTReference(arg.annotation.id, arg.arg,
-                                                                                          {})
-                target = target.replace(arg.arg, arg.annotation.id)
-        for n in globals:
-            target = target.replace(n, globals[n])
-        return target
-
-    def add_reference(self, call, cls, fun, target):
-        src = f"{cls.name}.{fun.name}"
-        ref = PythonASTReference(f"{target}::{call.node.attr}", call.node.value.id, {})
-        self.append_to_source(src, ref)
-
-    def append_to_source(self, src, ref):
-        if src in self._references:
-            self._references[src].append(ref)
-        else:
-            self._references[src] = [ref]
 
     def convert(self, line_nr, col):
         if (line_nr > len(self.lines)):
@@ -91,7 +64,7 @@ class PythonTranslationUnit():
 
 class ImplicitNode(ast.Name):
     def __init__(self, name, children):
-        self.id = name
+        super().__init__(name)
         self.body = children
         self.lineno = 0
         self.col_offset = 0
@@ -180,56 +153,9 @@ class PythonASTNode(ASTNode):
         elif isinstance(node, ast.Module) and translation_unit:
             self._offset = 0
             self._length = len(translation_unit.content)
-        elif isinstance(node, ast.Call):
-            self._offset = 0
-            self._length = 0
         else:
             self._offset = 0
             self._length = 0
-        #
-        # if (isinstance(node, str)):
-        #     self.name = node
-        #     self.__kind = 'Name'
-        #     return
-        # if (isinstance(node, ast.Assign)):
-        #     self.node = node
-        # for name in node._fields:
-        #     try:
-        #         child = getattr(node, name)
-        #     except AttributeError:
-        #         keywords = True
-        #         continue
-        #     if child is None and getattr(self.node, name, ...) is None:
-        #         keywords = True
-        #         continue
-        #     match child:
-        #         case ast.AST():
-        #             if type(child) not in [ast.Load, ast.Store]:
-        #                 self._children.append(PythonASTNode(child, translation_unit, self))
-        #         case list():  # Matches any list
-        #             if isinstance(node, ImplicitNode) or isinstance(node, ast.Module):
-        #                 for n in child:
-        #                     if not isinstance(n, ast.AST):
-        #                         n = ImplicitNode(n, None)
-        #                     self._children.append(PythonASTNode(n, translation_unit, self))
-        #             elif not name in ['keywords', 'type_ignores'] and child:
-        #                 self._children.append(PythonASTNode(ImplicitNode(name, child), translation_unit, self))
-        #         case str():
-        #             if name == 'id':
-        #                 self._name = child
-        #         case int():
-        #             if name == 'value':
-        #                 self._name = str(child)
-        #         case _:
-        #             pass
-        #     self.attributes = {}
-        #     try:
-        #         value = getattr(node, name)
-        #     except AttributeError:
-        #         continue
-        #     if value is None and getattr(self.node, name, ...) is None:
-        #         continue
-        #     self.attributes[name] = value
 
     @override
     @staticmethod
@@ -257,31 +183,9 @@ class PythonASTNode(ASTNode):
             name = self.node.name
         elif 'id' in self.node._fields and self.node.id:
             name = self.node.id
-        elif isinstance(self.node, ast.Call):
-            name = ast.unparse(self.node)
         else:
             name = self.kind
-        # if isinstance(self.node, ast.Name):
-        #     name = self.node.id
-        # elif isinstance(self.node, ast.Constant):
-        #     name = str(self.node.value)
-        # elif isinstance(self.node, ast.Expr) and isinstance(self.node.value, ast.Call):
-        #     name = self.node.value.func.id
-        # elif isinstance(self.node, ast.Expr) and isinstance(self.node.value, ast.Name):
-        #     name = self.node.value.id
-        # elif isinstance(self.node, ast.Call):
-        #     name = ast.unparse(self.node)
-        # else:
-        #     name = ''
         return name.replace(MATCH_ALL, '$$').replace(MATCH_ONE, '$')
-
-    @override
-    @cache
-    def _get_containing_filename(self) -> str:
-        return self.translation_unit.file_name if self.translation_unit else ""
-
-    def _is_statement_or_declaration(self):
-        return isinstance(self.node, ast.stmt)
 
     @override
     @property
@@ -294,15 +198,16 @@ class PythonASTNode(ASTNode):
             self.node).encode(sys.getfilesystemencoding())
 
     @override
-    def _matches_kind(self, node: ASTNode) -> bool:
-        return self.kind == node.kind
+    def matches_kind(self, target: ASTNode) -> bool:
+        return isinstance(self.node, type(target.node))
 
     @override
-    def _get_parent(self) -> Optional['PythonASTNode']:
-        return self.parent
+    @property
+    def parent(self) -> Optional['PythonASTNode']:
+        return self._parent
 
     @override
-    def _is_statement(self) -> bool:
+    def is_statement(self) -> bool:
         return isinstance(self.node, ast.stmt)
 
     @override
@@ -344,12 +249,6 @@ class PythonASTNode(ASTNode):
         return Stream(self.translation_unit._references.get(node_id, EMPTY_LIST)) \
             .map(lambda ref: ASTReference(self.translation_unit._nodes[ref.node_id], ref.ref_kind, ref.properties)).to_list()
 
-    def _addTokens(self, result: dict[str, str], *token_kind):
-        for token in self.node.get_tokens():
-            # find all attr of token that are of type str or int
-            kind = str(token.kind).split('.')[-1]
-            if kind in token_kind:
-                result[kind] = token.spelling
 
     def add_node(self):
         # add node to the node list for references
@@ -370,27 +269,6 @@ class PythonASTNode(ASTNode):
                 if self.name != 'self':
                     if self.name not in self.translation_unit._nodes:
                         self.translation_unit._nodes[self.name] = self
-
-    @staticmethod
-    def _is_reference(node):
-        try:
-            print(type(node))
-            print(vars(node))
-            print(dir(node))
-            print(node.__dict__)
-            node.__dict__['id']
-            return True
-        except:
-            return False
-
-    @staticmethod
-    @cache
-    def __is_property(key, value):
-        return callable(value) and any(key.startswith(tag) for tag in ['is_', 'get'])
-
-    @staticmethod
-    def _is_wrapped(cursor):
-        return cursor.kind.is_unexposed() and len(list(cursor.get_children())) == 1
 
     def get_container_parent(self):
         # Get the containing definition parent

@@ -46,12 +46,12 @@ class PythonCodeGraphExtractor(BaseCodeGraphExtractor):
         self.graph.add_edge(folder, file_path, type="contains")
 
         for node in lst.traverse():
-            if node.node_type == "function_definition":
+            if node.kind == "function_definition":
                 name = node.signature.split("(")[0].split()[-1]
                 self.graph.add_node(name, type="function", file=file_path)
                 self.graph.add_edge(file_path, name, type="defines")
 
-            elif node.node_type == "call":
+            elif node.kind == "call":
                 call_target = node.signature.strip().split("(")[0]
                 self.graph.add_node(call_target, type="call_target")
                 self.graph.add_edge(file_path, call_target, type="calls")
@@ -65,12 +65,12 @@ class JavaCodeGraphExtractor(BaseCodeGraphExtractor):
         self.graph.add_edge(folder, file_path, type="contains")
 
         for node in lst.traverse():
-            if node.node_type == "method_declaration":
-                name = node.attributes.get("name", "method")
+            if node.kind == "method_declaration":
+                name = node.properties.get("name", "method")
                 self.graph.add_node(name, type="method", file=file_path)
                 self.graph.add_edge(file_path, name, type="defines")
 
-            elif node.node_type == "method_invocation":
+            elif node.kind == "method_invocation":
                 target = node.signature.strip().split("(")[0]
                 self.graph.add_node(target, type="method_target")
                 self.graph.add_edge(file_path, target, type="calls")
@@ -84,12 +84,12 @@ class CppCodeGraphExtractor(BaseCodeGraphExtractor):
         self.graph.add_edge(folder, file_path, type="contains")
 
         for node in lst.traverse():
-            if node.node_type == "function_definition":
-                name = node.attributes.get("name", "func")
+            if node.kind == "function_definition":
+                name = node.properties.get("name", "func")
                 self.graph.add_node(name, type="function", file=file_path)
                 self.graph.add_edge(file_path, name, type="defines")
 
-            elif node.node_type == "call_expression":
+            elif node.kind == "call_expression":
                 call_expr = node.signature.strip().split("(")[0]
                 self.graph.add_node(call_expr, type="call_target")
                 self.graph.add_edge(file_path, call_expr, type="calls")

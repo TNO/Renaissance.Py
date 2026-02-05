@@ -31,7 +31,7 @@ class PatternMatcherInterfaceExtended:
 
         matches = []
         for node in lst.traverse():
-            if node.node_type == node_type:
+            if node.kind == node_type:
                 mr = MatchResult()
                 mr.add_binding("match", node)
                 matches.append(M(mr))

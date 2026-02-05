@@ -68,7 +68,7 @@ def refactor_with_nested_compositions(args):
     factory = ASTFactory(ClangASTNode, args if not code else args[1:])
     # Create a pattern factory (using the factory (hence also its args)
     #create translation unit
-    atu = factory.create(code) if code else factory.create_from_text(example_code, 'test.c')
+    atu = factory.create(code) if code else factory.create_from_text(example_code, 'example.c')
     # create a pattern factory atu is passed to the pattern factory for use of all # includes, #defines and declarations
     pattern_factory = CPatternFactory(factory, atu)
     # create a pattern that matches an if statement with a==1 as the condition and a block of statements as the body
@@ -107,14 +107,15 @@ def refactor_with_nested_compositions(args):
             return res + '\n'
         # create a refactoring that use different replacement code for different patterns
         def refactor(match):
-            repl2 = pattern2replacement
-            if match.nodes == pattern1:
-                return rewriter.replace(pattern1replacement, match.nodes)
-            for repl in match.expansions:
-                repl2 = repl2.replace(repl, match.expansions[repl].name)
-            for repl in match.expansion_lists:
-                repl2 = repl2.replace(repl, raw(match.expansion_lists[repl]))
-            return rewriter.replace(repl2, match.nodes)
+            if match.patterns == pattern1:
+                replment_text = pattern1replacement
+            else:
+                replment_text = pattern2replacement
+
+            for repl_snippet in match.expansions:
+                replment_text = replment_text.replace(repl_snippet, raw(match.expansions[repl_snippet]))
+            return rewriter.replace(replment_text, match.nodes)
+
 
 
         # search matches for pattern1 and pattern2 and replace them using the refactor function
@@ -125,7 +126,7 @@ def refactor_with_nested_compositions(args):
         #print the rewritten code
         result = rewriter.apply_to_string()
         if rewriter.has_changed():
-            atu = factory.create_from_text(result, 'test.c')
+            atu = factory.create_from_text(result, 'example.c')
         else:
             atu = None
     return result

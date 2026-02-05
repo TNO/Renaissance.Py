@@ -90,7 +90,7 @@ class TestBasic(TestCase):
 
 
     @parameterized.expand(Factories.factories)
-    @unittest.skip("its both call expr")
+    @unittest.skip("its both expr and statement are call expr")
     def test_is_match_expression(self, _: str, factory: ASTFactory):
         pattern_factory = CPatternFactory(factory)
         expression1_pattern = pattern_factory.create_expression("f()", ["int f();"])

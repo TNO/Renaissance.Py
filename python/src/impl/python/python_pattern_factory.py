@@ -3,7 +3,8 @@ import re
 from typing import Optional, Sequence
 
 from common.stream import Stream
-from .python_ast_node import PythonASTNode, MATCH_ALL, MATCH_ONE
+from impl import MATCH_ALL, MATCH_ONE
+from impl.python import PythonASTNode
 from syntax_tree.ast_node import ASTNode
 from syntax_tree.ast_shower import ASTShower
 
@@ -65,42 +66,6 @@ class PythonPatternFactory:
         text = text.replace('$$', MATCH_ALL).replace('$', MATCH_ONE)
         return PythonASTNode(ast.parse(text).body[0].value)
 
-
-    def create_declarations(
-        self,
-        text: str,
-        types: Sequence[str] = [],
-        parameters: Sequence[str] = [],
-        extra_declarations: Sequence[str] = [],
-        declarations: Sequence[str] = [],
-    ):
-        keywords = PythonPatternFactory._get_keywords_from_text(text)
-        keywords = [
-            k
-            for k in keywords
-            if not any(k in ed for ed in extra_declarations)
-            and not any(k in ed for ed in parameters)
-            and not any(k in ed for ed in types)
-            and not any(k in ed for ed in declarations)
-        ]
-        return self._create_body(
-            text, types, [*parameters, *keywords], extra_declarations, "(?i).*DECL.*"
-        )
-
-    def create_declaration(
-        self,
-        text: str,
-        types: Sequence[str] = [],
-        parameters: Sequence[str] = [],
-        extra_declarations: Sequence[str] = [],
-        declarations: Sequence[str] = [],
-    ) -> ASTNode:
-        result = self.create_declarations(
-            text, types, parameters, extra_declarations, declarations
-        )
-        assert len(result) > 0, "At least one declaration is expected"
-        return result[0]
-
     def create_statements(
         self,
         text: str,
@@ -139,79 +104,11 @@ class PythonPatternFactory:
         assert len(statements) == 1, "Only one statement is expected"
         return statements[0]
 
-    def _create_body(
-        self,
-        text: str,
-        types: Sequence[str],
-        parameters: Sequence[str],
-        extra_declarations: Sequence[str],
-        kind: str,
-    ) -> list[ASTNode]:
-        full_text = (
-            self.header + "\n".join(PythonPatternFactory._to_typedef(types)) + "\n"
-            "\n".join(PythonPatternFactory._to_declaration(parameters)) + "\n"
-            "\n".join(extra_declarations) + "\n"
-            "\nvoid " + PythonPatternFactory.reserved_function_name + "(){\n" + text + "\n}"
-        )
-        root = self._create(full_text)
-
-        # from the children of the compound statement that contains the text, get for each child the first
-        # node of the specified kind
-
-        return (
-            Stream(
-                ASTFinder.find_kind(root.children[-1], "(?i)COMPOUND_?STMT")
-                .find_first()
-                .get()
-                .children
-            )
-            .filter(ASTNode.is_part_of_translation_unit)
-            .map(lambda n: ASTFinder.find_kind(n, kind).find_first().get())
-            .to_list()
-        )
-
     def _create(self, text: str) -> ASTNode:
         atu = self.factory.create_from_text(text, "test.py")
         if SHOW_NODE:
             ASTShower.show_node(atu)
         return atu.children[0]
-
-    @staticmethod
-    def _get_keywords_from_text(text: str) -> Sequence[str]:
-        # regex to get keywords that start with one of two dollars followed by a \\w+
-        pattern = re.compile(r"\${0,2}[a-zA-Z]\w*")
-        return list(
-            k
-            for k in set(re.findall(pattern, text))
-            if k not in PythonPatternFactory.RESERVED_KEYWORDS
-        )
-
-    @staticmethod
-    def _get_dollar_keywords_from_text(text: str) -> Sequence[str]:
-        # regex to get keywords that start with one of two dollars followed by a \\w+
-        pattern = re.compile(r"\${1,2}[a-zA-Z]\w*")
-        return list(set(re.findall(pattern, text)))
-
-    @staticmethod
-    def _get_non_dollar_keywords_from_text(
-        text: str, prefix: str = "void* ", postfix: str = ";"
-    ) -> Sequence[str]:
-        pattern = re.compile(r"[^\$][a-zA-Z]\w*")
-        return list(set(re.findall(pattern, text)))
-
-    @staticmethod
-    def _to_declaration(
-        keywords: Sequence[str], prefix: str = "int ", postfix: str = ";"
-    ) -> Sequence[str]:
-        return [prefix + keyword + postfix for keyword in keywords]
-
-    @staticmethod
-    def _to_typedef(
-        keywords: Sequence[str], prefix: str = "typedef int ", postfix: str = ";"
-    ) -> Sequence[str]:
-        return [prefix + keyword + postfix for keyword in keywords]
-
-
 
 
 if __name__ == "__main__":
@@ -220,6 +117,3 @@ if __name__ == "__main__":
             "struct $type;struct $name; $type a = $name; int b = 4; $$x = $$y"
         )
     )
-    # factory = ASTFactory(ClangASTNode)
-    # patternFactory = CPatternFactory(factory)
-    # ASTShower.show_node(patternFactory.create_expression('a == $hallo'))

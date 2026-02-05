@@ -10,8 +10,8 @@ def find_nodes_by_signature(lst, sig):
 
 
 def assert_placeholder_node(testcase, node, expected_name=None):
-    testcase.assertEqual(node.node_type, "placeholder")
-    attrs = getattr(node, "attributes", {})
+    testcase.assertEqual(node.kind, "placeholder")
+    attrs = getattr(node, "properties", {})
     testcase.assertTrue(attrs.get("placeholder"))
     if expected_name is not None:
         testcase.assertEqual(attrs.get("placeholder_name"), expected_name)
@@ -38,7 +38,7 @@ class TestTreeSitterPythonPlaceholders(unittest.TestCase):
         nodes = find_nodes_by_signature(lst, "__PHL__foo")
         self.assertTrue(nodes)
         for n in nodes:
-            if n.node_type == "placeholder":
+            if n.kind == "placeholder":
                 assert_placeholder_node(self, n, expected_name="foo")
 
     def test_non_placeholder_not_coerced(self):
@@ -48,7 +48,7 @@ class TestTreeSitterPythonPlaceholders(unittest.TestCase):
         lst = adapter.to_lst(code, tree)
         nodes = find_nodes_by_signature(lst, "normal")
         for n in nodes:
-            self.assertNotEqual(n.node_type, "placeholder")
+            self.assertNotEqual(n.kind, "placeholder")
         print("✅ SUCCESS: Python normal identifier stayed non-placeholder")
 
 
@@ -71,7 +71,7 @@ class TestTreeSitterJavaPlaceholders(unittest.TestCase):
         nodes = find_nodes_by_signature(lst, "$x")
         self.assertTrue(nodes)
         for n in nodes:
-            if n.node_type == "placeholder":
+            if n.kind == "placeholder":
                 assert_placeholder_node(self, n, expected_name="x")
 
     def test_java_normal_identifier_not_placeholder(self):
@@ -81,7 +81,7 @@ class TestTreeSitterJavaPlaceholders(unittest.TestCase):
         lst = adapter.to_lst(code, tree)
         nodes = find_nodes_by_signature(lst, "normal")
         for n in nodes:
-            self.assertNotEqual(n.node_type, "placeholder")
+            self.assertNotEqual(n.kind, "placeholder")
         print("✅ SUCCESS: Java normal identifier stayed non-placeholder")
 
 
@@ -110,7 +110,7 @@ class TestClangAdapterPlaceholders(unittest.TestCase):
         nodes = find_nodes_by_signature(lst, "__PHL__foo")
         self.assertTrue(nodes)
         for n in nodes:
-            if n.node_type == "placeholder":
+            if n.kind == "placeholder":
                 assert_placeholder_node(self, n, expected_name="foo")
 
     def test_c_normal_identifier_not_placeholder(self):
@@ -123,7 +123,7 @@ class TestClangAdapterPlaceholders(unittest.TestCase):
             lst = adapter.parse(src)
         nodes = find_nodes_by_signature(lst, "normal")
         for n in nodes:
-            self.assertNotEqual(n.node_type, "placeholder")
+            self.assertNotEqual(n.kind, "placeholder")
         print("✅ SUCCESS: C normal identifier stayed non-placeholder")
 
 

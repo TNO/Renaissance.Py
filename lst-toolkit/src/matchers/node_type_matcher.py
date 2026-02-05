@@ -18,7 +18,7 @@ class NodeTypeMatcher:
         return results
 
     def _search(self, node: LSTNode, results: List[MatchResult]):
-        if node.node_type == self.node_type:
+        if node.kind == self.node_type:
             match = MatchResult()
             match.add_binding("match", node)
             results.append(match)

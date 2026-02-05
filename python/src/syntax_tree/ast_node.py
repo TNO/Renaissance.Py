@@ -1,12 +1,11 @@
 from __future__ import annotations
+
+import re
+import sys
 from abc import ABC, abstractmethod
 from enum import Enum
 from pathlib import Path
-import re
-import sys
 from typing import Any, Callable
-
-from common import Stream
 
 from .text_utils import TextUtils
 
@@ -49,22 +48,23 @@ class ASTNode(ABC):
 
     def __init__(self, root: ASTNode) -> None:
         super().__init__()
+        self._children = None
+        self.show_props = None
+        self._kind = None
+        self._length = None
+        self._offset = None
+        self._filename = None
         self.root: ASTNode = root
-        self.orelse = None
         self._properties = {}
-        self._expression = None
-        self.indent =''
+        self._name = ''
+        self.indent = ''
 
     def __repr__(self):
         raw_lines = self.raw_signature.splitlines()
-        properties_text = '' if not self.show_props else self.get_properties()
+        properties_text = '' if not self.show_props else self.properties
         prefix = " " if len(raw_lines) < 2 else f"\n    {self.indent}"
         formatted_lines = [f"{prefix}|{line}|" for line in raw_lines]
         return f"{self.indent}({self.kind}, {self.name}, {self.filename}[{self.offset}:{self.offset + self.length}]){properties_text}:{''.join(formatted_lines)}\n"
-
-    @property
-    def expression(self):
-        return self._expression
 
     def is_part_of_translation_unit(self) -> bool:
         return self.filename == self.root.filename
@@ -107,7 +107,7 @@ class ASTNode(ABC):
 
     @property
     def extended_end_offset(self) -> int:
-        pass
+        return 0
 
     @property
     def preceding_sibling(self) -> ASTNode | None:
@@ -119,11 +119,13 @@ class ASTNode(ABC):
         return siblings[index - 1] if index > 0 else None
 
     @property
-    def references(self) -> [ASTNode] | None:
+    @abstractmethod
+    def references(self) -> list[ASTNode]:
         pass
 
     @property
-    def referenced_by(self) -> [ASTNode] | None:
+    @abstractmethod
+    def referenced_by(self) -> list[ASTNode]:
         pass
 
     @property
@@ -137,7 +139,7 @@ class ASTNode(ABC):
 
     def get_ancestor(self, kind: str | re.Pattern[str]) -> ASTNode | None:
         pattern = re.compile(kind, re.IGNORECASE) if isinstance(kind, str) else kind
-        parent = self._get_parent()
+        parent = self.parent
         if not parent:
             return None
         if pattern.match(parent.kind):
@@ -158,14 +160,14 @@ class ASTNode(ABC):
     @staticmethod
     @abstractmethod
     def load(
-            file_path: Path, extra_args: [str], working_dir: Path
+            file_path: Path, extra_args: list[str], working_dir: Path
     ) -> ASTNode:
         pass
 
     @staticmethod
     @abstractmethod
     def load_from_text(
-            text: str, file_name: str, extra_args: [str], working_dir: Path
+            text: str, file_name: str, extra_args: list[str], working_dir: Path
     ) -> ASTNode:
         pass
 
@@ -189,8 +191,9 @@ class ASTNode(ABC):
     def kind(self) -> str:
         return self._kind
 
+    @abstractmethod
     def matches_kind(self, node: ASTNode) -> bool:
-        return self._matches_kind(node)
+        pass
 
     def get_frozen_properties(self) -> frozenset[tuple[str, Any]]:
         # TODO How to get type correct? How to get right of pyright: ignore comments?
@@ -206,25 +209,24 @@ class ASTNode(ABC):
                 )
             return value
 
-        return frozenset(freeze(self._get_properties()))
+        return frozenset(freeze(self.properties))
 
     @property
     def properties(self) -> dict[str, int | str]:
         return self._properties
 
     @property
-    def parent(self) -> ASTNode|None:
+    def parent(self) -> ASTNode | None:
         return self._parent
 
     @property
+    @abstractmethod
     def is_statement(self) -> bool:
-        return self._is_statement
+        pass
 
     @property
-    def children(self) -> [ASTNode]:
+    def children(self) -> list[ASTNode]:
         return self._children
-
-
 
     def process(self, function: Callable[[ASTNode], None]) -> None:
         function(self)
@@ -244,4 +246,3 @@ class ASTNode(ABC):
         if function(self) == VisitorResult.CONTINUE:
             for child in self.children:
                 child.accept(function)
-
