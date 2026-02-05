@@ -101,12 +101,8 @@ class TestClangAdapterPlaceholders(unittest.TestCase):
         int main() { return __PHL__foo(42); }
         """
         )
-        with tempfile.TemporaryDirectory() as tmp:
-            src = os.path.join(tmp, "t.c")
-            with open(src, "w", encoding="utf-8") as f:
-                f.write(code)
-            adapter = self.Adapter()
-            lst = adapter.parse(src)
+        adapter = self.Adapter()
+        lst = adapter.load_from_text(code,'t.c')
         nodes = find_nodes_by_signature(lst, "__PHL__foo")
         self.assertTrue(nodes)
         for n in nodes:
@@ -115,12 +111,8 @@ class TestClangAdapterPlaceholders(unittest.TestCase):
 
     def test_c_normal_identifier_not_placeholder(self):
         code = "int normal(int x) { return x; }"
-        with tempfile.TemporaryDirectory() as tmp:
-            src = os.path.join(tmp, "t.c")
-            with open(src, "w", encoding="utf-8") as f:
-                f.write(code)
-            adapter = self.Adapter()
-            lst = adapter.parse(src)
+        adapter = self.Adapter()
+        lst = adapter.load_from_text(code,"t.c")
         nodes = find_nodes_by_signature(lst, "normal")
         for n in nodes:
             self.assertNotEqual(n.kind, "placeholder")
