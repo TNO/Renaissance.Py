@@ -136,16 +136,16 @@ class PythonASTNode(ASTNode):
                 print(e)
                 continue
 
-    def __eq__(self, other:ASTNode):
-        if not other:
-            return False
-        for i,child in enumerate(self._children):
-            if child != other.children[i]:
-                return False
-        for prop in self.properties:
-            if self.properties[prop] != other.properties[prop]:
-                return False
-        return True
+    # def __eq__(self, other:ASTNode):
+    #     if not other:
+    #         return False
+    #     for i,child in enumerate(self._children):
+    #         if child != other.children[i]:
+    #             return False
+    #     for prop in self.properties:
+    #         if self.properties[prop] != other.properties[prop]:
+    #             return False
+    #     return True
     def derive_position(self, node: ast.AST , translation_unit: PythonTranslationUnit):
         if hasattr(node, 'lineno'):
             self._offset = self.translation_unit.convert(self.node.lineno, self.node.col_offset)
@@ -160,10 +160,9 @@ class PythonASTNode(ASTNode):
     @override
     @staticmethod
     def load(file_path: Path, extra_args: Sequence[str], working_dir: Path) -> 'PythonASTNode':
-        args = [*extra_args, *PythonASTNode.parse_args]
         with open(working_dir / file_path, 'r') as file:
             content = file.read()
-            return PythonASTNode.load_from_text(content, file_path, args[3:], working_dir)
+            return PythonASTNode.load_from_text(content, file_path, extra_args, working_dir)
 
     @override
     @staticmethod

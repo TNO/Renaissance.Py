@@ -1,4 +1,8 @@
 Feature: Ast based changes
+  In order to get started on the system test
+  As a Developer
+  I want a working example of how system test looks like
+
   Scenario: python code
     Given 'python' programming language
     And 'examples/demo.py' file written in that programming language
