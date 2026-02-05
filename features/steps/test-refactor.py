@@ -1,30 +1,36 @@
+import pytest
 from pytest_bdd import scenario, given, when, then
 
-@scenario('../features/refactor-python-file.feature', 'python code')
+from impl import PythonASTNode
+from syntax_tree import ASTFactory, ASTFinder
+
+@pytest.fixture
+def context():
+    return {"factory": None,
+            "atu": None,
+            }
+@scenario('../refactor-python-file.feature', 'python code')
 def test_refactor_python_file():
     pass
 
-
-
 @given("'python' programming language")
 def step_impl():
-    pass # raise NotImplementedError(u'STEP: Given	\'python\' programming language')
+    context["factory"] = ASTFactory(PythonASTNode, '')
 
 
-@given("a source file written in that programming language")
+@given("'example/demo.py' file written in that programming language")
 def step_impl():
-    pass # raise NotImplementedError(u'STEP: And	a source file written in that programming language')
-
+    context["atu"] = context["factory"].create('example/demo.py')
 
 @given("an AST extracted from that source file without errors")
 def step_impl():
-    pass # raise NotImplementedError(u'STEP: And	an AST extracted from that source file without errors')
+    context["atu"].check_diagnostics()
 
 
-@given("a node of that AST")
+@given("node 'some_old_fun' exits within that AST")
 def step_impl():
-    pass # raise NotImplementedError(u'STEP: And	a node of that AST')
-
+    result = ASTFinder.find_all(context["atu"], 'some_old_fun')
+    assert result is not None
 
 @given("a sequence of descendant nodes of that node")
 def step_impl():
