@@ -63,13 +63,15 @@ def find_in_list(src, cmp, expansions={}):
                     else:
                         if foundPosition + 1 == len(cmp):
                             current_name = cmp[foundPosition].name
-                            end = len(src)
-                            expansions[last_name] = src[expansion_start:end - 1]
-                            expansions[current_name] = src[end - 1:]
-                            return True
+                            end = len(src)-1
+                            expansions[last_name] = src[expansion_start:end]
+                            expansions[current_name] = src[end:]
+                            return end
             foundPosition += 1
             if foundPosition == len(cmp):
                 return i
+        elif not greedy:
+            return -1
     if foundPosition < len(cmp):
         if foundPosition == len(cmp) - 1 and isinstance(cmp[foundPosition], ASTNode) and cmp[foundPosition].kind == MATCH_ALL:
             if cmp[foundPosition].name in expansions:
@@ -85,13 +87,13 @@ def find_in_list(src, cmp, expansions={}):
 
 
 def is_match(src, cmp, expansions={}) -> bool:
-    if isinstance(cmp, ASTNode) and cmp.kind == MATCH_ONE and src.kind not in ['Module', 'FUNCTION_DECL','TRANSLATION_UNIT']:
+    if isinstance(cmp, ASTNode) and cmp.kind == MATCH_ONE and not ( isinstance(src, ASTNode) and src.kind in ['Module', 'FUNCTION_DECL','TRANSLATION_UNIT']):
         if cmp.name in expansions:
             return is_match(src, expansions[cmp.name][0])
         else:
             expansions[cmp.name] = [src]
             return True
-    elif isinstance(src, ASTNode) and (cmp.kind != src.kind or not src.is_part_of_translation_unit()):
+    elif isinstance(src, ASTNode) and isinstance(cmp, ASTNode) and (cmp.kind != src.kind or not src.is_part_of_translation_unit()):
         return False
     elif isinstance(cmp, list):
         return is_match_tree(src, cmp, expansions)
@@ -110,7 +112,7 @@ def is_match(src, cmp, expansions={}) -> bool:
     elif cmp == None:
         return src == None
     elif isinstance(cmp, ASTNode):
-        return (is_match_dict(src.properties, cmp.properties, expansions)
+        return (is_match_dict(src.properties, cmp.properties, {})
                 and is_match_tree(remove_comment_macro(src.children), cmp.children, expansions))
     else:
         return src == cmp
@@ -409,6 +411,7 @@ class MatchFinder:
                     expansions = {}
                     foundPosition = 0
             else:
+                expansions = {}
                 if node.children:
                     foundStatements.extend(MatchFinder.__match_pattern(
                         remove_comment_macro(node.children),

@@ -4,7 +4,7 @@ import pytest
 
 from impl import PythonASTNode, PythonPatternFactory
 from syntax_tree import ASTFactory, MatchFinder
-from syntax_tree.ast_node import MATCH_ALL
+from syntax_tree.ast_node import MATCH_ALL, MATCH_ONE
 from syntax_tree.match_finder import is_match_tree, find_in_list
 
 
@@ -67,6 +67,13 @@ def test_lists_with_list_with_matcher_at_start():
     pattern = [PythonASTNode(ast.Name(MATCH_ALL + "name")), 5, 6]
     assert is_match_tree(src, pattern, {})
 
+def test_lists_with_list_with_multi_single():
+    src = [1, 2, 3, 4, 5, 6]
+    pattern = [PythonASTNode(ast.Name(MATCH_ALL + "name")),PythonASTNode(ast.Name(MATCH_ONE+ "name")) ]
+    exp={}
+    assert is_match_tree(src, pattern, exp)
+    assert exp["$$name"]==[1, 2, 3, 4, 5]
+    assert exp["$name"]==[6]
 
 def test_lists_with_list_with_matcher_in_the_middle():
     src = [1, 2, 3, 4, 5, 6]
