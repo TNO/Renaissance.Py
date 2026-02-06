@@ -5,7 +5,7 @@ import pytest
 from impl import PythonASTNode, PythonPatternFactory
 from syntax_tree import ASTFactory, MatchFinder
 from syntax_tree.ast_node import MATCH_ALL
-from syntax_tree.match_finder import is_match_tree
+from syntax_tree.match_finder import is_match_tree, find_in_list
 
 
 def test_none_with_none():
@@ -98,18 +98,44 @@ def test_lists_with_list_with_matcher_in_both_end__mismatch():
     assert not is_match_tree(src, pattern, {})
 
 
-def test_lists_with_list_with_matcher_in_both_end_empty_list_at_the_end():
+def test_lists_with_list_with_matcher_in_both_end_same_pattern():
     src = [2, 3, 4, 5, 61, 2, 3, 4, 5]
     pattern = [PythonASTNode(ast.Name(MATCH_ALL + "seq")), 61, PythonASTNode(ast.Name(MATCH_ALL + "seq"))]
     assert is_match_tree(src, pattern, {})
 
 
 def test_lists_with_list_with_matcher_in_matcher_in_between():
-    src = [2, 3, 4, 5, 61, 2, 3, 4, 5,7,8,9]
-    pattern = [PythonASTNode(ast.Name(MATCH_ALL + "seq")), 61, PythonASTNode(ast.Name(MATCH_ALL + "seq")),7,8,9]
+    src = [2, 3, 4, 5, 61, 2, 3, 4, 5, 7, 8, 9]
+    pattern = [PythonASTNode(ast.Name(MATCH_ALL + "seq")), 61, PythonASTNode(ast.Name(MATCH_ALL + "seq")), 7, 8, 9]
     assert is_match_tree(src, pattern, {})
 
+
 def test_lists_with_list_with_matcher_in_matcher_in_between_but_has_leftover():
-    src = [2, 3, 4, 5, 61, 2, 3, 4, 5,7,8,9]
+    src = [2, 3, 4, 5, 61, 2, 3, 4, 5, 7, 8, 9]
     pattern = [PythonASTNode(ast.Name(MATCH_ALL + "seq")), 61, PythonASTNode(ast.Name(MATCH_ALL + "seq"))]
     assert not is_match_tree(src, pattern, {})
+
+
+def test_find_in_list():
+    src = [2, 3, 4, 5, 61, 2, 3, 4, 5, 7, 8, 9]
+    pattern = [2]
+    assert find_in_list(src, pattern, {}) == 0
+
+
+def test_can_t_find_in_list():
+    src = [2, 3, 4, 5, 61, 2, 3, 4, 5, 7, 8, 9]
+    pattern = [1]
+    assert find_in_list(src, pattern, {}) < 0
+
+
+def test_find_in_list_returns_last_pos():
+    src = [0, 1, 2, 3, 4, 5, 61, 2, 3, 4, 5, 7, 8, 9]
+    pattern = [0, 1, 2, 3, 4, 5]
+    assert find_in_list(src, pattern, {}) == 5
+
+
+def test_find_with_match_all_returns_last_pos():
+    src = [0, 1, 2, 3, 4, 5, 61, 2, 3, 4, 5, 7, 8, 9]
+    pattern = [0, 1, 2, 3, 4, 5, PythonASTNode(ast.Name(MATCH_ALL + "seq"))]
+    assert find_in_list(src, pattern, {}) == len(src) - 1
+

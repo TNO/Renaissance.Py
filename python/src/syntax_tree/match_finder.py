@@ -14,17 +14,17 @@ DEFAULT_EXCLUDE_KIND = "comment"
 
 
 def is_match_tree(src, cmp, expansions={}):
-    return find_match_tree(src, cmp, expansions)
-def find_match_tree(src, cmp, expansions={}):
-    foundPosition = 0
-    greedy = False
     if cmp==None or src == None:
         return src == cmp
     if len(cmp) == 0 or len(src)==0:
         return src == cmp
     if len(cmp) == 1 and isinstance(cmp[0], ASTNode) and cmp[0].kind == MATCH_ALL:
-        expansions[cmp[foundPosition].name] = src
+        expansions[cmp[0].name] = src
         return True
+    return find_in_list(src, cmp, expansions) + 1 == len(src)
+def find_in_list(src, cmp, expansions={}):
+    foundPosition = 0
+    greedy = False
     for i in range(len(src)):
         node = src[i]
         pattern = cmp[foundPosition]
@@ -35,7 +35,7 @@ def find_match_tree(src, cmp, expansions={}):
                 if is_match_tree(expansions[current_name], src[i:end]):
                     foundPosition += 1
                     if foundPosition == len(cmp):
-                        return end ==len(src)
+                        return end-1
                     else:
                         pattern = cmp[foundPosition]
                         expansion_start = i
@@ -48,7 +48,7 @@ def find_match_tree(src, cmp, expansions={}):
                 foundPosition += 1
                 if foundPosition == len(cmp):
                     expansions[current_name] = src[i:]
-                    return True
+                    return len(src)-1
                 else:
                     pattern = cmp[foundPosition]
                     expansion_start = i
@@ -69,19 +69,19 @@ def find_match_tree(src, cmp, expansions={}):
                             return True
             foundPosition += 1
             if foundPosition == len(cmp):
-                return i + 1 == len(src)
+                return i
     if foundPosition < len(cmp):
-        if foundPosition == len(cmp) - 1 and cmp[foundPosition].kind == MATCH_ALL:
+        if foundPosition == len(cmp) - 1 and isinstance(cmp[foundPosition], ASTNode) and cmp[foundPosition].kind == MATCH_ALL:
             if cmp[foundPosition].name in expansions:
                 return expansions[cmp[foundPosition].name] == []
             else:
                 expansions[cmp[foundPosition].name] = []
-                return True
+                return i
         for p in cmp:
             if isinstance(p, ASTNode) and p.name in expansions:
                 expansions.pop(p.name)
-        return False
-    return True
+        return -1
+    return i
 
 
 def is_match(src, cmp, expansions={}) -> bool:
