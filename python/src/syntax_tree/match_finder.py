@@ -14,26 +14,40 @@ DEFAULT_EXCLUDE_KIND = "comment"
 
 
 def is_match_tree(src, cmp, expansions={}):
+    return find_match_tree(src, cmp, expansions)
+def find_match_tree(src, cmp, expansions={}):
     foundPosition = 0
     greedy = False
-    if len(cmp) == 1 and cmp[0].kind == MATCH_ALL:
+    if cmp==None or src == None:
+        return src == cmp
+    if len(cmp) == 0 or len(src)==0:
+        return src == cmp
+    if len(cmp) == 1 and isinstance(cmp[0], ASTNode) and cmp[0].kind == MATCH_ALL:
         expansions[cmp[foundPosition].name] = src
         return True
     for i in range(len(src)):
         node = src[i]
         pattern = cmp[foundPosition]
-        if pattern.kind == MATCH_ALL:
-            current_name = cmp[foundPosition].name
+        if isinstance(pattern, ASTNode) and pattern.kind == MATCH_ALL:
+            current_name = pattern.name
             if current_name in expansions:
-                if is_match(expansions[current_name], src):
-                    pass
+                end = i+len(expansions[current_name])
+                if is_match_tree(expansions[current_name], src[i:end]):
+                    foundPosition += 1
+                    if foundPosition == len(cmp):
+                        return end ==len(src)
+                    else:
+                        pattern = cmp[foundPosition]
+                        expansion_start = i
                 else:
+                    expansions.pop(current_name)
                     foundPosition = 0
+                    return False
             else:
                 greedy = True
                 foundPosition += 1
                 if foundPosition == len(cmp):
-                    expansions[current_name] = src[i:-1]
+                    expansions[current_name] = src[i:]
                     return True
                 else:
                     pattern = cmp[foundPosition]
@@ -44,7 +58,7 @@ def is_match_tree(src, cmp, expansions={}):
                 greedy = False
                 last_name = cmp[foundPosition - 1].name
                 if not last_name in expansions:
-                    if pattern.kind != MATCH_ONE:
+                    if (not isinstance(pattern, ASTNode)) or pattern.kind != MATCH_ONE:
                         expansions[last_name] = src[expansion_start:i]
                     else:
                         if foundPosition + 1 == len(cmp):
@@ -64,7 +78,7 @@ def is_match_tree(src, cmp, expansions={}):
                 expansions[cmp[foundPosition].name] = []
                 return True
         for p in cmp:
-            if p.name in expansions:
+            if isinstance(p, ASTNode) and p.name in expansions:
                 expansions.pop(p.name)
         return False
     return True
