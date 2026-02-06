@@ -15,6 +15,9 @@ DEFAULT_EXCLUDE_KIND = "comment"
 def is_match_tree(src, cmp, expansions={}):
     foundPosition = 0
     greedy = False
+    if len(cmp) == 1 and cmp[0].kind == MATCH_ALL:
+        expansions[cmp[foundPosition].name] = src
+        return True
     for i in range(len(src)):
         node = src[i]
         pattern = cmp[foundPosition]
@@ -80,7 +83,7 @@ def is_match(src, cmp, expansions={}) -> bool:
     elif isinstance(cmp, dict):
         return is_match_dict(src, cmp, expansions)
     elif isinstance(cmp, str):
-        return cmp.startswith('$') or src == cmp
+        return cmp.startswith('$') or cmp.startswith(MATCH_ONE) or src == cmp
     elif isinstance(cmp, int):
         return src == cmp
     elif cmp == None:
@@ -341,7 +344,9 @@ class MatchFinder:
 
         # this case does not really make sense
         if len(patterns) == 1 and patterns[0].kind == MATCH_ALL:
-            foundStatements.append(src_nodes)
+            expansions[patterns[0].name]=src_nodes
+            match = PatternMatch(src_nodes, expansions, patterns)
+            foundStatements.append(match)
             return foundStatements
         if not patterns or len(patterns) == 0:
             return foundStatements
