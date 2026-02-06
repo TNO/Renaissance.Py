@@ -2,7 +2,7 @@ from io import StringIO
 import io
 
 
-from .ast_node import ASTNode, traverse
+from .ast_node import ASTNode
 
 IMPLICIT = ['ImplicitNode']
 class ASTShower:

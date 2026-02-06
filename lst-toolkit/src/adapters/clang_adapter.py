@@ -30,7 +30,7 @@ class ClangAdapter:
 
         node = LSTNode(
             node_type=coerced_type if is_ph else cursor.kind.name,
-            attributes={
+            properties={
                 "spelling": cursor.spelling,
                 "type": str(cursor.type.spelling),
                 "location": str(cursor.location),

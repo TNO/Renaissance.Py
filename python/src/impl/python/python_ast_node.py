@@ -7,7 +7,7 @@ from typing import Any, Optional, Sequence
 from typing_extensions import override
 
 from common import Stream
-from impl import MATCH_ONE, MATCH_ALL
+from syntax_tree.ast_node import MATCH_ONE, MATCH_ALL
 from syntax_tree import ASTNode, ASTReference
 
 EMPTY_DICT = {}
@@ -188,7 +188,7 @@ class PythonASTNode(ASTNode):
 
     @override
     @property
-    def raw_signature(self) -> str:
+    def signature(self) -> str:
         return self.binary_file_content().decode(sys.getfilesystemencoding())
 
     @override

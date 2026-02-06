@@ -4,11 +4,13 @@ import re
 import sys
 from typing import Any, Optional, Sequence
 from common import Stream
-from impl import MATCH_ALL, MATCH_ONE
+
 from syntax_tree import ASTNode, ASTReference, ASTFinder, TextUtils
 from typing_extensions import override
 
 from clang.cindex import TranslationUnit, Index, Config, CursorKind, TypeKind
+
+from syntax_tree.ast_node import MATCH_ONE, MATCH_ALL
 
 EMPTY_DICT = {}
 EMPTY_STR = ''

@@ -22,7 +22,7 @@ class TreeSitterAdapter:
 
         lst_node = LSTNode(
             node_type=coerced_type if is_ph else node.type,
-            attributes={
+            properties={
                 "start_point": node.start_point,
                 "end_point": node.end_point,
                 "is_named": node.is_named,

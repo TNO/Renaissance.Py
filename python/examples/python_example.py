@@ -1,7 +1,8 @@
 from adapters.tree_sitter_adapter import TreeSitterAdapter
 import tree_sitter_python as tspython
 
-from syntax_tree import MatchFinder
+from syntax_tree import MatchFinder, ASTShower
+
 
 code = """
 def greet(name):
@@ -10,15 +11,9 @@ def greet(name):
 if True:
     greet("World")
 """
-print(code)
 adapter = TreeSitterAdapter(tspython)
 tree = adapter.parse_code(code)
 lst = adapter.to_lst(code, tree)
-for node in traverse(lst):
-    print(node)
-#
-# self.assertIsInstance(lst, LST)
-# nodes = list(lst.traverse())
-#
-# for node in lst.traverse():
+ASTShower.show_node(lst.root)
+# for node in traverse(lst.root):
 #     print(node)

@@ -12,7 +12,7 @@ class ModelLoader():
     @staticmethod
     def load_model(factory:ASTFactory):
         # note: make sure to load a corresponding model for the language
-        return  factory.create(Path(__file__).parent.parent.parent.parent / 'examples/c/src/main.c')
+        return  factory.create(Path(__file__).parent.parent.parent.parent / 'features/targets/main.c')
 
 class TestFinder(TestCase):
     pass

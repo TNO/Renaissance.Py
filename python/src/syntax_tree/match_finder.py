@@ -6,8 +6,7 @@ from dataclasses import dataclass
 from typing import Callable, Iterable, Iterator, Optional, Sequence
 
 from common import Stream
-from impl import MATCH_ALL, MATCH_ONE
-from .ast_node import ASTNode
+from .ast_node import ASTNode,MATCH_ALL, MATCH_ONE
 
 VERBOSE = False
 DEFAULT_EXCLUDE_KIND = "comment"
@@ -138,7 +137,7 @@ class PatternMatch:
     def __str__(self):
         res = ''
         for node in self.nodes:
-            res += node.raw_signature
+            res += node.signature
         return res
 
     def get_raw_signatures(self):

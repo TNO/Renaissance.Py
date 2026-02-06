@@ -3,7 +3,7 @@ import re
 from typing import Optional, Sequence
 
 from common.stream import Stream
-from impl import MATCH_ALL, MATCH_ONE
+from syntax_tree.ast_node import MATCH_ALL, MATCH_ONE
 from impl.python import PythonASTNode
 from syntax_tree.ast_node import ASTNode
 from syntax_tree.ast_shower import ASTShower

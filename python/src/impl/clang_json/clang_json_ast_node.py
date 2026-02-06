@@ -9,7 +9,7 @@ import re
 import sys
 import tempfile
 from common import Stream
-from impl import MATCH_ALL, MATCH_ONE
+from syntax_tree.ast_node import MATCH_ALL, MATCH_ONE
 from syntax_tree import ASTNode, ASTReference, CPPUtils
 from typing import Any, Optional, Sequence
 from typing_extensions import override
