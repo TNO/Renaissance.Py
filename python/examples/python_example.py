@@ -14,7 +14,7 @@ print(code)
 adapter = TreeSitterAdapter(tspython)
 tree = adapter.parse_code(code)
 lst = adapter.to_lst(code, tree)
-for node in lst.traverse():
+for node in traverse(lst):
     print(node)
 #
 # self.assertIsInstance(lst, LST)

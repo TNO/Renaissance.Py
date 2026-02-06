@@ -10,4 +10,5 @@ pytest-cov
 pytest-mock
 pytest-black
 pytest-profiling
+tree-sitter
 tree-sitter-python

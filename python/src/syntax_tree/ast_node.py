@@ -3,12 +3,12 @@ from __future__ import annotations
 import re
 import sys
 from abc import ABC, abstractmethod
+from collections import deque
 from enum import Enum
 from pathlib import Path
 from typing import Any, Callable
 
 from .text_utils import TextUtils
-
 
 # enum with ABORT, CONTINUE and SKIP
 class VisitorResult(Enum):
@@ -246,3 +246,10 @@ class ASTNode(ABC):
         if function(self) == VisitorResult.CONTINUE:
             for child in self.children:
                 child.accept(function)
+
+def traverse(node):
+    todo = deque([node])
+    while todo:
+        node = todo.popleft()
+        todo.extend(node.children)
+        yield node

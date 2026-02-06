@@ -33,11 +33,3 @@ class LSTNode:
 class LST:
     def __init__(self, root: LSTNode):
         self.root = root
-
-    def traverse(self) -> Generator[LSTNode]:
-        yield from self._traverse_recursive(self.root)
-
-    def _traverse_recursive(self, node: LSTNode) -> Generator[LSTNode]:
-        yield node
-        for child in node.children:
-            yield from self._traverse_recursive(child)

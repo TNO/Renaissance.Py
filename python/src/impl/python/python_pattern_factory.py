@@ -23,48 +23,31 @@ class PythonPatternFactory:
         language: str = "python",
     ):
         self.factory = factory
-        # collect includes #defines  and var decl from the refNode
         if ref_node:
             offset = (
                 Stream(ref_node.children)
                 .filter(ASTNode.is_part_of_translation_unit)
-                .filter(
-                    lambda c: not ASTFinder.matches_kind(
-                        c, "(?i)Macro.*|Inclusion_?Directive"
-                    )
-                )
                 .map(lambda n: n.offset)
                 .reduce(min)
                 .or_else(0)
             )
-           # self.header = ref_node.get_content(0, offset) + "\n"
-            # self.header += (
-            #     Stream(ref_node.get_children())
-            #     .filter(ASTNode.is_part_of_translation_unit)
-            #     .filter(
-            #         lambda c: ASTFinder.matches_kind(
-            #             c, "(?i)(Function|Var|Typedef)_?Decl"
-            #         )
-            #     )
-            #     .filter(
-            #         lambda c: ASTFinder.find_kind(c, "(?i)Compound_?Stmt").count() == 0
-            #     )
-            #     .map(lambda c: c.get_text() + ";")
-            #     .collect(lambda n: "\n".join(n))
-            #     + "\n"
-            # )
+
         else:
             self.language = language
             self.header = ""
-        # print(self.header)
 
 
+
+    def replace_dollar(self, text: str) -> str:
+        return text.replace('$$', MATCH_ALL).replace('$', MATCH_ONE)
 
     def create_expression(
         self, text: str, extra_declarations: Sequence[str] = []
     ) -> ASTNode:
-        text = text.replace('$$', MATCH_ALL).replace('$', MATCH_ONE)
+        text = self.replace_dollar(text)
         return PythonASTNode(ast.parse(text).body[0].value)
+
+
 
     def create_statements(
         self,
@@ -73,7 +56,7 @@ class PythonPatternFactory:
         extra_declarations: Sequence[str] = [],
         kind: str = ".*",
     ) -> Sequence[ASTNode]:
-        text = text.replace('$$', MATCH_ALL).replace('$', MATCH_ONE)
+        text = self.replace_dollar(text)
         result = []
         for node in ast.parse(text).body:
             result.append(PythonASTNode(node))
@@ -83,14 +66,14 @@ class PythonPatternFactory:
         # create python node from string
         # the output could be different, the comments are removed
         # Return PythonASTNode
-        text = text.replace('$$', MATCH_ALL).replace('$', MATCH_ONE)
+        text = self.replace_dollar(text)
         return PythonASTNode(ast.parse(text).body[0])
 
     def create(self, text: str, kind: Optional[str] = None) -> ASTNode:
         # create python from text
         # the comments are removed
         # Return Module
-        text = text.replace('$$', MATCH_ALL).replace('$', MATCH_ONE)
+        text = self.replace_dollar(text)
         return self._create(text)
 
     def create_statement(

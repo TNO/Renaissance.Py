@@ -136,16 +136,16 @@ class PythonASTNode(ASTNode):
                 print(e)
                 continue
 
-    # def __eq__(self, other:ASTNode):
-    #     if not other:
-    #         return False
-    #     for i,child in enumerate(self._children):
-    #         if child != other.children[i]:
-    #             return False
-    #     for prop in self.properties:
-    #         if self.properties[prop] != other.properties[prop]:
-    #             return False
-    #     return True
+    def __eq__(self, other:ASTNode):
+        if not other:
+            return False
+        if any(mine!= other_child for mine, other_child in zip(self.children,other.children)):
+            return False
+        common_keys = set(self.properties.keys()) | set(other.properties.keys())
+        tupples = zip(common_keys, ((self.properties[k], other.properties[k]) for k in common_keys))
+        if any(val1 != val2 for key, (val1, val2) in tupples):
+            return False
+        return True
     def derive_position(self, node: ast.AST , translation_unit: PythonTranslationUnit):
         if hasattr(node, 'lineno'):
             self._offset = self.translation_unit.convert(self.node.lineno, self.node.col_offset)

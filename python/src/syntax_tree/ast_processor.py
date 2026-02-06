@@ -1,6 +1,8 @@
 from __future__ import annotations
+
+from collections import deque
 from pathlib import Path
-from typing import Callable, Iterator, Sequence
+from typing import Callable, Iterator, Sequence, Generator
 
 from common.stream import Stream
 from .ast_finder import ASTFinder
@@ -134,6 +136,7 @@ class ASTProcessor:
             # TODO check errors
             atu = self.__ast_factory.create(Path(self.get_filename()))
         return ASTProcessor(atu, self.__ast_factory, self.in_memory)
+
 
 
 # main

@@ -1,6 +1,8 @@
 from io import StringIO
 import io
-from .ast_node import ASTNode
+
+
+from .ast_node import ASTNode, traverse
 
 IMPLICIT = ['ImplicitNode']
 class ASTShower:
@@ -34,5 +36,3 @@ class ASTShower:
         if node.children:
             for child in node.children:
                 ASTShower._process_node(output, indent + "  ", child, include_properties)
-        else:
-            pass
