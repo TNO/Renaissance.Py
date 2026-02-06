@@ -61,7 +61,7 @@ class TestMatchers(unittest.TestCase):
         matcher = NodeTypeMatcher("call_expression")
         matches = matcher.match(self.if_node)
         self.assertEqual(len(matches), 1)
-        self.assertEqual(matches[0].bindings["match"][0].node_type, "call_expression")
+        self.assertEqual(matches[0].bindings["match"][0].kind, "call_expression")
 
 
 if __name__ == "__main__":

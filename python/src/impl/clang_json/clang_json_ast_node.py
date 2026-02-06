@@ -9,14 +9,13 @@ import re
 import sys
 import tempfile
 from common import Stream
-from impl.python import MATCH_ONE
+from impl import MATCH_ALL, MATCH_ONE
 from syntax_tree import ASTNode, ASTReference, CPPUtils
 from typing import Any, Optional, Sequence
 from typing_extensions import override
 import subprocess
 
-MATCH_ONE = '_MatchOne__'
-MATCH_ALL = '_MatchAll__'
+
 EMPTY_DICT = {}
 EMPTY_STR = ""
 EMPTY_LIST: list[ClangJsonASTReference] = []
@@ -340,7 +339,8 @@ class ClangJsonASTNode(ASTNode):
         return re.match("(?i).*(Stmt|Decl)", self.kind)
 
     @override
-    def _matches_kind(self, node: ASTNode) -> bool:
+    @property
+    def matches_kind(self, node: ASTNode) -> bool:
         self_kind = self._kind
         node_kind = node.kind
         return (
@@ -432,7 +432,8 @@ class ClangJsonASTNode(ASTNode):
 
 
     @override
-    def _is_statement(self) -> bool:
+    @property
+    def is_statement(self) -> bool:
         return (
                 self.parent != None and self.parent.kind in STMT_PARENTS
         )  # TODO: Why look at the kind of your parent and not at your own kind?

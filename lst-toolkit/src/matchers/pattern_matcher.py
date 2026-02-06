@@ -35,8 +35,8 @@ class StructuralPatternMatcher:
         result = MatchResult()
 
         def recurse(p_node: LSTNode, t_node: LSTNode) -> bool:
-            if (p_node.node_type == "identifier" 
-                or p_node.node_type == "placeholder" )and (
+            if (p_node.kind == "identifier"
+                or p_node.kind == "placeholder")and (
                 p_node.signature.startswith(
                     "$"
                 )  # this does not work for call expressions in tree sitter
@@ -45,7 +45,7 @@ class StructuralPatternMatcher:
             ):
                 result.add_binding(p_node.signature[1:], t_node)
                 return True
-            if p_node.node_type != t_node.node_type:
+            if p_node.kind != t_node.kind:
                 return False
             if len(p_node.children) != len(t_node.children):
                 return False

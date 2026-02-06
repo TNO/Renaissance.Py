@@ -12,8 +12,8 @@ class LSTNode:
         children: Optional[List['LSTNode']] = None,
         parent: Optional['LSTNode'] = None,
     ):
-        self.node_type = node_type
-        self.attributes = attributes
+        self.kind = node_type
+        self.properties = attributes
         self.signature = signature
         self.offset = offset
         self.children = children if children else []
@@ -25,7 +25,7 @@ class LSTNode:
 
     def __repr__(self) -> str:
         return (
-            f"LSTNode(type={self.node_type}, sig={self.signature[:30]!r}, "
+            f"LSTNode(type={self.kind}, sig={self.signature[:30]!r}, "
             f"offset={self.offset}, children={len(self.children)})"
         )
 

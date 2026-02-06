@@ -23,7 +23,7 @@ class LSTMermaidVisualizer:
     def _render_node(self, node):
         node_id = self._get_node_id(node)
         label = f"""\
-{node_id}: {node.node_type} {{
+{node_id}: {node.kind} {{
 offset: {node.offset}
 signature: {self._clean_signature(node.signature)}
 }}"""

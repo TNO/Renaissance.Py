@@ -1,0 +1,13 @@
+textx
+dataclasses-json
+clang==18.1.8
+libclang
+parameterized
+coverage
+pyperclip
+pytest-bdd
+pytest-cov
+pytest-mock
+pytest-black
+pytest-profiling
+tree-sitter-python

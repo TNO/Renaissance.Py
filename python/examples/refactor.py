@@ -68,12 +68,7 @@ def refactor_with_nested_compositions(args):
             else:
                 replment_text = pattern2replacement
             for repl_snippet in match.expansions:
-                if(isinstance(match.expansions[repl_snippet],list)):
-                    replment_text = replment_text.replace(repl_snippet, raw(match.expansions[repl_snippet]))
-                else:
-                    replment_text = replment_text.replace(repl_snippet, match.expansions[repl_snippet].text)
-            for repl_snippet in match.expansion_lists:
-                replment_text = replment_text.replace(repl_snippet, raw(match.expansion_lists[repl_snippet]))
+                replment_text = replment_text.replace(repl_snippet, raw(match.expansions[repl_snippet]))
             return rewriter.replace(replment_text, match.nodes)
 
         # search matches for pattern1 and pattern2 and replace them using the refactor function

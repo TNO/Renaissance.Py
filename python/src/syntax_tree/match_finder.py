@@ -6,12 +6,11 @@ from dataclasses import dataclass
 from typing import Callable, Iterable, Iterator, Optional, Sequence
 
 from common import Stream
+from impl import MATCH_ALL, MATCH_ONE
 from .ast_node import ASTNode
 
 VERBOSE = False
 DEFAULT_EXCLUDE_KIND = "comment"
-MATCH_ONE = '_MatchOne__'
-MATCH_ALL = '_MatchAll__'
 
 
 def is_match_tree(src, cmp, expansions={}):
@@ -192,7 +191,7 @@ class PatternMatch:
             self, patterns_list: Sequence[Sequence[ASTNode] | ConstrainedPattern],
             recursive: bool, exclude_kind: str, part_of_translation_unit: bool
     ) -> Iterable[PatternMatch]:
-        for n in self.src_nodes:
+        for n in self.nodes:
             for ref in n.references:
                 yield from MatchFinder.find_all_strict(
                     [ref.node],
@@ -279,7 +278,7 @@ class MatchFinder:
     def match_pattern(
             src_nodes: [ASTNode] | ASTNode,
             patterns: [ASTNode] | ConstrainedPattern,
-            src_filter: Callable[[Sequence[ASTNode]], [ASTNode]] = lambda n: n,
+            src_filter: Callable[[Sequence[ASTNode]], Sequence[ASTNode]] = lambda n: n,
     ) -> [PatternMatch]:
         """
         Matches a given source node or list of source nodes against a list of pattern nodes.

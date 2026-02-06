@@ -3,10 +3,9 @@ import inspect
 import unittest
 from unittest.mock import patch
 
-from impl import PythonASTNode, PythonPatternFactory
-from impl.python import MATCH_ALL
+from impl import PythonASTNode, PythonPatternFactory, MATCH_ALL, MATCH_ONE
 from syntax_tree import ASTFactory, MatchFinder
-from syntax_tree.match_finder import MATCH_ONE, is_match, PatternMatch
+from syntax_tree.match_finder import is_match, PatternMatch
 
 
 class PythonMatcherTest(unittest.TestCase):
