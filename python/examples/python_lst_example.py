@@ -15,5 +15,3 @@ adapter = TreeSitterAdapter(tspython)
 tree = adapter.parse_code(code)
 lst = adapter.to_lst(code, tree)
 ASTShower.show_node(lst.root)
-# for node in traverse(lst.root):
-#     print(node)
