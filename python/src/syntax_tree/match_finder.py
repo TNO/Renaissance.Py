@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 import re
 from collections import Counter
 from dataclasses import dataclass
@@ -83,7 +84,13 @@ def is_match(src, cmp, expansions={}) -> bool:
     elif isinstance(cmp, dict):
         return is_match_dict(src, cmp, expansions)
     elif isinstance(cmp, str):
-        return cmp.startswith('$') or cmp.startswith(MATCH_ONE) or src == cmp
+        if cmp.startswith('$') or cmp.startswith(MATCH_ONE):
+            if cmp in expansions:
+                return is_match(src, expansions[cmp.replace(MATCH_ONE,'$')][0])
+            else:
+                expansions[cmp.replace(MATCH_ONE,'$')] = [src]
+                return True
+        return src == cmp
     elif isinstance(cmp, int):
         return src == cmp
     elif cmp == None:

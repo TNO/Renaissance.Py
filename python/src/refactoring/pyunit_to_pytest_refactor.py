@@ -9,8 +9,11 @@ PYTEST_REPLACEMENT = 'def $test_case():\n    $$aaa'
 def raw(nodes):
     res = ''
     for node in nodes:
-        res += node.text
-    return res + '\n'
+        if isinstance(node, PythonASTNode):
+            res += node.signature + '\n        '
+        else:
+            res += str(node)
+    return res #+ '\n'
 def convert_test_cases(atu):
     rewriter = ASTRewriter(atu)
     pattern_factory = PythonPatternFactory(factory, atu)
@@ -21,6 +24,6 @@ def convert_test_cases(atu):
         pytest_replacement = PYTEST_REPLACEMENT
         for snippets in test_case.expansions:
             pytest_replacement = pytest_replacement.replace(snippets, raw(test_case.expansions[snippets]))
-        rewriter.replace(PYTEST_REPLACEMENT, test_case.nodes)
+        rewriter.replace(pytest_replacement, test_case.nodes)
     rewriter.apply()
     return rewriter.apply_to_string()

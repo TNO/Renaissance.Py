@@ -50,12 +50,14 @@ from syntax_tree import ASTShower, TextUtils, ASTFinder
 def refactor(args):
     factory = ASTFactory(PythonASTNode, [])
     atu = factory.create(args[1])
-    convert_test_cases(atu)
-    return atu.signature
+    return convert_test_cases(atu)
+
 
 if __name__ == "__main__":
     import sys
 
     result = refactor(sys.argv)
+    with open(sys.argv[1], 'w') as f:
+        f.write(result)
     print(result)
 
