@@ -363,66 +363,29 @@ class MatchFinder:
         foundPosition = 0
         foundPositionInExpandedList = 0
         expansions = {}
-        foundStatements = []
-
-        # this case does not really make sense
-        if len(patterns) == 1 and patterns[0].kind == MATCH_ALL:
-            expansions[patterns[0].name]=src_nodes
-            match = PatternMatch(src_nodes, expansions, patterns)
-            foundStatements.append(match)
-            return foundStatements
-        if not patterns or len(patterns) == 0:
-            return foundStatements
-
-        for i in range(len(src_nodes)):
-            node = src_nodes[i]
-            pattern = patterns[foundPosition]
-            if pattern.kind == MATCH_ALL:
-                current_name = patterns[foundPosition].name
-                if current_name in expansions:
-                    if is_match(expansions[current_name][foundPositionInExpandedList], node):
-                        foundPositionInExpandedList = foundPositionInExpandedList + 1
-                        if (foundPositionInExpandedList == len(expansions[current_name])):
-                            # found all match
-                            foundPositionInExpandedList = 0
-                            foundPosition += 1
-                    else:
-                        foundPosition = 0
-                else:
-                    greedy = True
-                    foundPosition += 1
-                    pattern = patterns[foundPosition]
-                    expansion_start = i
-                    foundPositionInExpandedList = 0
-            if is_match(node, pattern, expansions):
-                if foundPosition == 0:
-                    start = i
-                if greedy == True:
-                    greedy = False
-                    last_name = patterns[foundPosition - 1].name
-                    if not last_name in expansions:
-                        expansions[last_name] = src_nodes[expansion_start:i]
-                        foundPositionInExpandedList = 0
-                foundPosition += 1
-                if foundPosition == len(patterns):
-                    end = i + 1
-
-                    foundStatements.append(PatternMatch(src_nodes[start:end], expansions, patterns))
-                    expansions = {}
-                    foundPosition = 0
-            else:
+        found_statements = []
+        to_do = src_nodes
+        while len(to_do)>0:
+            found_position  = find_in_list(to_do, patterns, expansions)
+            if found_position >=0:
+                match = PatternMatch(to_do[:found_position+1], expansions, patterns)
+                found_statements.append(match)
                 expansions = {}
-                if node.children:
-                    foundStatements.extend(MatchFinder.__match_pattern(
-                        remove_comment_macro(node.children),
+                to_do = to_do[found_position+1:]
+            else:
+                if to_do[0].children:
+                    found_statements.extend(MatchFinder.__match_pattern(
+                        remove_comment_macro(to_do[0].children),
                         patterns,
                         depth,
                         multiplicity,
                         pattern_match,
                         src_filter,
                     ))
+                to_do = to_do[1:]
 
-        return foundStatements
+
+        return found_statements
 
         # TODO check with pierre whether we should take the highest or the deepest match
 
