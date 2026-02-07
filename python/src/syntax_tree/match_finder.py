@@ -359,9 +359,6 @@ class MatchFinder:
             pattern_match: Optional[PatternMatch],
             src_filter: Callable[[Sequence[ASTNode]], Sequence[ASTNode]],
     ) -> Sequence[PatternMatch]:
-        greedy = False
-        foundPosition = 0
-        foundPositionInExpandedList = 0
         expansions = {}
         found_statements = []
         to_do = src_nodes
