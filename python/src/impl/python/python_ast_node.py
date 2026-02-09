@@ -289,12 +289,6 @@ class ReferenceHelper:
         assert isinstance(ast_node, PythonASTNode), f'Expected PythonASTNode but got {type(ast_node)}'
         try:
             match ast_node.kind:
-                case 'Name':
-                    if ref_id not in types:
-                        node_id = ast_node.id
-                        ref_id = ref_node.id
-                        ref_kind = 'TypeRef'
-                        ReferenceHelper.add_reference(ast_node, node_id, ref_id, ref_kind)
                 case 'arg':
                     if ast_node.name != 'self':
                         if hasattr(ast_node.node, 'arg') and hasattr(ast_node.node, 'annotation'):
@@ -314,16 +308,6 @@ class ReferenceHelper:
                         node_id = ast_node.node.target.id
                         ref_id = ast_node.node.annotation.id
                         ref_kind = 'TypeRef'
-                    # if isinstance(ast_node.node.value, ast.Call):
-                    #   node_id = ast_node.node.target.id
-                    #  ref_node = ast_node.node.value.func
-                    # ref_id = ref_node.id
-                    # ref_kind = 'CallRef'
-                    # if isinstance(ast_node.node.value, ast.Name):
-                    #    node_id = ast_node.node.target.id
-                    #  ref_node = ast_node.node.value
-                    #  ref_id = ref_node.id
-                    #  ref_kind = 'ParamRef'
                     ReferenceHelper.add_reference(ast_node, node_id, ref_id, ref_kind)
                 case 'ClassDef':
                     node = ast_node.node
