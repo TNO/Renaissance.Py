@@ -1,6 +1,8 @@
 from lst.lst import LSTNode
 from typing import Dict, List
 
+from syntax_tree.ast_node import MATCH_ONE
+
 
 class MatchResult:
     def __init__(self):
@@ -41,7 +43,7 @@ class StructuralPatternMatcher:
                     "$"
                 )  # this does not work for call expressions in tree sitter
                 or 
-                p_node.signature.startswith("__PLH_")
+                p_node.signature.startswith(MATCH_ONE)
             ):
                 result.add_binding(p_node.signature[1:], t_node)
                 return True

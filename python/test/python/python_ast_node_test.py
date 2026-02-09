@@ -2,16 +2,8 @@ import ast
 import unittest
 from parameterized import parameterized
 from impl import PythonASTNode, PythonPatternFactory, ClangASTNode
-from syntax_tree import ASTFactory, MatchFinder, ASTShower
-
-
-def walk(node):
-    from collections import deque
-    todo = deque([node])
-    while todo:
-        node = todo.popleft()
-        todo.extend(node.children)
-        yield node
+from syntax_tree import ASTFactory, MatchFinder, ASTShower, ASTProcessor
+from syntax_tree.ast_node import traverse
 
 
 class PythonNodeTest(unittest.TestCase):
@@ -75,7 +67,7 @@ def outer():
     ])
     def test_stmt_kind_in_context(self, raw, kind):
         it = self.factory.create_from_text(raw, 'context.py')
-        kinds = [node.kind for node in walk(it)]
+        kinds = [node.kind for node in traverse(it)]
         self.assertIn(kind, kinds)
 
     @parameterized.expand([

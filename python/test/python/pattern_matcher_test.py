@@ -3,7 +3,8 @@ import inspect
 import unittest
 from unittest.mock import patch
 
-from impl import PythonASTNode, PythonPatternFactory, MATCH_ALL, MATCH_ONE
+from impl import PythonASTNode, PythonPatternFactory
+from syntax_tree.ast_node import MATCH_ALL, MATCH_ONE
 from syntax_tree import ASTFactory, MatchFinder
 from syntax_tree.match_finder import is_match, PatternMatch
 

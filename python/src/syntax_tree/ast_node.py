@@ -3,12 +3,12 @@ from __future__ import annotations
 import re
 import sys
 from abc import ABC, abstractmethod
+from collections import deque
 from enum import Enum
 from pathlib import Path
 from typing import Any, Callable
 
 from .text_utils import TextUtils
-
 
 # enum with ABORT, CONTINUE and SKIP
 class VisitorResult(Enum):
@@ -16,6 +16,8 @@ class VisitorResult(Enum):
     CONTINUE = 1
     SKIP = 2
 
+MATCH_ONE = '_MatchOne__'
+MATCH_ALL = '_MatchAll__'
 
 class ASTReference:
     def __init__(
@@ -60,7 +62,7 @@ class ASTNode(ABC):
         self.indent = ''
 
     def __repr__(self):
-        raw_lines = self.raw_signature.splitlines()
+        raw_lines = self.signature.splitlines()
         properties_text = '' if not self.show_props else self.properties
         prefix = " " if len(raw_lines) < 2 else f"\n    {self.indent}"
         formatted_lines = [f"{prefix}|{line}|" for line in raw_lines]
@@ -70,7 +72,7 @@ class ASTNode(ABC):
         return self.filename == self.root.filename
 
     @property
-    def raw_signature(self) -> str:
+    def signature(self) -> str:
         start = self.offset
         end = self.extended_end_offset
         if start == end:
@@ -83,7 +85,7 @@ class ASTNode(ABC):
     @property
     def text(self) -> str:
         return TextUtils.shift_left(
-            self.raw_signature, len(self.indent), start_line=1
+            self.signature, len(self.indent), start_line=1
         )
 
     def content(self, start: int, end: int) -> str:
@@ -246,3 +248,10 @@ class ASTNode(ABC):
         if function(self) == VisitorResult.CONTINUE:
             for child in self.children:
                 child.accept(function)
+
+def traverse(node):
+    todo = deque([node])
+    while todo:
+        node = todo.popleft()
+        todo.extend(node.children)
+        yield node

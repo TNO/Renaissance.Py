@@ -7,7 +7,7 @@ from typing import Any, Optional, Sequence
 from typing_extensions import override
 
 from common import Stream
-from impl import MATCH_ONE, MATCH_ALL
+from syntax_tree.ast_node import MATCH_ONE, MATCH_ALL
 from syntax_tree import ASTNode, ASTReference
 
 EMPTY_DICT = {}
@@ -44,7 +44,7 @@ class PythonTranslationUnit():
         msg = None
         errors = ''
         for d in self.atu.type_ignores:
-            msg  = f'type ignored: {d.tag} at {d.lineno}\n'
+            msg = f'type ignored: {d.tag} at {d.lineno}\n'
             errors += msg
             print(msg)
         if msg:
@@ -81,21 +81,15 @@ class PythonASTNode(ASTNode):
     def __init__(self, node: ast.AST, translation_unit: PythonTranslationUnit = None, parent=None,
                  start_offset: Optional[int] = None, length: Optional[int] = None, insert_kind: Optional[str] = None):
         super().__init__(self if parent is None else parent.root)
-        if(isinstance(node, str)):
-            pass
         self.node = node
         self._parent = parent
-        self.translation_unit = translation_unit
         cls = type(node)
         self._kind = cls.__name__
         self.indent = ''
         self._name = self._derive_name()
-
-        self.show_props =False
+        self.show_props = False
         self._children = []
-        self.orelse = []
-        self._properties={}
-        self._expression=None
+        self._properties = {}
         if translation_unit:
             self._filename = translation_unit.file_name
             self.translation_unit = translation_unit
@@ -110,25 +104,25 @@ class PythonASTNode(ASTNode):
         if (isinstance(node, str)):
             self._kind = 'Name'
             return
-        if (isinstance(node, ast.Expr) and isinstance(node.value, ast.Name) ) or isinstance(node, ast.Name):
-                id = node.id if isinstance(node, ast.Name) else node.value.id
-                if id.startswith(MATCH_ONE):
-                    self._kind = MATCH_ONE
-                elif id.startswith(MATCH_ALL):
-                    self._kind = MATCH_ALL
+        if (isinstance(node, ast.Expr) and isinstance(node.value, ast.Name)) or isinstance(node, ast.Name):
+            id = node.id if isinstance(node, ast.Name) else node.value.id
+            if id.startswith(MATCH_ONE):
+                self._kind = MATCH_ONE
+            elif id.startswith(MATCH_ALL):
+                self._kind = MATCH_ALL
         for name in node._fields:
             try:
                 child = getattr(node, name)
                 match child:
                     case list():  # Matches any list
-                        if isinstance(node, ImplicitNode) or isinstance(node, ast.Module) or len(node._fields)==1:
+                        if isinstance(node, ImplicitNode) or isinstance(node, ast.Module) or len(node._fields) == 1:
                             for n in child:
-                                self._children.append(PythonASTNode(n, translation_unit,self))
+                                self._children.append(PythonASTNode(n, translation_unit, self))
                         else:
-                            self._children.append(PythonASTNode(ImplicitNode(name,child), translation_unit,self))
+                            self._children.append(PythonASTNode(ImplicitNode(name, child), translation_unit, self))
                     case ast.AST():
                         if name not in ['ctx', 'ctx']:
-                            self._children.append(PythonASTNode(child, translation_unit,self))
+                            self._children.append(PythonASTNode(child, translation_unit, self))
                     case _:
                         if name not in ['None']:
                             self.properties[name] = child
@@ -136,17 +130,25 @@ class PythonASTNode(ASTNode):
                 print(e)
                 continue
 
-    def __eq__(self, other:ASTNode):
-        if not other:
+    def __eq__(self, other: ASTNode):
+        if (not other
+        or  not isinstance(other, type(self))
+        or len(self.children) != len(other.children)
+        or self.kind != other.kind):
             return False
-        for i,child in enumerate(self._children):
-            if child != other.children[i]:
+        try:
+            if any(mine != other_child for mine, other_child in zip(self.children, other.children)):
                 return False
-        for prop in self.properties:
-            if self.properties[prop] != other.properties[prop]:
+            common_keys = set(self.properties.keys()) | set(other.properties.keys())
+            tupples = zip(common_keys, ((self.properties[k], other.properties[k]) for k in common_keys))
+            if any(val1 != val2 for key, (val1, val2) in tupples):
                 return False
-        return True
-    def derive_position(self, node: ast.AST , translation_unit: PythonTranslationUnit):
+            return True
+        except AttributeError as e:
+            print(e)
+            return False
+
+    def derive_position(self, node: ast.AST, translation_unit: PythonTranslationUnit):
         if hasattr(node, 'lineno'):
             self._offset = self.translation_unit.convert(self.node.lineno, self.node.col_offset)
             self._length = self.translation_unit.convert(self.node.end_lineno, self.node.end_col_offset) - self.offset
@@ -160,10 +162,9 @@ class PythonASTNode(ASTNode):
     @override
     @staticmethod
     def load(file_path: Path, extra_args: Sequence[str], working_dir: Path) -> 'PythonASTNode':
-        args = [*extra_args, *PythonASTNode.parse_args]
         with open(working_dir / file_path, 'r') as file:
             content = file.read()
-            return PythonASTNode.load_from_text(content, file_path, args[3:], working_dir)
+            return PythonASTNode.load_from_text(content, file_path, extra_args, working_dir)
 
     @override
     @staticmethod
@@ -189,7 +190,7 @@ class PythonASTNode(ASTNode):
 
     @override
     @property
-    def raw_signature(self) -> str:
+    def signature(self) -> str:
         return self.binary_file_content().decode(sys.getfilesystemencoding())
 
     @override
@@ -247,8 +248,8 @@ class PythonASTNode(ASTNode):
             case 'arg':
                 node_id = self.name
         return Stream(self.translation_unit._references.get(node_id, EMPTY_LIST)) \
-            .map(lambda ref: ASTReference(self.translation_unit._nodes[ref.node_id], ref.ref_kind, ref.properties)).to_list()
-
+            .map(
+            lambda ref: ASTReference(self.translation_unit._nodes[ref.node_id], ref.ref_kind, ref.properties)).to_list()
 
     def add_node(self):
         # add node to the node list for references
@@ -281,6 +282,7 @@ class PythonASTNode(ASTNode):
         else:
             return self.parent.get_container_parent()
 
+
 class ReferenceHelper:
     @staticmethod
     def create_references(ast_node: PythonASTNode) -> None:
@@ -312,16 +314,16 @@ class ReferenceHelper:
                         node_id = ast_node.node.target.id
                         ref_id = ast_node.node.annotation.id
                         ref_kind = 'TypeRef'
-                    #if isinstance(ast_node.node.value, ast.Call):
-                     #   node_id = ast_node.node.target.id
-                      #  ref_node = ast_node.node.value.func
-                       # ref_id = ref_node.id
-                       # ref_kind = 'CallRef'
-                   # if isinstance(ast_node.node.value, ast.Name):
+                    # if isinstance(ast_node.node.value, ast.Call):
+                    #   node_id = ast_node.node.target.id
+                    #  ref_node = ast_node.node.value.func
+                    # ref_id = ref_node.id
+                    # ref_kind = 'CallRef'
+                    # if isinstance(ast_node.node.value, ast.Name):
                     #    node_id = ast_node.node.target.id
-                      #  ref_node = ast_node.node.value
-                      #  ref_id = ref_node.id
-                      #  ref_kind = 'ParamRef'
+                    #  ref_node = ast_node.node.value
+                    #  ref_id = ref_node.id
+                    #  ref_kind = 'ParamRef'
                     ReferenceHelper.add_reference(ast_node, node_id, ref_id, ref_kind)
                 case 'ClassDef':
                     node = ast_node.node
@@ -365,6 +367,7 @@ class ReferenceHelper:
             ast_node.translation_unit._referenced_by[ref_id].append(referenced_by)
         except:
             ast_node.translation_unit._referenced_by[ref_id] = [referenced_by]
+
 
 types = ['int', 'float', 'str', 'list', 'set', 'tuple', 'Mapping', 'dict', 'Optional']
 if __name__ == "__main__":

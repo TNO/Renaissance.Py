@@ -4,11 +4,11 @@ from matchers.pattern_matcher import StructuralPatternMatcher, MatchResult
 
 def dummy_example():
     # Construct a fake pattern tree manually
-    cond = LSTNode(node_type="$cond", attributes={}, signature="", offset=0)
-    body = LSTNode(node_type="$body", attributes={}, signature="", offset=0)
+    cond = LSTNode(node_type="$cond", properties={}, signature="", offset=0)
+    body = LSTNode(node_type="$body", properties={}, signature="", offset=0)
     if_node = LSTNode(
         node_type="if_statement",
-        attributes={},
+        properties={},
         signature="if x > 0: print(x)",
         offset=0,
     )
