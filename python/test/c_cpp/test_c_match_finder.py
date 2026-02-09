@@ -3,7 +3,8 @@ import unittest
 from unittest import TestCase
 from parameterized import parameterized
 
-from impl import ClangASTNode, ClangJsonASTNode
+from impl.clang import ClangASTNode
+from impl.clang_json import ClangJsonASTNode
 from syntax_tree import ASTFactory, ASTFinder, ASTShower, ASTNode, MatchFinder, CPatternFactory
 from syntax_tree.match_finder import remove_comment_macro
 from utils_for_tests import to_string, compress, show_node

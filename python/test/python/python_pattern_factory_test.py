@@ -1,6 +1,5 @@
 import unittest
 import ast
-from impl import PythonASTNode
 from .factories import Factories
 from parameterized import parameterized
 from impl.python.python_pattern_factory import PythonPatternFactory

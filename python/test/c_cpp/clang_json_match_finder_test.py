@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from impl import ClangASTNode, ClangJsonASTNode
+from impl.clang_json import ClangJsonASTNode
 from syntax_tree import ASTFactory, ASTFinder, MatchFinder, CPatternFactory
 from syntax_tree.match_finder import remove_comment_macro
 
