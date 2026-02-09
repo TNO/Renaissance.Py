@@ -6,13 +6,7 @@ import syntax_tree
 from impl.python import PythonASTNode
 
 
-def walk(node):
-    from collections import deque
-    todo = deque([node])
-    while todo:
-        node = todo.popleft()
-        todo.extend(node.children)
-        yield node
+
 
 content = """
 # antagonist

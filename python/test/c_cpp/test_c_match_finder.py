@@ -93,7 +93,7 @@ class TestCMatchFinder(TestCase):
         for actual, expected_dict in zip(actual_matches, expected_dicts_per_match):
             for k, v in actual.expansions.items():
                 for i,n in enumerate(v):
-                    self.assertEqual(n.text,expected_dict[k][i])
+                    self.assertEqual(expected_dict[k][i], n.text)
         self.assertEqual(len(expected_dicts_per_match),len(actual_matches))
 
 class TestExpressions(TestCMatchFinder):
@@ -134,9 +134,9 @@ class TestStatements(TestCMatchFinder):
     @parameterized.expand(Factories.extend([
     ('$x;$y;',[{'$x': ['int a = 3;'], '$y': ['int b = 4;']}, {'$x': ['if(a == 3){\n                b=5;\n            }\n            else{\n                b--;\n            }'], '$y': ['while(a != 3){\n                if  (a == 4 && b == 5){\n                    b = a;\n                }\n            }']}]),
     ('if($x){$$stmts;}',[{'$x': ['a == 4 && b == 5'], '$$stmts': ['b = a;']}]),
-    ('if($x){$$stmts;}else{$single;$$multi;}',[{'$x': ['a == 3'], '$$stmts': ['b = 5;'], '$single': ['b--;'], '$$multi': []}]),
-    ('if($x){$$stmts;}else{$$multi;$single;}',[{'$x': ['a == 3'], '$$stmts': ['b = 5;'], '$single': ['b--;'], '$$multi': []}]),
-    ('while(a!=$x){$$stmts;}',[{'$x': ['3'], '$$stmts': ['if(a == 4 && b == 5){b=a;}']}]),
+    ('if($x){$$stmts;}else{$single;$$multi;}',[{'$x': ['a == 3'], '$$stmts': ['b=5;'], '$single': ['b--;'], '$$multi': []}]),
+    ('if($x){$$stmts;}else{$$multi;$single;}',[{'$x': ['a == 3'], '$$stmts': ['b=5;'], '$single': ['b--;'], '$$multi': []}]),
+    ('while(a!=$x){$$stmts;}',[{'$x': ['3'], '$$stmts': ['if  (a == 4 && b == 5){\n                    b = a;\n                }']}]),
 ]))
     def test(self, _, factory, statements, expected_dicts_per_match: list[dict[str, list[str]]]):
         stmtNodes = CPatternFactory(factory).create_statements(statements)

@@ -1,14 +1,14 @@
 import pytest
 from pytest_bdd import given, when, then, scenario, parsers
 from impl import PythonASTNode, ClangASTNode, PythonPatternFactory
-from syntax_tree import ASTFactory, ASTFinder, ASTRewriter
+from syntax_tree import ASTFactory, ASTFinder, ASTRewriter, MatchFinder
 
 
 @pytest.fixture
 def context():
     return {
             }
-@scenario('refactor-python-file.feature','python code')
+@scenario('../refactor-python-file.feature','python code')
 def test_refactor_python_file():
     pass
 
@@ -34,37 +34,30 @@ def step_impl(context):
 def step_impl(context):
     pattern_factory = PythonPatternFactory(context['factory'], context['atu'])
     old = pattern_factory.create_statements('a=1')
-    context['result'] = ASTFinder.find_all(context["atu"].childern, old)
-    assert context['result'] is not None
+    context['result'] = MatchFinder.find_all(context["atu"].children, old).to_list()
+    assert context['result']
 
 @given("a sequence of descendant nodes of that node")
 def step_impl(context):
-    assert context['result'].to_list()[0].nodes.children
+    assert context['result'][0].nodes[0].children
 
 
 @when("that node is replaced by 'def my_awesome_fun(): pass'")
 def step_impl(context):
         context['rewriter'] = ASTRewriter(context['atu'])
 
-        context['rewriter'].replace('a=5', context['match'][0].nodes)
+        context['rewriter'].replace('a=5', context['result'][0].nodes)
 
 
-@given("Rewrites replace is performed on that sequence of descendant nodes")
+@when("rewrites replace is performed on that sequence of descendant nodes")
 def step_impl(context):
     context['rewriter'].apply()
 
-
 @then("in the modified source file that node is replaced by the given text")
 def step_impl(context):
-    'def my_awesome_fun(): pass' in context['rewriter'].apply_to_string
+    'a=5' in context['rewriter'].apply_to_string()
 
 
-@given("all rewrites on that sequence of descendant nodes are not performed / hidden")
+@then("all rewrites on that sequence of descendant nodes are not performed or hidden")
 def step_impl(context):
-    'def some_old_fun' not in context['rewriter'].apply_to_string
-@when("rewrites replace is performed on that sequence of descendant nodes")
-def step_impl(context):
-    pass # raise NotImplementedError(u'STEP: And all rewrites on that sequence of descendant nodes are not performed / hidden')
-@then( "all rewrites on that sequence of descendant nodes are not performed / hidden")
-def step_impl(context):
-    pass
+    assert context['rewriter'].has_changed()
