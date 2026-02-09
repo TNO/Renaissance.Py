@@ -63,16 +63,7 @@ class TestReplaceIfWithTernaryOperator(TestCase):
  '        int c = 3;\n'
  '        int d = 4;\n'
  '        void f(){\n'
- '            if (a==1) {\n'
- '                c++;\n'
- '                b = 2;\n'
- '                d++;\n'
- '            }\n'
- '            else {\n'
- '                c++;\n'
- '                b = 3;\n'
- '                d++;\n'
- '            }\n'
+ '            c++; b=(a==1) ? 2:3; d++;\n'
  '        }')
         self.assertEqual( expected_result_ternary,result)
 

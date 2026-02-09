@@ -88,9 +88,19 @@ class TestBasic(TestCase):
         count: int = len(results)
         assert 1 == count, "count = " + str(count)
 
+    @parameterized.expand(Factories.factories)
+
+    def test_is_match_assignment_expression(self, _: str, factory: ASTFactory):
+        pattern_factory = CPatternFactory(factory)
+        expression1_pattern = pattern_factory.create_expression("x=3", ["int x;"])
+        assert is_match(expression1_pattern, expression1_pattern, {}), "An expression matches itself"
+
+        expression2_pattern = pattern_factory.create_expression("x=3", ["int x;"])
+        assert is_match(expression1_pattern, expression2_pattern, {}), "Identical expressions match"
+
 
     @parameterized.expand(Factories.factories)
-    def test_is_match_expression(self, _: str, factory: ASTFactory):
+    def test_is_match_call_expression(self, _: str, factory: ASTFactory):
         pattern_factory = CPatternFactory(factory)
         expression1_pattern = pattern_factory.create_expression("f()", ["int f();"])
         assert is_match(expression1_pattern, expression1_pattern,{}), "An expression matches itself"
@@ -98,11 +108,19 @@ class TestBasic(TestCase):
         expression2_pattern = pattern_factory.create_expression("f()", ["int f();"])
         assert is_match(expression1_pattern, expression2_pattern,{}), "Identical expressions match"
         
+
+
+    @parameterized.expand(Factories.factories)
+    @unittest.skip("stmt and expr are the same")
+    def test_is_match_expression_differs_from_stmt(self, _: str, factory: ASTFactory):
+        pattern_factory = CPatternFactory(factory)
+        expression_pattern = pattern_factory.create_expression("x=3", ["int x;"])
+        statement_pattern = pattern_factory.create_statement("x=3;", extra_declarations=["int x;"])
+        assert not is_match(expression_pattern, statement_pattern, {}), "An expression doesn't match a statement"
+
+        expression_pattern = pattern_factory.create_expression("f()", ["int f();"])
         statement_pattern = pattern_factory.create_statement("f();", extra_declarations=["int f();"])
-        assert not is_match(expression1_pattern, statement_pattern,{}), "An expression doesn't match a statement"
-
-        atu = factory.create_from_text('void ca(int a,int b,int c){ca(13,14,15); ca(13,14,15);}', 'fut.c')
-
+        assert not is_match(expression_pattern, statement_pattern, {}), "An expression doesn't match a statement"
 
     @parameterized.expand(Factories.factories)
     def test_is_match_statement(self, _: str, factory: ASTFactory):

@@ -263,10 +263,10 @@ class TestComposeReplacement(TestCase):
         atu = factory.create_from_text(code, 'test.cpp')
         stmtNodes = CPatternFactory(factory).create_statements(statements, extra_declarations=extra_declarations)
         matches = MatchFinder.find_all([atu],stmtNodes).\
-            filter(lambda match: match.src_nodes[0].is_part_of_translation_unit()).to_list()
+            filter(lambda match: match.nodes[0].is_part_of_translation_unit()).to_list()
 
         for match, exp in zip(matches, replacement.items()):
-            rewriter = ASTRewriter(match.src_nodes[0].root)
+            rewriter = ASTRewriter(match.nodes[0].root)
             org, expected = exp
             rewriter.replace(org, match)
             actual = rewriter.apply_to_string()

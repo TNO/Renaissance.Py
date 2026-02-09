@@ -425,7 +425,7 @@ class _RewriteActions:
                         place_holder_length = end_index - index + 1
                     indent_replacement = raw_signature.replace("\n", "\n" + spaces)
                     if (
-                        PatternMatch.is_multi(placeholder)
+                        placeholder.startswith('$$')
                         and index + place_holder_length < len(replacement)
                         and replacement[index + place_holder_length] == ";"
                     ):

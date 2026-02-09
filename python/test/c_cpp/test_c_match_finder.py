@@ -219,7 +219,7 @@ class TestMultiAssignments(TestCMatchFinder):
         
         stmtNodes = CPatternFactory(factory).create_statements(statements, extra_declarations=extra_declarations)
         matches = self.do_test_fun_body(factory, code, stmtNodes, recursive=True) # type: ignore
-        self.assert_matches(matches, expected_dicts_per_match)
+        self.assert_matches(expected_dicts_per_match,matches)
 
 class TestUseAtuToCreatePattern(TestCMatchFinder):
     @parameterized.expand(Factories.extend([

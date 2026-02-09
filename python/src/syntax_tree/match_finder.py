@@ -14,76 +14,84 @@ DEFAULT_EXCLUDE_KIND = "comment"
 
 
 def is_match_tree(src, cmp, expansions={}):
-    if cmp==None or src == None:
+    if cmp == None or src == None:
         return src == cmp
-    if len(cmp) == 0 or len(src)==0:
+    if not isinstance(src , list) or not isinstance(cmp , list):
+        return src == cmp
+    if len(cmp) == 0 or len(src) == 0:
         return src == cmp
     if len(cmp) == 1 and isinstance(cmp[0], ASTNode) and cmp[0].kind == MATCH_ALL:
         expansions[cmp[0].name] = src
         return True
     return find_in_list(src, cmp, expansions) + 1 == len(src)
-def find_in_list(src, cmp, expansions={}):
+
+def find_in_list(src, cmp, exp={}):
     foundPosition = 0
     greedy = False
-    for i in range(len(src)):
-        node = src[i]
+    # src = remove_comment_macro(src)
+    i = 0
+    while i <len(src):
         pattern = cmp[foundPosition]
         if isinstance(pattern, ASTNode) and pattern.kind == MATCH_ALL:
             current_name = pattern.name
-            if current_name in expansions:
-                end = i+len(expansions[current_name])
-                if is_match_tree(expansions[current_name], src[i:end]):
+            if current_name in exp:
+                end = i + len(exp[current_name])
+                if is_match_tree(exp[current_name], src[i:end], {}):
                     foundPosition += 1
                     if foundPosition == len(cmp):
-                        return end-1
+                        return end - 1
                     else:
                         pattern = cmp[foundPosition]
+                        i=end
                         expansion_start = i
+
                 else:
-                    expansions.pop(current_name)
+                    exp.pop(current_name)
                     foundPosition = 0
                     return False
             else:
                 greedy = True
                 foundPosition += 1
                 if foundPosition == len(cmp):
-                    expansions[current_name] = src[i:]
-                    return len(src)-1
+                    exp[current_name] = src[i:]
+                    return len(src) - 1
                 else:
                     pattern = cmp[foundPosition]
                     expansion_start = i
 
-        if is_match(node, pattern, expansions):
+        if is_match(src[i], pattern, exp):
             if greedy == True:
                 greedy = False
                 last_name = cmp[foundPosition - 1].name
-                if not last_name in expansions:
+                if not last_name in exp:
                     if (not isinstance(pattern, ASTNode)) or pattern.kind != MATCH_ONE:
-                        expansions[last_name] = src[expansion_start:i]
+                        exp[last_name] = src[expansion_start:i]
                     else:
                         if foundPosition + 1 == len(cmp):
                             current_name = cmp[foundPosition].name
-                            end = len(src)-1
-                            expansions[last_name] = src[expansion_start:end]
-                            expansions[current_name] = src[end:]
+                            end = len(src) - 1
+                            exp[last_name] = src[expansion_start:end]
+                            exp[current_name] = src[end:]
                             return end
             foundPosition += 1
             if foundPosition == len(cmp):
                 return i
         elif not greedy:
             return -1
+        i+=1
     if foundPosition < len(cmp):
-        if foundPosition == len(cmp) - 1 and isinstance(cmp[foundPosition], ASTNode) and cmp[foundPosition].kind == MATCH_ALL:
-            if cmp[foundPosition].name in expansions:
-                return expansions[cmp[foundPosition].name] == []
+        if foundPosition == len(cmp) - 1 and isinstance(cmp[foundPosition], ASTNode) and cmp[
+            foundPosition].kind == MATCH_ALL:
+            if cmp[foundPosition].name in exp:
+                return exp[cmp[foundPosition].name] == []
             else:
-                expansions[cmp[foundPosition].name] = []
-                return i
+                exp[cmp[foundPosition].name] = []
+                return i-1
         for p in cmp:
-            if isinstance(p, ASTNode) and p.name in expansions:
-                expansions.pop(p.name)
+            if isinstance(p, ASTNode) and p.name in exp:
+                exp.pop(p.name)
         return -1
-    return i
+    return i-1
 
 
 def is_match(src, cmp, expansions={}) -> bool:
@@ -359,15 +367,14 @@ class MatchFinder:
             pattern_match: Optional[PatternMatch],
             src_filter: Callable[[Sequence[ASTNode]], Sequence[ASTNode]],
     ) -> Sequence[PatternMatch]:
-        expansions = {}
         found_statements = []
         to_do = src_nodes
         while len(to_do)>0:
-            found_position  = find_in_list(to_do, patterns, expansions)
+            found_expansions = {}
+            found_position  = find_in_list(to_do, patterns, found_expansions)
             if found_position >=0:
-                match = PatternMatch(to_do[:found_position+1], expansions, patterns)
+                match = PatternMatch(to_do[:found_position+1], found_expansions, patterns)
                 found_statements.append(match)
-                expansions = {}
                 to_do = to_do[found_position+1:]
             else:
                 if to_do[0].children:
