@@ -90,7 +90,6 @@ class TestBasic(TestCase):
 
 
     @parameterized.expand(Factories.factories)
-    @unittest.skip("its both expr and statement are call expr")
     def test_is_match_expression(self, _: str, factory: ASTFactory):
         pattern_factory = CPatternFactory(factory)
         expression1_pattern = pattern_factory.create_expression("f()", ["int f();"])
@@ -101,7 +100,10 @@ class TestBasic(TestCase):
         
         statement_pattern = pattern_factory.create_statement("f();", extra_declarations=["int f();"])
         assert not is_match(expression1_pattern, statement_pattern,{}), "An expression doesn't match a statement"
-        
+
+        atu = factory.create_from_text('void ca(int a,int b,int c){ca(13,14,15); ca(13,14,15);}', 'fut.c')
+
+
     @parameterized.expand(Factories.factories)
     def test_is_match_statement(self, _: str, factory: ASTFactory):
         pattern_factory = CPatternFactory(factory)

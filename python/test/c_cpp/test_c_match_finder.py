@@ -195,7 +195,6 @@ class TestMultiAssignments(TestCMatchFinder):
     ('if ($c) {$$before; c=3; $$after;} else {$$before; c=6; $$after;}',[],[{'$c': ['1'], '$$before': ['a=1;', 'b=2;'], '$true': ['c=3;'], '$$after': ['d=4;', 'e=5;'], '$false': ['c=6;']}]),
 ]))
 
-    @unittest.skip('too advanced for now?')
     def test_statements(self, _, factory, statements, extra_declarations, expected_dicts_per_match: list[dict[str, list[str]]]):
         code = """
         

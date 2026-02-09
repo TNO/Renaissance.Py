@@ -33,12 +33,6 @@ class PythonShowerTest(unittest.TestCase):
 
         self.assertEqual(expected, str(self.atu.children))
 
-    @unittest.skip("compare two impl")
-    def test_show_ast_a_b(self):
-        text = ASTShower.get_node(self.atu)
-        ptext = ASTShower.get_node(self.atu)
-        self.assertEqual(text+"a",ptext)
-
     def test_show_ast_filter_implicite_Node(self):
         ptext = ASTShower.get_node(self.atu)
         self.assertNotIn("(ImplicitNode,",ptext)
