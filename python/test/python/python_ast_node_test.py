@@ -1,7 +1,7 @@
 import ast
 import unittest
 from parameterized import parameterized
-from impl import PythonASTNode, PythonPatternFactory, ClangASTNode
+from impl.python import PythonASTNode, PythonPatternFactory
 from syntax_tree import ASTFactory, MatchFinder, ASTShower, ASTProcessor
 from syntax_tree.ast_node import traverse
 

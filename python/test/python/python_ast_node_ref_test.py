@@ -3,7 +3,7 @@ import unittest
 import pytest
 
 import syntax_tree
-from impl import PythonASTNode
+from impl.python import PythonASTNode
 
 
 

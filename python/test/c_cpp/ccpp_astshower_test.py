@@ -3,7 +3,7 @@ import unittest
 from _ast import AST
 from typing import Sequence
 
-from impl import PythonASTNode, PythonPatternFactory, ClangASTNode
+from impl.clang import ClangASTNode
 from syntax_tree import ASTFactory, MatchFinder, ASTShower, CPatternFactory, ASTFinder
 
 
