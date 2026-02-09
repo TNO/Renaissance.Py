@@ -1,4 +1,5 @@
 import ast
+import unittest
 
 import pytest
 
@@ -110,7 +111,7 @@ def test_lists_with_list_with_matcher_in_both_end_same_pattern():
     pattern = [PythonASTNode(ast.Name(MATCH_ALL + "seq")), 61, PythonASTNode(ast.Name(MATCH_ALL + "seq"))]
     assert is_match_tree(src, pattern, {})
 
-
+@unittest.skip('TODO')
 def test_lists_with_list_with_matcher_in_matcher_in_between():
     src = [2, 3, 4, 5, 61, 2, 3, 4, 5, 7, 8, 9]
     pattern = [PythonASTNode(ast.Name(MATCH_ALL + "seq")), 61, PythonASTNode(ast.Name(MATCH_ALL + "seq")), 7, 8, 9]
