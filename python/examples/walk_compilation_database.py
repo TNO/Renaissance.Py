@@ -1,7 +1,8 @@
 #use clang to load and walk a compilation database
 
 from pathlib import Path
-from impl import CompilationDatabase, ClangASTNode, ClangJsonASTNode
+from impl.clang import CompilationDatabase, ClangASTNode
+from impl.clang_json import ClangJsonASTNode
 from syntax_tree import ASTProcessor, ASTNode, ASTShower
 
     

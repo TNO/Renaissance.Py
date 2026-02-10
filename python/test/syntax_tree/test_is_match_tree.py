@@ -3,8 +3,8 @@ import unittest
 
 import pytest
 
-from impl import PythonASTNode, PythonPatternFactory, ClangASTNode
-from syntax_tree import ASTFactory, MatchFinder, CPatternFactory
+from impl.python import PythonASTNode, PythonPatternFactory
+from syntax_tree import ASTFactory, MatchFinder
 from syntax_tree.ast_node import MATCH_ALL, MATCH_ONE
 from syntax_tree.match_finder import is_match_tree, find_in_list
 
@@ -112,8 +112,8 @@ def test_lists_with_list_with_matcher_in_both_end_empty_list_at_the_end():
     assert is_match_tree(src, pattern, {})
 
 
-def test_lists_with_list_with_matcher_in_both_end_mismatch():
-    src = [1, 2, 3, 4, 5, 6,1, 2, 3, 4, 5, 6]
+def test_lists_with_list_with_matcher_in_both_end__mismatch():
+    src = [1, 2, 3, 4, 5, 61, 2, 3, 4, 5, 6]
     pattern = [PythonASTNode(ast.Name(MATCH_ALL + "seq")), 6, PythonASTNode(ast.Name(MATCH_ALL + "seq"))]
     assert not is_match_tree(src, pattern, {})
 

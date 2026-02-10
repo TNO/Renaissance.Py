@@ -4,7 +4,8 @@ from dataclasses import dataclass
 from typing import Callable
 from syntax_tree.recipe_ast_processor import RecipeASTProcessor, after_step, recipe_step, final_action
 from typing_extensions import Iterable, override
-from impl import ClangASTNode, ClangJsonASTNode
+from impl.clang import ClangASTNode
+from impl.clang_json import ClangJsonASTNode
 from refactoring import CleanupRefactoring
 from syntax_tree import ASTProcessor, ASTNode, TextUtils, ASTFactory, BatchASTProcessor
 

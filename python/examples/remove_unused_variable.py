@@ -2,7 +2,8 @@
 # It specifically showcases the replacement of if-else statements with ternary operators.
 from refactoring import CleanupRefactoring
 from syntax_tree import ASTFactory, ASTFinder, ASTRewriter, ASTShower, ASTProcessor, ASTNode
-from impl import ClangJsonASTNode, ClangASTNode
+from impl.clang import ClangASTNode
+from impl.clang_json import ClangJsonASTNode
 
 example_code = """
         int a = 1;

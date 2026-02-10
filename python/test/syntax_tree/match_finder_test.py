@@ -5,7 +5,7 @@ from unittest import TestCase
 
 from unittest.mock import Mock
 
-from impl import ClangASTNode
+from impl.clang import ClangASTNode
 from syntax_tree import ASTNode, ASTFactory, CPatternFactory, ASTFinder, ASTShower
 from syntax_tree.match_finder import is_match, MatchFinder, find_in_list
 

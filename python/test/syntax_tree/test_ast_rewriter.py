@@ -1,7 +1,8 @@
 from unittest import TestCase
 from parameterized import parameterized
 
-from impl import ClangJsonASTNode, ClangASTNode
+from impl.clang import ClangASTNode
+from impl.clang_json import ClangJsonASTNode
 from syntax_tree import ASTRewriter, CPatternFactory, MatchFinder, ASTFactory, ASTNode, ASTShower
 from typing import Callable, Sequence
 from utils_for_tests import compress

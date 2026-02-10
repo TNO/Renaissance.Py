@@ -3,7 +3,8 @@
 from common.stream import Stream
 from syntax_tree import ASTFinder, ASTRefactorActions, CPPPatternFactory, RecipeASTProcessor, TextUtils, recipe_step
 from typing_extensions import Iterable
-from impl import ClangASTNode, ClangJsonASTNode
+from impl.clang import ClangASTNode
+from impl.clang_json import ClangJsonASTNode
 from syntax_tree import ASTProcessor, ASTNode, TextUtils, ASTFactory
 
 example_1 = TextUtils.strip_indent("""

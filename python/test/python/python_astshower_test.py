@@ -1,6 +1,6 @@
 import unittest
 
-from impl import PythonASTNode, PythonPatternFactory
+from impl.python import PythonASTNode, PythonPatternFactory
 
 from syntax_tree import ASTFactory, ASTShower
 
