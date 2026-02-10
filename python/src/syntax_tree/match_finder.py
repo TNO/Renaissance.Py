@@ -370,13 +370,4 @@ class MatchFinder:
 
 
         return found_statements
-
         # TODO check with pierre whether we should take the highest or the deepest match
-
-def do_log(indent: int, *msgs: str):
-    text = "\n".join(msgs)
-    print(" ".join(f'{" " * indent}{l}' for l in text.splitlines()))
-
-
-def raw(nodes: Sequence[ASTNode]):
-    return " ".join([n.text for n in nodes])
