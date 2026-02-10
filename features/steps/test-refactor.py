@@ -1,6 +1,6 @@
 import pytest
 from pytest_bdd import given, when, then, scenario, parsers
-from impl import PythonASTNode, ClangASTNode, PythonPatternFactory
+from impl.python import PythonASTNode, PythonPatternFactory
 from syntax_tree import ASTFactory, ASTFinder, ASTRewriter, MatchFinder
 
 
