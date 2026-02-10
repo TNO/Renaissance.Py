@@ -80,6 +80,14 @@ def test_lists_with_list_with_multi_single():
     assert exp["$$name"]==[1, 2, 3, 4, 5]
     assert exp["$name"]==[6]
 
+def test_lists_with_list_with_list_multi_single():
+    src = [1, 2, 3, 4, 5, 6]
+    pattern = [1,2,PythonASTNode(ast.Name(MATCH_ALL + "name")),PythonASTNode(ast.Name(MATCH_ONE+ "name")) ]
+    exp={}
+    assert is_match_tree(src, pattern, exp)
+    assert exp["$$name"]==[3, 4, 5]
+    assert exp["$name"]==[6]
+
 def test_lists_with_list_with_matcher_in_the_middle():
     src = [1, 2, 3, 4, 5, 6]
     pattern = [1, PythonASTNode(ast.Name(MATCH_ALL + "name")), 6]
@@ -104,8 +112,8 @@ def test_lists_with_list_with_matcher_in_both_end_empty_list_at_the_end():
     assert is_match_tree(src, pattern, {})
 
 
-def test_lists_with_list_with_matcher_in_both_end__mismatch():
-    src = [1, 2, 3, 4, 5, 61, 2, 3, 4, 5, 6]
+def test_lists_with_list_with_matcher_in_both_end_mismatch():
+    src = [1, 2, 3, 4, 5, 6,1, 2, 3, 4, 5, 6]
     pattern = [PythonASTNode(ast.Name(MATCH_ALL + "seq")), 6, PythonASTNode(ast.Name(MATCH_ALL + "seq"))]
     assert not is_match_tree(src, pattern, {})
 
@@ -150,6 +158,11 @@ def test_find_with_match_all_returns_last_pos():
     src = [0, 1, 2, 3, 4, 5, 61, 2, 3, 4, 5, 7, 8, 9]
     pattern = [0, 1, 2, 3, 4, 5, PythonASTNode(ast.Name(MATCH_ALL + "seq"))]
     assert find_in_list(src, pattern, {}) == len(src) - 1
+
+def test_lists_with_list_with_matcher_in_both_end_mismatch2():
+    src = [1, 2, 3, 4, 5, 61, 2, 3, 4, 5, 6]
+    pattern = [PythonASTNode(ast.Name(MATCH_ALL + "seq")), 6, PythonASTNode(ast.Name(MATCH_ALL + "seq"))]
+    assert not is_match_tree(src, pattern, {})
 
 def test_find_function_with_any_param_python():
     factory = ASTFactory(PythonASTNode, [])

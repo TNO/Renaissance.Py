@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import ast
 import re
 from collections import Counter
 from dataclasses import dataclass
@@ -12,8 +11,7 @@ from .ast_node import ASTNode,MATCH_ALL, MATCH_ONE
 VERBOSE = False
 DEFAULT_EXCLUDE_KIND = "comment"
 
-
-def is_match_tree(src, cmp, expansions={}):
+def is_match_tree(src:list, cmp:list, expansions={}):
     if cmp == None or src == None:
         return src == cmp
     if not isinstance(src , list) or not isinstance(cmp , list):
@@ -25,73 +23,57 @@ def is_match_tree(src, cmp, expansions={}):
         return True
     return find_in_list(src, cmp, expansions) + 1 == len(src)
 
-def find_in_list(src, cmp, exp={}):
-    foundPosition = 0
-    greedy = False
-    # src = remove_comment_macro(src)
+def find_in_list(src:list, cmp:list, exp={}):
+    found_position = 0
+    greedy = None
+    expansion_start = -1
     i = 0
     while i <len(src):
-        pattern = cmp[foundPosition]
-        if isinstance(pattern, ASTNode) and pattern.kind == MATCH_ALL:
-            current_name = pattern.name
+        if found_position >=len(cmp):
+            break
+        if isinstance(cmp[found_position], ASTNode) and cmp[found_position].kind == MATCH_ALL:
+            current_name = cmp[found_position].name
             if current_name in exp:
                 end = i + len(exp[current_name])
                 if is_match_tree(exp[current_name], src[i:end], {}):
-                    foundPosition += 1
-                    if foundPosition == len(cmp):
-                        return end - 1
-                    else:
-                        pattern = cmp[foundPosition]
-                        i=end
-                        expansion_start = i
-
+                    found_position += 1
+                    i=end
                 else:
-                    exp.pop(current_name)
-                    foundPosition = 0
-                    return False
+                    return -1
             else:
-                greedy = True
-                foundPosition += 1
-                if foundPosition == len(cmp):
-                    exp[current_name] = src[i:]
-                    return len(src) - 1
-                else:
-                    pattern = cmp[foundPosition]
-                    expansion_start = i
-
-        if is_match(src[i], pattern, exp):
-            if greedy == True:
-                greedy = False
-                last_name = cmp[foundPosition - 1].name
-                if not last_name in exp:
-                    if (not isinstance(pattern, ASTNode)) or pattern.kind != MATCH_ONE:
-                        exp[last_name] = src[expansion_start:i]
-                    else:
-                        if foundPosition + 1 == len(cmp):
-                            current_name = cmp[foundPosition].name
-                            end = len(src) - 1
-                            exp[last_name] = src[expansion_start:end]
-                            exp[current_name] = src[end:]
-                            return end
-            foundPosition += 1
-            if foundPosition == len(cmp):
-                return i
-        elif not greedy:
+                greedy = cmp[found_position].name
+                expansion_start = i
+                found_position += 1
+        elif is_match(src[i], cmp[found_position], exp):
+            if greedy:
+                exp[greedy] = src[expansion_start:i]
+                greedy = None
+            found_position += 1
+            i += 1
+        elif greedy:
+            i += 1
+        else:
             return -1
-        i+=1
-    if foundPosition < len(cmp):
-        if foundPosition == len(cmp) - 1 and isinstance(cmp[foundPosition], ASTNode) and cmp[
-            foundPosition].kind == MATCH_ALL:
-            if cmp[foundPosition].name in exp:
-                return exp[cmp[foundPosition].name] == []
-            else:
-                exp[cmp[foundPosition].name] = []
-                return i-1
-        for p in cmp:
-            if isinstance(p, ASTNode) and p.name in exp:
-                exp.pop(p.name)
-        return -1
+    if found_position == len(cmp) - 1 and isinstance(cmp[found_position], ASTNode) and cmp[found_position].kind == MATCH_ALL:
+        if cmp[found_position].name in exp:
+            if exp[cmp[found_position].name] != []:
+                for p in cmp:
+                    if isinstance(p, ASTNode) and p.name in exp:
+                        exp.pop(p.name)
+                return -1
+        else:
+            exp[cmp[found_position].name] = []
+            i=len(src)
+    if found_position == len(cmp):
+        if i < len(src) and greedy:
+            exp[greedy] = src[expansion_start:]
+            i=len(src)
+        elif len(cmp) >=2 and isinstance(cmp[-2], ASTNode) and cmp[-2].kind == MATCH_ALL and isinstance(cmp[-1], ASTNode) and cmp[-1].kind ==MATCH_ONE:
+            exp[cmp[-2].name] = src[expansion_start:-1]
+            exp[cmp[-1].name] = src[-1:]
+            i=len(src)
     return i-1
+    # do reverse search?
 
 
 def is_match(src, cmp, expansions={}) -> bool:
@@ -134,14 +116,10 @@ def remove_comment_macro(src: list[ASTNode]) -> list[ASTNode]:
     return csrc
 
 IRRELEVANT_PROPS=['macro_expansion']
-def is_match_dict(src, cmp, expansions) -> bool:
-    for n in cmp:
-        if n in IRRELEVANT_PROPS:
-            continue
-        else:
-            if n not in src or not is_match(src[n], cmp[n], expansions):
-                return False
-    return True
+def is_match_dict(src:dict, cmp:dict, expansions:dict) -> bool:
+    all_keys = src.keys()|cmp.keys()
+    return all(n in IRRELEVANT_PROPS or (n in src and n in cmp and is_match(src[n], cmp[n], expansions)) for n in all_keys)
+
 
 
 def exclude_nodes_by_kind(exclude_kind: str, nodes: Sequence[ASTNode]) -> Sequence[ASTNode]:
@@ -392,89 +370,6 @@ class MatchFinder:
         return found_statements
 
         # TODO check with pierre whether we should take the highest or the deepest match
-
-
-# class MatchValidation:
-#     @staticmethod
-#     def _check_duplicate_matches(key_matches: Sequence[KeyMatch]):
-#         """
-#         Checks for duplicate matches in the keyMatches attribute.
-#
-#         This method groups the keyMatches by their keys and identifies groups with the same key.
-#         It then transposes the nodes in these groups to compare nodes at the same index across different groups.
-#         If any group of nodes at the same index do not match, the method returns False.
-#
-#         Returns:
-#             bool: False if any group of nodes at the same index do not match, otherwise None.
-#         """
-#         key_groups: dict[str, list[list[ASTNode]]] = {}
-#         for key_match in [m for m in key_matches if MatchUtils.is_wildcard(m.key)]:
-#             if key_match.key not in key_groups:
-#                 key_groups[key_match.key] = []
-#             # for single wildcards only the last/deepest node is relevant
-#             # an example of this is CallExpr where is matches twice once for the function and once for the function name
-#             # only the function name must be evaluated
-#             nodes = (
-#                 key_match.nodes
-#                 if MatchUtils.is_multi_wildcard(key_match.key)
-#                 else key_match.nodes[-1:]
-#             )
-#             key_groups[key_match.key].append(nodes)
-#         for key, same in key_groups.items():
-#             if len(same) < 2:
-#                 continue
-#             # cmp
-#             comp = same[0]
-#             for row in same[1:]:
-#                 if len(comp) != len(row):
-#                     if VERBOSE:
-#                         do_log(
-#                             0,
-#                             "FAILED on duplicate matches having different lengths",
-#                             key,
-#                             f"first[{raw(comp)}]",
-#                             f" next[{raw(row)}]",
-#                         )
-#                     return False
-#                 for col_idx, node in enumerate(row):
-#                     if not MatchFinder.is_match(comp[col_idx : col_idx + 1], [node]):
-#                         if VERBOSE:
-#                             do_log(
-#                                 0,
-#                                 "FAILED on duplicate matches not matching",
-#                                 key,
-#                                 " != ".join(
-#                                     ["[" + raw(comp) + "]", "[" + raw(row) + "]"]
-#                                 ),
-#                             )
-#                         return False
-#         return True
-#
-#     @staticmethod
-#     def _check_single_matches(key_matches: Sequence[KeyMatch]):
-#         """
-#         Checks for single matches in the keyMatches attribute.
-#
-#         This method checks if any keyMatch has exactly  one node. If not the method returns False.
-#
-#         Returns:
-#             bool: False if any keyMatch has more than one node, otherwise None.
-#         """
-#         result = all(
-#             len(key_match.nodes) > 0
-#             for key_match in key_matches
-#             if MatchUtils.is_single_wildcard(key_match.key)
-#         )
-#         if not result and VERBOSE:
-#             print(f"FAILED on single match")
-#         return result
-#
-#     @staticmethod
-#     def validate(key_matches: Sequence[KeyMatch]):
-#         return MatchValidation._check_single_matches(
-#             key_matches
-#         ) and MatchValidation._check_duplicate_matches(key_matches)
-#
 
 def do_log(indent: int, *msgs: str):
     text = "\n".join(msgs)
