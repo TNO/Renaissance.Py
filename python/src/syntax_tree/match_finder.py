@@ -64,7 +64,7 @@ def find_in_list(src:list, cmp:list, exp={}):
         else:
             exp[cmp[found_position].name] = []
             i=len(src)
-    if found_position == len(cmp):
+    elif found_position == len(cmp):
         if i < len(src) and greedy:
             exp[greedy] = src[expansion_start:]
             i=len(src)
@@ -72,6 +72,8 @@ def find_in_list(src:list, cmp:list, exp={}):
             exp[cmp[-2].name] = src[expansion_start:-1]
             exp[cmp[-1].name] = src[-1:]
             i=len(src)
+    else:
+        return -1
     return i-1
     # do reverse search?
 

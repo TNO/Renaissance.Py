@@ -6,7 +6,7 @@ from c_cpp.factories import Factories
 from descendant_search import find_descendant_match
 
 
-from syntax_tree import CPatternFactory, ASTFactory, MatchFinder
+from syntax_tree import CPatternFactory, ASTFactory, MatchFinder, ASTShower
 from syntax_tree.match_finder import is_match
 
 
