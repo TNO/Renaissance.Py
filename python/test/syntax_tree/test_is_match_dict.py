@@ -3,7 +3,8 @@ import unittest
 
 import pytest
 
-from impl import PythonASTNode, PythonPatternFactory, ClangASTNode
+from impl.python import PythonASTNode, PythonPatternFactory
+from impl.clang import ClangASTNode
 from syntax_tree import ASTFactory, MatchFinder, CPatternFactory
 from syntax_tree.ast_node import MATCH_ALL, MATCH_ONE
 from syntax_tree.match_finder import is_match_tree, find_in_list, is_match_dict
