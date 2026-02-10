@@ -108,8 +108,9 @@ class ASTNode(ABC):
         return self.offset + self.length
 
     @property
+    @abstractmethod
     def extended_end_offset(self) -> int:
-        return 0
+        pass
 
     @property
     def preceding_sibling(self) -> ASTNode | None:

@@ -231,6 +231,10 @@ class PythonASTNode(ASTNode):
     def _get_function_definition(self):
         return None
 
+    @property
+    @override
+    def extended_end_offset(self) -> int:
+        return self.offset+self.length
     @override
     @property
     def references(self) -> Sequence[ASTReference]:
