@@ -334,11 +334,10 @@ class _RewriteActions:
 
     def derive_indent(self, start_offset: int) -> int:
         indent = 0  # len(nodes[0].indent)
-
-        while len(self.content) >(start_offset - indent - 1) and  self.content[start_offset - indent - 1] in [32]:
-            indent += 1
+        if start_offset > 0:
+            while len(self.content) >(start_offset - indent - 1) and  self.content[start_offset - indent - 1] in [32]:
+                indent += 1
         return indent
-
     def __insert(
         self,
         rewriter: Rewriter,

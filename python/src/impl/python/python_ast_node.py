@@ -31,6 +31,7 @@ class PythonTranslationUnit():
     def __init__(self, content, file_name: str):
         self.content = content.encode(sys.getfilesystemencoding())
         self.atu = ast.parse(content, file_name)
+        output = ast.unparse(self.atu)
         self.file_name = file_name
         self.references_initialized = False
         PythonTranslationUnit.cache[file_name] = content
@@ -210,6 +211,15 @@ class PythonASTNode(ASTNode):
     @override
     def is_statement(self) -> bool:
         return isinstance(self.node, ast.stmt)
+
+    @override
+    @property
+    def extended_end_offset(self) -> int:
+        try:
+            endOffset = self._offset + self._length
+            return endOffset
+        except:
+            return 0
 
     @override
     @property

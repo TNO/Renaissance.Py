@@ -1,3 +1,5 @@
+import ast
+
 from impl.python import PythonASTNode, PythonPatternFactory
 from syntax_tree import ASTFinder, ASTProcessor, MatchFinder, ASTRewriter, ASTFactory, ASTNode
 
@@ -9,6 +11,7 @@ class TautRefactoring:
     def __init__(self, atu):
         raise  Exception('This class should not be instantiated')
 
+    @classmethod
     def raw(self, nodes):
         res = ''
         for node in nodes:
@@ -29,14 +32,41 @@ class TautRefactoring:
     def convert_test_cases(input_code):
         atu = factory.create_from_text(input_code, "test_import.py")
         rewriter = ASTRewriter(atu)
-        ast_refactor = ASTProcessor(atu, factory, in_memory=True)
         pattern_factory = PythonPatternFactory(factory, atu)
         taut_case = pattern_factory.create_statements(TAUT_TEST_CASE_PATTERN)
 
         test_cases = MatchFinder.find_all(atu, taut_case).to_iterable()
         for test_case in test_cases:
-            pytest_replacement = PYUNIT_REPLACEMENT
-            for node in test_case.nodes:
-                if node.kind == 'Import':
-                    rewriter.remove(test_case)
-        return ast_refactor.commit().apply_to_string()
+            rewriter.remove(test_case.nodes)
+        rewriter.apply()
+        return rewriter.apply_to_string()
+
+    @staticmethod
+    def remove_import_taut(ast_refactor: ASTProcessor) -> None:
+        """
+        Removes import TAUT
+        """
+        ast_refactor.find_kind('Import').\
+            filter(lambda node: node.name.find('TAUT') > 0).\
+            for_each(lambda node: ast_refactor.remove(node, True, True))
+
+    @staticmethod
+    def replace_taut(input_code):
+        """
+        replace TAUT.TestCase by unittest.TestCase
+        """
+        atu = factory.create_from_text(input_code, "test_class.py")
+        rewriter = ASTRewriter(atu)
+        pattern_factory = PythonPatternFactory(factory, atu)
+        pattern = 'class $test_case(TAUT.TestCase):\n    $$aaa'
+        pyunit_replacement = 'class $test_case(unittest.TestCase):\n    $$aaa'
+        class_def = pattern_factory.create(pattern)
+
+        test_cases = MatchFinder.find_all(atu, class_def).to_iterable()
+        for test_case in test_cases:
+            replacement = pyunit_replacement
+            for snippets in test_case.expansions:
+                replacement = replacement.replace(snippets, TautRefactoring.raw(test_case.expansions[snippets]))
+            rewriter.replace(replacement, test_case.nodes)
+        rewriter.apply()
+        return rewriter.apply_to_string()
