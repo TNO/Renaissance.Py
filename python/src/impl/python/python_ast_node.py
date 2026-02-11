@@ -175,6 +175,10 @@ class PythonASTNode(ASTNode):
         return root_node
 
     @override
+    def is_part_of_translation_unit(self) -> bool:
+        return True
+
+    @override
     def _derive_name(self):
         if isinstance(self.node, str):
             name = self.node

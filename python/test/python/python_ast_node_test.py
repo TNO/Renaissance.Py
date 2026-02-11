@@ -203,6 +203,15 @@ def outer():
         self.assertEqual('apple.py', second_stmt.filename)
         self.assertEqual(atu.translation_unit, second_stmt.translation_unit)
 
+    def test_show_call_with_args(self):
+        factory = ASTFactory(PythonASTNode, [])
+        atu = factory.create_from_text('def ba(a55,a66,a77,a88,a99): pass', 'apple.py')
+        ASTShower.show_node(atu)
+        second_stmt = atu.children[-1]
+        self.assertEqual(7, second_stmt.offset)
+        self.assertEqual(7, second_stmt.length)
+        self.assertEqual('apple.py', second_stmt.filename)
+        self.assertEqual(atu.translation_unit, second_stmt.translation_unit)
     # def test_show_call_btween_c_and_python(self):
     #     c_factory = ASTFactory(ClangASTNode, [])
     #     c_atu = c_factory.create_from_text(' int ba(int);\n int ca(int);\n int lo(int);\n int na(int);\nint main(){\n  ba(55);\n  ca(555);\n  lo(4444);\n  int na=55;\n}\n', 'lila.c')

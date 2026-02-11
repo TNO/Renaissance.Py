@@ -362,7 +362,8 @@ class ClangJsonASTNode(ASTNode):
         if self._get(["range", "end", "expansionLoc", "offset"], -1) != -1:  # dealing with a macro expansion
             properties["macro_expansion"] = self.text
         # matching name through props
-        properties['name'] = self.name
+        if self.kind == 'DeclRefExpr':
+            properties['name'] = self.name
 
         return properties
 

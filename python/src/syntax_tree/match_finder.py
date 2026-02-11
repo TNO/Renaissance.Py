@@ -103,7 +103,7 @@ def is_match(src, cmp, expansions={}) -> bool:
         return src == cmp
     elif cmp == None:
         return src == None
-    elif isinstance(cmp, ASTNode):
+    elif isinstance(src, ASTNode)and isinstance(cmp, ASTNode):
         return (is_match_dict(src.properties, cmp.properties, expansions)
                 and is_match_tree(remove_comment_macro(src.children), cmp.children, expansions))
     else:
