@@ -10,17 +10,18 @@ from impl.python import PythonASTNode, PythonPatternFactory
 from syntax_tree import ASTShower, TextUtils, ASTFinder
 
 
-def refactor(args):
+def refactor(test_file):
     factory = ASTFactory(PythonASTNode, [])
-    atu = factory.create(args[1])
-    return convert_test_cases(atu)
+    atu = factory.create(test_file)
+    return convert(atu)
 
 
 if __name__ == "__main__":
     import sys
 
-    result = refactor(sys.argv)
-    with open(sys.argv[1], 'w') as f:
+    test_file = sys.argv[1]
+    result = refactor(test_file)
+    with open(test_file, 'w') as f:
         f.write(result)
     print(result)
 
