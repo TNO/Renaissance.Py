@@ -104,7 +104,7 @@ class PythonASTNode(ASTNode):
         if (isinstance(node, str)):
             self._kind = 'Name'
             return
-        if (isinstance(node, ast.Expr) and isinstance(node.value, ast.Name)) or isinstance(node, ast.Name):
+        if (isinstance(node, ast.Expr) and isinstance(node.value, ast.Name)) or isinstance(node, ast.Name) or isinstance(node, ast.arg):
             id = node.id if isinstance(node, ast.Name) else node.value.id
             if id.startswith(MATCH_ONE):
                 self._kind = MATCH_ONE
@@ -173,6 +173,10 @@ class PythonASTNode(ASTNode):
         translation_unit.check_diagnostics()
         root_node = PythonASTNode(translation_unit.atu, translation_unit, None)
         return root_node
+
+    @override
+    def is_part_of_translation_unit(self) -> bool:
+        return True
 
     @override
     def _derive_name(self):
