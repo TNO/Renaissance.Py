@@ -1,4 +1,6 @@
 **/.venv
+**/.idea
+**/.hypothesis
 **/.modules
 **/*.pyc
 **/__pycache__
