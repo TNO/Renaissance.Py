@@ -31,7 +31,6 @@ class PythonTranslationUnit():
     def __init__(self, content, file_name: str):
         self.content = content.encode(sys.getfilesystemencoding())
         self.atu = ast.parse(content, file_name)
-        output = ast.unparse(self.atu)
         self.file_name = file_name
         self.references_initialized = False
         PythonTranslationUnit.cache[file_name] = content
@@ -105,7 +104,7 @@ class PythonASTNode(ASTNode):
         if (isinstance(node, str)):
             self._kind = 'Name'
             return
-        if (isinstance(node, ast.Expr) and isinstance(node.value, ast.Name)) or isinstance(node, ast.Name):
+        if (isinstance(node, ast.Expr) and isinstance(node.value, ast.Name)) or isinstance(node, ast.Name) or isinstance(node, ast.arg):
             id = node.id if isinstance(node, ast.Name) else node.value.id
             if id.startswith(MATCH_ONE):
                 self._kind = MATCH_ONE

@@ -31,3 +31,10 @@ class TestTaut2Unittest(unittest.TestCase):
     def test_replace_taut(self, _, factory: ASTFactory, input_code, expected_code):
         result = TautRefactoring.replace_taut(input_code)
         self.assertEqual(result, expected_code)
+
+    @parameterized.expand(Factories.extend([
+        ("@TAUT.skip_test\ndef test(a, b):\n    pass", "@unittest.skip\ndef test(a, b):\n    pass")
+    ]))
+    def test_replace_skip(self, _, factory: ASTFactory, input_code, expected_code):
+        result = TautRefactoring.replace_taut_skip(input_code)
+        self.assertEqual(result, expected_code)
