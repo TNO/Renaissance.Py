@@ -119,10 +119,9 @@ class PythonASTNode(ASTNode):
                 match child:
                     case list():  # Matches any list
                         if isinstance(node, ImplicitNode) or isinstance(node, ast.Module) or len(node._fields) == 1:
-                            for n in child:
-                                self._children.append(PythonASTNode(n, translation_unit, self))
+                            self._children.extend(PythonASTNode(n, translation_unit, self) for n in child)
                         else:
-                                self._children.append(PythonASTNode(ImplicitNode(name, child), translation_unit, self))
+                            self._children.append(PythonASTNode(ImplicitNode(name, child), translation_unit, self))
                     case ast.AST():
                         if name not in ['ctx', 'ctx']:
                             self._children.append(PythonASTNode(child, translation_unit, self))
