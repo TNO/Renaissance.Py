@@ -9,6 +9,7 @@ from typing_extensions import override
 from common import Stream
 from syntax_tree.ast_node import MATCH_ONE, MATCH_ALL
 from syntax_tree import ASTNode, ASTReference
+from syntax_tree.match_finder import is_match, is_match_dict, is_match_tree
 
 EMPTY_DICT = {}
 EMPTY_STR = ''
@@ -104,20 +105,21 @@ class PythonASTNode(ASTNode):
         if (isinstance(node, str)):
             self._kind = 'Name'
             return
-        if (isinstance(node, ast.Expr) and isinstance(node.value, ast.Name)) or isinstance(node, ast.Name):
-            id = node.id if isinstance(node, ast.Name) else node.value.id
-            if id.startswith(MATCH_ONE):
-                self._kind = MATCH_ONE
-            elif id.startswith(MATCH_ALL):
-                self._kind = MATCH_ALL
+
+        id = self.derive_id(node)
+
+        if id.startswith(MATCH_ONE):
+            self._kind = MATCH_ONE
+        elif id.startswith(MATCH_ALL):
+            self._kind = MATCH_ALL
+
         for name in node._fields:
             try:
                 child = getattr(node, name)
                 match child:
                     case list():  # Matches any list
                         if isinstance(node, ImplicitNode) or isinstance(node, ast.Module) or len(node._fields) == 1:
-                            for n in child:
-                                self._children.append(PythonASTNode(n, translation_unit, self))
+                            self._children.extend(PythonASTNode(n, translation_unit, self) for n in child)
                         else:
                             self._children.append(PythonASTNode(ImplicitNode(name, child), translation_unit, self))
                     case ast.AST():
@@ -130,23 +132,24 @@ class PythonASTNode(ASTNode):
                 print(e)
                 continue
 
+    def derive_id(self, node: ast.AST) -> str:
+        id = ''
+        if isinstance(node, ast.arg):
+            id = node.arg
+        elif isinstance(node, ast.Name):
+            id = node.id
+        elif (isinstance(node, ast.Expr) and isinstance(node.value, ast.Name)):
+            id = node.value.id
+        return id
+
     def __eq__(self, other: ASTNode):
         if (not other
         or  not isinstance(other, type(self))
-        or len(self.children) != len(other.children)
+        # or len(self.children) != len(other.children)
         or self.kind != other.kind):
             return False
-        try:
-            if any(mine != other_child for mine, other_child in zip(self.children, other.children)):
-                return False
-            common_keys = set(self.properties.keys()) | set(other.properties.keys())
-            tupples = zip(common_keys, ((self.properties[k], other.properties[k]) for k in common_keys))
-            if any(val1 != val2 for key, (val1, val2) in tupples):
-                return False
-            return True
-        except AttributeError as e:
-            print(e)
-            return False
+        return (is_match_dict(self.properties, other.properties, {})
+                and is_match_tree(self.children, other.children,{}))
 
     def derive_position(self, node: ast.AST, translation_unit: PythonTranslationUnit):
         if hasattr(node, 'lineno'):

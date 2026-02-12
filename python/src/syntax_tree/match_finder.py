@@ -103,8 +103,8 @@ def is_match(src, cmp, expansions={}) -> bool:
         return src == cmp
     elif cmp == None:
         return src == None
-    elif isinstance(cmp, ASTNode):
-        return (is_match_dict(src.properties, cmp.properties, {})
+    elif isinstance(src, ASTNode)and isinstance(cmp, ASTNode):
+        return (is_match_dict(src.properties, cmp.properties, expansions)
                 and is_match_tree(remove_comment_macro(src.children), cmp.children, expansions))
     else:
         return src == cmp
@@ -357,7 +357,7 @@ class MatchFinder:
                 found_statements.append(match)
                 to_do = to_do[found_position+1:]
             else:
-                if to_do[0].children:
+                if isinstance(to_do[0], ASTNode) and to_do[0].children:
                     found_statements.extend(MatchFinder.__match_pattern(
                         remove_comment_macro(to_do[0].children),
                         patterns,
@@ -370,13 +370,4 @@ class MatchFinder:
 
 
         return found_statements
-
         # TODO check with pierre whether we should take the highest or the deepest match
-
-def do_log(indent: int, *msgs: str):
-    text = "\n".join(msgs)
-    print(" ".join(f'{" " * indent}{l}' for l in text.splitlines()))
-
-
-def raw(nodes: Sequence[ASTNode]):
-    return " ".join([n.text for n in nodes])

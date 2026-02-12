@@ -8,7 +8,6 @@ from syntax_tree.match_finder import is_match
 
 class PythonMatcherTest(unittest.TestCase):
 
-    # @unittest.skip("works in isolation")
     def test_generic_is_match_any_stmt(self):
         factory = ASTFactory(PythonASTNode, [])
         atu = factory.create_from_text('ba(55)', 'test.py')

@@ -32,6 +32,7 @@ class ASTShower:
     ) -> None:
         if node.is_part_of_translation_unit() and node.kind not in IMPLICIT:
             node.indent = indent
+            node.show_props =include_properties
             output.write(str(node))
         if node.children:
             for child in node.children:

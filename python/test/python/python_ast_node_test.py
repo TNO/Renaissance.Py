@@ -4,6 +4,7 @@ from parameterized import parameterized
 from impl.python import PythonASTNode, PythonPatternFactory
 from syntax_tree import ASTFactory, MatchFinder, ASTShower, ASTProcessor
 from syntax_tree.ast_node import traverse
+from syntax_tree.match_finder import is_match
 
 
 class PythonNodeTest(unittest.TestCase):
@@ -203,19 +204,14 @@ def outer():
         self.assertEqual('apple.py', second_stmt.filename)
         self.assertEqual(atu.translation_unit, second_stmt.translation_unit)
 
-    # def test_show_call_btween_c_and_python(self):
-    #     c_factory = ASTFactory(ClangASTNode, [])
-    #     c_atu = c_factory.create_from_text(' int ba(int);\n int ca(int);\n int lo(int);\n int na(int);\nint main(){\n  ba(55);\n  ca(555);\n  lo(4444);\n  int na=55;\n}\n', 'lila.c')
-    #
-    #     c_second_stmt = c_atu.get_children()[4].get_children()[1]
-    #     p_factory = ASTFactory(PythonASTNode, [])
-    #     p_atu = p_factory.create_from_text('def main():\n  ba(55) \n  ca(555) \n  lo(4444) \n  na=55 \n ', 'apple.py')
-    #     p_second_stmt = p_atu.get_children()[0].get_children()[1]
-    #     self.assertEqual(c_second_stmt.get_start_offset(),p_second_stmt.get_start_offset())
-    #     self.assertEqual (c_second_stmt.get_length(), p_second_stmt.get_length())
-    #     self.assertEqual (c_second_stmt.get_raw_signature(), p_second_stmt.get_raw_signature())
-    #     self.assertEqual (len(c_second_stmt.get_children()), len(p_second_stmt.get_length()))
-    #     # self.assertEqual (c_second_stmt.get_length(), p_second_stmt.get_length())
+    def test_show_call_with_args(self):
+        factory = ASTFactory(PythonASTNode, [])
+        src = self.pattern_factory.create_statement('def ba(a55,a66,a77,a88,a99): pass')
+        cmp = self.pattern_factory.create_statement('def ba($$args): pass')
+        expansions={}
+        assert is_match(src,cmp, expansions)
+        assert '$$args' in expansions
+        assert  len(expansions['$$args']) == 5
 
     if __name__ == '__main__':
         unittest.main()
