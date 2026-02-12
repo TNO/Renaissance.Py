@@ -67,7 +67,7 @@ class PythonShowerTest(unittest.TestCase):
         factory = ASTFactory(PythonASTNode, [])
         atu = factory.create_from_text(
 '''
-if x >y :
+if call(y) :
     x=1
     call(x)
 else:
