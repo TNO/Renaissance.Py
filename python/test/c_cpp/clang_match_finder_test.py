@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from impl.clang import ClangASTNode
 from syntax_tree import ASTFactory, ASTFinder, MatchFinder, CPatternFactory, ASTShower
-from syntax_tree.match_finder import remove_comment_macro
+from syntax_tree.match_finder import exclude_nodes_by_kind
 
 
 class ClangMatchFinderTest(TestCase):
@@ -22,7 +22,7 @@ class ClangMatchFinderTest(TestCase):
         patternFactory = CPatternFactory(factory, ref_node=atu)
         statementsAtu = patternFactory.create(statements)
         statements = ASTFinder.find_kind(statementsAtu, pattern_type).find_last().get()
-        func_body = remove_comment_macro(atu.children)#[0].children[2]
+        func_body = exclude_nodes_by_kind(atu.children)#[0].children[2]
         result = MatchFinder.match_pattern(func_body, [statements])
         self.assertEqual(1, len(result))
         # self.assertEqual(expected, result[0].nodes[0].text)

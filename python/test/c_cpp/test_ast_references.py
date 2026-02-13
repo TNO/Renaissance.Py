@@ -113,14 +113,12 @@ class TestASTReference(TestCase):
         # in clang python, there is a TYPE_REF below the CLASS_DECL node whereas 
         # in clang json there is a bases/base element 
         # use show_node to understand the difference
-        # ASTShower.show_node(ast)
         using = ASTFinder.find_kind(ast, '(Type)_?Ref').find_first().or_else(None)
         if not using:
             using = ASTFinder.find_kind(ast, '(CXX_?Record)_?Decl').\
                 filter(lambda n: n.name == 'B').\
                 find_first().get()
         assert isinstance(using, ASTNode)
-        ASTShower.show_node(using)
         refs = using.references
         self.assertEqual(len(refs), 1)
         ref = refs[0]

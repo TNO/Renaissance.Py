@@ -1,14 +1,12 @@
 from __future__ import annotations
 
-import re
-from collections import Counter
-from typing import Callable, Iterable, Iterator, Optional, Sequence
+from typing import Optional, Sequence
 
 from common import Stream
 from .ast_node import ASTNode, MATCH_ALL, MATCH_ONE
 
 VERBOSE = False
-DEFAULT_EXCLUDE_KIND = "comment"
+
 
 def is_match_tree(src:list, cmp:list, expansions={}):
     if not cmp or not src:
@@ -104,34 +102,18 @@ def is_match(src, cmp, expansions={}) -> bool:
         return src == None
     elif isinstance(src, ASTNode)and isinstance(cmp, ASTNode):
         return (is_match_dict(src.properties, cmp.properties, expansions)
-                and is_match_tree(remove_comment_macro(src.children), cmp.children, expansions))
+                and is_match_tree(exclude_nodes_by_kind(src.children), cmp.children, expansions))
     else:
         return src == cmp
 
-
-def remove_comment_macro(src: list[ASTNode]) -> list[ASTNode]:
-    csrc = []
-    for c in src:
-        if not c.kind in ['FullComment', 'MACRO_DEFINITION']:
-            csrc.append(c)
-    return csrc
+DEFAULT_EXCLUDE_KIND = ['FullComment', 'MACRO_DEFINITION']
+def exclude_nodes_by_kind(src: list[ASTNode]) -> list[ASTNode]:
+    return [c for c in src if c.kind not in DEFAULT_EXCLUDE_KIND]
 
 IRRELEVANT_PROPS=['macro_expansion']
 def is_match_dict(src:dict, cmp:dict, expansions:dict) -> bool:
     all_keys = src.keys()|cmp.keys()
     return all(n in IRRELEVANT_PROPS or (n in src and n in cmp and is_match(src[n], cmp[n], expansions)) for n in all_keys)
-
-
-
-def exclude_nodes_by_kind(exclude_kind: str, nodes: Sequence[ASTNode]) -> Sequence[ASTNode]:
-    if exclude_kind:
-        return [
-            node
-            for node in nodes
-            if re.search(exclude_kind, node.kind, re.IGNORECASE) is None
-        ]
-        # return filter(lambda node: re.search(exclude_kind,node.kind, re.IGNORECASE)==None, nodes)
-    return nodes
 
 
 class PatternMatch:
@@ -153,59 +135,24 @@ class PatternMatch:
     def match_referenced_by(
             self,
             *patterns_list: Sequence[ASTNode],
-            recursive: bool = True,
-            exclude_kind: str = DEFAULT_EXCLUDE_KIND,
-            part_of_translation_unit: bool = True,
-    ) -> Stream[PatternMatch]:
-        return Stream(
-            self._match_referenced_by(
-                patterns_list, recursive, exclude_kind, part_of_translation_unit
-            )
-        )
+            recursive: bool = True) -> Stream[PatternMatch]:
+        found_matches = []
+        for n in self.nodes:
+            for ref in n.referenced_by:
+                for patterns in patterns_list:
+                    found_matches.extend(MatchFinder.match_pattern(self.nodes, patterns, recursive))
+        return Stream(found_matches)
 
     def match_references(
             self,
             *patterns_list: Sequence[ASTNode],
-            recursive: bool = True,
-            exclude_kind: str = DEFAULT_EXCLUDE_KIND,
-            part_of_translation_unit: bool = True,
-    ) -> Stream[PatternMatch]:
-        return Stream(
-            self._match_references(
-                patterns_list, recursive, exclude_kind, part_of_translation_unit
-            )
-        )
-
-    def _match_referenced_by(
-            self,
-            patterns_list: Sequence[Sequence[ASTNode]],
-            recursive: bool,
-            exclude_kind: str,
-            part_of_translation_unit: bool,
-    ) -> Iterable[PatternMatch]:
-        for n in self.nodes:
-            for ref in n.referenced_by:
-                yield from MatchFinder.find_all_strict(
-                    ref.node,
-                    patterns_list,
-                    recursive,
-                    exclude_kind,
-                    part_of_translation_unit,
-                ).to_iterable()
-
-    def _match_references(
-            self, patterns_list: Sequence[Sequence[ASTNode]],
-            recursive: bool, exclude_kind: str, part_of_translation_unit: bool
-    ) -> Iterable[PatternMatch]:
+            recursive: bool = True) -> Stream[PatternMatch]:
+        found_matches = []
         for n in self.nodes:
             for ref in n.references:
-                yield from MatchFinder.find_all_strict(
-                    [ref.node],
-                    patterns_list,
-                    recursive,
-                    exclude_kind,
-                    part_of_translation_unit,
-                ).to_iterable()
+                for patterns in patterns_list:
+                    found_matches.extend(MatchFinder.match_pattern(self.nodes, patterns, recursive))
+        return Stream(found_matches)
 
 
 class MatchFinder:
@@ -216,30 +163,6 @@ class MatchFinder:
             src_nodes: Sequence[ASTNode] | ASTNode,
             *patterns_list: Sequence[ASTNode],
             recursive: bool = True,
-            exclude_kind: str = DEFAULT_EXCLUDE_KIND,
-            part_of_translation_unit: bool = True,
-    ) -> Stream[PatternMatch]:
-        return MatchFinder.find_all_strict(
-            src_nodes,
-            patterns_list,
-            recursive=recursive,
-            exclude_kind=exclude_kind,
-            part_of_translation_unit=part_of_translation_unit,
-        )
-
-    # TODO: Why don't we define types for X | Sequence[X]?
-    # TODO: Why don't we enforce that input is always a sequence of ASTNodes (so just use [] around a single ASTNode)?
-
-    # TODO: Why don't we introduce a Pattern class (with multiple constructors for the different cases)?
-
-    # TODO: why is the type of patterns_list different from find_all (directly above)?
-    @staticmethod
-    def find_all_strict(
-            src_nodes: Sequence[ASTNode] | ASTNode,
-            patterns_list: Sequence[Sequence[ASTNode]],
-            recursive: bool = True,
-            exclude_kind: str = DEFAULT_EXCLUDE_KIND,
-            part_of_translation_unit: bool = True,
     ) -> Stream[PatternMatch]:
         """
         Finds all pattern matches in the given source nodes.
@@ -253,32 +176,15 @@ class MatchFinder:
         Returns:
             Stream[PatternMatch]: A stream of pattern matches found in the source nodes.
         """
-        if not isinstance(src_nodes, Sequence):
-            src_nodes = [src_nodes]
+        found_matches = []
+        for patterns in patterns_list:
+            found_matches.extend(MatchFinder.match_pattern(src_nodes, patterns, recursive))
+        return Stream(found_matches)
 
-        def src_filter(nodes: Sequence[ASTNode]):
-            if not part_of_translation_unit:
-                return exclude_nodes_by_kind(exclude_kind, nodes)
-            return [
-                node
-                for node in exclude_nodes_by_kind(
-                    exclude_kind, nodes
-                )
-                if node.is_part_of_translation_unit()
-            ]
 
-        return Stream(
-            MatchFinder.__find_all(
-                src_nodes, patterns_list, recursive=recursive, src_filter=src_filter
-            )
-        )
 
     @staticmethod
-    def match_pattern(
-            src_nodes: Sequence[ASTNode],
-            patterns: Sequence[ASTNode],
-            src_filter: Callable[[Sequence[ASTNode]], Sequence[ASTNode]] = lambda n: n,
-    ) -> Sequence[PatternMatch]:
+    def match_pattern(src_nodes: Sequence[ASTNode],patterns: Sequence[ASTNode],recursive =True) -> Sequence[PatternMatch]:
         """
         Matches a given source node or list of source nodes against a list of pattern nodes.
 
@@ -290,37 +196,6 @@ class MatchFinder:
         Returns:
             Optional[PatternMatch]: A PatternMatch object if a match is found, otherwise None.
         """
-
-        patterns = src_filter(patterns)  # exclude nodes by kind
-        keys = []
-        multiplicity = {key: 0 for key, count in Counter(keys).items() if count > 1}
-        return MatchFinder.__match_pattern(src_nodes, patterns, 0, multiplicity, None, src_filter=src_filter)
-
-    @staticmethod
-    def __find_all(
-            src_nodes: Sequence[ASTNode],
-            patterns_list: Sequence[Sequence[ASTNode]],
-            recursive: bool,
-            src_filter: Callable[[Sequence[ASTNode]], Sequence[ASTNode]],
-    ) -> Sequence[PatternMatch]:
-        found_matches = []
-        for patterns in patterns_list:
-            found_matches.extend(MatchFinder.match_pattern(src_nodes, patterns))
-        return found_matches
-
-        # src_nodes = src_filter(
-        #     src_nodes
-        # )  # exclude nodes by kind and optionally is part of translation unit
-
-    @staticmethod
-    def __match_pattern(
-            src_nodes: Sequence[ASTNode],
-            patterns: Sequence[ASTNode],
-            depth: int,
-            multiplicity: dict[str, int],
-            pattern_match: Optional[PatternMatch],
-            src_filter: Callable[[Sequence[ASTNode]], Sequence[ASTNode]],
-    ) -> Sequence[PatternMatch]:
         found_statements = []
         to_do = src_nodes
         while len(to_do)>0:
@@ -331,17 +206,11 @@ class MatchFinder:
                 found_statements.append(match)
                 to_do = to_do[found_position+1:]
             else:
-                if isinstance(to_do[0], ASTNode) and to_do[0].children:
-                    found_statements.extend(MatchFinder.__match_pattern(
-                        remove_comment_macro(to_do[0].children),
-                        patterns,
-                        depth,
-                        multiplicity,
-                        pattern_match,
-                        src_filter,
-                    ))
+                if recursive and isinstance(to_do[0], ASTNode) and to_do[0].children:
+                    found_statements.extend(MatchFinder.match_pattern(exclude_nodes_by_kind(to_do[0].children),patterns,recursive))
                 to_do = to_do[1:]
 
-
         return found_statements
-        # TODO check with pierre whether we should take the highest or the deepest match
+
+# TODO check with pierre whether we should take the highest or the deepest match reimple backtracking to find the best match
+
