@@ -2,17 +2,16 @@ from __future__ import annotations
 
 import re
 from collections import Counter
-from dataclasses import dataclass
 from typing import Callable, Iterable, Iterator, Optional, Sequence
 
 from common import Stream
-from .ast_node import ASTNode,MATCH_ALL, MATCH_ONE
+from .ast_node import ASTNode, MATCH_ALL, MATCH_ONE
 
 VERBOSE = False
 DEFAULT_EXCLUDE_KIND = "comment"
 
 def is_match_tree(src:list, cmp:list, expansions={}):
-    if cmp == None or src == None:
+    if not cmp or not src:
         return src == cmp
     if not isinstance(src , list) or not isinstance(cmp , list):
         return src == cmp
@@ -135,12 +134,6 @@ def exclude_nodes_by_kind(exclude_kind: str, nodes: Sequence[ASTNode]) -> Sequen
     return nodes
 
 
-def exclude_nodes_by_kind_as_sequence(
-        exclude_kind: str, nodes: Sequence[ASTNode]
-) -> Sequence[ASTNode]:
-    return exclude_nodes_by_kind(exclude_kind, nodes)
-
-
 class PatternMatch:
     def __init__(self, nodes, expansions, patterns):
         self.nodes = nodes
@@ -159,7 +152,7 @@ class PatternMatch:
 
     def match_referenced_by(
             self,
-            *patterns_list: Sequence[ASTNode] | ConstrainedPattern,
+            *patterns_list: Sequence[ASTNode],
             recursive: bool = True,
             exclude_kind: str = DEFAULT_EXCLUDE_KIND,
             part_of_translation_unit: bool = True,
@@ -172,7 +165,7 @@ class PatternMatch:
 
     def match_references(
             self,
-            *patterns_list: Sequence[ASTNode] | ConstrainedPattern,
+            *patterns_list: Sequence[ASTNode],
             recursive: bool = True,
             exclude_kind: str = DEFAULT_EXCLUDE_KIND,
             part_of_translation_unit: bool = True,
@@ -185,12 +178,12 @@ class PatternMatch:
 
     def _match_referenced_by(
             self,
-            patterns_list: Sequence[Sequence[ASTNode] | ConstrainedPattern],
+            patterns_list: Sequence[Sequence[ASTNode]],
             recursive: bool,
             exclude_kind: str,
             part_of_translation_unit: bool,
     ) -> Iterable[PatternMatch]:
-        for n in self.src_nodes:
+        for n in self.nodes:
             for ref in n.referenced_by:
                 yield from MatchFinder.find_all_strict(
                     ref.node,
@@ -201,7 +194,7 @@ class PatternMatch:
                 ).to_iterable()
 
     def _match_references(
-            self, patterns_list: Sequence[Sequence[ASTNode] | ConstrainedPattern],
+            self, patterns_list: Sequence[Sequence[ASTNode]],
             recursive: bool, exclude_kind: str, part_of_translation_unit: bool
     ) -> Iterable[PatternMatch]:
         for n in self.nodes:
@@ -215,20 +208,13 @@ class PatternMatch:
                 ).to_iterable()
 
 
-# TODO: do we want to merge the filter functionality with the find pattern?
-@dataclass(frozen=True)
-class ConstrainedPattern:
-    patterns: Sequence[ASTNode] | ASTNode  # TODO Why plural, i.e., patterns?
-    eligible: Callable[[PatternMatch], bool]
-
-
 class MatchFinder:
     DEFAULT_EXCLUDE_KIND = "comment"
 
     @staticmethod
     def find_all(
             src_nodes: Sequence[ASTNode] | ASTNode,
-            *patterns_list: Sequence[ASTNode] | ConstrainedPattern,
+            *patterns_list: Sequence[ASTNode],
             recursive: bool = True,
             exclude_kind: str = DEFAULT_EXCLUDE_KIND,
             part_of_translation_unit: bool = True,
@@ -243,14 +229,14 @@ class MatchFinder:
 
     # TODO: Why don't we define types for X | Sequence[X]?
     # TODO: Why don't we enforce that input is always a sequence of ASTNodes (so just use [] around a single ASTNode)?
-    # TODO: Why don't we define a type for a pattern: Sequence[ASTNode] | ConstrainedPattern
+
     # TODO: Why don't we introduce a Pattern class (with multiple constructors for the different cases)?
 
     # TODO: why is the type of patterns_list different from find_all (directly above)?
     @staticmethod
     def find_all_strict(
             src_nodes: Sequence[ASTNode] | ASTNode,
-            patterns_list: Sequence[Sequence[ASTNode] | ConstrainedPattern],
+            patterns_list: Sequence[Sequence[ASTNode]],
             recursive: bool = True,
             exclude_kind: str = DEFAULT_EXCLUDE_KIND,
             part_of_translation_unit: bool = True,
@@ -275,7 +261,7 @@ class MatchFinder:
                 return exclude_nodes_by_kind(exclude_kind, nodes)
             return [
                 node
-                for node in exclude_nodes_by_kind_as_sequence(
+                for node in exclude_nodes_by_kind(
                     exclude_kind, nodes
                 )
                 if node.is_part_of_translation_unit()
@@ -289,10 +275,10 @@ class MatchFinder:
 
     @staticmethod
     def match_pattern(
-            src_nodes: [ASTNode] | ASTNode,
-            patterns: [ASTNode] | ConstrainedPattern,
+            src_nodes: Sequence[ASTNode],
+            patterns: Sequence[ASTNode],
             src_filter: Callable[[Sequence[ASTNode]], Sequence[ASTNode]] = lambda n: n,
-    ) -> [PatternMatch]:
+    ) -> Sequence[PatternMatch]:
         """
         Matches a given source node or list of source nodes against a list of pattern nodes.
 
@@ -304,18 +290,6 @@ class MatchFinder:
         Returns:
             Optional[PatternMatch]: A PatternMatch object if a match is found, otherwise None.
         """
-        eligible: Callable[[PatternMatch], bool] = lambda _: True
-        if isinstance(src_nodes, ASTNode):
-            src_nodes = [src_nodes]
-        if isinstance(patterns, ConstrainedPattern):
-            eligible = patterns.eligible
-            patterns = (
-                patterns.patterns
-                if isinstance(patterns.patterns, Sequence)
-                else [patterns.patterns]
-            )
-        if isinstance(patterns, ASTNode):
-            patterns = [patterns]
 
         patterns = src_filter(patterns)  # exclude nodes by kind
         keys = []
@@ -325,10 +299,10 @@ class MatchFinder:
     @staticmethod
     def __find_all(
             src_nodes: Sequence[ASTNode],
-            patterns_list: Sequence[Sequence[ASTNode] | ConstrainedPattern],
+            patterns_list: Sequence[Sequence[ASTNode]],
             recursive: bool,
             src_filter: Callable[[Sequence[ASTNode]], Sequence[ASTNode]],
-    ) -> Iterator[PatternMatch]:
+    ) -> Sequence[PatternMatch]:
         found_matches = []
         for patterns in patterns_list:
             found_matches.extend(MatchFinder.match_pattern(src_nodes, patterns))

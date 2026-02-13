@@ -294,7 +294,7 @@ class CPPPatternFactory(CPatternFactory):
         type_ref = call_expr.preceding_sibling
         assert isinstance(type_ref, ASTNode), "No type ref found"
         # return the constrained pattern where the first node must be of type TypeRef
-        # return ConstrainedPattern([type_ref, call_expr], lambda m: ASTFinder.matches_kind(m.src_nodes[0], 'TypeRef'))
+
         return call_expr
 
 
