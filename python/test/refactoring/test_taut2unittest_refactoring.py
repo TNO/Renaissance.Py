@@ -38,3 +38,24 @@ class TestTaut2Unittest(unittest.TestCase):
     def test_replace_skip(self, _, factory: ASTFactory, input_code, expected_code):
         result = TautRefactoring.replace_taut_skip(input_code)
         self.assertEqual(result, expected_code)
+
+    @parameterized.expand(Factories.extend([
+        ("import mock\nfrom TAUT import TestCase, TestDoubles", "\ntry:\n    from unittest.mock import patch\nexcept ImportError:\n    from mock import patch\n")
+    ]))
+    def test_replace_import(self, _, factory: ASTFactory, input_code, expected_code):
+        result = TautRefactoring.replace_mock_import(input_code)
+        self.assertEqual(result, expected_code)
+
+    @parameterized.expand(Factories.extend([
+        ('emrwxread = 0', 'self.emrwxread = 0'),
+        ('func(emrwxwidxread)', 'func(self.emrwxwidxread)'),
+        ('a = test(emrwxviprxinterface)', 'a = test(self.emrwxviprxinterface)'),
+        ('b = whxstream2', 'b = self.whxstream2'),
+    ]))
+    def test_add_self(self, _, factory: ASTFactory, input_code, expected_code):
+        atu = factory.create_from_text(input_code, 'add_self.py')
+        ASTShower.show_node(atu)
+        ast_refactor = ASTProcessor(atu, factory, in_memory=True)
+        TautRefactoring.add_self(ast_refactor)
+        result = ast_refactor.commit().apply_to_string()
+        self.assertEqual(result, expected_code)

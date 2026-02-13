@@ -91,3 +91,35 @@ class TautRefactoring:
             rewriter.replace(replacement, test_case.nodes)
         rewriter.apply()
         return rewriter.apply_to_string()
+
+    @staticmethod
+    def replace_mock_import(input_code):
+        """
+        replace mock by unittest.mock and using patch
+        """
+        atu = factory.create_from_text(input_code, 'import_2.py')
+        rewriter = ASTRewriter(atu)
+        pattern_factory = PythonPatternFactory(factory, atu)
+        pattern1 = 'import mock\n'
+        pattern2 = 'from TAUT import TestCase, TestDoubles'
+        pyunit_replacement = 'try:\n    from unittest.mock import patch\nexcept ImportError:\n    from mock import patch\n'
+        import_pattern1 = pattern_factory.create_python_pattern(pattern1)
+        import_pattern2 = pattern_factory.create_python_pattern(pattern2)
+
+        match1 = MatchFinder.find_all(atu, import_pattern1).to_iterable()
+        for test_case in match1:
+            rewriter.remove(test_case.nodes)
+        match2 = MatchFinder.find_all(atu, import_pattern2).to_iterable()
+        rewriter.replace(pyunit_replacement, match2[0].nodes)
+        rewriter.apply()
+        return rewriter.apply_to_string()
+
+    @staticmethod
+    def add_self(ast_refactor):
+        """
+        replace mock by unittest.mock and using patch
+        """
+        matching = ['emrwxread', 'emrwxwidxread', 'emrwxviprxinterface', 'whxstream2']
+        ast_refactor.find_kind('Name'). \
+            filter(lambda node: node.name in matching). \
+            for_each(lambda node: ast_refactor.replace('self.' + node.name, node))
