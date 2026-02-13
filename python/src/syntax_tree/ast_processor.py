@@ -6,7 +6,7 @@ from typing import Callable, Iterator, Sequence, Generator
 
 from common.stream import Stream
 from .ast_finder import ASTFinder
-from .match_finder import ConstrainedPattern, MatchFinder, PatternMatch
+from .match_finder import MatchFinder, PatternMatch
 from .ast_rewriter import ASTRewriter
 from .ast_factory import ASTFactory
 from .ast_node import ASTNode

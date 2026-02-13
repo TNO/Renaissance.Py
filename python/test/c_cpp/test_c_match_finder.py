@@ -105,7 +105,7 @@ class TestExpressions(TestCMatchFinder):
 
         show_node(atu, "CPP code")
         #find all if and while statements
-        matches = MatchFinder.find_all(atu,exprNode).\
+        matches = MatchFinder.find_all(atu,[exprNode]).\
             filter(lambda match: match.nodes[0].is_part_of_translation_unit()).to_list()
         self.assertEqual(2, len(matches))
 

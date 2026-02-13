@@ -41,7 +41,7 @@ class PythonMatcherTest(unittest.TestCase):
         self.assertFalse(is_match(atu.children[1], simple))
         self.assertFalse(is_match(atu.children[2], simple))
         self.assertFalse(is_match(atu.children[3], simple))
-        result = MatchFinder.match_pattern(atu.children, simple)#.to_list()
+        result = MatchFinder.match_pattern(atu.children, [simple])
         self.assertEqual(1,len(result))
 
 
@@ -215,7 +215,7 @@ else:
         # create a pattern factory atu is passed to the pattern factory for use of all # includes, #defines and declarations
         pattern_factory = PythonPatternFactory(factory, atu)
         simple = pattern_factory.create('pa(55)')
-        results = MatchFinder.match_pattern(atu.children, simple)
+        results = MatchFinder.match_pattern(atu.children, [simple])
         # 4 because the one in if is a expression
         self.assertEqual(4,len(results))
 

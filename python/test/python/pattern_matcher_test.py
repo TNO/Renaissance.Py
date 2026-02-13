@@ -30,7 +30,7 @@ class PythonMatcherTest(unittest.TestCase):
 
     def test_is_match_all_stmt(self):
         simple = self.pattern_factory.create('$$pa')
-        self.assertTrue(MatchFinder.match_pattern(self.atu.children, simple))
+        self.assertTrue(MatchFinder.match_pattern(self.atu.children, [simple]))
 
     def test_is_exact_match(self):
         simple = self.pattern_factory.create('ba(55)')
@@ -39,7 +39,7 @@ class PythonMatcherTest(unittest.TestCase):
     def test_match_exact_pattern(self):
         simple = self.pattern_factory.create('ba(55)')
 
-        result = MatchFinder.match_pattern(self.atu, simple)
+        result = MatchFinder.match_pattern(self.atu.children, [simple])
         self.assertEqual(1, len(result))
 
     def test_find_all_exact_match(self):
@@ -49,13 +49,13 @@ class PythonMatcherTest(unittest.TestCase):
 
     def test_match_single_pattern(self):
         simple = self.pattern_factory.create('$stmt')
-        result = MatchFinder.match_pattern(self.atu, simple)
+        result = MatchFinder.match_pattern(self.atu.children, [simple])
         self.assertEqual(4, len(result))
 
     def test_match_single_call_pattern(self):
         simple = self.pattern_factory.create('$call($arg)')
 
-        result = MatchFinder.match_pattern(self.atu, simple)
+        result = MatchFinder.match_pattern(self.atu.children, [simple])
         self.assertEqual(3, len(result))
 
     def test_find_all_cakks_match_pattern(self):
@@ -84,7 +84,7 @@ class PythonMatcherTest(unittest.TestCase):
         self.assertFalse(is_match(self.atu.children[2], simple))
         self.assertFalse(is_match(self.atu.children[3], simple))
 
-        result = MatchFinder.match_pattern(self.atu.children, simple)  # .to_list()
+        result = MatchFinder.match_pattern(self.atu.children, [simple])  # .to_list()
         self.assertEqual(1, len(result))
 
     def test_match_one_fun_pattern_using_generic_matcher(self):
@@ -245,7 +245,7 @@ ba()
         pattern_factory = PythonPatternFactory(self.factory, atu)
         simple = pattern_factory.create('pa(55)')
 
-        results = MatchFinder.match_pattern(atu.children, simple)
+        results = MatchFinder.match_pattern(atu.children, [simple])
         # 4 because the one in if is a expression
         self.assertEqual(4, len(results))
 

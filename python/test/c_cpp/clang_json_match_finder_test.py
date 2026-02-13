@@ -22,5 +22,5 @@ class ClangMatchJsonFinderTest(TestCase):
         statementsAtu = patternFactory.create(statements)
         statements = ASTFinder.find_kind(statementsAtu, pattern_type).find_last().get()
         func_body = remove_comment_macro(atu.children)#[0].children[2]
-        result = MatchFinder.match_pattern(func_body, statements)
+        result = MatchFinder.match_pattern(func_body, [statements])
         self.assertEqual(1, len(result))
