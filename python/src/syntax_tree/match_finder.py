@@ -357,7 +357,7 @@ class MatchFinder:
                 found_statements.append(match)
                 to_do = to_do[found_position+1:]
             else:
-                if to_do[0].children:
+                if isinstance(to_do[0], ASTNode) and to_do[0].children:
                     found_statements.extend(MatchFinder.__match_pattern(
                         remove_comment_macro(to_do[0].children),
                         patterns,
