@@ -237,7 +237,7 @@ class TestExample(TestCase):
         ''', 'test_file.py')
     pattern_factory = PythonPatternFactory(factory, atu)
     pattern = pattern_factory.create_statements('class $name(TestCase):\n    $$cases')
-    matches = MatchFinder.find_all(atu, pattern).to_list()
+    matches = MatchFinder.find_all(atu.children, pattern).to_list()
     assert len(matches) == 1
     assert matches[0].expansions['$name'] == ['TestExample']
 
@@ -256,7 +256,7 @@ def test_find_all_in_python_arg_list_with_expansion():
     atu = factory.create_from_text('class klass:\n  def fun(a,b,c,d,f): pass', 'test_file.py')
     pattern_factory = PythonPatternFactory(factory, atu)
     pattern = pattern_factory.create_statements('def fun($$args): pass')
-    matches = MatchFinder.find_all(atu, pattern).to_list()
+    matches = MatchFinder.find_all(atu.children, pattern).to_list()
     assert len(matches) == 1
     assert matches[0].expansions['$$args']
 

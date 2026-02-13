@@ -8,7 +8,7 @@ from .ast_node import ASTNode, MATCH_ALL, MATCH_ONE
 VERBOSE = False
 
 
-def is_match_tree(src:list, cmp:list, expansions={}):
+def is_match_tree(src:Sequence, cmp:Sequence, expansions={}):
     if not cmp or not src:
         return src == cmp
     if not isinstance(src , list) or not isinstance(cmp , list):
@@ -20,7 +20,7 @@ def is_match_tree(src:list, cmp:list, expansions={}):
         return True
     return find_in_list(src, cmp, expansions) + 1 == len(src)
 
-def find_in_list(src:list, cmp:list, exp={}):
+def find_in_list(src:Sequence, cmp:Sequence, exp={}):
     found_position = 0
     greedy = None
     expansion_start = -1
@@ -137,10 +137,10 @@ class PatternMatch:
             *patterns_list: Sequence[ASTNode],
             recursive: bool = True) -> Stream[PatternMatch]:
         found_matches = []
-        for n in self.nodes:
-            for ref in n.referenced_by:
+        for node in self.nodes:
+            for ref in node.referenced_by:
                 for patterns in patterns_list:
-                    found_matches.extend(MatchFinder.match_pattern(self.nodes, patterns, recursive))
+                    found_matches.extend(MatchFinder.match_pattern(ref.node, patterns, recursive))
         return Stream(found_matches)
 
     def match_references(
@@ -148,10 +148,10 @@ class PatternMatch:
             *patterns_list: Sequence[ASTNode],
             recursive: bool = True) -> Stream[PatternMatch]:
         found_matches = []
-        for n in self.nodes:
-            for ref in n.references:
+        for node in self.nodes:
+            for ref in node.references:
                 for patterns in patterns_list:
-                    found_matches.extend(MatchFinder.match_pattern(self.nodes, patterns, recursive))
+                    found_matches.extend(MatchFinder.match_pattern(ref.node, patterns, recursive))
         return Stream(found_matches)
 
 
@@ -191,10 +191,10 @@ class MatchFinder:
         Args:
             src_nodes (Sequence[ASTNode] | ASTNode): The source node or list of source nodes to be matched.
             patterns (Sequence[ASTNode]): The list of pattern nodes to match against the source nodes.
-            src_filter: The kind of nodes to exclude from matching.
+            recursive: match children sequence
 
         Returns:
-            Optional[PatternMatch]: A PatternMatch object if a match is found, otherwise None.
+            Sequence[PatternMatch]: A PatternMatch object if a match is found, otherwise None.
         """
         found_statements = []
         to_do = src_nodes

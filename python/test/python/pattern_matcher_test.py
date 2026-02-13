@@ -44,7 +44,7 @@ class PythonMatcherTest(unittest.TestCase):
 
     def test_find_all_exact_match(self):
         simple = self.pattern_factory.create('ba(55)')
-        result = MatchFinder.find_all(self.atu, [simple]).to_list()
+        result = MatchFinder.find_all(self.atu.children, [simple]).to_list()
         self.assertEqual(1, len(result))
 
     def test_match_single_pattern(self):
@@ -58,15 +58,15 @@ class PythonMatcherTest(unittest.TestCase):
         result = MatchFinder.match_pattern(self.atu.children, [simple])
         self.assertEqual(3, len(result))
 
-    def test_find_all_cakks_match_pattern(self):
+    def test_find_all_calls_match_pattern(self):
         simple = self.pattern_factory.create('$stmt')
         with patch.object(MatchFinder, 'match_pattern') as mock_match_pattern:
-            MatchFinder.find_all(self.atu, [simple]).to_list()
-            mock_match_pattern.assert_called_once_with([self.atu], [simple])
+            MatchFinder.find_all(self.atu.children, [simple]).to_list()
+            mock_match_pattern.assert_called_once_with(self.atu.children, [simple], True)
 
     def test_match_pattern(self):
         simple = self.pattern_factory.create('$pa($55)')
-        result = MatchFinder.find_all(self.atu, [simple]).to_list()
+        result = MatchFinder.find_all(self.atu.children, [simple]).to_list()
         self.assertEqual(3, len(result))
 
     def test_generic_is_match_assignment(self):
@@ -89,24 +89,24 @@ class PythonMatcherTest(unittest.TestCase):
 
     def test_match_one_fun_pattern_using_generic_matcher(self):
         simple = self.pattern_factory.create('$ca($sss)')
-        result = MatchFinder.find_all(self.atu, [simple]).to_list()
+        result = MatchFinder.find_all(self.atu.children, [simple]).to_list()
         self.assertEqual(3, len(result))
 
     def test_match_fun_using_generic_matcher(self):
         simple = self.pattern_factory.create('ca(555)')
-        result = MatchFinder.find_all(self.atu, [simple]).to_list()
+        result = MatchFinder.find_all(self.atu.children, [simple]).to_list()
         self.assertEqual(1, len(result))
 
     def test_match_multi_fun_using_generic_matcher(self):
         simple = self.pattern_factory.create('ba(55)\nca(555)')
-        result = MatchFinder.find_all(self.atu, [simple]).to_list()
+        result = MatchFinder.find_all(self.atu.children, [simple]).to_list()
         self.assertEqual(1, len(result))
 
     def test_match_multi_fun_using_generic_matcher(self):
         # create a pattern factory atu is passed to the pattern factory for use of all # includes, #defines and declarations
 
         simple = self.pattern_factory.create('ba(55)\nca(555)')
-        result = MatchFinder.find_all(self.atu, [simple]).to_list()
+        result = MatchFinder.find_all(self.atu.children, [simple]).to_list()
         self.assertEqual(1, len(result))
 
     def test_match_flat(self):
