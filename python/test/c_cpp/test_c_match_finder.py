@@ -6,7 +6,7 @@ from parameterized import parameterized
 from impl.clang import ClangASTNode
 from impl.clang_json import ClangJsonASTNode
 from syntax_tree import ASTFactory, ASTFinder, ASTShower, ASTNode, MatchFinder, CPatternFactory
-from syntax_tree.match_finder import remove_comment_macro
+from syntax_tree.match_finder import exclude_nodes_by_kind
 from utils_for_tests import to_string, compress, show_node
 from c_cpp.factories import Factories
 
@@ -74,7 +74,7 @@ class TestCMatchFinder(TestCase):
 
         show_node(atu, "CPP code")
         #find all if and while statements
-        func_body = remove_comment_macro(atu.children)[0].children[2]
+        func_body = exclude_nodes_by_kind(atu.children)[0].children[2]
         matches = MatchFinder.find_all( func_body.children,patterns,recursive=recursive).\
             filter(lambda match: match.nodes[0].is_part_of_translation_unit()).to_list()
         if debug_mismatches:

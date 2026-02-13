@@ -40,7 +40,7 @@ class TestRewrites(TestCase):
         atu = factory.create_from_text("void f() { /* c1 */ /* c2 */ int a=3;\n}", 'test.cpp')
         patternFactory = CPatternFactory(factory)
         declaration_pattern = patternFactory.create_declaration('int a=3;')
-        found = MatchFinder.find_all(atu, [declaration_pattern]).to_list()
+        found = MatchFinder.find_all(atu.children, [declaration_pattern]).to_list()
 
         rewriter = ASTRewriter(atu)
         for match in found:  # .map(lambda m: m.nodes).to_iterable():
@@ -55,7 +55,7 @@ class TestRewrites(TestCase):
         atu = factory.create_from_text("void f() { /* c1 */ /* c2 */ int a=3;\n}", 'test.cpp')
         patternFactory = CPatternFactory(factory)
         declaration_pattern = patternFactory.create_declaration('int a=3;')
-        found = MatchFinder.find_all(atu, [declaration_pattern]).to_list()
+        found = MatchFinder.find_all(atu.children, [declaration_pattern]).to_list()
 
         rewriter = ASTRewriter(atu)
         for match in found:  # .map(lambda m: m.nodes).to_iterable():
@@ -68,7 +68,7 @@ class TestRewrites(TestCase):
         patternFactory = CPatternFactory(factory)
         declaration_pattern = patternFactory.create_declaration('int a=3;')
         rewriter = ASTRewriter(atu)
-        found =MatchFinder.find_all(atu, [declaration_pattern]).to_list()
+        found =MatchFinder.find_all(atu.children, [declaration_pattern]).to_list()
 
         for match in found: # .map(lambda m: m.nodes).to_iterable():
             nodes = match.nodes
