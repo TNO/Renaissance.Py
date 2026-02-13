@@ -1,4 +1,3 @@
-
 from .cleanup_refactoring import CleanupRefactoring
-
-__all__ = ['CleanupRefactoring']
+from .taut2pyunit import TautRefactoring
+__all__ = ['CleanupRefactoring', 'TautRefactoring']
