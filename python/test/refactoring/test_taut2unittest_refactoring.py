@@ -16,35 +16,35 @@ class TestTaut2Unittest(unittest.TestCase):
         ast_refactor = ASTProcessor(atu, factory, in_memory=True)
         TautRefactoring.remove_import_taut(ast_refactor)
         result = ast_refactor.commit().apply_to_string()
-        self.assertEqual(result, expected_code)
+        self.assertEqual(expected_code, result)
 
     @parameterized.expand(Factories.extend([
         ("import unittest\nimport TAUT\nimport DDXA", "import unittest\nimport DDXA"),
     ]))
     def test_remove_import(self, _, factory: ASTFactory, input_code, expected_code):
         result = TautRefactoring.convert_test_cases(input_code)
-        self.assertEqual(result, expected_code)
+        self.assertEqual(expected_code, result)
 
     @parameterized.expand(Factories.extend([
-        ("class ATestCase(TAUT.TestCase):\n    pass", "class ATestCase(unittest.TestCase):\n    pass\n        "),
+        ("class ATestCase(TAUT.TestCase):\n    pass\n", "class ATestCase(unittest.TestCase):\n    pass\n"),
     ]))
     def test_replace_taut(self, _, factory: ASTFactory, input_code, expected_code):
         result = TautRefactoring.replace_taut(input_code)
-        self.assertEqual(result, expected_code)
+        self.assertEqual(expected_code, result)
 
     @parameterized.expand(Factories.extend([
-        ("@TAUT.skip_test\ndef test(a, b):\n    pass", "@unittest.skip\ndef test(a, b):\n    pass")
+        ("@TAUT.skip_test\ndef test(a, b):\n    pass\n", "@unittest.skip\ndef test(a, b):\n    pass\n")
     ]))
     def test_replace_skip(self, _, factory: ASTFactory, input_code, expected_code):
         result = TautRefactoring.replace_taut_skip(input_code)
-        self.assertEqual(result, expected_code)
+        self.assertEqual(expected_code, result)
 
     @parameterized.expand(Factories.extend([
         ("import mock\nfrom TAUT import TestCase, TestDoubles", "\ntry:\n    from unittest.mock import patch\nexcept ImportError:\n    from mock import patch\n")
     ]))
     def test_replace_import(self, _, factory: ASTFactory, input_code, expected_code):
         result = TautRefactoring.replace_mock_import(input_code)
-        self.assertEqual(result, expected_code)
+        self.assertEqual(expected_code, result)
 
     @parameterized.expand(Factories.extend([
         ('emrwxread = 0', 'self.emrwxread = 0'),
@@ -58,4 +58,4 @@ class TestTaut2Unittest(unittest.TestCase):
         ast_refactor = ASTProcessor(atu, factory, in_memory=True)
         TautRefactoring.add_self(ast_refactor)
         result = ast_refactor.commit().apply_to_string()
-        self.assertEqual(result, expected_code)
+        self.assertEqual(expected_code, result)

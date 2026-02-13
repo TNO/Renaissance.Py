@@ -255,7 +255,6 @@ def test_find_all_in_python_arg_list_with_expansion():
     factory = ASTFactory(PythonASTNode, [])
     atu = factory.create_from_text('class klass:\n  def fun(a,b,c,d,f): pass', 'test_file.py')
     pattern_factory = PythonPatternFactory(factory, atu)
-    statement = pattern_factory.create_statements('assertEqual(1,2,34,5,6,7,7,8)')
     pattern = pattern_factory.create_statements('def fun($$args): pass')
     matches = MatchFinder.find_all(atu, pattern).to_list()
     assert len(matches) == 1

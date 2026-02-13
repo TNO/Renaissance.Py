@@ -216,15 +216,6 @@ class PythonASTNode(ASTNode):
 
     @override
     @property
-    def extended_end_offset(self) -> int:
-        try:
-            endOffset = self._offset + self._length
-            return endOffset
-        except:
-            return 0
-
-    @override
-    @property
     def referenced_by(self) -> Sequence[ASTReference]:
         self.translation_unit.lazy_create_refers(self)
         node_id = self.node.name if hasattr(self.node, 'name') else self.node.id

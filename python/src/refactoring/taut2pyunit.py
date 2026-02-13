@@ -1,7 +1,7 @@
 import ast
 
 from impl.python import PythonASTNode, PythonPatternFactory
-from syntax_tree import ASTFinder, ASTProcessor, MatchFinder, ASTRewriter, ASTFactory, ASTNode
+from syntax_tree import ASTShower, ASTProcessor, MatchFinder, ASTRewriter, ASTFactory
 
 factory = ASTFactory(PythonASTNode, [])
 TAUT_TEST_CASE_PATTERN='import TAUT'
@@ -12,11 +12,25 @@ class TautRefactoring:
         raise  Exception('This class should not be instantiated')
 
     @classmethod
-    def raw(self, nodes):
+    def raw(self, nodes, multi_nodes: bool = False) -> str:
         res = ''
+        start_offset = 0
+        end_offset = 0
+        if multi_nodes:
+            for node in nodes:
+                if isinstance(node, PythonASTNode):
+                    if start_offset == 0 or node.offset < start_offset:
+                        start_offset = node.offset
+                    if end_offset == 0 or node.end_offset > end_offset :
+                        end_offset = node.end_offset
+            return node.root.content(start_offset, end_offset)
         for node in nodes:
             if isinstance(node, PythonASTNode):
-                res += node.signature + '\n        '
+                match node.kind:
+                    case 'Pass':
+                        res += 'pass'
+                    case _:
+                        res += node.signature
             else:
                 res += str(node)
         return res #+ '\n'
@@ -77,6 +91,7 @@ class TautRefactoring:
         replace @TAUT.skip_test by @unittest.skip
         """
         atu = factory.create_from_text(input_code, "test_skip.py")
+        ASTShower.show_node(atu)
         rewriter = ASTRewriter(atu)
         pattern_factory = PythonPatternFactory(factory, atu)
         pattern = '@TAUT.skip_test\ndef $test_case($$bbb):\n    $$aaa'
@@ -87,7 +102,8 @@ class TautRefactoring:
         for test_case in test_cases:
             replacement = pyunit_replacement
             for snippets in test_case.expansions:
-                replacement = replacement.replace(snippets, TautRefactoring.raw(test_case.expansions[snippets]))
+                multi_nodes = True if len(test_case.expansions[snippets]) > 1 else False
+                replacement = replacement.replace(snippets, TautRefactoring.raw(test_case.expansions[snippets], multi_nodes))
             rewriter.replace(replacement, test_case.nodes)
         rewriter.apply()
         return rewriter.apply_to_string()
