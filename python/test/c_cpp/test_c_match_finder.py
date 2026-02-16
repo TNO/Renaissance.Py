@@ -36,10 +36,10 @@ class TestCMatchFinder(TestCase):
     def test_simple_pattern(self):
 
         factory = ASTFactory(ClangASTNode, [])
-        patterns = [CPatternFactory(factory).create_statement('b--;')]
+        patterns = CPatternFactory(factory).create_statements('b--;')
 
         atu = factory.create_from_text('void fun(){int a,b;\nb--;\na==4;\nb==5;}', "test.c")
-        matches = MatchFinder.find_all(atu.children, [patterns], recursive=False).to_list()
+        matches = MatchFinder.find_all(atu.children, patterns).to_list()
         self.assertEqual(1, len(matches))
 
 
@@ -51,7 +51,7 @@ class TestCMatchFinder(TestCase):
 
         show_node(atu, "CPP code")
         #find all if and while statements
-        matches = MatchFinder.find_all([atu],patterns,recursive=recursive).\
+        matches = MatchFinder.find_all(atu.children,patterns,recursive=recursive).\
             filter(lambda match: match.nodes[0].is_part_of_translation_unit()).to_list()
         if debug_mismatches:
             for match in matches:

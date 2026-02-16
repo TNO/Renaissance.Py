@@ -61,8 +61,8 @@ class PythonMatcherTest(unittest.TestCase):
     def test_find_all_calls_match_pattern(self):
         simple = self.pattern_factory.create('$stmt')
         with patch.object(MatchFinder, 'match_pattern') as mock_match_pattern:
-            MatchFinder.find_all(self.atu.children, [simple]).to_list()
-            mock_match_pattern.assert_called_once_with(self.atu.children, [simple], True)
+            MatchFinder.find_all(self.atu.children, simple).to_list()
+            mock_match_pattern.assert_called_once_with(self.atu.children, simple, True)
 
     def test_match_pattern(self):
         simple = self.pattern_factory.create('$pa($55)')
