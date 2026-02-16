@@ -134,24 +134,24 @@ class PatternMatch:
 
     def match_referenced_by(
             self,
-            *patterns_list: Sequence[ASTNode],
+            patterns_list: Sequence[ASTNode],
             recursive: bool = True) -> Stream[PatternMatch]:
         found_matches = []
         for node in self.nodes:
             for ref in node.referenced_by:
                 for patterns in patterns_list:
-                    found_matches.extend(MatchFinder.match_pattern(ref.node, patterns, recursive))
+                    found_matches.extend(MatchFinder.match_pattern([ref.node], patterns, recursive))
         return Stream(found_matches)
 
     def match_references(
             self,
-            *patterns_list: Sequence[ASTNode],
+            patterns_list: Sequence[ASTNode],
             recursive: bool = True) -> Stream[PatternMatch]:
         found_matches = []
         for node in self.nodes:
             for ref in node.references:
                 for patterns in patterns_list:
-                    found_matches.extend(MatchFinder.match_pattern(ref.node, patterns, recursive))
+                    found_matches.extend(MatchFinder.match_pattern([ref.node], patterns, recursive))
         return Stream(found_matches)
 
 
