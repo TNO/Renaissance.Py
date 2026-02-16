@@ -160,7 +160,7 @@ class MatchFinder:
 
     @staticmethod
     def find_all(
-            src_nodes: Sequence[ASTNode] | ASTNode,
+            src_nodes: Sequence[ASTNode],
             *patterns_list: Sequence[ASTNode],
             recursive: bool = True,
     ) -> Stream[PatternMatch]:

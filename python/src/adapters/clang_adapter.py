@@ -4,10 +4,13 @@ from typing import Optional
 from utils.placeholders import detect_placeholder
 
 
+
+
+
 class ClangAdapter:
     def __init__(self, clang_path: Optional[str] = None, args: Optional[list] = None):
         if clang_path:
-            cindex.Config.set_library_file(clang_path)
+            cindex.Config.set_library_path(clang_path)
         self.args = args or ["-std=c++17"]
 
     def parse(self, file_path: str) -> LST:
@@ -24,12 +27,16 @@ class ClangAdapter:
     def _convert_node(
         self, cursor: cindex.Cursor, parent: Optional[LSTNode] = None
     ) -> LSTNode:
-        signature = cursor.spelling or cursor.displayname or cursor.kind.name
+        try:
+            kind = cursor.kind.name
+        except Exception as e:
+            kind = None
+        signature = cursor.spelling or cursor.displayname or kind
 
-        is_ph, coerced_type, ph_name = detect_placeholder(signature, cursor.kind.name)
+        is_ph, coerced_type, ph_name = detect_placeholder(signature, kind)
 
         node = LSTNode(
-            node_type=coerced_type if is_ph else cursor.kind.name,
+            node_type=coerced_type if is_ph else kind,
             properties={
                 "spelling": cursor.spelling,
                 "type": str(cursor.type.spelling),

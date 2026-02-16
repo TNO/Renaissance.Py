@@ -205,10 +205,8 @@ def test_match_all_function_with_any_param_clang():
     src = atu.children[-1].children[-1].children
     pattern_factory = CPatternFactory(factory)
     # atu = factory.create_from_text(, 'pat.c')
-    pattern = \
-    factory.create_from_text('int $a,$$all;void $f(int a,int b){$f($a, $$all);}', 'pat.c').children[-1].children[
-        -1].children[0]
-    assert len(MatchFinder.find_all(src, [pattern]).to_list()) == 2
+    pattern = factory.create_from_text('int $a,$$all;void $f(int a,int b){$f($a, $$all);}', 'pat.c').children[-1].children[-1].children
+    assert len(MatchFinder.find_all(src, pattern).to_list()) == 2
 
 
 def test_find_all_in_list_with_expansion():

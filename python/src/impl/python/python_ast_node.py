@@ -120,11 +120,17 @@ class PythonASTNode(ASTNode):
                     case list():  # Matches any list
                         if isinstance(node, ImplicitNode) or isinstance(node, ast.Module) or len(node._fields) == 1:
                             self._children.extend(PythonASTNode(n, translation_unit, self) for n in child)
+                            if name == 'body':
+                                self.body = self._children
                         else:
                             self._children.append(PythonASTNode(ImplicitNode(name, child), translation_unit, self))
+                            if name == 'body':
+                                self.body = self._children[-1]
                     case ast.AST():
                         if name not in ['ctx', 'ctx']:
                             self._children.append(PythonASTNode(child, translation_unit, self))
+                            if isinstance(child, ast.expr):
+                                self.expression = self.children[-1]
                     case _:
                         if name not in ['None']:
                             self.properties[name] = child
@@ -152,7 +158,7 @@ class PythonASTNode(ASTNode):
                 and is_match_tree(self.children, other.children,{}))
 
     def derive_position(self, node: ast.AST, translation_unit: PythonTranslationUnit):
-        if hasattr(node, 'lineno'):
+        if node._attributes:
             self._offset = self.translation_unit.convert(self.node.lineno, self.node.col_offset)
             self._length = self.translation_unit.convert(self.node.end_lineno, self.node.end_col_offset) - self.offset
         elif isinstance(node, ast.Module) and translation_unit:

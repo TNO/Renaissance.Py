@@ -84,7 +84,7 @@ class TestBasic(TestCase):
             self.code_text, "text.c"
         )  # file extension consistent with C Pattern Factory
         snippet_pattern = pattern_factory.create_expression(snippet, extra_declarations)
-        results = MatchFinder.find_all(code_pattern, [snippet_pattern]).to_list()
+        results = MatchFinder.find_all(code_pattern.children, [snippet_pattern]).to_list()
         count: int = len(results)
         assert 1 == count, "count = " + str(count)
 

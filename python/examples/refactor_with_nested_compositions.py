@@ -119,7 +119,7 @@ def refactor_with_nested_compositions(args):
 
 
         # search matches for pattern1 and pattern2 and replace them using the refactor function
-        MatchFinder.find_all(atu, pattern1, pattern2).\
+        MatchFinder.find_all(atu.children, pattern1, pattern2).\
             peek(lambda match: print('peek: ' +str(match.get_raw_signatures()))).\
             for_each(refactor)
         
