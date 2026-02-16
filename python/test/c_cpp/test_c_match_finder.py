@@ -39,7 +39,7 @@ class TestCMatchFinder(TestCase):
         patterns = [CPatternFactory(factory).create_statement('b--;')]
 
         atu = factory.create_from_text('void fun(){int a,b;\nb--;\na==4;\nb==5;}', "test.c")
-        matches = MatchFinder.find_all([atu], patterns, recursive=False).to_list()
+        matches = MatchFinder.find_all(atu.children, [patterns], recursive=False).to_list()
         self.assertEqual(1, len(matches))
 
 
@@ -105,7 +105,7 @@ class TestExpressions(TestCMatchFinder):
 
         show_node(atu, "CPP code")
         #find all if and while statements
-        matches = MatchFinder.find_all(atu,[exprNode]).\
+        matches = MatchFinder.find_all(atu.children,[exprNode]).\
             filter(lambda match: match.nodes[0].is_part_of_translation_unit()).to_list()
         self.assertEqual(2, len(matches))
 
@@ -259,7 +259,7 @@ class TestUseAtuToCreatePattern(TestCMatchFinder):
         statements = ASTFinder.find_kind(statementsAtu, pattern_type).find_last().get()  # pick the last statement
         # ASTShower.show_node(atu, include_properties=True)
         # ASTShower.show_node(statementsAtu, include_properties=True)
-        func_body = atu.children[-1]
+        func_body = atu.children[-1].children
         result = MatchFinder.find_all(func_body, [statements], recursive=True)
         self.assertLessEqual(1, len(result.to_list()))
         text=(result.filter(lambda match: match.patterns == names).\
