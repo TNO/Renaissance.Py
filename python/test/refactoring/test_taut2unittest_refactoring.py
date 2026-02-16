@@ -36,7 +36,11 @@ class TestTaut2Unittest(unittest.TestCase):
         ("@TAUT.skip_test\ndef test(a, b):\n    pass\n", "@unittest.skip\ndef test(a, b):\n    pass\n")
     ]))
     def test_replace_skip(self, _, factory: ASTFactory, input_code, expected_code):
-        result = TautRefactoring.replace_taut_skip(input_code)
+        atu = factory.create_from_text(input_code, 'tautskip.py')
+        ASTShower.show_node(atu)
+        ast_refactor = ASTProcessor(atu, factory, in_memory=True)
+        TautRefactoring.replace_taut_skip(ast_refactor)
+        result = ast_refactor.commit().apply_to_string()
         self.assertEqual(expected_code, result)
 
     @parameterized.expand(Factories.extend([

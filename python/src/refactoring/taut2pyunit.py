@@ -86,27 +86,13 @@ class TautRefactoring:
         return rewriter.apply_to_string()
 
     @staticmethod
-    def replace_taut_skip(input_code):
+    def replace_taut_skip(ast_refactor):
         """
         replace @TAUT.skip_test by @unittest.skip
         """
-        atu = factory.create_from_text(input_code, "test_skip.py")
-        ASTShower.show_node(atu)
-        rewriter = ASTRewriter(atu)
-        pattern_factory = PythonPatternFactory(factory, atu)
-        pattern = '@TAUT.skip_test\ndef $test_case($$bbb):\n    $$aaa'
-        pyunit_replacement = '@unittest.skip\ndef $test_case($$bbb):\n    $$aaa'
-        test_def = pattern_factory.create_python_pattern(pattern)
-
-        test_cases = MatchFinder.find_all(atu, test_def).to_iterable()
-        for test_case in test_cases:
-            replacement = pyunit_replacement
-            for snippets in test_case.expansions:
-                multi_nodes = True if len(test_case.expansions[snippets]) > 1 else False
-                replacement = replacement.replace(snippets, TautRefactoring.raw(test_case.expansions[snippets], multi_nodes))
-            rewriter.replace(replacement, test_case.nodes)
-        rewriter.apply()
-        return rewriter.apply_to_string()
+        ast_refactor.find_kind('Attribute'). \
+            filter(lambda node: node.name == 'TAUT.skip_test'). \
+            for_each(lambda node: ast_refactor.replace('unittest.skip', node))
 
     @staticmethod
     def replace_mock_import(input_code):
