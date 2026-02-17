@@ -250,9 +250,3 @@ class ASTNode(ABC):
             for child in self.children:
                 child.accept(function)
 
-def traverse(node):
-    todo = deque([node])
-    while todo:
-        node = todo.popleft()
-        todo.extend(node.children)
-        yield node

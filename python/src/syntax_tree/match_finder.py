@@ -28,8 +28,8 @@ def find_in_list(src:Sequence, cmp:Sequence, exp={}):
     while i <len(src):
         if found_position >=len(cmp):
             break
-        if isinstance(cmp[found_position], ASTNode) and cmp[found_position].kind == MATCH_ALL:
-            current_name = cmp[found_position].name
+        if getattr(cmp[found_position],'kind', 'unknown') == MATCH_ALL:
+            current_name = getattr(cmp[found_position],'name', 'unknown')
             if current_name in exp:
                 end = i + len(exp[current_name])
                 if is_match_tree(exp[current_name], src[i:end], {}):
@@ -76,17 +76,19 @@ def find_in_list(src:Sequence, cmp:Sequence, exp={}):
 
 
 def is_match(src, cmp, expansions={}) -> bool:
-    if isinstance(cmp, ASTNode) and cmp.kind == MATCH_ONE and not ( isinstance(src, ASTNode) and src.kind in ['Module', 'FUNCTION_DECL','TRANSLATION_UNIT']):
+    cmp_kind = getattr(cmp, 'kind', 'unknown')
+    src_kind = getattr(src, 'kind', 'unknown')
+    if src_kind in ['Module', 'FUNCTION_DECL','TRANSLATION_UNIT'] and cmp_kind == MATCH_ONE:
         if cmp.name in expansions:
             return is_match(src, expansions[cmp.name][0])
         else:
             expansions[cmp.name] = [src]
             return True
-    elif isinstance(src, ASTNode) and isinstance(cmp, ASTNode) and (cmp.kind != src.kind or not src.is_part_of_translation_unit()):
+    elif cmp_kind != src_kind:
         return False
-    elif isinstance(cmp, list):
+    elif isinstance(src, list) and  isinstance(cmp, list):
         return is_match_tree(src, cmp, expansions)
-    elif isinstance(cmp, dict):
+    elif isinstance(src, dict) and isinstance(cmp, dict):
         return is_match_dict(src, cmp, expansions)
     elif isinstance(cmp, str):
         if cmp.startswith('$') or cmp.startswith(MATCH_ONE):
@@ -96,11 +98,7 @@ def is_match(src, cmp, expansions={}) -> bool:
                 expansions[cmp.replace(MATCH_ONE,'$')] = [src]
                 return True
         return src == cmp
-    elif isinstance(cmp, int):
-        return src == cmp
-    elif cmp == None:
-        return src == None
-    elif isinstance(src, ASTNode)and isinstance(cmp, ASTNode):
+    elif hasattr(src, 'properties') and hasattr(cmp ,'properties') and hasattr(src ,'children') and hasattr(cmp ,'children'):
         return (is_match_dict(src.properties, cmp.properties, expansions)
                 and is_match_tree(exclude_nodes_by_kind(src.children), cmp.children, expansions))
     else:
@@ -206,11 +204,11 @@ class MatchFinder:
                 found_statements.append(match)
                 to_do = to_do[found_position+1:]
             else:
-                if recursive and isinstance(to_do[0], ASTNode) and to_do[0].children:
-                    found_statements.extend(MatchFinder.match_pattern(exclude_nodes_by_kind(to_do[0].children),patterns,recursive))
+                if recursive:
+                    found_statements.extend(MatchFinder.match_pattern(exclude_nodes_by_kind(getattr(to_do[0],'children' ,[])),patterns,recursive))
                 to_do = to_do[1:]
 
         return found_statements
 
-# TODO check with pierre whether we should take the highest or the deepest match reimple backtracking to find the best match
+# TODO check with pierre whether we should take the highest or the deepest match re imple backtracking to find the best match
 

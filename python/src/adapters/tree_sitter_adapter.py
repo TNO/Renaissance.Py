@@ -1,6 +1,6 @@
 from tree_sitter import Parser, Language
 from lst.lst import LST, LSTNode
-from utils.placeholders import detect_placeholder
+from utils.node_util import detect_placeholder, replace_dollar
 
 
 class TreeSitterAdapter:
@@ -14,6 +14,7 @@ class TreeSitterAdapter:
 
     def to_lst(self, source_code: str, tree) -> LST:
         root_node = tree.root_node
+        source_code= replace_dollar(source_code)
         return LST(self._convert_node(root_node, source_code))
 
     def _convert_node(self, node, source_code: str) -> LSTNode:
