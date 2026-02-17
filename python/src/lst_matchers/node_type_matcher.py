@@ -1,6 +1,8 @@
 from lst.lst import LSTNode
-from matchers.pattern_matcher import MatchResult
+
 from typing import List
+
+from syntax_tree import PatternMatch
 
 
 class NodeTypeMatcher:
@@ -12,14 +14,14 @@ class NodeTypeMatcher:
     def __init__(self, node_type: str):
         self.node_type = node_type
 
-    def match(self, lst_root: LSTNode) -> List[MatchResult]:
+    def match(self, lst_root: LSTNode) -> List[PatternMatch]:
         results = []
         self._search(lst_root, results)
         return results
 
-    def _search(self, node: LSTNode, results: List[MatchResult]):
+    def _search(self, node: LSTNode, results: List[PatternMatch]):
         if node.kind == self.node_type:
-            match = MatchResult()
+            match = PatternMatch()
             match.add_binding("match", node)
             results.append(match)
         for child in node.children:

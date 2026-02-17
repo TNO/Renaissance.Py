@@ -2,8 +2,9 @@ import unittest
 import tree_sitter_cpp as tscpp
 from adapters.tree_sitter_adapter import TreeSitterAdapter
 from lst.lst import LSTNode
-from matchers.pattern_matcher import StructuralPatternMatcher
-from matchers.node_type_matcher import NodeTypeMatcher
+from lst_matchers.node_type_matcher import NodeTypeMatcher
+from syntax_tree.match_finder import is_match
+
 
 # from matchers.pattern_matcher import MatchResult
 
@@ -28,34 +29,35 @@ class TestMatchers(unittest.TestCase):
             "class MyClass { method(self) { pass; } }", adapter
         )
 
-    def test_structural_pattern_match(self):
+    def test_if_pattern_match(self):
 
         adapter = TreeSitterAdapter(tscpp)
         pattern = make_pattern("if ($x > 0) print($x);", adapter)
 
-        matcher = StructuralPatternMatcher(pattern)
-        matches = matcher.match(self.if_node)
-        self.assertEqual(len(matches), 1)
+        self.assertTrue(is_match(self.if_node, pattern))
 
+    def test_for_pattern_match(self):
+        adapter = TreeSitterAdapter(tscpp)
         pattern = make_pattern("for ($i in range(10)) print($i);", adapter)
-        matcher = StructuralPatternMatcher(pattern)
-        matches = matcher.match(self.for_node)
-        self.assertEqual(len(matches), 1)
+        self.assertTrue(is_match(self.for_node, pattern))
+
+    def test_while_pattern_match(self):
+        adapter = TreeSitterAdapter(tscpp)
         pattern = make_pattern("while ($x < 10) $x += 1;", adapter)
-        matcher = StructuralPatternMatcher(pattern)
-        matches = matcher.match(self.while_node)
-        self.assertEqual(len(matches), 1)
+        self.assertTrue(is_match(self.while_node, pattern))
+
+    def test_try_pattern_match(self):
+        adapter = TreeSitterAdapter(tscpp)
         pattern = make_pattern(
             "try { risky_operation(); } catch (Exception $e) { handle_error($e); }",
             adapter,
         )
-        matcher = StructuralPatternMatcher(pattern)
-        matches = matcher.match(self.try_node)
-        self.assertEqual(len(matches), 1)
+        self.assertTrue(is_match(self.try_node, pattern))
+
+    def test_class_pattern_match(self):
+        adapter = TreeSitterAdapter(tscpp)
         pattern = make_pattern("class MyClass { method(self) { pass; } }", adapter)
-        matcher = StructuralPatternMatcher(pattern)
-        matches = matcher.match(self.class_node)
-        self.assertEqual(len(matches), 1)
+        self.assertTrue(is_match(self.class_node, pattern))
 
     def test_node_type_match(self):
         matcher = NodeTypeMatcher("call_expression")

@@ -3,7 +3,6 @@ import unittest
 import pytest
 
 from adapters.clang_adapter import ClangAdapter
-from extractors.extractor import PatternMatcherInterfaceExtended, Extractor
 
 adapter = ClangAdapter()
 interface = PatternMatcherInterfaceExtended(adapter)
