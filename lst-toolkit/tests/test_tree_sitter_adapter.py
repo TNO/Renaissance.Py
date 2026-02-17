@@ -2,8 +2,8 @@ import tree_sitter_python as tspython
 import tree_sitter_cpp as tscpp
 import tree_sitter_java as tsjava
 
+from impl.tree_sitter_adapter.tree_sitter_adapter import TreeSitterAdapter
 from visualizers.lst_mermaid_visualizer import LSTMermaidVisualizer
-from adapters.tree_sitter_adapter import TreeSitterAdapter
 
 
 def process_code(language_name, grammar_module, code):

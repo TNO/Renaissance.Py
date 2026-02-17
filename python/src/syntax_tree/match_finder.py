@@ -78,7 +78,7 @@ def find_in_list(src:Sequence, cmp:Sequence, exp={}):
 def is_match(src, cmp, expansions={}) -> bool:
     cmp_kind = getattr(cmp, 'kind', 'unknown')
     src_kind = getattr(src, 'kind', 'unknown')
-    if src_kind in ['Module', 'FUNCTION_DECL','TRANSLATION_UNIT'] and cmp_kind == MATCH_ONE:
+    if src_kind not in ['Module', 'FUNCTION_DECL','TRANSLATION_UNIT'] and cmp_kind == MATCH_ONE and cmp.name:
         if cmp.name in expansions:
             return is_match(src, expansions[cmp.name][0])
         else:

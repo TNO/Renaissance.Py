@@ -1,4 +1,4 @@
-from adapters.clang_adapter import ClangAdapter
+from impl.clang.clang_adapter import ClangAdapter
 from syntax_tree import ASTShower
 
 

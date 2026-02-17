@@ -26,6 +26,7 @@ class TreeSitterAdapter:
             properties={
                 "start_point": node.start_point,
                 "end_point": node.end_point,
+                'name': ph_name,
                 "is_named": node.is_named,
                 **(
                     {
@@ -36,6 +37,7 @@ class TreeSitterAdapter:
                     if is_ph
                     else {}
                 ),
+
             },
             signature=signature,
             offset=node.start_byte,

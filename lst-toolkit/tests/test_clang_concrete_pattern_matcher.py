@@ -1,11 +1,10 @@
 import unittest
 
 import pytest
+from extractors.extractor import PatternMatcherInterfaceExtended, Extractor
+from impl.clang.clang_adapter import ClangAdapter
+from impl.tree_sitter_adapter.ts_pattern_factory import TsPatternFactory
 
-from adapters.clang_adapter import ClangAdapter
-
-adapter = ClangAdapter()
-interface = PatternMatcherInterfaceExtended(adapter)
 
 @pytest.mark.parametrize("code, pattern",[
         ("int main() { return 0; }", "int main() { $body }"),
@@ -29,8 +28,10 @@ interface = PatternMatcherInterfaceExtended(adapter)
         ("auto f = []() { return 1; };", "auto $f = []() { $body };")
     ])
 def test_clang_patterns(code, pattern):
+    adapter = ClangAdapter()
+    interface = TsPatternFactory(adapter)
     extractor = Extractor(interface)
-    extractor.add_rule((pattern, "pattern"), lambda m: m)
+    extractor.add_rule(pattern, lambda m: m)
     matches = extractor.run(code)
     assert  len(matches) >= 1
 
