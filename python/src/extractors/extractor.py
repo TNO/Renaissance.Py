@@ -22,7 +22,7 @@ class PatternMatcherInterfaceExtended:
 
         return [Match(res) for res in results]
 
-    def find_by_node_type(self, code_base: str, node_type: str) -> List[Match]:
+    def find_by_node_type(self, code_base: str, node_type: str) -> List[PatternMatch]:
         base_tree = self.adapter.parse_code(code_base)
         lst = self.adapter.to_lst(code_base, base_tree)
 

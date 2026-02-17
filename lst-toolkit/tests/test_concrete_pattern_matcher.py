@@ -4,8 +4,6 @@ from parameterized import parameterized
 
 from lst.lst import LSTNode
 from adapters.tree_sitter_adapter import TreeSitterAdapter
-from extractors.extractor import PatternMatcherInterfaceExtended
-from extractors.extractor import Extractor
 import tree_sitter_python as tspython
 
 

@@ -108,7 +108,7 @@ DEFAULT_EXCLUDE_KIND = ['FullComment', 'MACRO_DEFINITION']
 def exclude_nodes_by_kind(src: list[ASTNode]) -> list[ASTNode]:
     return [c for c in src if c.kind not in DEFAULT_EXCLUDE_KIND]
 
-IRRELEVANT_PROPS=['macro_expansion']
+IRRELEVANT_PROPS=['macro_expansion', 'start_point', 'end_point']
 def is_match_dict(src:dict, cmp:dict, expansions:dict) -> bool:
     all_keys = src.keys()|cmp.keys()
     return all(n in IRRELEVANT_PROPS or (n in src and n in cmp and is_match(src[n], cmp[n], expansions)) for n in all_keys)
