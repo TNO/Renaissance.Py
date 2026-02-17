@@ -2,49 +2,93 @@ import unittest
 
 from parameterized import parameterized
 
+from extractors.extractor import PatternMatcherInterfaceExtended, Extractor
+from impl.tree_sitter_adapter.tree_sitter_adapter import TreeSitterAdapter
+from impl.tree_sitter_adapter.ts_pattern_factory import TsPatternFactory
 from lst.lst import LSTNode
-from adapters.tree_sitter_adapter import TreeSitterAdapter
 import tree_sitter_python as tspython
+
+from syntax_tree.match_finder import is_match, is_match_tree
 
 
 class TestConcretePatternMatcher(unittest.TestCase):
 
-    def setUp(self):
-        self.adapter = TreeSitterAdapter(tspython)
-        self.interface = PatternMatcherInterfaceExtended(self.adapter)
-
-    def run_pattern(self, code: str, pattern: str) -> list:
-        extractor = Extractor(self.interface)
-        extractor.add_rule((pattern, "pattern"), lambda m: m)
-        return extractor.run(code)
-
     @parameterized.expand([
         ("def foo(): pass", "def foo(): pass"),
-        ("if x:  print(x)", "if x:  __PLH_body"),
-        ("for i in range(10): print(i)", "for __PLH_i in __PLH_iter: __PLH_body"),
-        ("while True: pass", "while __PLH_cond: __PLH_body"),
-        # ("try: pass except: pass", "try: __PLH_b except: __PLH_b"),
-        ("class A: pass", "class __PLH_C: __PLH_body"),
-        (
-            "with open('x') as f: pass",
-            "with __PLH_ctx as __PLH_var: __PLH_body",
-        ),
-        ("assert x", "assert __PLH_cond"),
-        ("return x", "return __PLH_value"),
-        ("lambda x: x", "lambda __PLH_arg: __PLH_body"),
-        ("a = b", "__PLH_lhs = __PLH_rhs"),
-        ("a += b", "__PLH_lhs += __PLH_rhs"),
-        ("x and y", "__PLH_left and __PLH_right"),
-        ("not x", "not __PLH_expr"),
-        ("x if y else z", "__PLH_t if __PLH_cond else __PLH_f"),
-        ("f(x)", "__PLH_func(__PLH_arg)"),
-        ("[x for x in y]", "[__PLH_x for __PLH_x in __PLH_y]"),
-        ("x in y", "__PLH_x in __PLH_y"),
-        ("import os", "import __PLH_mod"),
+        ("if x:  print(x)", "if x:  $body"),
+        ("for i in range(10): print(i)", "for $i in $iter: $body"),
+        ("while True: pass", "while $cond: $body"),
+        ("try: pass except: pass", "try: $b except: $b"),
+        ("class A: pass", "class $C: $body"),
+        ("with open('x') as f: pass","with $ctx as $var: $body"),
+        ("assert x", "assert $cond"),
+        ("return x", "return $value"),
+        ("lambda x: x", "lambda $arg: $body"),
+        ("a = b", "$lhs = $rhs"),
+        ("a += b", "$lhs += $rhs"),
+        ("x and y", "$left and $right"),
+        ("not x", "not $expr"),
+        ("x if y else z", "$t if $cond else $f"),
+        ("f(x)", "$func($arg)"),
+        ("[x for x in y]", "[$x for $x in $y]"),
+        ("x in y", "$x in $y"),
+        ("import os", "import $mod"),
     ])
-    def test_python_patterns(self, src, pattern):
-        matches = self.run_pattern(src, pattern)
+    def test_python_patterns(self, code, pattern):
+        self.adapter = TreeSitterAdapter(tspython)
+        self.interface = TsPatternFactory(self.adapter)
+        extractor = Extractor(self.interface)
+        extractor.add_rule(pattern)
+        matches = extractor.run(code)
+
         self.assertTrue(len(matches) >= 1, f"Pattern failed: {pattern}")
+
+
+
+def test_is_match_python_patterns():
+    adapter = TreeSitterAdapter(tspython)
+    interface = TsPatternFactory(adapter)
+    c = interface.create_statement("if x:  print(x)")
+    p = interface.create_statement("if x:  $body")
+    assert is_match(c.children[0], p.children[0], {})
+    assert is_match(c.children[1], p.children[1], {})
+    assert is_match(c.children[2], p.children[2], {})
+    assert is_match(c.children[3], p.children[3], {})
+
+
+def test_is_match_python_patterns_tree(self):
+    self.adapter = TreeSitterAdapter(tspython)
+    self.interface = TsPatternFactory(self.adapter)
+    c = self.interface.create_statement("try: pass except: pass")
+    p = self.interface.create_statement("try: $b except: $b")
+    assert is_match_tree(c.children, p.children, {})
+
+def test_is_match_python_patterns_1(self):
+    self.adapter = TreeSitterAdapter(tspython)
+    self.interface = TsPatternFactory(self.adapter)
+    c = self.interface.create_statement("if x:  print(x)")
+    p = self.interface.create_statement("if x:  $body")
+    assert is_match(c, p, {})
+
+def test_python_patterns_tree_1(self):
+    self.adapter = TreeSitterAdapter(tspython)
+    self.interface = TsPatternFactory(self.adapter)
+    cc = self.interface.create_statements("if x:  print(x)")
+    pp = self.interface.create_statements("if x:  $body")
+    assert is_match_tree(cc, pp, {})
+
+# def test_python_patterns_1(self, code, pattern):
+#     self.adapter = TreeSitterAdapter(tspython)
+#     self.interface = TsPatternFactory(self.adapter)
+#     c = self.interface.create_statement("if x:  print(x)")
+#     p = self.interface.create_statement("if x:  $body")
+#     cc = self.interface.create_statements(code)
+#     pp = self.interface.create_statements(pattern)
+#     assert is_match(p.children[2], p.children[2], {})
+#     assert is_match(p.children[3], p.children[3], {})
+#     assert is_match_tree(p.children, p.children, {})
+#     assert is_match(c, p, {})
+#     assert is_match_tree(cc, pp, {})
 
 
 if __name__ == "__main__":

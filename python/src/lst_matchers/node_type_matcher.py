@@ -21,8 +21,7 @@ class NodeTypeMatcher:
 
     def _search(self, node: LSTNode, results: List[PatternMatch]):
         if node.kind == self.node_type:
-            match = PatternMatch()
-            match.add_binding("match", node)
+            match = ("match", node)
             results.append(match)
         for child in node.children:
             self._search(child, results)

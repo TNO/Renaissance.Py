@@ -21,10 +21,10 @@ def detect_placeholder(
     if not signature:
         return (False, original_node_type, "")
     if (signature.startswith(MATCH_ALL) or signature.startswith("$$") ) and ' ' not in signature:  # legacy compatibility
-        return (True, MATCH_ALL, signature[len(MATCH_ALL) :])
+        return (True, MATCH_ALL, signature)
     elif (signature.startswith(MATCH_ONE) or signature.startswith("$")) and ' ' not in signature:
-        return (True, MATCH_ONE, signature[len(MATCH_ONE) :])
-    return (False, original_node_type, "")
+        return (True, MATCH_ONE, signature)
+    return (False, original_node_type, "-")
 
 def traverse(node):
     todo = deque([node])

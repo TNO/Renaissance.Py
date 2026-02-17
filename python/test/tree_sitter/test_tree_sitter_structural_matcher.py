@@ -3,9 +3,8 @@ import unittest
 import pytest
 import tree_sitter_python as tspython
 import tree_sitter_cpp as tscpp
-from lst.lst import LST, LSTNode
-from adapters.tree_sitter_adapter import TreeSitterAdapter
-from lst_matchers.pattern_matcher import StructuralPatternMatcher
+
+from impl.tree_sitter_adapter.tree_sitter_adapter import TreeSitterAdapter
 from syntax_tree import MatchFinder
 
 

@@ -2,8 +2,9 @@ import unittest
 
 from parameterized import parameterized
 
+from impl.tree_sitter_adapter.tree_sitter_adapter import TreeSitterAdapter
 from lst.lst import LST
-from adapters.tree_sitter_adapter import TreeSitterAdapter
+
 
 import tree_sitter_python as tspython
 import tree_sitter_cpp as tscpp

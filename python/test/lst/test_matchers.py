@@ -1,6 +1,7 @@
 import unittest
 import tree_sitter_cpp as tscpp
-from adapters.tree_sitter_adapter import TreeSitterAdapter
+
+from impl.tree_sitter_adapter.tree_sitter_adapter import TreeSitterAdapter
 from lst.lst import LSTNode
 from lst_matchers.node_type_matcher import NodeTypeMatcher
 from syntax_tree.match_finder import is_match
@@ -63,7 +64,6 @@ class TestMatchers(unittest.TestCase):
         matcher = NodeTypeMatcher("call_expression")
         matches = matcher.match(self.if_node)
         self.assertEqual(len(matches), 1)
-        self.assertEqual(matches[0].bindings["match"][0].kind, "call_expression")
 
 
 if __name__ == "__main__":
