@@ -1,6 +1,5 @@
 from typing import Callable, TypeVar, Generic, List, Union, Tuple, Optional
-from matchers.match import Match
-from matchers.pattern_matcher import StructuralPatternMatcher
+
 from adapters.tree_sitter_adapter import TreeSitterAdapter
 
 R = TypeVar("R")
@@ -19,22 +18,20 @@ class PatternMatcherInterfaceExtended:
         ).root
         matcher = StructuralPatternMatcher(pattern_tree)
         results = matcher.match(lst.root)
-        from matchers.match import Match as M
 
-        return [M(res) for res in results]
+
+        return [Match(res) for res in results]
 
     def find_by_node_type(self, code_base: str, node_type: str) -> List[Match]:
         base_tree = self.adapter.parse_code(code_base)
         lst = self.adapter.to_lst(code_base, base_tree)
-        from matchers.pattern_matcher import MatchResult
-        from matchers.match import Match as M
 
         matches = []
         for node in lst.traverse():
             if node.kind == node_type:
                 mr = MatchResult()
                 mr.add_binding("match", node)
-                matches.append(M(mr))
+                matches.append(Match(mr))
         return matches
 
 

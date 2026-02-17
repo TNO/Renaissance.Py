@@ -1,8 +1,10 @@
+from abc import ABC
 from typing import Any, Dict, Generator, List, Optional
 
+from syntax_tree import ASTNode
 
 
-class LSTNode:
+class LSTNode(ABC):
     def __init__(
         self,
         node_type: str,
@@ -21,6 +23,17 @@ class LSTNode:
         self.show_props=False
         self.indent =''
         self.length = len(signature)
+        self.extended_end_offset = self.offset + self.length
+        self.is_statement= node_type=='Expr'
+        self.referenced_by=[]
+        self.references=[]
+
+    def load(self):
+        return self
+    def load_from_text(self):
+        return self
+    def matches_kind(self, other):
+        return True
 
     def add_child(self, child): # LSTNode):
         self.children.append(child)
@@ -33,11 +46,6 @@ class LSTNode:
     @property
     def filename(self):
         return self.properties['name'] if 'name' in self.properties else None
-    # def __repr__(self) -> str:
-    #     return (
-    #         f"LSTNode(type={self.kind}, sig={self.signature[:30]!r}, "
-    #         f"offset={self.offset}, children={len(self.children)})"
-    #     )
 
     def __repr__(self):
         raw_lines = self.signature.splitlines()

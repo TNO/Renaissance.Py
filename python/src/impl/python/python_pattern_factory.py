@@ -10,6 +10,7 @@ from syntax_tree.ast_shower import ASTShower
 
 from syntax_tree.ast_factory import ASTFactory
 from syntax_tree.ast_finder import ASTFinder
+from utils.node_util import replace_dollar
 
 SHOW_NODE = False
 
@@ -38,8 +39,6 @@ class PythonPatternFactory:
 
 
 
-    def replace_dollar(self, text: str) -> str:
-        return text.replace('$$', MATCH_ALL).replace('$', MATCH_ONE)
 
     def create_expression(
         self, text: str, extra_declarations: Sequence[str] = []
@@ -73,7 +72,7 @@ class PythonPatternFactory:
         # create python from text
         # the comments are removed
         # Return Module
-        text = self.replace_dollar(text)
+        text = replace_dollar(text)
         return self._create(text)
 
     def create_statement(

@@ -1,7 +1,7 @@
 from clang import cindex
 from lst.lst import LSTNode, LST
 from typing import Optional
-from utils.placeholders import detect_placeholder
+from utils.node_util import detect_placeholder
 
 
 
@@ -30,7 +30,7 @@ class ClangAdapter:
         try:
             kind = cursor.kind.name
         except Exception as e:
-            kind = None
+            kind = f"invalid {cursor._kind_id}"
         signature = cursor.spelling or cursor.displayname or kind
 
         is_ph, coerced_type, ph_name = detect_placeholder(signature, kind)

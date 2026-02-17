@@ -9,7 +9,7 @@ import tree_sitter_python as tspython
 import tree_sitter_cpp as tscpp
 import tree_sitter_java as tsjava
 
-
+from utils.node_util import traverse
 
 
 class TestLanguages(unittest.TestCase):
@@ -82,7 +82,7 @@ class TestLanguages(unittest.TestCase):
         tree = adapter.parse_code(code)
         lst = adapter.to_lst(code, tree)
         self.assertIsInstance(lst, LST)
-        nodes = list(lst.traverse())
+        nodes = list(traverse(lst.root))
         self.assertGreater(len(nodes), 0)
 
 
