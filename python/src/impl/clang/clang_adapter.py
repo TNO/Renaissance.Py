@@ -1,10 +1,7 @@
 from clang import cindex
 from lst.lst import LSTNode, LST
 from typing import Optional
-from utils.node_util import detect_placeholder
-
-
-
+from utils.node_util import detect_placeholder, replace_dollar
 
 
 class ClangAdapter:
@@ -23,6 +20,12 @@ class ClangAdapter:
         translation_unit  = index.parse(file_name, unsaved_files=[(file_name, text)], args=[])
         return LST(self._convert_node(translation_unit.cursor))
 
+    def to_lst(self, source_code: str, tree) -> LST:
+        # source_code= replace_dollar(source_code)
+        return self.load_from_text(source_code, "no_src.cpp")
+
+    def parse_code(self, source_code: str):
+        return ''
 
     def _convert_node(
         self, cursor: cindex.Cursor, parent: Optional[LSTNode] = None
@@ -42,6 +45,7 @@ class ClangAdapter:
                 "type": str(cursor.type.spelling),
                 "location": str(cursor.location),
                 "is_definition": cursor.is_definition(),
+                "name": ph_name,
                 **(
                     {
                         "placeholder": True,
