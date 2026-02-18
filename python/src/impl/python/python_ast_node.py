@@ -1,15 +1,14 @@
 import ast
 import sys
-from functools import cache
 from pathlib import Path
 from typing import Any, Optional, Sequence
 
 from typing_extensions import override
 
 from common import Stream
-from syntax_tree.ast_node import MATCH_ONE, MATCH_ALL
 from syntax_tree import ASTNode, ASTReference
-from syntax_tree.match_finder import is_match, is_match_dict, is_match_tree
+from syntax_tree.ast_node import MATCH_ONE, MATCH_ALL
+from syntax_tree.match_finder import is_match_dict, is_match_tree, find_in_list, match_pattern
 
 EMPTY_DICT = {}
 EMPTY_STR = ''
@@ -127,7 +126,7 @@ class PythonASTNode(ASTNode):
                             if name == 'body':
                                 self.body = self._children[-1]
                     case ast.AST():
-                        if name not in ['ctx', 'ctx']:
+                        if name not in ['ctx']:
                             self._children.append(PythonASTNode(child, translation_unit, self))
                             if isinstance(child, ast.expr):
                                 self.expression = self.children[-1]
@@ -156,6 +155,9 @@ class PythonASTNode(ASTNode):
             return False
         return (is_match_dict(self.properties, other.properties, {})
                 and is_match_tree(self.children, other.children,{}))
+
+    def __contains__(self, item):
+        return match_pattern([self],[item], {})
 
     def derive_position(self, node: ast.AST, translation_unit: PythonTranslationUnit):
         if node._attributes:
@@ -294,6 +296,21 @@ class PythonASTNode(ASTNode):
             return self.parent
         else:
             return self.parent.get_container_parent()
+
+    def __getitem__(self, key):
+        """Allow indexing/slicing into node to access children.
+
+        Usage: node[0] == node.children[0]
+        """
+        # support integer index and slice
+        if isinstance(key, int):
+            return self.children[key]
+        if isinstance(key, slice):
+            return self.children[key]
+        # support string keys to access properties (e.g., node['name'])
+        if isinstance(key, str):
+            return self.properties[key]
+        raise TypeError(f"Indices must be integers or slices, not {type(key)}")
 
 
 class ReferenceHelper:

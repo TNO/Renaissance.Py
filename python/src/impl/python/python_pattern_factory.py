@@ -43,7 +43,7 @@ class PythonPatternFactory:
     def create_expression(
         self, text: str, extra_declarations: Sequence[str] = []
     ) -> ASTNode:
-        text = self.replace_dollar(text)
+        text = replace_dollar(text)
         return PythonASTNode(ast.parse(text).body[0].value)
 
 
@@ -55,7 +55,7 @@ class PythonPatternFactory:
         extra_declarations: Sequence[str] = [],
         kind: str = ".*",
     ) -> Sequence[ASTNode]:
-        text = self.replace_dollar(text)
+        text = replace_dollar(text)
         result = []
         for node in ast.parse(text).body:
             result.append(PythonASTNode(node))
