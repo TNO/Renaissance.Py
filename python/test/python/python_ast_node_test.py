@@ -3,8 +3,8 @@ import unittest
 from parameterized import parameterized
 from impl.python import PythonASTNode, PythonPatternFactory
 from syntax_tree import ASTFactory, MatchFinder, ASTShower, ASTProcessor
-from syntax_tree.ast_node import traverse
 from syntax_tree.match_finder import is_match
+from utils.node_util import traverse
 
 
 class PythonNodeTest(unittest.TestCase):

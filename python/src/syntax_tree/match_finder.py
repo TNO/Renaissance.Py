@@ -114,6 +114,34 @@ def is_match_dict(src:dict, cmp:dict, expansions:dict) -> bool:
     all_keys = src.keys()|cmp.keys()
     return all(n in IRRELEVANT_PROPS or (n in src and n in cmp and is_match(src[n], cmp[n], expansions)) for n in all_keys)
 
+def match_pattern(src_nodes: Sequence[ASTNode],patterns: Sequence[ASTNode],recursive =True) -> Sequence[PatternMatch]:
+    """
+    Matches a given source node or list of source nodes against a list of pattern nodes.
+
+    Args:
+        src_nodes (Sequence[ASTNode] | ASTNode): The source node or list of source nodes to be matched.
+        patterns (Sequence[ASTNode]): The list of pattern nodes to match against the source nodes.
+        recursive: match children sequence
+
+    Returns:
+        Sequence[PatternMatch]: A PatternMatch object if a match is found, otherwise None.
+    """
+    found_statements = []
+    to_do = src_nodes
+    while len(to_do)>0:
+        found_expansions = {}
+        found_position  = find_in_list(to_do, patterns, found_expansions)
+        if found_position >=0:
+            match = PatternMatch(to_do[:found_position+1], found_expansions, patterns)
+            found_statements.append(match)
+            to_do = to_do[found_position+1:]
+        else:
+            if recursive:
+                found_statements.extend(MatchFinder.match_pattern(exclude_nodes_by_kind(getattr(to_do[0],'children' ,[])),patterns,recursive))
+            to_do = to_do[1:]
+
+    return found_statements
+
 
 class PatternMatch:
     def __init__(self, nodes, expansions, patterns):
@@ -184,32 +212,8 @@ class MatchFinder:
 
     @staticmethod
     def match_pattern(src_nodes: Sequence[ASTNode],patterns: Sequence[ASTNode],recursive =True) -> Sequence[PatternMatch]:
-        """
-        Matches a given source node or list of source nodes against a list of pattern nodes.
+        return match_pattern(src_nodes, patterns, recursive)
 
-        Args:
-            src_nodes (Sequence[ASTNode] | ASTNode): The source node or list of source nodes to be matched.
-            patterns (Sequence[ASTNode]): The list of pattern nodes to match against the source nodes.
-            recursive: match children sequence
-
-        Returns:
-            Sequence[PatternMatch]: A PatternMatch object if a match is found, otherwise None.
-        """
-        found_statements = []
-        to_do = src_nodes
-        while len(to_do)>0:
-            found_expansions = {}
-            found_position  = find_in_list(to_do, patterns, found_expansions)
-            if found_position >=0:
-                match = PatternMatch(to_do[:found_position+1], found_expansions, patterns)
-                found_statements.append(match)
-                to_do = to_do[found_position+1:]
-            else:
-                if recursive:
-                    found_statements.extend(MatchFinder.match_pattern(exclude_nodes_by_kind(getattr(to_do[0],'children' ,[])),patterns,recursive))
-                to_do = to_do[1:]
-
-        return found_statements
 
 # TODO check with pierre whether we should take the highest or the deepest match re imple backtracking to find the best match
 
