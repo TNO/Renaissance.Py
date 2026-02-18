@@ -161,7 +161,10 @@ class PythonASTNode(ASTNode):
 
     def derive_position(self, node: ast.AST, translation_unit: PythonTranslationUnit):
         if node._attributes:
-            self._offset = self.translation_unit.convert(self.node.lineno, self.node.col_offset)
+            if isinstance(node, ast.Attribute):
+                self._offset = self.translation_unit.convert(self.node.lineno, self.node.col_offset)-1
+            else:
+                self._offset = self.translation_unit.convert(self.node.lineno, self.node.col_offset)
             self._length = self.translation_unit.convert(self.node.end_lineno, self.node.end_col_offset) - self.offset
         elif isinstance(node, ast.Module) and translation_unit:
             self._offset = 0

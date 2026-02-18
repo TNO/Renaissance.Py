@@ -65,7 +65,7 @@ class PythonPatternFactory:
         # create python node from string
         # the output could be different, the comments are removed
         # Return PythonASTNode
-        text = self.replace_dollar(text)
+        text = replace_dollar(text)
         return PythonASTNode(ast.parse(text).body[0])
 
     def create(self, text: str, kind: Optional[str] = None) -> ASTNode:
