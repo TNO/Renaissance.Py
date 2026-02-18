@@ -76,7 +76,7 @@ class TsPatternFactory:
         kind: str = ".*",
     ) -> ASTNode:
         text = replace_dollar(text)
-        return self.adapter.to_lst(text, self.adapter.parse_code(text)).root.children[0]
+        return self.adapter.to_lst(text, self.adapter.parse_code(text)).root.children[-1]
 
     def _create(self, text: str) -> ASTNode:
         atu = self.factory.create_from_text(text, "test.py")

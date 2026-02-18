@@ -23,7 +23,7 @@ def process_code(language_name, grammar_module, code):
         f.write("\n```")
 
 
-if __name__ == "__main__":
+def test_create_diagrams():
     code_py = "def foo():\n    return 42"
     code_cpp = "int main() { return 0; }"
     code_java = "public class Test { public static void main(String[] args) {} }"
