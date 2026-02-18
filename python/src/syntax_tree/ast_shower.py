@@ -1,7 +1,7 @@
 from io import StringIO
 import io
 
-
+from utils.node_util import process_node
 from .ast_node import ASTNode
 
 IMPLICIT = ['ImplicitNode']
@@ -30,6 +30,13 @@ class ASTShower:
     def _process_node(
             output: StringIO, indent: str, node: ASTNode, include_properties: bool
     ) -> None:
+        # def node_action(node):
+        #     if node.is_part_of_translation_unit() and node.kind not in IMPLICIT:
+        #         node.indent = indent
+        #         node.show_props = include_properties
+        #         output.write(str(node))
+        #
+        # process_node(node, node_action )
         if node.is_part_of_translation_unit() and node.kind not in IMPLICIT:
             node.indent = indent
             node.show_props =include_properties
@@ -37,3 +44,4 @@ class ASTShower:
         if node.children:
             for child in node.children:
                 ASTShower._process_node(output, indent + "  ", child, include_properties)
+

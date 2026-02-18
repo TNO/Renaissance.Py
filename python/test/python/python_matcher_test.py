@@ -29,7 +29,7 @@ class PythonMatcherTest(unittest.TestCase):
         atu = factory.create_from_text('ba(55)\nca(555)\nlo(4444)\nna=55', 'test.py')
         pattern_factory = PythonPatternFactory(factory, atu)
         simple = pattern_factory.create('$pa')
-        result = MatchFinder.find_all(atu, [simple]).to_list()
+        result = MatchFinder.find_all(atu.children, [simple]).to_list()
         self.assertEqual(4,len(result))
 
     def test_find_all_using_generic_matcher(self):
@@ -41,7 +41,7 @@ class PythonMatcherTest(unittest.TestCase):
         self.assertFalse(is_match(atu.children[1], simple))
         self.assertFalse(is_match(atu.children[2], simple))
         self.assertFalse(is_match(atu.children[3], simple))
-        result = MatchFinder.match_pattern(atu.children, simple)#.to_list()
+        result = MatchFinder.match_pattern(atu.children, [simple])
         self.assertEqual(1,len(result))
 
 
@@ -50,7 +50,7 @@ class PythonMatcherTest(unittest.TestCase):
         atu = factory.create_from_text('ba(55)\nca(555)\nlo(4444)\nna=55', 'test.py')
         pattern_factory = PythonPatternFactory(factory, atu)
         simple = pattern_factory.create('$ca($sss)')
-        result = MatchFinder.find_all(atu, [simple]).to_list()
+        result = MatchFinder.find_all(atu.children, [simple]).to_list()
         self.assertEqual(3, len(result))
 
     def test_match_fun_using_generic_matcher(self):
@@ -59,7 +59,7 @@ class PythonMatcherTest(unittest.TestCase):
         # create a pattern factory atu is passed to the pattern factory for use of all # includes, #defines and declarations
         pattern_factory = PythonPatternFactory(factory, atu)
         simple = pattern_factory.create('ca(555)')
-        result = MatchFinder.find_all(atu, [simple]).to_list()
+        result = MatchFinder.find_all(atu.children, [simple]).to_list()
         self.assertEqual(1, len(result))
 
     def test_match_multi_fun_using_generic_matcher(self):
@@ -68,7 +68,7 @@ class PythonMatcherTest(unittest.TestCase):
         # create a pattern factory atu is passed to the pattern factory for use of all # includes, #defines and declarations
         pattern_factory = PythonPatternFactory(factory, atu)
         simple = pattern_factory.create('ba(55)\nca(555)')
-        result = MatchFinder.find_all(atu, [simple]).to_list()
+        result = MatchFinder.find_all(atu.children, [simple]).to_list()
         self.assertEqual(1, len(result))
 
     def test_match_multi_fun_using_generic_matcher(self):
@@ -77,7 +77,7 @@ class PythonMatcherTest(unittest.TestCase):
         # create a pattern factory atu is passed to the pattern factory for use of all # includes, #defines and declarations
         pattern_factory = PythonPatternFactory(factory, atu)
         simple = pattern_factory.create('ba(55)\nca(555)')
-        result = MatchFinder.find_all(atu, [simple]).to_list()
+        result = MatchFinder.find_all(atu.children, [simple]).to_list()
         self.assertEqual(1, len(result))
 
     def test_match_flat(self):
@@ -215,7 +215,7 @@ else:
         # create a pattern factory atu is passed to the pattern factory for use of all # includes, #defines and declarations
         pattern_factory = PythonPatternFactory(factory, atu)
         simple = pattern_factory.create('pa(55)')
-        results = MatchFinder.match_pattern(atu.children, simple)
+        results = MatchFinder.match_pattern(atu.children, [simple])
         # 4 because the one in if is a expression
         self.assertEqual(4,len(results))
 

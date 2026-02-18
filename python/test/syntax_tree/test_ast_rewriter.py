@@ -39,8 +39,8 @@ class TestRewrites(TestCase):
         factory = ASTFactory(ClangASTNode, [])
         atu = factory.create_from_text("void f() { /* c1 */ /* c2 */ int a=3;\n}", 'test.cpp')
         patternFactory = CPatternFactory(factory)
-        declaration_pattern = patternFactory.create_declaration('int a=3;')
-        found = MatchFinder.find_all(atu, [declaration_pattern]).to_list()
+        declaration_pattern = patternFactory.create_declarations('int a=3;')
+        found = MatchFinder.find_all(atu.children, declaration_pattern).to_list()
 
         rewriter = ASTRewriter(atu)
         for match in found:  # .map(lambda m: m.nodes).to_iterable():
@@ -54,8 +54,8 @@ class TestRewrites(TestCase):
         factory = ASTFactory(ClangJsonASTNode, [])
         atu = factory.create_from_text("void f() { /* c1 */ /* c2 */ int a=3;\n}", 'test.cpp')
         patternFactory = CPatternFactory(factory)
-        declaration_pattern = patternFactory.create_declaration('int a=3;')
-        found = MatchFinder.find_all(atu, [declaration_pattern]).to_list()
+        declaration_pattern = patternFactory.create_declarations('int a=3;')
+        found = MatchFinder.find_all(atu.children, declaration_pattern).to_list()
 
         rewriter = ASTRewriter(atu)
         for match in found:  # .map(lambda m: m.nodes).to_iterable():
@@ -66,9 +66,9 @@ class TestRewrites(TestCase):
     def do_test(self, action: Callable[[ASTRewriter, str, Sequence[ASTNode],bool, bool], None], factory: ASTFactory, code: str, replacement:str, include_whitespace: bool, include_comments: bool, expected: str):
         atu = factory.create_from_text(code, 'test.cpp')
         patternFactory = CPatternFactory(factory)
-        declaration_pattern = patternFactory.create_declaration('int a=3;')
+        declaration_pattern = patternFactory.create_declarations('int a=3;')
         rewriter = ASTRewriter(atu)
-        found =MatchFinder.find_all(atu, [declaration_pattern]).to_list()
+        found =MatchFinder.find_all(atu.children, declaration_pattern).to_list()
 
         for match in found: # .map(lambda m: m.nodes).to_iterable():
             nodes = match.nodes

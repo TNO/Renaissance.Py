@@ -3,8 +3,8 @@ import unittest
 from parameterized import parameterized
 from impl.python import PythonASTNode, PythonPatternFactory
 from syntax_tree import ASTFactory, MatchFinder, ASTShower, ASTProcessor
-from syntax_tree.ast_node import traverse
 from syntax_tree.match_finder import is_match
+from utils.node_util import traverse
 
 
 class PythonNodeTest(unittest.TestCase):
@@ -212,6 +212,12 @@ def outer():
         assert is_match(src,cmp, expansions)
         assert '$$args' in expansions
         assert  len(expansions['$$args']) == 5
+
+    def test_attribute_signature_has_at(self):
+        factory = ASTFactory(PythonASTNode, [])
+        src = self.pattern_factory.create_statement('@TUAT\ndef ba(): pass')
+        ASTShower.show_node(src)
+        assert src.children[2].children[0].signature == '@TUAT'
 
     if __name__ == '__main__':
         unittest.main()

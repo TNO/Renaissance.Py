@@ -1,29 +1,25 @@
 import ast
-import re
 from typing import Optional, Sequence
 
 from common.stream import Stream
-from syntax_tree.ast_node import MATCH_ALL, MATCH_ONE
 from impl.python import PythonASTNode
+from impl.tree_sitter_adapter.tree_sitter_adapter import TreeSitterAdapter
 from syntax_tree.ast_node import ASTNode
 from syntax_tree.ast_shower import ASTShower
-
-from syntax_tree.ast_factory import ASTFactory
-from syntax_tree.ast_finder import ASTFinder
 from utils.node_util import replace_dollar
 
 SHOW_NODE = False
 
 
-class PythonPatternFactory:
+class TsPatternFactory:
 
     def __init__(
         self,
-        factory: ASTFactory,
+        adapter: TreeSitterAdapter,
         ref_node: Optional[ASTNode] = None,
         language: str = "python",
     ):
-        self.factory = factory
+        self.adapter = adapter
         if ref_node:
             offset = (
                 Stream(ref_node.children)
@@ -43,7 +39,7 @@ class PythonPatternFactory:
     def create_expression(
         self, text: str, extra_declarations: Sequence[str] = []
     ) -> ASTNode:
-        text = replace_dollar(text)
+        text = self.replace_dollar(text)
         return PythonASTNode(ast.parse(text).body[0].value)
 
 
@@ -56,16 +52,13 @@ class PythonPatternFactory:
         kind: str = ".*",
     ) -> Sequence[ASTNode]:
         text = replace_dollar(text)
-        result = []
-        for node in ast.parse(text).body:
-            result.append(PythonASTNode(node))
-        return result
+        return self.adapter.to_lst(text, self.adapter.parse_code(text)).root.children
 
     def create_python_pattern(self, text: str) -> PythonASTNode:
         # create python node from string
         # the output could be different, the comments are removed
         # Return PythonASTNode
-        text = replace_dollar(text)
+        text = self.replace_dollar(text)
         return PythonASTNode(ast.parse(text).body[0])
 
     def create(self, text: str, kind: Optional[str] = None) -> ASTNode:
@@ -82,9 +75,8 @@ class PythonPatternFactory:
         extra_declarations: Sequence[str] = [],
         kind: str = ".*",
     ) -> ASTNode:
-        statements = list(self.create_statements(text, types, extra_declarations, kind))
-        assert len(statements) == 1, "Only one statement is expected"
-        return statements[0]
+        text = replace_dollar(text)
+        return self.adapter.to_lst(text, self.adapter.parse_code(text)).root.children[-1]
 
     def _create(self, text: str) -> ASTNode:
         atu = self.factory.create_from_text(text, "test.py")
@@ -95,7 +87,7 @@ class PythonPatternFactory:
 
 if __name__ == "__main__":
     print(
-        PythonPatternFactory._get_dollar_keywords_from_text(
+        TsPatternFactory._get_dollar_keywords_from_text(
             "struct $type;struct $name; $type a = $name; int b = 4; $$x = $$y"
         )
     )
