@@ -125,3 +125,10 @@ class TautRefactoring:
         ast_refactor.find_kind('Name'). \
             filter(lambda node: node.name in matching). \
             for_each(lambda node: ast_refactor.replace('self.' + node.name, node))
+
+    @staticmethod
+    def remove_decorator(ast_refactor):
+        node = ast_refactor.find_kind('Attribute').filter(lambda node: node.name == 'TAUT.log_stub').to_list()
+        ast_refactor.find_kind('Attribute'). \
+            filter(lambda node: node.name == 'TAUT.log_stub'). \
+            for_each(lambda node: ast_refactor.remove(node))

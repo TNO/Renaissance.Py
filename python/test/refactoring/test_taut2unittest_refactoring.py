@@ -4,7 +4,6 @@ from refactoring import TautRefactoring
 from python.factories import Factories
 from syntax_tree import ASTFactory, ASTShower, ASTProcessor
 
-
 class TestTaut2Unittest(unittest.TestCase):
 
     @parameterized.expand(Factories.extend([
@@ -61,5 +60,17 @@ class TestTaut2Unittest(unittest.TestCase):
         ASTShower.show_node(atu)
         ast_refactor = ASTProcessor(atu, factory, in_memory=True)
         TautRefactoring.add_self(ast_refactor)
+        result = ast_refactor.commit().apply_to_string()
+        self.assertEqual(expected_code, result)
+
+    @parameterized.expand(Factories.extend([
+        ('@TAUT.log_stub\ndef create_test_log(self, test_log_id):\n    pass\n', 'def create_test_log(self, test_log_id):\n    pass\n'),
+    ]))
+    def test_remove_decorator(self, _, factory: ASTFactory, input_code, expected_code):
+        atu = factory.create_from_text(input_code, 'add_self.py')
+        ASTShower.show_node(atu)
+        ast_refactor = ASTProcessor(atu, factory, in_memory=True)
+        TautRefactoring.remove_decorator(ast_refactor)
+        #self.assertEqual(expected_code, result)
         result = ast_refactor.commit().apply_to_string()
         self.assertEqual(expected_code, result)
