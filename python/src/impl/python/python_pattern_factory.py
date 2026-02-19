@@ -3,6 +3,7 @@ import re
 from typing import Optional, Sequence
 
 from common.stream import Stream
+from impl.python.python_ast_node import PythonTranslationUnit
 from syntax_tree.ast_node import MATCH_ALL, MATCH_ONE
 from impl.python import PythonASTNode
 from syntax_tree.ast_node import ASTNode
@@ -58,9 +59,8 @@ class PythonPatternFactory:
         text = replace_dollar(text)
         result = []
 
-        for node in ast.parse(text).body:
-            result.append(PythonASTNode(node))
-        return result
+        root = PythonTranslationUnit(text, "snippet.py")
+        return PythonASTNode(root.atu).children
 
     def create_python_pattern(self, text: str) -> PythonASTNode:
         # create python node from string
@@ -83,7 +83,7 @@ class PythonPatternFactory:
         extra_declarations: Sequence[str] = [],
         kind: str = ".*",
     ) -> ASTNode:
-        statements = list(self.create_statements(text, types, extra_declarations, kind))
+        statements = self.create_statements(text, types, extra_declarations, kind)
         assert len(statements) == 1, "Only one statement is expected"
         return statements[0]
 

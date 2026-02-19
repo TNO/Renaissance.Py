@@ -3,7 +3,6 @@ from __future__ import annotations
 import re
 import sys
 from abc import ABC, abstractmethod
-from collections import deque
 from enum import Enum
 from pathlib import Path
 from typing import Any, Callable
@@ -249,4 +248,3 @@ class ASTNode(ABC):
         if function(self) == VisitorResult.CONTINUE:
             for child in self.children:
                 child.accept(function)
-

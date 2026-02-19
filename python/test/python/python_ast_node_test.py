@@ -217,7 +217,8 @@ def outer():
         factory = ASTFactory(PythonASTNode, [])
         src = self.pattern_factory.create_statement('@TUAT\ndef ba(): pass')
         ASTShower.show_node(src)
-        assert src.children[2].children[0].signature == '@TUAT'
+        attr = src.children[2].children[0]
+        assert attr.signature == '@TUAT'
 
     if __name__ == '__main__':
         unittest.main()
