@@ -1,8 +1,7 @@
 import re
 from typing import Sequence
-from syntax_tree.ast_node import ASTNode
-from syntax_tree.ast_shower import ASTShower
 
+from syntax_tree import ASTNode, ASTShower
 
 VERBOSE = False
 def to_string(d:dict[str, Sequence[ASTNode]]):

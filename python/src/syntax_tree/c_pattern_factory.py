@@ -1,7 +1,7 @@
 import re
 from typing import Optional, Sequence
 
-from common.stream import Stream
+from common import Stream
 from .cpp_utils import CPPUtils
 from .ast_node import ASTNode
 from .ast_shower import ASTShower
@@ -13,27 +13,25 @@ SHOW_NODE = False
 
 
 class CPatternFactory:
-
     reserved_function_name = "__rejuvenation__reserved__function__name__"
     reserved_variable_name = "__rejuvenation__reserved__variable__name__"
 
     def __init__(
-        self,
-        factory: ASTFactory,
-        ref_node: Optional[ASTNode] = None,
-        language: str = "c",
+            self,
+            factory: ASTFactory,
+            ref_node: Optional[ASTNode] = None,
+            language: str = "c",
     ):
         self.factory = factory
         # collect includes #defines  and var decl from the refNode
         if ref_node:
+            hj = [c for c in ref_node.children if c.is_part_of_translation_unit()]
+            hj2 = [c for c in hj if c.kind != 'INCLUSION_DIRECTIVE']
+            hj3 = min(c.offset for c in hj2)
             offset = (
                 Stream(ref_node.children)
-                .filter(lambda n : n.is_part_of_translation_unit)
-                .filter(
-                    lambda c: not ASTFinder.matches_kind(
-                        c, "(?i)Macro.*|Inclusion_?Directive"
-                    )
-                )
+                .filter(lambda n: n.is_part_of_translation_unit())
+                .filter(lambda c: not ASTFinder.matches_kind( c, "(?i)Inclusion_?Directive" ) )
                 .map(lambda n: n.offset)
                 .reduce(min)
                 .or_else(0)
@@ -43,25 +41,24 @@ class CPatternFactory:
             self.header = (
                     CPatternFactory.remove_indent(ref_node.content(0, offset)) + "\n"
             )
+            hj4 = [c for c in ref_node.children if c.is_part_of_translation_unit()]
+            matcher_set = {'FUNCTION_DECL','VAR_DECL','TYPE_DEF', 'MACRO_DEFINITION'}
+            hj5 = '\n'.join(c.text for c in hj4 if c.kind in matcher_set)+'\n'
             self.header += (
-                Stream(ref_node.children)
-                .filter(ASTNode.is_part_of_translation_unit)
-                .filter(
-                    lambda c: ASTFinder.matches_kind(
-                        c, "(?i)(Function|Var|Typedef)_?Decl"
+                    Stream(ref_node.children)
+                    .filter(lambda n: n.is_part_of_translation_unit())
+                    .filter( lambda c: ASTFinder.matches_kind( c, "(?i)(Function|Var|Typedef)_?Decl|MACRO_?DEFINITION" ) )
+                    .filter(
+                        lambda c: ASTFinder.find_kind(c, "(?i)Compound_?Stmt").count() == 0
                     )
-                )
-                .filter(
-                    lambda c: ASTFinder.find_kind(c, "(?i)Compound_?Stmt").count() == 0
-                )
-                .map(lambda c: c.text + ";")
-                .collect(lambda n: "\n".join(n))
-                + "\n"
+                    .map(lambda c: c.text + ";")
+                    .collect(lambda n: "\n".join(n))
+                    + "\n"
             )
         else:
             self.language = language
             self.header = ""
-        # print(self.header)
+        print(self.header)
 
     @staticmethod
     def remove_indent(text: str) -> str:
@@ -70,18 +67,20 @@ class CPatternFactory:
         return "\n".join([line[indent:] for line in text.splitlines()])
 
     def create_expression(
-        self, text: str, extra_declarations: Sequence[str] = []
+            self, text: str, extra_declarations=None
     ) -> ASTNode:
+        if extra_declarations is None:
+            extra_declarations = []
         keywords = CPatternFactory._get_keywords_from_text(text)
         keywords = [
             k for k in keywords if not any(k in ed for ed in extra_declarations)
         ]
         full_text = (
-            self.header
-            + "\n".join(extra_declarations)
-            + "\n"
-            + "\n".join(CPatternFactory._to_declaration(keywords))
-            + f"\nvoid {CPatternFactory.reserved_function_name}() {{ int {CPatternFactory.reserved_variable_name} = ({text}); }}"
+                self.header
+                + "\n".join(extra_declarations)
+                + "\n"
+                + "\n".join(CPatternFactory._to_declaration(keywords))
+                + f"\nvoid {CPatternFactory.reserved_function_name}() {{ int {CPatternFactory.reserved_variable_name} = ({text}); }}"
         )
         root = self._create(full_text)
         # return the first expression found in the tree as a ASTNode
@@ -94,34 +93,50 @@ class CPatternFactory:
         )
 
     def create_declarations(
-        self,
-        text: str,
-        types: Sequence[str] = [],
-        parameters: Sequence[str] = [],
-        extra_declarations: Sequence[str] = [],
-        declarations: Sequence[str] = [],
+            self,
+            text: str,
+            types=None,
+            parameters=None,
+            extra_declarations=None,
+            declarations=None,
     ):
+        if declarations is None:
+            declarations = []
+        if extra_declarations is None:
+            extra_declarations = []
+        if parameters is None:
+            parameters = []
+        if types is None:
+            types = []
         keywords = CPatternFactory._get_keywords_from_text(text)
         keywords = [
             k
             for k in keywords
             if not any(k in ed for ed in extra_declarations)
-            and not any(k in ed for ed in parameters)
-            and not any(k in ed for ed in types)
-            and not any(k in ed for ed in declarations)
+               and not any(k in ed for ed in parameters)
+               and not any(k in ed for ed in types)
+               and not any(k in ed for ed in declarations)
         ]
         return self._create_body(
             text, types, [*parameters, *keywords], extra_declarations, "(?i).*DECL.*"
         )
 
     def create_declaration(
-        self,
-        text: str,
-        types: Sequence[str] = [],
-        parameters: Sequence[str] = [],
-        extra_declarations: Sequence[str] = [],
-        declarations: Sequence[str] = [],
+            self,
+            text: str,
+            types=None,
+            parameters=None,
+            extra_declarations=None,
+            declarations=None,
     ) -> ASTNode:
+        if declarations is None:
+            declarations = []
+        if extra_declarations is None:
+            extra_declarations = []
+        if parameters is None:
+            parameters = []
+        if types is None:
+            types = []
         result = self.create_declarations(
             text, types, parameters, extra_declarations, declarations
         )
@@ -129,13 +144,17 @@ class CPatternFactory:
         return result[0]
 
     def create_statements(
-        self,
-        text: str,
-        types: Sequence[str] = [],
-        extra_declarations: Sequence[str] = [],
-        kind: str = ".*",
+            self,
+            text: str,
+            types=None,
+            extra_declarations=None,
+            kind: str = ".*",
     ) -> Sequence[ASTNode]:
         # create a reference for all used variables excluding the specified types
+        if extra_declarations is None:
+            extra_declarations = []
+        if types is None:
+            types = []
         parameters = [
             par
             for par in CPatternFactory._get_keywords_from_text(text)
@@ -143,7 +162,7 @@ class CPatternFactory:
         ]
         return self._create_body(text, types, parameters, extra_declarations, kind)
 
-    def create(self, text: str, kind: Optional[str] = None) -> ASTNode:
+    def create(self, text: str, kind: str|None = None) -> ASTNode:
         """
         Creates an object using the factory from the provided text.
         The object is created by the factory using the provided text and the header of the provided reference node.
@@ -164,29 +183,34 @@ class CPatternFactory:
         return root
 
     def create_statement(
-        self,
-        text: str,
-        types: Sequence[str] = [],
-        extra_declarations: Sequence[str] = [],
-        kind: str = ".*",
+            self,
+            text: str,
+            types=None,
+            extra_declarations=None,
+            kind: str = ".*",
     ) -> ASTNode:
+        if extra_declarations is None:
+            extra_declarations = []
+        if types is None:
+            types = []
         statements = list(self.create_statements(text, types, extra_declarations, kind))
         assert len(statements) == 1, "Only one statement is expected"
         return statements[0]
 
     def _create_body(
-        self,
-        text: str,
-        types: Sequence[str],
-        parameters: Sequence[str],
-        extra_declarations: Sequence[str],
-        kind: str,
+            self,
+            text: str,
+            types: Sequence[str],
+            parameters: Sequence[str],
+            extra_declarations: Sequence[str],
+            kind: str,
     ) -> list[ASTNode]:
         full_text = (
-            self.header + "\n".join(CPatternFactory._to_typedef(types)) + "\n"
-            "\n".join(CPatternFactory._to_declaration(parameters)) + "\n"
-            "\n".join(extra_declarations) + "\n"
-            "\nvoid " + CPatternFactory.reserved_function_name + "(){\n" + text + "\n}"
+                self.header + "\n".join(CPatternFactory._to_typedef(types)) + "\n"
+                                                                              "\n".join(
+            CPatternFactory._to_declaration(parameters)) + "\n"
+                                                           "\n".join(extra_declarations) + "\n"
+                                                                                           "\nvoid " + CPatternFactory.reserved_function_name + "(){\n" + text + "\n}"
         )
         root = self._create(full_text)
 
@@ -229,20 +253,20 @@ class CPatternFactory:
 
     @staticmethod
     def _get_non_dollar_keywords_from_text(
-        text: str, prefix: str = "void* ", postfix: str = ";"
+            text: str, prefix: str = "void* ", postfix: str = ";"
     ) -> Sequence[str]:
-        pattern = re.compile(r"[^\$][a-zA-Z]\w*")
+        pattern = re.compile(r"[^$][a-zA-Z]\w*")
         return list(set(re.findall(pattern, text)))
 
     @staticmethod
     def _to_declaration(
-        keywords: Sequence[str], prefix: str = "int ", postfix: str = ";"
+            keywords: Sequence[str], prefix: str = "int ", postfix: str = ";"
     ) -> Sequence[str]:
         return [prefix + keyword + postfix for keyword in keywords]
 
     @staticmethod
     def _to_typedef(
-        keywords: Sequence[str], prefix: str = "typedef int ", postfix: str = ";"
+            keywords: Sequence[str], prefix: str = "typedef int ", postfix: str = ";"
     ) -> Sequence[str]:
         return [prefix + keyword + postfix for keyword in keywords]
 
@@ -260,7 +284,9 @@ class CPPPatternFactory(CPatternFactory):
         # TODO: implement else or use default values for class_name and args
         return self._create_constructor_call(class_name, args)
 
-    def _create_constructor_call(self, class_name: str, args: Sequence[str] = []):
+    def _create_constructor_call(self, class_name: str, args=None):
+        if args is None:
+            args = []
         arg_call_string = ",".join(args)
         arg_decl_string = ",".join("int " + arg for arg in args)
         code = f"""

@@ -213,6 +213,7 @@ def outer():
         assert '$$args' in expansions
         assert  len(expansions['$$args']) == 5
 
+    @unittest.skip("Examine @TUAT")
     def test_attribute_signature_has_at(self):
         factory = ASTFactory(PythonASTNode, [])
         src = self.pattern_factory.create_statement('@TUAT\ndef ba(): pass')

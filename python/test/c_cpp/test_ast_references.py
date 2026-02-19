@@ -1,4 +1,3 @@
-import os
 import tempfile
 from unittest import TestCase
 from parameterized import parameterized
@@ -17,9 +16,8 @@ class TestASTReference(TestCase):
     ]))
     def test_definition_declaration_references(self, _, factory, code, *args):
         ast =  factory.create_from_text(code, "test.cpp")
-        temp_dir = tempfile.gettempdir()
-
-        ASTShower.store_node(os.path.join(temp_dir, 'c0.txt'), ast)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            ASTShower.store_node(f'{temp_dir}/c0.txt', ast)
         call = ASTFinder.find_kind(ast, '(Call|CXXConstruct)Expr').find_first().get()
         assert isinstance(call, ASTNode)
         refs = call.references

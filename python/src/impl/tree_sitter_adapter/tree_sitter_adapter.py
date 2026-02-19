@@ -1,13 +1,14 @@
 from tree_sitter import Parser, Language
+
 from lst.lst import LST, LSTNode
-from utils.node_util import detect_placeholder, replace_dollar
+from utils.node_util import replace_dollar, detect_placeholder
 
 
 class TreeSitterAdapter:
     def __init__(self, grammar_module):
-        LANGUAGE = Language(grammar_module.language())
-        self.language = LANGUAGE
-        self.parser = Parser(LANGUAGE)
+        language = Language(grammar_module.language())
+        self.language = language
+        self.parser = Parser(language)
 
     def parse_code(self, source_code: str):
         return self.parser.parse(bytes(source_code, "utf8"))

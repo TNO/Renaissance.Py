@@ -1,8 +1,10 @@
 
 from pathlib import Path
 from typing import Iterator
-from syntax_tree import ASTNode, ASTFactory
 from clang.cindex import CompilationDatabase as ClangCompilationDatabase
+
+from syntax_tree import ASTNode, ASTFactory
+
 
 class CompilationDatabase:
 

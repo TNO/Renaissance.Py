@@ -1,11 +1,10 @@
 import ast
 from typing import Optional, Sequence
 
-from common.stream import Stream
+from common import Stream
 from impl.python import PythonASTNode
 from impl.tree_sitter_adapter.tree_sitter_adapter import TreeSitterAdapter
-from syntax_tree.ast_node import ASTNode
-from syntax_tree.ast_shower import ASTShower
+from syntax_tree import ASTNode, ASTShower
 from utils.node_util import replace_dollar
 
 SHOW_NODE = False
@@ -39,7 +38,7 @@ class TsPatternFactory:
     def create_expression(
         self, text: str, extra_declarations: Sequence[str] = []
     ) -> ASTNode:
-        text = self.replace_dollar(text)
+        text = replace_dollar(text)
         return PythonASTNode(ast.parse(text).body[0].value)
 
 

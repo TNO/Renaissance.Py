@@ -1,61 +1,50 @@
-from abc import ABC
-from typing import Any, Dict, Generator, List, Optional
-
-from syntax_tree import ASTNode
+from typing import Any, Self
 
 
-class LSTNode(ABC):
+class LSTNode:
     def __init__(
-        self,
-        node_type: str,
-        properties: Dict[str, Any],
-        signature: str,
-        offset: Optional[int] = None,
-        children: Optional[List['LSTNode']] = None,
-        parent: Optional['LSTNode'] = None,
+            self,
+            node_type: str,
+            properties: dict[str, Any],
+            signature: str,
+            offset: int | None = None,
+            children: list[Self] | None = None,
+            parent: Self | None = None,
     ):
         self.kind = node_type
         self.properties = properties
         self.signature = signature
         self.offset = offset
-        self.children = children if children else []
+        self.children = [] if children is None else children
         self.parent = parent
-        self.show_props=False
-        self.indent =''
+        self.show_props = False
+        self.indent = ''
         self.length = len(signature)
-        self.extended_end_offset = self.offset + self.length
-        self.is_statement= node_type=='Expr'
-        self.referenced_by=[]
-        self.references=[]
+        self.end_offset = self.offset + self.length
+        self.is_statement = node_type == 'Expr'
+        self.referenced_by = []
+        self.references = []
 
-    def load(self):
-        return self
-    def load_from_text(self):
-        return self
-    def matches_kind(self, other):
-        return True
-
-    def add_child(self, child): # LSTNode):
+    def add_child(self, child):  # LSTNode):
         self.children.append(child)
         child.parent = self
 
     @property
     def name(self):
-        return self.properties['name'] if 'name' in self.properties else None
+        return self.properties.get('name')
 
-    @property
-    def filename(self):
-        return self.properties['name'] if 'name' in self.properties else None
-
-    def __repr__(self):
+    def __str__(self):
         raw_lines = self.signature.splitlines()
         properties_text = '' if not self.show_props else self.properties
         prefix = " " if len(raw_lines) < 2 else f"\n    {self.indent}"
         formatted_lines = [f"{prefix}|{line}|" for line in raw_lines]
-        return f"{self.indent}({self.kind}, {self.name}, {self.filename}[{self.offset}:{self.offset + self.length}]){properties_text}:{''.join(formatted_lines)}\n"
+        return (f"{self.indent}({self.kind}, {self.name},"
+                f" {self.filename}[{self.offset}:{self.offset + self.length}])"
+                f"{properties_text}:{''.join(formatted_lines)}\n")
 
     def is_part_of_translation_unit(self):
         return True
+
 
 class LST:
     def __init__(self, root: LSTNode):

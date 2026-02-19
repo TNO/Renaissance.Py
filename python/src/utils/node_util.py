@@ -2,7 +2,7 @@
 from collections import deque
 from typing import Tuple
 
-from syntax_tree.ast_node import MATCH_ONE, MATCH_ALL
+from impl import MATCH_ALL, MATCH_ONE
 
 
 def replace_dollar(text: str) -> str:

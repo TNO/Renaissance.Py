@@ -6,8 +6,8 @@ from typing import Any, Optional, Sequence
 from typing_extensions import override
 
 from common import Stream
+from impl import MATCH_ONE, MATCH_ALL
 from syntax_tree import ASTNode, ASTReference
-from syntax_tree.ast_node import MATCH_ONE, MATCH_ALL
 from syntax_tree.match_finder import is_match_dict, is_match_tree, match_pattern
 
 EMPTY_DICT = {}
@@ -15,7 +15,7 @@ EMPTY_STR = ''
 EMPTY_LIST = []
 
 
-class PythonASTReference():
+class PythonASTReference:
     def __repr__(self):
         return f"{self.node_id}:{self.ref_kind}"
 
@@ -101,7 +101,7 @@ class PythonASTNode(ASTNode):
             self._offset = 0
             self.translation_unit = None
 
-        if (isinstance(node, str)):
+        if isinstance(node, str):
             self._kind = 'Name'
             return
 
@@ -149,15 +149,15 @@ class PythonASTNode(ASTNode):
 
     def __eq__(self, other: ASTNode):
         if (not other
-        or  not isinstance(other, type(self))
-        # or len(self.children) != len(other.children)
-        or self.kind != other.kind):
+                or not isinstance(other, type(self))
+                # or len(self.children) != len(other.children)
+                or self.kind != other.kind):
             return False
         return (is_match_dict(self.properties, other.properties, {})
-                and is_match_tree(self.children, other.children,{}))
+                and is_match_tree(self.children, other.children, {}))
 
     def __contains__(self, item):
-        return match_pattern([self],[item], {})
+        return match_pattern([self], [item], {})
 
     def derive_position(self, node: ast.AST, translation_unit: PythonTranslationUnit, parent):
         if node._attributes:
@@ -228,7 +228,8 @@ class PythonASTNode(ASTNode):
             txt = ast.unparse(self.node).encode(sys.getfilesystemencoding())
             if type(self.node) is ast.Attribute:
                 txt = '@' + txt
-        return  txt
+        return txt
+
     @override
     def matches_kind(self, target: ASTNode) -> bool:
         return isinstance(self.node, type(target.node))
@@ -246,6 +247,8 @@ class PythonASTNode(ASTNode):
     @property
     def referenced_by(self) -> Sequence[ASTReference]:
         # if both the function declaration and function definition are available node.name if hasattr(self.node, 'name') else self.node.id
+        self.translation_unit.lazy_create_refers(self)
+        node_id = self.node.name if hasattr(self.node, 'name') else self.node.id
         ref_by = self.translation_unit._referenced_by.get(node_id, EMPTY_LIST)
         # if both the function declaration and function definition are avaible 
         # the references are stored in the function definition
@@ -265,6 +268,7 @@ class PythonASTNode(ASTNode):
     @override
     def extended_end_offset(self) -> int:
         return self.offset + self.length
+
     @override
     @property
     def references(self) -> Sequence[ASTReference]:

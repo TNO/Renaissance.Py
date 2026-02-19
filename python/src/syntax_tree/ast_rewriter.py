@@ -2,11 +2,11 @@ from enum import Enum
 import re
 import sys
 from typing import Optional, Sequence
-from common import Rewriter
 from .match_finder import PatternMatch
 from .ast_finder import ASTFinder
 from .ast_node import ASTNode
 from .text_utils import TextUtils
+from common import Rewriter
 
 
 class _RewriteActionType(Enum):

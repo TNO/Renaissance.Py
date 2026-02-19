@@ -3,10 +3,10 @@ import inspect
 import unittest
 from unittest.mock import patch
 
+from impl import MATCH_ONE, MATCH_ALL
 from impl.python import PythonASTNode, PythonPatternFactory
-from syntax_tree.ast_node import MATCH_ALL, MATCH_ONE
-from syntax_tree import ASTFactory, MatchFinder
-from syntax_tree.match_finder import is_match, PatternMatch
+from syntax_tree import ASTFactory
+from syntax_tree.match_finder import is_match, MatchFinder, PatternMatch
 
 
 class PythonMatcherTest(unittest.TestCase):
@@ -250,7 +250,13 @@ ba()
         self.assertEqual(4, len(results))
 
     def test_match_all_statement(self):
-        atu = self.factory.create_from_text('pa(55)\nif pa(55):\n  pa(55)\n  if pa(55):\n    pa(55)\n  pa=55',
+        atu = self.factory.create_from_text('''\
+pa(55)
+if pa(55):
+  pa(55)
+  if pa(55):
+    pa(55)
+  pa=55''',
                                             'test.py')
         # create a pattern factory atu is passed to the pattern factory for use of all # includes, #defines and declarations
         pattern_factory = PythonPatternFactory(self.factory, atu)

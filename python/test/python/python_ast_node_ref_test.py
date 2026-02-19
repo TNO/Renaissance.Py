@@ -1,3 +1,4 @@
+import tempfile
 import unittest
 
 import pytest
@@ -72,7 +73,8 @@ class PythonNodeTest(unittest.TestCase):
     def test_def_call_references(self):
         # Function f() refers to Function a()
         ast = self.factory.create_from_text(content2, 'content2.py')
-        syntax_tree.ASTShower.store_node('c:/temp/py0.txt', ast)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            syntax_tree.ASTShower.store_node(f'{temp_dir}/py0.txt', ast)
         funcDef = syntax_tree.ASTFinder.find_kind(ast, 'FunctionDef').filter(lambda x: x.name == 'f').find_first().get()
         assert isinstance(funcDef, PythonASTNode)
         ast.translation_unit.lazy_create_refers(ast)
@@ -96,7 +98,8 @@ class PythonNodeTest(unittest.TestCase):
     def test_type_reference(self):
         # Name z refers to Name a
         ast = self.factory.create_from_text('from abc import a\nx = a()\nz: a = x', 'content3.py')
-        syntax_tree.ASTShower.store_node('c:/temp/py1.txt', ast)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            syntax_tree.ASTShower.store_node(f'{temp_dir}/py1.txt', ast)
         type_node = syntax_tree.ASTFinder.find_kind(ast, 'Name').filter(lambda x: x.name == 'z').find_first().get()
         assert isinstance(type_node, PythonASTNode)
         ast.translation_unit.lazy_create_refers(ast)
@@ -114,7 +117,8 @@ class PythonNodeTest(unittest.TestCase):
     def test_class_reference(self):
         # Class A refers to Class B
         ast = self.factory.create_from_text(content3, 'content3.py')
-        syntax_tree.ASTShower.store_node('c:/temp/py2.txt', ast)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            syntax_tree.ASTShower.store_node(f'{temp_dir}/py2.txt', ast)
         class_node = syntax_tree.ASTFinder.find_kind(ast, 'ClassDef').filter(lambda c: c.name == 'A').find_first().get()
         assert isinstance(class_node, PythonASTNode)
         ast.translation_unit.lazy_create_refers(ast)
@@ -130,7 +134,8 @@ class PythonNodeTest(unittest.TestCase):
     def test_param_reference(self):
         # param obj refers to its type, if type definition in the same file, refers to def, otherwise refers to Name
         ast = self.factory.create_from_text(content, 'content.py')
-        syntax_tree.ASTShower.store_node('c:/temp/py3.txt', ast)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            syntax_tree.ASTShower.store_node(f'{temp_dir}/py3.txt', ast)
         param_node = syntax_tree.ASTFinder.find_kind(ast, 'arg').filter(lambda x: x.name.startswith('bruno')).find_first().get()
         assert isinstance(param_node, PythonASTNode)
         ast.translation_unit.lazy_create_refers(ast)
@@ -145,7 +150,8 @@ class PythonNodeTest(unittest.TestCase):
 
     def test_function_reference(self):
         ast = self.factory.create_from_text(content, 'content.py')
-        syntax_tree.ASTShower.store_node('c:/temp/py3.txt', ast)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            syntax_tree.ASTShower.store_node(f'{temp_dir}/py3.txt', ast)
         call_node = syntax_tree.ASTFinder.find_kind(ast, 'Call').filter(lambda x: x.name.startswith('bruno.is_near')).find_first().get()
         assert isinstance(call_node, PythonASTNode)
         ast.translation_unit.lazy_create_refers(ast)

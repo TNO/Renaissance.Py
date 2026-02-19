@@ -15,9 +15,6 @@ class VisitorResult(Enum):
     CONTINUE = 1
     SKIP = 2
 
-MATCH_ONE = '_MatchOne__'
-MATCH_ALL = '_MatchAll__'
-
 class ASTReference:
     def __init__(
             self, ast_node: ASTNode, ref_kind: str, properties: dict[str, Any]

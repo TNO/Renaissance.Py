@@ -8,13 +8,13 @@ from pathlib import Path
 import re
 import sys
 import tempfile
-from common import Stream
-from syntax_tree.ast_node import MATCH_ALL, MATCH_ONE
-from syntax_tree import ASTNode, ASTReference, CPPUtils
 from typing import Any, Optional, Sequence
 from typing_extensions import override
 import subprocess
 
+from common import Stream
+from impl import MATCH_ALL, MATCH_ONE
+from syntax_tree import ASTNode, CPPUtils, ASTReference
 
 EMPTY_DICT = {}
 EMPTY_STR = ""
@@ -60,6 +60,7 @@ class ClangJsonTranslationUnit:
         node.root.process(ReferenceHelper.add_record_references)
         self.references_initialized = True
 
+
 class ClangJsonASTNode(ASTNode):
     parse_args = [
         "-fparse-all-comments",
@@ -70,14 +71,14 @@ class ClangJsonASTNode(ASTNode):
     ]
 
     def __init__(
-        self,
-        node: dict[str, Any],
-        translation_unit: ClangJsonTranslationUnit,
-        parent: Optional[ClangJsonASTNode] = None,
-        start_offset: Optional[int] = None,
-        length: Optional[int] = None,
-        insert_kind: Optional[str] = None,
-        insert_name: Optional[str] = None,
+            self,
+            node: dict[str, Any],
+            translation_unit: ClangJsonTranslationUnit,
+            parent: Optional[ClangJsonASTNode] = None,
+            start_offset: Optional[int] = None,
+            length: Optional[int] = None,
+            insert_kind: Optional[str] = None,
+            insert_name: Optional[str] = None,
     ) -> None:
         super().__init__(self if parent is None else parent.root)
         self.node: dict[str, Any] = node
@@ -85,7 +86,7 @@ class ClangJsonASTNode(ASTNode):
         self._parent = parent
         self.translation_unit = translation_unit
         self._filename = translation_unit.filename
-        self.inserted = insert_kind != None
+        self.inserted = insert_kind is not None
         self.show_props = False
         # if the node has not been added to the translation unit, add it
         # a node might already be added if it is split into multiple nodes
@@ -93,7 +94,7 @@ class ClangJsonASTNode(ASTNode):
         if "id" in node and self.translation_unit._nodes.get(node["id"]) == None:
             self.translation_unit._nodes[node["id"]] = self
         self._offset = (
-            start_offset if start_offset != None else self.__derive_start_offset()
+            start_offset if start_offset is not None else self.__derive_start_offset()
         )
         self._end_offset = (
             self._offset + length
@@ -101,18 +102,18 @@ class ClangJsonASTNode(ASTNode):
             else self.__derive_end_offset()
         )
         self._length = self._end_offset - self._offset
-        self._kind = insert_kind if insert_kind != None else self.__derive_kind()
-        self._name = insert_name if insert_name != None else self._derive_name()
+        self._kind = insert_kind if insert_kind is not None else self.__derive_kind()
+        self._name = insert_name if insert_name is not None else self._derive_name()
         # an fake child is introduced to handle the case where the type of a declaration is not found
         # for example in the case of a base type.
         # without the fake child pattern matching on types will be difficult
         self.__inserted_children: list[ClangJsonASTNode] = []
         type = self.node.get("type")
         if (
-            insert_kind == None
-            and type
-            and not self.node.get("implicit")
-            and re.fullmatch("(Var|Function|CxxMethod)Decl", self._kind)
+                insert_kind == None
+                and type
+                and not self.node.get("implicit")
+                and re.fullmatch("(Var|Function|CxxMethod)Decl", self._kind)
         ):
             declared_type = type["qualType"].replace("(", "").replace(")", "").strip()
             if self.node.get("loc"):
@@ -167,7 +168,6 @@ class ClangJsonASTNode(ASTNode):
             elif self.name.startswith("$"):
                 self._kind = MATCH_ONE
 
-
         self._children = self.__inserted_children + [
             ClangJsonASTNode(
                 ClangJsonASTNode._remove_wrapper(n),
@@ -181,16 +181,16 @@ class ClangJsonASTNode(ASTNode):
     @override
     @staticmethod
     def load(
-        file_path: Path,
-        extra_args: Sequence[str],
-        working_dir: Path,
-        code: Optional[str] = None,
+            file_path: Path,
+            extra_args: Sequence[str],
+            working_dir: Path,
+            code: Optional[str] = None,
     ) -> ClangJsonASTNode:
         # in a shell process compile the file_path with clang compiler
         try:
             # remove the compiler name if it is the first argument
             if len(extra_args) > 0 and re.match(
-                r".*(g\+\+|gcc|cl\.exe).*", extra_args[0]
+                    r".*(g\+\+|gcc|cl\.exe).*", extra_args[0]
             ):
                 extra_args = extra_args[1:]
             # add clang compiler if it is not in the arguments
@@ -202,50 +202,39 @@ class ClangJsonASTNode(ASTNode):
             json_dump = None
             error = None
             length = 0
-            with tempfile.NamedTemporaryFile(delete=True) as std_out_file:
-                with tempfile.NamedTemporaryFile(delete=True) as std_err_file:
-                    if code:
-                        if str(file_path) in command:
-                            command.remove(str(file_path))
-                        compile = "-xc++" if file_path.suffix == ".cpp" else "-xc"
-                        if not compile in command:
-                            command.append(compile)
-                        if not "-" in command:
-                            command.append("-")
-                        # command.append('-main-file-name=' + str(file_path))
-                        input = code.encode(sys.getfilesystemencoding())
-                        subprocess.run(
-                            command,
-                            input=input,
-                            stdout=std_out_file,
-                            stderr=std_err_file,
-                            cwd=working_dir,
-                            shell=True,
-                        )
-                        std_out_file.seek(0)
-                        json_dump = (
-                            std_out_file.read()
-                            .decode()
-                            .replace("<stdin>", str(file_path))
-                        )
-                        std_err_file.seek(0)
-                        error = std_err_file.read().decode()
-                        length = len(input)
-                    else:
-                        if str(file_path) not in command:
-                            command.append(str(file_path))
-                        subprocess.run(
-                            command,
-                            stdout=std_out_file,
-                            stderr=std_err_file,
-                            text=True,
-                            cwd=working_dir,
-                        )
-                        std_out_file.seek(0)
-                        json_dump = std_out_file.read().decode()
-                        length = os.path.getsize(working_dir / file_path)
-                        std_err_file.seek(0)
-                        error = std_err_file.read().decode()
+            if code:
+                if str(file_path) in command:
+                    command.remove(str(file_path))
+                compile = "-xc++" if file_path.suffix == ".cpp" else "-xc"
+                if not compile in command:
+                    command.append(compile)
+                if not "-" in command:
+                    command.append("-")
+                # command.append('-main-file-name=' + str(file_path))
+                input = code.encode(sys.getfilesystemencoding())
+                result = subprocess.run(
+                    command,
+                    input=input,
+                    capture_output=True
+                )
+                json_dump = result.stdout.decode() .replace("<stdin>", str(file_path))
+                error = result.stderr.decode()
+                length = len(input)
+            else:
+                if str(file_path) not in command:
+                    command.append(str(file_path))
+                subprocess.run(
+                    command,
+                    stdout=std_out_file,
+                    stderr=std_err_file,
+                    text=True,
+                    cwd=working_dir,
+                )
+                std_out_file.seek(0)
+                json_dump = std_out_file.read().decode()
+                length = os.path.getsize(working_dir / file_path)
+                std_err_file.seek(0)
+                error = std_err_file.read().decode()
 
             if VERBOSE:
                 temp_dir = tempfile.gettempdir()
@@ -280,13 +269,12 @@ class ClangJsonASTNode(ASTNode):
     @override
     @staticmethod
     def load_from_text(
-        text: str, file_name: str, extra_args: Sequence[str], working_dir: Path
+            text: str, file_name: str, extra_args: Sequence[str], working_dir: Path
     ) -> ClangJsonASTNode:
         return ClangJsonASTNode.load(
             Path(file_name), extra_args, working_dir, code=text
         )
 
-    @override
     @cache
     def _get_containing_filename(self) -> str:
         if self.node.get("isImplicit", False):
@@ -301,19 +289,18 @@ class ClangJsonASTNode(ASTNode):
             return containing_file
         included_file = self._get(["loc", "includedFrom", "file"], "")
         if (
-            included_file
+                included_file
         ):  # included but no file location is provided in the node so we don't know the file name
             return ""
         included_file = self._get(["loc", "spellingLoc", "includedFrom", "file"], "")
         if (
-            included_file
+                included_file
         ):  # included but no file location is provided in the node so we don't know the file name
             return ""
         # not included and no file location so it is the same as the parent
         if self.parent:
             return self.parent.filename
         return EMPTY_STR
-
 
     @override
     @property
@@ -328,7 +315,7 @@ class ClangJsonASTNode(ASTNode):
             ):
                 content = self.root.binary_file_content()
                 while (
-                    endOffset < len(content) and not content[endOffset - 1] in b";"
+                        endOffset < len(content) and not content[endOffset - 1] in b";"
                 ):  # Why use 'in' when list has one element, i.e. ';'?
                     endOffset += 1
             return endOffset
@@ -344,9 +331,9 @@ class ClangJsonASTNode(ASTNode):
         self_kind = self._kind
         node_kind = node.kind
         return (
-            self_kind == node_kind
-            or (self_kind.endswith("Literal") and node_kind == "DeclRefExpr")
-            or (self_kind == "DeclRefExpr" and node_kind.endswith("Literal"))
+                self_kind == node_kind
+                or (self_kind.endswith("Literal") and node_kind == "DeclRefExpr")
+                or (self_kind == "DeclRefExpr" and node_kind.endswith("Literal"))
         )
 
     @override
@@ -357,7 +344,7 @@ class ClangJsonASTNode(ASTNode):
             k: ClangJsonASTNode._remove_ids(v)
             for k, v in self.node.items()
             if ClangJsonASTNode.__is_property(k)
-            and not ClangJsonASTNode._is_reference(v) == None
+               and not ClangJsonASTNode._is_reference(v) == None
         }
         if self._get(["range", "end", "expansionLoc", "offset"], -1) != -1:  # dealing with a macro expansion
             properties["macro_expansion"] = self.text
@@ -431,14 +418,12 @@ class ClangJsonASTNode(ASTNode):
             .to_list()
         )
 
-
     @override
     @property
     def is_statement(self) -> bool:
         return (
                 self.parent != None and self.parent.kind in STMT_PARENTS
         )  # TODO: Why look at the kind of your parent and not at your own kind?
-
 
     def _derive_name(self) -> str:
         name = self.node.get("name")
@@ -550,8 +535,6 @@ class ClangJsonASTNode(ASTNode):
             return default
 
 
-
-
 class ReferenceHelper:
 
     @staticmethod
@@ -568,7 +551,7 @@ class ReferenceHelper:
             k: v
             for k, v in ast_node.node.items()
             if not ReferenceHelper._is_child_node(k)
-            and ClangJsonASTNode._is_reference(v)
+               and ClangJsonASTNode._is_reference(v)
         }
         for k in [k for k in ast_node.node.keys() if k in ON_NODE_ID_TAGS]:
             refs[k] = ast_node.node
@@ -582,7 +565,7 @@ class ReferenceHelper:
                         k: v
                         for k, v in n.node.items()
                         if not ReferenceHelper._is_child_node(k)
-                        and ClangJsonASTNode._is_reference(v)
+                           and ClangJsonASTNode._is_reference(v)
                     }
                     refs.update(refChild)
 
@@ -604,8 +587,6 @@ class ReferenceHelper:
                 except:
                     ast_node.translation_unit._referenced_by[ref_id] = [referenced_by]
                 references.append(reference)
-
-
 
     @staticmethod
     def add_record_references(ast_node: ClangJsonASTNode) -> None:
@@ -673,8 +654,8 @@ class ReferenceHelper:
                     matches = True
                     for ns in namespaces:
                         if (
-                            ns != parent.name
-                            or parent.kind != "NamespaceDecl"
+                                ns != parent.name
+                                or parent.kind != "NamespaceDecl"
                         ):
                             matches = False
                         parent = parent.parent

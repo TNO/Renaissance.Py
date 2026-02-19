@@ -1,16 +1,10 @@
 import ast
-import re
-from typing import Optional, Sequence
+from typing import Sequence
 
-from common.stream import Stream
-from impl.python.python_ast_node import PythonTranslationUnit
-from syntax_tree.ast_node import MATCH_ALL, MATCH_ONE
+from common import Stream
 from impl.python import PythonASTNode
-from syntax_tree.ast_node import ASTNode
-from syntax_tree.ast_shower import ASTShower
-
-from syntax_tree.ast_factory import ASTFactory
-from syntax_tree.ast_finder import ASTFinder
+from impl.python.python_ast_node import PythonTranslationUnit
+from syntax_tree import ASTFactory, ASTNode, ASTShower
 from utils.node_util import replace_dollar
 
 SHOW_NODE = False
@@ -19,10 +13,10 @@ SHOW_NODE = False
 class PythonPatternFactory:
 
     def __init__(
-        self,
-        factory: ASTFactory,
-        ref_node: Optional[ASTNode] = None,
-        language: str = "python",
+            self,
+            factory: ASTFactory,
+            ref_node: ASTNode | None = None,
+            language: str = "python",
     ):
         self.factory = factory
         if ref_node:
@@ -38,24 +32,25 @@ class PythonPatternFactory:
             self.language = language
             self.header = ""
 
-
-
-
     def create_expression(
-        self, text: str, extra_declarations: Sequence[str] = []
+            self, text: str, extra_declarations=None
     ) -> ASTNode:
+        if extra_declarations is None:
+            extra_declarations = []
         text = replace_dollar(text)
         return PythonASTNode(ast.parse(text).body[0].value)
 
-
-
     def create_statements(
-        self,
-        text: str,
-        types: Sequence[str] = [],
-        extra_declarations: Sequence[str] = [],
-        kind: str = ".*",
+            self,
+            text: str,
+            types=None,
+            extra_declarations=None,
+            kind: str = ".*",
     ) -> Sequence[ASTNode]:
+        if extra_declarations is None:
+            extra_declarations = []
+        if types is None:
+            types = []
         text = replace_dollar(text)
         result = []
 
@@ -69,7 +64,7 @@ class PythonPatternFactory:
         text = replace_dollar(text)
         return PythonASTNode(ast.parse(text).body[0])
 
-    def create(self, text: str, kind: Optional[str] = None) -> ASTNode:
+    def create(self, text: str, kind: str|None = None) -> ASTNode:
         # create python from text
         # the comments are removed
         # Return Module
@@ -77,12 +72,16 @@ class PythonPatternFactory:
         return self._create(text)
 
     def create_statement(
-        self,
-        text: str,
-        types: Sequence[str] = [],
-        extra_declarations: Sequence[str] = [],
-        kind: str = ".*",
+            self,
+            text: str,
+            types=None,
+            extra_declarations=None,
+            kind: str = ".*",
     ) -> ASTNode:
+        if extra_declarations is None:
+            extra_declarations = []
+        if types is None:
+            types = []
         statements = self.create_statements(text, types, extra_declarations, kind)
         assert len(statements) == 1, "Only one statement is expected"
         return statements[0]
