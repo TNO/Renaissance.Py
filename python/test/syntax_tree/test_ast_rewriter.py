@@ -51,7 +51,7 @@ class TestRewrites(TestCase):
     def test_failing_case(self):
         # action: Callable[[ASTRewriter, str, Sequence[ASTNode], bool, bool], None],
         # factory: ASTFactory,code: str, replacement: str, include_whitespace: bool, include_comments: bool, expected: str):
-        factory = ASTFactory(ClangJsonASTNode, [])
+        factory = ASTFactory(ClangASTNode, [])
         atu = factory.create_from_text("void f() { /* c1 */ /* c2 */ int a=3;\n}", 'test.cpp')
         patternFactory = CPatternFactory(factory)
         declaration_pattern = patternFactory.create_declarations('int a=3;')

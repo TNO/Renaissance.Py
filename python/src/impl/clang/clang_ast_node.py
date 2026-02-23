@@ -59,9 +59,10 @@ class ClangTranslationUnit():
 class ClangASTNode(ASTNode):
     @staticmethod
     def set_library_path() -> None:
-        try: 
-            print(Path(__file__).parent.parent.parent.parent / '.venv/Lib/site-packages/clang/native')
-            Config.set_library_path(Path(__file__).parent.parent.parent.parent / '.venv/Lib/site-packages/clang/native')
+        try:
+            clang_lib = Path(__file__).parent.parent.parent.parent.parent / '.venv/lib/python3.13/site-packages/clang/native'
+            print(clang_lib)
+            Config.set_library_path(clang_lib)
         except Exception as e:  
             print(e)
             
