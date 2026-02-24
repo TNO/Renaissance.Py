@@ -14,3 +14,4 @@ tree-sitter
 tree-sitter-python
 tree-sitter-cpp
 tree-sitter-java
+autopep8
