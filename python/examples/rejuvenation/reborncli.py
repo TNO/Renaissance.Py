@@ -5,7 +5,7 @@ from impl.python import PythonASTNode, PythonPatternFactory
 import sys
 
 
-def refactor(test_file):
+def refactor():
     factory = ASTFactory(PythonASTNode, [])
     atu = factory.create(sys.argv[1])
     return convert(atu)

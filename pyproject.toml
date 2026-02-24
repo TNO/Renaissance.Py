@@ -10,7 +10,7 @@ readme = "README.md"
 license = "MIT"
 # Package directory layout: include each top-level package found under python/src
 packages = [
-    { include = "*.py", from = "python/examples" },
+    { include = "rejuvenation", from = "python/examples" },
     { include = "common", from = "python/src" },
     { include = "extractors", from = "python/src" },
     { include = "impl", from = "python/src" },
@@ -98,4 +98,4 @@ behave = ["behave", "coverage-enable-subprocess", "nose"]
 issues = "https://github.com/TNO/Renaissance-Experiments"
 
 [tool.poetry.scripts]
-reborncli = "reborncli:refactor"
+reborncli = "rejuvenation.reborncli:refactor"
