@@ -8,7 +8,20 @@ version = "0.3.0"
 description = "Python version of the renaissance experiments"
 readme = "README.md"
 license = "MIT"
-packages = [{ include = "src", from = "python" }]
+# Package directory layout: include each top-level package found under python/src
+packages = [
+    { include = "*.py", from = "python/examples" },
+    { include = "common", from = "python/src" },
+    { include = "extractors", from = "python/src" },
+    { include = "impl", from = "python/src" },
+    { include = "lst", from = "python/src" },
+    { include = "lst_matchers", from = "python/src" },
+    { include = "project", from = "python/src" },
+    { include = "refactoring", from = "python/src" },
+    { include = "syntax_tree", from = "python/src" },
+    { include = "utils", from = "python/src" },
+    { include = "visualizers", from = "python/src" },
+]
 [project]
 name = "renaissance-experiments"
 version = "0.3.0"
@@ -35,9 +48,9 @@ dependencies = [
     "pytest-black==0.6.0",
     "pytest-profiling==1.8.1",
     "tree-sitter>=0.25",
-#    "tree-sitter-python==0.25.0",
-#    "tree-sitter-cpp==0.23.4",
-#    "tree-sitter-java==0.23.5"
+    "tree-sitter-python==0.25.0",
+    "tree-sitter-cpp==0.23.4",
+    "tree-sitter-java==0.23.5"
 ]
 
 
@@ -85,4 +98,4 @@ behave = ["behave", "coverage-enable-subprocess", "nose"]
 issues = "https://github.com/TNO/Renaissance-Experiments"
 
 [tool.poetry.scripts]
-reborncli = "example.reborncli:main"
+reborncli = "reborncli:refactor"

@@ -60,12 +60,16 @@ class ClangASTNode(ASTNode):
     @staticmethod
     def set_library_path() -> None:
         try:
-            clang_lib = Path(__file__).parent.parent.parent.parent.parent / '.venv/lib/python3.13/site-packages/clang/native'
-            print(clang_lib)
+
+            clang_lib = Path(__file__).parent.parent.parent.parent.parent / '.venv/lib/site-packages/clang/native'
+            # only print or log the library path when debugging
+            if DEBUG:
+                print(clang_lib)
             Config.set_library_path(clang_lib)
         except Exception as e:  
-            print(e)
-            
+            if DEBUG:
+                print(e)
+
     set_library_path()
     index = Index.create()
     parse_args=['-fparse-all-comments', '-ferror-limit=0', '-Xclang', '-detailed-preprocessing-record', '-fsyntax-only']
@@ -340,10 +344,12 @@ class ClangASTNode(ASTNode):
     @staticmethod
     def _is_reference(node):
         try:
-            print(type(node))
-            print(vars(node))
-            print(dir(node))
-            print(node.__dict__)
+            # avoid verbose printing during normal operation; only print when debugging
+            if DEBUG:
+                print(type(node))
+                print(vars(node))
+                print(dir(node))
+                print(node.__dict__)
             node.__dict__['id']
             return True
         except:
