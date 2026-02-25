@@ -1,4 +1,4 @@
-# lst_toolkit/src/utils/placeholders.py
+# python/src/utils/node_util.py
 from collections import deque
 from typing import Tuple
 

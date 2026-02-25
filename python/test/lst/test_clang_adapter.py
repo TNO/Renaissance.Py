@@ -1,14 +1,16 @@
 import unittest
 
+import clang
+
 from impl.clang.clang_adapter import ClangAdapter
 from lst.lst import LST
 from utils.node_util import traverse
 
 
 class TestClangAdapter(unittest.TestCase):
-    @unittest.skip("don't know what the correct path should be")
     def test_parse_cpp_file(self):
-        adapter = ClangAdapter('../../../.venv/lib/python3.13/site-packages/clang/native')
+        adapter = ClangAdapter(clang.__file__.replace('__init__.py','native'))
+
         lst = adapter.parse("../../../features/targets/cpp_example.cpp")
         self.assertIsInstance(lst, LST)
         self.assertGreater(len(list(traverse(lst.root))), 0)

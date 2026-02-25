@@ -1,15 +1,16 @@
-from functools import cache
-from pathlib import Path
 import re
 import sys
+from functools import cache
+from logging import DEBUG
+from pathlib import Path
 from typing import Any, Optional, Sequence
-from common import Stream
 
-from syntax_tree import ASTNode, ASTReference, ASTFinder, TextUtils
+import clang
+from clang.cindex import TranslationUnit, Index, Config, CursorKind, TypeKind
 from typing_extensions import override
 
-from clang.cindex import TranslationUnit, Index, Config, CursorKind, TypeKind
-
+from common import Stream
+from syntax_tree import ASTNode, ASTReference, ASTFinder
 from syntax_tree.ast_node import MATCH_ONE, MATCH_ALL
 
 EMPTY_DICT = {}
@@ -60,14 +61,9 @@ class ClangASTNode(ASTNode):
     @staticmethod
     def set_library_path() -> None:
         try:
-
-            clang_lib = Path(__file__).parent.parent.parent.parent.parent / '.venv/lib/site-packages/clang/native'
-            # only print or log the library path when debugging
-            if DEBUG:
-                print(clang_lib)
+            clang_lib = (clang.__file__.replace('__init__.py','native'))
             Config.set_library_path(clang_lib)
         except Exception as e:  
-            if DEBUG:
                 print(e)
 
     set_library_path()
