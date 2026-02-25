@@ -1,7 +1,11 @@
 import unittest
+
 from parameterized import parameterized
-from refactoring import TautRefactoring
+
 from python.factories import Factories
+from refactoring import TautRefactoring
+from test_data.test_code import taut_code, result_code
+from test_data.test_insert import input_code, insert_code
 from syntax_tree import ASTFactory, ASTShower, ASTProcessor
 
 class TestTaut2Unittest(unittest.TestCase):
@@ -64,13 +68,26 @@ class TestTaut2Unittest(unittest.TestCase):
         self.assertEqual(expected_code, result)
 
     @parameterized.expand(Factories.extend([
-        ('@TAUT.log_stub\ndef create_test_log(self, test_log_id):\n    pass\n', 'def create_test_log(self, test_log_id):\n    pass\n'),
+        ('@TAUT.log_stub\ndef create_test_log(self, test_log_id):\n    pass\n', '\ndef create_test_log(self, test_log_id):\n    pass\n'),
     ]))
     def test_remove_decorator(self, _, factory: ASTFactory, input_code, expected_code):
         atu = factory.create_from_text(input_code, 'add_self.py')
         ASTShower.show_node(atu)
         ast_refactor = ASTProcessor(atu, factory, in_memory=True)
         TautRefactoring.remove_decorator(ast_refactor)
-        #self.assertEqual(expected_code, result)
         result = ast_refactor.commit().apply_to_string()
         self.assertEqual(expected_code, result)
+
+    @parameterized.expand(Factories.extend([
+        (taut_code, result_code)
+    ]))
+    def test_log_emrwxtl(self, _, factory: ASTFactory, input_code, expected_code):
+        result = TautRefactoring.replace_log_emrwxtl(input_code)
+        self.assertEqual(expected_code, result)
+
+    @parameterized.expand(Factories.extend([
+        (input_code, insert_code)
+    ]))
+    def test_insert_class(self, _, factory: ASTFactory, input_code, insert_code):
+        result = TautRefactoring.insert_class(input_code, insert_code)
+        self.assertEqual(input_code + insert_code +'\n', result)

@@ -2,6 +2,7 @@ import pytest
 from pytest_bdd import given, when, then, scenario, parsers
 from impl.python import PythonASTNode, PythonPatternFactory
 from syntax_tree import ASTFactory, ASTFinder, ASTRewriter, MatchFinder
+from utils.flake8_util import fix_indent
 
 @pytest.fixture
 def context():
@@ -16,6 +17,14 @@ def test_taut_test2():
 
 @scenario('../refactor-taut-test.feature', 'replace import')
 def test_taut_test3():
+    pass
+
+@scenario('../refactor-taut-test.feature', 'remove decorator')
+def test_taut_test4():
+    pass
+
+@scenario('../refactor-taut-test.feature', 'replace TestDoubles')
+def test_taut_test5():
     pass
 
 @given("'python' programming language")
@@ -59,5 +68,9 @@ def step_impl(context, replacement):
 @then("in the modified source file that node is replaced by the given text")
 def step_impl(context):
     assert context['replacement'] in context['rewriter'].apply_to_string()
+
+@when("run flake8 and autopep8 to auto fix the code")
+def step_impl(context):
+    context['fixed_code'] = fix_indent(context['rewriter'].apply_to_string())
 
 
