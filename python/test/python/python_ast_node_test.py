@@ -1,8 +1,10 @@
-import ast
 import unittest
+from pathlib import Path
+
 from parameterized import parameterized
+
 from impl.python import PythonASTNode, PythonPatternFactory
-from syntax_tree import ASTFactory, MatchFinder, ASTShower, ASTProcessor
+from syntax_tree import ASTFactory, ASTShower
 from syntax_tree.match_finder import is_match
 from utils.node_util import traverse
 
@@ -96,12 +98,10 @@ def outer():
 
     def test_Slice(self):
         it = self.pattern_factory.create_expression('items[1:2:3]')
-        result = ASTShower.get_node(it)
         self.assertEqual('Slice', it.children[1].kind)
 
     def test_NamedExpr(self):
         it = self.pattern_factory.create('if n:= len(items): pass')
-        result = ASTShower.get_node(it)
         self.assertEqual('NamedExpr', it.children[0].kind)
 
     def test_Starred(self):
@@ -205,7 +205,6 @@ def outer():
         self.assertEqual(atu.translation_unit, second_stmt.translation_unit)
 
     def test_show_call_with_args(self):
-        factory = ASTFactory(PythonASTNode, [])
         src = self.pattern_factory.create_statement('def ba(a55,a66,a77,a88,a99): pass')
         cmp = self.pattern_factory.create_statement('def ba($$args): pass')
         expansions={}
@@ -215,11 +214,21 @@ def outer():
 
     @unittest.skip("Examine @TUAT")
     def test_attribute_signature_has_at(self):
-        factory = ASTFactory(PythonASTNode, [])
         src = self.pattern_factory.create_statement('@TUAT\ndef ba(): pass')
         ASTShower.show_node(src)
         attr = src.children[2].children[0]
         assert attr.signature == '@TUAT'
+
+def test_load_file():
+    atu = PythonASTNode.load('features/targets/demo.py',{}, Path(__file__).parent.parent.parent.parent)
+    assert atu.translation_unit.atu.type_ignores ==[]
+
+def test_load_invalid_file():
+    try:
+        atu = PythonASTNode.load('features/targets/invalid.py', {}, Path(__file__).parent.parent.parent.parent)
+        assert False
+    except IndentationError as e:
+        assert e.msg == 'unexpected indent'
 
     if __name__ == '__main__':
         unittest.main()

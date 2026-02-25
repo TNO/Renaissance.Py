@@ -143,7 +143,7 @@ class PythonASTNode(ASTNode):
             result = node.arg
         elif isinstance(node, ast.Name):
             result = node.id
-        elif (isinstance(node, ast.Expr) and isinstance(node.value, ast.Name)):
+        elif isinstance(node, ast.Expr) and isinstance(node.value, ast.Name):
             result = node.value.id
         return result
 
@@ -189,17 +189,17 @@ class PythonASTNode(ASTNode):
     def load(file_path: Path, extra_args: Sequence[str], working_dir: Path) -> 'PythonASTNode':
         with open(working_dir / file_path, 'r') as file:
             content = file.read()
-            return PythonASTNode.load_from_text(content, file_path, extra_args, working_dir)
+            return PythonASTNode.load_from_text(content, str(file_path), extra_args, working_dir)
 
     @override
     @staticmethod
     def load_from_text(text: str, file_name: str, extra_args: Sequence[str], working_dir: Path) -> "PythonASTNode":
-        translation_unit = PythonTranslationUnit(text, file_name=str(file_name))
+        translation_unit = PythonTranslationUnit(text, file_name=file_name)
         translation_unit.check_diagnostics()
         root_node = PythonASTNode(translation_unit.atu, translation_unit, None)
         return root_node
 
-    @override
+
     def _derive_name(self):
         if isinstance(self.node, str):
             name = self.node
@@ -408,5 +408,3 @@ class ReferenceHelper:
 
 
 types = ['int', 'float', 'str', 'list', 'set', 'tuple', 'Mapping', 'dict', 'Optional']
-if __name__ == "__main__":
-    pass

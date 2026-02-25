@@ -88,14 +88,4 @@ class PythonPatternFactory:
 
     def _create(self, text: str) -> ASTNode:
         atu = self.factory.create_from_text(text, "test.py")
-        if SHOW_NODE:
-            ASTShower.show_node(atu)
         return atu.children[0]
-
-
-if __name__ == "__main__":
-    print(
-        PythonPatternFactory._get_dollar_keywords_from_text(
-            "struct $type;struct $name; $type a = $name; int b = 4; $$x = $$y"
-        )
-    )
