@@ -13,12 +13,12 @@
     ],
     "python.envFile": "${workspaceFolder}/.env",
     "terminal.integrated.env.linux": {
-        "PATH": ".venv/Lib/site-packages/clang/native:${env:PATH}"
+        "PATH": ".venv/lib/site-packages/clang/native:${env:PATH}"
     },
     "terminal.integrated.env.osx": {
-        "PATH": ".venv/Lib/site-packages/clang/native:${env:PATH}"
+        "PATH": ".venv/lib/site-packages/clang/native:${env:PATH}"
     },
     "terminal.integrated.env.windows": {
-        "Path": ".venv\\Lib\\site-packages\\clang\\native;${env:Path}"
+        "Path": ".venv\\lib\\site-packages\\clang\\native;${env:Path}"
     }
 }

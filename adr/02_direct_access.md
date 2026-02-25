@@ -1,2 +1,26 @@
 
 next to children and properties is direct access. Direct access allows us to access the properties of a node directly without having to go through the children. This is useful in cases where we want to quickly access a specific property without having to traverse the entire tree. For example, if we have a node that represents a function call, we can directly access the name of the function without having to go through the children that represent the arguments. This design decision allows us to optimize our code and improve performance by reducing the number of nodes we need to traverse to access specific information.
+
+
+ADR:
+use python sytle of meta programming to navigate through the children _'fields' and '_attributes' instead of get_children() _getchildren() _children
+e.g.
+
+```
+class IfAstNode():
+    _fields = (
+        'test',
+        'body',
+        'else',
+    )
+```
+
+instead of
+```python
+class IfAstNode():
+    _Children = [
+         ImplicitNode(test,[AstNode]  ) 
+         ImplicitNode(body,[AstNode]  )
+         ImplicitNode(orelse.[AstNode]) 
+                ]
+```

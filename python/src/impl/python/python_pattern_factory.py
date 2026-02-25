@@ -57,6 +57,7 @@ class PythonPatternFactory:
     ) -> Sequence[ASTNode]:
         text = replace_dollar(text)
         result = []
+
         for node in ast.parse(text).body:
             result.append(PythonASTNode(node))
         return result

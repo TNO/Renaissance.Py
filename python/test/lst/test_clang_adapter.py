@@ -8,7 +8,7 @@ from utils.node_util import traverse
 class TestClangAdapter(unittest.TestCase):
     @unittest.skip("don't know what the correct path should be")
     def test_parse_cpp_file(self):
-        adapter = ClangAdapter('../../../.venv/Lib/site-packages/clang/native')
+        adapter = ClangAdapter('../../../.venv/lib/python3.13/site-packages/clang/native')
         lst = adapter.parse("../../../features/targets/cpp_example.cpp")
         self.assertIsInstance(lst, LST)
         self.assertGreater(len(list(traverse(lst.root))), 0)

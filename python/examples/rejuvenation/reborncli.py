@@ -2,20 +2,10 @@
 from refactoring.pyunit_to_pytest_refactor import convert_test_cases, convert
 from syntax_tree import ASTFactory, CPatternFactory, MatchFinder, ASTRewriter
 from impl.python import PythonASTNode, PythonPatternFactory
+import sys
 
 
-def refactor(test_file):
+def refactor():
     factory = ASTFactory(PythonASTNode, [])
-    atu = factory.create(test_file)
+    atu = factory.create(sys.argv[1])
     return convert(atu)
-
-
-if __name__ == "__main__":
-    import sys
-
-    test_file = sys.argv[1]
-    result = refactor(test_file)
-    # with open(test_file, 'w') as f:
-    #     f.write(result)
-    print(result)
-

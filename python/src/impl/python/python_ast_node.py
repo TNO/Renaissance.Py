@@ -93,7 +93,7 @@ class PythonASTNode(ASTNode):
         if translation_unit:
             self._filename = translation_unit.file_name
             self.translation_unit = translation_unit
-            self.derive_position(node, translation_unit)
+            self.derive_position(node, translation_unit, parent)
             self.add_node()
         else:
             self._filename = ''
@@ -159,10 +159,11 @@ class PythonASTNode(ASTNode):
     def __contains__(self, item):
         return match_pattern([self],[item], {})
 
-    def derive_position(self, node: ast.AST, translation_unit: PythonTranslationUnit):
+    def derive_position(self, node: ast.AST, translation_unit: PythonTranslationUnit, parent):
         if node._attributes:
-            if isinstance(node, ast.Attribute):
-                self._offset = self.translation_unit.convert(self.node.lineno, self.node.col_offset)-1
+            if parent.name == 'decorator_list':
+                # also include the @ in the decorator
+                self._offset = self.translation_unit.convert(self.node.lineno, self.node.col_offset) -1
             else:
                 self._offset = self.translation_unit.convert(self.node.lineno, self.node.col_offset)
             self._length = self.translation_unit.convert(self.node.end_lineno, self.node.end_col_offset) - self.offset
@@ -205,8 +206,10 @@ class PythonASTNode(ASTNode):
     @override
     @property
     def signature(self) -> str:
-        return self.binary_file_content().decode(sys.getfilesystemencoding())
-
+        sig = self.binary_file_content().decode(sys.getfilesystemencoding())
+        if self.parent and self.parent.name == 'decorator_list' and not sig.startswith('@'):
+            sig = '@'+sig
+        return sig
     @override
     def binary_file_content(self) -> bytes:
         return self.translation_unit.content[self.offset:self.end_offset] if self.translation_unit else ast.unparse(

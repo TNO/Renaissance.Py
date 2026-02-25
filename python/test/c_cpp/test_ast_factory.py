@@ -1,7 +1,7 @@
 from unittest import TestCase
-from parameterized import parameterized
 from syntax_tree import ASTShower
 from .factories import Factories
+from parameterized import parameterized
 
 class TestASTFactory(TestCase):
 
