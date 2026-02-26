@@ -1,4 +1,5 @@
-#include <stdio.h>
+//#include <stdio.h>
+#define FOO "foo"
 
 static int static_int = 2;
 
@@ -13,7 +14,7 @@ do{\
 int main() {
     int qwerty = 3 + A_DEFINE;
     FC_MACRO(qwerty);
-    printf("QWERTY %d", qwerty+static_int);
+//    printf("QWERTY %d", qwerty+static_int);
     FC_MACRO(qwerty);
     return 0;
 }

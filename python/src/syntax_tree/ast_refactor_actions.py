@@ -1,7 +1,7 @@
 from functools import cache
 from typing import Callable, Optional, Sequence
 
-from common.stream import Stream
+from common import Stream
 from .match_finder import MatchFinder, PatternMatch
 
 from .c_pattern_factory import CPPPatternFactory

@@ -1,15 +1,12 @@
+from typing import Callable, Sequence
 from unittest import TestCase
 from parameterized import parameterized
 
 from impl.clang import ClangASTNode
 from impl.clang_json import ClangJsonASTNode
-from syntax_tree import ASTRewriter, CPatternFactory, MatchFinder, ASTFactory, ASTNode, ASTShower
-from typing import Callable, Sequence
-from utils_for_tests import compress
-
-from syntax_tree.ast_processor import ASTProcessor
-
+from syntax_tree import ASTRewriter, ASTFactory, CPatternFactory, MatchFinder, ASTNode, ASTShower
 from c_cpp.factories import Factories
+from utils_for_tests import compress
 
 VERBOSE = False
 AST_SHOWER = False
@@ -26,7 +23,7 @@ class TestCommentLocation(TestCase):
     ])
     def test(self, _, start_offset: int, stop_offset: int, content: bytes, expected: tuple[int, int]):
         result = ASTRewriter._get_comment_location(start_offset, stop_offset, content)
-        if(result != (-1, -1)):
+        if result != (-1, -1):
             print(content[result[0]:result[1]])
         self.assertEqual(result, expected)
 

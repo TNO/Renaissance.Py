@@ -3,7 +3,6 @@ from __future__ import annotations
 import re
 import sys
 from abc import ABC, abstractmethod
-from collections import deque
 from enum import Enum
 from pathlib import Path
 from typing import Any, Callable
@@ -15,9 +14,6 @@ class VisitorResult(Enum):
     ABORT = 0
     CONTINUE = 1
     SKIP = 2
-
-MATCH_ONE = '_MatchOne__'
-MATCH_ALL = '_MatchAll__'
 
 class ASTReference:
     def __init__(
@@ -249,4 +245,3 @@ class ASTNode(ABC):
         if function(self) == VisitorResult.CONTINUE:
             for child in self.children:
                 child.accept(function)
-

@@ -4,7 +4,7 @@ from collections import deque
 from pathlib import Path
 from typing import Callable, Iterator, Sequence, Generator
 
-from common.stream import Stream
+from common import Stream
 from .ast_finder import ASTFinder
 from .match_finder import MatchFinder, PatternMatch
 from .ast_rewriter import ASTRewriter
@@ -90,7 +90,7 @@ class ASTProcessor:
 
     def find_match(
         self,
-        *patterns_list: Sequence[ASTNode] | ConstrainedPattern,
+        *patterns_list,
         recursive: bool = True,
         exclude_kind: str =MatchFinder.DEFAULT_EXCLUDE_KIND
     ) -> Stream[PatternMatch]:

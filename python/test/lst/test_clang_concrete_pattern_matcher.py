@@ -23,10 +23,7 @@ from syntax_tree import ASTShower
 def test_clang_patterns(code, pattern):
     adapter = ClangAdapter()
     interface = TsPatternFactory(adapter)
-    extractor = Extractor(interface)
-    ASTShower.show_node(interface.create_statement(code))
-    ASTShower.show_node(interface.create_statement(pattern))
-    extractor.add_rule(pattern)
+    extractor = Extractor(interface, [pattern])
     matches = extractor.run(code)
     assert  len(matches) >= 1
 
@@ -44,8 +41,7 @@ def test_clang_patterns(code, pattern):
 def test_clang_patterns_to_be_fixed(code, pattern):
     adapter = ClangAdapter()
     interface = TsPatternFactory(adapter)
-    extractor = Extractor(interface)
-    extractor.add_rule(pattern)
+    extractor = Extractor(interface, [pattern])
     matches = extractor.run(code)
     assert  len(matches) ==0 #but should be 1
 

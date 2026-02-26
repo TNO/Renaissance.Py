@@ -1,9 +1,11 @@
 from itertools import product
-from impl.clang.clang_ast_node import ClangASTNode
-from impl.clang_json.clang_json_ast_node import ClangJsonASTNode
-from syntax_tree.ast_factory import ASTFactory
 
-class Factories():
+from impl.clang import ClangASTNode
+from impl.clang_json import ClangJsonASTNode
+from syntax_tree import ASTFactory
+
+
+class Factories:
     # add factories here to test different ASTNode implementations
     node_types = [ ('clang', ClangASTNode), ('clang_json', ClangJsonASTNode)]
     factories = [ (name_type[0], ASTFactory(name_type[1])) for name_type in node_types]

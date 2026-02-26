@@ -6,16 +6,16 @@ from typing import Any, Optional, Sequence
 from typing_extensions import override
 
 from common import Stream
+from impl import MATCH_ONE, MATCH_ALL
 from syntax_tree import ASTNode, ASTReference
-from syntax_tree.ast_node import MATCH_ONE, MATCH_ALL
-from syntax_tree.match_finder import is_match_dict, is_match_tree, find_in_list, match_pattern
+from syntax_tree.match_finder import is_match_dict, is_match_tree, match_pattern
 
 EMPTY_DICT = {}
 EMPTY_STR = ''
 EMPTY_LIST = []
 
 
-class PythonASTReference():
+class PythonASTReference:
     def __repr__(self):
         return f"{self.node_id}:{self.ref_kind}"
 
@@ -101,15 +101,15 @@ class PythonASTNode(ASTNode):
             self._offset = 0
             self.translation_unit = None
 
-        if (isinstance(node, str)):
+        if isinstance(node, str):
             self._kind = 'Name'
             return
 
-        id = self.derive_id(node)
+        node_id = self.derive_id(node)
 
-        if id.startswith(MATCH_ONE):
+        if node_id.startswith(MATCH_ONE):
             self._kind = MATCH_ONE
-        elif id.startswith(MATCH_ALL):
+        elif node_id.startswith(MATCH_ALL):
             self._kind = MATCH_ALL
 
         for name in node._fields:
@@ -138,26 +138,26 @@ class PythonASTNode(ASTNode):
                 continue
 
     def derive_id(self, node: ast.AST) -> str:
-        id = ''
+        result = ''
         if isinstance(node, ast.arg):
-            id = node.arg
+            result = node.arg
         elif isinstance(node, ast.Name):
-            id = node.id
+            result = node.id
         elif (isinstance(node, ast.Expr) and isinstance(node.value, ast.Name)):
-            id = node.value.id
-        return id
+            result = node.value.id
+        return result
 
     def __eq__(self, other: ASTNode):
         if (not other
-        or  not isinstance(other, type(self))
-        # or len(self.children) != len(other.children)
-        or self.kind != other.kind):
+                or not isinstance(other, type(self))
+                # or len(self.children) != len(other.children)
+                or self.kind != other.kind):
             return False
         return (is_match_dict(self.properties, other.properties, {})
-                and is_match_tree(self.children, other.children,{}))
+                and is_match_tree(self.children, other.children, {}))
 
     def __contains__(self, item):
-        return match_pattern([self],[item], {})
+        return match_pattern([self], [item], {})
 
     def derive_position(self, node: ast.AST, translation_unit: PythonTranslationUnit, parent):
         if node._attributes:
@@ -173,6 +173,16 @@ class PythonASTNode(ASTNode):
         else:
             self._offset = 0
             self._length = 0
+        # If the source contains a decorator marker '@' immediately before the node,
+        # include it in the signature so decorator nodes show the leading '@'.
+        try:
+            if self.translation_unit and self._offset > 0:
+                # translation_unit.content is bytes
+                if self.translation_unit.content[self._offset - 1:self._offset] == b'@':
+                    self._offset -= 1
+                    self._length += 1
+        except Exception:
+            pass
 
     @override
     @staticmethod
@@ -211,9 +221,14 @@ class PythonASTNode(ASTNode):
             sig = '@'+sig
         return sig
     @override
-    def binary_file_content(self) -> bytes:
-        return self.translation_unit.content[self.offset:self.end_offset] if self.translation_unit else ast.unparse(
-            self.node).encode(sys.getfilesystemencoding())
+    def binary_file_content(self, file_path: str | None = None) -> bytes:
+        if self.translation_unit:
+            txt = self.translation_unit.content[self.offset:self.end_offset]
+        else:
+            txt = ast.unparse(self.node).encode(sys.getfilesystemencoding())
+            if type(self.node) is ast.Attribute:
+                txt = '@' + txt
+        return txt
 
     @override
     def matches_kind(self, target: ASTNode) -> bool:
@@ -231,6 +246,7 @@ class PythonASTNode(ASTNode):
     @override
     @property
     def referenced_by(self) -> Sequence[ASTReference]:
+        # if both the function declaration and function definition are available node.name if hasattr(self.node, 'name') else self.node.id
         self.translation_unit.lazy_create_refers(self)
         node_id = self.node.name if hasattr(self.node, 'name') else self.node.id
         ref_by = self.translation_unit._referenced_by.get(node_id, EMPTY_LIST)
@@ -251,7 +267,8 @@ class PythonASTNode(ASTNode):
     @property
     @override
     def extended_end_offset(self) -> int:
-        return self.offset+self.length
+        return self.offset + self.length
+
     @override
     @property
     def references(self) -> Sequence[ASTReference]:
@@ -315,7 +332,8 @@ class PythonASTNode(ASTNode):
             return self.children[key]
         # support string keys to access properties (e.g., node['name'])
         if isinstance(key, str):
-            return self.properties[key]
+            # be tolerant and return None if property missing
+            return self.properties.get(key)
         raise TypeError(f"Indices must be integers or slices, not {type(key)}")
 
 
@@ -374,7 +392,7 @@ class ReferenceHelper:
 
     @staticmethod
     def add_reference(ast_node: PythonASTNode, node_id: str, ref_id: str, ref_kind: str) -> None:
-        properties = []
+        properties: dict[str, Any] = {}
         if node_id == ref_id:
             return
         reference = PythonASTReference(ref_id, ref_kind, properties)

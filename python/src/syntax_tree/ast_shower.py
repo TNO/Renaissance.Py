@@ -1,7 +1,6 @@
 from io import StringIO
 import io
 
-from utils.node_util import process_node
 from .ast_node import ASTNode
 
 IMPLICIT = ['ImplicitNode']

@@ -3,8 +3,11 @@
 #TODO: Why not use RxPy?
 
 from __future__ import annotations
-from typing import Iterable, Callable, Any, Optional
+from typing import Iterable, Callable, Any, Optional, TypeVar
 from functools import reduce
+from more_itertools import unique_everseen
+
+T = TypeVar('T')
 
 
 class StreamOptional[T]:
@@ -131,3 +134,10 @@ class Stream[T]:
         if isinstance(obj, typ):
             return obj
         return None
+
+def first_occurrences(lst: list[T]) -> list[T]:
+    """
+    Returns a new list containing only the first occurrence of each element in lst, preserving order.
+    Uses more-itertools' unique_everseen for efficiency.
+    """
+    return list(unique_everseen(lst))
