@@ -91,7 +91,45 @@ class TautRefactoring:
     @staticmethod
     def insert_class(input_code, insert_code):
         insert_pattern = 'def b():\n    $$bb'
-        return TautRefactoring.refactor_insert(input_code, insert_code, insert_pattern)
+        return TautRefactoring.refactor_insert_after(input_code, insert_code, insert_pattern)
+
+    @staticmethod
+    def refactor_teardown(input_code):
+        pattern1 = 'for double in self.doubles:\n    double.exit()'
+        replace_pattern = 'patch.stopall()'
+        result = TautRefactoring.refactor_replace(input_code, pattern1, replace_pattern)
+
+        insert_code = """EMRWxCONTEXT.emrmxcontext.reset_method_attributes("start_wafer")
+EMRWxCONTEXT.emrmxcontext.reset_method_attributes("finish_wafer")
+EMRWxCONTEXT.emrmxcontext.reset_method_attributes("start_lot")
+EMRWxCONTEXT.emrmxcontext.reset_method_attributes("finish_lot")
+"""
+        pattern2 = 'self._patch_readout_data_filler.stop()'
+        return TautRefactoring.refactor_insert_before(result, insert_code, pattern2)
+
+    @staticmethod
+    def refactor_setup(input_code):
+        #add self. at front of interface EMRMxCONTEXT
+        pattern1 = 'context_stub = EMRMxCONTEXT.EMRMxCONTEXTStub()'
+        replace_pattern = 'self.context_stub = EMRMxCONTEXT.EMRMxCONTEXTStub()'
+        result = TautRefactoring.refactor_replace(input_code, pattern1, replace_pattern)
+
+        # remove self.doubles
+        pattern2 = 'self.doubles = $aa'
+        result2 = TautRefactoring.refactor_remove(result, pattern2)
+        pattern3 = 'self.doubles.append($$bb)'
+        result3 = TautRefactoring.refactor_remove(result2, pattern3)
+
+        insert_code = """self.patches = []
+self.patches.append(patch('EMRMxCONTEXT.emrmxcontext', self.context_stub))
+self.patches.append(patch.object(EMRMxAPxData.data.rep, 'context', self.context_stub))
+self.patches.append(patch.object(EMxWLxCTL.EMxWLxCTL, 'reload_wafer', self.wh_stub.reload_wafer))
+self.patches.append(patch.object(EMRMxEngine.EMRMxEngine, 'measure_wafer', self.engine_stub.measure_wafer_gw))
+self.patches.append(patch.object(VIPR, 'check_stopped', self.vipr_stub.check_stopped))
+for p in self.patches:
+    p.start()"""
+        pattern4 = 'self.context_stub = EMRMxCONTEXT.EMRMxCONTEXTStub()'
+        return TautRefactoring.refactor_insert_after(result3, insert_code, pattern4)
 
     @classmethod
     def refactor_replace(self, input_code: str, before: str, after: str):
@@ -123,7 +161,7 @@ class TautRefactoring:
         return rewriter.apply_to_string()
 
     @classmethod
-    def refactor_insert(self, input_code: str, insert_code: str, match_str: str):
+    def refactor_insert_after(self, input_code: str, insert_code: str, match_str: str):
         atu = factory.create_from_text(input_code, 'temp.py')
         rewriter = ASTRewriter(atu)
         pattern_factory = PythonPatternFactory(factory, atu)
@@ -131,6 +169,18 @@ class TautRefactoring:
 
         matched = MatchFinder.find_all([atu], [match_pattern]).to_iterable()[0]
         rewriter.insert_after(insert_code, matched.nodes)
+        rewriter.apply()
+        return rewriter.apply_to_string()
+
+    @classmethod
+    def refactor_insert_before(self, input_code: str, insert_code: str, match_str: str):
+        atu = factory.create_from_text(input_code, 'temp.py')
+        rewriter = ASTRewriter(atu)
+        pattern_factory = PythonPatternFactory(factory, atu)
+        match_pattern = pattern_factory.create_python_pattern(match_str)
+
+        matched = MatchFinder.find_all([atu], [match_pattern]).to_iterable()[0]
+        rewriter.insert_before(insert_code, matched.nodes)
         rewriter.apply()
         return rewriter.apply_to_string()
 
