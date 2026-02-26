@@ -10,7 +10,7 @@ from utils.node_util import traverse
 
 class TestClangAdapter(unittest.TestCase):
     def test_parse_cpp_file(self):
-        adapter = ClangAdapter(clang.__file__.replace('__init__.py','native'))
+        adapter = ClangAdapter() #clang.__file__.replace('__init__.py','native'))
 
         lst = adapter.parse("../../../features/targets/cpp_example.cpp")
         self.assertIsInstance(lst, LST)
