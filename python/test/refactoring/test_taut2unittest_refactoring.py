@@ -6,6 +6,7 @@ from python.factories import Factories
 from refactoring import TautRefactoring
 from test_data.test_code import taut_code, result_code
 from test_data.test_insert import input_code, insert_code
+from test_data.test_class import set_up, new_set_up, tear_down, new_tear_down
 from syntax_tree import ASTFactory, ASTShower, ASTProcessor
 
 class TestTaut2Unittest(unittest.TestCase):
@@ -91,3 +92,17 @@ class TestTaut2Unittest(unittest.TestCase):
     def test_insert_class(self, _, factory: ASTFactory, input_code, insert_code):
         result = TautRefactoring.insert_class(input_code, insert_code)
         self.assertEqual(input_code + insert_code +'\n', result)
+
+    @parameterized.expand(Factories.extend([
+        (set_up, new_set_up)
+    ]))
+    def test_setUp(self, _, factory: ASTFactory, input_code, expected_code):
+        result = TautRefactoring.refactor_setup(input_code)
+        self.assertEqual(expected_code, result)
+
+    @parameterized.expand(Factories.extend([
+        (tear_down, new_tear_down)
+    ]))
+    def test_tearDown(self, _, factory: ASTFactory, input_code, expected_code):
+        result = TautRefactoring.refactor_teardown(input_code)
+        self.assertEqual(expected_code, result)

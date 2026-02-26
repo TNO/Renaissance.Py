@@ -52,8 +52,3 @@ Feature: taut migration
     When that node is replaced by '$c = fake_emrwxtl.$a($$bb)'
     And rewrites replace is performed on that sequence of descendant nodes
     Then in the modified source file that node is replaced by the given text
-
-
-
-
-
