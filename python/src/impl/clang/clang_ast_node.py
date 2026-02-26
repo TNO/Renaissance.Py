@@ -86,8 +86,8 @@ class ClangASTNode(ASTNode):
         if self.node.hash not in self.translation_unit._nodes:
             self.translation_unit._nodes[node.hash] = self
         self._offset = start_offset if start_offset is not None else self.__derive_start_offset()
-        self._length = length if length != None else self.__derive_length()
-        self._kind = insert_kind if insert_kind != None else self.__derive_kind()
+        self._length = length if length is not None else self.__derive_length()
+        self._kind = insert_kind if insert_kind is not None else self.__derive_kind()
         self.indent = ''
         # TODO: TextUtils.get_indent(self.content, self._offset)
 

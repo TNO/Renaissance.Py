@@ -1,4 +1,5 @@
 //#include <stdio.h>
+#define FOO "foo"
 
 static int static_int = 2;
 

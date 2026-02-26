@@ -11,7 +11,7 @@ VERBOSE = False
 class AstProtocol(Protocol):
     kind: str
     properties: dict
-    children: list[ASTNode]
+    children: list[Self]
     signature: str
     name: str
 
