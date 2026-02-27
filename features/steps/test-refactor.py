@@ -1,8 +1,8 @@
 import pytest
 from pytest_bdd import given, when, then, scenario, parsers
 
-from impl.python import PythonASTNode, PythonPatternFactory
-from syntax_tree import ASTFactory, MatchFinder, ASTRewriter
+from renaissance.impl import PythonASTNode, PythonPatternFactory
+from renaissance.syntax_tree import ASTFactory, MatchFinder, ASTRewriter
 
 
 @pytest.fixture
