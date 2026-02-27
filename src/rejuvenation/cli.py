@@ -18,3 +18,13 @@ def convert(taut):
 def refactor(taut):
     for taut in dir(sys.argv[1]):
         convert(taut)
+
+
+def refactor():
+    factory = ASTFactory(PythonASTNode, [])
+    for taut in dir(sys.argv[1]):
+        taut_atu = factory.create(taut)
+        result = convert(taut_atu)
+        if result:
+            with open(taut, 'w') as f:
+                f.write(result)
