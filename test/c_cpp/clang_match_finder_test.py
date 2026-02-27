@@ -7,21 +7,25 @@ from renaissance.syntax_tree.match_finder import exclude_nodes_by_kind
 
 
 class ClangMatchFinderTest(TestCase):
-    @unittest.skip("This test is currently not working, needs to be fixed")
+    # @unittest.skip("This test is currently not working, needs to be fixed")
     def testIsMatch(self):
         code = """
         #define BAR "bar"
+        void g(int,int);
+        int h=0;
+        struct S {};
+        
         void f(){
             const char* bar = BAR;
         }
         """
-        statements='void f() {const char* bar = BAR;}'
+        fun='void f() {const char* bar = BAR;  }'
         pattern_type='(?i)Decl_?Stmt'
         expected = 'const char* bar = BAR;'
         factory = ASTFactory(ClangASTNode, [])
         atu = factory.create_from_text(code, 'test.c')
         patternFactory = CPatternFactory(factory, ref_node=atu)
-        statementsAtu = patternFactory.create(statements)
+        statementsAtu = patternFactory.create(fun)
         statements = ASTFinder.find_kind(statementsAtu, pattern_type).find_last().get()
         func_body = exclude_nodes_by_kind(atu.children)#[0].children[2]
         result = MatchFinder.match_pattern(func_body, [statements])

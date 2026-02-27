@@ -114,7 +114,7 @@ class ClangASTNode(ASTNode):
         for n in self.__inserted_children:
             self._children.append(n)
         for n in self.node.get_children():
-            if not (n.kind.name == 'MACRO_DEFINITION' and n.displayname.startswith('__')):
+            if not (n.kind.name == 'MACRO_DEFINITION' and (n.displayname.startswith('__') or n.displayname in ['linux', 'unix', '_LP64'])):
                 self._children.append(ClangASTNode(ClangASTNode.remove_wrapper(n), self.translation_unit, self))
 
         self._properties = self._derive_properties()
@@ -310,13 +310,20 @@ class ClangASTNode(ASTNode):
 
     def __derive_start_offset(self) -> int:
         try:
+            if self.node.kind.name == 'MACRO_DEFINITION':
+                    return self.node.extent.start.offset-self.node.extent.column
+
             return self.node.extent.start.offset
+
         except:
             return 0
 
     def __derive_length(self) -> int:
         try:
-            endOffset = self.node.extent.end.offset
+            if self.node.kind.name == 'VAR_DECL':
+                endOffset = self.node.extent.end.offset+1
+            else:
+                endOffset = self.node.extent.end.offset
             return endOffset - self.__derive_start_offset()
         except:
             return 0
