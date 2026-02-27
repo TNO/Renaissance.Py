@@ -1,8 +1,8 @@
 import pytest
 from pytest_bdd import given, when, then, scenario, parsers
-from impl.python import PythonASTNode, PythonPatternFactory
-from syntax_tree import ASTFactory, ASTFinder, ASTRewriter, MatchFinder
-from utils.flake8_util import fix_indent
+from renaissance.impl import PythonASTNode, PythonPatternFactory
+from renaissance.syntax_tree import ASTFactory, ASTRewriter, MatchFinder
+from renaissance.utils.flake8_util import fix_indent
 
 @pytest.fixture
 def context():

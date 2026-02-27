@@ -1,30 +1,25 @@
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+#[build-system]
+#requires = ["poetry-core>=2.0.0"]
+#build-backend = "poetry.core.masonry.api"
 
-[tool.poetry]
-name = "renaissance-experiments"
-version = "0.3.0"
-description = "Python version of the renaissance experiments"
-readme = "README.md"
-license = "MIT"
-# Package directory layout: include each top-level package found under python/src
-packages = [
-    { include = "rejuvenation", from = "python/examples" },
-    { include = "common", from = "python/src" },
-    { include = "extractors", from = "python/src" },
-    { include = "impl", from = "python/src" },
-    { include = "lst", from = "python/src" },
-    { include = "lst_matchers", from = "python/src" },
-    { include = "project", from = "python/src" },
-    { include = "refactoring", from = "python/src" },
-    { include = "syntax_tree", from = "python/src" },
-    { include = "utils", from = "python/src" },
-    { include = "visualizers", from = "python/src" },
-]
+#[tool.poetry]
+#packages = [
+#    { include = "rejuvenation", from = "python/examples" },
+#    { include = "common", from = "python/src" },
+#    { include = "extractors", from = "python/src" },
+#    { include = "impl", from = "python/src" },
+#    { include = "lst", from = "python/src" },
+#    { include = "lst_matchers", from = "python/src" },
+#    { include = "project", from = "python/src" },
+#    { include = "refactoring", from = "python/src" },
+#    { include = "syntax_tree", from = "python/src" },
+#    { include = "utils", from = "python/src" },
+#    { include = "visualizers", from = "python/src" },
+#]
+
 [project]
-name = "renaissance-experiments"
-version = "0.3.0"
+name = "renaissance"
+version = "0.3.1"
 description = "experimental python version of the renaissance tool"
 readme = "README.md"
 authors = [
@@ -33,7 +28,6 @@ authors = [
 license = { text = "MIT" }
 requires-python = ">=3.12"
 dependencies = [
-    # List your dependecies here
     "textx==4.3.0",
     "dataclasses-json==0.6.7",
     "parameterized==0.9.0",
@@ -41,31 +35,29 @@ dependencies = [
     "pyperclip==1.11.0",
     "clang==18.1.8",
     "libclang==18.1.1",
+    "more-itertools",
     "parameterized==0.9.0",
+    "pytest",
     "pytest-bdd==8.1.0",
     "pytest-cov==7.0.0",
     "pytest-mock==3.15.1",
     "pytest-black==0.6.0",
     "pytest-profiling==1.8.1",
+    "autopep8",
+    "pyecore",
+    "pyyaml",
+
+
+
+
+    "typing-extensions",
     "tree-sitter>=0.25",
     "tree-sitter-python==0.25.0",
     "tree-sitter-cpp==0.23.4",
     "tree-sitter-java==0.23.5"
 ]
 
-
-
-[[tool.poetry.source]]
-name = "pypi"
-#url = "https://pypi.org/simple"
-priority = "primary"
-
-[tool.poetry.dependencies]
-python = "^3.12"
-
 #bandit = { version = "^1.6.2", optional = true }
-#behave = { version = "^1.2.6", optional = true }
-#black = { version = "^19.10b0", optional = true }
 #cohesion = { version = "^1.0.0", optional = true }
 #coverage-enable-subprocess = { version = "^1.0", optional = true }
 #mock = { version = "^4.0.1", optional = true }
@@ -78,24 +70,41 @@ python = "^3.12"
 #vulture = { version = "^1.3", optional = true }
 #xenon = { version = "^0.7.0", optional = true }
 #coverage = { version = "^5.2.1", optional = true }
-#pyecore = "0.11.7"
-#pyyaml = "^5.3.1"
 
-[tool.poetry.extras]
-all = ["bandit", "behave", "black", "cohesion", "coverage", "coverage-enable-subprocess", "mock", "nose", "pycodestyle", "pydocstyle", "pylint", "pytest", "radon", "vulture", "xenon"]
-bandit = ["bandit"]
-black = ["black"]
-cohesion = ["cohesion"]
-pycodestyle = ["pycodestyle"]
-pydocstyle = ["pydocstyle"]
-pylint = ["pylint", "behave", "mock", "nose", "pytest"]
-radon = ["radon", "xenon"]
-vulture = ["vulture"]
-pytest = ["pytest", "mock", "coverage"]
-behave = ["behave", "coverage-enable-subprocess", "nose"]
-
-[tool.poetry.urls]
+#
+#
+#[[tool.poetry.source]]
+#name = "pypi"
+##url = "https://pypi.org/simple"
+#priority = "primary"
+#
+#[tool.poetry.dependencies]
+#python = "^3.12"
+#
+#[tool.uv.workspace]
+#members = [
+#    "renaissance",
+#    "renaissance-example",
+#]
+#
+#
+#
+#[project.extras]
+#all = ["bandit", "behave", "black", "cohesion", "coverage", "coverage-enable-subprocess", "mock", "nose", "pycodestyle", "pydocstyle", "pylint", "pytest", "radon", "vulture", "xenon"]
+#bandit = ["bandit"]
+#black = ["black"]
+#cohesion = ["cohesion"]
+#pycodestyle = ["pycodestyle"]
+#pydocstyle = ["pydocstyle"]
+#pylint = ["pylint", "behave", "mock", "nose", "pytest"]
+#radon = ["radon", "xenon"]
+#vulture = ["vulture"]
+#pytest = ["pytest", "mock", "coverage"]
+#behave = ["behave", "coverage-enable-subprocess", "nose"]
+#
+[project.urls]
 issues = "https://github.com/TNO/Renaissance-Experiments"
 
-[tool.poetry.scripts]
-reborncli = "rejuvenation.reborncli:refactor"
+[project.scripts]
+rejuvenate = "rejuvenation.cli:refactor"
+taut2test = "rejuvenation.cli:refactor"
