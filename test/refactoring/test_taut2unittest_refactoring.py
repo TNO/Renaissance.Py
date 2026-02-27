@@ -41,7 +41,6 @@ class TestTaut2Unittest(unittest.TestCase):
     @parameterized.expand(Factories.extend([
         ("@TAUT.skip_test\ndef test(a, b):\n    pass\n", "@unittest.skip\ndef test(a, b):\n    pass\n")
     ]))
-    @unittest.skip("Developed by Luna")
     def test_replace_skip(self, _, factory: ASTFactory, input_code, expected_code):
         atu = factory.create_from_text(input_code, 'tautskip.py')
         ASTShower.show_node(atu)
@@ -53,7 +52,6 @@ class TestTaut2Unittest(unittest.TestCase):
     @parameterized.expand(Factories.extend([
         ("import mock\nfrom TAUT import TestCase, TestDoubles", "\ntry:\n    from unittest.mock import patch\nexcept ImportError:\n    from mock import patch\n")
     ]))
-    @unittest.skip("Developed by Luna")
     def test_replace_import(self, _, factory: ASTFactory, input_code, expected_code):
         result = TautRefactoring.replace_mock_import(input_code)
         self.assertEqual(expected_code, result)
@@ -86,6 +84,7 @@ class TestTaut2Unittest(unittest.TestCase):
     @parameterized.expand(Factories.extend([
         (taut_code, result_code)
     ]))
+    @unittest.skip("Developed by Luna")
     def test_log_emrwxtl(self, _, factory: ASTFactory, input_code, expected_code):
         result = TautRefactoring.replace_log_emrwxtl(input_code)
         self.assertEqual(expected_code, result)

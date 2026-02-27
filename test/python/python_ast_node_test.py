@@ -3,6 +3,7 @@ from pathlib import Path
 
 from parameterized import parameterized
 
+import targets
 from renaissance.impl.python import PythonASTNode, PythonPatternFactory
 from renaissance.syntax_tree import ASTFactory, ASTShower
 from renaissance.syntax_tree.match_finder import is_match
@@ -231,12 +232,12 @@ def test_load_invalid_file():
         assert e.msg == 'unexpected indent'
 
 def test_load_file():
-    atu = PythonASTNode.load('features/targets/demo.py',{}, Path(__file__).parent.parent.parent.parent)
+    atu = PythonASTNode.load('demo.py',{}, Path(targets.__file__).parent)
     assert atu.translation_unit.atu.type_ignores ==[]
 
 def test_load_invalid_file():
     try:
-        atu = PythonASTNode.load('features/targets/invalid.py', {}, Path(__file__).parent.parent.parent.parent)
+        atu = PythonASTNode.load('invalid.py', {}, Path(targets.__file__).parent)
         assert False
     except IndentationError as e:
         assert e.msg == 'unexpected indent'

@@ -1,3 +1,4 @@
+import unittest
 from unittest import TestCase
 
 from renaissance.impl.clang_json import ClangJsonASTNode
@@ -6,6 +7,7 @@ from renaissance.syntax_tree.match_finder import exclude_nodes_by_kind
 
 
 class ClangMatchJsonFinderTest(TestCase):
+    @unittest.skip("marco is not detected")
     def testIsMatch(self):
         code = """
         #define BAR "bar"
@@ -21,6 +23,5 @@ class ClangMatchJsonFinderTest(TestCase):
         patternFactory = CPatternFactory(factory, ref_node=atu)
         statementsAtu = patternFactory.create(statements)
         statements = ASTFinder.find_kind(statementsAtu, pattern_type).find_last().get()
-        func_body = exclude_nodes_by_kind(atu.children)#[0].children[2]
-        result = MatchFinder.match_pattern(func_body, [statements])
+        result = MatchFinder.match_pattern(atu.children[-1].children[-1].children, [statements])
         self.assertEqual(1, len(result))

@@ -24,7 +24,7 @@ class CcppShowerTest(unittest.TestCase):
         }''')
         simple = ASTFinder.find_kind(pattern, '(?i)Call_?Expr').to_list()[0]
 
-        self.assertEqual('(CALL_EXPR, $pa, test.c[91:99]): |$pa($xx);|\n', str(simple))
+        self.assertEqual('(CALL_EXPR, $pa, test.c[80:88]): |$pa($xx);|\n', str(simple))
 
     def test_show_main(self):
         expected = ('(TRANSLATION_UNIT, test.c, test.c[0:105]):\n'
@@ -40,7 +40,7 @@ class CcppShowerTest(unittest.TestCase):
         expected =(('[(FUNCTION_DECL, ba, test.c[9:25]): |void ba(int i){}|\n'
          ', (FUNCTION_DECL, ca, test.c[34:50]): |void ca(int i){}|\n'
          ', (FUNCTION_DECL, lo, test.c[59:75]): |void lo(int i){}|\n'
-         ', (VAR_DECL, na, test.c[84:95]): |int na = 55|\n'
+         ', (VAR_DECL, na, test.c[84:96]): |int na = 55;|\n'
          ']'))
         real_children = list(filter(lambda n: n.kind != 'MACRO_DEFINITION', self.atu.children))
         self.assertEqual(expected, str(real_children))
@@ -79,7 +79,7 @@ class CcppShowerTest(unittest.TestCase):
  '      (DECL_LOC, i, test.c[71:72]): |i|\n'
  '      (TYPE_REF, i, test.c[67:70]): |int|\n'
  '    (COMPOUND_STMT, , test.c[73:75]): |{}|\n'
- '  (VAR_DECL, na, test.c[84:95]): |int na = 55|\n'
+ '  (VAR_DECL, na, test.c[84:96]): |int na = 55;|\n'
  '    (DECL_LOC, na, test.c[88:90]): |na|\n'
  '    (TYPE_REF, na, test.c[84:87]): |int|\n'
  '    (INTEGER_LITERAL, , test.c[93:95]): |55|\n'), text)
