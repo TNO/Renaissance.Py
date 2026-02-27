@@ -26,7 +26,13 @@ class CPatternFactory:
         # collect includes #defines  and var decl from the refNode
         if ref_node:
             matcher_set = {'STRUCT_DECL', 'VAR_DECL', 'TYPE_DEF', 'MACRO_DEFINITION','INCLUSION_DIRECTIVE'}
-            self.header = "\n".join(c.text for c in ref_node.children if c.is_part_of_translation_unit() and c.kind in matcher_set)
+            self.header = "\n".join(c.signature for c in ref_node.children if c.is_part_of_translation_unit() and c.kind in matcher_set)
+            # self.header = "\n"
+            # if ref_node:
+            #     matcher_set = {'STRUCT_DECL', 'VAR_DECL', 'TYPE_DEF', 'MACRO_DEFINITION', 'INCLUSION_DIRECTIVE'}
+            #     for c in ref_node.children:
+            #         if c.is_part_of_translation_unit() and c.kind in matcher_set:
+            #             self.header += c.signature + '\n'
             # hj2 = [c for c in hj if c.kind != 'INCLUSION_DIRECTIVE']
             # hj3 = min(c.offset for c in hj2)
             # offset = (

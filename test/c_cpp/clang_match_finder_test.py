@@ -27,7 +27,8 @@ class ClangMatchFinderTest(TestCase):
         patternFactory = CPatternFactory(factory, ref_node=atu)
         statementsAtu = patternFactory.create(fun)
         statements = ASTFinder.find_kind(statementsAtu, pattern_type).find_last().get()
-        func_body = exclude_nodes_by_kind(atu.children)#[0].children[2]
+        # atu.statements[-1].body
+        func_body = atu.children[-1].children[-1].children
         result = MatchFinder.match_pattern(func_body, [statements])
         self.assertEqual(1, len(result))
         # self.assertEqual(expected, result[0].nodes[0].text)

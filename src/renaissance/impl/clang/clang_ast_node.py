@@ -91,7 +91,6 @@ class ClangASTNode(ASTNode):
         self._kind = insert_kind if insert_kind is not None else self.__derive_kind()
         self.indent = ''
         # TODO: TextUtils.get_indent(self.content, self._offset)
-
         # an fake child is introduced to handle the case where the type of a declaration is not found
         # for example in the case of a base type.
         # without the fake child pattern matching on types will be difficult
@@ -114,8 +113,7 @@ class ClangASTNode(ASTNode):
         for n in self.__inserted_children:
             self._children.append(n)
         for n in self.node.get_children():
-            if not (n.kind.name == 'MACRO_DEFINITION' and (n.displayname.startswith('__') or n.displayname.startswith('_MS')
-                                                           or n.displayname.startswith('_M_') or n.displayname in ['linux', 'unix', '_LP64','_WIN32','_WIN64','_ISO_VOLATILE','_INTEGRAL_MAX_BITS'])):
+            if not is_system_macro(n) and n.kind.name != 'MACRO_INSTANTIATION':
                 self._children.append(ClangASTNode(ClangASTNode.remove_wrapper(n), self.translation_unit, self))
 
         self._properties = self._derive_properties()
@@ -188,7 +186,7 @@ class ClangASTNode(ASTNode):
     def extended_end_offset(self) -> int:
         try:
             endOffset = self._offset + self._length
-            if (not self._is_statement_or_declaration()) and (self.parent and self.parent.kind in STMT_PARENTS):
+            if (not self._is_statement_or_declaration()) and (self.parent and self.parent.kind in STMT_PARENTS) and self.kind not in ['MACRO_DEFINITION']:
                 content = self.root.binary_file_content()
                 while endOffset < len(content) and not content[endOffset - 1] in b';':
                     endOffset += 1
@@ -373,6 +371,20 @@ class ClangASTNode(ASTNode):
     @staticmethod
     def _is_wrapped(cursor):
         return cursor.kind.is_unexposed() and len(list(cursor.children)) == 1
+
+SYSTEM_MACROS= {'linux',
+     'unix',
+     '_LP64',
+     '_WIN32',
+     '_WIN64',
+     '_ISO_VOLATILE',
+     '_INTEGRAL_MAX_BITS'}
+def is_system_macro(n):
+    return (n.kind.name == 'MACRO_DEFINITION'
+        and (n.displayname.startswith('__')
+          or n.displayname.startswith('_MS')
+          or n.displayname.startswith('_M_')
+          or n.displayname in SYSTEM_MACROS ))
 
 
 class ReferenceHelper():
