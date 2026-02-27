@@ -24,7 +24,7 @@ class CcppShowerTest(unittest.TestCase):
         }''')
         simple = ASTFinder.find_kind(pattern, '(?i)Call_?Expr').to_list()[0]
 
-        self.assertEqual('(CALL_EXPR, $pa, test.c[82:90]): |$pa($xx);|\n', str(simple))
+        self.assertEqual('(CALL_EXPR, $pa, test.c[80:88]): |$pa($xx);|\n', str(simple))
 
     def test_show_main(self):
         expected = ('(TRANSLATION_UNIT, test.c, test.c[0:105]):\n'
