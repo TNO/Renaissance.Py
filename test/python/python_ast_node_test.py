@@ -230,5 +230,16 @@ def test_load_invalid_file():
     except IndentationError as e:
         assert e.msg == 'unexpected indent'
 
+def test_load_file():
+    atu = PythonASTNode.load('features/targets/demo.py',{}, Path(__file__).parent.parent.parent.parent)
+    assert atu.translation_unit.atu.type_ignores ==[]
+
+def test_load_invalid_file():
+    try:
+        atu = PythonASTNode.load('features/targets/invalid.py', {}, Path(__file__).parent.parent.parent.parent)
+        assert False
+    except IndentationError as e:
+        assert e.msg == 'unexpected indent'
+
     if __name__ == '__main__':
         unittest.main()
