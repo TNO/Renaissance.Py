@@ -8,7 +8,7 @@ from typing_extensions import override
 from renaissance.common import Stream
 from renaissance.impl import MATCH_ONE, MATCH_ALL
 from renaissance.syntax_tree import ASTNode, ASTReference
-from renaissance.syntax_tree.match_finder import is_match_dict, is_match_tree, match_pattern
+from renaissance.syntax_tree.match_finder import is_match_dict, is_match_tree, match_pattern, is_match, find_in_list
 
 EMPTY_DICT = {}
 EMPTY_STR = ''
@@ -77,6 +77,7 @@ class ImplicitNode(ast.Name):
     )
 
 
+
 class PythonASTNode(ASTNode):
     def __init__(self, node: ast.AST, translation_unit: PythonTranslationUnit = None, parent=None,
                  start_offset: Optional[int] = None, length: Optional[int] = None, insert_kind: Optional[str] = None):
@@ -124,7 +125,7 @@ class PythonASTNode(ASTNode):
                         else:
                             self._children.append(PythonASTNode(ImplicitNode(name, child), translation_unit, self))
                             if name == 'body':
-                                self.body = self._children[-1]
+                                self.body = self._children[-1].children
                     case ast.AST():
                         if name not in ['ctx']:
                             self._children.append(PythonASTNode(child, translation_unit, self))
@@ -148,16 +149,28 @@ class PythonASTNode(ASTNode):
         return id
 
     def __eq__(self, other: ASTNode):
-        if (not other
-        or  not isinstance(other, type(self))
-        # or len(self.children) != len(other.children)
-        or self.kind != other.kind):
-            return False
-        return (is_match_dict(self.properties, other.properties, {})
-                and is_match_tree(self.children, other.children,{}))
+        return is_match(self,other)
 
     def __contains__(self, item):
-        return match_pattern([self],[item], {})
+        if isinstance(item, self.__class__):
+            item = [item]
+        return find_in_list(self.children,item )
+
+
+    def __getitem__(self, key):
+        """Allow indexing/slicing into node to access children.
+
+        Usage: node[0] == node.children[0]
+        """
+        # support integer index and slice
+        if isinstance(key, int):
+            return self.children[key]
+        if isinstance(key, slice):
+            return self.children[key]
+        # support string keys to access properties (e.g., node['name'])
+        if isinstance(key, str):
+            return self.properties[key]
+        raise TypeError(f"Indices must be integers or slices, not {type(key)}")
 
     def derive_position(self, node: ast.AST, translation_unit: PythonTranslationUnit, parent):
         if node._attributes:
@@ -191,18 +204,46 @@ class PythonASTNode(ASTNode):
 
     @override
     def _derive_name(self):
-        if isinstance(self.node, str):
+        if 'name' in self.node._fields and self.node.name:
+            name = self.node.name
+        elif 'target' in self.node._fields and self.node.target.id:
+            name = self.node.target.id
+        elif 'targets' in self.node._fields and len(self.node.targets)==1:
+            name = self.node.targets[0].id
+        elif isinstance(self.node, str):
             name = self.node
         elif 'body' not in self.node._fields:
             name = ast.unparse(self.node)
-        elif 'name' in self.node._fields and self.node.name:
-            name = self.node.name
         elif 'id' in self.node._fields and self.node.id:
             name = self.node.id
         else:
             name = self.kind
         return name.replace(MATCH_ALL, '$$').replace(MATCH_ONE, '$')
 
+    @property
+    def type(self):
+        return self.node.annotation.id if 'annotation' in self.node._fields else None
+
+    @property
+    def value(self):
+        return self.node.value.value
+
+    @property
+    def expr(self):
+        return 'expr'
+
+    OPERATOR_MAP = {
+        'Assign': '=',
+        'AnnAssign': '=',
+        'AugAssignAdd': '+=',
+        'For': 'for'
+
+    }
+    @property
+    def operator(self):
+        node_type = type(self.node).__name__
+        op   = type(self.node.op).__name__ if 'op' in self.node._fields else ""
+        return self.OPERATOR_MAP.get(node_type+op,'')
     @override
     @property
     def signature(self) -> str:
@@ -302,21 +343,6 @@ class PythonASTNode(ASTNode):
             return self.parent
         else:
             return self.parent.get_container_parent()
-
-    def __getitem__(self, key):
-        """Allow indexing/slicing into node to access children.
-
-        Usage: node[0] == node.children[0]
-        """
-        # support integer index and slice
-        if isinstance(key, int):
-            return self.children[key]
-        if isinstance(key, slice):
-            return self.children[key]
-        # support string keys to access properties (e.g., node['name'])
-        if isinstance(key, str):
-            return self.properties[key]
-        raise TypeError(f"Indices must be integers or slices, not {type(key)}")
 
 
 class ReferenceHelper:
