@@ -1,18 +1,13 @@
-import ast
-import inspect
-import unittest
-from itertools import count
-from unittest.mock import patch
-
+import pytest
 from parameterized import parameterized
 
 from renaissance.impl import MATCH_ONE, MATCH_ALL
 from renaissance.impl.python import PythonASTNode, PythonPatternFactory
 from renaissance.syntax_tree import ASTFactory
-from renaissance.syntax_tree.match_finder import is_match, MatchFinder, PatternMatch
+from renaissance.syntax_tree.match_finder import MatchFinder
 
 
-class PythonMatcherTest(unittest.TestCase):
+class TestPythonMatcher:
 
     def setUp(self):
         self.factory = ASTFactory(PythonASTNode, [])
