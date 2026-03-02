@@ -7,7 +7,7 @@ from typing_extensions import override
 
 from renaissance.common import Stream
 from renaissance.impl import MATCH_ONE, MATCH_ALL
-from renaissance.syntax_tree import ASTNode, ASTReference
+from renaissance.syntax_tree import ASTNode, ASTReference, PatternMatch
 from renaissance.syntax_tree.match_finder import is_match_dict, is_match_tree, match_pattern, is_match, find_in_list
 
 EMPTY_DICT = {}
@@ -172,6 +172,8 @@ class PythonASTNode(ASTNode):
             return self.properties[key]
         raise TypeError(f"Indices must be integers or slices, not {type(key)}")
 
+    def find_all(self, pattern: Sequence)-> Sequence[PatternMatch]:
+        return match_pattern(self.children, pattern)
     def derive_position(self, node: ast.AST, translation_unit: PythonTranslationUnit, parent):
         if node._attributes:
             if parent.name == 'decorator_list':
@@ -230,13 +232,25 @@ class PythonASTNode(ASTNode):
 
     @property
     def expr(self):
-        return 'expr'
+        if 'expr' in self.node._fields:
+            return PythonASTNode(self.node.expr, self.translation_unit, self)
+        elif 'iter' in self.node._fields:
+            return PythonASTNode(self.node.iter, self.translation_unit, self)
+        elif 'test' in self.node._fields:
+            return PythonASTNode(self.node.test, self.translation_unit, self)
+        else:
+            return None
 
     OPERATOR_MAP = {
         'Assign': '=',
         'AnnAssign': '=',
         'AugAssignAdd': '+=',
-        'For': 'for'
+        'For': 'for',
+        'While': 'while',
+        'If': 'if',
+        'Try': 'try',
+        'ClassDef': 'class',
+        'FunctionDef': 'function',
 
     }
     @property
