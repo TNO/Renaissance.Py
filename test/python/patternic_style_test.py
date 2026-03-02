@@ -5,11 +5,12 @@ from renaissance.impl import MATCH_ONE, MATCH_ALL
 from renaissance.impl.python import PythonASTNode, PythonPatternFactory
 from renaissance.syntax_tree import ASTFactory
 from renaissance.syntax_tree.match_finder import MatchFinder
-
+from hamcrest import assert_that, is_equal
 
 class TestPythonMatcher:
 
-    def setUp(self):
+
+    def Setup(self):
         self.factory = ASTFactory(PythonASTNode, [])
         self.atu = self.factory.create_from_text('ba(55)\nca(555)\nlo(4444)\nna=55', 'test.py')
         self.pattern_factory = PythonPatternFactory(self.factory, self.atu)
@@ -27,11 +28,13 @@ class TestPythonMatcher:
     #     ('match x:\n  case _:    pass', 'Match'),
     #     ])
     def test_for_stmt(self):
-        it = self.pattern_factory.create('for name in expr:\n  1\n  2\n  pass')
-        self.assertEqual(it.operator,"for")
-        self.assertEqual(it.name,"name")
-        self.assertEqual(it.expr,"expr")
-        self.assertEqual(len(it.body),3)
+        factory = ASTFactory(PythonASTNode, [])
+        pattern_factory = PythonPatternFactory(self.factory)
+        it = pattern_factory.create('for name in expr:\n  1\n  2\n  pass')
+        assert_that(it.operator,is_equal("for"))
+        assertEqual(it.name,"name")
+        assertEqual(it.expr,"expr")
+        assertEqual(len(it.body),3)
 
     #
     # def test_stmt_with_body(self):
