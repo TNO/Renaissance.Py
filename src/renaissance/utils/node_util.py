@@ -20,9 +20,9 @@ def detect_placeholder(
     """
     if not signature:
         return (False, original_node_type, "")
-    if (signature.startswith(MATCH_ALL) or signature.startswith("$$") ) and ' ' not in signature:  # legacy compatibility
+    if (signature.startswith(MATCH_ALL) or signature.startswith("$$") ) and ' ' not in signature and '(' not in signature:  # legacy compatibility
         return (True, MATCH_ALL, signature)
-    elif (signature.startswith(MATCH_ONE) or signature.startswith("$")) and ' ' not in signature:
+    elif (signature.startswith(MATCH_ONE) or signature.startswith("$")) and ' ' not in signature and '(' not in signature:
         return (True, MATCH_ONE, signature)
     return (False, original_node_type, "-")
 

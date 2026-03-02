@@ -1,5 +1,6 @@
 import tree_sitter_python as tspython
 
+from renaissance.impl import MATCH_ONE
 from renaissance.impl.python import PythonPatternFactory
 from renaissance.impl.tree_sitter_adapter import TreeSitterAdapter, TsPatternFactory
 from renaissance.lst.lst import LSTNode
@@ -38,13 +39,16 @@ rewriter = ASTRewriter(lst.root)
 def raw(nodes):
     res = ''
     for node in nodes:
-        res += node.signature
+        if isinstance(node,str ):
+            res += node
+        else:
+            res += node.signature
     return res + '\n'
 
 for match in matches:
     replment_text = "my_awesome_$greet($arg,'is','awesome)"
     for repl_snippet in match.expansions:
-        replment_text = replment_text.replace(repl_snippet, raw(match.expansions[repl_snippet]))
+        replment_text = replment_text.replace(repl_snippet.replace(MATCH_ONE,'$'), raw(match.expansions[repl_snippet]))
     rewriter.replace(replment_text, match.nodes)
 result = rewriter.apply_to_string()
 print(result)
