@@ -202,3 +202,22 @@ class TestPythonicStyle:
         assert_that(results, has_length(2))
         assert_that(results[0].nodes, has_length(3))
 
+    def test_slice_call(self):
+        factory = ASTFactory(PythonASTNode)
+        atu = factory.create_from_text('ba(55)\nna(55)\nna(55)\npa(55)\npa(55)\nba(55)\nna(55)\nna(55)\nna=55', 'test.py')
+        slice = atu[0:3]
+        assert_that(slice , has_length(3))
+
+    @pytest.mark.skip(reason="This test should work")
+    def test_property_kind_call(self):
+        factory = ASTFactory(PythonASTNode)
+        atu = factory.create_from_text('ba(55)\nna(55)\nna(55)\npa(55)\npa(55)\nba(55)\nna(55)\nna(55)\nna=55', 'test.py')
+        slice = atu['kind']
+        assert_that(slice , is_('Module'))
+
+    @pytest.mark.skip(reason="This test should work")
+    def test_property_name_call(self):
+        factory = ASTFactory(PythonASTNode)
+        atu = factory.create_from_text('ba(55)\nna(55)\nna(55)\npa(55)\npa(55)\nba(55)\nna(55)\nna(55)\nna=55', 'test.py')
+        slice = atu['name']
+        assert_that(slice , is_('Module'))

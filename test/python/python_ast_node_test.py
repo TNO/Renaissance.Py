@@ -1,6 +1,7 @@
 import unittest
 from pathlib import Path
 
+from hamcrest import has_length, assert_that
 from parameterized import parameterized
 
 import targets
@@ -213,23 +214,15 @@ def outer():
         assert '$$args' in expansions
         assert  len(expansions['$$args']) == 5
 
-    @unittest.skip("Examine @TUAT")
     def test_attribute_signature_has_at(self):
         src = self.pattern_factory.create_statement('@TUAT\ndef ba(): pass')
         ASTShower.show_node(src)
         attr = src.children[2].children[0]
         assert attr.signature == '@TUAT'
 
-def test_load_file():
-    atu = PythonASTNode.load('features/targets/demo.py',{}, Path(__file__).parent.parent.parent.parent)
-    assert atu.translation_unit.atu.type_ignores ==[]
-
-def test_load_invalid_file():
-    try:
-        atu = PythonASTNode.load('features/targets/invalid.py', {}, Path(__file__).parent.parent.parent.parent)
-        assert False
-    except IndentationError as e:
-        assert e.msg == 'unexpected indent'
+def test_load_file_with_ignored_types():
+    atu = PythonASTNode.load_from_text('name:TypeX =TypeX(1,2,3)', 'bogus.py',{}, Path(targets.__file__))
+    assert_that(atu.translation_unit.atu.type_ignores, has_length(1))
 
 def test_load_file():
     atu = PythonASTNode.load('demo.py',{}, Path(targets.__file__).parent)

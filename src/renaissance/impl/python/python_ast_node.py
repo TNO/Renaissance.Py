@@ -8,7 +8,7 @@ from typing_extensions import override
 from renaissance.common import Stream
 from renaissance.impl import MATCH_ONE, MATCH_ALL
 from renaissance.syntax_tree import ASTNode, ASTReference, PatternMatch
-from renaissance.syntax_tree.match_finder import is_match_dict, is_match_tree, match_pattern, is_match, find_in_list
+from renaissance.syntax_tree.match_finder import match_pattern, is_match, find_in_list
 
 EMPTY_DICT = {}
 EMPTY_STR = ''
@@ -148,7 +148,7 @@ class PythonASTNode(ASTNode):
             id = node.value.id
         return id
 
-    def __eq__(self, other: ASTNode):
+    def __eq__(self, other):
         return is_match(self,other)
 
     def __contains__(self, item):
@@ -194,7 +194,7 @@ class PythonASTNode(ASTNode):
     def load(file_path: Path, extra_args: Sequence[str], working_dir: Path) -> 'PythonASTNode':
         with open(working_dir / file_path, 'r') as file:
             content = file.read()
-            return PythonASTNode.load_from_text(content, file_path, extra_args, working_dir)
+            return PythonASTNode.load_from_text(content, str(file_path), extra_args, working_dir)
 
     @override
     @staticmethod
@@ -208,12 +208,10 @@ class PythonASTNode(ASTNode):
     def _derive_name(self):
         if 'name' in self.node._fields and self.node.name:
             name = self.node.name
-        elif 'target' in self.node._fields and self.node.target.id:
+        elif 'target' in self.node._fields and hasattr(self.node.target,'id'):
             name = self.node.target.id
-        elif 'targets' in self.node._fields and len(self.node.targets)==1:
+        elif 'targets' in self.node._fields and len(self.node.targets)==1 and hasattr(self.node.targets[0],'id'):
             name = self.node.targets[0].id
-        elif isinstance(self.node, str):
-            name = self.node
         elif 'body' not in self.node._fields:
             name = ast.unparse(self.node)
         elif 'id' in self.node._fields and self.node.id:
@@ -293,15 +291,12 @@ class PythonASTNode(ASTNode):
         # the references are stored in the function definition
         # but we want them to also show up in the declaration
         if len(ref_by) == 0:
-            definition = self._get_function_definition()
+            definition = None
             if definition:
                 ref_by = self.translation_unit._referenced_by.get(node_id, EMPTY_LIST)
         return Stream(ref_by) \
             .map(
             lambda ref: ASTReference(self.translation_unit._nodes[ref.node_id], ref.ref_kind, ref.properties)).to_list()
-
-    def _get_function_definition(self):
-        return None
 
     @property
     @override
