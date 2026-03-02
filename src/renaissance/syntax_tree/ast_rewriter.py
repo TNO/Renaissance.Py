@@ -5,7 +5,7 @@ from typing import Optional, Sequence
 from .match_finder import PatternMatch
 from .ast_finder import ASTFinder
 from .ast_node import ASTNode
-from .text_utils import TextUtils
+from renaissance.utils.text_utils import TextUtils
 from renaissance.common import Rewriter
 
 

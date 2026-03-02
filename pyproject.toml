@@ -47,6 +47,7 @@ dependencies = [
     "autopep8",
     "pyecore",
     "pyyaml",
+    "termcolor",
     "typing-extensions",
     "tree-sitter>=0.25",
     "tree-sitter-python==0.25.0",

@@ -430,5 +430,3 @@ class ReferenceHelper:
 
 
 types = ['int', 'float', 'str', 'list', 'set', 'tuple', 'Mapping', 'dict', 'Optional']
-if __name__ == "__main__":
-    pass

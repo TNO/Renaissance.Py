@@ -7,7 +7,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Callable
 
-from .text_utils import TextUtils
+from renaissance.utils.text_utils import TextUtils
 
 # enum with ABORT, CONTINUE and SKIP
 class VisitorResult(Enum):
