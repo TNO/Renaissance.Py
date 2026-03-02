@@ -1,4 +1,7 @@
+import sys
 from typing import Any, Self
+
+from renaissance.utils.node_util import preceding_sibling, next_sibling
 
 
 class LSTNode:
@@ -10,6 +13,7 @@ class LSTNode:
             offset: int | None = None,
             children: list[Self] | None = None,
             parent: Self | None = None,
+            root: Self | None = None,
     ):
         self.kind = node_type
         self.properties = properties
@@ -21,17 +25,33 @@ class LSTNode:
         self.indent = ''
         self.length = len(signature)
         self.end_offset = self.offset + self.length
+        self.extended_end_offset = self.end_offset
         self.is_statement = node_type == 'Expr'
         self.referenced_by = []
         self.references = []
+        self.root = root if root else self
+
+        self.filename = 'unknown'
 
     def add_child(self, child):  # LSTNode):
         self.children.append(child)
         child.parent = self
 
     @property
+    def preceding_sibling(self) -> Self | None:
+        return preceding_sibling(self)
+
+    @property
+    def next_sibling(self) -> Self | None:
+        next_sibling(self)
+
+    @property
     def name(self):
         return self.properties.get('name')
+
+    def binary_file_content(self):
+        return self.properties.get('source_code').encode(sys.getfilesystemencoding())
+
 
     def __str__(self):
         raw_lines = self.signature.splitlines()

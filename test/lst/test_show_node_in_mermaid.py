@@ -7,7 +7,7 @@ from renaissance.impl.tree_sitter_adapter.tree_sitter_adapter import TreeSitterA
 from renaissance.visualizers.lst_mermaid_visualizer import LSTMermaidVisualizer
 
 
-def process_code(language_name, grammar_module, code):
+def process_code( grammar_module, code):
     adapter = TreeSitterAdapter(grammar_module)
     tree = adapter.parse_code(code)
     lst = adapter.to_lst(code, tree)
@@ -132,7 +132,7 @@ n1 --> n2'''
 ])
 def test_create_diagrams(raw,module, mermaid):
     code_py = raw
-    result = process_code("python", module, code_py)
+    result = process_code( module, code_py)
 
     assert result == mermaid
 
@@ -140,10 +140,3 @@ def test_create_diagrams(raw,module, mermaid):
     #     f.write("```mermaid\n")
     #     f.write(mermaid)
     #     f.write("\n```")
-    #
-    # code_cpp =
-    # code_java =
-
-
-    # process_code("cpp", tscpp, code_cpp)
-    # process_code("java", tsjava, code_java)

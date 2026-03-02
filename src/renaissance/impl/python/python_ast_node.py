@@ -30,7 +30,7 @@ class PythonTranslationUnit():
 
     def __init__(self, content, file_name: str):
         self.content = content.encode(sys.getfilesystemencoding())
-        self.atu = ast.parse(content, file_name)
+        self.atu = ast.parse(content, file_name,type_comments=True)
         self.file_name = file_name
         self.references_initialized = False
         PythonTranslationUnit.cache[file_name] = content
@@ -40,14 +40,14 @@ class PythonTranslationUnit():
         self._referenced_by: dict[str, list[PythonASTReference]] = {}
         self._nodes: dict[str, 'PythonASTNode'] = {}
 
-    def check_diagnostics(self) -> None:
+    def check_diagnostics(self, continue_with_warning=True) -> None:
         msg = None
         errors = ''
         for d in self.atu.type_ignores:
             msg = f'type ignored: {d.tag} at {d.lineno}\n'
             errors += msg
             print(msg)
-        if msg:
+        if msg and not continue_with_warning:
             raise Exception(f'Error parsing: {self.file_name} \n+ errors: {errors}')
 
     def lazy_create_refers(self, node: 'ASTNode') -> None:

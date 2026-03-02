@@ -38,3 +38,20 @@ def process_node(node, action ) -> None:
     if node.children:
         for child in node.children:
             process_node(child, action)
+
+
+def preceding_sibling(node):
+    parent = node.parent
+    if not parent:
+        return None
+    siblings = parent.children
+    index = siblings.index(node)
+    return siblings[index - 1] if index > 0 else None
+
+def next_sibling(self):
+    parent = self.parent
+    if not parent:
+        return None
+    siblings = parent.children
+    index = siblings.index(self)
+    return siblings[index + 1] if index < len(siblings) - 1 else None
