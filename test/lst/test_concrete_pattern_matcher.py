@@ -1,5 +1,6 @@
 import unittest
 
+from hamcrest import assert_that, has_length
 from parameterized import parameterized
 
 from renaissance.extractors.extractor import Extractor
@@ -8,7 +9,7 @@ from renaissance.impl.tree_sitter_adapter.ts_pattern_factory import TsPatternFac
 
 import tree_sitter_python
 
-from renaissance.syntax_tree.match_finder import is_match, is_match_tree
+from renaissance.syntax_tree.match_finder import is_match, is_match_tree, match_pattern
 
 
 @parameterized.expand([
@@ -39,7 +40,7 @@ def test_python_pattern(code, pattern):
     extractor = Extractor(interface, [pattern])
     matches = extractor.run(code)
 
-    assert len(matches) == 1, f"{code=} {pattern=}"
+    assert_that(matches, has_length(1), f"{code=} {pattern=}")
 
 
 def test_is_match_python_patterns():
@@ -66,9 +67,15 @@ def test_is_match_python_patterns_1():
     interface = TsPatternFactory(adapter)
     c = interface.create_statement("if x:  print(x)")
     p = interface.create_statement("if x:  $body")
-    assert is_match(c, p, {})  # type: ignore
+    assert_that(is_match(c,p))
+    assert match_pattern([c], [p])  # type: ignore
 
-
+def test_is_match():
+    adapter = TreeSitterAdapter(tree_sitter_python)
+    interface = TsPatternFactory(adapter)
+    c = interface.create_statement("def foo(): pass")
+    p = interface.create_statement("def foo(): pass")
+    assert_that(is_match(c,p))
 # def test_python_patterns_tree_1(self):
 #     adapter = TreeSitterAdapter(tspython)
 #     interface = TsPatternFactory(adapter)
