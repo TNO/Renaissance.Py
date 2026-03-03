@@ -26,6 +26,8 @@ Prefer writing thin wrappers (adapter objects) that present the project's canoni
 - Wrappers preserve original semantics and make interop explicit.
 - Adapters make it easy to support multiple external sources without changing core logic.
 
+
+
 ## Consequences
 
 Positive:

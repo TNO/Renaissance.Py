@@ -8,6 +8,8 @@ from renaissance.impl import MATCH_ALL, MATCH_ONE
 def replace_dollar(text: str) -> str:
     return text.replace('$$', MATCH_ALL).replace('$', MATCH_ONE)
 
+def use_dollar(text: str) -> str:
+    return text.replace(MATCH_ALL,'$$').replace( MATCH_ONE,'$')
 
 def detect_placeholder(
     signature: str, original_node_type: str

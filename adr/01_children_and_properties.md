@@ -35,7 +35,7 @@ class GoAstNode:
         ...
 
     @property
-    def children(self) -> list[self]:
+    def children(self) -> list[Self]:
         ...
 
 ```

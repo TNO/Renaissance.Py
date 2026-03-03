@@ -3,6 +3,7 @@ from typing import Sequence, Self, Iterable, Protocol, runtime_checkable
 from .ast_node import ASTNode
 from renaissance.common import Stream
 from renaissance.impl import MATCH_ALL, MATCH_ONE
+from ..utils.node_util import use_dollar
 
 VERBOSE = False
 
@@ -177,11 +178,11 @@ def is_match_dict(src: dict, cmp: dict, expansions: dict) -> bool:
     def match_property(n):
         c = cmp.get(n)
         s = src.get(n)
-        if isinstance(c, str) and (c.startswith('$') or c.startswith(MATCH_ONE)):
+        if isinstance(c, str) and (use_dollar(c).startswith('$')):
             if c in expansions:
-                return s == expansions[c][0]
+                return s == expansions[use_dollar(c)][0]
             else:
-                expansions[c] = [s]
+                expansions[use_dollar(c)] = [s]
                 return True
         return s == c
     all_keys = (src.keys() | cmp.keys()) - IRRELEVANT_PROPS

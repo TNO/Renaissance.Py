@@ -36,25 +36,19 @@ Adopt a Pythonic direct-access convention for node definitions. Nodes may declar
 
 ```python
 class GoAstNode:
-    expr:self
-    body:self
-    other:self
+    #direct access protocol
+    expr:Self
+    body:Sequence[Self]
+    other:Sequence[self]
     
+    #rewrite protocol
     length:int
     offset:int
     name:str
-    
-    @property
-    def properties(self) -> dict[str, int | str]:
-        return {"name": self.name}
 
-    @property
-    def children(self) -> list[self]:
-        return [
-            self.expr,
-            self.body,
-            self.other,
-        ]
+    #matcher
+    properties:dict[str, int | str]
+    children:list[Self]
 
 ```
 ## Rationale
