@@ -179,9 +179,9 @@ def is_match_dict(src: dict, cmp: dict, expansions: dict) -> bool:
         s = src.get(n)
         if isinstance(c, str) and (c.startswith('$') or c.startswith(MATCH_ONE)):
             if c in expansions:
-                return s == expansions[c][0]
+                return s == expansions[c.replace(MATCH_ONE, '$')][0]
             else:
-                expansions[c] = [s]
+                expansions[c.replace(MATCH_ONE, '$')] = [s]
                 return True
         return s == c
     all_keys = (src.keys() | cmp.keys()) - IRRELEVANT_PROPS

@@ -44,3 +44,20 @@ def fix_indent(code_string):
         # Clean up the temporary file
         if os.path.exists(file_path):
             os.remove(file_path)
+
+def add_indent(code, spaces=4):
+    # Create the indentation string
+    indent = ' ' * spaces
+
+    # Split the code into lines
+    lines = code.splitlines()
+
+    # If there's only one line or no lines, return the original code
+    if len(lines) <= 1:
+        return code
+
+    # Keep the first line unchanged, add indentation to the rest
+    indented_lines = [lines[0]] + [indent + line for line in lines[1:]]
+    indented_code = '\n'.join(indented_lines)
+
+    return indented_code

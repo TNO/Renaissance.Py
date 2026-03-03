@@ -1,4 +1,4 @@
-from renaissance.utils.flake8_util import fix_indent
+from renaissance.utils.flake8_util import fix_indent, add_indent
 
 from renaissance.impl.python import PythonASTNode, PythonPatternFactory
 from renaissance.syntax_tree import ASTShower, ASTProcessor, MatchFinder, ASTRewriter, ASTFactory
@@ -123,6 +123,84 @@ for p in self.patches:
     p.start()"""
         pattern4 = 'self.context_stub = EMRMxCONTEXT.EMRMxCONTEXTStub()'
         return TautRefactoring.refactor_insert_after(result3, insert_code, pattern4)
+
+    @staticmethod
+    def refactor_testdoubles_fun(input_code):
+        """refactor cannot use standard replace method, because it needs to fix the indentation"""
+        atu = factory.create_from_text(input_code, 'temp.py')
+        rewriter = ASTRewriter(atu)
+        pattern_factory = PythonPatternFactory(factory, atu)
+        pattern1 = """def $a($$b):
+    self.doubles.append(
+        TAUT.TestDoubles(
+            module=$mod, $e=$f
+        )
+    )
+    $$c
+"""
+        replace_pattern = """def $a($$b):
+    with patch.object($mod, '$e', $f):
+        $$c
+"""
+        match_pattern = pattern_factory.create_python_pattern(pattern1)
+        test_cases = MatchFinder.find_all([atu], [match_pattern]).to_iterable()
+        for test_case in test_cases:
+            replacement = replace_pattern
+            for snippets in test_case.expansions:
+                if snippets == '$$c':
+                    replacement = replacement.replace(snippets, add_indent(TautRefactoring.raw(test_case.expansions[snippets], snippets)))
+                else:
+                    replacement = replacement.replace(snippets,
+                                                      TautRefactoring.raw(test_case.expansions[snippets], snippets))
+            rewriter.replace(replacement, test_case.nodes)
+        rewriter.apply()
+        return rewriter.apply_to_string()
+
+    @staticmethod
+    def refactor_testdoubles_class(input_code):
+        match_pattern = """class $a(TAUT.TestCase):
+    
+    def setUp(self):
+        $$bb
+        self.doubles = []
+        $$cc
+        self.doubles.append(
+            TAUT.TestDoubles(
+                module=$mod1, 
+                $e1=$f1,
+            )
+        )
+        self.doubles.append(
+            TAUT.TestDoubles(
+                module=$mod2, 
+                $e2=$f2,
+            )
+        )
+        $$dd
+        
+    def tearDown(self):
+        $$gg
+        for double in self.doubles:
+            double.exit()"""
+        replace_pattern = """class $a(unittest.TestCase):
+    
+    def setUp(self):
+        $$bb
+        $$cc
+        self.patches = [
+            patch.object($mod1, '$e1', $f1),
+            patch.object($mod2, '$e2', $f2),
+        ]
+        for p in self.patches:
+            p.start()
+
+        $$dd
+        
+    def tearDown(self):
+        $$gg
+        for p in self.patches:
+            p.stop()"""
+        return TautRefactoring.refactor_replace(input_code, match_pattern, replace_pattern)
 
     @classmethod
     def refactor_replace(self, input_code: str, before: str, after: str):
