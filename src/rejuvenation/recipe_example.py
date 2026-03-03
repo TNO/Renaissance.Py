@@ -4,7 +4,7 @@ from renaissance.common.stream import Stream
 from renaissance.syntax_tree import ASTFinder, ASTRefactorActions, CPPPatternFactory, RecipeASTProcessor, recipe_step
 from typing_extensions import Iterable
 from renaissance.impl.clang import ClangASTNode
-from renaissance.impl import ClangJsonASTNode
+from renaissance.impl.clang_json import ClangJsonASTNode
 from renaissance.syntax_tree import ASTProcessor, ASTNode, TextUtils, ASTFactory
 
 example_1 = TextUtils.strip_indent("""

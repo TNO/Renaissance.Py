@@ -52,6 +52,17 @@ for match in matches:
     rewriter.replace(replment_text, match.nodes)
 result = rewriter.apply_to_string()
 print(result)
+
+def add_children(parent):
+    uml =""
+    for child in parent.children:
+        uml += f'"{parent.kind}"->"{child.kind}"\n'
+        uml +=add_children(child)
+    return uml
+
+uml = add_children( lst.root)
+print(uml)
+
 # if rewriter.has_changed():
 #     atu = factory.create_from_text(result, 'test.py')
 # else:
