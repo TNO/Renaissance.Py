@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from renaissance.impl.clang import ClangASTNode
-from renaissance.syntax_tree import ASTFactory, CPatternFactory
+from renaissance.impl.clang import ClangASTNode, CPatternFactory
+from renaissance.syntax_tree import ASTFactory
 from renaissance.syntax_tree.match_finder import find_in_list, MatchFinder
 
 VERBOSE = False

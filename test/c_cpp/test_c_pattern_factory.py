@@ -2,8 +2,8 @@ import unittest
 from unittest import TestCase
 
 from more_itertools import last
-
-from renaissance.syntax_tree import ASTFinder,ASTShower,CPatternFactory
+from renaissance.impl.clang import CPatternFactory
+from renaissance.syntax_tree import ASTFinder,ASTShower
 from parameterized import parameterized
 from c_cpp.factories import Factories
 

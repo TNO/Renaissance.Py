@@ -2,16 +2,60 @@ import re
 from typing import Optional, Sequence
 
 from renaissance.common import Stream
+from renaissance.syntax_tree import ASTNode
 from renaissance.utils.cpp_utils import CPPUtils
-from .ast_node import ASTNode
-from .ast_shower import ASTShower
+from renaissance.syntax_tree.ast_node import ASTNode
+from renaissance.syntax_tree.ast_shower import ASTShower
 
-from .ast_factory import ASTFactory
-from .ast_finder import ASTFinder
+from renaissance.syntax_tree.ast_factory import ASTFactory
+from renaissance.syntax_tree.ast_finder import ASTFinder
 
 SHOW_NODE = False
 
 
+def derive_header_text(language: str, ref_node: ASTNode | None):
+    # collect includes #defines  and var decl from the refNode
+    header = "\n"
+    if ref_node:
+        # matcher_set = { 'VAR_DECL', 'TYPE_DEF', 'MACRO_DEFINITION','INCLUSION_DIRECTIVE'}
+        # self.header = "\n".join(c.signature for c in ref_node.children if c.is_part_of_translation_unit() and c.kind in matcher_set)
+
+        if ref_node:
+            matcher_set = {'STRUCT_DECL', 'VAR_DECL', 'TYPE_DEF', 'MACRO_DEFINITION', 'INCLUSION_DIRECTIVE'}
+            for c in ref_node.children:
+                if c.is_part_of_translation_unit() and c.kind in matcher_set:
+                    header += c.signature + '\n'
+        hj2 = [c for c in ref_node.children if c.kind != 'INCLUSION_DIRECTIVE']
+        hj3 = min(c.offset for c in hj2)
+        offset = (
+            Stream(ref_node.children)
+            .filter(lambda n: n.is_part_of_translation_unit())
+            .filter(lambda c: not ASTFinder.matches_kind(c, "(?i)Inclusion_?Directive"))
+            .map(lambda n: n.offset)
+            .reduce(min)
+            .or_else(0)
+        )
+        language = ref_node.filename.split(".")[-1]
+
+        header = (
+            CPatternFactory.remove_indent(ref_node.content(0, offset))
+        )
+        hj4 = [c for c in ref_node.children if c.is_part_of_translation_unit()]
+        matcher_set = {'FUNCTION_DECL', 'VAR_DECL', 'TYPE_DEF', 'MACRO_DEFINITION'}
+        hj5 = '\n'.join(c.text for c in hj4 if c.kind in matcher_set) + '\n'
+        header += (
+                Stream(ref_node.children)
+                .filter(lambda n: n.is_part_of_translation_unit())
+                .filter(lambda c: ASTFinder.matches_kind(c, "(?i)(Function|Var|Typedef)_?Decl|MACRO_?DEFINITION"))
+                .filter(
+                    lambda c: ASTFinder.find_kind(c, "(?i)Compound_?Stmt").count() == 0
+                )
+                .map(lambda c: c.text + ";")
+                .collect(lambda n: "\n".join(n))
+                + "\n"
+        )
+
+    return header, language
 class CPatternFactory:
     reserved_function_name = "__rejuvenation__reserved__function__name__"
     reserved_variable_name = "__rejuvenation__reserved__variable__name__"
@@ -23,48 +67,8 @@ class CPatternFactory:
             language: str = "c",
     ):
         self.factory = factory
-        # collect includes #defines  and var decl from the refNode
-        if ref_node:
-            # matcher_set = { 'VAR_DECL', 'TYPE_DEF', 'MACRO_DEFINITION','INCLUSION_DIRECTIVE'}
-            # self.header = "\n".join(c.signature for c in ref_node.children if c.is_part_of_translation_unit() and c.kind in matcher_set)
-            self.header = "\n"
-            if ref_node:
-                matcher_set = {'STRUCT_DECL', 'VAR_DECL', 'TYPE_DEF', 'MACRO_DEFINITION', 'INCLUSION_DIRECTIVE'}
-                for c in ref_node.children:
-                    if c.is_part_of_translation_unit() and c.kind in matcher_set:
-                        self.header += c.signature + '\n'
-            hj2 = [c for c in ref_node.children if c.kind != 'INCLUSION_DIRECTIVE']
-            hj3 = min(c.offset for c in hj2)
-            offset = (
-                Stream(ref_node.children)
-                .filter(lambda n: n.is_part_of_translation_unit())
-                .filter(lambda c: not ASTFinder.matches_kind( c, "(?i)Inclusion_?Directive" ) )
-                .map(lambda n: n.offset)
-                .reduce(min)
-                .or_else(0)
-            )
-            self.language = ref_node.filename.split(".")[-1]
+        self.header, self.language = derive_header_text(language, ref_node)
 
-            self.header = (
-                    CPatternFactory.remove_indent(ref_node.content(0, offset))
-            )
-            hj4 = [c for c in ref_node.children if c.is_part_of_translation_unit()]
-            matcher_set = {'FUNCTION_DECL','VAR_DECL','TYPE_DEF', 'MACRO_DEFINITION'}
-            hj5 = '\n'.join(c.text for c in hj4 if c.kind in matcher_set)+'\n'
-            self.header += (
-                    Stream(ref_node.children)
-                    .filter(lambda n: n.is_part_of_translation_unit())
-                    .filter( lambda c: ASTFinder.matches_kind( c, "(?i)(Function|Var|Typedef)_?Decl|MACRO_?DEFINITION" ) )
-                    .filter(
-                        lambda c: ASTFinder.find_kind(c, "(?i)Compound_?Stmt").count() == 0
-                    )
-                    .map(lambda c: c.text + ";")
-                    .collect(lambda n: "\n".join(n))
-                    + "\n"
-            )
-        else:
-            self.language = language
-            self.header = ""
 
 
     @staticmethod

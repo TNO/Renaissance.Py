@@ -7,7 +7,6 @@ from .batch_ast_processor import (BatchASTProcessor, IterableProvider, AST_FACTO
 from .match_finder import (MatchFinder, PatternMatch)
 from .ast_rewriter import (ASTRewriter)
 from .ast_processor import (ASTProcessor)
-from .c_pattern_factory import (CPatternFactory, CPPPatternFactory)
 from renaissance.utils.ast_utils import (ASTUtils)
 from renaissance.utils.text_utils import (TextUtils)
 from renaissance.utils.cpp_utils import (CPPUtils)
@@ -24,7 +23,6 @@ __all__ = [
     'MatchFinder',
     'PatternMatch',
     'ASTRewriter',
-    'CPatternFactory',
     'CPPUtils',
     'ASTUtils',
     'TextUtils',
@@ -34,7 +32,6 @@ __all__ = [
     'AST_FACTORY_AND_ATU',
     'Action',
     'ASTRefactorActions',
-    'CPPPatternFactory',
     'RecipeASTProcessor',
     'after_step',
     'recipe_step',

@@ -1,6 +1,6 @@
 import pytest
 from pytest_bdd import given, when, then, scenario, parsers
-from renaissance.impl import PythonASTNode, PythonPatternFactory
+from renaissance.impl.python import PythonASTNode, PythonPatternFactory
 from renaissance.syntax_tree import ASTFactory, ASTRewriter, MatchFinder
 from renaissance.utils.refactor_utils import fix_indent
 
