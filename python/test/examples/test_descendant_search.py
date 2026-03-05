@@ -1,5 +1,9 @@
 from unittest import TestCase
+from impl.clang.clang_ast_node import ClangASTNode
 from parameterized import parameterized
+from syntax_tree.ast_node import ASTNode
+from syntax_tree.ast_shower import ASTShower
+from syntax_tree.c_pattern_factory import CPPPatternFactory
 
 from examples.descendant_search import find_descendant_match
 from test.c_cpp.factories import Factories
@@ -48,6 +52,14 @@ class TestFindDescendantMatch(TestCase):
 
 
 class TestBasic(TestCase):
+
+    def test_shower(self) -> None:
+        factory: ASTFactory = ASTFactory(ClangASTNode)
+        pattern_factory: CPPPatternFactory = CPPPatternFactory(factory)
+        code_str: str = "void f(int x) { if (x > 4) x = 5; x = 6; }"
+        code: ASTNode = pattern_factory.create(code_str)
+        ASTShower.show_node(code)
+
 
     code_text: str = """
             int my_function();

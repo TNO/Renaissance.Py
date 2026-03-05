@@ -101,7 +101,7 @@ class ClangASTNode(ASTNode):
 
     @override
     @staticmethod
-    def load(file_path: Path, extra_args:Sequence[str], working_dir:Path) -> 'ClangASTNode':
+    def load(file_path: Path, extra_args:Sequence[str], working_dir:Path) -> ClangASTNode:
         args=[*extra_args, *ClangASTNode.parse_args]
         translation_unit: TranslationUnit = ClangASTNode.index.parse(working_dir / file_path, args=args[3:])
         ClangASTNode.check_diagnostics(translation_unit, file_path.name)
@@ -110,7 +110,7 @@ class ClangASTNode(ASTNode):
 
     @override
     @staticmethod
-    def load_from_text(text: str, file_name: str, extra_args:Sequence[str], working_dir:Path) -> "ClangASTNode":
+    def load_from_text(text: str, file_name: str, extra_args:Sequence[str], working_dir:Path) -> ClangASTNode:
         translation_unit: TranslationUnit = ClangASTNode.index.parse(file_name, unsaved_files=[(file_name, text)],  args=[*ClangASTNode.parse_args,*extra_args])
         ClangASTNode.check_diagnostics(translation_unit, file_name)
         root_node =  ClangASTNode(translation_unit.cursor, ClangTranslationUnit(translation_unit, file_name=str(file_name)), None)
@@ -179,7 +179,7 @@ class ClangASTNode(ASTNode):
             return 0
 
     def _is_statement_or_declaration(self):
-        return re.match('.*(_STMT|_DECL|CXX_METHOD)', self.get_kind())
+        return re.match('.*(_STMT|_DECL|CXX_METHOD)', self.get_kind())  # TODO: Doesn't clang provide functionality to check this?
 
     @override
     def _get_kind(self) -> str: 
@@ -237,7 +237,7 @@ class ClangASTNode(ASTNode):
         return result
     
     @override
-    def _get_parent(self) -> Optional['ClangASTNode']: 
+    def _get_parent(self) -> Optional[ClangASTNode]: 
         return  self.parent
 
     @override
@@ -246,7 +246,7 @@ class ClangASTNode(ASTNode):
     
     @override
     @cache
-    def _get_children(self) -> Sequence['ClangASTNode']: 
+    def _get_children(self) -> Sequence[ClangASTNode]: 
         if self._children is None:
             self._children = self.__inserted_children + [ClangASTNode(ClangASTNode.remove_wrapper(n), self.translation_unit, self) for n in self.node.get_children()]
         return self._children
