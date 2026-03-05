@@ -48,7 +48,7 @@ def setUp(self):
     self.doubles.append(
         TAUT.TestDoubles(module=VIPR, check_stopped=self.vipr_stub.check_stopped)
     )
-
+    
     EMRMxAPxData.data.adv_wp = EMRMxADVxWP.input()
     self.measurement_strategy = EMRM_MeasurementDefault.EMRM_MeasurementDefault()
 """
@@ -84,9 +84,10 @@ def setUp(self):
     self.patches.append(patch.object(EMxWLxCTL.EMxWLxCTL, 'reload_wafer', self.wh_stub.reload_wafer))
     self.patches.append(patch.object(EMRMxEngine.EMRMxEngine, 'measure_wafer', self.engine_stub.measure_wafer_gw))
     self.patches.append(patch.object(VIPR, 'check_stopped', self.vipr_stub.check_stopped))
+    
     for p in self.patches:
         p.start()
-
+    
     EMRMxAPxData.data.adv_wp = EMRMxADVxWP.input()
     self.measurement_strategy = EMRM_MeasurementDefault.EMRM_MeasurementDefault()
 """

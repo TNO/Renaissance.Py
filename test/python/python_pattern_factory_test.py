@@ -200,6 +200,14 @@ class PythonFactoryTestCase(unittest.TestCase):
         self.assertEqual(node.kind, ast.Expr.__name__)
         self.assertEqual(code, node.signature)
 
+    @parameterized.expand(Factories.extend([
+        ('"hello = \'hello\' # comment to hello"', ...)
+    ]))
+    def test_comments(self, _, factory, code, *args):
+        pattern_factory = PythonPatternFactory(factory)
+        node = pattern_factory.create_python_pattern(code)
+        self.assertEqual(node.kind, ast.Expr.__name__)
+        self.assertEqual(code, node.signature)
 
 if __name__ == '__main__':
     unittest.main()

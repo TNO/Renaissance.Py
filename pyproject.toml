@@ -53,6 +53,8 @@ dependencies = [
     "tree-sitter-python==0.25.0",
     "tree-sitter-cpp==0.23.4",
     "tree-sitter-java==0.23.5",
+    "ast_comments",
+    "flake8",
 ]
 
 #bandit = { version = "^1.6.2", optional = true }

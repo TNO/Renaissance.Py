@@ -103,26 +103,44 @@ EMRWxCONTEXT.emrmxcontext.reset_method_attributes("finish_lot")
     @staticmethod
     def refactor_setup(input_code):
         #add self. at front of interface EMRMxCONTEXT
-        pattern1 = 'context_stub = EMRMxCONTEXT.EMRMxCONTEXTStub()'
-        replace_pattern = 'self.context_stub = EMRMxCONTEXT.EMRMxCONTEXTStub()'
+        pattern1 = 'context_stub = $c'
+        replace_pattern = 'self.context_stub = $c'
         result = TautRefactoring.refactor_replace(input_code, pattern1, replace_pattern)
+
+        pattern2 = """self.doubles.append(
+    TAUT.TestDoubles(module=EMRMxAPxData.data.rep, context=context_stub)
+)"""
+        replace_pattern2 = """self.patches.append(patch.object(EMRMxAPxData.data.rep, 'context', self.context_stub))"""
+        result2 = TautRefactoring.refactor_replace(result, pattern2, replace_pattern2)
+        # should able to replace all context_stub with self.context_stub
 
         # remove self.doubles
         pattern2 = 'self.doubles = $aa'
-        result2 = TautRefactoring.refactor_remove(result, pattern2)
-        pattern3 = 'self.doubles.append($$bb)'
-        result3 = TautRefactoring.refactor_remove(result2, pattern3)
+        result3 = TautRefactoring.refactor_remove(result2, pattern2)
 
-        insert_code = """self.patches = []
-self.patches.append(patch('EMRMxCONTEXT.emrmxcontext', self.context_stub))
-self.patches.append(patch.object(EMRMxAPxData.data.rep, 'context', self.context_stub))
-self.patches.append(patch.object(EMxWLxCTL.EMxWLxCTL, 'reload_wafer', self.wh_stub.reload_wafer))
-self.patches.append(patch.object(EMRMxEngine.EMRMxEngine, 'measure_wafer', self.engine_stub.measure_wafer_gw))
-self.patches.append(patch.object(VIPR, 'check_stopped', self.vipr_stub.check_stopped))
-for p in self.patches:
-    p.start()"""
-        pattern4 = 'self.context_stub = EMRMxCONTEXT.EMRMxCONTEXTStub()'
-        return TautRefactoring.refactor_insert_after(result3, insert_code, pattern4)
+        # insert self.patches
+        insert_code = 'self.patches = []'
+        pattern3 = 'self.context_stub = EMRMxCONTEXT.EMRMxCONTEXTStub()'
+        result4 = TautRefactoring.refactor_insert_after(result3, insert_code, pattern3)
+
+        # replace doubles with patches
+        pattern4 = """self.doubles.append(TAUT.TestDoubles(emrmxcontext=context_stub))"""
+        replace_pattern2 = """self.patches.append(patch('EMRMxCONTEXT.emrmxcontext', self.context_stub))"""
+        result5 = TautRefactoring.refactor_replace(result4, pattern4, replace_pattern2)
+        pattern5 = """self.doubles.append(
+                TAUT.TestDoubles(
+                    module=$mod, $e=$f
+                )
+            )
+        """
+        replace_pattern3 = """self.patches.append(patch.object($mod, '$e', $f))"""
+        result6 = TautRefactoring.refactor_replace(result5, pattern5, replace_pattern3)
+
+        insert_code = """for p in self.patches:
+    p.start()
+"""
+        pattern6 = 'EMRMxAPxData.data.adv_wp = EMRMxADVxWP.input()'
+        return TautRefactoring.refactor_insert_before(result6, insert_code, pattern6)
 
     @staticmethod
     def refactor_testdoubles_fun(input_code):
