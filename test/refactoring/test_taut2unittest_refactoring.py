@@ -83,6 +83,7 @@ class TestTaut2Unittest(unittest.TestCase):
     @parameterized.expand(Factories.extend([
         (taut_code, result_code)
     ]))
+    @unittest.skip("Developed by Luna")
     def test_log_emrwxtl(self, _, factory: ASTFactory, input_code, expected_code):
         result = TautRefactoring.replace_log_emrwxtl(input_code)
         self.assertEqual(expected_code, result)

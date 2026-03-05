@@ -1,5 +1,4 @@
-import unittest
-
+import pytest
 from hamcrest import assert_that, is_
 
 from renaissance.impl.clang import ClangASTNode,CPatternFactory
@@ -26,8 +25,18 @@ def test_var_decl_includesemi_column():
     src = ClangASTNode.load_from_text('int x= 0;', 'test.c', [], None)
     assert_that(src.children[-1].signature, is_('int x= 0;'))
 
+def test_var_decl_in_ancestor():
+    src = ClangASTNode.load_from_text('int x= 0;', 'test.c', [], None)
+    assert_that(not src.children[-1].children[-1].get_ancestor('VAR_DECL'))
 
-@unittest.skip("last semicolumn is cut off from decl")
+
+def test_var_decl_in_ancestor():
+    src = ClangASTNode.load_from_text('int x= 0;', 'test.c', [], None)
+    assert_that(src.is_ancestor_of(src.children[-1].children[-1]))
+
+
+
+@pytest.mark.skip("last semicolumn is cut off from decl")
 def test_var_decl_include_semi_column_and_keep_space():
     src = ClangASTNode.load_from_text('   int    x   =    0   ;', 'test.c', [], None)
     assert_that(src.children[-1].signature, is_('   int    x   =    0   ;'))
@@ -38,11 +47,10 @@ def test_struct_include_semicolumn():
     assert_that(src.children[-1].signature, is_('struct s;'))
 
 
-@unittest.skip("last semicolumn is cut off from struct")
+@pytest.mark.skip("last semicolumn is cut off from struct")
 def test_struct_include_semicolumn_and_space():
     src = ClangASTNode.load_from_text('struct s{int x; int y;} ;', 'test.c', [], None)
     assert src.children[-1].signature == 'struct s{int x; int y;} ;'
-
 
 def test_mix_of_macro_and_decl():
     src = ClangASTNode.load_from_text('''

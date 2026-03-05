@@ -186,22 +186,6 @@ class ASTNode(ABC):
     def matches_kind(self, node: ASTNode) -> bool:
         pass
 
-    def get_frozen_properties(self) -> frozenset[tuple[str, Any]]:
-        # TODO How to get type correct? How to get right of pyright: ignore comments?
-        def freeze(value: Any) -> Any:
-            if isinstance(value, dict):
-                return frozenset(
-                    (k, freeze(v)) for k, v in value.items()  # pyright: ignore
-                )
-            if isinstance(value, list):
-                return tuple(
-                    freeze(v)
-                    for v in value  # pyright: ignore[reportUnknownVariableType]
-                )
-            return value
-
-        return frozenset(freeze(self.properties))
-
     @property
     def properties(self) -> dict[str, int | str]:
         return self._properties
