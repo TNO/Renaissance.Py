@@ -62,7 +62,8 @@ class ClangASTNode(ASTNode):
     def set_library_path() -> None:
         try:
             Config.set_library_path(Path(clang.native.__file__).parent)
-        except Exception as e:  
+            Config.set_library_path(Path("C:\\tools\\clang\\bin"))
+        except Exception as e:
             print(e)
 
     set_library_path()

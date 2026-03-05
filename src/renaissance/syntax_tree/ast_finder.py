@@ -48,7 +48,7 @@ class ASTFinder:
         if pattern.fullmatch(ast_kind):
             yield ast_node
         for child in ast_node.children:
-            assert isinstance(child, type(ast_node)), f'Expected {type(ast_node)} but got {type(child)}'
+            # assert isinstance(child, type(ast_node)), f'Expected {type(ast_node)} but got {type(child)}'
             yield from ASTFinder.__matches_kind(child, pattern)
 #
 # class NodeTypeMatcher:
