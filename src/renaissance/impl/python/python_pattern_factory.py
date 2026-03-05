@@ -6,6 +6,7 @@ from renaissance.impl.python import PythonASTNode
 from renaissance.impl.python.python_ast_node import PythonTranslationUnit
 from renaissance.syntax_tree import ASTFactory, ASTNode
 from renaissance.utils.node_util import replace_dollar
+from ast_comments import *
 
 SHOW_NODE = False
 
@@ -38,7 +39,7 @@ class PythonPatternFactory:
         if extra_declarations is None:
             extra_declarations = []
         text = replace_dollar(text)
-        return PythonASTNode(ast.parse(text).body[0].value)
+        return PythonASTNode(parse(text).body[0].value)
 
     def create_statements(
             self,
@@ -62,7 +63,7 @@ class PythonPatternFactory:
         # the output could be different, the comments are removed
         # Return PythonASTNode
         text = replace_dollar(text)
-        return PythonASTNode(ast.parse(text).body[0])
+        return PythonASTNode(parse(text).body[0])
 
     def create(self, text: str, kind: str|None = None) -> ASTNode:
         # create python from text

@@ -9,6 +9,7 @@ from renaissance.common import Stream
 from renaissance.impl import MATCH_ONE, MATCH_ALL
 from renaissance.syntax_tree import ASTNode, ASTReference, PatternMatch
 from renaissance.syntax_tree.match_finder import match_pattern, is_match, find_in_list
+from ast_comments import *
 
 EMPTY_DICT = {}
 EMPTY_STR = ''
@@ -30,7 +31,7 @@ class PythonTranslationUnit():
 
     def __init__(self, content, file_name: str):
         self.content = content.encode(sys.getfilesystemencoding())
-        self.atu = ast.parse(content, file_name,type_comments=True)
+        self.atu = parse(content, file_name,type_comments=True)
         self.file_name = file_name
         self.references_initialized = False
         PythonTranslationUnit.cache[file_name] = content
@@ -149,6 +150,9 @@ class PythonASTNode(ASTNode):
         return id
 
     def __eq__(self, other):
+        if (not other or not isinstance(other, type(self))
+            or self.kind != other.kind):
+            return False
         return is_match(self,other)
 
     def __contains__(self, item):
@@ -213,7 +217,7 @@ class PythonASTNode(ASTNode):
         elif 'targets' in self.node._fields and len(self.node.targets)==1 and hasattr(self.node.targets[0],'id'):
             name = self.node.targets[0].id
         elif 'body' not in self.node._fields:
-            name = ast.unparse(self.node)
+            name = unparse(self.node)
         elif 'id' in self.node._fields and self.node.id:
             name = self.node.id
         else:
@@ -265,7 +269,7 @@ class PythonASTNode(ASTNode):
         return sig
     @override
     def binary_file_content(self) -> bytes:
-        return self.translation_unit.content[self.offset:self.end_offset] if self.translation_unit else ast.unparse(
+        return self.translation_unit.content[self.offset:self.end_offset] if self.translation_unit else unparse(
             self.node).encode(sys.getfilesystemencoding())
 
     @override
