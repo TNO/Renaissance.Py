@@ -95,8 +95,6 @@ def test_python_patterns(code, pattern):
             ("!a", "!$a"),
             ("a = b;", "$a = $b;"),
             ("foo();", "$foo();"),
-            # Expressions followed by semicolons and assignments without semicolons
-            # make the parser fail, so we skip them for now
         ])
 def test_cpp_patterns(code, pattern):
     adapter = TreeSitterAdapter(tscpp)

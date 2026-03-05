@@ -7,7 +7,6 @@ from renaissance.syntax_tree.match_finder import exclude_nodes_by_kind
 
 
 class ClangMatchJsonFinderTest(TestCase):
-    # @unittest.skip("marco is not detected")
     def testIsMatchUsingMacroFromAtu(self):
         code = """
         #define BAR "bar"
