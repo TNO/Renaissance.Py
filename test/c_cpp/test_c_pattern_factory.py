@@ -90,7 +90,6 @@ class TestUseAtuToCreatePatterns(TestCPatternFactory):
         ('const char* foo=FOO;',1, 2),   
         ('const char* $x = BAR;',1,2),
     ])))
-    # @unittest.skip("This test is currently not working, needs to be fixed")
     def test(self, _, factory, statementText, expected_stmts, expected_refs):
         code = """
         int print(const char*,const char*,const char*,const char*);
