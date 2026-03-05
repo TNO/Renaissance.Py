@@ -1,6 +1,8 @@
 import unittest
 from unittest import TestCase
 
+from more_itertools import last
+
 from renaissance.syntax_tree import ASTFinder,ASTShower,CPatternFactory
 from parameterized import parameterized
 from c_cpp.factories import Factories
@@ -91,7 +93,7 @@ class TestUseAtuToCreatePatterns(TestCPatternFactory):
     # @unittest.skip("This test is currently not working, needs to be fixed")
     def test(self, _, factory, statementText, expected_stmts, expected_refs):
         code = """
-        #include <stdio.h>
+        int print(const char*,const char*,const char*,const char*);
         #define FOO "foo"
         #define BAR "bar"
         #define SAME "bar"
@@ -106,7 +108,7 @@ class TestUseAtuToCreatePatterns(TestCPatternFactory):
             const char* foo = FOO;
             const char* bar = BAR;
             const char* same = SAME;
-            printf("%s %s %s", foo, bar, same);
+            print("%s %s %s", foo, bar, same);
 
         }
 
@@ -122,5 +124,7 @@ class TestUseAtuToCreatePatterns(TestCPatternFactory):
 
         # the user must pick it's own pattern in this case the last statement
         self.assertTrue(pattern_root.children[-1].is_statement)
-        raw = pattern_root.children[-1].signature
+        node = last(n for n in pattern_root.children if n.kind !='UNEXPOSED_DECL')
+        raw = node.signature
+
         self.assertTrue(statementText.startswith(raw))
