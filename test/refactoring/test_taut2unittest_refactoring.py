@@ -7,6 +7,7 @@ from renaissance.refactoring import TautRefactoring
 from test_data.test_code import taut_code, result_code
 from test_data.test_insert import input_code, insert_code
 from test_data.test_class import set_up, new_set_up, tear_down, new_tear_down
+from test_data.test_testdoubles import test_doubles_fun, test_doubles_fun_new, test_doubles_class, test_doubles_class_new
 from renaissance.syntax_tree import ASTFactory, ASTShower, ASTProcessor
 
 class TestTaut2Unittest(unittest.TestCase):
@@ -25,7 +26,6 @@ class TestTaut2Unittest(unittest.TestCase):
     @parameterized.expand(Factories.extend([
         ("import unittest\nimport TAUT\nimport DDXA", "import unittest\nimport DDXA"),
     ]))
-    @unittest.skip("Developed by Luna")
     def test_remove_import(self, _, factory: ASTFactory, input_code, expected_code):
         result = TautRefactoring.convert_test_cases(input_code)
         self.assertEqual(expected_code, result)
@@ -33,7 +33,6 @@ class TestTaut2Unittest(unittest.TestCase):
     @parameterized.expand(Factories.extend([
         ("class ATestCase(TAUT.TestCase):\n    pass\n", "class ATestCase(unittest.TestCase):\n    pass\n"),
     ]))
-    @unittest.skip("Developed by Luna")
     def test_replace_taut(self, _, factory: ASTFactory, input_code, expected_code):
         result = TautRefactoring.replace_taut(input_code)
         self.assertEqual(expected_code, result)
@@ -84,7 +83,6 @@ class TestTaut2Unittest(unittest.TestCase):
     @parameterized.expand(Factories.extend([
         (taut_code, result_code)
     ]))
-    @unittest.skip("Developed by Luna")
     def test_log_emrwxtl(self, _, factory: ASTFactory, input_code, expected_code):
         result = TautRefactoring.replace_log_emrwxtl(input_code)
         self.assertEqual(expected_code, result)
@@ -108,4 +106,18 @@ class TestTaut2Unittest(unittest.TestCase):
     ]))
     def test_tearDown(self, _, factory: ASTFactory, input_code, expected_code):
         result = TautRefactoring.refactor_teardown(input_code)
+        self.assertEqual(expected_code, result)
+
+    @parameterized.expand(Factories.extend([
+        (test_doubles_fun, test_doubles_fun_new)
+    ]))
+    def test_testdoubles_fun(self, _, factory: ASTFactory, input_code, expected_code):
+        result = TautRefactoring.refactor_testdoubles_fun(input_code)
+        self.assertEqual(expected_code, result)
+
+    @parameterized.expand(Factories.extend([
+        (test_doubles_class, test_doubles_class_new)
+    ]))
+    def test_testdoubles_class(self, _, factory: ASTFactory, input_code, expected_code):
+        result = TautRefactoring.refactor_testdoubles_class(input_code)
         self.assertEqual(expected_code, result)
