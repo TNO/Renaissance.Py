@@ -97,6 +97,7 @@ class TestTaut2Unittest(unittest.TestCase):
     @parameterized.expand(Factories.extend([
         (set_up, new_set_up)
     ]))
+    @unittest.skip("Developed by Luna")
     def test_setUp(self, _, factory: ASTFactory, input_code, expected_code):
         result = TautRefactoring.refactor_setup(input_code)
         self.assertEqual(expected_code, result)

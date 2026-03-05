@@ -232,7 +232,7 @@ class TestUseAtuToCreatePattern(TestCMatchFinder):
     ('void f() {const char* $name = SAME;}','(?i)Decl_?Stmt',['const char* same = SAME;'], {'$name':['same']}),
     ('const char* $$args; void f() { printf($$args);}','(?i)Call_?Expr',['printf("%s %s %s", foo, bar, same);'], {'$$args': ['"%s %s %s"', 'foo', 'bar', 'same']}),
     ]))
-    @unittest.skip("Macro definitions are currently not included in the AST, so the test cases with FOO, BAR, SAME will fail. Need to implement macro handling first.")
+    # @unittest.skip("Macro definitions are currently not included in the AST, so the test cases with FOO, BAR, SAME will fail. Need to implement macro handling first.")
     def test(self, _, factory, statements, pattern_type, expected, names):
         code = """
         #define FOO "foo"

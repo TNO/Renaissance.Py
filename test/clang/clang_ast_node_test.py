@@ -21,7 +21,7 @@ def test_var_decl_includesemi_column():
     src = ClangASTNode.load_from_text('int x= 0;', 'test.c',[],None)
     assert src.children[-1].signature == 'int x= 0;'
 
-@unittest.skip("last semicolumn is cut off")
+# @unittest.skip("last semicolumn is cut off")
 def test_var_decl_include_semi_column_and_keep_space():
     src = ClangASTNode.load_from_text('   int    x   =    0   ;', 'test.c',[],None)
     assert src.children[-1].signature == '   int    x   =    0   ;'
@@ -30,7 +30,7 @@ def test_struct_include_semicolumn():
     src = ClangASTNode.load_from_text('struct s;', 'test.c',[],None)
     assert src.children[-1].signature == 'struct s;'
 
-@unittest.skip("last semicolumn is cut off")
+# @unittest.skip("last semicolumn is cut off")
 def test_struct_include_semicolumn_and_space():
     src = ClangASTNode.load_from_text('struct s{intx, int y\n} ;', 'test.c',[],None)
     assert src.children[-1].signature == 'struct s{intx, int y\n} ;'
