@@ -1,14 +1,57 @@
 import unittest
 from unittest import TestCase
 
+import hamcrest
+from hamcrest import assert_that, contains_string
 from more_itertools import last
-from renaissance.impl.clang import CPatternFactory
+from renaissance.impl.clang import CPatternFactory, ClangASTNode
+from renaissance.impl.clang.c_pattern_factory import derive_header_text
 from renaissance.syntax_tree import ASTFinder,ASTShower
 from parameterized import parameterized
 from c_cpp.factories import Factories
+from utils_for_tests import show_node
+
 
 class TestCPatternFactory(TestCase):
-    pass
+    def test_derive_header(self):
+        code = """
+                int print(const char*,...);
+                #define FOO "foo"
+                #define BAR "bar"
+                #define SAME "bar"
+                typedef struct A_Struct{
+                    int a;
+                    int b;
+                } A;
+                int some_decl = 1; 
+
+                void f(){
+                    A a = {};
+                    const char* foo = FOO;
+                    const char* bar = BAR;
+                    const char* same = SAME;
+                    print("%s %s %s", foo, bar, same);
+
+                }
+
+        """
+        atu = ClangASTNode.load_from_text(code, 'test.c', [], None)
+        ASTShower.show_node(atu)
+
+        header, lang = derive_header_text('c', atu )
+        matcher_set = { 'VAR_DECL', 'TYPE_DEF', 'MACRO_DEFINITION','INCLUSION_DIRECTIVE'}
+        simple_header = ";\n".join(c.signature for c in atu.children if c.is_part_of_translation_unit() and not(c.kind == 'FUNCTION_DECL' and c.children[-1].kind =='COMPOUND_STMT'))
+
+        assert_that(header, contains_string('#define FOO "foo";'))
+        assert_that(header, contains_string('int print(const char*,...);'))
+        assert_that(header, contains_string('typedef struct A_Struct'))
+        assert_that(header, contains_string('int some_decl = 1;'))
+        assert_that(simple_header, contains_string('#define FOO "foo"'))
+        assert_that(simple_header, contains_string('int print(const char*,...);'))
+        assert_that(simple_header, contains_string('typedef struct A_Struct'))
+
+        assert_that(simple_header, contains_string('int some_decl = 1;'))
+
 
 class TestExpression(TestCPatternFactory):
 
