@@ -12,7 +12,10 @@ The project may receive nodes from different parsers or libraries that do not ma
 
 ## Decision
 
-Prefer writing thin wrappers (adapter objects) that present the project's canonical node API while delegating to the original node. Wrappers make behavior explicit, allow normalization, and preserve access to the original node when necessary.
+Prefer writing only the protocol function on top of the current native implementation if not already available.
+this requires minimum amount of implementation and oppertunity for reuse of the maatcher and rewrite , etc functionalities
+
+'thin wrappers (adapter objects) that present the project's canonical node API while delegating to the original node. Wrappers make behavior explicit, allow normalization, and preserve access to the original node when necessary.'
 
 ## Implementation notes
 

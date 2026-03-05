@@ -4,7 +4,12 @@ Status: Proposal
 
 Date: 2026-02-25
 
-Authors: Project contributors
+Authors: 
+ - jinmin.hu@capgemini.com
+ - huub.joosten@capgemini.com
+ - luna.li@capgemini.com
+ - paul.nelissen@esi.nl
+ - pierre.vandelaar@tno.nl
 
 ## Context
 
@@ -52,9 +57,15 @@ Negative:
 - Enforce a strict base node class — rejected for flexibility reasons.
 - Rely solely on runtime duck checks with no static typing — rejected in favor of combining runtime checks with Protocols for better tooling.
 
+## Comment and whitespace
+
+comment and white space belongs to astnode.
+is comment need to it own property without "comment sign"
+
 ## Related decisions
 
 - See ADR 06 (Wrapper or adapter) and ADR 01 (Children and properties).
+
 
 ---
 

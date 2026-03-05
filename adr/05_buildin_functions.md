@@ -46,6 +46,10 @@ Negative:
 
 - See ADR 04 (Make nodes immutable) when implementing ``__hash__`` and ``__eq__``.
 
+## note
+
+is_match is __not the same as __eq__
+also it avoids extra implementation 
 ---
 
 Revision history:

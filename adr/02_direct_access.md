@@ -17,8 +17,13 @@ Status: Proposal
 
 Date: 2026-02-25
 
-Authors: Project contributors
 
+Authors: 
+ - jinmin.hu@capgemini.com
+ - huub.joosten@capgemini.com
+ - luna.li@capgemini.com
+ - paul.nelissen@esi.nl
+ - pierre.vandelaar@tno.nl
 ## Context
 
 Direct access refers to exposing node fields and attributes using a Pythonic style (e.g., `_fields`, `_attributes`) rather than using explicit accessor methods such as `get_children()` or `get_children`. This allows for natural attribute access, simpler metaprogramming, and compatibility with Python tooling and idioms.
