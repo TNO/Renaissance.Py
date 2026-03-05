@@ -3,9 +3,9 @@ import ast
 import pytest
 from hamcrest import assert_that, has_length, is_
 
-from renaissance.impl.clang import ClangASTNode
+from renaissance.impl.clang import ClangASTNode, CPatternFactory
 from renaissance.impl.python import PythonPatternFactory, PythonASTNode
-from renaissance.syntax_tree import ASTFactory, CPatternFactory
+from renaissance.syntax_tree import ASTFactory
 from renaissance.syntax_tree.match_finder import is_match_tree, MatchFinder, find_in_list
 
 

@@ -1,8 +1,8 @@
 
 #This script demonstrates the use of the syntax_tree library to parse and rewrite C code.
 #It specifically showcases nested replacements and multiple patterns.
-from renaissance.syntax_tree import ASTFactory, CPatternFactory, MatchFinder, ASTRewriter
-from renaissance.impl.clang import ClangASTNode
+from renaissance.syntax_tree import ASTFactory, MatchFinder, ASTRewriter
+from renaissance.impl.clang import ClangASTNode, CPatternFactory
 from renaissance.syntax_tree import ASTShower, TextUtils, ASTFinder
 
 example_code = """

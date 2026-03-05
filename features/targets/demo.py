@@ -1,7 +1,19 @@
-from module import foo, bar, \
-    baz, quux
+from python import python_matcher_test,python_astshower_test, \
+    python_ast_node_ref_test, test_ast_factory
+
+def some_old_fun():
+    a=1
+    b=a
+    return b
+
+component_one,component_two = 1,2
+component_three:int =3
+component_four= 4
+component_five= 5
+component_six= sum(2,4)
 
 long_expression = component_one + component_two + component_three + component_four + component_five + component_six
+
 
 
 def xyzzy(a1, a2,
@@ -21,6 +33,7 @@ xyzzy(
     'hanging',
     'indent'
 )
+items = []
 attrs = [e.attr for e in
          items]
 

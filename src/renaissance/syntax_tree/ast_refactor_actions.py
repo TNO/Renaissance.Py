@@ -4,7 +4,7 @@ from typing import Callable, Optional, Sequence
 from renaissance.common import Stream
 from .match_finder import MatchFinder, PatternMatch
 
-from .c_pattern_factory import CPPPatternFactory
+from renaissance.impl.clang.c_pattern_factory import CPPPatternFactory
 
 from .ast_finder import ASTFinder
 from .ast_processor import ASTProcessor

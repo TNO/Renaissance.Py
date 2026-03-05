@@ -1,8 +1,8 @@
 
 #This script demonstrates the use of the syntax_tree library to parse and rewrite C code.
 #It specifically showcases the replacement of if-else statements with ternary operators.
-from renaissance.syntax_tree import ASTFactory, CPatternFactory, MatchFinder, ASTRewriter
-from renaissance.impl.clang import ClangASTNode
+from renaissance.syntax_tree import ASTFactory, MatchFinder, ASTRewriter
+from renaissance.impl.clang import ClangASTNode, CPatternFactory
 
 example_code = """
         int a = 1;

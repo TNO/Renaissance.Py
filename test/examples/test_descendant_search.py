@@ -4,9 +4,9 @@ from parameterized import parameterized
 
 from c_cpp.factories import Factories
 from rejuvenation.descendant_search import find_descendant_match
+from renaissance.impl.clang import CPatternFactory
 
-
-from renaissance.syntax_tree import CPatternFactory, ASTFactory, MatchFinder
+from renaissance.syntax_tree import ASTFactory, MatchFinder
 from renaissance.syntax_tree.match_finder import is_match
 
 

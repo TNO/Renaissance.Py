@@ -3,8 +3,8 @@ import unittest
 import hamcrest
 from hamcrest import assert_that, matches_regexp
 
-from renaissance.impl.clang import ClangASTNode
-from renaissance.syntax_tree import ASTFactory, ASTShower, CPatternFactory, ASTFinder
+from renaissance.impl.clang import ClangASTNode, CPatternFactory
+from renaissance.syntax_tree import ASTFactory, ASTShower, ASTFinder
 
 
 class CcppShowerTest(unittest.TestCase):
