@@ -7,7 +7,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Callable
 
-from .text_utils import TextUtils
+from renaissance.utils.node_util import preceding_sibling, next_sibling
+from renaissance.utils.text_utils import TextUtils
 
 # enum with ABORT, CONTINUE and SKIP
 class VisitorResult(Enum):
@@ -88,6 +89,7 @@ class ASTNode(ABC):
         content = self.root.binary_file_content()
         return str(content[start:end], sys.getfilesystemencoding())
 
+
     def binary_file_content(self, file_path: str | None = None) -> bytes:
         if not file_path:
             file_path = self.root.filename
@@ -110,12 +112,7 @@ class ASTNode(ABC):
 
     @property
     def preceding_sibling(self) -> ASTNode | None:
-        parent = self.parent
-        if not parent:
-            return None
-        siblings = parent.children
-        index = siblings.index(self)
-        return siblings[index - 1] if index > 0 else None
+        return preceding_sibling(self)
 
     @property
     @abstractmethod
@@ -129,12 +126,7 @@ class ASTNode(ABC):
 
     @property
     def next_sibling(self) -> ASTNode | None:
-        parent = self.parent
-        if not parent:
-            return None
-        siblings = parent.children
-        index = siblings.index(self)
-        return siblings[index + 1] if index < len(siblings) - 1 else None
+        next_sibling(self)
 
     def get_ancestor(self, kind: str | re.Pattern[str]) -> ASTNode | None:
         pattern = re.compile(kind, re.IGNORECASE) if isinstance(kind, str) else kind

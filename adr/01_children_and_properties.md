@@ -9,7 +9,7 @@ Authors:
  - huub.joosten@capgemini.com
  - luna.li@capgemini.com
  - paul.nelissen@esi.nl
- - Pierre van der laar@esi.nl
+ - pierre.vandelaar@tno.nl
 
 ## Context
 
@@ -31,11 +31,11 @@ All AST nodes will expose both children and properties. Children will be represe
 ```python
 class GoAstNode:
     @property
-    def properties(self) -> dict[str, int | str]:
+    def properties(self) -> dict[str, Any]:
         ...
 
     @property
-    def children(self) -> list[self]:
+    def children(self) -> list[Self]:
         ...
 
 ```
@@ -56,6 +56,10 @@ Negative:
 ## Alternatives considered
 
 - Merge children and properties into a single list of mixed entries — rejected because it complicates traversal and semantic clarity.
+
+## considered
+
+order of the list matters here and if possible follows the definition in signature text
 
 ## Related decisions
 

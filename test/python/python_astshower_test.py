@@ -28,7 +28,7 @@ class PythonShowerTest(unittest.TestCase):
         expected =('[  (Expr, ba(55), test.py[0:6]): |ba(55)|\n'
  ',   (Expr, ca(555), test.py[7:14]): |ca(555)|\n'
  ',   (Expr, lo(4444), test.py[15:23]): |lo(4444)|\n'
- ',   (Assign, na = 55, test.py[24:29]): |na=55|\n'
+ ',   (Assign, na, test.py[24:29]): |na=55|\n'
  ']')
 
         self.assertEqual(expected, str(self.atu.children))
@@ -56,7 +56,7 @@ class PythonShowerTest(unittest.TestCase):
  '    (Call, lo(4444), test.py[15:23]): |lo(4444)|\n'
  '      (Name, lo, test.py[15:17]): |lo|\n'
  '        (Constant, 4444, test.py[18:22]): |4444|\n'
- '  (Assign, na = 55, test.py[24:29]): |na=55|\n'
+ '  (Assign, na, test.py[24:29]): |na=55|\n'
  '      (Name, na, test.py[24:26]): |na|\n'
  '    (Constant, 55, test.py[27:29]): |55|\n')
         self.assertEqual(expected, text)
@@ -86,14 +86,14 @@ else:
  '    (Name, x, test.py[4:5]): |x|\n'
  '      (Gt, , test.py[0:0]):\n'
  '      (Name, y, test.py[7:8]): |y|\n'
- '    (Assign, x = 1, test.py[15:18]): |x=1|\n'
+ '    (Assign, x, test.py[15:18]): |x=1|\n'
  '        (Name, x, test.py[15:16]): |x|\n'
  '      (Constant, 1, test.py[17:18]): |1|\n'
  '    (Expr, call(x), test.py[23:30]): |call(x)|\n'
  '      (Call, call(x), test.py[23:30]): |call(x)|\n'
  '        (Name, call, test.py[23:27]): |call|\n'
  '          (Name, x, test.py[28:29]): |x|\n'
- '    (Assign, y = 1, test.py[41:44]): |y=1|\n'
+ '    (Assign, y, test.py[41:44]): |y=1|\n'
  '        (Name, y, test.py[41:42]): |y|\n'
  '      (Constant, 1, test.py[43:44]): |1|\n'
  '    (Expr, call(y), test.py[49:56]): |call(y)|\n'

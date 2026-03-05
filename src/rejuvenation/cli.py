@@ -1,5 +1,5 @@
 #! /usr/bin/python3
-from renaissance.refactoring.taut2pyunit
+from renaissance.refactoring.taut2pyunit import TautRefactoring
 from renaissance.syntax_tree import ASTFactory
 from renaissance.impl.python import PythonASTNode
 import sys

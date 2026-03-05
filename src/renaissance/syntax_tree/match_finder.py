@@ -3,6 +3,7 @@ from typing import Sequence, Self, Iterable, Protocol, runtime_checkable
 from .ast_node import ASTNode
 from renaissance.common import Stream
 from renaissance.impl import MATCH_ALL, MATCH_ONE
+from ..utils.node_util import use_dollar
 
 VERBOSE = False
 
@@ -144,18 +145,18 @@ def is_match(src: AstProtocol, cmp: AstProtocol, expansions=None) -> bool:
             return True
     elif cmp.kind != src.kind:
         return False
-    elif isinstance(src, list) and isinstance(cmp, list):
-        return is_match_tree(src, cmp, expansions)
-    elif isinstance(src, dict) and isinstance(cmp, dict):
-        return is_match_dict(src, cmp, expansions)
-    elif isinstance(cmp, str):
-        if cmp.startswith('$') or cmp.startswith(MATCH_ONE):
-            if cmp in expansions:
-                return is_match(src, expansions[cmp.replace(MATCH_ONE, '$')][0])
-            else:
-                expansions[cmp.replace(MATCH_ONE, '$')] = [src]
-                return True
-        return src == cmp
+    # elif isinstance(src, list) and isinstance(cmp, list):
+    #     return is_match_tree(src, cmp, expansions)
+    # elif isinstance(src, dict) and isinstance(cmp, dict):
+    #     return is_match_dict(src, cmp, expansions)
+    # elif isinstance(cmp, str):
+    #     if cmp.startswith('$') or cmp.startswith(MATCH_ONE):
+    #         if cmp in expansions:
+    #             return is_match(src, expansions[cmp.replace(MATCH_ONE, '$')][0])
+    #         else:
+    #             expansions[cmp.replace(MATCH_ONE, '$')] = [src]
+    #             return True
+    #     return src == cmp
     elif isinstance(src, AstProtocol) and isinstance(cmp, AstProtocol):
         return (is_match_dict(src.properties, cmp.properties, expansions)
                 and is_match_tree(exclude_nodes_by_kind(src.children), cmp.children, expansions))
@@ -170,18 +171,18 @@ def exclude_nodes_by_kind(src: list[ASTNode]) -> list[ASTNode]:
     return [c for c in src if c.kind not in DEFAULT_EXCLUDE_KIND]
 
 
-IRRELEVANT_PROPS = {'macro_expansion', 'start_point', 'end_point'}
+IRRELEVANT_PROPS = {'macro_expansion', 'start_point', 'end_point', 'source_code'}
 
 
 def is_match_dict(src: dict, cmp: dict, expansions: dict) -> bool:
     def match_property(n):
         c = cmp.get(n)
         s = src.get(n)
-        if isinstance(c, str) and (c.startswith('$') or c.startswith(MATCH_ONE)):
+        if isinstance(c, str) and (use_dollar(c).startswith('$')):
             if c in expansions:
-                return s == expansions[c.replace(MATCH_ONE, '$')][0]
+                return s == expansions[use_dollar(c)][0]
             else:
-                expansions[c.replace(MATCH_ONE, '$')] = [s]
+                expansions[use_dollar(c)] = [s]
                 return True
         return s == c
     all_keys = (src.keys() | cmp.keys()) - IRRELEVANT_PROPS

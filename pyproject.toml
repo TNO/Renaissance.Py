@@ -30,13 +30,14 @@ requires-python = ">=3.12"
 dependencies = [
     "textx==4.3.0",
     "dataclasses-json==0.6.7",
-    "parameterized==0.9.0",
     "coverage>=7.13.0",
     "pyperclip==1.11.0",
     "clang==18.1.8",
     "libclang==18.1.1",
     "more-itertools",
+    "networkx",
     "parameterized==0.9.0",
+    "PyHamcrest",
     "pytest",
     "pytest-bdd==8.1.0",
     "pytest-cov==7.0.0",
@@ -46,15 +47,12 @@ dependencies = [
     "autopep8",
     "pyecore",
     "pyyaml",
-
-
-
-
+    "termcolor",
     "typing-extensions",
     "tree-sitter>=0.25",
     "tree-sitter-python==0.25.0",
     "tree-sitter-cpp==0.23.4",
-    "tree-sitter-java==0.23.5"
+    "tree-sitter-java==0.23.5",
 ]
 
 #bandit = { version = "^1.6.2", optional = true }

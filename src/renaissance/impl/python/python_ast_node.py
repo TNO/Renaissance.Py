@@ -7,8 +7,8 @@ from typing_extensions import override
 
 from renaissance.common import Stream
 from renaissance.impl import MATCH_ONE, MATCH_ALL
-from renaissance.syntax_tree import ASTNode, ASTReference
-from renaissance.syntax_tree.match_finder import is_match_dict, is_match_tree, match_pattern
+from renaissance.syntax_tree import ASTNode, ASTReference, PatternMatch
+from renaissance.syntax_tree.match_finder import match_pattern, is_match, find_in_list
 
 EMPTY_DICT = {}
 EMPTY_STR = ''
@@ -30,7 +30,7 @@ class PythonTranslationUnit():
 
     def __init__(self, content, file_name: str):
         self.content = content.encode(sys.getfilesystemencoding())
-        self.atu = ast.parse(content, file_name)
+        self.atu = ast.parse(content, file_name,type_comments=True)
         self.file_name = file_name
         self.references_initialized = False
         PythonTranslationUnit.cache[file_name] = content
@@ -40,14 +40,14 @@ class PythonTranslationUnit():
         self._referenced_by: dict[str, list[PythonASTReference]] = {}
         self._nodes: dict[str, 'PythonASTNode'] = {}
 
-    def check_diagnostics(self) -> None:
+    def check_diagnostics(self, continue_with_warning=True) -> None:
         msg = None
         errors = ''
         for d in self.atu.type_ignores:
             msg = f'type ignored: {d.tag} at {d.lineno}\n'
             errors += msg
             print(msg)
-        if msg:
+        if msg and not continue_with_warning:
             raise Exception(f'Error parsing: {self.file_name} \n+ errors: {errors}')
 
     def lazy_create_refers(self, node: 'ASTNode') -> None:
@@ -75,6 +75,7 @@ class ImplicitNode(ast.Name):
         'id',
         'body',
     )
+
 
 
 class PythonASTNode(ASTNode):
@@ -124,7 +125,7 @@ class PythonASTNode(ASTNode):
                         else:
                             self._children.append(PythonASTNode(ImplicitNode(name, child), translation_unit, self))
                             if name == 'body':
-                                self.body = self._children[-1]
+                                self.body = self._children[-1].children
                     case ast.AST():
                         if name not in ['ctx']:
                             self._children.append(PythonASTNode(child, translation_unit, self))
@@ -147,18 +148,32 @@ class PythonASTNode(ASTNode):
             id = node.value.id
         return id
 
-    def __eq__(self, other: ASTNode):
-        if (not other
-        or  not isinstance(other, type(self))
-        # or len(self.children) != len(other.children)
-        or self.kind != other.kind):
-            return False
-        return (is_match_dict(self.properties, other.properties, {})
-                and is_match_tree(self.children, other.children,{}))
+    def __eq__(self, other):
+        return is_match(self,other)
 
     def __contains__(self, item):
-        return match_pattern([self],[item], {})
+        if isinstance(item, self.__class__):
+            item = [item]
+        return find_in_list(self.children,item )
 
+
+    def __getitem__(self, key):
+        """Allow indexing/slicing into node to access children.
+
+        Usage: node[0] == node.children[0]
+        """
+        # support integer index and slice
+        if isinstance(key, int):
+            return self.children[key]
+        if isinstance(key, slice):
+            return self.children[key]
+        # support string keys to access properties (e.g., node['name'])
+        if isinstance(key, str):
+            return self.properties[key]
+        raise TypeError(f"Indices must be integers or slices, not {type(key)}")
+
+    def find_all(self, pattern: Sequence)-> Sequence[PatternMatch]:
+        return match_pattern(self.children, pattern)
     def derive_position(self, node: ast.AST, translation_unit: PythonTranslationUnit, parent):
         if node._attributes:
             if parent.name == 'decorator_list':
@@ -179,7 +194,7 @@ class PythonASTNode(ASTNode):
     def load(file_path: Path, extra_args: Sequence[str], working_dir: Path) -> 'PythonASTNode':
         with open(working_dir / file_path, 'r') as file:
             content = file.read()
-            return PythonASTNode.load_from_text(content, file_path, extra_args, working_dir)
+            return PythonASTNode.load_from_text(content, str(file_path), extra_args, working_dir)
 
     @override
     @staticmethod
@@ -191,18 +206,56 @@ class PythonASTNode(ASTNode):
 
     @override
     def _derive_name(self):
-        if isinstance(self.node, str):
-            name = self.node
+        if 'name' in self.node._fields and self.node.name:
+            name = self.node.name
+        elif 'target' in self.node._fields and hasattr(self.node.target,'id'):
+            name = self.node.target.id
+        elif 'targets' in self.node._fields and len(self.node.targets)==1 and hasattr(self.node.targets[0],'id'):
+            name = self.node.targets[0].id
         elif 'body' not in self.node._fields:
             name = ast.unparse(self.node)
-        elif 'name' in self.node._fields and self.node.name:
-            name = self.node.name
         elif 'id' in self.node._fields and self.node.id:
             name = self.node.id
         else:
             name = self.kind
         return name.replace(MATCH_ALL, '$$').replace(MATCH_ONE, '$')
 
+    @property
+    def type(self):
+        return self.node.annotation.id if 'annotation' in self.node._fields else None
+
+    @property
+    def value(self):
+        return self.node.value.value
+
+    @property
+    def expr(self):
+        if 'expr' in self.node._fields:
+            return PythonASTNode(self.node.expr, self.translation_unit, self)
+        elif 'iter' in self.node._fields:
+            return PythonASTNode(self.node.iter, self.translation_unit, self)
+        elif 'test' in self.node._fields:
+            return PythonASTNode(self.node.test, self.translation_unit, self)
+        else:
+            return None
+
+    OPERATOR_MAP = {
+        'Assign': '=',
+        'AnnAssign': '=',
+        'AugAssignAdd': '+=',
+        'For': 'for',
+        'While': 'while',
+        'If': 'if',
+        'Try': 'try',
+        'ClassDef': 'class',
+        'FunctionDef': 'function',
+
+    }
+    @property
+    def operator(self):
+        node_type = type(self.node).__name__
+        op   = type(self.node.op).__name__ if 'op' in self.node._fields else ""
+        return self.OPERATOR_MAP.get(node_type+op,'')
     @override
     @property
     def signature(self) -> str:
@@ -238,15 +291,12 @@ class PythonASTNode(ASTNode):
         # the references are stored in the function definition
         # but we want them to also show up in the declaration
         if len(ref_by) == 0:
-            definition = self._get_function_definition()
+            definition = None
             if definition:
                 ref_by = self.translation_unit._referenced_by.get(node_id, EMPTY_LIST)
         return Stream(ref_by) \
             .map(
             lambda ref: ASTReference(self.translation_unit._nodes[ref.node_id], ref.ref_kind, ref.properties)).to_list()
-
-    def _get_function_definition(self):
-        return None
 
     @property
     @override
@@ -302,21 +352,6 @@ class PythonASTNode(ASTNode):
             return self.parent
         else:
             return self.parent.get_container_parent()
-
-    def __getitem__(self, key):
-        """Allow indexing/slicing into node to access children.
-
-        Usage: node[0] == node.children[0]
-        """
-        # support integer index and slice
-        if isinstance(key, int):
-            return self.children[key]
-        if isinstance(key, slice):
-            return self.children[key]
-        # support string keys to access properties (e.g., node['name'])
-        if isinstance(key, str):
-            return self.properties[key]
-        raise TypeError(f"Indices must be integers or slices, not {type(key)}")
 
 
 class ReferenceHelper:
@@ -390,5 +425,3 @@ class ReferenceHelper:
 
 
 types = ['int', 'float', 'str', 'list', 'set', 'tuple', 'Mapping', 'dict', 'Optional']
-if __name__ == "__main__":
-    pass

@@ -19,18 +19,8 @@ class TsPatternFactory:
         language: str = "python",
     ):
         self.adapter = adapter
-        if ref_node:
-            offset = (
-                Stream(ref_node.children)
-                .filter(ASTNode.is_part_of_translation_unit)
-                .map(lambda n: n.offset)
-                .reduce(min)
-                .or_else(0)
-            )
-
-        else:
-            self.language = language
-            self.header = ""
+        self.language = language
+        self.header = ""
 
 
 

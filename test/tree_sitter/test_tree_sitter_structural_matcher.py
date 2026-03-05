@@ -6,6 +6,7 @@ import tree_sitter_cpp as tscpp
 
 from renaissance.impl.tree_sitter_adapter.tree_sitter_adapter import TreeSitterAdapter
 from renaissance.syntax_tree import MatchFinder
+from renaissance.syntax_tree.match_finder import is_match
 
 
 @pytest.mark.parametrize("code, pattern", [
@@ -45,7 +46,7 @@ def test_python_patterns(code, pattern):
     lst = adapter.to_lst(code, ast)
 
     pat = adapter.to_lst(pattern,ast)
-
+    is_match(lst.root.children[0], pat.root.children[0])
     result = MatchFinder.find_all(lst.root.children, pat.root.children).to_list()
     assert  len(result) >= 1
 

@@ -16,7 +16,7 @@ Adopt Poetry as the recommended tool for dependency management and packaging. En
 
 ## Implementation notes
 
-- Keep `pyproject.toml` and `poetry.lock` up-to-date.
+- Keep `pyproject.toml` and `uv.lock` up-to-date.
 - Document common contributor workflows in the repository README (install, run tests, add dependency).
 - Provide instructions for creating and activating a Poetry-managed virtualenv and installing dev dependencies.
 

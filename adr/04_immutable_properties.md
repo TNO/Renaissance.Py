@@ -30,6 +30,20 @@ Implementation notes and recommendations for contributors:
 - Concurrency: Immutable data structures are safe to share across threads without synchronization.
 - Caching & memoization: Since nodes don't change, caching derived information (like computed hashes, string representations, or analysis results) is reliable.
 - Correctness: Avoids accidental side effects caused by in-place modifications during complex refactorings.
+```python
+    @property
+    def properties(self) -> dict[str, int | str]:
+        return {"name": self.name}
+
+    @property
+    def children(self) -> list[Self]:
+        return [
+            self.expr,
+            self.body,
+            self.other,
+        ]
+
+```
 
 ## Consequences
 

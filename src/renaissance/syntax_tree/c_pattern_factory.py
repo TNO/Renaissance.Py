@@ -2,7 +2,7 @@ import re
 from typing import Optional, Sequence
 
 from renaissance.common import Stream
-from .cpp_utils import CPPUtils
+from renaissance.utils.cpp_utils import CPPUtils
 from .ast_node import ASTNode
 from .ast_shower import ASTShower
 

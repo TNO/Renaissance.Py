@@ -1,10 +1,9 @@
 import os
 import networkx as nx
 from pathlib import Path
-from adapters.tree_sitter_adapter import TreeSitterAdapter
-from renaissance.extractors.extractor import PatternMatcherInterfaceExtended
-from matchers.match import Match
 from typing import List
+
+from renaissance.impl.tree_sitter_adapter import TreeSitterAdapter
 
 GRAPHML_DIR = "out_graphml"
 os.makedirs(GRAPHML_DIR, exist_ok=True)
@@ -15,7 +14,6 @@ class BaseCodeGraphExtractor:
         self.language = language
         self.lib_path = lib_path
         self.adapter = TreeSitterAdapter(lib_path, language)
-        self.interface = PatternMatcherInterfaceExtended(self.adapter)
         self.graph = nx.DiGraph()
 
     def extract(self, files: List[str]):

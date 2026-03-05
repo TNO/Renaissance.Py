@@ -17,8 +17,13 @@ Status: Proposal
 
 Date: 2026-02-25
 
-Authors: Project contributors
 
+Authors: 
+ - jinmin.hu@capgemini.com
+ - huub.joosten@capgemini.com
+ - luna.li@capgemini.com
+ - paul.nelissen@esi.nl
+ - pierre.vandelaar@tno.nl
 ## Context
 
 Direct access refers to exposing node fields and attributes using a Pythonic style (e.g., `_fields`, `_attributes`) rather than using explicit accessor methods such as `get_children()` or `get_children`. This allows for natural attribute access, simpler metaprogramming, and compatibility with Python tooling and idioms.
@@ -36,25 +41,19 @@ Adopt a Pythonic direct-access convention for node definitions. Nodes may declar
 
 ```python
 class GoAstNode:
-    expr:self
-    body:self
-    other:self
+    #direct access protocol
+    expr:Self
+    body:Sequence[Self]
+    other:Sequence[self]
     
+    #rewrite protocol
     length:int
     offset:int
     name:str
-    
-    @property
-    def properties(self) -> dict[str, int | str]:
-        return {"name": self.name}
 
-    @property
-    def children(self) -> list[self]:
-        return [
-            self.expr,
-            self.body,
-            self.other,
-        ]
+    #matcher
+    properties:dict[str, int | str]
+    children:list[Self]
 
 ```
 ## Rationale

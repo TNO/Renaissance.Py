@@ -1,8 +1,10 @@
-from matchers.match import Match
+
 from termcolor import colored
 
+from renaissance.syntax_tree import PatternMatch
 
-def highlight_match(code: str, match: Match) -> str:
+
+def highlight_match(code: str, match: PatternMatch) -> str:
     lines = code.splitlines(keepends=True)
     highlights = []
 

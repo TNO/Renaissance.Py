@@ -1,6 +1,6 @@
 from pathlib import Path
-from .ast_factory import ASTFactory
-from .ast_rewriter import ASTRewriter
+from renaissance.syntax_tree.ast_factory import ASTFactory
+from renaissance.syntax_tree.ast_rewriter import ASTRewriter
 
 
 class ASTUtils:

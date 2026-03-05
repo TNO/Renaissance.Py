@@ -5,7 +5,7 @@ from typing import Callable
 from renaissance.syntax_tree.recipe_ast_processor import RecipeASTProcessor, after_step, recipe_step, final_action
 from typing_extensions import Iterable
 from renaissance.impl.clang import ClangASTNode
-from renaissance.impl import ClangJsonASTNode
+from renaissance.impl.clang_json import ClangJsonASTNode
 from renaissance.refactoring import CleanupRefactoring
 from renaissance.syntax_tree import ASTProcessor, ASTNode, TextUtils, ASTFactory, BatchASTProcessor
 
