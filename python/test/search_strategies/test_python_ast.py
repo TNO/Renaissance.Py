@@ -1,37 +1,53 @@
 import ast
+import re
 
 from hypothesis import given, strategies as st
-from python_type_and_value import arguments_from_types, list_type_and_value, type_and_value, union_type_and_value
+from python_type_and_value import gen_list, gen_union, gen_tuple, gen_dict
+
+@given(gen_union())
+def test_gen_union(
+    pair: tuple[ast.expr, st.SearchStrategy[ast.expr]]
+) -> None:   
+    _type_expr, _value_gen = pair
+    s = ast.unparse(_type_expr)
+    assert re.match("^.*\\|.*$", s), f"type '{s}' unexpectedly doesn't match pattern"
 
 
-@given(arguments_from_types(depth=3, tv=union_type_and_value(3)))
-def test_union_focused_compiles(a: ast.arguments):
-    f = ast.FunctionDef(
-        name="f", args=a, body=[ast.Pass()], decorator_list=[], returns=None
-    )
-    m = ast.Module(body=[f], type_ignores=[])
-    ast.fix_missing_locations(m)
-    compile(m, "<hypothesis>", "exec")
-
-
-@given(list_type_and_value(depth=0), st.data())
-def test_empty_list(
+@given(gen_list(), st.data())
+def test_gen_list(
     pair: tuple[ast.expr, st.SearchStrategy[ast.expr]],
-    data: st.DataObject,
-) -> None:
+    data: st.DataObject
+) -> None:   
     _type_expr, value_gen = pair
+    s = ast.unparse(_type_expr)
+    assert re.match("^list\\[.*\\]$", s), f"type '{s}' unexpectedly doesn't match pattern"
     value_expr = data.draw(value_gen)
     s = ast.unparse(value_expr)
-    assert s == "[]"
+    assert re.match("^\\[.*\\]$", s), f"value '{s}' unexpectedly doesn't match pattern"
 
 
-@given(type_and_value(depth=1), st.data())
-def test_empty_containers_are_possible(
+    
+@given(gen_tuple(), st.data())
+def test_gen_tuple(
     pair: tuple[ast.expr, st.SearchStrategy[ast.expr]],
-    data: st.DataObject,
-) -> None:
+    data: st.DataObject
+) -> None:   
     _type_expr, value_gen = pair
+    s = ast.unparse(_type_expr)
+    assert re.match("^tuple\\[.*\\]$", s), f"type '{s}' unexpectedly doesn't match pattern"
     value_expr = data.draw(value_gen)
     s = ast.unparse(value_expr)
-    # empty list, dict, tuple or a scalar constant (allowed at depth 1)
-    assert s in ("[]", "{}", "()") or isinstance(value_expr, ast.Constant)
+    assert re.match("^\\(.*\\)$", s), f"value '{s}' unexpectedly doesn't match pattern"
+
+
+@given(gen_dict(), st.data())
+def test_gen_dict(
+    pair: tuple[ast.expr, st.SearchStrategy[ast.expr]],
+    data: st.DataObject
+) -> None:   
+    _type_expr, value_gen = pair
+    s = ast.unparse(_type_expr)
+    assert re.match("^dict\\[.*\\]$", s), f"type '{s}' unexpectedly doesn't match pattern"
+    value_expr = data.draw(value_gen)
+    s = ast.unparse(value_expr)
+    assert re.match("^{.*}$", s), f"value '{s}' unexpectedly doesn't match pattern"

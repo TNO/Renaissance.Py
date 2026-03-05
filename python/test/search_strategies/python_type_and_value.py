@@ -1,15 +1,21 @@
 import ast
 import keyword
 import string
-
 from itertools import islice
-from typing import Sequence
-from hypothesis import strategies as st
-from hypothesis.strategies import SearchStrategy, composite, DrawFn
 
-# ============================================================
-# Private AST builders (module-local, as requested)
-# ============================================================
+from hypothesis import strategies as st
+from hypothesis.strategies import DrawFn, SearchStrategy, composite
+
+DEFAULT_DEPTH: int = 3
+
+# -------------------- policy --------------------
+
+
+def max_len(depth: int) -> int:
+    return 3 * depth
+
+
+# -------------------- AST builders (private) --------------------
 
 
 def _build_name(id_: str) -> ast.Name:
@@ -20,52 +26,40 @@ def _build_subscript(value: ast.expr, slice_expr: ast.expr) -> ast.Subscript:
     return ast.Subscript(value=value, slice=slice_expr, ctx=ast.Load())
 
 
-def _build_tuple(elts: list[ast.expr]) -> ast.Tuple:
-    return ast.Tuple(elts=elts, ctx=ast.Load())
-
-
 def _build_list(elts: list[ast.expr]) -> ast.List:
     return ast.List(elts=elts, ctx=ast.Load())
 
 
-def _build_dict(keys: Sequence[ast.expr], values: list[ast.expr]) -> ast.Dict:
+def _build_dict(keys: list[ast.expr], values: list[ast.expr]) -> ast.Dict:
+    # ast.Dict.keys is list[expr | None]; list is invariant, so copy keys for type correctness
     return ast.Dict(keys=list(keys), values=values)
 
 
-def _build_bitor_chain(exprs: list[ast.expr]) -> ast.expr:
-    """Build A | B | C as (A | B) | C. Requires at least one element."""
-    if not exprs:
-        raise ValueError("_build_bitor_chain() requires at least one expression")
-    acc = exprs[0]
-    for e in islice(
-        exprs, 1, None
-    ):  # iterates exprs[1:] but without creating a new list
-        acc = ast.BinOp(left=acc, op=ast.BitOr(), right=e)
-    return acc
+def _build_tuple(elts: list[ast.expr]) -> ast.Tuple:
+    return ast.Tuple(elts=elts, ctx=ast.Load())
 
 
 def _build_tuple_type_slice(type_args: list[ast.expr]) -> ast.expr:
-    """
-    Build the slice part of `tuple[...]`.
-    - For non-empty list: tuple[T1, T2, ...]  -> slice = (T1, T2, ...)
-    - For empty list    : tuple[()]           -> slice = ((),)  i.e., a 1-tuple containing the empty tuple
-    """
+    # tuple[()] uses slice == ((),)
     return (
         _build_tuple([_build_tuple([])]) if not type_args else _build_tuple(type_args)
     )
 
 
-# -------------------- depth sizing -------------------------
+def _build_bitor_chain(exprs: list[ast.expr]) -> ast.expr:
+    if len(exprs) < 2:
+        raise ValueError("union requires at least two arms")
+    acc = exprs[0]
+    for e in islice(exprs, 1, None):  # avoids slice copy
+        acc = ast.BinOp(left=acc, op=ast.BitOr(), right=e)
+    return acc
 
 
-def max_len(depth: int) -> int:
-    """Max length/arity/arms as function of depth."""
-    return 3 * depth
+def _build_arg(name: str, ann: ast.expr | None) -> ast.arg:
+    return ast.arg(arg=name, annotation=ann, type_comment=None)
 
 
-# ============================================================
-# Base types and their AST Constant value strategies
-# ============================================================
+# -------------------- base types --------------------
 
 BASE_VALUES: dict[str, SearchStrategy[ast.expr]] = {
     "bool": st.builds(ast.Constant, st.booleans()),
@@ -76,168 +70,135 @@ BASE_VALUES: dict[str, SearchStrategy[ast.expr]] = {
     ),
     "bytes": st.builds(ast.Constant, st.binary(min_size=0, max_size=5)),
 }
-BASE_TYPE: SearchStrategy[str] = st.sampled_from(list(BASE_VALUES.keys()))
+BASE_TYPE: SearchStrategy[str] = st.sampled_from(list(BASE_VALUES))
 
 
-def base_pair() -> SearchStrategy[tuple[ast.expr, SearchStrategy[ast.expr]]]:
-    """(type_expr, value_gen) for scalar base types."""
-    return BASE_TYPE.map(lambda t: (_build_name(t), BASE_VALUES[t]))
+# ============================================================
+# Generator family (PUBLIC): gen_base/gen_list/gen_dict/gen_union/gen_type
+# All return: (type_expr: ast.expr, value_gen: SearchStrategy[ast.expr])
+# ============================================================
 
 
-# -------------------- PUBLIC constructors: list/tuple/union/dict --------------------
-# Each takes a child strategy and current depth.
+@composite
+def gen_base(draw: DrawFn) -> tuple[ast.expr, SearchStrategy[ast.expr]]:
+    tname = draw(BASE_TYPE)
+    return _build_name(tname), BASE_VALUES[tname]
 
 
 @composite
 def gen_list(
-    draw: DrawFn,
-    child: SearchStrategy[tuple[ast.expr, SearchStrategy[ast.expr]]],
-    depth: int,
+    draw: DrawFn, depth: int = DEFAULT_DEPTH
 ) -> tuple[ast.expr, SearchStrategy[ast.expr]]:
-    t, vg = draw(child)
+    elem_t, elem_vg = draw(gen_type(depth - 1))
     return (
-        _build_subscript(_build_name("list"), t),
-        st.lists(vg, min_size=0, max_size=max_len(depth)).map(_build_list),
+        _build_subscript(_build_name("list"), elem_t),
+        st.lists(elem_vg, min_size=0, max_size=max_len(depth)).map(_build_list),
     )
-
-
-@composite
-def gen_union(
-    draw: DrawFn,
-    child: SearchStrategy[tuple[ast.expr, SearchStrategy[ast.expr]]],
-    depth: int,
-) -> tuple[ast.expr, SearchStrategy[ast.expr]]:
-    members = draw(st.lists(child, min_size=2, max_size=max_len(depth)))
-    type_exprs = [t for (t, _vg) in members]
-    value_gens = [vg for (_t, vg) in members]
-    return _build_bitor_chain(type_exprs), st.one_of(*value_gens)
 
 
 @composite
 def gen_dict(
-    draw: DrawFn,
-    child: SearchStrategy[tuple[ast.expr, SearchStrategy[ast.expr]]],
-    depth: int,
+    draw: DrawFn, depth: int = DEFAULT_DEPTH
 ) -> tuple[ast.expr, SearchStrategy[ast.expr]]:
-    # keys restricted to base types to keep runtime values hashable
+    # keys restricted to base types for runtime hashability
     kname = draw(BASE_TYPE)
     kt, kvg = _build_name(kname), BASE_VALUES[kname]
 
-    vt, vvg = draw(child)
-    t = _build_subscript(_build_name("dict"), _build_tuple([kt, vt]))
+    vt, vvg = draw(gen_type(depth - 1))
+    type_expr = _build_subscript(_build_name("dict"), _build_tuple([kt, vt]))
 
-    pairs = draw(st.lists(st.tuples(kvg, vvg), min_size=0, max_size=max_len(depth)))
-    keys = [k for (k, _v) in pairs]
-    vals = [v for (_k, v) in pairs]
-    return t, st.just(_build_dict(keys, vals))
+    value_gen = st.lists(
+        st.tuples(kvg, vvg),
+        min_size=0,
+        max_size=max_len(depth),
+    ).map(lambda pairs: _build_dict([k for (k, _v) in pairs], [v for (_k, v) in pairs]))
+
+    return type_expr, value_gen
+
+
+@composite
+def gen_union(
+    draw: DrawFn, depth: int = DEFAULT_DEPTH
+) -> tuple[ast.expr, SearchStrategy[ast.expr]]:
+    members = draw(
+        st.lists(
+            gen_type(depth - 1),
+            min_size=2,
+            max_size=2 if depth <= 2 else max_len(depth),
+        )
+    )
+
+    ts = [t for (t, _vg) in members]
+    vgs = [vg for (_t, vg) in members]
+    return _build_bitor_chain(ts), st.one_of(*vgs)
 
 
 @composite
 def gen_tuple(
-    draw: DrawFn,
-    child: SearchStrategy[tuple[ast.expr, SearchStrategy[ast.expr]]],
-    depth: int,
+    draw: DrawFn, depth: int = DEFAULT_DEPTH
 ) -> tuple[ast.expr, SearchStrategy[ast.expr]]:
-    members = draw(st.lists(child, min_size=0, max_size=max_len(depth)))
+    members = draw(st.lists(gen_type(depth - 1), min_size=0, max_size=max_len(depth)))
     if not members:
-        t = _build_subscript(_build_name("tuple"), _build_tuple_type_slice([]))
-        return t, st.just(_build_tuple([]))
-    type_exprs = [t for (t, _vg) in members]
-    value_gens = [vg for (_t, vg) in members]
-    t = _build_subscript(_build_name("tuple"), _build_tuple_type_slice(type_exprs))
-    return t, st.tuples(*value_gens).map(lambda xs: _build_tuple(list(xs)))
+        t = _build_subscript(
+            _build_name("tuple"), _build_tuple_type_slice([])
+        )  # tuple[()]
+        return t, st.just(_build_tuple([]))  # ()
+    ts = [t for (t, _vg) in members]
+    vgs = [vg for (_t, vg) in members]
+    t = _build_subscript(_build_name("tuple"), _build_tuple_type_slice(ts))
+    return t, st.tuples(*vgs).map(lambda xs: _build_tuple(list(xs)))
 
 
-# -------------------- recursive dispatchers (public) --------------------
-
-
-def type_and_value(
-    depth: int,
-) -> SearchStrategy[tuple[ast.expr, SearchStrategy[ast.expr]]]:
-    """Full recursive mix: base | list | tuple | union | dict."""
+@composite
+def gen_type(
+    draw: DrawFn, depth: int = DEFAULT_DEPTH
+) -> tuple[ast.expr, SearchStrategy[ast.expr]]:
+    """
+    Depth bounds recursion by forcing base at depth<=0.
+    """
     if depth <= 0:
-        return base_pair()
-    depth = depth - 1
-    child = type_and_value(depth)
-    return st.one_of(
-        base_pair(),
-        gen_list(child, depth),
-        gen_tuple(child, depth),
-        gen_union(child, depth),
-        gen_dict(child, depth),
-    )
+        return draw(gen_base())
+
+    types = ["base", "list", "dict", "union", "tuple"]
+    choice = draw(st.sampled_from(types))
+    match choice:
+        case "base":
+            return draw(gen_base())
+        case "list":
+            return draw(gen_list(depth))
+        case "dict":
+            return draw(gen_dict(depth))
+        case "union":
+            return draw(gen_union(depth))
+        case "tuple":
+            return draw(gen_tuple(depth))
+        case _:
+            raise Exception(f"Programming error: '{choice}' not in {types}")
 
 
-def union_type_and_value(
-    depth: int,
-) -> SearchStrategy[tuple[ast.expr, SearchStrategy[ast.expr]]]:
-    """Focused: unions only (plus base leaves for recursion/shrinking)."""
-    if depth <= 0:
-        return base_pair()
-    child = union_type_and_value(depth - 1)
-    return st.one_of(base_pair(), gen_union(child, depth))
+# -------------------- (Optional) arguments generator can use gen_type(depth) --------------------
+
+_FIRST = st.sampled_from(string.ascii_letters + "_")
+_REST = st.text(string.ascii_letters + string.digits + "_", min_size=0, max_size=20)
+IDENT = st.builds(str.__add__, _FIRST, _REST).filter(lambda s: not keyword.iskeyword(s))
 
 
-def list_type_and_value(
-    depth: int,
-) -> SearchStrategy[tuple[ast.expr, SearchStrategy[ast.expr]]]:
-    return st.just( gen_list(, depth-1))
-    if depth <= 0:
-        return base_pair()
-    child = list_type_and_value(depth - 1)
-    return st.one_of(base_pair(), gen_list(child, depth))
-
-
-def tuple_type_and_value(
-    depth: int,
-) -> SearchStrategy[tuple[ast.expr, SearchStrategy[ast.expr]]]:
-    if depth <= 0:
-        return base_pair()
-    child = tuple_type_and_value(depth - 1)
-    return st.one_of(base_pair(), gen_tuple(child, depth))
-
-
-def dict_type_and_value(
-    depth: int,
-) -> SearchStrategy[tuple[ast.expr, SearchStrategy[ast.expr]]]:
-    if depth <= 0:
-        return base_pair()
-    child = dict_type_and_value(depth - 1)
-    return st.one_of(base_pair(), gen_dict(child, depth))
-
-
-# -------------------- arguments generator (unchanged API, uses tv injection) --------------------
-
-_FIRST: SearchStrategy[str] = st.sampled_from(string.ascii_letters + "_")
-_REST: SearchStrategy[str] = st.text(
-    string.ascii_letters + string.digits + "_", min_size=0, max_size=20
-)
-IDENTIFIER: SearchStrategy[str] = st.builds(str.__add__, _FIRST, _REST).filter(
-    lambda s: not keyword.iskeyword(s)
-)
-
-
-def _make_arg(name: str, ann: ast.expr | None) -> ast.arg:
-    return ast.arg(arg=name, annotation=ann)
-
-
-def _bernoulli(p: float) -> st.SearchStrategy[bool]:
+def _bernoulli(p: float) -> SearchStrategy[bool]:
     return st.integers(0, 999).map(lambda x: x < int(p * 1000))
 
 
 @composite
-def arguments_from_types(
+def gen_arguments(
     draw: DrawFn,
     *,
-    depth: int = 2,
-    tv: SearchStrategy[tuple[ast.expr, SearchStrategy[ast.expr]]] | None = None,
+    depth: int = DEFAULT_DEPTH,
     max_posonly: int = 2,
     max_args: int = 3,
     max_kwonly: int = 3,
     p_annot: float = 0.5,
     p_kwonly_default: float = 0.5,
 ) -> ast.arguments:
-    tv = type_and_value(depth) if tv is None else tv
+    tv = gen_type(depth)
 
     n_pos = draw(st.integers(0, max_posonly))
     n_args = draw(st.integers(0, max_args))
@@ -246,10 +207,9 @@ def arguments_from_types(
     use_kwarg = draw(st.booleans())
 
     total = n_pos + n_args + n_kw + use_vararg + use_kwarg
-    names = draw(st.lists(IDENTIFIER, min_size=total, max_size=total, unique=True))
+    names = draw(st.lists(IDENT, min_size=total, max_size=total, unique=True))
     it = iter(names)
 
-    # positional params
     total_pos = n_pos + n_args
     n_def = draw(st.integers(0, total_pos))
     tail_start = total_pos - n_def
@@ -269,10 +229,9 @@ def arguments_from_types(
                 t, _vg = draw(tv)
                 anns[i] = t
 
-    posonlyargs = [_make_arg(next(it), anns[i]) for i in range(n_pos)]
-    args = [_make_arg(next(it), anns[n_pos + j]) for j in range(n_args)]
+    posonlyargs = [_build_arg(next(it), anns[i]) for i in range(n_pos)]
+    args = [_build_arg(next(it), anns[n_pos + j]) for j in range(n_args)]
 
-    # kw-only params
     kwonlyargs: list[ast.arg] = []
     kw_defaults: list[ast.expr | None] = []
     for _ in range(n_kw):
@@ -281,32 +240,31 @@ def arguments_from_types(
         do_def = draw(_bernoulli(p_kwonly_default))
         if do_ann and do_def:
             t, vg = draw(tv)
-            kwonlyargs.append(_make_arg(name, t))
+            kwonlyargs.append(_build_arg(name, t))
             kw_defaults.append(draw(vg))
         elif do_ann:
             t, _vg = draw(tv)
-            kwonlyargs.append(_make_arg(name, t))
+            kwonlyargs.append(_build_arg(name, t))
             kw_defaults.append(None)
         elif do_def:
             _t, vg = draw(tv)
-            kwonlyargs.append(_make_arg(name, None))
+            kwonlyargs.append(_build_arg(name, None))
             kw_defaults.append(draw(vg))
         else:
-            kwonlyargs.append(_make_arg(name, None))
+            kwonlyargs.append(_build_arg(name, None))
             kw_defaults.append(None)
 
-    # vararg/kwarg
     vararg = None
     if use_vararg:
         name = next(it)
         ann = draw(tv)[0] if draw(_bernoulli(p_annot)) else None
-        vararg = _make_arg(name, ann)
+        vararg = _build_arg(name, ann)
 
     kwarg = None
     if use_kwarg:
         name = next(it)
         ann = draw(tv)[0] if draw(_bernoulli(p_annot)) else None
-        kwarg = _make_arg(name, ann)
+        kwarg = _build_arg(name, ann)
 
     return ast.arguments(
         posonlyargs=posonlyargs,
