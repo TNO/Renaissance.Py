@@ -17,8 +17,9 @@ def derive_header_text(language: str, ref_node: ASTNode | None):
     # collect includes #defines  and var decl from the refNode
     header = "\n"
     if ref_node:
-        # matcher_set = { 'VAR_DECL', 'TYPE_DEF', 'MACRO_DEFINITION','INCLUSION_DIRECTIVE'}
-        # self.header = "\n".join(c.signature for c in ref_node.children if c.is_part_of_translation_unit() and c.kind in matcher_set)
+        language = ref_node.filename.split(".")[-1]
+        # header = "\n;\n".join(c.signature for c in ref_node.children if c.is_part_of_translation_unit() and not (
+        #             c.kind == 'FUNCTION_DECL' and c.children[-1].kind == 'COMPOUND_STMT'))
 
         if ref_node:
             matcher_set = {'STRUCT_DECL', 'VAR_DECL', 'TYPE_DEF', 'MACRO_DEFINITION', 'INCLUSION_DIRECTIVE'}
@@ -35,7 +36,6 @@ def derive_header_text(language: str, ref_node: ASTNode | None):
             .reduce(min)
             .or_else(0)
         )
-        language = ref_node.filename.split(".")[-1]
 
         header = (
             CPatternFactory.remove_indent(ref_node.content(0, offset))
