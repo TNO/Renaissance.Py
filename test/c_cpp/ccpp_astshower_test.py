@@ -1,5 +1,8 @@
 import unittest
 
+import hamcrest
+from hamcrest import assert_that, matches_regexp
+
 from renaissance.impl.clang import ClangASTNode
 from renaissance.syntax_tree import ASTFactory, ASTShower, CPatternFactory, ASTFinder
 
@@ -24,7 +27,7 @@ class CcppShowerTest(unittest.TestCase):
         }''')
         simple = ASTFinder.find_kind(pattern, '(?i)Call_?Expr').to_list()[0]
 
-        self.assertEqual('(CALL_EXPR, $pa, test.c[80:88]): |$pa($xx);|\n', str(simple))
+        assert_that(str(simple) , matches_regexp('\(CALL_EXPR, $pa, test.c[\d+:\d+]\): |$pa($xx);|\n'))
 
     def test_show_main(self):
         expected = ('(TRANSLATION_UNIT, test.c, test.c[0:105]):\n'

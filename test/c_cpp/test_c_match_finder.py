@@ -230,7 +230,7 @@ class TestUseAtuToCreatePattern(TestCMatchFinder):
     ('void f() {const char* $name = BAR;}','(?i)Decl_?Stmt',['const char* bar = BAR;'], {'$name':['bar']}),
     ('void f() {const char* $name = FOO;}','(?i)Decl_?Stmt',['const char* foo = FOO;'] , {'$name':['foo']}),
     ('void f() {const char* $name = SAME;}','(?i)Decl_?Stmt',['const char* same = SAME;'], {'$name':['same']}),
-    ('const char* $$args; void f() { printf($$args);}','(?i)Call_?Expr',['printf("%s %s %s", foo, bar, same);'], {'$$args': ['"%s %s %s"', 'foo', 'bar', 'same']}),
+    ('const char* $$args; void f() { print($$args);}','(?i)Call_?Expr',['print("%s %s %s", foo, bar, same);'], {'$$args': ['"%s %s %s"', 'foo', 'bar', 'same']}),
     ]))
     # @unittest.skip("Macro definitions are currently not included in the AST, so the test cases with FOO, BAR, SAME will fail. Need to implement macro handling first.")
     def test(self, _, factory, statements, pattern_type, expected, names):
@@ -244,7 +244,7 @@ class TestUseAtuToCreatePattern(TestCMatchFinder):
         } A;
         int some_decl = 1; 
 
-        int print(const char*, const char *, const char *, const char*);
+        int print(const char*, ...);
         void f(){
             A a = {};
             const char* foo = FOO;
