@@ -3,9 +3,9 @@ import unittest
 from unittest import TestCase
 from parameterized import parameterized
 
-from renaissance.impl.clang import ClangASTNode
+from renaissance.impl.clang import ClangASTNode, CPatternFactory
 from renaissance.impl.clang_json import ClangJsonASTNode
-from renaissance.syntax_tree import ASTFactory, ASTFinder, ASTShower, ASTNode, MatchFinder, CPatternFactory
+from renaissance.syntax_tree import ASTFactory, ASTFinder, ASTShower, ASTNode, MatchFinder
 from renaissance.syntax_tree.match_finder import exclude_nodes_by_kind
 from utils_for_tests import to_string, compress, show_node
 from c_cpp.factories import Factories

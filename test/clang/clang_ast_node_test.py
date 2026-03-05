@@ -2,8 +2,8 @@ import unittest
 
 from hamcrest import assert_that, is_
 
-from renaissance.impl.clang import ClangASTNode
-from renaissance.syntax_tree import CPatternFactory, ASTFactory
+from renaissance.impl.clang import ClangASTNode,CPatternFactory
+from renaissance.syntax_tree import ASTFactory
 
 
 def test_find_all_in_clang_list_with_expansion():

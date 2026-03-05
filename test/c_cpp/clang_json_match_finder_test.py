@@ -1,8 +1,8 @@
 import unittest
 from unittest import TestCase
-
+from renaissance.impl.clang import CPatternFactory
 from renaissance.impl.clang_json import ClangJsonASTNode
-from renaissance.syntax_tree import ASTFactory, ASTFinder, MatchFinder, CPatternFactory, ASTShower
+from renaissance.syntax_tree import ASTFactory, ASTFinder, MatchFinder, ASTShower
 from renaissance.syntax_tree.match_finder import exclude_nodes_by_kind
 
 

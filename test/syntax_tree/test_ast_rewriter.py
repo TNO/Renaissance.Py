@@ -2,8 +2,8 @@ from typing import Callable, Sequence
 from unittest import TestCase
 from parameterized import parameterized
 
-from renaissance.impl.clang import ClangASTNode
-from renaissance.syntax_tree import ASTRewriter, ASTFactory, CPatternFactory, MatchFinder, ASTNode, ASTShower
+from renaissance.impl.clang import ClangASTNode, CPatternFactory
+from renaissance.syntax_tree import ASTRewriter, ASTFactory, MatchFinder, ASTNode, ASTShower
 from c_cpp.factories import Factories
 from utils_for_tests import compress
 

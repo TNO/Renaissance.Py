@@ -1,5 +1,6 @@
 from renaissance.impl.clang_json import ClangJsonASTNode
-from renaissance.syntax_tree import ASTShower, CPatternFactory, ASTFactory
+from renaissance.impl.clang import CPatternFactory
+from renaissance.syntax_tree import ASTShower, ASTFactory
 import unittest
 
 
