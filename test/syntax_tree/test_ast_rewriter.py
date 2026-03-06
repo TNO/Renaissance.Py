@@ -1,10 +1,15 @@
+import sys
 from typing import Callable, Sequence
 from unittest import TestCase
+
+import pytest
+from hamcrest import assert_that, instance_of, is_
 from parameterized import parameterized
 
-from renaissance.impl.clang import ClangASTNode
-from renaissance.syntax_tree import ASTRewriter, ASTFactory, CPatternFactory, MatchFinder, ASTNode, ASTShower
+from renaissance.impl.clang import ClangASTNode, CPatternFactory
+from renaissance.syntax_tree import ASTRewriter, ASTFactory, MatchFinder, ASTNode, ASTShower, PatternMatch
 from c_cpp.factories import Factories
+from renaissance.syntax_tree.ast_rewriter import _RewriteAction, _RewriteActions
 from utils_for_tests import compress
 
 VERBOSE = False
@@ -268,3 +273,31 @@ class TestComposeReplacement(TestCase):
             rewriter.replace(org, match)
             actual = rewriter.apply_to_string()
             self.assertEqual(compress(actual), compress(expected))  
+
+def test_get_node_in_match_pattern(mocker):
+        node = mocker.Mock()
+        reference = mocker.Mock()
+        node.referenced_by = [reference, reference]
+        reference.node = node
+        pattern_match = PatternMatch([node, node, node], {}, [])
+        n = _RewriteAction._get_nodes([pattern_match])[0]
+        assert_that(n, is_(node))
+
+@pytest.mark.skip("fail on empty nodes")
+def test_get_node_in_match_pattern(mocker):
+    it = _RewriteActions([], sys.getfilesystemencoding(), True)
+    text = _RewriteAction.__get_texts([])
+    assert_that(text, is_('node'))
+
+
+def test_get_text_from_rewrite(mocker):
+    node = mocker.Mock()
+    node.root = node
+    node.binary_file_content = lambda: b'int x =0;'
+    node.offset = 0
+    node.extended_end_offset = 8
+    node.text = 'int x =0'
+
+    it = _RewriteActions([node], sys.getfilesystemencoding(), True)
+    text = it._RewriteActions__get_texts([node])
+    assert_that(text, is_('int x =0'))

@@ -1,12 +1,57 @@
 import unittest
 from unittest import TestCase
 
-from renaissance.syntax_tree import ASTFinder,ASTShower,CPatternFactory
+import hamcrest
+from hamcrest import assert_that, contains_string
+from more_itertools import last
+from renaissance.impl.clang import CPatternFactory, ClangASTNode
+from renaissance.impl.clang.c_pattern_factory import derive_header_text
+from renaissance.syntax_tree import ASTFinder,ASTShower
 from parameterized import parameterized
 from c_cpp.factories import Factories
+from utils_for_tests import show_node
+
 
 class TestCPatternFactory(TestCase):
-    pass
+    def test_derive_header(self):
+        code = """
+                int print(const char*,...);
+                #define FOO "foo"
+                #define BAR "bar"
+                #define SAME "bar"
+                typedef struct A_Struct{
+                    int a;
+                    int b;
+                } A;
+                int some_decl = 1; 
+
+                void f(){
+                    A a = {};
+                    const char* foo = FOO;
+                    const char* bar = BAR;
+                    const char* same = SAME;
+                    print("%s %s %s", foo, bar, same);
+
+                }
+
+        """
+        atu = ClangASTNode.load_from_text(code, 'test.c', [], None)
+        ASTShower.show_node(atu)
+
+        header, lang = derive_header_text('c', atu )
+        matcher_set = { 'VAR_DECL', 'TYPE_DEF', 'MACRO_DEFINITION','INCLUSION_DIRECTIVE'}
+        simple_header = ";\n".join(c.signature for c in atu.children if c.is_part_of_translation_unit() and not(c.kind == 'FUNCTION_DECL' and c.children[-1].kind =='COMPOUND_STMT'))
+
+        assert_that(header, contains_string('#define FOO "foo";'))
+        assert_that(header, contains_string('int print(const char*,...);'))
+        assert_that(header, contains_string('typedef struct A_Struct'))
+        assert_that(header, contains_string('int some_decl = 1;'))
+        assert_that(simple_header, contains_string('#define FOO "foo"'))
+        assert_that(simple_header, contains_string('int print(const char*,...);'))
+        assert_that(simple_header, contains_string('typedef struct A_Struct'))
+
+        assert_that(simple_header, contains_string('int some_decl = 1;'))
+
 
 class TestExpression(TestCPatternFactory):
 
@@ -88,10 +133,9 @@ class TestUseAtuToCreatePatterns(TestCPatternFactory):
         ('const char* foo=FOO;',1, 2),   
         ('const char* $x = BAR;',1,2),
     ])))
-    @unittest.skip("This test is currently not working, needs to be fixed")
     def test(self, _, factory, statementText, expected_stmts, expected_refs):
         code = """
-        #include <stdio.h>
+        int print(const char*,const char*,const char*,const char*);
         #define FOO "foo"
         #define BAR "bar"
         #define SAME "bar"
@@ -106,7 +150,7 @@ class TestUseAtuToCreatePatterns(TestCPatternFactory):
             const char* foo = FOO;
             const char* bar = BAR;
             const char* same = SAME;
-            printf("%s %s %s", foo, bar, same);
+            print("%s %s %s", foo, bar, same);
 
         }
 
@@ -122,5 +166,7 @@ class TestUseAtuToCreatePatterns(TestCPatternFactory):
 
         # the user must pick it's own pattern in this case the last statement
         self.assertTrue(pattern_root.children[-1].is_statement)
-        raw = pattern_root.children[-1].signature
+        node = last(n for n in pattern_root.children if n.kind !='UNEXPOSED_DECL')
+        raw = node.signature
+
         self.assertTrue(statementText.startswith(raw))

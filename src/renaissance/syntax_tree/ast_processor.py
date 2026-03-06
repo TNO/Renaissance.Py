@@ -4,13 +4,10 @@ from pathlib import Path
 from typing import Callable, Iterator, Sequence
 
 from renaissance.common import Stream
-from .ast_finder import ASTFinder
-from .match_finder import MatchFinder, PatternMatch
-from .ast_rewriter import ASTRewriter
-from .ast_factory import ASTFactory
-from .ast_node import ASTNode
-
-
+from renaissance.syntax_tree.ast_rewriter import ASTRewriter
+from renaissance.syntax_tree.match_finder import ASTNode,  PatternMatch,  MatchFinder
+from renaissance.syntax_tree.ast_finder import ASTFinder
+from renaissance.syntax_tree.ast_factory import ASTFactory
 class ASTProcessor:
     def __init__(
         self,
@@ -97,7 +94,6 @@ class ASTProcessor:
             self.__root_node,
             *patterns_list,
             recursive=recursive,
-            exclude_kind=exclude_kind
         )
 
     def has_changed(self) -> bool:

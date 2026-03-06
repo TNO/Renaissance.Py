@@ -1,22 +1,22 @@
-import unittest
 from typing import Callable
 from unittest import TestCase
 
 from parameterized import parameterized
 
 from c_cpp.factories import Factories
+
 from rejuvenation.refactor_examples_different_styles import example_use_ast_kind_finder, \
     example_use_ast_function_finder
 from rejuvenation.refactor_with_nested_compositions import refactor_with_nested_compositions
 from rejuvenation.remove_unused_variable import remove_unused_variable_using_refactor_method, remove_unused_variable_low_level
 from rejuvenation.replace_if_with_ternary import replace_if_with_ternary
-from renaissance.syntax_tree import CPatternFactory, ASTFactory
+from renaissance.impl.clang import CPatternFactory
+from renaissance.syntax_tree import ASTFactory
 from renaissance.syntax_tree.ast_node import ASTNode
 
 
 class TestRefactorWithNestedCompositions(TestCase):
 
-    @unittest.skip("mocro not added, nodistinction betweenfun decl and fen definition")
     def test_refactor_with_nested_compositions(self):
         result =  refactor_with_nested_compositions(['', ''])
         assert result

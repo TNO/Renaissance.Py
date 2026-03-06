@@ -1,13 +1,12 @@
 import unittest
 from unittest import TestCase
 
-from renaissance.impl.clang import ClangASTNode
-from renaissance.syntax_tree import ASTFactory, ASTFinder, MatchFinder, CPatternFactory, ASTShower
-from renaissance.syntax_tree.match_finder import exclude_nodes_by_kind
+from renaissance.impl.clang import ClangASTNode, CPatternFactory
+from renaissance.syntax_tree import ASTFactory, ASTFinder, MatchFinder,  ASTShower
+
 
 
 class ClangMatchFinderTest(TestCase):
-    # @unittest.skip("This test is currently not working, needs to be fixed")
     def testIsMatch(self):
         code = """
         #define BAR "bar"
@@ -38,8 +37,4 @@ class ClangMatchFinderTest(TestCase):
         atu = factory.create_from_text('int f(){return 0;}', 'test.c')
         pattern_factory = CPatternFactory(factory)
         pattern1 = pattern_factory.create_declarations('old $name = $value;', extra_declarations=['typedef int old;'], parameters=['$value'])
-        pattern2 = pattern_factory.create_declarations('old $name;', extra_declarations=['typedef int old;'], parameters=['$value'])
-
-        ASTShower.show_node(pattern1[0])
-        ASTShower.show_node(pattern2[0])
         self.assertEqual(pattern1[0].children[0].name,'$name')

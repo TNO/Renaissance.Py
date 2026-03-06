@@ -4,7 +4,7 @@ from typing import Callable, Optional, Sequence
 from renaissance.common import Stream
 from .match_finder import MatchFinder, PatternMatch
 
-from .c_pattern_factory import CPPPatternFactory
+from renaissance.impl.clang.c_pattern_factory import CPPPatternFactory
 
 from .ast_finder import ASTFinder
 from .ast_processor import ASTProcessor
@@ -82,9 +82,9 @@ class ASTRefactorActions:
         if not patterns:
             self.processor.replace(replacement, matches)
             return
-        MatchFinder.find_all(node, patterns[0]).for_each(
+        MatchFinder.find_all([node], patterns[0]).for_each(
             lambda m: self._replace_patterns(
-                m.src_nodes[0], replacement, patterns[1:], list(matches) + [m]
+                m.nodes[0], replacement, patterns[1:], list(matches) + [m]
             )
         )
 
@@ -99,6 +99,3 @@ class ASTRefactorActions:
 
         return self.processor.find_match(root).to_list()
 
-
-if __name__ == "__main__":
-    pass

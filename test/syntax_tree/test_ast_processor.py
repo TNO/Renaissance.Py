@@ -1,0 +1,21 @@
+from pathlib import Path
+
+from hamcrest import assert_that
+
+from renaissance.impl.clang import ClangASTNode
+from renaissance.refactoring import CleanupRefactoring
+from renaissance.syntax_tree import ASTProcessor, ASTFactory, PatternMatch
+
+
+def test_find_match(mocker):
+    node = mocker.Mock()
+    pattern_match = PatternMatch([node, node, node], {}, [])
+    mock_matcher = mocker.patch("renaissance.syntax_tree.match_finder.MatchFinder.match_pattern", return_value=[pattern_match])
+    atu = ClangASTNode.load_from_text('int main(){return 0;}', 'test.c',[], None)
+    ast_refactor = ASTProcessor(atu, ASTFactory(ClangASTNode), in_memory=True)
+
+    ast_refactor.find_match([atu.children[-1].children[-1]])
+
+    assert_that(mock_matcher.call_count == 1)
+
+
