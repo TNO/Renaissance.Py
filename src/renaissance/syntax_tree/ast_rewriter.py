@@ -144,7 +144,7 @@ class _RewriteAction:
             if isinstance(target[0], ASTNode):
                 return [n for n in target if isinstance(n, ASTNode)]
             if isinstance(target[-1], PatternMatch):
-                return target[-1].src_nodes
+                return target[-1].nodes
         return []
 
 
