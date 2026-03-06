@@ -2,6 +2,7 @@ from renaissance.impl.python import PythonASTNode, PythonPatternFactory
 from renaissance.syntax_tree import ASTFinder, ASTProcessor, MatchFinder, ASTRewriter, ASTFactory
 
 factory = ASTFactory(PythonASTNode, [])
+pattern_factory = PythonPatternFactory(factory, None)
 PYUNIT_TEST_CASE_PATTERN='def $test_case(self):\n    $$aaa'
 PYTEST_REPLACEMENT = 'def $test_case():\n    $$aaa'
 
