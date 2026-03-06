@@ -94,7 +94,6 @@ class ASTProcessor:
             self.__root_node,
             *patterns_list,
             recursive=recursive,
-            exclude_kind=exclude_kind
         )
 
     def has_changed(self) -> bool:
