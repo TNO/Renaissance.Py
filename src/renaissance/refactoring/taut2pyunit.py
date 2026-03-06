@@ -1,4 +1,4 @@
-from renaissance.utils.flake8_util import fix_indent, add_indent
+from renaissance.utils.refactor_utils import fix_indent, add_indent, is_block_statement
 
 from renaissance.impl.python import PythonASTNode, PythonPatternFactory
 from renaissance.syntax_tree import ASTShower, ASTProcessor, MatchFinder, ASTRewriter, ASTFactory
@@ -231,7 +231,11 @@ EMRWxCONTEXT.emrmxcontext.reset_method_attributes("finish_lot")
         for test_case in test_cases:
             replacement = after
             for snippets in test_case.expansions:
-                replacement = replacement.replace(snippets, TautRefactoring.raw(test_case.expansions[snippets], snippets))
+                # by replacing if, try, with statements move the body to left
+                if is_block_statement(before_pattern):
+                    pass
+                else:
+                    replacement = replacement.replace(snippets, TautRefactoring.raw(test_case.expansions[snippets], snippets))
             rewriter.replace(replacement, test_case.nodes)
         rewriter.apply()
         return rewriter.apply_to_string()
