@@ -5,8 +5,6 @@ from renaissance.common import Stream
 from renaissance.impl import MATCH_ALL, MATCH_ONE
 from ..utils.node_util import use_dollar
 
-VERBOSE = False
-
 
 @runtime_checkable
 class AstProtocol(Protocol):

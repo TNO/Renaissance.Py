@@ -229,6 +229,29 @@ def outer():
         attr = src.children[2].children[0]
         assert attr.signature == '@TUAT'
 
+    def test_node_family(self):
+        src = PythonASTNode.load_from_text('''
+import you 
+from other import dog
+class Parent:
+    def previous_me():
+        pass
+    def mememe(a55,a66,a77,a88,a99):
+        l(a55)
+        l(a66)
+        l(a77)
+        l(a88)
+    def next_me():
+        pass
+    ''', 'nav.py',[], Path('.'))
+        #          module  class     body        fun memem
+        me = src.children[-1].children[2].children[1]
+        assert_that(me.name, is_('mememe'))
+        assert_that(me.preceding_sibling.name, is_('previous_me'))
+        assert_that(me.next_sibling.name, is_('next_me'))
+        assert_that(me.parent.parent.name, is_('Parent'))
+        assert_that(me.children[1].children, has_length(4))
+
 def test_load_file_with_ignored_types():
     atu = PythonASTNode.load_from_text('x = 1 # type: ignore', 'bogus.py',{}, Path(targets.__file__))
     assert_that(atu.translation_unit.atu.type_ignores, has_length(1))

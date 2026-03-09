@@ -43,7 +43,8 @@ class ASTFinder:
     @staticmethod
     def __matches_kind(ast_node: ASTNode, kind: str | re.Pattern[str]) -> Iterator[ASTNode]:
         pattern = kind if isinstance(kind, re.Pattern) else re.compile(kind, re.IGNORECASE)
-        ast_kind = ASTFinder.KIND_MATCH.sub('', ast_node.kind).lower()
+        node_kind = ast_node.kind if ast_node.kind else ''
+        ast_kind = ASTFinder.KIND_MATCH.sub('', node_kind).lower()
 
         if pattern.fullmatch(ast_kind):
             yield ast_node
