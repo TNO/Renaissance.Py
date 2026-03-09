@@ -1,15 +1,13 @@
-import ast
-import sys
 from pathlib import Path
 from typing import Any, Optional, Sequence
 
+from ast_comments import *
 from typing_extensions import override
 
 from renaissance.common import Stream
 from renaissance.impl import MATCH_ONE, MATCH_ALL
 from renaissance.syntax_tree import ASTNode, ASTReference, PatternMatch
 from renaissance.syntax_tree.match_finder import match_pattern, is_match, find_in_list
-from ast_comments import *
 
 EMPTY_DICT = {}
 EMPTY_STR = ''

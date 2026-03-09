@@ -3,6 +3,7 @@
 from renaissance.syntax_tree import ASTFactory, MatchFinder, ASTRewriter
 from renaissance.impl.python import PythonASTNode, PythonPatternFactory
 from renaissance.syntax_tree import ASTShower, TextUtils
+from renaissance.syntax_tree.match_finder import match_pattern
 
 example_code = """
 from module import foo, bar, baz, quux
@@ -15,24 +16,16 @@ if pa():
 pa(54)  
 """
 
-def refactor_with_nested_compositions(args):
-    # the first argument is the code to be parsed
-    code = args[1] if len(args) > 1 else ''
-
-    # Create a factory args from the command line are passed to the factory for example -I/usr/include
-    factory = ASTFactory(PythonASTNode, args if not code else args[1:])
-    # Create a pattern factory (using the factory (hence also its args)
-    #create translation unit
-    atu = factory.create(code) if code else factory.create_from_text(example_code, 'test.py')
-    # create a pattern factory atu is passed to the pattern factory for use of all # includes, #defines and declarations
+def python_ast_smoke_test():
+    factory = ASTFactory(PythonASTNode)
+    atu = factory.create_from_text(example_code, 'test.py')
     pattern_factory = PythonPatternFactory(factory, atu)
+
     pattern1 = pattern_factory.create_statements('if pa(): $$stmts')
-    # for pattern 2 we create a fully functional c snippet with a call to f1
-    # note that the f1 declaration is derived from the atu
     pattern2 = pattern_factory.create_expression('na($a)')
+
     ASTShower.show_node(pattern1[0], include_properties=True)
 
-    # the replacement code strip indent is used to be agnostic to the indentation of the replacement
     pattern1replacement = TextUtils.strip_indent("""
             # changed if expr to const
             isAOne=True
@@ -41,49 +34,28 @@ def refactor_with_nested_compositions(args):
             """)
     pattern2replacement = '# changed function f1 to f2\nf2($a,123456)\n'
 
-    # show node and patterns enable include properties to show the properties of the nodes
-    include_properties = True
-    ASTShower.show_node(atu, include_properties)
-    ASTShower.show_node(pattern1[0], include_properties)
-    ASTShower.show_node(pattern2, include_properties)
+    rewriter = ASTRewriter(atu)
+    for match in match_pattern(atu.children, pattern1):
+        refactor(match,pattern1replacement , rewriter)
+    for match in match_pattern(atu.children, [pattern2]):
+        refactor(match,pattern2replacement , rewriter)
+    return rewriter.apply_to_string()
 
-    result = None
-    while atu:
-        # create an ASTRewriter
-        rewriter = ASTRewriter(atu)
+def raw(nodes):
+    res = ''
+    for node in nodes:
+        res += node.text
+    return res + '\n'
 
-        def raw(nodes):
-            res = ''
-            for node in nodes:
-                res += node.text
-            return res + '\n'
-        # create a refactoring that use different replacement code for different patterns
-        def refactor(match):
-            if match.patterns == pattern1:
-                replment_text = pattern1replacement
-            else:
-                replment_text = pattern2replacement
-            for repl_snippet in match.expansions:
-                replment_text = replment_text.replace(repl_snippet, raw(match.expansions[repl_snippet]))
-            return rewriter.replace(replment_text, match.nodes)
-
-        # search matches for pattern1 and pattern2 and replace them using the refactor function
-        MatchFinder.find_all(atu, pattern1, pattern2). \
-            peek(lambda match: print('peek: ' + str(match.nodes))). \
-            for_each(refactor)
-
-        # print the rewritten code
-        result = rewriter.apply_to_string()
-        if rewriter.has_changed():
-            atu = factory.create_from_text(result, 'test.py')
-        else:
-            atu = None
-    return result
+# create a refactoring that use different replacement code for different patterns
+def refactor(match,replment_text, rewriter):
+    for repl_snippet in match.expansions:
+        replment_text = replment_text.replace(repl_snippet, raw(match.expansions[repl_snippet]))
+    return rewriter.replace(replment_text, match.nodes)
 
 
 if __name__ == "__main__":
-    import sys
 
-    result = refactor_with_nested_compositions(sys.argv)
+    result = python_ast_smoke_test()
     print(result)
 

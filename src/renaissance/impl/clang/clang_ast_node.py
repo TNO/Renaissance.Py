@@ -416,39 +416,3 @@ class ReferenceHelper():
             except:
                 pass
 
-
-if __name__ == "__main__":
-    pass
-    # Set the path to libclang.so
-    # clang.cindex.Config.set_library_file('C:/Users/pnelissen/scoop/apps/llvm/current/bin/libclang.dll')
-    # root = ClangASTNode.load(Path('Z:/testproject/c/src/main.c'))
-
-    # root.translation_unit.save('Z:/testproject/c/src/main.c.ast')
-
-    # def visitFunction(astNode: ASTNode) -> None:
-    #     parent = astNode.get_parent()
-    #     depth = 0
-    #     while parent:
-    #         depth += 1
-    #         parent = parent.get_parent()
-    #     print(str('  ' * depth) + astNode.kind)
-
-    # # root.process(visitFunction)
-
-    # ASTShower.show_node(root)
-
-
-# Function to visit all nodes
-def print_node_kind(node, depth=0):
-    if PRINT_ALL_NODES:
-        print(f"{' ' * depth} Node: {node.spelling}, Kind: {node.kind}")
-
-        for child in node.children:
-            print_node_kind(child, depth + 2)
-
-
-def save_get(target, key):
-    try:
-        return getattr(target, key)()
-    except:
-        return None

@@ -126,7 +126,7 @@ class ASTNode(ABC):
 
     @property
     def next_sibling(self) -> ASTNode | None:
-        next_sibling(self)
+        return next_sibling(self)
 
     def get_ancestor(self, kind: str | re.Pattern[str]) -> ASTNode | None:
         pattern = re.compile(kind, re.IGNORECASE) if isinstance(kind, str) else kind

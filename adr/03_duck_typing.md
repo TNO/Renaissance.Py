@@ -31,7 +31,7 @@ Treat nodes by behavior (structural and API shape) rather than by explicit concr
 @runtime_checkable
 class NodeMatchProtocol(protocol):
     properties: dict
-    children: list[self]
+    children: list[Self]
 
 def is_match(src: NodeMatchProtocol, cmp: NodeMatchProtocol) -> bool:
     ...

@@ -62,7 +62,7 @@ def example_add_comment_and_commit(factory, pattern_factory):
     #create an ASTRewriter
     rewriter = ASTRewriter(atu)
     # search matches and replace them
-    result = MatchFinder.find_all(atu, *patterns_list)
+    result = MatchFinder.find_all(atu.children, *patterns_list)
     result.for_each(lambda match: rewriter.insert_before('// old has become obsolete',match))
     
     #commit
@@ -83,17 +83,17 @@ def example_replace_old_by_fancy_new(factory, pattern_factory):
 
     # a example of how to use a function iso of lambda to filter the nodes
     def matches_old(node):
-        if node.name == 'old':
+        if '$old' in node and node['$old'][0].name == 'old':
             return True
         return False
     
     atu = factory.create_from_text(example_code, 'test.c')
     rewriter = ASTRewriter(atu)
 
-    matches=MatchFinder.find_all(atu, *patterns_list)
-    (matches.\
-        map(lambda match: match.expansions['$old'][0]).\
-        filter(matches_old).\
+    matches=MatchFinder.find_all(atu.children, *patterns_list)
+    (matches.
+        map(lambda match: match.expansions).
+        filter(matches_old).
         for_each(lambda node: rewriter.replace('fancy_new',node)))
     print('results after replacing the old type by fancy_new using MatchFinder:')
     result = rewriter.apply_to_string().strip()
