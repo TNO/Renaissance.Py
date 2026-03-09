@@ -1,4 +1,4 @@
-from renaissance.utils.flake8_util import fix_indent, add_indent
+from renaissance.utils.refactor_utils import fix_indent, adjust_indent, remove_indent, get_indentation_level
 
 from renaissance.impl.python import PythonASTNode, PythonPatternFactory
 from renaissance.syntax_tree import ASTShower, ASTProcessor, MatchFinder, ASTRewriter, ASTFactory
@@ -73,10 +73,9 @@ class TautRefactoring:
         pattern1 = 'with TAUT.TestDoubles(emrwxtl=FakeEMRWxTL(None)):\n    log = TAUT.Logger()\n    $$aa'
         replace_pattern = 'fake_emrwxtl = FakeEMRWxTL(None)\n$$aa'
         result = TautRefactoring.refactor_replace(input_code, pattern1, replace_pattern)
-        formatted_code = fix_indent(result)
 
         pattern2 = 'emrwxtl.$a($$bb)'
-        result2 = TautRefactoring.refactor_replace(formatted_code, pattern2, 'fake_emrwxtl.$a($$bb)')
+        result2 = TautRefactoring.refactor_replace(result, pattern2, 'fake_emrwxtl.$a($$bb)')
 
         pattern3 = '$c = emrwxtl.$a($$bb)'
         return TautRefactoring.refactor_replace(result2, pattern3, '$c = fake_emrwxtl.$a($$bb)')
@@ -145,9 +144,6 @@ EMRWxCONTEXT.emrmxcontext.reset_method_attributes("finish_lot")
     @staticmethod
     def refactor_testdoubles_fun(input_code):
         """refactor cannot use standard replace method, because it needs to fix the indentation"""
-        atu = factory.create_from_text(input_code, 'temp.py')
-        rewriter = ASTRewriter(atu)
-        pattern_factory = PythonPatternFactory(factory, atu)
         pattern1 = """def $a($$b):
     self.doubles.append(
         TAUT.TestDoubles(
@@ -160,19 +156,7 @@ EMRWxCONTEXT.emrmxcontext.reset_method_attributes("finish_lot")
     with patch.object($mod, '$e', $f):
         $$c
 """
-        match_pattern = pattern_factory.create_python_pattern(pattern1)
-        test_cases = MatchFinder.find_all([atu], [match_pattern]).to_iterable()
-        for test_case in test_cases:
-            replacement = replace_pattern
-            for snippets in test_case.expansions:
-                if snippets == '$$c':
-                    replacement = replacement.replace(snippets, add_indent(TautRefactoring.raw(test_case.expansions[snippets], snippets)))
-                else:
-                    replacement = replacement.replace(snippets,
-                                                      TautRefactoring.raw(test_case.expansions[snippets], snippets))
-            rewriter.replace(replacement, test_case.nodes)
-        rewriter.apply()
-        return rewriter.apply_to_string()
+        return TautRefactoring.refactor_replace(input_code, pattern1, replace_pattern)
 
     @staticmethod
     def refactor_testdoubles_class(input_code):
@@ -231,7 +215,14 @@ EMRWxCONTEXT.emrmxcontext.reset_method_attributes("finish_lot")
         for test_case in test_cases:
             replacement = after
             for snippets in test_case.expansions:
-                replacement = replacement.replace(snippets, TautRefactoring.raw(test_case.expansions[snippets], snippets))
+                raw = TautRefactoring.raw(test_case.expansions[snippets], snippets)
+                # indentation adjustment may need
+                if snippets.count('$') == 2:
+                    before_level = get_indentation_level(before, snippets)
+                    after_level = get_indentation_level(after, snippets)
+                    if before_level != after_level:
+                        raw = adjust_indent(raw, after_level - before_level)
+                replacement = replacement.replace(snippets, raw)
             rewriter.replace(replacement, test_case.nodes)
         rewriter.apply()
         return rewriter.apply_to_string()
@@ -285,7 +276,7 @@ EMRWxCONTEXT.emrmxcontext.reset_method_attributes("finish_lot")
                         start_offset = node.offset
                     if end_offset == 0 or node.end_offset > end_offset:
                         end_offset = node.end_offset
-            return node.root.content(start_offset, end_offset)
+            return node.root.signature[start_offset:end_offset]
         else:
             for node in nodes:
                 if isinstance(node, PythonASTNode):

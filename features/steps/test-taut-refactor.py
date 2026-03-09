@@ -2,7 +2,7 @@ import pytest
 from pytest_bdd import given, when, then, scenario, parsers
 from renaissance.impl.python import PythonASTNode, PythonPatternFactory
 from renaissance.syntax_tree import ASTFactory, ASTRewriter, MatchFinder
-from renaissance.utils.flake8_util import fix_indent
+from renaissance.utils.refactor_utils import fix_indent
 
 @pytest.fixture
 def context():
