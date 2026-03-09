@@ -50,10 +50,16 @@ def convert_pytest(file):
     unittest = pattern_factory.create_statements('import unittest')
     rewriter = ASTRewriter(test_atu)
     for match in match_pattern(test_atu.children, unittest):
-        rewriter.replace('import pytest',match.nodes)
+        rewriter.replace('import pytest',match.nodes,False, False)
+
+    test_main = pattern_factory.create_statements('unittest.main()')
+    for match in match_pattern(test_atu.children, test_main):
+        rewriter.replace('pytest.main()',match.nodes, False, False)
+
     if rewriter.has_changed():
         with open(file, 'w') as f:
             f.write(rewriter.apply_to_string())
+
 
 
 if __name__ == "__main__":
