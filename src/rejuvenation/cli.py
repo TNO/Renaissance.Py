@@ -42,15 +42,26 @@ def select_pyton_file():
     return current_dir.glob('**/*.py')
     # return (file_path for file_path in current_dir.iterdir() if is_python_file)
 
-
+def raw(nodes):
+    res = ''
+    for node in nodes:
+        res += '\n    ' + node.text
+    return res + '\n    '
 def convert_pytest(file):
     print(file)
     test_atu = factory.create(file)
     pattern_factory = PythonPatternFactory(factory, None)
-    unittest = pattern_factory.create_statements('import unittest')
     rewriter = ASTRewriter(test_atu)
+
+    unittest = pattern_factory.create_statements('import unittest')
     for match in match_pattern(test_atu.children, unittest):
         rewriter.replace('import pytest',match.nodes,False, False)
+
+
+    test_main = pattern_factory.create_statements('class $klass(unittest.TestCase):\n    $$test_cases\n')
+    for match in match_pattern(test_atu.children, test_main):
+        repl = f'class {match.expansions["$klass"][0]}:\n{raw(match.expansions["$$test_cases"])}'
+        rewriter.replace(repl, match.nodes, True, True)
 
     test_main = pattern_factory.create_statements('unittest.main()')
     for match in match_pattern(test_atu.children, test_main):
