@@ -45,7 +45,29 @@ def fix_indent(code_string):
         if os.path.exists(file_path):
             os.remove(file_path)
 
-def add_indent(code, spaces=4):
+def adjust_indent(code, counter:int, spaces=4):
+    # Create the indentation string
+    indent = ' ' * int(counter/spaces) * spaces
+
+    # Split the code into lines
+    lines = code.splitlines()
+
+    # If there's only one line or no lines, return the original code
+    if len(lines) <= 1:
+        return code
+
+    # Keep the first line unchanged, adjust the indentation to the rest
+    if counter > 0:
+        # move to right, add indent
+        indented_lines = [lines[0]] + [indent + line for line in lines[1:]]
+    else:
+        # move to left, remove indent
+        indented_lines = [lines[0]] + [line.lstrip() for line in lines[1:]]
+    indented_code = '\n'.join(indented_lines)
+
+    return indented_code
+
+def remove_indent(code, spaces=4):
     # Create the indentation string
     indent = ' ' * spaces
 
@@ -56,8 +78,8 @@ def add_indent(code, spaces=4):
     if len(lines) <= 1:
         return code
 
-    # Keep the first line unchanged, add indentation to the rest
-    indented_lines = [lines[0]] + [indent + line for line in lines[1:]]
+    # Keep the first line unchanged, remove indentation to the rest
+    indented_lines = [lines[0]] + [line.lstrip() for line in lines[1:]]
     indented_code = '\n'.join(indented_lines)
 
     return indented_code
@@ -92,35 +114,61 @@ def is_block_statement(statement):
         return False
 
     # Check for if, elif, else statements
-    if statement.startswith('if ') and statement.endswith(':'):
+    if statement.startswith('if '):
         return True
-    if statement.startswith('elif ') and statement.endswith(':'):
+    if statement.startswith('elif '):
         return True
     if statement == 'else:':
         return True
 
     # Check for with statements
-    if statement.startswith('with ') and statement.endswith(':'):
+    if statement.startswith('with '):
         return True
 
     # Check for try, except, finally statements
     if statement == 'try:':
         return True
-    if statement.startswith('except') and statement.endswith(':'):
+    if statement.startswith('except'):
         return True
     if statement == 'finally:':
         return True
 
     # Check for loops
-    if statement.startswith('for ') and statement.endswith(':'):
+    if statement.startswith('for '):
         return True
-    if statement.startswith('while ') and statement.endswith(':'):
+    if statement.startswith('while '):
         return True
 
     # Check for function and class definitions
-    if statement.startswith('def ') and statement.endswith(':'):
+    if statement.startswith('def '):
         return True
-    if statement.startswith('class ') and statement.endswith(':'):
+    if statement.startswith('class '):
         return True
 
     return False
+
+def get_indentation_level(code, snippets):
+    """
+    Determines the indentation level of a matched pattern in a code snippet.
+
+    Args:
+        code (str): The complete code snippet to search within
+        snippets (str): The pattern to find in the code
+
+    Returns:
+        int: The number of spaces of indentation for the matched pattern
+             Returns -1 if the pattern is not found
+    """
+    # Split the code into lines for processing
+    lines = code.splitlines()
+
+    # Search for the pattern in each line
+    for line in lines:
+        stripped_line = line.lstrip()
+        if snippets in stripped_line:
+            # Calculate indentation by finding difference between original and stripped line
+            indentation = len(line) - len(stripped_line)
+            return indentation
+
+    # Pattern not found
+    return -1
