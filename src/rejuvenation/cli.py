@@ -45,7 +45,7 @@ def select_pyton_file():
 def raw(nodes):
     res = ''
     for node in nodes:
-        res += '\n    ' + node.text
+        res += '\n\n    ' + node.text
     return res + '\n    '
 def convert_pytest(file):
     print(file)
