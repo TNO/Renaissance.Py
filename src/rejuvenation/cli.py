@@ -1,8 +1,7 @@
-#! /usr/bin/python3
 from pathlib import Path
 
 from renaissance.refactoring.taut2pyunit import TautRefactoring
-from renaissance.syntax_tree import ASTFactory, ASTRewriter
+from renaissance.syntax_tree import ASTFactory, ASTRewriter, ASTShower
 from renaissance.impl.python import PythonASTNode, PythonPatternFactory
 import sys
 
@@ -58,6 +57,13 @@ def convert_pytest(file):
         rewriter.replace('import pytest',match.nodes,False, False)
 
 
+
+    unittest = pattern_factory.create_statements('self.assertEqual($exp, $act)')
+    for match in match_pattern(test_atu.children, unittest):
+        act = match.expansions['$act']
+        exp = match.expansions['$exp']
+        rewriter.replace(f'assert_that({act}, is_({exp}))',match.nodes,False, False)
+
     test_main = pattern_factory.create_statements('class $klass(unittest.TestCase):\n    $$test_cases\n')
     for match in match_pattern(test_atu.children, test_main):
         repl = f'class {match.expansions["$klass"][0]}:\n{raw(match.expansions["$$test_cases"])}'
@@ -74,6 +80,12 @@ def convert_pytest(file):
 
 
 if __name__ == "__main__":
+    sample = factory.create('c_cpp/ccpp_astshower_test.py')
+    # ASTShower.show_node(sample)
+
+    stmt = factory.create_from_text('self.assertEqual(___exp, ___act)', 'test.py')
+    ASTShower.show_node(stmt)
+
     for file in select_pyton_file():
         # print(file.resolve())
         convert_pytest(file)
