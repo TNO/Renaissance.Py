@@ -1,12 +1,9 @@
+import sys
 from pathlib import Path
 
-from renaissance.refactoring.taut2pyunit import TautRefactoring
+from renaissance.impl.python import PythonASTNode
 from renaissance.refactoring.unit2pytest import convert_pytest
-from renaissance.syntax_tree import ASTFactory, ASTRewriter, ASTShower
-from renaissance.impl.python import PythonASTNode, PythonPatternFactory
-import sys
-
-from renaissance.syntax_tree.match_finder import match_pattern
+from renaissance.syntax_tree import ASTFactory
 
 factory = ASTFactory(PythonASTNode, [])
 
@@ -39,18 +36,15 @@ def select_pyton_file():
     current_dir = Path('.')
     print(f'refactor in {current_dir.resolve()}')
 
-    return current_dir.glob('**/*test_tree_sitter_structural_matcher.py')
+    return current_dir.glob('**/*clang_ast_node_test.py')
     # return (file_path for file_path in current_dir.iterdir() if is_python_file)
 
 
 
 
 if __name__ == "__main__":
-    sample = factory.create('tree_sitter/test_tree_sitter_structural_matcher.py')
-    ASTShower.show_node(sample)
-
-    stmt = factory.create_from_text('self.assertEqual(___exp, ___act)', 'test.py')
-    ASTShower.show_node(stmt)
+    sample = factory.create('clang/clang_ast_node_test.py')
+    # ASTShower.show_node(sample)
 
     for file in select_pyton_file():
         # print(file.resolve())

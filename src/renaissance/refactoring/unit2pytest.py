@@ -27,6 +27,7 @@ def convert_pytest(file):
 
     convert_plain_assert_not_empty(pattern_factory, rewriter, test_atu)
     convert_plain_assert_same_length(pattern_factory, rewriter, test_atu)
+    convert_plain_assert_string(pattern_factory, rewriter, test_atu)
 
     remove_print(pattern_factory, rewriter, test_atu)
 
@@ -85,12 +86,22 @@ def convert_plain_assert_not_empty(pattern_factory: PythonPatternFactory, rewrit
         repl = f'assert_that({exp}, is_not(empty()))'
         rewriter.replace(repl, match.nodes, False, False)
 
+
 def convert_plain_assert_same_length(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):
     unittest = pattern_factory.create_statements('assert  len($exp) == $length')
     for match in match_pattern(test_atu.children, unittest):
         exp = match.expansions['$exp'][0].signature
         length = match.expansions['$length'][0].signature
         repl = f'assert_that({exp}, has_length({length}))'
+        rewriter.replace(repl, match.nodes, False, False)
+
+
+def convert_plain_assert_string(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):
+    unittest = pattern_factory.create_statements('assert str($act) == $exp')
+    for match in match_pattern(test_atu.children, unittest):
+        exp = match.expansions['$exp'][0].signature
+        act = match.expansions['$act'][0].signature
+        repl = f'assert_that({act}, has_string({exp}))'
         rewriter.replace(repl, match.nodes, False, False)
 
 def remove_print(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):
