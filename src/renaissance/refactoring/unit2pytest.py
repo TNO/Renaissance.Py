@@ -35,7 +35,7 @@ def convert_pytest(file):
 def convert_test_import(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):
     unittest = pattern_factory.create_statements('import unittest')
     for match in match_pattern(test_atu.children, unittest):
-        rewriter.replace('import pytest', match.nodes, False, False)
+        rewriter.replace('import pytest\nfrom hamcrest import assert_that, is_', match.nodes, False, False)
 
 
 def convert_test_class(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):
@@ -52,6 +52,7 @@ def convert_test_main(pattern_factory: PythonPatternFactory, rewriter: ASTRewrit
 
 
 def convert_assert_equals(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):
+
     unittest = pattern_factory.create_statements('self.assertEqual($exp, $act)')
     for match in match_pattern(test_atu.children, unittest):
         act = match.expansions['$act'][0].signature
