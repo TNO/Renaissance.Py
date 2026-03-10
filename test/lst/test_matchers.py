@@ -62,8 +62,12 @@ class TestMatchers:
         assert_that(is_match(self.class_node, pattern))
 
     def test_node_type_match(self):
-        # I expect call_expression to work, or a defined way to get kind
         matches = ASTFinder.find_kind(self.if_node, "call_?expression").to_list()
+        assert_that(matches, has_length(1))
+
+    @pytest.mark.skip("I expect 'call_expression' to work, or a defined way to get kind")
+    def test_node_type_match_exact_type(self):
+        matches = ASTFinder.find_kind(self.if_node, "call_expression").to_list()
         assert_that(matches, has_length(1))
 
 
