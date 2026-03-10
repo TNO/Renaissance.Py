@@ -15,8 +15,17 @@ def raw(nodes):
 
 def convert_pytest(file):
     print(file)
-    test_atu = factory.create(file)
     pattern_factory = PythonPatternFactory(factory, None)
+
+    test_atu2 = factory.create(file)
+    rewriter2 = ASTRewriter(test_atu2)
+    convert_test_class(pattern_factory, rewriter2, test_atu2)
+    if rewriter2.has_changed():
+        with open(file, 'w') as f:
+            f.write(rewriter2.apply_to_string())
+
+    test_atu = factory.create(file)
+
     rewriter = ASTRewriter(test_atu)
 
     convert_test_import(pattern_factory, rewriter, test_atu)
@@ -38,12 +47,7 @@ def convert_pytest(file):
         with open(file, 'w') as f:
             f.write(rewriter.apply_to_string())
 
-            test_atu2 = factory.create(file)
-            rewriter2 = ASTRewriter(test_atu2)
-            convert_test_class(pattern_factory, rewriter2, test_atu2)
-            if rewriter2.has_changed():
-                with open(file, 'w') as f:
-                    f.write(rewriter2.apply_to_string())
+
 
 
 

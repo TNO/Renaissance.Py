@@ -44,7 +44,7 @@ def select_pyton_file():
 
 if __name__ == "__main__":
     sample = factory.create('c_cpp/test_c_match_finder.py')
-    ASTShower.show_node(sample)
+    # ASTShower.show_node(sample)
 
     for file in select_pyton_file():
         # print(file.resolve())
