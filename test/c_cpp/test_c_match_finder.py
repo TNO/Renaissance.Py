@@ -5,14 +5,12 @@ from parameterized import parameterized
 
 from renaissance.impl.clang import ClangASTNode, CPatternFactory
 from renaissance.impl.clang_json import ClangJsonASTNode
-from renaissance.syntax_tree import ASTFactory, ASTFinder, ASTShower, ASTNode, MatchFinder
-from renaissance.syntax_tree.match_finder import exclude_nodes_by_kind
-from utils_for_tests import to_string, compress, show_node
+from renaissance.syntax_tree import ASTFactory, ASTFinder, ASTShower, ASTNode, MatchFinder, PatternMatch
+from renaissance.syntax_tree.match_finder import exclude_nodes_by_kind, match_pattern
+from utils_for_tests import to_string, compress, show_node, debug_mismatch
 from c_cpp.factories import Factories
 
 logger = logging.getLogger(__name__)
-
-debug_mismatches = True
 
 class TestCMatchFinder(TestCase):
 
@@ -44,49 +42,10 @@ class TestCMatchFinder(TestCase):
 
 
     def do_test(self, factory: ASTFactory, cpp_code, patterns:list[ASTNode], recursive: bool):
-        for idx, pattern in enumerate(patterns):
-            show_node(pattern, f"Pattern[{idx}]")
-
         atu = factory.create_from_text(cpp_code, "test.c")
-
-        show_node(atu, "CPP code")
-        #find all if and while statements
-        matches = MatchFinder.find_all(atu.children,patterns,recursive=recursive).\
-            filter(lambda match: match.nodes[0].is_part_of_translation_unit()).to_list()
-        if debug_mismatches:
-            for match in matches:
-                print(f'\nmatch({[compress(p.text) for p in match.patterns]})' + '{')
-                print(f"  start node: {compress(match.nodes[0].text)}")
-                for k, vs in match.expansions.items():
-                    # right align the key
-                    print(f"{k.rjust(12)}: {[compress(v.text) for v in vs]}")
-                print('}')
-            print('    expected dict should look like:')
-            print(f'      {[to_string(match.expansions) for match in matches]}')
-        return matches
-
-
-    def do_test_fun_body(self, factory: ASTFactory, cpp_code, patterns:list[ASTNode], recursive: bool):
-        for idx, pattern in enumerate(patterns):
-            show_node(pattern, f"Pattern[{idx}]")
-
-        atu = factory.create_from_text(cpp_code, "test.c")
-
-        show_node(atu, "CPP code")
-        #find all if and while statements
-        func_body = exclude_nodes_by_kind(atu.children)[0].children[2]
-        matches = MatchFinder.find_all( func_body.children,patterns,recursive=recursive).\
-            filter(lambda match: match.nodes[0].is_part_of_translation_unit()).to_list()
-        if debug_mismatches:
-            for match in matches:
-                print(f'\nmatch({[compress(p.text) for p in match.patterns]})' + '{')
-                print(f"  start node: {compress(match.nodes[0].text)}")
-                for k, vs in match.expansions.items():
-                    # right align the key
-                    print(f"{k.rjust(12)}: {[compress(v.text) for v in vs]}")
-                print('}')
-            print('    expected dict should look like:')
-            print(f'      {[to_string(match.expansions) for match in matches]}')
+        # find all if and while statements
+        matches = MatchFinder.find_all(atu.children, patterns, recursive=recursive).filter(lambda match: match.nodes[0].is_part_of_translation_unit()).to_list()
+        debug_mismatch(True, atu, patterns, matches)
         return matches
 
     def assert_matches(self, expected_dicts_per_match, actual_matches):
@@ -139,8 +98,12 @@ class TestStatements(TestCMatchFinder):
     ('while(a!=$x){$$stmts;}',[{'$x': ['3'], '$$stmts': ['if  (a == 4 && b == 5){\n                    b = a;\n                }']}]),
 ]))
     def test(self, _, factory, statements, expected_dicts_per_match: list[dict[str, list[str]]]):
-        stmtNodes = CPatternFactory(factory).create_statements(statements)
-        matches = self.do_test_fun_body(factory, TestStatements.SIMPLE_CPP, stmtNodes, recursive=True)  # type: ignore
+        patterns = CPatternFactory(factory).create_statements(statements)
+
+        atu = factory.create_from_text(TestStatements.SIMPLE_CPP, "test.c")
+        func_body = exclude_nodes_by_kind(atu.children)[0].children[2]
+        matches = match_pattern( func_body.children,patterns)
+
         self.assert_matches( expected_dicts_per_match,matches)
 
 class TestFunctionCallStatements(TestCMatchFinder):
@@ -165,7 +128,7 @@ class TestFunctionCallStatements(TestCMatchFinder):
         """
         
         stmtNodes = CPatternFactory(factory).create_statements(statements, extra_declarations=extra_declarations)
-        matches = self.do_test(factory, code, stmtNodes, recursive=True) # type: ignore
+        matches = self.do_test(factory, code, stmtNodes, recursive=True)
         self.assert_matches(expected_dicts_per_match, matches)
 
 class TestMultiAssignments(TestCMatchFinder):
@@ -189,7 +152,7 @@ class TestMultiAssignments(TestCMatchFinder):
         """
         
         stmtNodes = CPatternFactory(factory).create_statements(statements, extra_declarations=extra_declarations)
-        matches = self.do_test(factory, code, stmtNodes, recursive=True) # type: ignore
+        matches = self.do_test(factory, code, stmtNodes, recursive=True)
         self.assert_matches(expected_dicts_per_match, matches)
 
     @parameterized.expand(Factories.extend([
@@ -217,9 +180,13 @@ class TestMultiAssignments(TestCMatchFinder):
             }
         }
         """
-        
-        stmtNodes = CPatternFactory(factory).create_statements(statements, extra_declarations=extra_declarations)
-        matches = self.do_test_fun_body(factory, code, stmtNodes, recursive=True) # type: ignore
+        patterns = CPatternFactory(factory).create_statements(statements, extra_declarations=extra_declarations)
+        atu = factory.create_from_text(code, "test.c")
+        func_body = exclude_nodes_by_kind(atu.children)[0].children[2]
+        matches = match_pattern( func_body.children,patterns)
+
+
+
         self.assert_matches(expected_dicts_per_match,matches)
 
 class TestUseAtuToCreatePattern(TestCMatchFinder):
