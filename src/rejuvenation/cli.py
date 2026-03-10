@@ -36,14 +36,14 @@ def select_pyton_file():
     current_dir = Path('.')
     print(f'refactor in {current_dir.resolve()}')
 
-    return current_dir.glob('**/*clang_ast_node_test.py')
+    return current_dir.glob('**/*test_matchers.py')
     # return (file_path for file_path in current_dir.iterdir() if is_python_file)
 
 
 
 
 if __name__ == "__main__":
-    sample = factory.create('clang/clang_ast_node_test.py')
+    sample = factory.create('lst/test_matchers.py')
     # ASTShower.show_node(sample)
 
     for file in select_pyton_file():

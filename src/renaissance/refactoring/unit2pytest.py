@@ -23,6 +23,7 @@ def convert_pytest(file):
 
     convert_assert_equals(pattern_factory, rewriter, test_atu)
     convert_assert_greater(pattern_factory, rewriter, test_atu)
+    convert_assert_true(pattern_factory, rewriter, test_atu)
     convert_test_class(pattern_factory, rewriter, test_atu)
 
     convert_plain_assert_not_empty(pattern_factory, rewriter, test_atu)
@@ -78,6 +79,13 @@ def convert_assert_greater(pattern_factory: PythonPatternFactory, rewriter: ASTR
             repl = f'assert_that({exp}, greater_than({act}))'
         else: #original is wrong
             repl = f'assert_that({act}, greater_than({exp}))'
+        rewriter.replace(repl, match.nodes, False, False)
+
+def convert_assert_true(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):
+    unittest = pattern_factory.create_statements('self.assertTrue($act)')
+    for match in match_pattern(test_atu.children, unittest):
+        act = match.expansions['$act'][0].signature
+        repl = f'assert_that({act})'
         rewriter.replace(repl, match.nodes, False, False)
 
 def convert_plain_assert_not_empty(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):
