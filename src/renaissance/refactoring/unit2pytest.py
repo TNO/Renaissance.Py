@@ -33,13 +33,18 @@ def convert_pytest(file):
     remove_print(pattern_factory, rewriter, test_atu)
 
     convert_test_setup(pattern_factory, rewriter, test_atu)
-    rewriter.apply()
-    convert_test_class(pattern_factory, rewriter, test_atu)
     convert_test_main(pattern_factory, rewriter, test_atu)
-
     if rewriter.has_changed():
         with open(file, 'w') as f:
             f.write(rewriter.apply_to_string())
+
+    test_atu2 = factory.create(file)
+    rewriter2 = ASTRewriter(test_atu2)
+    convert_test_class(pattern_factory, rewriter2, test_atu2)
+    if rewriter2.has_changed():
+        with open(file, 'w') as f:
+            f.write(rewriter2.apply_to_string())
+
 
 
 def convert_test_import(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):
@@ -58,7 +63,6 @@ def convert_test_setup(pattern_factory: PythonPatternFactory, rewriter: ASTRewri
     test_main = pattern_factory.create_statements('def setUp(self): $$stmts')
     for match in match_pattern(test_atu.children, test_main):
         stmts=raw(match.expansions['$$stmts'])
-        match.nodes[0].signature
         repl = f'@pytest.fixture(autouse=True)\n{match.nodes[0].signature}'
         rewriter.replace(repl, match.nodes, False, False)
 
