@@ -1,12 +1,10 @@
-import unittest
-
 import pytest
-import tree_sitter_python as tspython
 import tree_sitter_cpp as tscpp
+import tree_sitter_python as tspython
+from hamcrest import *
 
 from renaissance.impl.tree_sitter_adapter.tree_sitter_adapter import TreeSitterAdapter
-from renaissance.syntax_tree import MatchFinder
-from renaissance.syntax_tree.match_finder import is_match
+from renaissance.syntax_tree.match_finder import match_pattern
 
 
 @pytest.mark.parametrize("code, pattern", [
@@ -44,11 +42,11 @@ def test_python_patterns(code, pattern):
     adapter = TreeSitterAdapter(tspython)
     ast = adapter.parse_code(code)
     lst = adapter.to_lst(code, ast)
-
     pat = adapter.to_lst(pattern,ast)
-    is_match(lst.root.children[0], pat.root.children[0])
-    result = MatchFinder.find_all(lst.root.children, pat.root.children).to_list()
-    assert  len(result) >= 1
+
+    result = match_pattern(lst.root.children, pat.root.children)
+
+    assert_that(result, has_length(1))
 
 @pytest.mark.parametrize("code, pattern", [
             (
@@ -102,8 +100,9 @@ def test_cpp_patterns(code, pattern):
     lst = adapter.to_lst(code, ast)
     pat = adapter.to_lst(pattern, ast)
 
-    result = MatchFinder.find_all(lst.root.children, pat.root.children).to_list()
-    assert len(result) == 1
+    result = match_pattern(lst.root.children, pat.root.children)
+
+    assert_that(result, has_length(1))
 
 if __name__ == "__main__":
-    unittest.main()
+    pytest.main()
