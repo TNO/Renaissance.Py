@@ -38,12 +38,12 @@ def convert_pytest(file):
         with open(file, 'w') as f:
             f.write(rewriter.apply_to_string())
 
-    test_atu2 = factory.create(file)
-    rewriter2 = ASTRewriter(test_atu2)
-    convert_test_class(pattern_factory, rewriter2, test_atu2)
-    if rewriter2.has_changed():
-        with open(file, 'w') as f:
-            f.write(rewriter2.apply_to_string())
+            test_atu2 = factory.create(file)
+            rewriter2 = ASTRewriter(test_atu2)
+            convert_test_class(pattern_factory, rewriter2, test_atu2)
+            if rewriter2.has_changed():
+                with open(file, 'w') as f:
+                    f.write(rewriter2.apply_to_string())
 
 
 
@@ -56,8 +56,9 @@ def convert_test_import(pattern_factory: PythonPatternFactory, rewriter: ASTRewr
 def convert_test_class(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):
     test_main = pattern_factory.create_statements('class $klass(unittest.TestCase):\n    $$test_cases\n')
     for match in match_pattern(test_atu.children, test_main):
-        repl = f'class {match.expansions["$klass"][0]}:\n{raw(match.expansions["$$test_cases"])}'
-        rewriter.replace(repl, match.nodes, True, False)
+        repl = match.expansions["$klass"][0].signature.replace('(unittest.TestCase):',':')
+        # repl = f'class {match.expansions["$klass"][0]}:\n{raw(match.expansions["$$test_cases"])}'
+        rewriter.replace(repl, match.nodes, False, False)
 
 def convert_test_setup(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):
     test_main = pattern_factory.create_statements('def setUp(self): $$stmts')
