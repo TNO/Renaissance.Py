@@ -24,7 +24,6 @@ def convert_pytest(file):
     convert_assert_equals(pattern_factory, rewriter, test_atu)
     convert_assert_greater(pattern_factory, rewriter, test_atu)
     convert_assert_true(pattern_factory, rewriter, test_atu)
-    convert_test_class(pattern_factory, rewriter, test_atu)
 
     convert_plain_assert_not_empty(pattern_factory, rewriter, test_atu)
     convert_plain_assert_same_length(pattern_factory, rewriter, test_atu)
@@ -33,6 +32,9 @@ def convert_pytest(file):
 
     remove_print(pattern_factory, rewriter, test_atu)
 
+    convert_test_setup(pattern_factory, rewriter, test_atu)
+    rewriter.apply()
+    convert_test_class(pattern_factory, rewriter, test_atu)
     convert_test_main(pattern_factory, rewriter, test_atu)
 
     if rewriter.has_changed():
@@ -56,8 +58,9 @@ def convert_test_setup(pattern_factory: PythonPatternFactory, rewriter: ASTRewri
     test_main = pattern_factory.create_statements('def setUp(self): $$stmts')
     for match in match_pattern(test_atu.children, test_main):
         stmts=raw(match.expansions['$$stmts'])
-        repl = f'    @pytest.fixture(autouse=True)\n    def setUp(self):\n{stmts}'
-        rewriter.replace(repl, match.nodes, True, False)
+        match.nodes[0].signature
+        repl = f'@pytest.fixture(autouse=True)\n{match.nodes[0].signature}'
+        rewriter.replace(repl, match.nodes, False, False)
 
 
 def convert_test_main(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):
