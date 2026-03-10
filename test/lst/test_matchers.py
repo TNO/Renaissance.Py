@@ -6,12 +6,8 @@ from hamcrest import assert_that, has_length
 from renaissance.impl.tree_sitter_adapter.tree_sitter_adapter import TreeSitterAdapter
 from renaissance.lst.lst import LSTNode
 
-
 from renaissance.syntax_tree import ASTFinder
 from renaissance.syntax_tree.match_finder import is_match
-
-
-# from matchers.pattern_matcher import MatchResult
 
 
 def make_pattern(code: str, adapter: any) -> LSTNode:
@@ -22,23 +18,21 @@ def make_pattern(code: str, adapter: any) -> LSTNode:
 
 class TestMatchers:
 
-
     @pytest.fixture(autouse=True)
     def setUp(self):
-                adapter = TreeSitterAdapter(tscpp)
-                self.if_node = make_pattern("if (x > 0) print(x);", adapter)
-                self.for_node = make_pattern("for (i in range(10)) print(i);", adapter)
-                self.while_node = make_pattern("while (x < 10) x += 1;", adapter)
-                self.try_node = make_pattern(
-                    "try { risky_operation(); } catch (Exception e) { handle_error(e); }",
-                    adapter,
-                )
-                self.class_node = make_pattern(
-                    "class MyClass { method(self) { pass; } }", adapter
-                )
+        adapter = TreeSitterAdapter(tscpp)
+        self.if_node = make_pattern("if (x > 0) print(x);", adapter)
+        self.for_node = make_pattern("for (i in range(10)) print(i);", adapter)
+        self.while_node = make_pattern("while (x < 10) x += 1;", adapter)
+        self.try_node = make_pattern(
+            "try { risky_operation(); } catch (Exception e) { handle_error(e); }",
+            adapter,
+        )
+        self.class_node = make_pattern(
+            "class MyClass { method(self) { pass; } }", adapter
+        )
 
     def test_if_pattern_match(self):
-
         adapter = TreeSitterAdapter(tscpp)
         pattern = make_pattern("if ($x > 0) print($x);", adapter)
 
@@ -69,9 +63,8 @@ class TestMatchers:
 
     def test_node_type_match(self):
         # I expect call_expression to work, or a defined way to get kind
-        matches = ASTFinder.find_kind(self.if_node,"call_?expression").to_list()
+        matches = ASTFinder.find_kind(self.if_node, "call_?expression").to_list()
         assert_that(matches, has_length(1))
-    
 
 
 if __name__ == "__main__":
