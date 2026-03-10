@@ -39,15 +39,15 @@ def select_pyton_file():
     current_dir = Path('.')
     print(f'refactor in {current_dir.resolve()}')
 
-    return current_dir.glob('**/*test_ast_finder.py')
+    return current_dir.glob('**/*test_tree_sitter_structural_matcher.py')
     # return (file_path for file_path in current_dir.iterdir() if is_python_file)
 
 
 
 
 if __name__ == "__main__":
-    sample = factory.create('c_cpp/ccpp_astshower_test.py')
-    # ASTShower.show_node(sample)
+    sample = factory.create('tree_sitter/test_tree_sitter_structural_matcher.py')
+    ASTShower.show_node(sample)
 
     stmt = factory.create_from_text('self.assertEqual(___exp, ___act)', 'test.py')
     ASTShower.show_node(stmt)

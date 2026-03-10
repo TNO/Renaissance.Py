@@ -24,6 +24,10 @@ def convert_pytest(file):
     convert_assert_equals(pattern_factory, rewriter, test_atu)
     convert_assert_greater(pattern_factory, rewriter, test_atu)
     convert_test_class(pattern_factory, rewriter, test_atu)
+
+    convert_plain_assert_not_empty(pattern_factory, rewriter, test_atu)
+    convert_plain_assert_same_length(pattern_factory, rewriter, test_atu)
+
     remove_print(pattern_factory, rewriter, test_atu)
 
     convert_test_main(pattern_factory, rewriter, test_atu)
@@ -36,7 +40,7 @@ def convert_pytest(file):
 def convert_test_import(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):
     unittest = pattern_factory.create_statements('import unittest')
     for match in match_pattern(test_atu.children, unittest):
-        rewriter.replace('import pytest\nfrom hamcrest import assert_that, is_, greater_than', match.nodes, False, False)
+        rewriter.replace('import pytest\nfrom hamcrest import *', match.nodes, False, False)
 
 
 def convert_test_class(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):
@@ -72,6 +76,21 @@ def convert_assert_greater(pattern_factory: PythonPatternFactory, rewriter: ASTR
             repl = f'assert_that({exp}, greater_than({act}))'
         else: #original is wrong
             repl = f'assert_that({act}, greater_than({exp}))'
+        rewriter.replace(repl, match.nodes, False, False)
+
+def convert_plain_assert_not_empty(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):
+    unittest = pattern_factory.create_statements('assert  len($exp) >= 1')
+    for match in match_pattern(test_atu.children, unittest):
+        exp = match.expansions['$exp'][0].signature
+        repl = f'assert_that({exp}, is_not(empty()))'
+        rewriter.replace(repl, match.nodes, False, False)
+
+def convert_plain_assert_same_length(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):
+    unittest = pattern_factory.create_statements('assert  len($exp) == $length')
+    for match in match_pattern(test_atu.children, unittest):
+        exp = match.expansions['$exp'][0].signature
+        length = match.expansions['$length'][0].signature
+        repl = f'assert_that({exp}, has_length({length}))'
         rewriter.replace(repl, match.nodes, False, False)
 
 def remove_print(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):
