@@ -1,5 +1,5 @@
 from renaissance.impl.python import PythonASTNode, PythonPatternFactory
-from renaissance.syntax_tree import ASTFinder, ASTProcessor, MatchFinder, ASTRewriter, ASTFactory
+from renaissance.syntax_tree import ASTFinder, ASTProcessor, MatchFinder, ASTRewriter, ASTFactory, ASTNode
 from renaissance.syntax_tree.match_finder import match_pattern
 
 factory = ASTFactory(PythonASTNode, [])
@@ -19,30 +19,49 @@ def convert_pytest(file):
     pattern_factory = PythonPatternFactory(factory, None)
     rewriter = ASTRewriter(test_atu)
 
+    convert_test_import(pattern_factory, rewriter, test_atu)
+
+    convert_assert_equals(pattern_factory, rewriter, test_atu)
+
+    convert_test_class(pattern_factory, rewriter, test_atu)
+
+    convert_test_main(pattern_factory, rewriter, test_atu)
+
+    if rewriter.has_changed():
+        with open(file, 'w') as f:
+            f.write(rewriter.apply_to_string())
+
+
+def convert_test_import(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):
     unittest = pattern_factory.create_statements('import unittest')
     for match in match_pattern(test_atu.children, unittest):
-        rewriter.replace('import pytest',match.nodes,False, False)
+        rewriter.replace('import pytest', match.nodes, False, False)
 
 
-
-    unittest = pattern_factory.create_statements('self.assertEqual($exp, $act)')
-    for match in match_pattern(test_atu.children, unittest):
-        act = match.expansions['$act']
-        exp = match.expansions['$exp']
-        rewriter.replace(f'assert_that({act}, is_({exp}))',match.nodes,False, False)
-
+def convert_test_class(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):
     test_main = pattern_factory.create_statements('class $klass(unittest.TestCase):\n    $$test_cases\n')
     for match in match_pattern(test_atu.children, test_main):
         repl = f'class {match.expansions["$klass"][0]}:\n{raw(match.expansions["$$test_cases"])}'
         rewriter.replace(repl, match.nodes, True, True)
 
+
+def convert_test_main(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):
     test_main = pattern_factory.create_statements('unittest.main()')
     for match in match_pattern(test_atu.children, test_main):
-        rewriter.replace('pytest.main()',match.nodes, False, False)
+        rewriter.replace('pytest.main()', match.nodes, False, False)
 
-    if rewriter.has_changed():
-        with open(file, 'w') as f:
-            f.write(rewriter.apply_to_string())
+
+def convert_assert_equals(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):
+    unittest = pattern_factory.create_statements('self.assertEqual($exp, $act)')
+    for match in match_pattern(test_atu.children, unittest):
+        act = match.expansions['$act'][0].signature
+        exp = match.expansions['$exp'][0].signature
+        if match.expansions['$act'][0].kind in ['Constant']:
+            repl = f'assert_that({exp}, is_({act}))'
+        else: #original is wrong
+            repl = f'assert_that({act}, is_({exp}))'
+        rewriter.replace(repl, match.nodes, False, False)
+
 
 # def raw(nodes):
 #     res = ''

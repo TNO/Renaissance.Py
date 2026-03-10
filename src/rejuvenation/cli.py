@@ -39,7 +39,7 @@ def select_pyton_file():
     current_dir = Path('.')
     print(f'refactor in {current_dir.resolve()}')
 
-    return current_dir.glob('**/ccpp_astshower_test.py.py')
+    return current_dir.glob('**/*test_ast_finder.py')
     # return (file_path for file_path in current_dir.iterdir() if is_python_file)
 
 
