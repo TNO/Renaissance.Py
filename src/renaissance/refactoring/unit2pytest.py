@@ -4,14 +4,16 @@ from renaissance.syntax_tree.match_finder import match_pattern
 
 factory = ASTFactory(PythonASTNode, [])
 pattern_factory = PythonPatternFactory(factory, None)
-PYUNIT_TEST_CASE_PATTERN='def $test_case(self):\n    $$aaa'
+PYUNIT_TEST_CASE_PATTERN = 'def $test_case(self):\n    $$aaa'
 PYTEST_REPLACEMENT = 'def $test_case():\n    $$aaa'
+
 
 def raw(nodes):
     res = ''
     for node in nodes:
         res += '\n\n    ' + node.text
     return res + '\n    '
+
 
 def convert_pytest(file):
     print(file)
@@ -33,6 +35,7 @@ def convert_pytest(file):
     convert_assert_equals(pattern_factory, rewriter, test_atu)
     convert_assert_greater(pattern_factory, rewriter, test_atu)
     convert_assert_true(pattern_factory, rewriter, test_atu)
+    convert_assert_equals_len(pattern_factory, rewriter, test_atu)
 
     convert_plain_assert_not_empty(pattern_factory, rewriter, test_atu)
     convert_plain_assert_same_length(pattern_factory, rewriter, test_atu)
@@ -48,9 +51,6 @@ def convert_pytest(file):
             f.write(rewriter.apply_to_string())
 
 
-
-
-
 def convert_test_import(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):
     unittest = pattern_factory.create_statements('import unittest')
     for match in match_pattern(test_atu.children, unittest):
@@ -60,19 +60,21 @@ def convert_test_import(pattern_factory: PythonPatternFactory, rewriter: ASTRewr
 def convert_test_class(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):
     test_main = pattern_factory.create_statements('class $klass(unittest.TestCase):\n    $$test_cases\n')
     for match in match_pattern(test_atu.children, test_main):
-        repl = match.nodes[0].signature.replace('(unittest.TestCase):',':')
+        repl = match.nodes[0].signature.replace('(unittest.TestCase):', ':')
         # repl = f'class {match.expansions["$klass"][0]}:\n{raw(match.expansions["$$test_cases"])}'
         rewriter.replace(repl, match.nodes, False, False)
 
     test_main = pattern_factory.create_statements('class $klass(TestCase):\n    $$test_cases\n')
     for match in match_pattern(test_atu.children, test_main):
-        repl = match.nodes[0].signature.replace('(TestCase):',':')
+        repl = match.nodes[0].signature.replace('(TestCase):', ':')
         # repl = f'class {match.expansions["$klass"][0]}:\n{raw(match.expansions["$$test_cases"])}'
         rewriter.replace(repl, match.nodes, False, False)
+
+
 def convert_test_setup(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):
     test_main = pattern_factory.create_statements('def setUp(self): $$stmts')
     for match in match_pattern(test_atu.children, test_main):
-        stmts=raw(match.expansions['$$stmts'])
+        stmts = raw(match.expansions['$$stmts'])
         repl = f'@pytest.fixture(autouse=True)\n{match.nodes[0].signature}'
         rewriter.replace(repl, match.nodes, False, False)
 
@@ -90,9 +92,21 @@ def convert_assert_equals(pattern_factory: PythonPatternFactory, rewriter: ASTRe
         exp = match.expansions['$exp'][0].signature
         if match.expansions['$act'][0].kind in ['Constant']:
             repl = f'assert_that({exp}, is_({act}))'
-        else: #original is wrong
+        else:  # original is wrong
             repl = f'assert_that({act}, is_({exp}))'
         rewriter.replace(repl, match.nodes, False, False)
+
+def convert_assert_equals_len(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):
+    unittest = pattern_factory.create_statements('self.assertEqual($act, len($exp))')
+    for match in match_pattern(test_atu.children, unittest):
+        act = match.expansions['$act'][0].signature
+        exp = match.expansions['$exp'][0].signature
+        if match.expansions['$act'][0].kind in ['Constant']:
+            repl = f'assert_that({exp}, has_length({act}))'
+        else:  # original is wrong
+            repl = f'assert_that({act}, has_length({exp}))'
+        rewriter.replace(repl, match.nodes, False, False)
+
 
 def convert_assert_greater(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):
     unittest = pattern_factory.create_statements('self.assertGreater($exp, $act)')
@@ -101,9 +115,10 @@ def convert_assert_greater(pattern_factory: PythonPatternFactory, rewriter: ASTR
         exp = match.expansions['$exp'][0].signature
         if match.expansions['$act'][0].kind in ['Constant']:
             repl = f'assert_that({exp}, greater_than({act}))'
-        else: #original is wrong
+        else:  # original is wrong
             repl = f'assert_that({act}, greater_than({exp}))'
         rewriter.replace(repl, match.nodes, False, False)
+
 
 def convert_assert_true(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):
     unittest = pattern_factory.create_statements('self.assertTrue($act)')
@@ -111,6 +126,7 @@ def convert_assert_true(pattern_factory: PythonPatternFactory, rewriter: ASTRewr
         act = match.expansions['$act'][0].signature
         repl = f'assert_that({act})'
         rewriter.replace(repl, match.nodes, False, False)
+
 
 def convert_plain_assert_not_empty(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):
     unittest = pattern_factory.create_statements('assert  len($exp) >= 1')
@@ -137,6 +153,7 @@ def convert_plain_assert_string(pattern_factory: PythonPatternFactory, rewriter:
         repl = f'assert_that({act}, has_string({exp}))'
         rewriter.replace(repl, match.nodes, False, False)
 
+
 def convert_plain_assert_equal(pattern_factory, rewriter, test_atu):
     unittest = pattern_factory.create_statements('assert $exp == $act')
     for match in match_pattern(test_atu.children, unittest):
@@ -144,6 +161,7 @@ def convert_plain_assert_equal(pattern_factory, rewriter, test_atu):
         act = match.expansions['$act'][0].signature
         repl = f'assert_that({act}, is_({exp}))'
         rewriter.replace(repl, match.nodes, False, False)
+
 
 def remove_print(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):
     print_msg = pattern_factory.create_statements('print($$msg)')
@@ -171,6 +189,7 @@ def convert_test_cases(atu):
             pytest_replacement = pytest_replacement.replace(snippets, raw(test_case.expansions[snippets]))
         rewriter.replace(pytest_replacement, test_case.nodes)
     return rewriter.apply_to_string()
+
 
 def remove_class(atu):
     pyunit_class = pattern_factory.create_statements('class $TestExample(TestCase):\n    $$cases')
