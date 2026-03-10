@@ -3,7 +3,7 @@ from pathlib import Path
 
 from renaissance.impl.python import PythonASTNode
 from renaissance.refactoring.unit2pytest import convert_pytest
-from renaissance.syntax_tree import ASTFactory
+from renaissance.syntax_tree import ASTFactory, ASTShower
 
 factory = ASTFactory(PythonASTNode, [])
 
@@ -44,7 +44,7 @@ def select_pyton_file():
 
 if __name__ == "__main__":
     sample = factory.create('lst/test_matchers.py')
-    # ASTShower.show_node(sample)
+    ASTShower.show_node(sample)
 
     for file in select_pyton_file():
         # print(file.resolve())

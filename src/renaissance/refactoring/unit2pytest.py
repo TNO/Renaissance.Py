@@ -50,7 +50,14 @@ def convert_test_class(pattern_factory: PythonPatternFactory, rewriter: ASTRewri
     test_main = pattern_factory.create_statements('class $klass(unittest.TestCase):\n    $$test_cases\n')
     for match in match_pattern(test_atu.children, test_main):
         repl = f'class {match.expansions["$klass"][0]}:\n{raw(match.expansions["$$test_cases"])}'
-        rewriter.replace(repl, match.nodes, True, True)
+        rewriter.replace(repl, match.nodes, True, False)
+
+def convert_test_setup(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):
+    test_main = pattern_factory.create_statements('def setUp(self): $$stmts')
+    for match in match_pattern(test_atu.children, test_main):
+        stmts=raw(match.expansions['$$stmts'])
+        repl = f'    @pytest.fixture(autouse=True)\n    def setUp(self):\n{stmts}'
+        rewriter.replace(repl, match.nodes, True, False)
 
 
 def convert_test_main(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):
