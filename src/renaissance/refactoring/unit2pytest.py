@@ -24,6 +24,7 @@ def convert_pytest(file):
     convert_assert_equals(pattern_factory, rewriter, test_atu)
     convert_assert_greater(pattern_factory, rewriter, test_atu)
     convert_test_class(pattern_factory, rewriter, test_atu)
+    remove_print(pattern_factory, rewriter, test_atu)
 
     convert_test_main(pattern_factory, rewriter, test_atu)
 
@@ -73,6 +74,10 @@ def convert_assert_greater(pattern_factory: PythonPatternFactory, rewriter: ASTR
             repl = f'assert_that({act}, greater_than({exp}))'
         rewriter.replace(repl, match.nodes, False, False)
 
+def remove_print(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):
+    print_msg = pattern_factory.create_statements('print($$msg)')
+    for match in match_pattern(test_atu.children, print_msg):
+        rewriter.remove(match.nodes, False, False)
 
 
 # def raw(nodes):
