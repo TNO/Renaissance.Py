@@ -31,11 +31,9 @@ def convert_pytest(file):
     rewriter = ASTRewriter(test_atu)
 
     convert_test_import(pattern_factory, rewriter, test_atu)
-
     convert_assert_equals(pattern_factory, rewriter, test_atu)
     convert_assert_greater(pattern_factory, rewriter, test_atu)
     convert_assert_true(pattern_factory, rewriter, test_atu)
-    convert_assert_equals_len(pattern_factory, rewriter, test_atu)
 
     convert_plain_assert_not_empty(pattern_factory, rewriter, test_atu)
     convert_plain_assert_same_length(pattern_factory, rewriter, test_atu)
@@ -49,7 +47,16 @@ def convert_pytest(file):
     if rewriter.has_changed():
         with open(file, 'w') as f:
             f.write(rewriter.apply_to_string())
+    # post proc
+    hamcrest_atu = factory.create(file)
 
+    rewriter3 = ASTRewriter(hamcrest_atu)
+
+    convert_assert_that_equal_len(pattern_factory, rewriter3, hamcrest_atu)
+
+    if rewriter3.has_changed():
+        with open(file, 'w') as f:
+            f.write(rewriter3.apply_to_string())
 
 def convert_test_import(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):
     unittest = pattern_factory.create_statements('import unittest')
@@ -96,15 +103,12 @@ def convert_assert_equals(pattern_factory: PythonPatternFactory, rewriter: ASTRe
             repl = f'assert_that({act}, is_({exp}))'
         rewriter.replace(repl, match.nodes, False, False)
 
-def convert_assert_equals_len(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):
-    unittest = pattern_factory.create_statements('self.assertEqual($act, len($exp))')
-    for match in match_pattern(test_atu.children, unittest):
+def convert_assert_that_equal_len(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):
+    pattern = pattern_factory.create_statements('assert_that(len($act), is_($exp))')
+    for match in match_pattern(test_atu.children, pattern):
         act = match.expansions['$act'][0].signature
         exp = match.expansions['$exp'][0].signature
-        if match.expansions['$act'][0].kind in ['Constant']:
-            repl = f'assert_that({exp}, has_length({act}))'
-        else:  # original is wrong
-            repl = f'assert_that({act}, has_length({exp}))'
+        repl = f'assert_that({act}, has_length({exp}))'
         rewriter.replace(repl, match.nodes, False, False)
 
 
