@@ -38,7 +38,6 @@ def test_gen_arguments_compilable(a: ast.arguments):
 @given(gen_arguments())
 def test_gen_arguments_unparsable_parsable(a: ast.arguments):
     code = ast.unparse(a)
-    print(code)
     ast.parse(
         f"""
 def f({code}):

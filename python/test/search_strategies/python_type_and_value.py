@@ -62,6 +62,7 @@ def _build_arg(name: str, ann: ast.expr | None) -> ast.arg:
 # -------------------- base types --------------------
 
 BASE_VALUES: dict[str, SearchStrategy[ast.expr]] = {
+    "NoneType": st.just(ast.Constant(None)),
     "bool": st.builds(ast.Constant, st.booleans()),
     "int": st.builds(ast.Constant, st.integers(min_value=-1000, max_value=1000)),
     "str": st.builds(ast.Constant, st.text(min_size=0, max_size=5)),
@@ -124,7 +125,7 @@ def gen_union(
         st.lists(
             gen_type(depth - 1),
             min_size=2,
-            max_size=2 if depth <= 2 else max_len(depth),
+            max_size=2 if depth <= 1 else max_len(depth),
         )
     )
 
@@ -156,10 +157,12 @@ def gen_type(
     """
     Depth bounds recursion by forcing base at depth<=0.
     """
-    if depth <= 0:
-        return draw(gen_base())
-
-    types = ["base", "list", "dict", "union", "tuple"]
+    types = ["base"]
+    if depth >= 1:
+        types.extend(["list", "dict", "tuple"])
+    if depth >= 2:
+        types.append("union")
+    
     choice = draw(st.sampled_from(types))
     match choice:
         case "base":
