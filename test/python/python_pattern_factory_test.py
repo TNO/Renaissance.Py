@@ -1,10 +1,12 @@
 import pytest
 import ast
 
-from hamcrest import assert_that
+from hamcrest import assert_that, has_length, is_
 from renaissance.impl.python import PythonASTNode
 from renaissance.syntax_tree import ASTFactory
 from renaissance.impl.python.python_pattern_factory import PythonPatternFactory
+from renaissance.syntax_tree.match_finder import match_pattern
+
 
 class TestPythonFactory:
 
@@ -209,3 +211,18 @@ class TestPythonFactory:
         node = pattern_factory.create_python_pattern(code)
         assert node.kind == ast.Expr.__name__
         assert code == node.signature
+
+    def test_decorators(self):
+        pattern_factory = PythonPatternFactory(self.factory)
+        node = pattern_factory.create_decorators('@parameterized.expand($exp)')
+        assert_that(node.kind,is_('ImplicitNode'))
+        assert_that(node.name,is_('decorator_list'))
+
+
+    def test_match_decorators(self):
+        pattern_factory = PythonPatternFactory(self.factory)
+        pattern = pattern_factory.create_decorators('@parameterized.expand($exp)')
+        node = PythonASTNode.load_from_text('@parameterized.expand("sasas")\ndef fun():\n    parameterized.expand("sasas")\n')
+        result = match_pattern(node.children,[pattern])
+        assert_that(result, has_length(1))
+

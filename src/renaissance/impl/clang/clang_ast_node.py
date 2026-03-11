@@ -132,7 +132,7 @@ class ClangASTNode(ASTNode):
 
     @override
     @staticmethod
-    def load_from_text(text: str, file_name: str, extra_args: Sequence[str], working_dir: Path) -> "ClangASTNode":
+    def load_from_text(text: str, file_name: str, extra_args: Sequence[str]=[], working_dir: Path=None) -> "ClangASTNode":
         # Convert file_content to bytes
         file_content_bytes = text.encode(sys.getfilesystemencoding())
         # add to cache to avoid reading the file again

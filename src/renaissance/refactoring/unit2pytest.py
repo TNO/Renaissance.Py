@@ -34,6 +34,7 @@ def convert_pytest(file):
     convert_assert_equals(pattern_factory, rewriter, test_atu)
     convert_assert_greater(pattern_factory, rewriter, test_atu)
     convert_assert_true(pattern_factory, rewriter, test_atu)
+    convert_parameterized_test(pattern_factory, rewriter, test_atu)
 
     convert_plain_assert_not_empty(pattern_factory, rewriter, test_atu)
     convert_plain_assert_same_length(pattern_factory, rewriter, test_atu)
@@ -166,6 +167,13 @@ def convert_plain_assert_equal(pattern_factory, rewriter, test_atu):
         repl = f'assert_that({act}, is_({exp}))'
         rewriter.replace(repl, match.nodes, False, False)
 
+
+def convert_parameterized_test(pattern_factory, rewriter, test_atu):
+    parameter = pattern_factory.create_decorators('@parameterized.expand($$parameters)')
+
+    for match in match_pattern(test_atu.children, [parameter]):
+        repl =match.nodes[0].signature.replace('parameterized.expand','pytest.mark.parametrize')
+        rewriter.replace(repl, match.nodes, False, False)
 
 def remove_print(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):
     print_msg = pattern_factory.create_statements('print($$msg)')
