@@ -174,10 +174,10 @@ def convert_parameterized_test(pattern_factory, rewriter, test_atu):
 
     for match in match_pattern(test_atu.children, unittest):
         fun = match.nodes[0]
-        args = ', '.join([arg.name for arg in match.expansions['$$args']])
-        args = args.replace('self, ')
-        repl =fun.signature.replace('parameterized.expand(',f'pytest.mark.parametrize("{args}",')
-        rewriter.replace(repl, match.nodes[0][0], False, False)
+        args = ', '.join([arg.node.arg for arg in match.expansions['$$args']])
+        args = args.replace('self, ','')
+        repl =fun.signature.replace('@parameterized.expand(',f'    @pytest.mark.parametrize("{args}",')
+        rewriter.replace(repl, fun, False, False)
 
 def remove_print(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):
     print_msg = pattern_factory.create_statements('print($$msg)')
