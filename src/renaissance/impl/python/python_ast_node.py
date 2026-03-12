@@ -178,7 +178,9 @@ class PythonASTNode(ASTNode):
         return match_pattern(self.children, pattern)
     def derive_position(self, node: ast.AST, translation_unit: PythonTranslationUnit, parent):
         if node._attributes:
-            if parent.name == 'decorator_list':
+            if 'decorator_list' in self.node._fields and self.node.decorator_list:
+                self._offset = self.translation_unit.convert(self.node.decorator_list[0].lineno, self.node.decorator_list[0].col_offset) -1
+            elif parent.name == 'decorator_list':
                 # also include the @ in the decorator
                 self._offset = self.translation_unit.convert(self.node.lineno, self.node.col_offset) -1
             else:
@@ -200,7 +202,7 @@ class PythonASTNode(ASTNode):
 
     @override
     @staticmethod
-    def load_from_text(text: str, file_name: str, extra_args: Sequence[str], working_dir: Path) -> "PythonASTNode":
+    def load_from_text(text: str, file_name: str='test.py', extra_args: Sequence[str]=None, working_dir: Path=None) -> "PythonASTNode":
         translation_unit = PythonTranslationUnit(text, file_name=str(file_name))
         translation_unit.check_diagnostics()
         root_node = PythonASTNode(translation_unit.atu, translation_unit, None)

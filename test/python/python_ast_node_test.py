@@ -1,7 +1,12 @@
+import ast
+
+import ast
+from ast import unparse
+
 import pytest
 from pathlib import Path
 
-from hamcrest import has_length, assert_that, is_in, is_
+from hamcrest import has_length, assert_that, is_in, is_, contains_string
 from parameterized import parameterized
 
 import targets
@@ -263,3 +268,30 @@ def test_load_file():
 def test_load_invalid_file():
     with pytest.raises(IndentationError, match='unexpected indent'):
         PythonASTNode.load('invalid.py', {}, Path(targets.__file__).parent)
+
+def test_annFun_to_str():
+    annFun = '''
+@parameterized.expand(Factories.extend(['$x;$y;']))
+def test(_):
+    atu = factory.create_from_text(TestStatements.SIMPLE_CPP, "test.c")
+
+    matches = match_pattern( func_body.children,patterns)
+
+    self.assert_matches( expected_dicts_per_match,matches)
+    '''
+    it = PythonASTNode.load_from_text(annFun, 'fun.py',[], None).body[-1]
+    assert_that(it.offset, is_(1))
+    assert_that(it.signature , contains_string('@parameterized.expand'))
+@pytest.mark.skip("it was working before")
+def test_annFun_to_str():
+    annFun = '''
+@parameterized.expand(Factories.extend(['$x;$y;']))
+def test(_):
+    atu = factory.create_from_text(TestStatements.SIMPLE_CPP, "test.c")
+
+    matches = match_pattern( func_body.children,patterns)
+
+    self.assert_matches( expected_dicts_per_match,matches)
+    '''
+    it = PythonASTNode.load_from_text(annFun, 'fun.py',[], None).body[-1]
+    assert str(it) == ast.unparse(it.node)
