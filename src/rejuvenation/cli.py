@@ -36,17 +36,17 @@ def select_pyton_file():
     current_dir = Path('.')
     print(f'refactor in {current_dir.resolve()}')
 
-    return current_dir.glob('**/*.py')
+    return current_dir.glob('**/*ccpp_astshower_test.py')
     # return (file_path for file_path in current_dir.iterdir() if is_python_file)
 
 
 
 
 if __name__ == "__main__":
-    sample = factory.create('c_cpp/test_c_match_finder.py')
-    # ASTShower.show_node(sample)
+    sample = factory.create('c_cpp/ccpp_astshower_test.py')
+    ASTShower.show_node(sample)
 
     for file in select_pyton_file():
-        if 'utils_for_tests' not in file:
+        if 'utils_for_tests' not in str(file):
         # print(file.resolve())
             convert_pytest(file)
