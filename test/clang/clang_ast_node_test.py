@@ -27,7 +27,7 @@ def test_var_decl_includesemi_column():
 
 def test_var_decl_in_ancestor():
     src = ClangASTNode.load_from_text('int x= 0;', 'test.c')
-    assert_that(not src.children[-1].children[-1].get_ancestor('VAR_DECL'))
+    assert_that(src.children[-1].children[-1].get_ancestor('VAR_DECL'))
 
 
 def test_var_decl_in_ancestor_of():

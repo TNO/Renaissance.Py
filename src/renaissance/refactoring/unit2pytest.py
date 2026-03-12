@@ -65,6 +65,11 @@ def convert_test_import(pattern_factory: PythonPatternFactory, rewriter: ASTRewr
         rewriter.replace('import pytest\nfrom hamcrest import *', match.nodes, False, False)
 
 
+    unittest = pattern_factory.create_statements('from unittest import $$symbols')
+    for match in match_pattern(test_atu.children, unittest):
+        rewriter.replace('import pytest\nfrom hamcrest import *', match.nodes, False, False)
+
+
 def convert_test_class(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):
     test_main = pattern_factory.create_statements('class $klass(unittest.TestCase):\n    $$test_cases\n')
     for match in match_pattern(test_atu.children, test_main):
