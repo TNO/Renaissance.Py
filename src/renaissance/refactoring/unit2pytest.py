@@ -172,8 +172,8 @@ def convert_parameterized_test(pattern_factory, rewriter, test_atu):
     parameter = pattern_factory.create_decorators('@parameterized.expand($$parameters)')
 
     for match in match_pattern(test_atu.children, [parameter]):
-        repl =match.nodes[0].signature.replace('parameterized.expand','pytest.mark.parametrize')
-        rewriter.replace(repl, match.nodes, False, False)
+        repl =match.nodes[0][0].signature.replace('parameterized.expand(','pytest.mark.parametrize("_,factory,expression,expected_full_matches,expected_dicts_per_match",')
+        rewriter.replace(repl, match.nodes[0][0], False, False)
 
 def remove_print(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):
     print_msg = pattern_factory.create_statements('print($$msg)')
