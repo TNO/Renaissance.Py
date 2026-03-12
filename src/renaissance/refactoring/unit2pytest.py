@@ -169,10 +169,14 @@ def convert_plain_assert_equal(pattern_factory, rewriter, test_atu):
 
 
 def convert_parameterized_test(pattern_factory, rewriter, test_atu):
-    parameter = pattern_factory.create_decorators('@parameterized.expand($$parameters)')
 
-    for match in match_pattern(test_atu.children, [parameter]):
-        repl =match.nodes[0][0].signature.replace('parameterized.expand(','pytest.mark.parametrize("_,factory,expression,expected_full_matches,expected_dicts_per_match",')
+    unittest = pattern_factory.create_statements('@parameterized.expand($$parameters)\ndef $fun($$args):\n    $$stmts')
+
+    for match in match_pattern(test_atu.children, unittest):
+        fun = match.nodes[0]
+        args = ', '.join([arg.name for arg in match.expansions['$$args']])
+        args = args.replace('self, ')
+        repl =fun.signature.replace('parameterized.expand(',f'pytest.mark.parametrize("{args}",')
         rewriter.replace(repl, match.nodes[0][0], False, False)
 
 def remove_print(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):
