@@ -1,16 +1,15 @@
 import ast
 
+from hamcrest import assert_that, is_, not_none
+
 from renaissance.impl.python import PythonASTNode
 
 
 def test_it_can_be_created():
     it = PythonASTNode(ast.Pass())
-    assert it
+    assert_that(it, is_(not_none()))
+
 
 def test_it_has_elements():
     it = PythonASTNode(ast.parse('def fun():  pass'))
-    assert it[0]==it.children[0]
-
-# def test_it_has_key_pairs():
-#     it = PythonASTNode(ast.parse('def fun():  pass'))
-#     assert it['name']==it.properties['name']
+    assert_that(it[0], is_(it.children[0]))
