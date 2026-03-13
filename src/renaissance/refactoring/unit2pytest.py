@@ -19,25 +19,20 @@ def convert_pytest(file):
     print(file)
     pattern_factory = PythonPatternFactory(factory, None)
 
-    test_atu2 = factory.create(file)
-    rewriter2 = ASTRewriter(test_atu2)
-    convert_test_class(pattern_factory, rewriter2, test_atu2)
-    if rewriter2.has_changed():
-        with open(file, 'w') as f:
-            f.write(rewriter2.apply_to_string())
-
     test_atu = factory.create(file)
-
     rewriter = ASTRewriter(test_atu)
+    convert_test_class(pattern_factory, rewriter, test_atu)
+    if rewriter.has_changed():
+        test_atu = factory.create_from_text(rewriter.apply_to_string(), file)
+        rewriter = ASTRewriter(test_atu)
 
     convert_test_import(pattern_factory, rewriter, test_atu)
     convert_assert_equals(pattern_factory, rewriter, test_atu)
     convert_assert_greater(pattern_factory, rewriter, test_atu)
+    convert_assert_lesser(pattern_factory, rewriter, test_atu)
     convert_assert_true(pattern_factory, rewriter, test_atu)
     convert_assert_in(pattern_factory, rewriter, test_atu)
-    convert_assert_starts_with(pattern_factory, rewriter, test_atu)
 
-    convert_parameterized_test(pattern_factory, rewriter, test_atu)
 
     convert_plain_assert_not_empty(pattern_factory, rewriter, test_atu)
     convert_plain_assert_same_length(pattern_factory, rewriter, test_atu)
@@ -49,18 +44,19 @@ def convert_pytest(file):
     convert_test_setup(pattern_factory, rewriter, test_atu)
     convert_test_main(pattern_factory, rewriter, test_atu)
     if rewriter.has_changed():
-        with open(file, 'w') as f:
-            f.write(rewriter.apply_to_string())
-    # post proc
-    hamcrest_atu = factory.create(file)
+        test_atu = factory.create_from_text(rewriter.apply_to_string(), file)
+        rewriter = ASTRewriter(test_atu)
 
-    rewriter3 = ASTRewriter(hamcrest_atu)
+    convert_assert_that_len(pattern_factory, rewriter, test_atu)
+    convert_assert_that_start_with(pattern_factory, rewriter, test_atu)
+    if rewriter.has_changed():
+        test_atu = factory.create_from_text(rewriter.apply_to_string(), file)
+        rewriter = ASTRewriter(test_atu)
 
-    convert_assert_that_equal_len(pattern_factory, rewriter3, hamcrest_atu)
+    convert_parameterized_test(pattern_factory, rewriter, test_atu)
 
-    if rewriter3.has_changed():
-        with open(file, 'w') as f:
-            f.write(rewriter3.apply_to_string())
+    with open(file, 'w') as f:
+        f.write(rewriter.apply_to_string())
 
 def convert_test_import(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):
     unittest = pattern_factory.create_statements('import unittest')
@@ -127,8 +123,8 @@ def convert_assert_in(pattern_factory: PythonPatternFactory, rewriter: ASTRewrit
         repl = f'assert_that({act}, contain_string({exp}))'
         rewriter.replace(repl, match.nodes, False, False)
 
-def convert_assert_starts_with(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):
-    unittest = pattern_factory.create_statements('self.assertTrue($exp.startswith($act))')
+def convert_assert_that_start_with(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):
+    unittest = pattern_factory.create_statements('assert_that($exp.startswith($act))')
     for match in match_pattern(test_atu.children, unittest):
         act = match.expansions['$act'][0].signature
         exp = match.expansions['$exp'][0].signature
@@ -137,8 +133,8 @@ def convert_assert_starts_with(pattern_factory: PythonPatternFactory, rewriter: 
         repl = f'assert_that({exp}, starts_with({act}))'
         rewriter.replace(repl, match.nodes, False, False)
 
-def convert_assert_that_equal_len(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):
-    pattern = pattern_factory.create_statements('assert_that(len($act), is_($exp))')
+def convert_assert_that_len(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):
+    pattern = pattern_factory.create_statements('assert_that(len($act), $exp)')
     for match in match_pattern(test_atu.children, pattern):
         act = match.expansions['$act'][0].signature
         exp = match.expansions['$exp'][0].signature
@@ -155,6 +151,29 @@ def convert_assert_greater(pattern_factory: PythonPatternFactory, rewriter: ASTR
             repl = f'assert_that({exp}, greater_than({act}))'
         else:  # original is wrong
             repl = f'assert_that({act}, greater_than({exp}))'
+        rewriter.replace(repl, match.nodes, False, False)
+
+
+    unittest = pattern_factory.create_statements('self.assertGreaterEqual($exp, $act)')
+    for match in match_pattern(test_atu.children, unittest):
+        act = match.expansions['$act'][0].signature
+        exp = match.expansions['$exp'][0].signature
+        if match.expansions['$act'][0].kind in ['Constant']:
+            repl = f'assert_that({exp}, greater_than_or_equal_to({act}))'
+        else:  # original is wrong
+            repl = f'assert_that({act}, greater_than_or_equal_to({exp}))'
+        rewriter.replace(repl, match.nodes, False, False)
+
+
+def convert_assert_lesser(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):
+    unittest = pattern_factory.create_statements('self.assertLessEqual($exp, $act)')
+    for match in match_pattern(test_atu.children, unittest):
+        act = match.expansions['$act'][0].signature
+        exp = match.expansions['$exp'][0].signature
+        if match.expansions['$act'][0].kind in ['Constant']:
+            repl = f'assert_that({exp}, less_than_or_equal_to({act}))'
+        else:  # original is wrong
+            repl = f'assert_that({act}, less_than_or_equal_to({exp}))'
         rewriter.replace(repl, match.nodes, False, False)
 
 
