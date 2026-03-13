@@ -1,3 +1,4 @@
+from hamcrest import assert_that, is_
 
 from renaissance.syntax_tree import PatternMatch, MatchFinder
 
@@ -9,4 +10,4 @@ def test_match_referenced_by(mocker):
     pattern_match = PatternMatch([node, node, node], {}, [])
     mock_matcher = mocker.patch("renaissance.syntax_tree.match_finder.MatchFinder.match_pattern", return_value=[pattern_match])
     pattern_match.match_referenced_by([[node]], False)
-    assert mock_matcher.call_count == 6
+    assert_that(mock_matcher.call_count, is_(6))
