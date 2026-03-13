@@ -19,7 +19,7 @@ class TestASTReference:
         with tempfile.TemporaryDirectory() as temp_dir:
             ASTShower.store_node(f'{temp_dir}/c0.txt', ast)
         call = ASTFinder.find_kind(ast, '(Call|CXXConstruct)Expr').find_first().get()
-        assert isinstance(call, ASTNode)
+        assert_that(isinstance(call, ASTNode), is_(True))
         refs = call.references
         assert_that(refs, has_length(greater_than(0)))
         refs = [r for r in refs if ASTFinder.matches_kind(r.node, '.*(Constructor|Function).*')]
@@ -41,7 +41,7 @@ class TestASTReference:
         def test_call_reference(self, _, factory):
             ast =  factory.create_from_text('void f(){} void f1(){ f();}', "test.c")
             call = ASTFinder.find_kind(ast, 'Decl_?Ref_?Expr').find_first().get()
-            assert isinstance(call, ASTNode)
+            assert_that(isinstance(call, ASTNode), is_(True))
             refs = call.references
             assert_that(refs, has_length(is_(1)))
             ref = refs[0]
@@ -63,7 +63,7 @@ class TestASTReference:
     def test_var_reference(self, _, factory, code, *args):
         ast =  factory.create_from_text(code, "test.c")
         using = ASTFinder.find_kind(ast, 'Decl_?Ref_?Expr').find_first().get()
-        assert isinstance(using, ASTNode)
+        assert_that(isinstance(using, ASTNode), is_(True))
         refs = using.references
         assert_that(refs, has_length(is_(1)))
         ref = refs[0]
@@ -92,7 +92,7 @@ class TestASTReference:
                 filter(lambda n: len(n.references) > 0).find_first().or_else(None)
             if not using:
                 using = ASTFinder.find_kind(ast, '(Parm)?(Var)?_?Decl').find_first().get()
-            assert isinstance(using, ASTNode)
+            assert_that(isinstance(using, ASTNode), is_(True))
             refs = using.references
             assert_that(refs, has_length(is_(1)))
             ref = refs[0]
@@ -120,7 +120,7 @@ class TestASTReference:
                 using = ASTFinder.find_kind(ast, '(CXX_?Record)_?Decl').\
                     filter(lambda n: n.name == 'B').\
                     find_first().get()
-            assert isinstance(using, ASTNode)
+            assert_that(isinstance(using, ASTNode), is_(True))
             refs = using.references
             assert_that(refs, has_length(is_(1)))
             ref = refs[0]
