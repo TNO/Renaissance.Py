@@ -3,7 +3,7 @@ from typing import Callable, Sequence
 from unittest import TestCase
 
 import pytest
-from hamcrest import assert_that, instance_of, is_
+from hamcrest import assert_that, instance_of, is_, is_not
 from parameterized import parameterized
 
 from renaissance.impl.clang import ClangASTNode, CPatternFactory
@@ -27,11 +27,8 @@ class TestCommentLocation(TestCase):
     ])
     def test(self, _, start_offset: int, stop_offset: int, content: bytes, expected: tuple[int, int]):
         result = ASTRewriter._get_comment_location(start_offset, stop_offset, content)
-        if result != (-1, -1):
-            print(content[result[0]:result[1]])
+        assert_that(result, is_not(-1, -1), f="first char={content[result[0]:result[1]]}")
         self.assertEqual(result, expected)
-
-
 
 class TestRewrites(TestCase):
     def test_passing_case_in_clang(self):
