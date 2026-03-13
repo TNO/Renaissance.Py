@@ -34,6 +34,7 @@ def convert_pytest(file):
     convert_assert_equals(pattern_factory, rewriter, test_atu)
     convert_assert_greater(pattern_factory, rewriter, test_atu)
     convert_assert_true(pattern_factory, rewriter, test_atu)
+    convert_assert_in(pattern_factory, rewriter, test_atu)
     convert_parameterized_test(pattern_factory, rewriter, test_atu)
 
     convert_plain_assert_not_empty(pattern_factory, rewriter, test_atu)
@@ -116,15 +117,12 @@ def convert_assert_equals(pattern_factory: PythonPatternFactory, rewriter: ASTRe
             repl = f'assert_that({act}, is_({exp}))'
         rewriter.replace(repl, match.nodes, False, False)
 
-def convert_assert_equals(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):
+def convert_assert_in(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):
     unittest = pattern_factory.create_statements('self.assertIn($exp, $act)')
     for match in match_pattern(test_atu.children, unittest):
         act = match.expansions['$act'][0].signature
         exp = match.expansions['$exp'][0].signature
-        if match.expansions['$act'][0].kind in ['Constant']:
-            repl = f'assert_that({act}, contain_string({exp}))'
-        else:  # original is wrong
-            repl = f'assert_that({act}, is_({exp}))'
+        repl = f'assert_that({act}, contain_string({exp}))'
         rewriter.replace(repl, match.nodes, False, False)
 
 def convert_assert_that_equal_len(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):

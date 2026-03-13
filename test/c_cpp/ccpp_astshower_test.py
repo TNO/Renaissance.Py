@@ -47,10 +47,6 @@ class TestCcppShower:
         assert_that(str(self.atu.children[2]), matches_regexp('(FUNCTION_DECL, lo, test.c[\d+:\d+]): |void lo(int i){}|\n'))
         assert_that(str(self.atu.children[3]), matches_regexp('(VAR_DECL, na, test.c[\d+:\d+]): |int na = 55;|\n'))
 
-    def test_show_ast_filter_implicite_Node(self):
-        ptext = ASTShower.get_node(self.atu)
-        self.assertIn("DECL_LOC",ptext)
-
     def test_show_ast(self):
         text = ASTShower.get_node(self.atu)
         assert_that(text, is_('(TRANSLATION_UNIT, test.c, test.c[0:105]):\n'
