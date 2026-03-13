@@ -198,52 +198,37 @@ class ClangJsonASTNode(ASTNode):
                 extra_args = [clang, *extra_args]
 
             command = [*extra_args, *ClangJsonASTNode.parse_args]
-            json_dump = None
-            error = None
-            length = 0
-            with tempfile.NamedTemporaryFile(delete=True) as std_out_file, tempfile.NamedTemporaryFile(delete=True) as std_err_file:
-                    if code:
-                        if str(file_path) in command:
-                            command.remove(str(file_path))
-                        compile = "-xc++" if file_path.suffix == ".cpp" else "-xc"
-                        if not compile in command:
-                            command.append(compile)
-                        if not "-" in command:
-                            command.append("-")
-                        # command.append('-main-file-name=' + str(file_path))
-                        input = code.encode(sys.getfilesystemencoding())
-                        subprocess.run(
-                            command,
-                            input=input,
-                            stdout=std_out_file,
-                            stderr=std_err_file,
-                            cwd=working_dir,
-                            shell=True,
-                        )
-                        std_out_file.seek(0)
-                        json_dump = (
-                            std_out_file.read()
-                            .decode()
-                            .replace("<stdin>", str(file_path))
-                        )
-                        std_err_file.seek(0)
-                        error = std_err_file.read().decode()
-                        length = len(input)
-                    else:
-                        if str(file_path) not in command:
-                            command.append(str(file_path))
-                        subprocess.run(
-                            command,
-                            stdout=std_out_file,
-                            stderr=std_err_file,
-                            text=True,
-                            cwd=working_dir,
-                        )
-                        std_out_file.seek(0)
-                        json_dump = std_out_file.read().decode()
-                        length = os.path.getsize(working_dir / file_path)
-                        std_err_file.seek(0)
-                        error = std_err_file.read().decode()
+            if code:
+                if str(file_path) in command:
+                    command.remove(str(file_path))
+                compile = "-xc++" if file_path.suffix == ".cpp" else "-xc"
+                if not compile in command:
+                    command.append(compile)
+                if not "-" in command:
+                    command.append("-")
+                # command.append('-main-file-name=' + str(file_path))
+                input = code
+                result = subprocess.run(
+                    command,
+                    input=input,
+                    capture_output=True,
+                    text=True,
+                    cwd = working_dir,
+                )
+                length = len(input)
+            else:
+                if str(file_path) not in command:
+                    command.append(str(file_path))
+                result = subprocess.run(
+                    command,
+                    capture_output=True,
+                    text=True,
+                    cwd=working_dir,
+                )
+                length = os.path.getsize(working_dir / file_path)
+            json_dump = result.stdout.replace("<stdin>", str(file_path))
+            error = result.stderr
+
             if VERBOSE:
                 temp_dir = tempfile.gettempdir()
                 temp_file_name = os.path.join(temp_dir, file_path.name + ".ast.json")
