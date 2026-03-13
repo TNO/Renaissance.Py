@@ -1,4 +1,4 @@
-from hamcrest import assert_that, is_
+from hamcrest import assert_that, is_, has_length
 
 from renaissance.syntax_tree.recipe_ast_processor import (
     RecipeASTProcessor,
@@ -10,7 +10,8 @@ from renaissance.syntax_tree.recipe_ast_processor import (
 
 class TestRecipeASTProcessor:
     def test_receipe_proc(self):
-        it = RecipeASTProcessor(None, None, None)
+        it = RecipeASTProcessor(lambda n:n, lambda : (), '')
+        assert_that(it, is_(RecipeASTProcessor))
 
     def test_run(self, mocker):
         # define a simple recipe class with one recipe_step
@@ -19,26 +20,24 @@ class TestRecipeASTProcessor:
                 self.ran = []
 
             @recipe_step(order=0)
-            def do_step(self, ast_processor):
+            def do_step(self, _):
                 def work():
                     self.ran.append('done')
 
                 return work
-
-        recipe = SimpleRecipe()
-        iterable_provider = lambda: []
-        file_filter = None
-
         # patch BatchASTProcessor.repeat to immediately invoke actions with a dummy ASTProcessor
-        def fake_repeat(self, provider, actions, ffilter):
+        def fake_repeat(_, _1, actions, _2):
             dummy = mocker.Mock()
             dummy.repeat_step = 0
             for action in actions:
                 action(dummy)
 
+        recipe = SimpleRecipe()
+        iterable_provider = lambda: []
+
         mocker.patch.object(BatchASTProcessor, 'repeat', new=fake_repeat)
 
-        processor = RecipeASTProcessor(recipe, iterable_provider, file_filter)
+        processor = RecipeASTProcessor(recipe, iterable_provider, '')
         processor.run()
 
         assert_that(recipe.ran, is_(['done']))
@@ -64,8 +63,8 @@ def test_get_methods_with_decorator():
         def step1(self):
             pass
 
-    methods = list(get_methods_with_decorator(Sample, recipe_step))
-    assert_that(len(methods), is_(1))
+    methods = get_methods_with_decorator(Sample, recipe_step)
+    assert_that(methods, has_length(1))
     assert_that(methods[0].__name__, is_('step1'))
 
 
@@ -75,6 +74,6 @@ def test_final_action():
         def final(self):
             pass
 
-    methods = list(get_methods_with_decorator(Sample, final_action))
-    assert_that(len(methods), is_(1))
+    methods = get_methods_with_decorator(Sample, final_action)
+    assert_that(methods, has_length(1))
     assert_that(methods[0].__name__, is_('final'))
