@@ -116,6 +116,17 @@ def convert_assert_equals(pattern_factory: PythonPatternFactory, rewriter: ASTRe
             repl = f'assert_that({act}, is_({exp}))'
         rewriter.replace(repl, match.nodes, False, False)
 
+def convert_assert_equals(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):
+    unittest = pattern_factory.create_statements('self.assertIn($exp, $act)')
+    for match in match_pattern(test_atu.children, unittest):
+        act = match.expansions['$act'][0].signature
+        exp = match.expansions['$exp'][0].signature
+        if match.expansions['$act'][0].kind in ['Constant']:
+            repl = f'assert_that({act}, contain_string({exp}))'
+        else:  # original is wrong
+            repl = f'assert_that({act}, is_({exp}))'
+        rewriter.replace(repl, match.nodes, False, False)
+
 def convert_assert_that_equal_len(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):
     pattern = pattern_factory.create_statements('assert_that(len($act), is_($exp))')
     for match in match_pattern(test_atu.children, pattern):
