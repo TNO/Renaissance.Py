@@ -35,6 +35,8 @@ def convert_pytest(file):
     convert_assert_greater(pattern_factory, rewriter, test_atu)
     convert_assert_true(pattern_factory, rewriter, test_atu)
     convert_assert_in(pattern_factory, rewriter, test_atu)
+    convert_assert_starts_with(pattern_factory, rewriter, test_atu)
+
     convert_parameterized_test(pattern_factory, rewriter, test_atu)
 
     convert_plain_assert_not_empty(pattern_factory, rewriter, test_atu)
@@ -123,6 +125,16 @@ def convert_assert_in(pattern_factory: PythonPatternFactory, rewriter: ASTRewrit
         act = match.expansions['$act'][0].signature
         exp = match.expansions['$exp'][0].signature
         repl = f'assert_that({act}, contain_string({exp}))'
+        rewriter.replace(repl, match.nodes, False, False)
+
+def convert_assert_starts_with(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):
+    unittest = pattern_factory.create_statements('self.assertTrue($exp.startswith($act))')
+    for match in match_pattern(test_atu.children, unittest):
+        act = match.expansions['$act'][0].signature
+        exp = match.expansions['$exp'][0].signature
+
+
+        repl = f'assert_that({exp}, starts_with({act}))'
         rewriter.replace(repl, match.nodes, False, False)
 
 def convert_assert_that_equal_len(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):

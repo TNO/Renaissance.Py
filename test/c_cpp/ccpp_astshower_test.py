@@ -42,10 +42,10 @@ class TestCcppShower:
         assert_that(str(self.atu), is_(expected))
 
     def test_show_body(self):
-        assert_that(str(self.atu.children[0]), matches_regexp('(FUNCTION_DECL, ba, test.c[\d+:\d+]): |void ba(int i){}|\n'))
-        assert_that(str(self.atu.children[1]), matches_regexp('(FUNCTION_DECL, ca, test.c[\d+:\d+]): |void ca(int i){}|\n'))
-        assert_that(str(self.atu.children[2]), matches_regexp('(FUNCTION_DECL, lo, test.c[\d+:\d+]): |void lo(int i){}|\n'))
-        assert_that(str(self.atu.children[3]), matches_regexp('(VAR_DECL, na, test.c[\d+:\d+]): |int na = 55;|\n'))
+        assert_that(str(self.atu.children[0]), matches_regexp('(FUNCTION_DECL, ba, test.c[\\d+:\\d+]): |void ba(int i){}|\n'))
+        assert_that(str(self.atu.children[1]), matches_regexp('(FUNCTION_DECL, ca, test.c[\\d+:\\d+]): |void ca(int i){}|\n'))
+        assert_that(str(self.atu.children[2]), matches_regexp('(FUNCTION_DECL, lo, test.c[\\d+:\\d+]): |void lo(int i){}|\n'))
+        assert_that(str(self.atu.children[3]), matches_regexp('(VAR_DECL, na, test.c[\\d+:\\d+]): |int na = 55;|\n'))
 
     def test_show_ast(self):
         text = ASTShower.get_node(self.atu)

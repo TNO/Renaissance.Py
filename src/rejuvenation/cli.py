@@ -36,7 +36,7 @@ def select_pyton_file():
     current_dir = Path('.')
     print(f'refactor in {current_dir.resolve()}')
 
-    return current_dir.glob('**/*clang_match_finder_test.py')
+    return current_dir.glob('**/*.py')
     # return (file_path for file_path in current_dir.iterdir() if is_python_file)
 
 
@@ -44,7 +44,7 @@ def select_pyton_file():
 
 if __name__ == "__main__":
     sample = factory.create('c_cpp/clang_match_finder_test.py')
-    ASTShower.show_node(sample)
+    # ASTShower.show_node(sample)
 
     for file in select_pyton_file():
         if 'utils_for_tests' not in str(file):
