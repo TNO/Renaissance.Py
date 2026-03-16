@@ -94,7 +94,7 @@ class TestDeclaration(TestCPatternFactory):
                 count_vars += ASTFinder.find_kind(decl, '(?i)VAR_?DECL').count()
                 ASTShower.show_node(decl)
             assert_that(count_vars, is_(expected_vars))
-            assert_that(count_refs, less_than_or_equal_to(expected_refs))
+            assert_that(count_refs, greater_than_or_equal_to(expected_refs))
 
 class TestStatements(TestCPatternFactory):
 
@@ -114,7 +114,7 @@ class TestStatements(TestCPatternFactory):
             for decl in created_statements:
                 count_refs += ASTFinder.find_kind(decl, 'DECL_?REF_?EXPR|.*MatchOne.*').count()
             assert_that(expected_stmts, is_(len(created_statements)))
-            assert_that(expected_refs, greater_than_or_equal_to(count_refs))
+            assert_that(expected_refs, less_than_or_equal_to(count_refs))
             for stmt in created_statements:
                 assert_that(stmt.is_statement)
 

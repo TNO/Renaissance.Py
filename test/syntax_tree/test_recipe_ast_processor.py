@@ -63,7 +63,7 @@ def test_get_methods_with_decorator():
         def step1(self):
             pass
 
-    methods = get_methods_with_decorator(Sample, recipe_step)
+    methods = list(get_methods_with_decorator(Sample, recipe_step))
     assert_that(methods, has_length(1))
     assert_that(methods[0].__name__, is_('step1'))
 
@@ -74,6 +74,6 @@ def test_final_action():
         def final(self):
             pass
 
-    methods = get_methods_with_decorator(Sample, final_action)
+    methods = list(get_methods_with_decorator(Sample, final_action))
     assert_that(methods, has_length(1))
     assert_that(methods[0].__name__, is_('final'))

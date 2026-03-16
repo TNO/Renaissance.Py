@@ -11,7 +11,7 @@ from .factories import Factories
 
 def load_model(factory: ASTFactory):
     # note: make sure to load a corresponding model for the language
-    return factory.create(Path(targets.__file__) / 'main.c')
+    return factory.create(Path(targets.__file__).parent / 'main.c')
 
 
 class TestFinder:

@@ -5,7 +5,7 @@ from hamcrest import assert_that, is_, contains_string, has_length
 
 from renaissance.impl.python import PythonASTNode, PythonPatternFactory
 from renaissance.syntax_tree import ASTRewriter, ASTFactory
-from renaissance.refactoring.unit2pytest import remove_class, convert_test_cases, convert_assert_equals
+from renaissance.refactoring.unit2pytest import Unit2PyTest
 from renaissance.syntax_tree.match_finder import match_pattern
 
 code = '''
