@@ -33,14 +33,14 @@ class Unit2PyTest:
         self.replace('from unittest import $$symbols', 'import pytest\nfrom hamcrest import *')
         self.replace('assert $exp', 'assert_that($exp)')
 
+        self.replace('self.assertTrue($exp)', 'assert_that($exp)')
+        self.replace('self.assertFalse($exp)', 'assert_that(not $exp)')
         self.convert_assert('self.assertEqual($exp, $act)', 'assert_that($exp, is_($act))')
         self.convert_assert('self.assertGreaterEqual($exp, $act)', 'assert_that($exp, greater_than_or_equal_to($act))')
         self.convert_assert('self.assertGreater($exp, $act)', 'assert_that($exp, greater_than($act))')
         self.convert_assert('self.assertLesserEqual($exp, $act)', 'assert_that($exp, less_than_or_equal_to($act))')
         self.convert_assert('self.assertLesser($exp, $act)', 'assert_that($exp, less_than($act))')
         self.convert_assert('self.assertIn($act, $exp)', 'assert_that($exp, contain_string($act))')
-        self.replace('self.assertTrue($exp)', 'assert_that($exp)')
-        self.replace('self.assertFalse($exp)', 'assert_that(not $exp)')
 
         # convert_plain_assert_not_empty(pattern_factory, rewriter, atu)
         # convert_plain_assert_same_length(pattern_factory, rewriter, atu)
