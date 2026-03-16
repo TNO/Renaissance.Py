@@ -16,7 +16,7 @@ def raw(nodes):
 
 
 def convert_pytest(file):
-    print(file)
+    print(f"refactoring {file}")
     pattern_factory = PythonPatternFactory(factory, None)
 
     test_atu = factory.create(file)
@@ -29,14 +29,14 @@ def convert_pytest(file):
         rewriter = ASTRewriter(test_atu)
 
     convert_test_import(pattern_factory, rewriter, test_atu)
-
+    convert_plain_assert(pattern_factory, rewriter, test_atu)
     convert_assert_equals(pattern_factory, rewriter, test_atu)
     convert_assert_greater(pattern_factory, rewriter, test_atu)
     convert_assert_lesser(pattern_factory, rewriter, test_atu)
     convert_assert_true(pattern_factory, rewriter, test_atu)
     convert_assert_in(pattern_factory, rewriter, test_atu)
 
-    convert_plain_assert(pattern_factory, rewriter, test_atu)
+
 
 
     # convert_plain_assert_not_empty(pattern_factory, rewriter, test_atu)
@@ -53,19 +53,35 @@ def convert_pytest(file):
             f.write(rewriter.apply_to_string())
         test_atu = factory.create_from_text(rewriter.apply_to_string(), file)
         rewriter = ASTRewriter(test_atu)
+
     convert_assert_that_len(pattern_factory, rewriter, test_atu)
     convert_assert_that_start_with(pattern_factory, rewriter, test_atu)
     convert_assert_that_instance(pattern_factory, rewriter, test_atu)
 
     if rewriter.has_changed():
-        test_atu = factory.create_from_text(rewriter.apply_to_string(), file)
-        rewriter = ASTRewriter(test_atu)
         with open(file, 'w') as f:
             f.write(rewriter.apply_to_string())
+        test_atu = factory.create_from_text(rewriter.apply_to_string(), file)
+        rewriter = ASTRewriter(test_atu)
     convert_parameterized_test(pattern_factory, rewriter, test_atu)
 
     with open(file, 'w') as f:
         f.write(rewriter.apply_to_string())
+
+def improve_asserts(file):
+    print(f"refactoring {file}")
+    pattern_factory = PythonPatternFactory(factory, None)
+
+    test_atu = factory.create(file)
+    rewriter = ASTRewriter(test_atu)
+    # convert_assert_that_len(pattern_factory, rewriter, test_atu)
+    # convert_assert_that_start_with(pattern_factory, rewriter, test_atu)
+    convert_assert_that_instance(pattern_factory, rewriter, test_atu)
+    if rewriter.has_changed():
+        with open(file, 'w') as f:
+            f.write(rewriter.apply_to_string())
+        test_atu = factory.create_from_text(rewriter.apply_to_string(), file)
+        rewriter = ASTRewriter(test_atu)
 
 def convert_test_import(pattern_factory: PythonPatternFactory, rewriter: ASTRewriter, test_atu: ASTNode):
     unittest = pattern_factory.create_statements('import unittest')
