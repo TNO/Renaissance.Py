@@ -25,6 +25,8 @@ OPERATOR_MAP = {
     'AsyncFunctionDef': 'function',
     'With': 'with',
     'AsyncWith': 'with',
+    'Import': 'import',
+    'ImportFrom': 'import',
 
 }
 
@@ -232,8 +234,12 @@ class PythonASTNode(ASTNode):
             name = self.node.targets[0].id
         elif 'id' in self.node._fields and self.node.id:
             name = self.node.id
-        elif self.kind =='Match':
+        elif self.kind == 'Match':
             name = self.node.subject.id
+        elif self.kind == 'Import' and len(self.node.names) ==1:
+            name = self.node.names[0].name
+        elif self.kind == 'ImportFrom' and len(self.node.names) == 1:
+            name = self.node.names[0].name
         elif 'body' not in self.node._fields:
             name = unparse(self.node)
         else:
@@ -246,7 +252,7 @@ class PythonASTNode(ASTNode):
 
     @property
     def value(self):
-        return self.node.value.value
+        return self.node.value.value if hasattr(self.node,'value') else None
 
     @property
     def expr(self):

@@ -31,10 +31,10 @@ class TestPythonFactory:
         assert_that(node.signature, is_(statement))
 
     @pytest.mark.parametrize("statement", [
-        'if a:\n    pass\nelif:\n    pass\nelse:\n    pass',
-        'if a:\n    pass\nelif:\n    pass',
+        'if a:\n    pass\nelif b:\n    pass\nelse:\n    pass',
+        'if a:\n    pass\nelif b:\n    pass',
         'if a:\n    pass\nelse:\n    pass',
-        'if a:\n    pass\n',
+        'if a:\n    pass',
     ])
     def test_if_else(self, statement):
         pattern_factory = PythonPatternFactory(self.factory)

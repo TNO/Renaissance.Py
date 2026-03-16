@@ -1,4 +1,5 @@
 import ast
+import textwrap
 import unittest
 
 from hamcrest import assert_that, is_not
@@ -258,7 +259,7 @@ else:
 
     def test_replace_multiple_different_nodes(self):
 
-        example_code = """
+        example_code = textwrap.dedent("""
         from module import foo, bar, baz, quux
         ba(51)
         na(52)
@@ -277,7 +278,7 @@ else:
           na(52)
           na(53)
         
-        """.strip()
+        """)
         atu = PythonASTNode.load_from_text(example_code)
         assert_that(atu, is_not(None))
 if __name__ == '__main__':

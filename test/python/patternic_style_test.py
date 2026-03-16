@@ -60,15 +60,15 @@ class TestPythonicStyle:
     @pytest.mark.parametrize("raw, kind, typ, name, op, value",[
         ('i:int=0', 'AnnAssign', 'int', 'i', '=', 0),
         ('x += 5', 'AugAssign', None, 'x', "+=", 5),
-        ('assert 0', 'Assert',None, None, 'assert', 0),
-        ('break', 'Break',None, None, 'break', None),
-        ('continue', 'Continue', None, None, 'continue', None),
-        ('fun()', 'Expr', None, None, None, None, ),
+        ('assert 0', 'Assert','assert', '0', 'assert', 0),
+        ('break', 'Break','break', '', 'break', None),
+        ('continue', 'Continue', None, 'Continue', 'continue', None),
+        ('fun()', 'Expr', None, 'fun()', None, None, ),
         ('import x', 'Import',None, 'x', 'import', None),
-        ('from x import y', 'ImportFrom',None, 'x', 'import', 'y'),
-        ('pass', 'Pass',None, None, 'pass', None,),
-        ('raise', 'Raise',None, None, 'raise', None,),
-        ('return', 'Return',None, None, 'return', None,),
+        ('from x import y', 'ImportFrom',None, 'y', 'import', 'x'),
+        ('pass', 'Pass',None, 'pass', 'pass', None,),
+        ('raise', 'Raise',None, 'raise', 'raise', None,),
+        ('return', 'Return',None, 'Return', 'return', None,),
     ])
 
     def test_stmt_kind(self, raw, kind, typ, name, op, value):
