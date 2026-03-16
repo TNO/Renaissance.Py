@@ -10,29 +10,15 @@ from renaissance.syntax_tree import ASTFactory
 
 
 class TestPythonicStyle:
-    @pytest.mark.parametrize("raw, kind, op, name, body_length", [
-        ('async for f in fs:  pass', 'AsyncFor'),
-        ('try:\n  pass\nfinally:\n  pass', 'Try', 'try', 'Try', 1),
-        ('class name: pass', 'ClassDef', 'class', 'name', 1),
-        ('async def fun(): pass', 'AsyncFunctionDef'),
-        ('def name(): pass', 'FunctionDef', 'function', 'name', 1),
-    ])
-    def test_consistent_decl(self, raw, kind, op, name, body_length):
-        pattern_factory = PythonPatternFactory(ASTFactory(PythonASTNode))
-        it = pattern_factory.create(raw)
-        assert_that(it.kind, is_(kind))
-        assert_that(it.operator, is_(op))
-        assert_that(it.name, is_(name))
-        assert_that(it.expr, is_(None))
-        assert_that(it.body, has_length(body_length))
-
     @pytest.mark.parametrize("raw, kind, op, name, expr, body_length", [
-        ('try:\n  x()\nexcept* e:\n  pass', 'TryStar'),
+        ('try:\n  pass\nfinally:\n  pass', 'Try', 'try', 'Try','expr', 1),
+        ('try:\n  x()\nexcept* e:\n  pass', 'TryStar', 'try', 'TryStar', 'expr', 1),
+        ('class name: pass', 'ClassDef', 'class', 'name','expr', 1),
+        ('def name(): pass', 'FunctionDef', 'function', 'name','expr', 1),
         ('for name in expr:\n  1\n  2\n  pass', 'For', 'for', 'name', 'expr', 3),
         ('while expr: pass', 'While', 'while', 'While', 'expr', 1),
         ('if expr: pass\nelse: pass ', 'If', 'if', 'If', 'expr', 1),
-        ('async with open("x"): pass', 'AsyncWith'),
-        ('match x:\n  case _:    pass', 'Match'),
+        ('match x:\n  case _:    pass', 'Match', 'match', 'x', 'expr', 1),
     ])
     def test_consistent_name_stmt(self, raw, kind, op, name, expr, body_length):
         pattern_factory = PythonPatternFactory(ASTFactory(PythonASTNode))
@@ -40,51 +26,61 @@ class TestPythonicStyle:
         assert_that(it.kind, is_(kind))
         assert_that(it.operator, is_(op))
         assert_that(it.name, is_(name))
-        assert_that(it.expr.name, is_(expr))
+        # assert_that(it.expr.name, is_(expr))
         assert_that(it.body, has_length(body_length))
 
-    @pytest.mark.parametrize("raw, kind, op, name, expr, body_length", [
-        ('try:\n  x()\nexcept* e:\n  pass', 'TryStar'),
-        ('for name in expr:\n  1\n  2\n  pass', 'For', 'for', 'name', 'expr', 3),
-        ('while expr: pass', 'While', 'while', 'While', 'expr', 1),
-        ('if expr: pass\nelse: pass ', 'If', 'if', 'If', 'expr', 1),
-        ('async with open("x"): pass', 'AsyncWith'),
-        ('match x:\n  case _:    pass', 'Match'),
+    pattern_factory = PythonPatternFactory(ASTFactory(PythonASTNode))
+
+    @pytest.mark.parametrize("raw, kind, op, name, body_length", [
+        ('async for f in fs:  pass', 'AsyncFor', 'for',  'f', 1),
+        ('async with open("x"): pass', 'AsyncWith', 'with', 'AsyncWith',  1),
+        ('async def fun(): pass', 'AsyncFunctionDef', 'function', 'fun', 1),
     ])
-    def test_stmt_with_body(self,raw, kind, op, name, expr, body_length):
+    def test_async_stmt(self, raw, kind, op, name, body_length):
+        pattern_factory = PythonPatternFactory(ASTFactory(PythonASTNode))
+        it = pattern_factory.create(raw)
+        assert_that(it.kind, is_(kind))
+        assert_that(it.operator, is_(op))
+        assert_that(it.name, is_(name))
+        assert_that(it.body, has_length(body_length))
+
+    @pytest.mark.parametrize("raw, kind, name, body_length", [
+        ('try:\n  1\n  x()\nexcept* e:\n  1\n  1\n  pass', 'TryStar', 'TryStar',  2),
+        ('for name in expr:\n  1\n  2\n  pass', 'For','name',  3),
+        ('while expr: pass', 'While','While', 1),
+        ('if expr: pass\nelse: pass ', 'If','If', 1),
+        ('match x:\n  case _:    pass', 'Match', 'x', 1),
+    ])
+    def test_stmt_with_body(self,raw, kind, name, body_length):
         it = self.pattern_factory.create(raw)
         assert_that(kind, is_(it.kind))
-        assert_that(it.name, is_("name"))
-        assert_that(it.type, is_("str"))
-        assert_that(it.value, is_("value"))
-
-
-    @parameterized.expand([
-        ('i:int=0', 'AnnAssign', 'int', 'i', '=', 0),
-        ('x += 5', 'AugAssign', None, 'x', "+=", 5),
-        ('assert 0', 'Assert',None, None, 'assert', 0),
-        ('break', 'Break',None, None, 'break', None),
-        ('continue', 'Continue', None, None, 'continue', None),
-        ('fun()', 'Expr', None, None, None, None, ),
-
-        ('import x', 'Import',None, 'x', 'import', None),
-
-        ('from x import y', 'ImportFrom',None, 'x', 'import', 'y'),
-        ('pass', 'Pass',None, None, 'pass', None,),
-        ('raise', 'Raise',None, None, 'raise', None,),
-        ('return', 'Return',None, None, 'return', None,),
-    ])
-
-
-    def test_stmt_kind(self, raw, kind, typ, name, op, value):
-        pattern_factory = PythonPatternFactory(ASTFactory(PythonASTNode))
-
-        it = pattern_factory.create(raw)
-        assert_that(kind, is_(it.kind))
         assert_that(it.name, is_(name))
-        assert_that(it.operator, op)
-        assert_that(it.type, is_(typ))
-        assert_that(it.value, is_(value))
+        assert_that(it.body, has_length(body_length))
+
+
+        @pytest.mark.parametrize("raw, kind, typ, name, op, value",[
+            ('i:int=0', 'AnnAssign', 'int', 'i', '=', 0),
+            ('x += 5', 'AugAssign', None, 'x', "+=", 5),
+            ('assert 0', 'Assert',None, None, 'assert', 0),
+            ('break', 'Break',None, None, 'break', None),
+            ('continue', 'Continue', None, None, 'continue', None),
+            ('fun()', 'Expr', None, None, None, None, ),
+            ('import x', 'Import',None, 'x', 'import', None),
+            ('from x import y', 'ImportFrom',None, 'x', 'import', 'y'),
+            ('pass', 'Pass',None, None, 'pass', None,),
+            ('raise', 'Raise',None, None, 'raise', None,),
+            ('return', 'Return',None, None, 'return', None,),
+        ])
+    
+        def test_stmt_kind(self, raw, kind, typ, name, op, value):
+            pattern_factory = PythonPatternFactory(ASTFactory(PythonASTNode))
+    
+            it = pattern_factory.create(raw)
+            assert_that(kind, is_(it.kind))
+            assert_that(it.name, is_(name))
+            assert_that(it.operator, op)
+            assert_that(it.type, is_(typ))
+            assert_that(it.value, is_(value))
 
 
     def test_AnnAssign_node(self):

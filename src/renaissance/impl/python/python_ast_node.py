@@ -9,10 +9,24 @@ from renaissance.impl import MATCH_ONE, MATCH_ALL
 from renaissance.syntax_tree import ASTNode, ASTReference, PatternMatch
 from renaissance.syntax_tree.match_finder import match_pattern, is_match, find_in_list
 
-EMPTY_DICT = {}
-EMPTY_STR = ''
-EMPTY_LIST = []
+OPERATOR_MAP = {
+    'Assign': '=',
+    'AnnAssign': '=',
+    'AugAssignAdd': '+=',
+    'For': 'for',
+    'AsyncFor': 'for',
+    'While': 'while',
+    'If': 'if',
+    'Match': 'match',
+    'Try': 'try',
+    'TryStar': 'try',
+    'ClassDef': 'class',
+    'FunctionDef': 'function',
+    'AsyncFunctionDef': 'function',
+    'With': 'with',
+    'AsyncWith': 'with',
 
+}
 
 class PythonASTReference:
     def __repr__(self):
@@ -123,7 +137,7 @@ class PythonASTNode(ASTNode):
                                 self.body = self._children
                         else:
                             self._children.append(PythonASTNode(ImplicitNode(name, child), translation_unit, self))
-                            if name == 'body':
+                            if name in ['body', 'cases']:
                                 self.body = self._children[-1].children
                     case ast.AST():
                         if name not in ['ctx']:
@@ -216,10 +230,12 @@ class PythonASTNode(ASTNode):
             name = self.node.target.id
         elif 'targets' in self.node._fields and len(self.node.targets)==1 and hasattr(self.node.targets[0],'id'):
             name = self.node.targets[0].id
-        elif 'body' not in self.node._fields:
-            name = unparse(self.node)
         elif 'id' in self.node._fields and self.node.id:
             name = self.node.id
+        elif self.kind =='Match':
+            name = self.node.subject.id
+        elif 'body' not in self.node._fields:
+            name = unparse(self.node)
         else:
             name = self.kind
         return name.replace(MATCH_ALL, '$$').replace(MATCH_ONE, '$')
@@ -243,23 +259,12 @@ class PythonASTNode(ASTNode):
         else:
             return None
 
-    OPERATOR_MAP = {
-        'Assign': '=',
-        'AnnAssign': '=',
-        'AugAssignAdd': '+=',
-        'For': 'for',
-        'While': 'while',
-        'If': 'if',
-        'Try': 'try',
-        'ClassDef': 'class',
-        'FunctionDef': 'function',
 
-    }
     @property
     def operator(self):
         node_type = type(self.node).__name__
         op   = type(self.node.op).__name__ if 'op' in self.node._fields else ""
-        return self.OPERATOR_MAP.get(node_type+op,'')
+        return OPERATOR_MAP.get(node_type+op,'')
     @override
     @property
     def signature(self) -> str:
@@ -290,14 +295,14 @@ class PythonASTNode(ASTNode):
     def referenced_by(self) -> Sequence[ASTReference]:
         self.translation_unit.lazy_create_refers(self)
         node_id = self.node.name if hasattr(self.node, 'name') else self.node.id
-        ref_by = self.translation_unit._referenced_by.get(node_id, EMPTY_LIST)
+        ref_by = self.translation_unit._referenced_by.get(node_id, [])
         # if both the function declaration and function definition are avaible 
         # the references are stored in the function definition
         # but we want them to also show up in the declaration
         if len(ref_by) == 0:
             definition = None
             if definition:
-                ref_by = self.translation_unit._referenced_by.get(node_id, EMPTY_LIST)
+                ref_by = self.translation_unit._referenced_by.get(node_id, [])
         return Stream(ref_by) \
             .map(
             lambda ref: ASTReference(self.translation_unit._nodes[ref.node_id], ref.ref_kind, ref.properties)).to_list()
@@ -322,7 +327,7 @@ class PythonASTNode(ASTNode):
                 node_id = self.name
             case 'arg':
                 node_id = self.name
-        return Stream(self.translation_unit._references.get(node_id, EMPTY_LIST)) \
+        return Stream(self.translation_unit._references.get(node_id, [])) \
             .map(
             lambda ref: ASTReference(self.translation_unit._nodes[ref.node_id], ref.ref_kind, ref.properties)).to_list()
 

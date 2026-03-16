@@ -105,9 +105,10 @@ class Unit2PyTest:
     def replace(self, find, repl):
         pattern = self.pattern_factory.create_statements(find)
         for match in match_pattern(self.stmts, pattern):
+            replacement = repl
             for exp in match.expansions:
-                repl = repl.replace(exp, match.expansions[exp][0].signature)
-            self.rewriter.replace(repl, match.nodes, False, False)
+                replacement = replacement.replace(exp, match.expansions[exp][0].signature)
+            self.rewriter.replace(replacement, match.nodes, False, False)
 
     def convert_parameterized_test(self):
 
