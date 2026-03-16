@@ -25,7 +25,7 @@ class ASTReference:
         self._properties = properties
 
     @property
-    def node(self) -> Self:
+    def node(self) -> ASTNode:
         return self._node
 
     @property

@@ -313,7 +313,7 @@ class PythonASTNode(ASTNode):
         return self.offset+self.length
     @override
     @property
-    def references(self) -> Sequence[ASTReference]:
+    def references(self) -> list[ASTReference]:
         self.translation_unit.lazy_create_refers(self)
         node_id = ''
         match self.kind:

@@ -50,13 +50,14 @@ class Unit2PyTest:
 
         self.convert_test_setup()
         self.replace('unittest.main()', 'pytest.main()')
+        self.commit()
 
-        self.replace('assert_that($exp.startswith($act))', 'assert_that($exp, starts_with($act))')
-        self.replace('assert_that(isinstance($exp,$act))', 'assert_that($exp, is_($act))')
+        self.replace('assert_that(isinstance($exp, $act))', 'assert_that($exp, is_($act))')
         self.replace('assert_that(len($exp), $act)', 'assert_that($exp, has_length($act))')
         self.replace('assert_that(len($exp) >= 1)', 'assert_that($exp, is_not(empty()))')
         self.replace('assert_that(len($exp) == $length)', 'assert_that($exp, has_length($length))')
         self.replace('assert_that($exp == $act)', 'assert_that($exp, is_($act))')
+        # self.replace('assert_that($exp.startswith($act))', 'assert_that($exp, starts_with($act))')
 
         self.commit()
         self.convert_parameterized_test()

@@ -382,7 +382,7 @@ class ClangJsonASTNode(ASTNode):
 
     @override
     @property
-    def references(self) -> Sequence[ASTReference]:
+    def references(self) -> list[ASTReference]:
         if self.inserted:
             return []
         self.translation_unit.lazy_create_references(self)

@@ -2,7 +2,7 @@ from itertools import product
 from renaissance.impl.python.python_ast_node import PythonASTNode
 from renaissance.syntax_tree.ast_factory import ASTFactory
 
-class Factories():
+class Factories:
     # add factories here to test different ASTNode implementations
     node_types = [ ('python', PythonASTNode) ]
     factories = [ (name_type[0], ASTFactory(name_type[1])) for name_type in node_types]

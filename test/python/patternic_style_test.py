@@ -2,7 +2,6 @@ from operator import is_not
 
 import pytest
 from hamcrest import assert_that, is_, has_length, is_in, is_not
-from parameterized import parameterized
 
 from renaissance.impl import MATCH_ONE, MATCH_ALL
 from renaissance.impl.python import PythonASTNode, PythonPatternFactory
@@ -58,32 +57,32 @@ class TestPythonicStyle:
         assert_that(it.body, has_length(body_length))
 
 
-        @pytest.mark.parametrize("raw, kind, typ, name, op, value",[
-            ('i:int=0', 'AnnAssign', 'int', 'i', '=', 0),
-            ('x += 5', 'AugAssign', None, 'x', "+=", 5),
-            ('assert 0', 'Assert',None, None, 'assert', 0),
-            ('break', 'Break',None, None, 'break', None),
-            ('continue', 'Continue', None, None, 'continue', None),
-            ('fun()', 'Expr', None, None, None, None, ),
-            ('import x', 'Import',None, 'x', 'import', None),
-            ('from x import y', 'ImportFrom',None, 'x', 'import', 'y'),
-            ('pass', 'Pass',None, None, 'pass', None,),
-            ('raise', 'Raise',None, None, 'raise', None,),
-            ('return', 'Return',None, None, 'return', None,),
-        ])
-    
-        def test_stmt_kind(self, raw, kind, typ, name, op, value):
-            pattern_factory = PythonPatternFactory(ASTFactory(PythonASTNode))
-    
-            it = pattern_factory.create(raw)
-            assert_that(kind, is_(it.kind))
-            assert_that(it.name, is_(name))
-            assert_that(it.operator, op)
-            assert_that(it.type, is_(typ))
-            assert_that(it.value, is_(value))
+    @pytest.mark.parametrize("raw, kind, typ, name, op, value",[
+        ('i:int=0', 'AnnAssign', 'int', 'i', '=', 0),
+        ('x += 5', 'AugAssign', None, 'x', "+=", 5),
+        ('assert 0', 'Assert',None, None, 'assert', 0),
+        ('break', 'Break',None, None, 'break', None),
+        ('continue', 'Continue', None, None, 'continue', None),
+        ('fun()', 'Expr', None, None, None, None, ),
+        ('import x', 'Import',None, 'x', 'import', None),
+        ('from x import y', 'ImportFrom',None, 'x', 'import', 'y'),
+        ('pass', 'Pass',None, None, 'pass', None,),
+        ('raise', 'Raise',None, None, 'raise', None,),
+        ('return', 'Return',None, None, 'return', None,),
+    ])
+
+    def test_stmt_kind(self, raw, kind, typ, name, op, value):
+        pattern_factory = PythonPatternFactory(ASTFactory(PythonASTNode))
+
+        it = pattern_factory.create(raw)
+        assert_that(kind, is_(it.kind))
+        assert_that(it.name, is_(name))
+        assert_that(it.operator, op)
+        assert_that(it.type, is_(typ))
+        assert_that(it.value, is_(value))
 
 
-    def test_AnnAssign_node(self):
+    def test_ann_assign_node(self):
         pattern_factory = PythonPatternFactory(ASTFactory(PythonASTNode))
         it = pattern_factory.create('name:str = "value"')
 
@@ -93,7 +92,7 @@ class TestPythonicStyle:
         assert_that(it.value, is_("value"))
 
 
-    def test_Assign_node(self):
+    def test_assign_node(self):
         pattern_factory = PythonPatternFactory(ASTFactory(PythonASTNode))
 
         it = pattern_factory.create('name = "value"')
@@ -104,7 +103,7 @@ class TestPythonicStyle:
         assert_that(it.value, is_("value"))
 
 
-    def test_Assign_node(self):
+    def test_assign_node_2(self):
         pattern_factory = PythonPatternFactory(ASTFactory(PythonASTNode))
         it = pattern_factory.create('name += 5', 'AugAssign')
         assert_that(it.name, is_("name"))
@@ -229,19 +228,19 @@ class TestPythonicStyle:
     def test_slice_call(self):
         factory = ASTFactory(PythonASTNode)
         atu = factory.create_from_text('ba(55)\nna(55)\nna(55)\npa(55)\npa(55)\nba(55)\nna(55)\nna(55)\nna=55', 'test.py')
-        slice = atu[0:3]
-        assert_that(slice, has_length(3))
+        node_slice = atu[0:3]
+        assert_that(node_slice, has_length(3))
 
 
     def test_property_kind_call(self):
         factory = ASTFactory(PythonASTNode)
         atu = factory.create_from_text('ba(55)\nna(55)\nna(55)\npa(55)\npa(55)\nba(55)\nna(55)\nna(55)\nna=55', 'test.py')
-        slice = atu.kind
-        assert_that(slice, is_('Module'))
+        kind = atu.kind
+        assert_that(kind, is_('Module'))
 
 
     def test_property_name_call(self):
         factory = ASTFactory(PythonASTNode)
         atu = factory.create_from_text('ba(55)\nna(55)\nna(55)\npa(55)\npa(55)\nba(55)\nna(55)\nna(55)\nna=55', 'test.py')
-        slice = atu.name
-        assert_that(slice, is_('Module'))
+        name = atu.name
+        assert_that(name, is_('Module'))

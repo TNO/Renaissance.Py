@@ -255,7 +255,7 @@ class ClangASTNode(ASTNode):
 
     @override
     @property
-    def referenced_by(self) -> [ASTReference]:
+    def referenced_by(self) -> Sequence[ASTReference]:
         self.translation_unit.lazy_create_references(self)
         node_id = self.node.hash
         ref_by = self.translation_unit._referenced_by.get(node_id, EMPTY_LIST)
