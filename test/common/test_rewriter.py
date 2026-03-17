@@ -1,10 +1,12 @@
-from unittest import TestCase
-from parameterized import parameterized
+import pytest
+from hamcrest import *
+
 from renaissance.common.rewriter import Rewriter
 
-class TestRewriter(TestCase):
 
-    @parameterized.expand([
+class TestRewriter:
+
+    @pytest.mark.parametrize("initial_bytes, start, end, new_content, expected_bytes",[
         (b'abcdefghij', 5, 10, b"hellooo", b'abcdehellooo'),
         (b'abcdefghij', 5, 10, b" world", b'abcde world'),
         (b'abcdefghij', 0, 0, b"BEGIN", b'BEGINabcdefghij'),
@@ -17,7 +19,7 @@ class TestRewriter(TestCase):
         rewriter = Rewriter(initial_bytes)
         rewriter.replace(start, end, new_content)
         result = rewriter.apply()
-        self.assertEqual(result, expected_bytes)
+        assert_that(expected_bytes, is_(result))
 
     def test_multiple_replaces(self):
         initial_bytes = b'abcdefghij'
@@ -26,4 +28,4 @@ class TestRewriter(TestCase):
         rewriter.replace(5, 10, b" world")
         rewriter.replace(0, 0, b"BEGIN")
         result = rewriter.apply()
-        self.assertEqual(result, b'BEGINabcdehello world')
+        assert_that(result, is_(b'BEGINabcdehello world'))
