@@ -147,9 +147,12 @@ class Unit2PyTest:
             fun = match.nodes[0]
             args = ', '.join([arg.node.arg for arg in match.expansions['$$args']])
             args = args.replace('self, ', '')
-            repl = fun.signature.replace('@parameterized.expand(', f'@pytest.mark.parametrize("{args}",')
-            if '  def ' in repl:
+            repl = fun.signature
+            if '    def ' in repl:
+                repl.replace('@parameterized.expand(', f'    @pytest.mark.parametrize("{args}",')
                 repl = TextUtils.strip_indent(repl)
+            else:
+                repl = repl.replace('@parameterized.expand(', f'@pytest.mark.parametrize("{args}",')
 
             self.rewriter.replace(repl, fun, False, False)
 
