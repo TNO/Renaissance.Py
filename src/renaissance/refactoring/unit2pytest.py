@@ -120,10 +120,14 @@ class Unit2PyTest:
         for match in match_pattern(self.stmts, pattern):
             replacement = repl
             for exp in match.expansions:
-                if hasattr(match.expansions[exp][0],'signature'):
-                    replacement = replacement.replace(exp, match.expansions[exp][0].signature)
+                if len(match.expansions[exp])==1:
+                    if hasattr(match.expansions[exp][0],'signature'):
+                        replacement = replacement.replace(exp, match.expansions[exp][0].signature)
+                    else:
+                        replacement = replacement.replace(exp, match.expansions[exp][0])
                 else:
-                    replacement = replacement.replace(exp, match.expansions[exp][0])
+                    replacement = replacement.replace(exp, ', '.join(match.expansions[exp]))
+            replacement = replacement.replace(', )',')')
             self.rewriter.replace(replacement, match.nodes, False, False)
 
     def convert_parameterized_test(self):
