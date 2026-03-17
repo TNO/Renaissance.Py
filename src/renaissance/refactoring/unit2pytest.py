@@ -63,7 +63,7 @@ class Unit2PyTest:
             self.replace('assert_that(isinstance($exp, $act))', 'assert_that($exp, is_($act))')
             self.replace('assert_that(isinstance($exp, $act))', 'assert_that($exp, is_($act))')
             self.replace('assert_that(len($exp), $act)', 'assert_that($exp, has_length($act))')
-            self.replace('assert_that(len($exp) >= 1)', 'assert_that($exp, is_not(empty()))')
+            self.replace('assert_that(len($exp) >= 1, is_(True)))', 'assert_that($exp, is_not(empty()))')
             self.replace('assert_that(len($exp) == $length)', 'assert_that($exp, has_length($length))')
             self.replace('assert_that($exp == $act)', 'assert_that($exp, is_($act))')
             self.replace('assert_that($exp == $act, is_(True))', 'assert_that($exp, is_($act))')
