@@ -12,7 +12,7 @@ class TestClangAdapter:
     def test_parse_cpp_file(self):
         adapter = ClangAdapter()
         lst = adapter.parse(Path(targets.__file__).parent / "cpp_example.cpp")
-        self.assertIsInstance(lst, LST)
+        assert_that(lst, is_(LST))
         assert_that(list(traverse(lst.root)), has_length(greater_than(0)))
 
 
