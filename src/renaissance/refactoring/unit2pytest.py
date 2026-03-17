@@ -33,6 +33,9 @@ class Unit2PyTest:
         self.replace('unittest.main()', 'pytest.main()')
         self.convert_test_class()
         self.replace('import unittest', 'import pytest\nfrom hamcrest import *')
+        self.replace('from parameterized import parameterized', 'import pytest\nfrom hamcrest import *')
+
+
         self.replace('from unittest import $$symbols', 'import pytest\nfrom hamcrest import *')
         self.commit()
 
@@ -52,8 +55,12 @@ class Unit2PyTest:
         self.convert_assert('self.assertGreater($exp, $act)', 'assert_that($exp, greater_than($act))')
         self.convert_assert('self.assertLesserEqual($exp, $act)', 'assert_that($exp, less_than_or_equal_to($act))')
         self.convert_assert('self.assertLesser($exp, $act)', 'assert_that($exp, less_than($act))')
-        self.convert_assert('self.assertIn($act, $exp)', 'assert_that($exp, contain_string($act))')
+        self.convert_assert('self.assertMultiLineEqual($act, $exp)', 'assert_that($act, is_($exp))')
 
+        self.replace('self.assertIn($act, $exp)', 'assert_that($exp, contain_string($act))')
+        self.replace('self.assertIsInstance($act, $exp)', 'assert_that($act, is_($exp))')
+
+        #
         self.remove_print()
         self.convert_plain_assert_same_length()
 
@@ -63,7 +70,8 @@ class Unit2PyTest:
             self.replace('assert_that(isinstance($exp, $act))', 'assert_that($exp, is_($act))')
             self.replace('assert_that(isinstance($exp, $act))', 'assert_that($exp, is_($act))')
             self.replace('assert_that(len($exp), $act)', 'assert_that($exp, has_length($act))')
-            self.replace('assert_that(len($exp) >= 1, is_(True)))', 'assert_that($exp, is_not(empty()))')
+            self.replace('assert_that(len($exp) >= 1)', 'assert_that($exp, is_not(empty()))')
+            self.replace('assert_that(len($exp) >= 1, is_(True))', 'assert_that($exp, is_not(empty()))')
             self.replace('assert_that(len($exp) == $length)', 'assert_that($exp, has_length($length))')
             self.replace('assert_that($exp == $act)', 'assert_that($exp, is_($act))')
             self.replace('assert_that($exp == $act, is_(True))', 'assert_that($exp, is_($act))')
