@@ -149,7 +149,7 @@ class Unit2PyTest:
             args = args.replace('self, ', '')
             repl = fun.signature
             if '    def ' in repl:
-                repl.replace('@parameterized.expand(', f'    @pytest.mark.parametrize("{args}",')
+                repl = repl.replace('@parameterized.expand(', f'    @pytest.mark.parametrize("{args}",')
                 repl = TextUtils.strip_indent(repl)
             else:
                 repl = repl.replace('@parameterized.expand(', f'@pytest.mark.parametrize("{args}",')
