@@ -1,20 +1,16 @@
-import unittest
-
-from parameterized import parameterized
+import pytest
+import tree_sitter_cpp as tscpp
+import tree_sitter_java as tsjava
+import tree_sitter_python as tspython
+from hamcrest import *
 
 from renaissance.impl.tree_sitter_adapter import TreeSitterAdapter
 from renaissance.lst.lst import LST
-
-
-import tree_sitter_python as tspython
-import tree_sitter_cpp as tscpp
-import tree_sitter_java as tsjava
-
 from renaissance.utils.node_util import traverse
 
 
-class TestLanguages(unittest.TestCase):
-    @parameterized.expand([
+class TestLanguages:
+    @pytest.mark.parametrize("lang, code",[
         (tspython,    "def add(x, y): return x + y"),
         (tspython,    "if x > 0:    print(x)"),
         (tspython,    "for i in range(10): print(i)"),
@@ -35,7 +31,7 @@ class TestLanguages(unittest.TestCase):
         (tspython,    "nonlocal x"),
         (tspython,    "pass"),
         (tspython,    "continue"),
-#        tsjava
+    #        tsjava
         (tsjava,    "public class A {}"),
         (tsjava,    "public class A { void m() {} }"),
         (tsjava,    "int x = 5;"),
@@ -82,10 +78,10 @@ class TestLanguages(unittest.TestCase):
         adapter = TreeSitterAdapter(lang)
         tree = adapter.parse_code(code)
         lst = adapter.to_lst(code, tree)
-        self.assertIsInstance(lst, LST)
+        assert_that(lst, is_(LST))
         nodes = list(traverse(lst.root))
-        self.assertGreater(len(nodes), 0)
+        assert_that(nodes, has_length(greater_than(0)))
 
 
 if __name__ == "__main__":
-    unittest.main()
+    pytest.main()
