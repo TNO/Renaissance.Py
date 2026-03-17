@@ -1,6 +1,7 @@
 import pytest
 from hamcrest import *
-from parameterized import parameterized
+import pytest
+from hamcrest import *
 from renaissance.refactoring import CleanupRefactoring
 from renaissance.syntax_tree import ASTShower, ASTFactory, ASTProcessor
 
@@ -22,8 +23,7 @@ class TestCleanupRefactoring:
         assert_that(result, is_(expected_code))
     
     def test_should_not_be_instantiable(self):
-        with self.assertRaises(Exception):
-            CleanupRefactoring()
+        assert_that(calling(CleanupRefactoring), raises(Exception))
 
 if __name__ == '__main__':
     pytest.main()

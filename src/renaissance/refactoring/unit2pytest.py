@@ -59,6 +59,9 @@ class Unit2PyTest:
 
         self.replace('self.assertIn($act, $exp)', 'assert_that($exp, contain_string($act))')
         self.replace('self.assertIsInstance($act, $exp)', 'assert_that($act, is_($exp))')
+        self.replace('with self.assertRaises($exception): $call()', 'assert_that(calling($call), raises($exception))')
+
+
 
         #
         self.remove_print()
