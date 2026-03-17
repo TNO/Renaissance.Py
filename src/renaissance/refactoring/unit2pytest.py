@@ -122,12 +122,12 @@ class Unit2PyTest:
         pattern = self.pattern_factory.create_statements(pattern)
         for match in match_pattern(self.stmts, pattern):
             repl = replacement
-            if match.expansions['$act'][0].kind in ['Constant']:
-                act = match.expansions['$act'][0].signature
-                exp = match.expansions['$exp'][0].signature
-            else:  # original is wrong
+            if match.expansions['$exp'][0].kind in ['Constant']:
                 exp = match.expansions['$act'][0].signature
                 act = match.expansions['$exp'][0].signature
+            else:  # original is wrong
+                act = match.expansions['$act'][0].signature
+                exp = match.expansions['$exp'][0].signature
             repl = repl.replace('$exp', exp).replace('$act', act)
             self.rewriter.replace(repl, match.nodes, False, False)
 
