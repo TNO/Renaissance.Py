@@ -57,8 +57,6 @@ class Unit2PyTest:
         self.remove_print()
         self.convert_plain_assert_same_length()
 
-        self.commit()
-
         # 4: improve to mor concise asserts
         while self.rewriter.has_changed():
             self.commit()
@@ -72,7 +70,7 @@ class Unit2PyTest:
             self.replace('assert_that(not $stmt, is_(True), $$msg)', 'assert_that($stmt, is_(False) ,$$msg)')
             self.replace('assert_that($stmt, is_not(True), $$msg)', 'assert_that($stmt, is_(False) ,$$msg)')
             self.replace('assert_that(not $stmt)', 'assert_that($stmt, is_(False))')
-            self.replace('assert_that($element in $collection, is_(True))', 'assert_that($collection, contains_string($element))')
+            self.replace('assert_that($element in $collection, is_(True))', 'assert_that($collection, contains_exactly($element))')
             self.replace('assert_that($exp, has_length(is_($act)))', 'assert_that($exp, has_length($act))')
             self.swap_expected_and_actual()
             self.convert_skip_test()
