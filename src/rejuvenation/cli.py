@@ -36,15 +36,15 @@ def select_pyton_file():
     current_dir = Path('.')
     print(f'refactor in {current_dir.resolve()}')
 
-    return current_dir.glob('**/*.py')
+    return current_dir.glob('**/*python_ast_node_test.py')
     # return (file_path for file_path in current_dir.iterdir() if is_python_file)
 
 
 
 
 if __name__ == "__main__":
-    sample = factory.create('examples/test_descendant_search.py')
-    ASTShower.show_node(sample)
+    sample = factory.create('python/python_ast_node_test.py')
+    # ASTShower.show_node(sample)
 
     for file in select_pyton_file():
         if 'utils_for_tests' not in str(file):
