@@ -155,7 +155,7 @@ class Unit2PyTest:
             fun = match.nodes[0]
             args = ', '.join([arg.node.arg for arg in match.expansions['$$args']])
             if varg := match.expansions['$$varg']:
-                args = f'{args}, *{varg[0]}'
+                args = f'{args}, *{varg[0].signature}'
             args = args.replace('self, ', '')
             repl = fun.signature
             if '    def ' in repl:
