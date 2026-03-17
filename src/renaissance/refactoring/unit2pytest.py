@@ -40,8 +40,8 @@ class Unit2PyTest:
         self.commit()
 
         # 3: function level changes
-        self.replace('assert $exp', 'assert_that($exp)')
-        self.replace('assert $stmt, "$msg"','assert_that($stmt, is_(True), "$msg")')
+
+        self.replace('assert $stmt, $$msg','assert_that($stmt, is_(True), "$msg")')
 
         self.replace('self.assertTrue($exp)', 'assert_that($exp, is_(True)')
         self.replace('self.assertTrue($exp,"$msg")', 'assert_that($exp, is_(True), "$msg")')
@@ -68,6 +68,7 @@ class Unit2PyTest:
         self.replace('assert_that(len($exp) == $length)', 'assert_that($exp, has_length($length))')
         self.replace('assert_that($exp == $act)', 'assert_that($exp, is_($act))')
         self.replace('assert_that(not $stmt, is_(True), $$msg)', 'assert_that($stmt, is_(False) ,$$msg)')
+        self.replace('assert_that($stmt, is_not(True), $$msg)', 'assert_that($stmt, is_(False) ,$$msg)')
         # self.replace('assert_that($exp.startswith($act))', 'assert_that($exp, starts_with($act))')
         self.convert_skip_test()
 
@@ -127,7 +128,7 @@ class Unit2PyTest:
                         replacement = replacement.replace(exp, match.expansions[exp][0])
                 else:
                     replacement = replacement.replace(exp, ', '.join(match.expansions[exp]))
-            replacement = replacement.replace(', )',')')
+            replacement = replacement.replace(' ,)',')')
             self.rewriter.replace(replacement, match.nodes, False, False)
 
     def convert_parameterized_test(self):
