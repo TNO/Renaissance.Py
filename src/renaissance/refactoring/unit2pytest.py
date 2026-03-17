@@ -5,17 +5,14 @@ from renaissance.syntax_tree import ASTRewriter, ASTFactory, ASTFinder
 from renaissance.syntax_tree.match_finder import match_pattern
 from renaissance.utils.text_utils import TextUtils
 
-factory = ASTFactory(PythonASTNode, [])
-pattern_factory = PythonPatternFactory(factory, None)
-PYUNIT_TEST_CASE_PATTERN = 'def $test_case(self):\n    $$aaa'
-PYTEST_REPLACEMENT = 'def $test_case():\n    $$aaa'
 
 
 class Unit2PyTest:
     def __init__(self, file):
         self.file = file
-        self.pattern_factory = PythonPatternFactory(factory, None)
-        self.atu = factory.create(file)
+        self.factory = ASTFactory(PythonASTNode, [])
+        self.pattern_factory = PythonPatternFactory(self.factory, None)
+        self.atu = self.factory.create(file)
         self.stmts = self.atu.children
         self.rewriter = ASTRewriter(self.atu)
 
@@ -96,7 +93,7 @@ class Unit2PyTest:
         if self.rewriter.has_changed():
             with open(self.file, 'w') as f:
                 f.write(self.rewriter.apply_to_string())
-            self.atu = factory.create_from_text(self.rewriter.apply_to_string(), self.file)
+            self.atu = self.factory.create_from_text(self.rewriter.apply_to_string(), self.file)
             self.stmts = self.atu.children
             self.rewriter = ASTRewriter(self.atu)
 
@@ -115,14 +112,14 @@ class Unit2PyTest:
                 self.rewriter.replace(repl, match.nodes, False, False)
 
     def convert_test_setup(self):
-        test_main = pattern_factory.create_statements('def setUp(self): $$stmts')
+        test_main = self.pattern_factory.create_statements('def setUp(self): $$stmts')
         for match in match_pattern(self.atu.children, test_main):
             # stmts = self.raw(match.expansions['$$stmts'])
             repl = f'@pytest.fixture(autouse=True)\n{match.nodes[0].signature}'
             self.rewriter.replace(repl, match.nodes, False, False)
 
     def convert_assert(self, pattern, replacement):
-        pattern = pattern_factory.create_statements(pattern)
+        pattern = self.pattern_factory.create_statements(pattern)
         for match in match_pattern(self.stmts, pattern):
             repl = replacement
             if match.expansions['$act'][0].kind in ['Constant']:
@@ -151,28 +148,14 @@ class Unit2PyTest:
 
     def convert_parameterized_test(self):
 
-        unittest = pattern_factory.create_statements(
-            '@parameterized.expand($$parameters)\ndef $fun($$args):\n    $$stmts')
+        unittest = self.pattern_factory.create_statements(
+            '@parameterized.expand($$parameters)\n@$$decorator\ndef $fun($$args, *$$varg):\n    $$stmts')
 
         for match in match_pattern(self.stmts, unittest):
             fun = match.nodes[0]
             args = ', '.join([arg.node.arg for arg in match.expansions['$$args']])
-            args = args.replace('self, ', '')
-            repl = fun.signature
-            if '    def ' in repl:
-                repl = repl.replace('@parameterized.expand(', f'    @pytest.mark.parametrize("{args}",')
-                repl = TextUtils.strip_indent(repl)
-            else:
-                repl = repl.replace('@parameterized.expand(', f'@pytest.mark.parametrize("{args}",')
-
-            self.rewriter.replace(repl, fun, False, False)
-
-        unittest = pattern_factory.create_statements(
-            '@parameterized.expand($$parameters)\n@$$decorator\ndef $fun($$args):\n    $$stmts')
-
-        for match in match_pattern(self.stmts, unittest):
-            fun = match.nodes[0]
-            args = ', '.join([arg.node.arg for arg in match.expansions['$$args']])
+            if varg := match.expansions['$$varg']:
+                args = f'{args}, *{varg[0]}'
             args = args.replace('self, ', '')
             repl = fun.signature
             if '    def ' in repl:
@@ -190,7 +173,7 @@ class Unit2PyTest:
 
 
     def remove_print(self):
-        print_msg = pattern_factory.create_statements('print($$msg)')
+        print_msg = self.pattern_factory.create_statements('print($$msg)')
         for match in match_pattern(self.stmts, print_msg):
             if len(match.nodes[0].parent.parent.body) == 1:
                 self.rewriter.remove([match.nodes[0].parent.parent], False, False)
@@ -200,7 +183,7 @@ class Unit2PyTest:
 
     def convert_plain_assert_same_length(self):
 
-        pattern = pattern_factory.create_statements('$act: int = len($real)\nassert $exp == $act, "$act = " + str($act)')
+        pattern = self.pattern_factory.create_statements('$act: int = len($real)\nassert $exp == $act, "$act = " + str($act)')
         for match in match_pattern(self.stmts, pattern):
             repl = 'assert_that($real, has_length($exp), f"length of $real = {len($real)}")'
             real = match.expansions['$real'][0].signature
@@ -221,7 +204,7 @@ class Unit2PyTest:
 
 
     def swap_expected_and_actual(self):
-        pattern = pattern_factory.create_statements('assert_that($exp, is_($act))')
+        pattern = self.pattern_factory.create_statements('assert_that($exp, is_($act))')
         for match in match_pattern(self.stmts, pattern):
             if match.expansions['$exp'][0].kind in ['Constant']:
                 repl = 'assert_that($act, is_($exp))'
