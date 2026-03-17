@@ -70,7 +70,7 @@ class Unit2PyTest:
         # 4: improve to mor concise asserts
         while self.rewriter.has_changed():
             self.commit()
-            self.replace('assert_that(isinstance($exp, $act))', 'assert_that($exp, is_($act))')
+            self.replace('assert_that($exp)', 'assert_that($exp, is_(True))')
             self.replace('assert_that(isinstance($exp, $act))', 'assert_that($exp, is_($act))')
             self.replace('assert_that(len($exp), $act)', 'assert_that($exp, has_length($act))')
             self.replace('assert_that(len($exp) >= 1)', 'assert_that($exp, is_not(empty()))')
@@ -166,6 +166,28 @@ class Unit2PyTest:
                 repl = repl.replace('@parameterized.expand(', f'@pytest.mark.parametrize("{args}",')
 
             self.rewriter.replace(repl, fun, False, False)
+
+        unittest = pattern_factory.create_statements(
+            '@parameterized.expand($$parameters)\n@$$decorator\ndef $fun($$args):\n    $$stmts')
+
+        for match in match_pattern(self.stmts, unittest):
+            fun = match.nodes[0]
+            args = ', '.join([arg.node.arg for arg in match.expansions['$$args']])
+            args = args.replace('self, ', '')
+            repl = fun.signature
+            if '    def ' in repl:
+                repl = repl.replace('@parameterized.expand(', f'    @pytest.mark.parametrize("{args}",')
+                repl = repl.replace('@unittest.skip(', f'    @pytest.mark.skip(')
+                repl = TextUtils.strip_indent(repl)
+            else:
+                repl = repl.replace('@parameterized.expand(', f'@pytest.mark.parametrize("{args}",')
+                repl = repl.replace('@unittest.skip(', f'@pytest.mark.skip(')
+            self.rewriter.replace(repl, fun, False, False)
+
+    # @parameterized.expand(Factories.factories)
+    # @pytest.mark.skip("stmt and expr are the same")
+
+
 
     def remove_print(self):
         print_msg = pattern_factory.create_statements('print($$msg)')
