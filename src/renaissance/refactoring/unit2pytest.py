@@ -110,9 +110,10 @@ class Unit2PyTest:
             repl = f'@pytest.fixture(autouse=True)\n{match.nodes[0].signature}'
             self.rewriter.replace(repl, match.nodes, False, False)
 
-    def convert_assert(self, pattern, repl):
+    def convert_assert(self, pattern, replacement):
         pattern = pattern_factory.create_statements(pattern)
         for match in match_pattern(self.stmts, pattern):
+            repl = replacement
             if match.expansions['$act'][0].kind in ['Constant']:
                 act = match.expansions['$act'][0].signature
                 exp = match.expansions['$exp'][0].signature
@@ -146,7 +147,10 @@ class Unit2PyTest:
             fun = match.nodes[0]
             args = ', '.join([arg.node.arg for arg in match.expansions['$$args']])
             args = args.replace('self, ', '')
-            repl = TextUtils.strip_indent(fun.signature.replace('@parameterized.expand(', f'    @pytest.mark.parametrize("{args}",'))
+            repl = fun.signature.replace('@parameterized.expand(', f'@pytest.mark.parametrize("{args}",')
+            if '  def ' in repl:
+                repl = TextUtils.strip_indent(repl)
+
             self.rewriter.replace(repl, fun, False, False)
 
     def remove_print(self):
