@@ -1,22 +1,23 @@
 import tempfile
+
 import pytest
 from hamcrest import *
-from parameterized import parameterized
 
 from renaissance.impl.clang import ClangASTNode
 from renaissance.syntax_tree import ASTNode, ASTFinder, ASTShower
 from .factories import Factories
 
+
 class TestASTReference:
 
-    @parameterized.expand(Factories.extend([
+    @pytest.mark.parametrize("_, factory, code, args",Factories.extend([
         ('class A{ public: A(int x); }; void f(){ A a(3);}',...),
         ('class A{ public: A(int x); }; A::A(int x){} void f(){ A a(3);}',...),
         ('int a(); void f(){ int x = a();}',...),
         ('int a(); int a(){return 0;} void f(){ int x = a();}',...),
         ('int a(){return 0;} void f(){ int x = a();}',...),
     ]))
-    def test_definition_declaration_references(self, _, factory, code, *args):
+    def test_definition_declaration_references(self, _, factory, code, args):
         ast =  factory.create_from_text(code, "test.cpp")
         with tempfile.TemporaryDirectory() as temp_dir:
             ASTShower.store_node(f'{temp_dir}/c0.txt', ast)
@@ -25,7 +26,7 @@ class TestASTReference:
         refs = call.references
         assert_that(refs, has_length(greater_than(0)))
         refs = [r for r in refs if ASTFinder.matches_kind(r.node, '.*(Constructor|Function).*')]
-
+    
         assert_that(refs, has_length(greater_than(0)))
         for ref in refs:
             ref_node = ref.node
@@ -56,13 +57,13 @@ class TestASTReference:
 
     # self.assertTrue(call in [r.node for r in referenced_by])
 
-    @parameterized.expand(Factories.extend([
+    @pytest.mark.parametrize("_, factory, code, args",Factories.extend([
         ('const int a = 3; const int b = a;',...),
         ('int a = 3; void f() {int b = a;}',...),
         ('void f() {int a = 3; int b = a;}',...),
         ('void f(int a) {int b = a;}',...),
     ]))
-    def test_var_reference(self, _, factory, code, *args):
+    def test_var_reference(self, _, factory, code, args):
         ast =  factory.create_from_text(code, "test.c")
         using = ASTFinder.find_kind(ast, 'Decl_?Ref_?Expr').find_first().get()
         assert_that(isinstance(using, ASTNode), is_(True))
@@ -130,7 +131,7 @@ class TestASTReference:
         assert_that(ASTFinder.matches_kind(ref_node, '(CXX_?Record|Class|Struct)_?Decl'), is_(True))
         referenced_by = ref_node.referenced_by
         assert_that(referenced_by, has_length(greater_than(0)))  # clang python return 2 references, clang json 1
-        if(len(referenced_by[0].node.children)):
+        if len(referenced_by[0].node.children):
             name = referenced_by[0].node.children[0].name
         else:
             name = referenced_by[0].node.name
