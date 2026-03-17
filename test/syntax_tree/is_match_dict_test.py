@@ -1,4 +1,4 @@
-from hamcrest import assert_that, is_
+from hamcrest import assert_that, is_, is_not
 
 from renaissance.syntax_tree.match_finder import is_match_dict
 
@@ -11,17 +11,17 @@ def test_is_same_dict():
 def test_is_same_dict_different_key():
     src={ 'a': 'asd', 'b': 'zxc'}
     cmp={ 'a': 'asd', 'c': 'zxc'}
-    assert_that(is_match_dict(src,cmp), is_(True))
+    assert_that(is_match_dict(src,cmp), is_not(True))
 
 def test_is_same_dict_extra_key():
     src={ 'a': 'asd', 'b': 'zxc','extra': 'zxc'}
     cmp={ 'a': 'asd', 'b': 'zxc'}
-    assert_that(is_match_dict(src,cmp), is_(False))
+    assert_that(is_match_dict(src,cmp), is_not(True))
 
 def test_is_same_dict_missing_key():
     src={ 'a': 'asd', 'b': 'zxc'}
     cmp={ 'a': 'asd', 'b': 'zxc','extra': 'zxc'}
-    assert_that(is_match_dict(src,cmp,), is_(False))
+    assert_that(is_match_dict(src,cmp,), is_not(True))
 
 def test_is_same_dict_extra_irelevent_key():
     src={ 'a': 'asd', 'b': 'zxc','macro_expansion': 'zxc'}

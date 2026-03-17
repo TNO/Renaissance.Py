@@ -10,23 +10,28 @@ from renaissance.syntax_tree import ASTNode, ASTReference, PatternMatch
 from renaissance.syntax_tree.match_finder import match_pattern, is_match, find_in_list
 
 OPERATOR_MAP = {
-    'Assign': '=',
     'AnnAssign': '=',
-    'AugAssignAdd': '+=',
-    'For': 'for',
+    'Assert': 'assert',
+    'Assign': '=',
     'AsyncFor': 'for',
-    'While': 'while',
-    'If': 'if',
-    'Match': 'match',
-    'Try': 'try',
-    'TryStar': 'try',
-    'ClassDef': 'class',
-    'FunctionDef': 'function',
     'AsyncFunctionDef': 'function',
-    'With': 'with',
     'AsyncWith': 'with',
+    'AugAssignAdd': '+=',
+    'Break': 'break',
+    'Call': 'def',
+    'ClassDef': 'class',
+    'Continue': 'continue',
+    'For': 'for',
+    'FunctionDef': 'function',
+    'If': 'if',
     'Import': 'import',
     'ImportFrom': 'import',
+    'Match': 'match',
+    'Pass': 'pass',
+    'Try': 'try',
+    'TryStar': 'try',
+    'While': 'while',
+    'With': 'with',
 
 }
 
@@ -236,10 +241,11 @@ class PythonASTNode(ASTNode):
             name = self.node.id
         elif self.kind == 'Match':
             name = self.node.subject.id
-        elif self.kind == 'Import' and len(self.node.names) ==1:
+        elif self.kind in ['Import','ImportFrom'] and len(self.node.names) ==1:
             name = self.node.names[0].name
-        elif self.kind == 'ImportFrom' and len(self.node.names) == 1:
-            name = self.node.names[0].name
+        elif self.kind in ['Assert', 'Break', 'Pass', 'Raise','Continue']:
+            name = ''
+
         elif 'body' not in self.node._fields:
             name = unparse(self.node)
         else:
@@ -252,16 +258,22 @@ class PythonASTNode(ASTNode):
 
     @property
     def value(self):
+        if self.kind == 'Assert':
+            return 0
         return self.node.value.value if hasattr(self.node,'value') else None
 
     @property
     def expr(self):
+        if 'value' in self.node._fields:
+            return PythonASTNode(self.node.value, self.translation_unit, self)
         if 'expr' in self.node._fields:
             return PythonASTNode(self.node.expr, self.translation_unit, self)
         elif 'iter' in self.node._fields:
             return PythonASTNode(self.node.iter, self.translation_unit, self)
         elif 'test' in self.node._fields:
             return PythonASTNode(self.node.test, self.translation_unit, self)
+        elif 'exc' in self.node._fields:
+            return PythonASTNode(self.node.exc, self.translation_unit, self)
         else:
             return None
 

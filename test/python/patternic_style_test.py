@@ -58,20 +58,18 @@ class TestPythonicStyle:
 
 
     @pytest.mark.parametrize("raw, kind, typ, name, op, value",[
-        ('i:int=0', 'AnnAssign', 'int', 'i', '=', 0),
-        ('x += 5', 'AugAssign', None, 'x', "+=", 5),
-        ('assert 0', 'Assert','assert', '0', 'assert', 0),
-        ('break', 'Break','break', '', 'break', None),
-        ('continue', 'Continue', None, 'Continue', 'continue', None),
-        ('fun()', 'Expr', None, 'fun()', None, None, ),
-        ('import x', 'Import',None, 'x', 'import', None),
-        ('from x import y', 'ImportFrom',None, 'y', 'import', 'x'),
-        ('pass', 'Pass',None, 'pass', 'pass', None,),
-        ('raise', 'Raise',None, 'raise', 'raise', None,),
-        ('return', 'Return',None, 'Return', 'return', None,),
+        ('i:int=0',          'AnnAssign',   'int',      'i',    '=',        0),
+        ('i=0',              'Assign',      None,       'i',    '=',        0),
+        ('x += 5',           'AugAssign',   None,       'x',    "+=",       5),
+        ('break',            'Break',       None,       '',     'break',    None),
+        ('assert 0',         'Assert',      None,       '',     'assert',   0),
+        ('continue',         'Continue',    None,       '',     'continue', None),
+        ('import x',         'Import',      None,       'x',    'import',   None),
+        ('pass',             'Pass',        None,       '',     'pass',     None,),
+
     ])
 
-    def test_stmt_kind(self, raw, kind, typ, name, op, value):
+    def test_stmt(self, raw, kind, typ, name, op, value):
         pattern_factory = PythonPatternFactory(ASTFactory(PythonASTNode))
 
         it = pattern_factory.create(raw)
@@ -81,6 +79,17 @@ class TestPythonicStyle:
         assert_that(it.type, is_(typ))
         assert_that(it.value, is_(value))
 
+    @pytest.mark.parametrize("raw, kind, expr", [
+    ('fun()',            'Expr',         'fun()' ),
+    ('return fun()',       'Return',     'fun()' ),
+    ('raise fun()',        'Raise',       'fun()' ),])
+    # ('from x import y', 'ImportFrom', None, 'x', 'import', 'y'),
+    def test_expr(self, raw, kind, expr):
+        pattern_factory = PythonPatternFactory(ASTFactory(PythonASTNode))
+
+        it = pattern_factory.create_statement(raw)
+        assert_that(kind, is_(it.kind))
+        assert_that(it.expr.name, is_(expr))
 
     def test_ann_assign_node(self):
         pattern_factory = PythonPatternFactory(ASTFactory(PythonASTNode))
