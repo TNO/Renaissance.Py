@@ -1,5 +1,6 @@
 import unittest
 from unittest import TestCase
+from unittest import TestCase, main
 from parameterized import parameterized
 
 from c_cpp.factories import Factories
