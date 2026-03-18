@@ -26,42 +26,46 @@ result = [{'$f': ['one'], '$a': ['a'], '$$all': []}, {'$f': ['two'], '$a': ['a']
           {'$f': ['three'], '$a': ['a'], '$$all': ['b', 'c']}]
 
 
-def test_find_in_tree_one_and_all_params():
-    factory = ASTFactory(ClangASTNode, [])
-    patterns = [CPatternFactory(factory).create_statements(statements, extra_declarations=extra_declarations)]
+class TestMatchFinder:
+    def test_find_in_tree_one_and_all_params(self):
+        factory = ASTFactory(ClangASTNode, [])
+        patterns = [CPatternFactory(factory).create_statements(statements, extra_declarations=extra_declarations)]
 
-    atu = factory.create_from_text(code, "test.c")
-    src = atu.children[-1].children[-1].children
-    found_position = find_in_list(src, patterns[0], {})
-    assert_that(found_position, is_(0))
-
-
-def test_find_in_tree_one_and_all_params_2():
-    factory = ASTFactory(ClangASTNode, [])
-    patterns = [CPatternFactory(factory).create_statements(statements, extra_declarations=extra_declarations)]
-
-    atu = factory.create_from_text(code, "test.c")
-    src = atu.children[-1].children[-1].children
-    found_position = find_in_list(src[1:], patterns[0], {})
-    assert_that(found_position, is_(0))
+        atu = factory.create_from_text(code, "test.c")
+        src = atu.children[-1].children[-1].children
+        found_position = find_in_list(src, patterns[0], {})
+        assert_that(found_position, is_(0))
 
 
-def test_find_in_tree_one_and_all_params_3():
-    factory = ASTFactory(ClangASTNode, [])
-    patterns = [CPatternFactory(factory).create_statements(statements, extra_declarations=extra_declarations)]
+    def test_find_in_tree_one_and_all_params_2(self):
+        factory = ASTFactory(ClangASTNode, [])
+        patterns = [CPatternFactory(factory).create_statements(statements, extra_declarations=extra_declarations)]
 
-    atu = factory.create_from_text(code, "test.c")
-    src = atu.children[-1].children[-1].children
-    found_position = find_in_list(src[2:], patterns[0], {})
-    assert_that(found_position, is_(0))
+        atu = factory.create_from_text(code, "test.c")
+        src = atu.children[-1].children[-1].children
+        found_position = find_in_list(src[1:], patterns[0], {})
+        assert_that(found_position, is_(0))
 
 
-def test_match_one_and_all_params():
-    factory = ASTFactory(ClangASTNode, [])
-    patterns = [CPatternFactory(factory).create_statements(statements, extra_declarations=extra_declarations)]
+    def test_find_in_tree_one_and_all_params_3(self):
+        factory = ASTFactory(ClangASTNode, [])
+        patterns = [CPatternFactory(factory).create_statements(statements, extra_declarations=extra_declarations)]
 
-    atu = factory.create_from_text(code, "test.c")
-    src = atu.children[-1].children[-1].children
-    # find all if and while statements
-    matches = MatchFinder.match_pattern(src, patterns[0])
-    assert_that(matches, has_length(3))
+        atu = factory.create_from_text(code, "test.c")
+        src = atu.children[-1].children[-1].children
+        found_position = find_in_list(src[2:], patterns[0], {})
+        assert_that(found_position, is_(0))
+
+
+    def test_match_one_and_all_params(self):
+        factory = ASTFactory(ClangASTNode, [])
+        patterns = [CPatternFactory(factory).create_statements(statements, extra_declarations=extra_declarations)]
+
+        atu = factory.create_from_text(code, "test.c")
+        src = atu.children[-1].children[-1].children
+        # find all if and while statements
+        matches = MatchFinder.match_pattern(src, patterns[0])
+        assert_that(matches, has_length(3))
+
+
+
