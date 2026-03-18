@@ -36,7 +36,7 @@ def select_pyton_file():
     current_dir = Path('.')
     print(f'refactor in {current_dir.resolve()}')
 
-    return current_dir.glob('**/*python_ast_node_test.py')
+    return current_dir.glob('**/*pythonic_node_test.py')
     # return (file_path for file_path in current_dir.iterdir() if is_python_file)
 
 
