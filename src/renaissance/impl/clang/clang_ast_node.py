@@ -294,7 +294,7 @@ class ClangASTNode(ASTNode):
 
     @override
     @property
-    def references(self) -> [ASTReference]:
+    def references(self) -> Sequence[ASTReference]:
         self.translation_unit.lazy_create_references(self)
         return Stream(self.translation_unit._references.get(self.node.hash, EMPTY_LIST)) \
             .map(
