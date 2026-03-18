@@ -4,14 +4,14 @@ Feature: Convert unittest to pytest
   I want a consistent set of unit test expressing specification of code behavior
   Scenario: convert unittest to pytest
     Given 'targets/pyunit_test_example.py' file
-    And it contains 'import unittest' statement
-    And it contains 'from unittest import TestCase' statement
-    And it contains 'assert ' statement
-    And it contains 'assertEqual(a,5)' statement
-    And it contains 'assertEqual(55,b)' statement
-    And it contains '@unittest.skip' statement
-    And it contains '@parameterized.expand' statement
-    And it contains 'class FindDescendantMatchTest(unittest.TestCase):' statement
+    And it contains 'import unittest'
+    And it contains 'from unittest import TestCase'
+    And it contains 'assert '
+    And it contains 'self.assertEqual(a,5)'
+    And it contains 'self.assertEqual(55,b)'
+    And it contains '@unittest.skip'
+    And it contains '@parameterized.expand'
+    And it contains 'class FindDescendantMatchTest(unittest.TestCase):'
     And an AST extracted from that source file without errors
     When I convert it to pytest
     Then AST extracted from that conversion should without errors
