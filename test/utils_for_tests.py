@@ -4,6 +4,7 @@ from typing import Sequence
 from renaissance.syntax_tree import ASTNode, ASTShower, PatternMatch
 
 VERBOSE = False
+AST_SHOWER = False
 def to_string(d:dict[str, Sequence[ASTNode]]):
     return {k: [compress(v.text if isinstance(v, ASTNode) else v) for v in vs] for k, vs in d.items()}
 
@@ -34,3 +35,21 @@ def debug_mismatch(debug_mismatches, atu, patterns: list[ASTNode], matches: list
             print('}')
         print('    expected dict should look like:')
         print(f'      {[to_string(match.expansions) for match in matches]}')
+def debug_print(actual: str, actual_result: ASTNode, atu: ASTNode, code: str, expected: str,
+                expected_result: ASTNode, include_comments: bool, include_whitespace: bool):
+    if AST_SHOWER:
+        print("Original:")
+        ASTShower.show_node(atu)
+        print("Expected:")
+        ASTShower.show_node(expected_result)
+        print("Actual:")
+        ASTShower.show_node(actual_result)
+    if VERBOSE:
+        print("\nOriginal:" + code.replace('\n', '\\n').replace('\r', '\\r'))
+        print("Expected:" + expected.replace('\n', '\\n').replace('\r', '\\r'))
+        print("  Actual:" + actual.replace('\n', '\\n').replace('\r', '\\r'))
+
+        code_test_input = f'("{code}", {include_whitespace}, {include_comments}, "{actual}"),'.replace('\n',
+                                                                                                       '\\n').replace(
+            '\r', '\\r')
+        print("\nFull parameterized:" + code_test_input)

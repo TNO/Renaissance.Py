@@ -1,13 +1,9 @@
 import ast
-
-import ast
-from ast import unparse
+from pathlib import Path
+from typing import Sized
 
 import pytest
-from pathlib import Path
-
-from hamcrest import has_length, assert_that, is_in, is_, contains_string
-from parameterized import parameterized
+from hamcrest import has_length, assert_that, is_in, is_, contains_string, contains_exactly, empty
 
 import targets
 from renaissance.impl.python import PythonASTNode, PythonPatternFactory
@@ -51,7 +47,7 @@ class TestPythonASTNode:
     ])
     def test_stmt_kind(self, raw, kind):
         it = self.pattern_factory.create(raw)
-        assert kind == it.kind
+        assert_that(kind, is_(it.kind))
 
     @pytest.mark.parametrize("raw, kind", [
         ('with open() as c: pass', 'With'),
@@ -80,15 +76,6 @@ def outer():
         kinds = [node.kind for node in traverse(it)]
         assert_that(kind, is_in(kinds))
 
-
-    @pytest.mark.skip("it was working before")
-    def test_TypeAlias(self):
-        it = self.factory.create_from_text('type UserId = int', 'context.py')
-        show_node(it)
-        kinds = [node.kind for node in traverse(it)]
-        assert_that('TypeAlias', is_in(kinds))
-        
-
     @pytest.mark.parametrize("raw, kind", [
         ('fun()', 'Call'),
         ('{one: 1, two:2}', 'Dict'),
@@ -112,25 +99,32 @@ def outer():
         it = self.pattern_factory.create_expression(raw)
         assert_that(kind, is_(it.kind))
 
-    def test_Slice(self):
+    @pytest.mark.skip("it was working before")
+    def test_type_alias(self):
+        it = self.factory.create_from_text('type UserId = int', 'context.py')
+        show_node(it)
+        kinds = [node.kind for node in traverse(it)]
+        assert_that('TypeAlias', is_in(kinds))
+
+    def test_slice(self):
         it = self.pattern_factory.create_expression('items[1:2:3]')
-        assert_that('Slice', is_(it.children[1].kind))
+        assert_that(it.children[1].kind, is_('Slice'))
 
-    def test_NamedExpr(self):
+    def test_named_expr(self):
         it = self.pattern_factory.create('if n:= len(items): pass')
-        assert_that('NamedExpr', is_(it.children[0].kind))
+        assert_that(it.children[0].kind, is_('NamedExpr'))
 
-    def test_Starred(self):
+    def test_starred(self):
         it = self.pattern_factory.create('*x =[1,2]')
-        assert_that('Starred', is_(it.children[0].children[0].kind))
+        assert_that(it.children[0].children[0].kind, is_('Starred'))
 
-    def test_FormattedValue(self):
+    def test_formatted_value(self):
         it = self.pattern_factory.create_expression('f"{one}two"')
-        assert_that('FormattedValue', is_(it.children[0].kind))
+        assert_that(it.children[0].kind, is_('FormattedValue'))
 
-    def test_ExceptHandler(self):
+    def test_except_handler(self):
         it = self.pattern_factory.create('try: pass\nexcept NameError:pass')
-        assert_that('ExceptHandler', is_(it.children[1].children[0].kind))
+        assert_that(it.children[1].children[0].kind, is_('ExceptHandler'))
 
     @pytest.mark.parametrize("raw, kind", [
         ('a == b', 'Eq'),
@@ -146,7 +140,7 @@ def outer():
     ])
     def test_comperator_operator(self, raw, kind):
         it = self.pattern_factory.create_expression(raw)
-        assert_that(kind, is_(it.children[1].children[0].kind))
+        assert_that(it.children[1].children[0].kind, is_(kind))
 
     @pytest.mark.parametrize("raw, kind", [
         ('case None: return "No data"', 'MatchSingleton'),
@@ -170,10 +164,10 @@ def outer():
     def test_match_stmt(self):
         sample_code = 'match data:\n  case [first, *rest]: return f"List with first element {first} and {len(rest)} more items"\n  case _: pass'
         stmt = self.pattern_factory.create(sample_code)
-        assert_that('Match', is_(stmt.kind))
-        assert_that('match_case', is_(stmt.children[1].children[0].kind))
-        assert_that('MatchStar', is_(stmt.children[1].children[0].children[0].children[1].kind))
-        assert_that('MatchAs', is_(  stmt.children[1].children[0].children[0].children[0].kind))
+        assert_that(stmt.kind, is_('Match'))
+        assert_that(stmt.children[1].children[0].kind, is_('match_case'))
+        assert_that(stmt.children[1].children[0].children[0].children[1].kind, is_('MatchStar'))
+        assert_that(stmt.children[1].children[0].children[0].children[0].kind, is_('MatchAs'))
 
     @pytest.mark.parametrize("raw, kind", [
         ('a % b', 'Mod'),
@@ -188,7 +182,7 @@ def outer():
     ])
     def test_binary_operator(self, raw, kind):
         it = self.pattern_factory.create_expression(raw)
-        assert_that(kind, is_(it.children[1].kind))
+        assert_that(it.children[1].kind, is_(kind))
 
     # @parameterized.expand([
     #     ('x = some_undefined_var', 'type_ignore'),
@@ -209,30 +203,30 @@ def outer():
     ])
     def test_unary_operator(self, raw, kind):
         it = self.pattern_factory.create_expression(raw)
-        assert_that(kind, is_(it.children[0].kind))
+        assert_that(it.children[0].kind, is_(kind))
 
     def test_show_call(self):
         factory = ASTFactory(PythonASTNode, [])
         atu = factory.create_from_text('ba(55)\nca(555)\nlo(4444)\nna=55', 'apple.py')
         second_stmt = atu.children[1]
-        assert_that(7, is_(second_stmt.offset))
-        assert_that(7, is_(second_stmt.length))
-        assert_that('apple.py', is_(second_stmt.filename))
+        assert_that(second_stmt.offset, is_(7))
+        assert_that(second_stmt.length, is_(7))
+        assert_that(second_stmt.filename, is_('apple.py'))
         assert_that(atu.translation_unit, is_(second_stmt.translation_unit))
 
     def test_show_call_with_args(self):
         src = self.pattern_factory.create_statement('def ba(a55,a66,a77,a88,a99): pass')
         cmp = self.pattern_factory.create_statement('def ba($$args): pass')
-        expansions={}
-        assert is_match(src,cmp, expansions)
-        assert '$$args' in expansions
-        assert  len(expansions['$$args']) == 5
+        expansions = {}
+        assert_that(is_match(src, cmp, expansions), is_(True))
+        assert_that(expansions, contains_exactly('$$args'))
+        assert_that(expansions['$$args'], has_length(5))
 
     def test_attribute_signature_has_at(self):
         src = self.pattern_factory.create_statement('@TUAT\ndef ba(): pass')
         ASTShower.show_node(src)
         attr = src.children[2].children[0]
-        assert attr.signature == '@TUAT'
+        assert_that(attr.signature, is_('@TUAT'))
 
     def test_node_family(self):
         src = PythonASTNode.load_from_text('''
@@ -248,7 +242,7 @@ class Parent:
         l(a88)
     def next_me():
         pass
-    ''', 'nav.py',[], Path('.'))
+    ''', 'nav.py', [], Path('.'))
         #          module  class     body        fun memem
         me = src.children[-1].children[2].children[1]
         assert_that(me.name, is_('mememe'))
@@ -257,20 +251,24 @@ class Parent:
         assert_that(me.parent.parent.name, is_('Parent'))
         assert_that(me.children[1].children, has_length(4))
 
+
 def test_load_file_with_ignored_types():
-    atu = PythonASTNode.load_from_text('x = 1 # type: ignore', 'bogus.py',{}, Path(targets.__file__))
+    atu = PythonASTNode.load_from_text('x = 1 # type: ignore', 'bogus.py', {}, Path(targets.__file__))
     assert_that(atu.translation_unit.atu.type_ignores, has_length(1))
 
+
 def test_load_file():
-    atu = PythonASTNode.load('demo.py',{}, Path(targets.__file__).parent)
-    assert atu.translation_unit.atu.type_ignores ==[]
+    atu = PythonASTNode.load(Path('demo.py'), {}, Path(targets.__file__).parent)
+    assert_that(atu.translation_unit.atu.type_ignores, is_(empty()))
+
 
 def test_load_invalid_file():
     with pytest.raises(IndentationError, match='unexpected indent'):
-        PythonASTNode.load('invalid.py', {}, Path(targets.__file__).parent)
+        PythonASTNode.load(Path('invalid.py'), {}, Path(targets.__file__).parent)
 
-def test_annFun_to_str():
-    annFun = '''
+
+def test_ann_fun_to_str2():
+    ann_fun = '''
 @parameterized.expand(Factories.extend(['$x;$y;']))
 def test(_):
     atu = factory.create_from_text(TestStatements.SIMPLE_CPP, "test.c")
@@ -279,12 +277,14 @@ def test(_):
 
     self.assert_matches( expected_dicts_per_match,matches)
     '''
-    it = PythonASTNode.load_from_text(annFun, 'fun.py',[], None).body[-1]
+    it = PythonASTNode.load_from_text(ann_fun, 'fun.py', [], None).body[-1]
     assert_that(it.offset, is_(1))
-    assert_that(it.signature , contains_string('@parameterized.expand'))
+    assert_that(it.signature, contains_string('@parameterized.expand'))
+
+
 @pytest.mark.skip("it was working before")
-def test_annFun_to_str():
-    annFun = '''
+def test_ann_fun_to_str():
+    ann_fun = '''
 @parameterized.expand(Factories.extend(['$x;$y;']))
 def test(_):
     atu = factory.create_from_text(TestStatements.SIMPLE_CPP, "test.c")
@@ -293,5 +293,5 @@ def test(_):
 
     self.assert_matches( expected_dicts_per_match,matches)
     '''
-    it = PythonASTNode.load_from_text(annFun, 'fun.py',[], None).body[-1]
-    assert str(it) == ast.unparse(it.node)
+    it = PythonASTNode.load_from_text(ann_fun, 'fun.py', [], None).body[-1]
+    assert_that(str(it), is_(ast.unparse(it.node)))

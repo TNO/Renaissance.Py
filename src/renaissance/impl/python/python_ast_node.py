@@ -9,10 +9,31 @@ from renaissance.impl import MATCH_ONE, MATCH_ALL
 from renaissance.syntax_tree import ASTNode, ASTReference, PatternMatch
 from renaissance.syntax_tree.match_finder import match_pattern, is_match, find_in_list
 
-EMPTY_DICT = {}
-EMPTY_STR = ''
-EMPTY_LIST = []
+OPERATOR_MAP = {
+    'AnnAssign': '=',
+    'Assert': 'assert',
+    'Assign': '=',
+    'AsyncFor': 'for',
+    'AsyncFunctionDef': 'function',
+    'AsyncWith': 'with',
+    'AugAssignAdd': '+=',
+    'Break': 'break',
+    'Call': 'def',
+    'ClassDef': 'class',
+    'Continue': 'continue',
+    'For': 'for',
+    'FunctionDef': 'function',
+    'If': 'if',
+    'Import': 'import',
+    'ImportFrom': 'import',
+    'Match': 'match',
+    'Pass': 'pass',
+    'Try': 'try',
+    'TryStar': 'try',
+    'While': 'while',
+    'With': 'with',
 
+}
 
 class PythonASTReference:
     def __repr__(self):
@@ -123,7 +144,7 @@ class PythonASTNode(ASTNode):
                                 self.body = self._children
                         else:
                             self._children.append(PythonASTNode(ImplicitNode(name, child), translation_unit, self))
-                            if name == 'body':
+                            if name in ['body', 'cases']:
                                 self.body = self._children[-1].children
                     case ast.AST():
                         if name not in ['ctx']:
@@ -216,10 +237,17 @@ class PythonASTNode(ASTNode):
             name = self.node.target.id
         elif 'targets' in self.node._fields and len(self.node.targets)==1 and hasattr(self.node.targets[0],'id'):
             name = self.node.targets[0].id
-        elif 'body' not in self.node._fields:
-            name = unparse(self.node)
         elif 'id' in self.node._fields and self.node.id:
             name = self.node.id
+        elif self.kind == 'Match':
+            name = self.node.subject.id
+        elif self.kind in ['Import','ImportFrom'] and len(self.node.names) ==1:
+            name = self.node.names[0].name
+        elif self.kind in ['Assert', 'Break', 'Pass', 'Raise','Continue']:
+            name = ''
+
+        elif 'body' not in self.node._fields:
+            name = unparse(self.node)
         else:
             name = self.kind
         return name.replace(MATCH_ALL, '$$').replace(MATCH_ONE, '$')
@@ -230,36 +258,31 @@ class PythonASTNode(ASTNode):
 
     @property
     def value(self):
-        return self.node.value.value
+        if self.kind == 'Assert':
+            return 0
+        return self.node.value.value if hasattr(self.node,'value') else None
 
     @property
     def expr(self):
+        if 'value' in self.node._fields:
+            return PythonASTNode(self.node.value, self.translation_unit, self)
         if 'expr' in self.node._fields:
             return PythonASTNode(self.node.expr, self.translation_unit, self)
         elif 'iter' in self.node._fields:
             return PythonASTNode(self.node.iter, self.translation_unit, self)
         elif 'test' in self.node._fields:
             return PythonASTNode(self.node.test, self.translation_unit, self)
+        elif 'exc' in self.node._fields:
+            return PythonASTNode(self.node.exc, self.translation_unit, self)
         else:
             return None
 
-    OPERATOR_MAP = {
-        'Assign': '=',
-        'AnnAssign': '=',
-        'AugAssignAdd': '+=',
-        'For': 'for',
-        'While': 'while',
-        'If': 'if',
-        'Try': 'try',
-        'ClassDef': 'class',
-        'FunctionDef': 'function',
 
-    }
     @property
     def operator(self):
         node_type = type(self.node).__name__
         op   = type(self.node.op).__name__ if 'op' in self.node._fields else ""
-        return self.OPERATOR_MAP.get(node_type+op,'')
+        return OPERATOR_MAP.get(node_type+op,'')
     @override
     @property
     def signature(self) -> str:
@@ -290,14 +313,14 @@ class PythonASTNode(ASTNode):
     def referenced_by(self) -> Sequence[ASTReference]:
         self.translation_unit.lazy_create_refers(self)
         node_id = self.node.name if hasattr(self.node, 'name') else self.node.id
-        ref_by = self.translation_unit._referenced_by.get(node_id, EMPTY_LIST)
+        ref_by = self.translation_unit._referenced_by.get(node_id, [])
         # if both the function declaration and function definition are avaible 
         # the references are stored in the function definition
         # but we want them to also show up in the declaration
         if len(ref_by) == 0:
             definition = None
             if definition:
-                ref_by = self.translation_unit._referenced_by.get(node_id, EMPTY_LIST)
+                ref_by = self.translation_unit._referenced_by.get(node_id, [])
         return Stream(ref_by) \
             .map(
             lambda ref: ASTReference(self.translation_unit._nodes[ref.node_id], ref.ref_kind, ref.properties)).to_list()
@@ -308,7 +331,7 @@ class PythonASTNode(ASTNode):
         return self.offset+self.length
     @override
     @property
-    def references(self) -> Sequence[ASTReference]:
+    def references(self) -> list[ASTReference]:
         self.translation_unit.lazy_create_refers(self)
         node_id = ''
         match self.kind:
@@ -322,7 +345,7 @@ class PythonASTNode(ASTNode):
                 node_id = self.name
             case 'arg':
                 node_id = self.name
-        return Stream(self.translation_unit._references.get(node_id, EMPTY_LIST)) \
+        return Stream(self.translation_unit._references.get(node_id, [])) \
             .map(
             lambda ref: ASTReference(self.translation_unit._nodes[ref.node_id], ref.ref_kind, ref.properties)).to_list()
 

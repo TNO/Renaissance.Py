@@ -2,7 +2,7 @@ import sys
 from pathlib import Path
 
 from renaissance.impl.python import PythonASTNode
-from renaissance.refactoring.unit2pytest import convert_pytest
+from renaissance.refactoring.unit2pytest import Unit2PyTest
 from renaissance.syntax_tree import ASTFactory, ASTShower
 
 factory = ASTFactory(PythonASTNode, [])
@@ -43,10 +43,10 @@ def select_pyton_file():
 
 
 if __name__ == "__main__":
-    sample = factory.create('c_cpp/test_c_match_finder.py')
+    # sample = factory.create('c_cpp/test_ast_references.py')
     # ASTShower.show_node(sample)
 
     for file in select_pyton_file():
-        if 'utils_for_tests' not in file:
+        if 'utils_for_tests' not in str(file):
         # print(file.resolve())
-            convert_pytest(file)
+            Unit2PyTest(file).convert_pytest()

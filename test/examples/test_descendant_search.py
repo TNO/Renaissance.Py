@@ -1,16 +1,16 @@
-import unittest
-from unittest import TestCase
-from parameterized import parameterized
+import pytest
+from hamcrest import *
+import pytest
+from hamcrest import *
 
 from c_cpp.factories import Factories
 from rejuvenation.descendant_search import find_descendant_match
 from renaissance.impl.clang import CPatternFactory
-
 from renaissance.syntax_tree import ASTFactory, MatchFinder
-from renaissance.syntax_tree.match_finder import is_match
+from renaissance.syntax_tree.match_finder import is_match, AstProtocol
 
 
-class TestFindDescendantMatch(TestCase):
+class TestFindDescendantMatch:
 
     code_text: str = """
             int my_function();
@@ -35,7 +35,7 @@ class TestFindDescendantMatch(TestCase):
     inner_text: str = "my_function()"
     extra_declarations_inner_text: list[str] = ["int my_function();"]
 
-    @parameterized.expand(Factories.factories)
+    @pytest.mark.parametrize("_, factory",Factories.factories)
     def test_descendant_search(self, _: str, factory: ASTFactory):
         pattern_factory = CPatternFactory(factory)
         code_pattern = factory.create_from_text(self.code_text, "text.c")
@@ -46,12 +46,11 @@ class TestFindDescendantMatch(TestCase):
         results = find_descendant_match(
             code_pattern, outer_pattern, inner_pattern
         ).to_list()
+    
+        assert_that(results, has_length(3), f"length of results = {len(results)}")
 
-        count: int = len(results)
-        assert 3 == count, "count = " + str(count)
 
-
-class TestBasic(TestCase):
+class TestBasic:
 
     code_text: str = """
             int my_function();
@@ -66,7 +65,7 @@ class TestBasic(TestCase):
     placeholder_text: str = "$f()"
     extra_declarations_placeholder_text: list[str] = ["int $f();"]
 
-    @parameterized.expand(
+    @pytest.mark.parametrize("_, factory, snippet, extra_declarations",
         list(
             Factories.extend(
                 [
@@ -85,55 +84,51 @@ class TestBasic(TestCase):
         )  # file extension consistent with C Pattern Factory
         snippet_pattern = pattern_factory.create_expression(snippet, extra_declarations)
         results = MatchFinder.find_all(code_pattern.children, [snippet_pattern]).to_list()
-        count: int = len(results)
-        assert 1 == count, "count = " + str(count)
+        assert_that(results, has_length(1), f"length of results = {len(results)}")
 
-    @parameterized.expand(Factories.factories)
-
+    @pytest.mark.parametrize("_, factory",Factories.factories)
+    
     def test_is_match_assignment_expression(self, _: str, factory: ASTFactory):
         pattern_factory = CPatternFactory(factory)
-        expression1_pattern = pattern_factory.create_expression("x=3", ["int x;"])
-        assert is_match(expression1_pattern, expression1_pattern, {}), "An expression matches itself"
-
+        expression1_pattern:AstProtocol = pattern_factory.create_expression("x=3", ["int x;"])
+        assert_that(is_match(expression1_pattern, expression1_pattern, {}), is_(True), "An expression matches itself")
+    
         expression2_pattern = pattern_factory.create_expression("x=3", ["int x;"])
-        assert is_match(expression1_pattern, expression2_pattern, {}), "Identical expressions match"
+        assert_that(is_match(expression1_pattern, expression2_pattern, {}), is_(True), "Identical expressions match")
 
 
-    @parameterized.expand(Factories.factories)
+    @pytest.mark.parametrize("_, factory",Factories.factories)
     def test_is_match_call_expression(self, _: str, factory: ASTFactory):
         pattern_factory = CPatternFactory(factory)
         expression1_pattern = pattern_factory.create_expression("f()", ["int f();"])
-        assert is_match(expression1_pattern, expression1_pattern,{}), "An expression matches itself"
+        assert_that(is_match(expression1_pattern, expression1_pattern,{}), is_(True), "An expression matches itself")
         
         expression2_pattern = pattern_factory.create_expression("f()", ["int f();"])
-        assert is_match(expression1_pattern, expression2_pattern,{}), "Identical expressions match"
-        
+        assert_that(is_match(expression1_pattern, expression2_pattern,{}), is_(True), "Identical expressions match")
 
 
-    @parameterized.expand(Factories.factories)
-    @unittest.skip("stmt and expr are the same")
+    @pytest.mark.parametrize("_, factory",Factories.factories)
+    @pytest.mark.skip("stmt and expr are the same")
     def test_is_match_expression_differs_from_stmt(self, _: str, factory: ASTFactory):
         pattern_factory = CPatternFactory(factory)
         expression_pattern = pattern_factory.create_expression("x=3", ["int x;"])
         statement_pattern = pattern_factory.create_statement("x=3;", extra_declarations=["int x;"])
-        assert not is_match(expression_pattern, statement_pattern, {}), "An expression doesn't match a statement"
-
+        assert_that(is_match(expression_pattern, statement_pattern, {}), is_(False) ,"An expression doesn't match a statement")
+    
         expression_pattern = pattern_factory.create_expression("f()", ["int f();"])
         statement_pattern = pattern_factory.create_statement("f();", extra_declarations=["int f();"])
-        assert not is_match(expression_pattern, statement_pattern, {}), "An expression doesn't match a statement"
+        assert_that(is_match(expression_pattern, statement_pattern, {}), is_(False) ,"An expression doesn't match a statement")
 
-    @parameterized.expand(Factories.factories)
+    @pytest.mark.parametrize("_, factory",Factories.factories)
     def test_is_match_statement(self, _: str, factory: ASTFactory):
         pattern_factory = CPatternFactory(factory)
         statement1_pattern = pattern_factory.create_statement("f();", extra_declarations=["int f();"])
-        self.assertTrue( is_match(statement1_pattern, statement1_pattern,{}), "A statement matches itself")
+        assert_that(is_match(statement1_pattern, statement1_pattern,{}), is_(True), "A statement matches itself")
         
         statement2_pattern = pattern_factory.create_statement("f ( ) ;", extra_declarations=["int f();"])
-        self.assertTrue(  is_match(statement1_pattern, statement2_pattern), "Identical statements match")
-
-        # expression can be foundwith f(), is match is not exact match
+        assert_that(is_match(statement1_pattern, statement2_pattern), is_(True), "Identical statements match")
+    
+        # expression can be found with f(), is match is not exact match
         expression_pattern = pattern_factory.create_expression("f(3)", ["int f();"])
-        self.assertFalse(  is_match(statement1_pattern, expression_pattern), "A statement doesn't match an expression")
-        
-        
+        assert_that(is_match(statement1_pattern, expression_pattern), is_(False), "A statement doesn't match an expression")
    

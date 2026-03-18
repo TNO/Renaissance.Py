@@ -172,7 +172,9 @@ def exclude_nodes_by_kind(src: list[ASTNode]) -> list[ASTNode]:
 IRRELEVANT_PROPS = {'macro_expansion', 'start_point', 'end_point', 'source_code'}
 
 
-def is_match_dict(src: dict, cmp: dict, expansions: dict) -> bool:
+def is_match_dict(src: dict, cmp: dict, expansions: dict=None) -> bool:
+    if expansions ==None:
+        expansions = {}
     def match_property(n):
         c = cmp.get(n)
         s = src.get(n)
