@@ -1,9 +1,11 @@
 from typing import Callable
-from unittest import TestCase
+import pytest
+from hamcrest import *
 
 import pytest
 from hamcrest import assert_that, calling, not_, raises, is_
-from parameterized import parameterized
+import pytest
+from hamcrest import *
 
 from c_cpp.factories import Factories
 from rejuvenation.batch_process_examples import batch_remove_unused_variable_once_example, batch_repeat_example, \
@@ -20,11 +22,11 @@ from renaissance.syntax_tree import ASTFactory
 from renaissance.syntax_tree.ast_node import ASTNode
 
 
-class TestRefactorWithNestedCompositions(TestCase):
+class TestRefactorWithNestedCompositions:
 
     def test_refactor_with_nested_compositions(self):
         result =  refactor_with_nested_compositions(['', ''])
-        assert result
+        assert_that(result, is_not(None))
         expected_result_nested=('void f1(int a, int b, int c);\n'
  'void f2(int a, int c);\n'
  'void f(){\n'
@@ -56,15 +58,15 @@ class TestRefactorWithNestedCompositions(TestCase):
  '    ,c\n'
  '    );\n'
  '}')
-        self.assertEqual(expected_result_nested,result)
+        assert_that(result, is_(expected_result_nested))
 
 
-class TestReplaceIfWithTernaryOperator(TestCase):
+class TestReplaceIfWithTernaryOperator:
 
     # didn't check expected result
     def test_refactor_with_nested_compositions(self):
         result =  replace_if_with_ternary()
-        assert result
+
         expected_result_ternary=('int a = 1;\n'
  '        int b = 2;\n'
  '        int c = 3;\n'
@@ -72,26 +74,25 @@ class TestReplaceIfWithTernaryOperator(TestCase):
  '        void f(){\n'
  '            c++; b=(a==1) ? 2:3; d++;\n'
  '        }')
-        self.assertEqual( expected_result_ternary,result)
+        assert_that(result, is_(expected_result_ternary))
 
 # add a testcase for remove unused variable
-class TestRemoveUnusedVariable(TestCase):
+class TestRemoveUnusedVariable:
 
-    @parameterized.expand(Factories.node_types)
+    @pytest.mark.parametrize("_, node_type",Factories.node_types)
     def test_remove_unused_variable_using_refactor_method(self, _: str, node_type: type[ASTNode]):
         result, expected = remove_unused_variable_using_refactor_method(node_type)
-        assert result
-        self.assertMultiLineEqual(result, expected)
+        assert_that(result, is_(expected))
 
-    @parameterized.expand(Factories.node_types)
+    @pytest.mark.parametrize("_, node_type",Factories.node_types)
     def test_remove_unused_variable_low_level(self, _: str, node_type: type[ASTNode]):
         result, expected_result = remove_unused_variable_low_level(node_type)
-        assert result
-        self.assertMultiLineEqual(result, expected_result)
+        assert_that(result, is_(expected_result))
 
-class TestExamplesDifferentStyles(TestCase):
 
-    @parameterized.expand(list(Factories.extend([
+class TestExamplesDifferentStyles:
+
+    @pytest.mark.parametrize("_, factory, _node_type, method",list(Factories.extend([
         ('kind',example_use_ast_kind_finder),
         ('function',example_use_ast_function_finder),
         # TODO: fix this 2 test
@@ -99,13 +100,13 @@ class TestExamplesDifferentStyles(TestCase):
         # ('cmt',example_add_comment_and_commit),
         # $old $name is ambiguous (int) (a); or (int) (a=0);.
         # ('match',example_replace_old_by_fancy_new),
-
+    
     ])))
     def test(self, _, factory: ASTFactory, _node_type : type[ASTNode], method: Callable[[ASTFactory, CPatternFactory], tuple[str, str]]):
         pattern_factory = CPatternFactory(factory)
         result, expected = method(factory, pattern_factory)
-        assert result
-        self.assertEqual(result, expected)
+
+        assert_that(expected, is_(result))
 
 def test_make_sure_that_batch_proc_still_run():
     assert_that( calling(batch_remove_unused_variable_once_example),not_(raises(Exception)))

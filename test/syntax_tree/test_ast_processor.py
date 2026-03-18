@@ -1,9 +1,8 @@
 from pathlib import Path
 
-from hamcrest import assert_that
+from hamcrest import assert_that, is_
 
 from renaissance.impl.clang import ClangASTNode
-from renaissance.refactoring import CleanupRefactoring
 from renaissance.syntax_tree import ASTProcessor, ASTFactory, PatternMatch
 
 
@@ -16,6 +15,6 @@ def test_find_match(mocker):
 
     ast_refactor.find_match([atu.children[-1].children[-1]])
 
-    assert_that(mock_matcher.call_count == 1)
+    assert_that(mock_matcher.call_count, is_(1))
 
 

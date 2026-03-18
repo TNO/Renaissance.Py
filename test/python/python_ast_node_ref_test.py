@@ -1,11 +1,12 @@
 import tempfile
-import unittest
 
 import pytest
+from hamcrest import *
 
 from renaissance import syntax_tree
 from renaissance.impl.python import PythonASTNode
 from renaissance.impl.python.python_ast_node import PythonASTReference
+from renaissance.syntax_tree import ASTNode
 
 content = """
 # antagonist
@@ -61,7 +62,8 @@ b_instance = B("Base")
 a_instance = A("Derived", "Extra")
 """
 
-class PythonNodeTest(unittest.TestCase):
+
+class TestPythonNode:
 
     @pytest.fixture(autouse=True)
     def setup(self):
@@ -70,29 +72,29 @@ class PythonNodeTest(unittest.TestCase):
 
     def test_def_call_references(self):
         # Function f() refers to Function a()
-        ast = self.factory.create_from_text(content2, 'content2.py')
+        ast = PythonASTNode.load_from_text(content2, 'content2.py')
         with tempfile.TemporaryDirectory(delete=True) as temp_dir:
             syntax_tree.ASTShower.store_node(temp_dir + '/py0.txt', ast)
 
-        funcDef = syntax_tree.ASTFinder.find_kind(ast, 'FunctionDef').filter(lambda x: x.name == 'f').find_first().get()
-        assert isinstance(funcDef, PythonASTNode)
+        func_def = syntax_tree.ASTFinder.find_kind(ast, 'FunctionDef').filter(lambda x: x.name == 'f').find_first().get()
+        assert_that(func_def, is_(PythonASTNode))
         ast.translation_unit.lazy_create_refers(ast)
-        refs = funcDef.references
-        self.assertEqual(len(refs), 2)
+        refs = func_def.references
+        assert_that(refs, has_length(2))
         ref = refs[0]
-        ref_node = ref.node
-        self.assertEqual(syntax_tree.ASTFinder.matches_kind(ref_node, 'FunctionDef'), True)
-        self.assertTrue(ref_node.name.lower(), 'a')
+        ref_node:ASTNode = ref.node
+        assert_that(syntax_tree.ASTFinder.matches_kind(ref_node, 'FunctionDef'), is_(True))
+        assert_that(ref_node.name.lower(), is_('a'))
         referenced_by = ref_node.referenced_by
-        self.assertEqual(len(referenced_by), 1)  # Function a referenced by function f and var x.
-        self.assertTrue(funcDef in [r.node for r in referenced_by])
+        assert_that(referenced_by, has_length(1))  # Function a referenced by function f and var x.
+        assert_that(func_def in [r.node for r in referenced_by])
         ref1 = refs[1]
         ref_node1 = ref1.node
-        self.assertEqual(syntax_tree.ASTFinder.matches_kind(ref_node, 'FunctionDef'), True)
-        self.assertTrue(ref_node1.name.lower(), 'b')
+        assert_that(syntax_tree.ASTFinder.matches_kind(ref_node, 'FunctionDef'), is_(True))
+        assert_that(ref_node1.name.lower(), is_('b'))
         referenced_by1 = ref_node1.referenced_by
-        self.assertEqual(len(referenced_by1), 1) # Function b referenced by function f.
-        self.assertTrue(funcDef in [r.node for r in referenced_by])
+        assert_that(referenced_by1, has_length(1))  # Function b referenced by function f.
+        assert_that(func_def in [r.node for r in referenced_by])
 
     def test_type_reference(self):
         # Name z refers to Name a
@@ -101,18 +103,17 @@ class PythonNodeTest(unittest.TestCase):
             syntax_tree.ASTShower.store_node(temp_dir + '/py1.txt', ast)
 
         type_node = syntax_tree.ASTFinder.find_kind(ast, 'Name').filter(lambda x: x.name == 'z').find_first().get()
-        assert isinstance(type_node, PythonASTNode)
+        assert_that(type_node, is_(PythonASTNode))
         ast.translation_unit.lazy_create_refers(ast)
         refs = type_node.references
-        self.assertEqual(len(refs), 1)
+        assert_that(refs, has_length(1))
         ref = refs[0]
         ref_node = ref.node
-        self.assertEqual(syntax_tree.ASTFinder.matches_kind(ref_node, 'Name'), True)
-        self.assertEqual(ref_node.name.lower(), 'a')
+        assert_that(syntax_tree.ASTFinder.matches_kind(ref_node, 'Name'), is_(True))
+        assert_that(ref_node.name.lower(), is_('a'))
         referenced_by = ref_node.referenced_by
-        self.assertGreater(len(referenced_by), 0)  # clang python returns 2 references, clang json 1
-        self.assertTrue(type_node in [r.node for r in referenced_by])
-
+        assert_that(referenced_by, has_length(greater_than(0)))
+        assert_that(type_node in [r.node for r in referenced_by])
 
     def test_class_reference(self):
         # Class A refers to Class B
@@ -120,16 +121,16 @@ class PythonNodeTest(unittest.TestCase):
         with tempfile.TemporaryDirectory(delete=True) as temp_dir:
             syntax_tree.ASTShower.store_node(temp_dir + '/py2.txt', ast)
         class_node = syntax_tree.ASTFinder.find_kind(ast, 'ClassDef').filter(lambda c: c.name == 'A').find_first().get()
-        assert isinstance(class_node, PythonASTNode)
+        assert_that(class_node, is_(PythonASTNode))
         ast.translation_unit.lazy_create_refers(ast)
         refs = class_node.references
-        self.assertEqual(len(refs), 1)
+        assert_that(refs, has_length(1))
         ref = refs[0]
         ref_node = ref.node
-        self.assertEqual(syntax_tree.ASTFinder.matches_kind(ref_node, 'ClassDef'), True)
+        assert_that(syntax_tree.ASTFinder.matches_kind(ref_node, 'ClassDef'), is_(True))
         referenced_by = ref_node.referenced_by
-        self.assertEqual(len(referenced_by), 2)
-        self.assertTrue(class_node in [r.node for r in referenced_by])
+        assert_that(referenced_by, has_length(2))
+        assert_that(class_node in [r.node for r in referenced_by])
 
     def test_param_reference(self):
         # param obj refers to its type, if type definition in the same file, refers to def, otherwise refers to Name
@@ -137,36 +138,40 @@ class PythonNodeTest(unittest.TestCase):
         with tempfile.TemporaryDirectory(delete=True) as temp_dir:
             syntax_tree.ASTShower.store_node(temp_dir + '/py3.txt', ast)
 
-        param_node = syntax_tree.ASTFinder.find_kind(ast, 'arg').filter(lambda x: x.name.startswith('bruno')).find_first().get()
-        assert isinstance(param_node, PythonASTNode)
+        param_node = syntax_tree.ASTFinder.find_kind(ast, 'arg').filter(
+            lambda x: x.name.startswith('bruno')).find_first().get()
+        assert_that(param_node, is_(PythonASTNode))
         ast.translation_unit.lazy_create_refers(ast)
         refs = param_node.references
-        self.assertEqual(len(refs), 1)
+        assert_that(refs, has_length(1))
         ref = refs[0]
         ref_node = ref.node
-        self.assertEqual(syntax_tree.ASTFinder.matches_kind(ref_node, 'ClassDef'), True)
+        assert_that(syntax_tree.ASTFinder.matches_kind(ref_node, 'ClassDef'), is_(True))
         referenced_by = ref_node.referenced_by
-        self.assertEqual(len(referenced_by), 2)
-        self.assertTrue(param_node in [r.node for r in referenced_by])
+        assert_that(referenced_by, has_length(2))
+        assert_that(param_node in [r.node for r in referenced_by])
 
     def test_function_reference(self):
         ast = self.factory.create_from_text(content, 'content.py')
         with tempfile.TemporaryDirectory(delete=True) as temp_dir:
             syntax_tree.ASTShower.store_node(temp_dir + '/py4.txt', ast)
-        call_node = syntax_tree.ASTFinder.find_kind(ast, 'Call').filter(lambda x: x.name.startswith('bruno.is_near')).find_first().get()
-        assert isinstance(call_node, PythonASTNode)
+        call_node = syntax_tree.ASTFinder.find_kind(ast, 'Call').filter(
+            lambda x: x.name.startswith('bruno.is_near')).find_first().get()
+        assert_that(call_node, is_(PythonASTNode))
         ast.translation_unit.lazy_create_refers(ast)
         refs = call_node.references
         ref = refs[0]
         ref_node = ref.node
-        self.assertEqual(syntax_tree.ASTFinder.matches_kind(ref_node, 'FunctionDef'), True)
+        assert_that(syntax_tree.ASTFinder.matches_kind(ref_node, 'FunctionDef'), is_(True))
         referenced_by = ref_node.referenced_by
-        self.assertEqual(len(referenced_by), 1)
-        self.assertTrue(call_node in [r.node for r in referenced_by])
+        assert_that(referenced_by, has_length(1))
+        assert_that(call_node in [r.node for r in referenced_by])
+
 
 def test_ref_node_to_str():
     it = PythonASTReference('it is ', 'kind', {})
-    assert str(it) == 'it is :kind'
+    assert_that(it, has_string('it is :kind'))
+
 
 if __name__ == '__main__':
-    unittest.main()
+    pytest.main()

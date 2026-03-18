@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from hamcrest import assert_that, is_, has_length
+
 from renaissance.impl.clang import ClangASTNode, CPatternFactory
 from renaissance.syntax_tree import ASTFactory
 from renaissance.syntax_tree.match_finder import find_in_list, MatchFinder
@@ -31,7 +33,7 @@ def test_find_in_tree_one_and_all_params():
     atu = factory.create_from_text(code, "test.c")
     src = atu.children[-1].children[-1].children
     found_position = find_in_list(src, patterns[0], {})
-    assert found_position == 0
+    assert_that(found_position, is_(0))
 
 
 def test_find_in_tree_one_and_all_params_2():
@@ -41,7 +43,7 @@ def test_find_in_tree_one_and_all_params_2():
     atu = factory.create_from_text(code, "test.c")
     src = atu.children[-1].children[-1].children
     found_position = find_in_list(src[1:], patterns[0], {})
-    assert found_position == 0
+    assert_that(found_position, is_(0))
 
 
 def test_find_in_tree_one_and_all_params_3():
@@ -51,7 +53,7 @@ def test_find_in_tree_one_and_all_params_3():
     atu = factory.create_from_text(code, "test.c")
     src = atu.children[-1].children[-1].children
     found_position = find_in_list(src[2:], patterns[0], {})
-    assert found_position == 0
+    assert_that(found_position, is_(0))
 
 
 def test_match_one_and_all_params():
@@ -62,4 +64,4 @@ def test_match_one_and_all_params():
     src = atu.children[-1].children[-1].children
     # find all if and while statements
     matches = MatchFinder.match_pattern(src, patterns[0])
-    assert len(matches) == 3
+    assert_that(matches, has_length(3))

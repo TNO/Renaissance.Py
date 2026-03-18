@@ -1,7 +1,8 @@
 import tree_sitter_python as tspython
 import tree_sitter_cpp as tscpp
 import tree_sitter_java as tsjava
-from parameterized import parameterized
+import pytest
+from hamcrest import *
 
 from renaissance.impl.tree_sitter_adapter.tree_sitter_adapter import TreeSitterAdapter
 from renaissance.visualizers.lst_mermaid_visualizer import LSTMermaidVisualizer
@@ -125,7 +126,7 @@ n28["n28: } {<br>offset: 62<br>signature: <br>}"]
 n7 --> n28
 n2 --> n7
 n1 --> n2'''
-@parameterized.expand([
+@pytest.mark.parametrize("raw, module, mermaid",[
     ("def foo():\n    return 42", tspython,MERMAID_PYTHON),
 ("int main() { return 0; }",tscpp,MERMAID_CPP),
 ("public class Test { public static void main(String[] args) {} }",tsjava, MERMAID_JAVA)
@@ -134,7 +135,7 @@ def test_create_diagrams(raw,module, mermaid):
     code_py = raw
     result = process_code( module, code_py)
 
-    assert result == mermaid
+    assert_that(result, is_(mermaid))
 
     # with open(f"lst_output_{language_name.upper()}.md", "w", encoding="utf-8") as f:
     #     f.write("```mermaid\n")

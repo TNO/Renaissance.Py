@@ -1,12 +1,12 @@
-import ast
 from typing import Sequence
+
+from ast_comments import *
 
 from renaissance.common import Stream
 from renaissance.impl.python import PythonASTNode
 from renaissance.impl.python.python_ast_node import PythonTranslationUnit
 from renaissance.syntax_tree import ASTFactory, ASTNode
 from renaissance.utils.node_util import replace_dollar
-from ast_comments import *
 
 SHOW_NODE = False
 
@@ -65,7 +65,7 @@ class PythonPatternFactory:
         text = replace_dollar(text)
         return PythonASTNode(parse(text).body[0])
 
-    def create(self, text: str, kind: str|None = None) -> ASTNode:
+    def create(self, text: str, kind: str|None = None) -> PythonASTNode:
         # create python from text
         # the comments are removed
         # Return Module
@@ -87,7 +87,7 @@ class PythonPatternFactory:
         assert len(statements) == 1, "Only one statement is expected"
         return statements[0]
 
-    def _create(self, text: str) -> ASTNode:
+    def _create(self, text: str) -> PythonASTNode:
         atu = self.factory.create_from_text(text, "test.py")
         return atu.children[0]
 

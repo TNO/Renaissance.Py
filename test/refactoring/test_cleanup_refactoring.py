@@ -1,13 +1,15 @@
-import unittest
-from parameterized import parameterized
+import pytest
+from hamcrest import *
+import pytest
+from hamcrest import *
 from renaissance.refactoring import CleanupRefactoring
 from renaissance.syntax_tree import ASTShower, ASTFactory, ASTProcessor
 
 from c_cpp.factories import Factories
 
-class TestCleanupRefactoring(unittest.TestCase):
+class TestCleanupRefactoring:
 
-    @parameterized.expand(list(Factories.extend( [
+    @pytest.mark.parametrize("name, factory, input_code, expected_code",list(Factories.extend( [
         ( "int foo() {\n    int x = 1;\n    return 2;\n}", "int foo() {\n    return 2;\n}"),
         ( "int bar() {\n    int y = 2;\n    int z = y + 3;\n    return z;\n}", "int bar() {\n    int y = 2;\n    int z = y + 3;\n    return z;\n}"),
         ( "int baz() {\n    int a = 1;\n    int b = 2;\n    int c = a + b;\n    return c;\n}", "int baz() {\n    int a = 1;\n    int b = 2;\n    int c = a + b;\n    return c;\n}")
@@ -18,11 +20,10 @@ class TestCleanupRefactoring(unittest.TestCase):
         ast_refactor = ASTProcessor(atu, factory, in_memory=True) 
         CleanupRefactoring.remove_unused_variables(ast_refactor)
         result = ast_refactor.commit().apply_to_string()
-        self.assertEqual(result, expected_code)
+        assert_that(result, is_(expected_code))
     
     def test_should_not_be_instantiable(self):
-        with self.assertRaises(Exception):
-            CleanupRefactoring()
+        assert_that(calling(CleanupRefactoring), raises(Exception))
 
 if __name__ == '__main__':
-    unittest.main()
+    pytest.main()

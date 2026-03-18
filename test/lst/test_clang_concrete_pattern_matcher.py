@@ -1,4 +1,5 @@
-import unittest
+import pytest
+from hamcrest import *
 
 import pytest
 from renaissance.extractors.extractor import  Extractor
@@ -25,7 +26,7 @@ def test_clang_patterns(code, pattern):
     interface = TsPatternFactory(adapter)
     extractor = Extractor(interface, [pattern])
     matches = extractor.run(code)
-    assert  len(matches) >= 1
+    assert_that(matches, is_not(empty()))
 
 @pytest.mark.parametrize("code, pattern",[
 
@@ -43,7 +44,7 @@ def test_clang_patterns_to_be_fixed(code, pattern):
     interface = TsPatternFactory(adapter)
     extractor = Extractor(interface, [pattern])
     matches = extractor.run(code)
-    assert  len(matches) ==0 #but should be 1
+    assert_that(matches, has_length(0)) #but should be 1
 
 from renaissance.syntax_tree.match_finder import is_match, is_match_tree, MatchFinder
 
@@ -53,21 +54,21 @@ def test_is_match_clang_patterns_without_decl():
     interface = TsPatternFactory(adapter)
     c = interface.create_statement("int main() { return 0; }")
     p = interface.create_statement("int main() { return $body; }")
-    assert not is_match(c.children[-1], p.children[-1], {})
+    assert_that(is_match(c.children[-1], p.children[-1], {}), is_(False))
 
 def test_is_match_clang_patterns_with_decl():
     adapter = ClangAdapter()
     interface = TsPatternFactory(adapter)
     c = interface.create_statement("int $body=0; int main() { return 0; }")
     p = interface.create_statement("int $body=0; int main() { return $body; }")
-    assert is_match(c.children[-1], p.children[-1], {})
+    assert_that(is_match(c.children[-1], p.children[-1], {}), is_(True))
 
 def test_is_match_clang_tree():
     adapter = ClangAdapter()
     interface = TsPatternFactory(adapter)
     c = interface.create_statement("int $body=0; int main() { return 0; }")
     p = interface.create_statement("int $body=0; int main() { return $body; }")
-    assert is_match_tree([c.children[-1]], [p.children[-1]], {})
+    assert_that(is_match_tree([c.children[-1]], [p.children[-1]], {}), is_(True))
 
 
 class Matchfinder:
@@ -80,8 +81,8 @@ def test_is_match_clang_patterns():
     c = interface.create_statement("int $body=0; int main() { return 0; }")
     p = interface.create_statement("int $body=0; int main() { return $body; }")
     match = MatchFinder.match_pattern([c.children[-1]], [p.children[-1]])
-    assert len(match)==1
+    assert_that(match, has_length(1))
 
 
 if __name__ == "__main__":
-    unittest.main()
+    pytest.main()
