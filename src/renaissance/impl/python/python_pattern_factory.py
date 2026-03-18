@@ -92,5 +92,5 @@ class PythonPatternFactory:
         return atu.children[0]
 
     def create_decorators(self, param):
-        module =  self.factory.create_from_text(replace_dollar(param)+'\ndef test(): pass',"test.py")
+        module = self.factory.create_from_text(replace_dollar(param) + '\ndef test(): pass', "test.py")
         return module.body[0].children[2]

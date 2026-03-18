@@ -1,7 +1,50 @@
-test_measure_wafer = """
+change_comment = """#!/usr/bin/env python
+# -----------------------------------------------------------------------------#
+#                                                                             #
+#                                 Python script                               #
+#                                                                             #
+# -----------------------------------------------------------------------------#
+#
+# Ident         : EMRW_utils.py
+# Description   : Utility functions for unittest
+#
+# History
+# 2016-03-31    : SWCHG00731605 ARJL Generated for EMRW python unit test
+# 2016-06-01    : SWCHG00739307 ARJL Update for EMRWxVIPRxWH code review
+# 2016-08-10    : SWCHG00746740 DMSA Fix EMAR, EMRW after a sync of NXE 2DG
+# -----------------------------------------------------------------------------#
+#                                                                             #
+#                   Copyright (c) 2016, ASML Netherlands B.V.                 #
+#                               All rights reserved                           #
+#                                                                             #
+# -----------------------------------------------------------------------------#
+
+import inspect
 """
 
-new_test_measure_wafer = """
+new_change_comment = """#!/usr/bin/env python
+# -----------------------------------------------------------------------------#
+#                                                                             #
+#                                 Python script                               #
+#                                                                             #
+# -----------------------------------------------------------------------------#
+#
+# Ident         : EMRW_utils.py
+# Description   : Utility functions for unittest
+#
+# History
+# 2016-03-31    : SWCHG00731605 ARJL Generated for EMRW python unit test
+# 2016-06-01    : SWCHG00739307 ARJL Update for EMRWxVIPRxWH code review
+# 2016-08-10    : SWCHG00746740 DMSA Fix EMAR, EMRW after a sync of NXE 2DG
+# 2026-01-22    : SWCHGxxxxxxxx SBYN Add assert_raises method to Asserter class
+# -----------------------------------------------------------------------------#
+#                                                                             #
+#                   Copyright (c) 2016, ASML Netherlands B.V.                 #
+#                               All rights reserved                           #
+#                                                                             #
+# -----------------------------------------------------------------------------#
+
+import inspect
 """
 set_up = """
 def setUp(self):

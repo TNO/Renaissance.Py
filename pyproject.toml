@@ -107,4 +107,4 @@ issues = "https://github.com/TNO/Renaissance-Experiments"
 
 [project.scripts]
 rejuvenate = "rejuvenation.cli:refactor"
-taut2test = "rejuvenation.cli:refactor"
+taut2test = "rejuvenation.cli_taut:refactor"
