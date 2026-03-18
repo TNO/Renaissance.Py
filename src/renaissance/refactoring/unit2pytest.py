@@ -214,11 +214,15 @@ class Unit2PyTest:
 
         if len(funs) > 0:
             if len(clss) < 1:
-                cls = f'class Test{self.convert_file_to_test_class()}:\n'
+                cls = f'class {self.convert_file_to_test_class()}:\n'
                 for fun in funs:
                     cls += self.convert_function(fun)
                 self.rewriter.replace(cls, funs)
-
+            elif clss==1:
+                for fun in funs:
+                    # assuming the class comes first
+                    meth = self.convert_function(fun)
+                    self.rewriter.replace(meth, fun)
     def convert_function(self, fun):
         signature: str = fun.signature + '\n\n\n'
         if len(fun.node.args.args) == 0:
@@ -232,4 +236,5 @@ class Unit2PyTest:
         parts = stem.split('_')
         if parts[-1].lower() == 'test':
             parts = parts[:-1]
-        return ''.join(word.capitalize() for word in parts)
+        name = ''.join(word.capitalize() for word in parts)
+        return name if name.startswith('Test') else f'Test{name}'
