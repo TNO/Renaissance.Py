@@ -1,13 +1,14 @@
 import os
 import textwrap
+from typing import Any
 
 from renaissance.impl.python import PythonASTNode, PythonPatternFactory
-from renaissance.syntax_tree import ASTRewriter, ASTFactory, ASTFinder
+from renaissance.syntax_tree import ASTRewriter, ASTFactory, ASTFinder, PatternMatch
 from renaissance.syntax_tree.match_finder import match_pattern
 from renaissance.utils.text_utils import TextUtils
 
 
-class Unit2PyTest:
+class Unit2Pytest:
     def __init__(self, file):
         self.file = file
         self.factory = ASTFactory(PythonASTNode, [])
@@ -32,12 +33,17 @@ class Unit2PyTest:
         self.replace('unittest.main()', 'pytest.main()')
         self.replace('import unittest', 'import pytest\nfrom hamcrest import *')
         self.replace('from parameterized import parameterized', 'import pytest\nfrom hamcrest import *')
-        self.replace('from unittest import $$symbols', 'import pytest\nfrom hamcrest import *')
+        self.replace('from unittest import TestCase,$$symbols', 'import pytest\nfrom hamcrest import *')
+        self.replace('from unittest import TestCase', 'import pytest\nfrom hamcrest import *')
         self.commit()
 
         # 2: class level changes
         self.convert_parameterized_test()
         self.convert_test_setup()
+        self.commit()
+        #
+        self.remove_print()
+        self.convert_plain_assert_same_length()
         self.commit()
 
         # 3: function level changes
@@ -57,9 +63,7 @@ class Unit2PyTest:
         self.replace('self.assertIsInstance($act, $exp)', 'assert_that($act, is_($exp))')
         self.replace('with self.assertRaises($exception): $call()', 'assert_that(calling($call), raises($exception))')
 
-        #
-        self.remove_print()
-        self.convert_plain_assert_same_length()
+
 
         # 4: improve to mor concise asserts
         while self.rewriter.has_changed():
@@ -70,8 +74,8 @@ class Unit2PyTest:
             self.replace('assert_that(len($exp) >= 1)', 'assert_that($exp, is_not(empty()))')
             self.replace('assert_that(len($exp) >= 1, is_(True))', 'assert_that($exp, is_not(empty()))')
             self.replace('assert_that(len($exp) == $length)', 'assert_that($exp, has_length($length))')
-            self.replace('assert_that($exp == $act)', 'assert_that($exp, is_($act))')
-            self.replace('assert_that($exp == $act, is_(True))', 'assert_that($exp, is_($act))')
+            self.replace('assert_that($exp == $act)', 'assert_that($exp, is_($act), $$msg)')
+            self.replace('assert_that($exp == $act, is_(True), $$msg)', 'assert_that($exp, is_($act), $$msg)')
             self.replace('assert_that(not $stmt, is_(True), $$msg)', 'assert_that($stmt, is_(False) ,$$msg)')
             self.replace('assert_that($stmt, is_not(True), $$msg)', 'assert_that($stmt, is_(False) ,$$msg)')
             self.replace('assert_that(not $stmt)', 'assert_that($stmt, is_(False))')
@@ -81,8 +85,8 @@ class Unit2PyTest:
             self.swap_expected_and_actual()
             self.convert_skip_test()
 
-        # self.replace('assert_that(not $stmt)', 'assert_that($stmt, is_(False))')
-        # self.replace('assert_that($exp.startswith($act))', 'assert_that($exp, starts_with($act))')
+        self.replace('assert_that(not $stmt)', 'assert_that($stmt, is_(False))')
+        self.replace('assert_that($exp.startswith($act))', 'assert_that($exp, starts_with($act))')
 
         self.commit()
 
@@ -133,15 +137,18 @@ class Unit2PyTest:
         for match in match_pattern(self.stmts, pattern):
             replacement = repl
             for exp in match.expansions:
-                if len(match.expansions[exp]) == 1:
-                    if hasattr(match.expansions[exp][0], 'signature'):
-                        replacement = replacement.replace(exp, match.expansions[exp][0].signature)
-                    else:
-                        replacement = replacement.replace(exp, match.expansions[exp][0])
-                else:
-                    replacement = replacement.replace(exp, ', '.join(match.expansions[exp]))
+                arg_str = ', '.join([self.to_str(node) for node in match.expansions[exp]])
+                replacement = replacement.replace(exp, arg_str)
+
             replacement = replacement.replace(' ,)', ')').replace(', )', ')')
             self.rewriter.replace(replacement, match.nodes, False, False)
+
+    def to_str(self, node) -> Any:
+        if hasattr(node, 'signature'):
+            return node.signature
+        else:
+            return str(node)
+
 
     def convert_parameterized_test(self):
 
@@ -157,8 +164,8 @@ class Unit2PyTest:
             repl = fun.signature
             if '    def ' in repl:
                 repl = repl.replace('@parameterized.expand(', f'    @pytest.mark.parametrize("{args}",')
-                repl = repl.replace('@unittest.skip(', f'    @pytest.mark.skip(')
-                repl = TextUtils.strip_indent(repl)
+                repl = repl.replace('@unittest.skip(', f'@pytest.mark.skip(')
+                repl = textwrap.dedent(repl)
             else:
                 repl = repl.replace('@parameterized.expand(', f'@pytest.mark.parametrize("{args}",')
                 repl = repl.replace('@unittest.skip(', f'@pytest.mark.skip(')
@@ -176,6 +183,7 @@ class Unit2PyTest:
 
         pattern = self.pattern_factory.create_statements(
             '$act: int = len($real)\nassert $exp == $act, "$act = " + str($act)')
+
         for match in match_pattern(self.stmts, pattern):
             repl = 'assert_that($real, has_length($exp), f"length of $real = {len($real)}")'
             real = match.expansions['$real'][0].signature
@@ -218,7 +226,7 @@ class Unit2PyTest:
                 for fun in funs:
                     cls += self.convert_function(fun)
                 self.rewriter.replace(cls, funs)
-            elif clss==1:
+            else:
                 for fun in funs:
                     # assuming the class comes first
                     meth = self.convert_function(fun)

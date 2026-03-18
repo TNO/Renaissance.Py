@@ -41,6 +41,7 @@ test = [
     "pytest-mock>=3.15",
     "pytest-profiling>=1.8",
     "coverage>=7.0",
+    "behave"
 ]
 lint = [
     "flake8>=7.0",
