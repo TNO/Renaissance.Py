@@ -1,3 +1,6 @@
+import ast
+import textwrap
+
 from hamcrest import assert_that
 
 from renaissance.impl.python import PythonASTNode, PythonPatternFactory
@@ -26,15 +29,17 @@ class Unit2PyTest:
     def convert_pytest(self):
         print(f"refactoring {self.file}")
 
+        self.convert_test_class()
+        self.restructure_module()
+
         # 1: file level changes
         self.replace('unittest.main()', 'pytest.main()')
-        self.convert_test_class()
         self.replace('import unittest', 'import pytest\nfrom hamcrest import *')
         self.replace('from parameterized import parameterized', 'import pytest\nfrom hamcrest import *')
-
-
         self.replace('from unittest import $$symbols', 'import pytest\nfrom hamcrest import *')
         self.commit()
+
+
 
         # 2: class level changes
         self.convert_parameterized_test()
@@ -167,11 +172,6 @@ class Unit2PyTest:
                 repl = repl.replace('@unittest.skip(', f'@pytest.mark.skip(')
             self.rewriter.replace(repl, fun, False, False)
 
-    # @parameterized.expand(Factories.factories)
-    # @pytest.mark.skip("stmt and expr are the same")
-
-
-
     def remove_print(self):
         print_msg = self.pattern_factory.create_statements('print($$msg)')
         for match in match_pattern(self.stmts, print_msg):
@@ -212,6 +212,25 @@ class Unit2PyTest:
                 exp = match.expansions['$exp'][0].signature
                 repl = repl.replace('$exp', exp).replace('$act', act)
                 self.rewriter.replace(repl, match.nodes, False, False)
+
+    def restructure_module(self):
+        funs = []
+        clss = []
+        for stmt in self.stmts:
+            if isinstance(stmt.kind, 'FunctionDef'):
+                funs += stmt
+            elif isinstance(stmt.kind, 'ClassDef'):
+                clss += stmt
+
+
+        if len(funs) >0:
+            if len(clss) <1:
+                cls = 'class Test{self.file}:\n'
+                for fun in funs:
+                    cls+= textwrap.indent(fun.text)
+                self.replace(funs,cls)
+
+
 
     # def raw(nodes):
     #     res = ''
