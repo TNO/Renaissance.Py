@@ -1,7 +1,7 @@
 import ast
 
 import pytest
-from hamcrest import assert_that, has_length, is_, not_none, empty, is_not, greater_than
+from hamcrest import assert_that, has_length, is_, not_none, empty, is_not, greater_than, less_than
 from marshmallow.utils import is_generator
 
 from renaissance.impl.clang import ClangASTNode, CPatternFactory
@@ -168,7 +168,7 @@ class TestMatchTree:
         src = self.pattern_factory.create_statements('2\n3\n4\n5\n61\n2\n3\n4\n5\n7\n8\n9')
         pattern = self.pattern_factory.create_statements('1')
 
-        assert_that(find_in_list(src, pattern, {}) , greater_than(0))
+        assert_that(find_in_list(src, pattern, {}) , less_than(0))
 
     def test_find_in_list_returns_last_pos(self):
         src = self.pattern_factory.create_statements('0\n1\n2\n3\n4\n5\n61\n2\n3\n4\n5\n7\n8\n9')
@@ -200,9 +200,10 @@ class TestMatchTree:
         assert_that(find_in_list(src, pattern, {}), is_(0))
 
     def test_match_all_function_with_any_param_clang(self):
-        atu = self.factory.create_from_text('void ca(int a,int b,int c){ca(13,14,15); ca(13,14,15);}', 'fut.c')
+        factory = ASTFactory(ClangASTNode, [])
+        atu = factory.create_from_text('void ca(int a,int b,int c){ca(13,14,15); ca(13,14,15);}', 'fut.c')
         src = atu.children[-1].children[-1].children
-        pattern = (self.factory.create_from_text('int $a,$$all;void $f(int a,int b){$f($a, $$all);}', 'pat.c')
+        pattern = (factory.create_from_text('int $a,$$all;void $f(int a,int b){$f($a, $$all);}', 'pat.c')
                    .children[-1].children[-1].children)
         assert_that(MatchFinder.find_all(src, pattern).to_list(), has_length(is_(2)))
 
