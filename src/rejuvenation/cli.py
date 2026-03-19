@@ -2,7 +2,7 @@ import sys
 from pathlib import Path
 
 from renaissance.impl.python import PythonASTNode
-from renaissance.refactoring.unit2pytest import Unit2PyTest
+from renaissance.refactoring.unit2pytest import  Unit2Pytest
 from renaissance.syntax_tree import ASTFactory, ASTShower
 
 factory = ASTFactory(PythonASTNode, [])
@@ -49,4 +49,4 @@ if __name__ == "__main__":
     for file in select_pyton_file():
         if 'utils_for_tests' not in str(file):
         # print(file.resolve())
-            Unit2PyTest(file).convert_pytest()
+            Unit2Pytest(file).convert_pytest()

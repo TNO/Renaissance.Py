@@ -23,13 +23,17 @@ cpp_code = (b'public class Test {\n    public static void main(String[] args) {\
 
 java_code = (b'public class Test {\n    public static void main(String[] args) {\n       '
  b' if (ready) start();\n    }\n}\n')
-def test_parse_py_code():
-    assert_that(py_code, is_(py_parser.parse(py_code).root_node.text))
+class TestTreeSitterParse:
+    def test_parse_py_code(self):
+        assert_that(py_code, is_(py_parser.parse(py_code).root_node.text))
 
 
-def test_parse_cpp_code():
-    assert_that(cpp_code, is_(cpp_parser.parse(cpp_code).root_node.text))
+    def test_parse_cpp_code(self):
+        assert_that(cpp_code, is_(cpp_parser.parse(cpp_code).root_node.text))
 
 
-def test_parse_java_code():
-    assert_that(java_code, is_(java_parser.parse(java_code).root_node.text))
+    def test_parse_java_code(self):
+        assert_that(java_code, is_(java_parser.parse(java_code).root_node.text))
+
+
+

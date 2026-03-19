@@ -7,15 +7,6 @@ from hamcrest import *
 from renaissance.impl.tree_sitter_adapter.tree_sitter_adapter import TreeSitterAdapter
 from renaissance.visualizers.lst_mermaid_visualizer import LSTMermaidVisualizer
 
-
-def process_code( grammar_module, code):
-    adapter = TreeSitterAdapter(grammar_module)
-    tree = adapter.parse_code(code)
-    lst = adapter.to_lst(code, tree)
-    visualizer = LSTMermaidVisualizer()
-    mermaid = visualizer.render(lst)
-    return mermaid
-
 MERMAID_PYTHON='''graph TD
 n1["n1: module {<br>offset: 0<br>signature: def foo     return 42<br>}"]
 n2["n2: function_definition {<br>offset: 0<br>signature: def foo     return 42<br>}"]
@@ -126,16 +117,29 @@ n28["n28: } {<br>offset: 62<br>signature: <br>}"]
 n7 --> n28
 n2 --> n7
 n1 --> n2'''
-@pytest.mark.parametrize("raw, module, mermaid",[
-    ("def foo():\n    return 42", tspython,MERMAID_PYTHON),
-("int main() { return 0; }",tscpp,MERMAID_CPP),
-("public class Test { public static void main(String[] args) {} }",tsjava, MERMAID_JAVA)
-])
-def test_create_diagrams(raw,module, mermaid):
-    code_py = raw
-    result = process_code( module, code_py)
+class TestShowNodeInMermaid:
+    def process_code(self, grammar_module, code):
+        adapter = TreeSitterAdapter(grammar_module)
+        tree = adapter.parse_code(code)
+        lst = adapter.to_lst(code, tree)
+        visualizer = LSTMermaidVisualizer()
+        mermaid = visualizer.render(lst)
+        return mermaid
 
-    assert_that(result, is_(mermaid))
+
+    @pytest.mark.parametrize("raw, module, mermaid",[
+        ("def foo():\n    return 42", tspython,MERMAID_PYTHON),
+    ("int main() { return 0; }",tscpp,MERMAID_CPP),
+    ("public class Test { public static void main(String[] args) {} }",tsjava, MERMAID_JAVA)
+    ])
+    def test_create_diagrams(self,raw,module, mermaid):
+        code_py = raw
+        result = self.process_code( module, code_py)
+
+        assert_that(result, is_(mermaid))
+
+
+
 
     # with open(f"lst_output_{language_name.upper()}.md", "w", encoding="utf-8") as f:
     #     f.write("```mermaid\n")

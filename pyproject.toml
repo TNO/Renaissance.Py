@@ -1,26 +1,11 @@
 #[build-system]
-#requires = ["poetry-core>=2.0.0"]
-#build-backend = "poetry.core.masonry.api"
-
-#[tool.poetry]
-#packages = [
-#    { include = "rejuvenation", from = "python/examples" },
-#    { include = "common", from = "python/src" },
-#    { include = "extractors", from = "python/src" },
-#    { include = "impl", from = "python/src" },
-#    { include = "lst", from = "python/src" },
-#    { include = "lst_matchers", from = "python/src" },
-#    { include = "project", from = "python/src" },
-#    { include = "refactoring", from = "python/src" },
-#    { include = "syntax_tree", from = "python/src" },
-#    { include = "utils", from = "python/src" },
-#    { include = "visualizers", from = "python/src" },
-#]
+#requires = ["hatchling"]
+#build-backend = "hatchling.build"
 
 [project]
 name = "renaissance"
 version = "0.3.1"
-description = "experimental python version of the renaissance tool"
+description = "Experimental Python version of the Renaissance refactoring tool"
 readme = "README.md"
 authors = [
     { name = "Luna Li", email = "luna.li@capgemini.com" }
@@ -30,81 +15,61 @@ requires-python = ">=3.12"
 dependencies = [
     "textx==4.3.0",
     "dataclasses-json==0.6.7",
-    "coverage>=7.13.0",
-    "pyperclip==1.11.0",
+    "pyperclip>=1.8",
     "clang==18.1.8",
     "libclang==18.1.1",
-    "more-itertools",
-    "networkx",
-    "parameterized==0.9.0",
-    "PyHamcrest",
-    "pytest",
-    "pytest-bdd==8.1.0",
-    "pytest-cov==7.0.0",
-    "pytest-mock==3.15.1",
-    "pytest-black==0.6.0",
-    "pytest-profiling==1.8.1",
-    "autopep8",
-    "pyecore",
-    "pyyaml",
-    "termcolor",
-    "typing-extensions",
+    "more-itertools>=10.0",
+    "networkx>=3.0",
+    "pyhamcrest>=2.1",
+    "pyecore>=0.14",
+    "pyyaml>=6.0",
+    "termcolor>=2.0",
+    "typing-extensions>=4.0",
     "tree-sitter>=0.25",
     "tree-sitter-python==0.25.0",
     "tree-sitter-cpp==0.23.4",
     "tree-sitter-java==0.23.5",
-    "ast_comments",
-    "flake8",
+    "ast-comments>=1.0",
 ]
 
-#bandit = { version = "^1.6.2", optional = true }
-#cohesion = { version = "^1.0.0", optional = true }
-#coverage-enable-subprocess = { version = "^1.0", optional = true }
-#mock = { version = "^4.0.1", optional = true }
-#nose = { version = "^1.3.7", optional = true }
-#pycodestyle = { version = "^2.5.0", optional = true }
-#pydocstyle = { version = "^5.0.2", optional = true }
-#pylint = { version = "^2.4.4", optional = true }
-#pytest = { version = "^5.3.5", optional = true }
-#radon = { version = "^4.1.0", optional = true }
-#vulture = { version = "^1.3", optional = true }
-#xenon = { version = "^0.7.0", optional = true }
-#coverage = { version = "^5.2.1", optional = true }
+[dependency-groups]
+test = [
+    "parameterized>=0.9",
+    "pytest>=8.0",
+    "pytest-bdd==8.1.0",
+    "pytest-cov>=7.0",
+    "pytest-mock>=3.15",
+    "pytest-profiling>=1.8",
+    "coverage>=7.0",
+    "behave"
+]
+lint = [
+    "flake8>=7.0",
+    "black>=24.0",
+    "autopep8>=2.0",
+    "pytest-black>=0.6",
+]
+dev = [
+    {include-group = "test"},
+    {include-group = "lint"},
+]
 
-#
-#
-#[[tool.poetry.source]]
-#name = "pypi"
-##url = "https://pypi.org/simple"
-#priority = "primary"
-#
-#[tool.poetry.dependencies]
-#python = "^3.12"
-#
-#[tool.uv.workspace]
-#members = [
-#    "renaissance",
-#    "renaissance-example",
-#]
-#
-#
-#
-#[project.extras]
-#all = ["bandit", "behave", "black", "cohesion", "coverage", "coverage-enable-subprocess", "mock", "nose", "pycodestyle", "pydocstyle", "pylint", "pytest", "radon", "vulture", "xenon"]
-#bandit = ["bandit"]
-#black = ["black"]
-#cohesion = ["cohesion"]
-#pycodestyle = ["pycodestyle"]
-#pydocstyle = ["pydocstyle"]
-#pylint = ["pylint", "behave", "mock", "nose", "pytest"]
-#radon = ["radon", "xenon"]
-#vulture = ["vulture"]
-#pytest = ["pytest", "mock", "coverage"]
-#behave = ["behave", "coverage-enable-subprocess", "nose"]
-#
 [project.urls]
-issues = "https://github.com/TNO/Renaissance-Experiments"
+Homepage = "https://github.com/TNO/Renaissance-Experiments"
+Issues = "https://github.com/TNO/Renaissance-Experiments/issues"
 
 [project.scripts]
 rejuvenate = "rejuvenation.cli:refactor"
-taut2test = "rejuvenation.cli_taut:refactor"
+taut2test = "rejuvenation.cli:refactor"
+
+[tool.pytest.ini_options]
+testpaths = ["test", "features"]
+pythonpath = ["src", "test", "features"]
+
+[tool.coverage.run]
+source = ["src"]
+omit = ["test/*", "features/*"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
