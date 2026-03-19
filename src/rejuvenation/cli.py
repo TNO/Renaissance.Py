@@ -2,6 +2,7 @@ import sys
 from pathlib import Path
 
 from renaissance.impl.python import PythonASTNode
+from renaissance.refactoring.simplify_renaissance import SimplifyRenaissance
 from renaissance.refactoring.unit2pytest import  Unit2Pytest
 from renaissance.syntax_tree import ASTFactory, ASTShower
 
@@ -47,6 +48,7 @@ if __name__ == "__main__":
     # ASTShower.show_node(sample)
 
     for file in select_pyton_file():
-        if 'utils_for_tests' not in str(file):
+        SimplifyRenaissance(file).simplify()
+        # if 'utils_for_tests' not in str(file):
         # print(file.resolve())
-            Unit2Pytest(file).convert_pytest()
+        #     Unit2Pytest(file).convert_pytest()
