@@ -13,6 +13,7 @@ class TestPythonFactory:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.factory = ASTFactory(PythonASTNode, [])
+        self.pattern_factory = PythonPatternFactory(self.factory)
 
     # Statements patterns
     @pytest.mark.parametrize("statement", [
@@ -25,9 +26,8 @@ class TestPythonFactory:
         """
         Test the creation of a statement in Python
         """
-        pattern_factory = PythonPatternFactory(self.factory)
-        node = pattern_factory.create_python_pattern(statement)
-        assert_that(True, node.is_statement)
+        node = self.pattern_factory.create_python_pattern(statement)
+        assert_that(node.is_statement, is_(True))
         assert_that(node.signature, is_(statement))
 
     @pytest.mark.parametrize("statement", [
@@ -222,9 +222,14 @@ class TestPythonFactory:
 
 
     def test_match_decorators(self):
-        pattern_factory = PythonPatternFactory(self.factory)
-        pattern = pattern_factory.create_decorators('@parameterized.expand($exp)')
-        node = PythonASTNode.load_from_text('@parameterized.expand("sasas")\ndef fun():\n    parameterized.expand("sasas")\n')
+        node = self.factory.create_from_text('@parameterized.expand("sasas")\ndef fun():\n    parameterized.expand("sasas")\n')
+        pattern = self.pattern_factory.create_decorators('@parameterized.expand($exp)')
         result = match_pattern(node.children,[pattern])
         assert_that(result, has_length(1))
+
+    def test_create_kwargs(self):
+        pattern = self.pattern_factory.create_statement('fun($c=0, $d=2312)')
+        kwargs = [PythonASTNode(kwarg) for kwarg in pattern.node.value.keywords]
+        it = self.pattern_factory.create_kwargs('$c=0, $d=2312')
+        assert_that(it[0], is_(kwargs[0]))
 

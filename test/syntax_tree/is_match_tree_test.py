@@ -1,4 +1,5 @@
 import ast
+import textwrap
 
 import pytest
 from hamcrest import assert_that, has_length, is_, not_none, empty, is_not, greater_than, less_than
@@ -6,7 +7,7 @@ from marshmallow.utils import is_generator
 
 from renaissance.impl.clang import ClangASTNode, CPatternFactory
 from renaissance.impl.python import PythonPatternFactory, PythonASTNode
-from renaissance.syntax_tree import ASTFactory
+from renaissance.syntax_tree import ASTFactory, ASTShower
 from renaissance.syntax_tree.match_finder import is_match_tree, MatchFinder, find_in_list
 
 
@@ -258,3 +259,21 @@ class TestExample(TestCase):
         matches = MatchFinder.find_all(src, pattern).to_list()
         assert_that(matches, has_length(is_(2)))
         assert_that(matches[0].expansions['$x'], is_not(empty()))
+
+
+    def test_match_one_and_all_params(self):
+        sample = textwrap.dedent('''
+        context_stub=0
+        EMRMxAPxData_data_rep = 0
+        class SomeTest:
+            def setUp(self):
+                [].append(
+                      TAUT.TestDoubles(module=EMRMxAPxData_data_rep, context=context_stub)
+                )
+        ''')
+        atu = self.factory.create_from_text(sample,'sample.py')
+        ASTShower.show_node(atu)
+        kwargs = self.pattern_factory.create_kwargs('$c=context_stub')
+        matches = MatchFinder.match_pattern(atu.children, kwargs)
+        assert_that(matches, has_length(is_(1)))
+
