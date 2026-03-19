@@ -222,7 +222,7 @@ class TestPythonFactory:
 
 
     def test_match_decorators(self):
-        node = self.factory.create_from_text('@parameterized.expand("sasas")\ndef fun():\n    parameterized.expand("sasas")\n')
+        node = self.factory.create_from_text('@parameterized.expand("sasas")\ndef fun():\n    parameterized.expand("sasas")\n', 'snippet.py')
         pattern = self.pattern_factory.create_decorators('@parameterized.expand($exp)')
         result = match_pattern(node.children,[pattern])
         assert_that(result, has_length(1))

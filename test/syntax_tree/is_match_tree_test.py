@@ -206,7 +206,7 @@ class TestMatchTree:
         src = atu.children[-1].children[-1].children
         pattern = (factory.create_from_text('int $a,$$all;void $f(int a,int b){$f($a, $$all);}', 'pat.c')
                    .children[-1].children[-1].children)
-        assert_that(MatchFinder.find_all(src, pattern).to_list(), has_length(is_(2)))
+        assert_that(MatchFinder.find_all(src, pattern).to_list(), has_length(2))
 
     def test_find_all_in_list_with_expansion(self):
         src = self.pattern_factory.create_statements('2\n3\n4\n5\n61\n2\n3\n4\n5\n7\n8\n9')
@@ -233,7 +233,7 @@ class TestExample(TestCase):
 ''', 'test_file.py')
         pattern = self.pattern_factory.create_statements('class $name(TestCase):\n    $$cases')
         matches = MatchFinder.find_all(atu.children, pattern).to_list()
-        assert_that(matches, has_length(is_(1)))
+        assert_that(matches, has_length(1))
         assert_that(['TestExample'], is_(matches[0].expansions['$name']))
 
     def test_find_all_in_python_arg_list_with_expansion(self):
@@ -242,14 +242,14 @@ class TestExample(TestCase):
         statement = self.pattern_factory.create_statements('assertEqual(1,2,34,5,6,7,7,8)')
         pattern = self.pattern_factory.create_statements('assertEqual($$args)')
         matches = MatchFinder.find_all(statement, pattern).to_list()
-        assert_that(matches, has_length(is_(1)))
+        assert_that(matches, has_length(1))
         assert_that(matches[0].expansions['$$args'], is_not(empty()))
 
     def test_find_all_in_python_arg_list_with_expansion(self):
         atu = self.factory.create_from_text('class klass:\n  def fun(a,b,c,d,f): pass', 'test_file.py')
         pattern = self.pattern_factory.create_statements('def fun($$args): pass')
         matches = MatchFinder.find_all(atu.children, pattern).to_list()
-        assert_that(matches, has_length(is_(1)))
+        assert_that(matches, has_length(1))
         assert_that(matches[0].expansions['$$args'], is_not(empty()))
 
     def test_find_all_in_clang_list_with_expansion(self):
@@ -257,7 +257,7 @@ class TestExample(TestCase):
         pattern = CPatternFactory(factory).create_statements('a == $x;')
         src = CPatternFactory(factory).create_statements('a == 3;a == 4; b == 5;')
         matches = MatchFinder.find_all(src, pattern).to_list()
-        assert_that(matches, has_length(is_(2)))
+        assert_that(matches, has_length(2))
         assert_that(matches[0].expansions['$x'], is_not(empty()))
 
 
@@ -275,5 +275,5 @@ class TestExample(TestCase):
         ASTShower.show_node(atu)
         kwargs = self.pattern_factory.create_kwargs('$c=context_stub')
         matches = MatchFinder.match_pattern(atu.children, kwargs)
-        assert_that(matches, has_length(is_(1)))
+        assert_that(matches, has_length(1))
 

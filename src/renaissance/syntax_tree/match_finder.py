@@ -33,7 +33,7 @@ class PatternMatch:
 
     def match_referenced_by(
             self,
-            patterns: Sequence[ASTNode],
+            patterns: Sequence[list],
             recursive: bool = True) -> Stream[Self]:
         found_matches = []
         for node in self.nodes:
@@ -44,7 +44,7 @@ class PatternMatch:
 
     def match_references(
             self,
-            patterns: Iterable[ASTNode],
+            patterns: Iterable[list],
             recursive: bool = True) -> Stream[Self]:
         found_matches = []
         for node in self.nodes:
@@ -54,17 +54,19 @@ class PatternMatch:
         return Stream(found_matches)
 
 
-def is_match_tree(src: Sequence, cmp: Sequence, expansions=None):
+def is_match_tree(src: Sequence | None, cmp: Sequence | None, expansions=None):
     if expansions is None:
         expansions = {}
-    if not cmp or not src:
+    if cmp is None or src is None:
         return src == cmp
-    if not isinstance(src, list) or not isinstance(cmp, list):
+    # src and cmp  are both not None
+    if not (isinstance(src, list) and isinstance(cmp, list)):
         return src == cmp
+    # src and cmp are both lists
     if len(cmp) == 0 or len(src) == 0:
         return src == cmp
-    if len(cmp) == 1 and isinstance(cmp[0], ASTNode) and cmp[0].kind == MATCH_ALL:
-        expansions[cmp[0].name] = src
+    if len(cmp) == 1 and isinstance(cmp0 := cmp[0], ASTNode) and cmp0.kind == MATCH_ALL:
+        expansions[cmp0.name] = src
         return True
     return find_in_list(src, cmp, expansions) + 1 == len(src)
 
@@ -165,7 +167,7 @@ def is_match(src: AstProtocol, cmp: AstProtocol, expansions=None) -> bool:
 DEFAULT_EXCLUDE_KIND = {'FullComment', 'MACRO_DEFINITION'}
 
 
-def exclude_nodes_by_kind(src: list[ASTNode]) -> list[ASTNode]:
+def exclude_nodes_by_kind(src: list[AstProtocol]) -> list[AstProtocol]:
     return [c for c in src if c.kind not in DEFAULT_EXCLUDE_KIND]
 
 
@@ -173,7 +175,7 @@ IRRELEVANT_PROPS = {'macro_expansion', 'start_point', 'end_point', 'source_code'
 
 
 def is_match_dict(src: dict, cmp: dict, expansions: dict=None) -> bool:
-    if expansions ==None:
+    if expansions is None:
         expansions = {}
     def match_property(n):
         c = cmp.get(n)
@@ -189,7 +191,7 @@ def is_match_dict(src: dict, cmp: dict, expansions: dict=None) -> bool:
     return all(match_property(n)  for n in all_keys)
 
 
-def match_pattern(src_nodes: Sequence[ASTNode], patterns: Sequence[ASTNode], recursive=True) -> Sequence[PatternMatch]:
+def match_pattern(src_nodes: Sequence[AstProtocol], patterns: Sequence[AstProtocol], recursive=True) -> Sequence[PatternMatch]:
     """
     Matches a given source node or list of source nodes against a list of pattern nodes.
 
@@ -225,8 +227,8 @@ class MatchFinder:
 
     @staticmethod
     def find_all(
-            src_nodes: Sequence[ASTNode],
-            *patterns: Sequence[ASTNode],
+            src_nodes: Sequence[AstProtocol],
+            *patterns: Sequence[AstProtocol],
             recursive: bool = True,
     ) -> Stream[PatternMatch]:
         """
@@ -246,7 +248,7 @@ class MatchFinder:
         return Stream(found_matches)
 
     @staticmethod
-    def match_pattern(src_nodes: Sequence[ASTNode], patterns: Sequence[ASTNode], recursive=True) -> Sequence[
+    def match_pattern(src_nodes: Sequence[AstProtocol], patterns: Sequence[AstProtocol], recursive=True) -> Sequence[
         PatternMatch]:
         return match_pattern(src_nodes, patterns, recursive)
 
