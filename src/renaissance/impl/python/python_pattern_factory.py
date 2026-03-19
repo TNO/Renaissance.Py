@@ -94,3 +94,7 @@ class PythonPatternFactory:
     def create_decorators(self, param):
         module = self.factory.create_from_text(replace_dollar(param) + '\ndef test(): pass', "test.py")
         return module.body[0].children[2]
+
+    def create_kwargs(self, kw_str):
+        call = ast.parse(f'fun({replace_dollar(kw_str)})', 'snippet.py',type_comments=True).body[0]
+        return [PythonASTNode(kwarg) for kwarg in call.value.keywords]

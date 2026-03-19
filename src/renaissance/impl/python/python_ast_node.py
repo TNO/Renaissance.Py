@@ -304,6 +304,7 @@ class PythonASTNode(ASTNode):
     def parent(self) -> Optional['PythonASTNode']:
         return self._parent
 
+    @property
     @override
     def is_statement(self) -> bool:
         return isinstance(self.node, ast.stmt)
