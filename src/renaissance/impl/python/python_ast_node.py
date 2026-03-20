@@ -4,10 +4,9 @@ from typing import Any, Optional, Sequence
 from ast_comments import *
 from typing_extensions import override
 
-from renaissance.common import Stream
 from renaissance.impl import MATCH_ONE, MATCH_ALL
-from renaissance.syntax_tree import ASTNode, ASTReference, PatternMatch
-from renaissance.syntax_tree.match_finder import match_pattern, is_match, find_in_list
+from renaissance.syntax_tree import ASTNode, ASTReference
+from renaissance.syntax_tree.match_finder import find_in_list
 
 OPERATOR_MAP = {
     'AnnAssign': '=',
@@ -34,6 +33,8 @@ OPERATOR_MAP = {
     'With': 'with',
 
 }
+types = ['int', 'float', 'str', 'list', 'set', 'tuple', 'Mapping', 'dict', 'Optional']
+IRRELEVANT_PROPS = {'comment'}
 
 class PythonASTReference:
     def __repr__(self):
@@ -73,7 +74,7 @@ class PythonTranslationUnit:
     def lazy_create_refers(self, node: 'ASTNode') -> None:
         if self.references_initialized:
             return
-        node.root.process(self.create_references)
+        node.root.process(lambda n: self.create_references(n))
         self.references_initialized = True
 
     def convert(self, line_nr, col):
@@ -101,66 +102,61 @@ class PythonTranslationUnit:
                     if node.name not in self._nodes:
                         self._nodes[node.name] = node
 
-    @staticmethod
-    def create_references(ast_node) -> None:
+
+    def create_references(self, ast_node) -> None:
         assert isinstance(ast_node, PythonASTNode), f'Expected PythonASTNode but got {type(ast_node)}'
-        self = ast_node.translation_unit
-        try:
-            match ast_node.kind:
-                case 'arg':
-                    if ast_node.name != 'self':
-                        if isinstance(ast_node.node, ast.arg) and isinstance(ast_node.node.annotation, ast.Name):
-                            node_id = ast_node.name
-                            ref_id = ast_node.node.annotation.id
-                            ref_kind = 'TypeRef'
-                            self.add_reference(node_id, ref_id, ref_kind)
-                case 'Assign':
-                    if isinstance(ast_node.node, ast.Assign):
-                        for n in ast_node.node.targets:
-                            if isinstance(n, ast.Name) and isinstance(ast_node.node.value, ast.Call):
-                                node_id = n.id
-                                func = ast_node.node.value.func
-                                ref_id = func.id if isinstance(func, ast.Name) else None
-                                if ref_id:
-                                    ref_kind = 'CallRef'
-                                    self.add_reference(node_id, ref_id, ref_kind)
-                case 'AnnAssign':
-                    if isinstance(ast_node.node, ast.AnnAssign):
-                        if ast_node.node.annotation and isinstance(ast_node.node.target, ast.Name) and isinstance(ast_node.node.annotation, ast.Name):
-                            node_id = ast_node.node.target.id
-                            ref_id = ast_node.node.annotation.id
-                            ref_kind = 'TypeRef'
-                            self.add_reference(node_id, ref_id, ref_kind)
-                case 'ClassDef':
-                    if isinstance(ast_node.node, ast.ClassDef):
-                        node = ast_node.node
-                        node_id = node.name
-                        if node.bases:
-                            ref_node = node.bases[0]
-                            if isinstance(ref_node, ast.Name):
-                                ref_id = ref_node.id
-                                ref_kind = 'Inherit'
+        match ast_node.kind:
+            case 'arg':
+                if ast_node.name != 'self':
+                    if isinstance(ast_node.node, ast.arg) and isinstance(ast_node.node.annotation, ast.Name):
+                        node_id = ast_node.name
+                        ref_id = ast_node.node.annotation.id
+                        ref_kind = 'TypeRef'
+                        self.add_reference(node_id, ref_id, ref_kind)
+            case 'Assign':
+                if isinstance(ast_node.node, ast.Assign):
+                    for n in ast_node.node.targets:
+                        if isinstance(n, ast.Name) and isinstance(ast_node.node.value, ast.Call):
+                            node_id = n.id
+                            func = ast_node.node.value.func
+                            ref_id = func.id if isinstance(func, ast.Name) else None
+                            if ref_id:
+                                ref_kind = 'CallRef'
                                 self.add_reference(node_id, ref_id, ref_kind)
-                    # add functions and attributes to class
-
-                case 'Call':
-                    if isinstance(ast_node.node, ast.Call):
-                        # obj.function. then obj refers to function
-                        if isinstance(ast_node.node.func, ast.Attribute):
-                            node_id = ast_node.name
-                            ref_id = ast_node.node.func.attr
-                            ref_kind = 'FuncCall'
+            case 'AnnAssign':
+                if isinstance(ast_node.node, ast.AnnAssign):
+                    if ast_node.node.annotation and isinstance(ast_node.node.target, ast.Name) and isinstance(ast_node.node.annotation, ast.Name):
+                        node_id = ast_node.node.target.id
+                        ref_id = ast_node.node.annotation.id
+                        ref_kind = 'TypeRef'
+                        self.add_reference(node_id, ref_id, ref_kind)
+            case 'ClassDef':
+                if isinstance(ast_node.node, ast.ClassDef):
+                    node = ast_node.node
+                    node_id = node.name
+                    if node.bases:
+                        ref_node = node.bases[0]
+                        if isinstance(ref_node, ast.Name):
+                            ref_id = ref_node.id
+                            ref_kind = 'Inherit'
                             self.add_reference(node_id, ref_id, ref_kind)
-                        # call function a in function b, then b refers to a
-                        container = ast_node.get_container_parent()
-                        if container.kind == 'FunctionDef' and isinstance(ast_node.node.func, ast.Name):
-                            node_id = container.name
-                            ref_id = ast_node.node.func.id
-                            ref_kind = 'FuncCall'
-                            self.add_reference(node_id, ref_id, ref_kind)
-        except:
-            pass
+                # add functions and attributes to class
 
+            case 'Call':
+                if isinstance(ast_node.node, ast.Call):
+                    # obj.function. then obj refers to function
+                    if isinstance(ast_node.node.func, ast.Attribute):
+                        node_id = ast_node.name
+                        ref_id = ast_node.node.func.attr
+                        ref_kind = 'FuncCall'
+                        self.add_reference(node_id, ref_id, ref_kind)
+                    # call function 'a' in function 'b', then 'b' refers to 'a'
+                    container = ast_node.get_container_parent()
+                    if container.kind == 'FunctionDef' and isinstance(ast_node.node.func, ast.Name):
+                        node_id = container.name
+                        ref_id = ast_node.node.func.id
+                        ref_kind = 'FuncCall'
+                        self.add_reference(node_id, ref_id, ref_kind)
 
     def add_reference(self,node_id: str, ref_id: str, ref_kind: str) -> None:
         properties = {}
@@ -168,34 +164,46 @@ class PythonTranslationUnit:
             return
         reference = PythonASTReference(ref_id, ref_kind, properties)
         referenced_by = PythonASTReference(node_id, ref_kind, properties)
-        try:
+        if node_id in self._references:
             self._references[node_id].append(reference)
-        except:
+        else:
             self._references[node_id] = [reference]
-        try:
+        if ref_id in self._referenced_by:
             self._referenced_by[ref_id].append(referenced_by)
-        except:
+        else:
             self._referenced_by[ref_id] = [referenced_by]
+
+    def get_referenced_by(self, node_id):
+        refs = self._referenced_by.get(node_id,[])
+        return [ASTReference(self._nodes[ref.node_id], ref.ref_kind, ref.properties) for ref in refs]
+    def get_references(self, node_id):
+        refs = self._references.get(node_id, [])
+        return [ASTReference(self._nodes[ref.node_id], ref.ref_kind, ref.properties) for ref in refs]
+
 
 
 class ImplicitNode(ast.Name):
-    def __init__(self, name, children):
-        super().__init__(name)
-        self.body = children
-        self.lineno = 0
-        self.col_offset = 0
-        self.end_lineno = 0
-        self.end_col_offset = 0
-
     _fields = (
         'id',
         'body',
     )
 
+    _field_types = {
+        'id': str,
+        'body': list,
+    }
+
+    def __init__(self, name, children=None):
+        super().__init__(name)
+        self.body = children or []
+        self.lineno = 0
+        self.col_offset = 0
+        self.end_lineno = 0
+        self.end_col_offset = 0
+
 
 class PythonASTNode(ASTNode):
-    def __init__(self, node: ast.AST, translation_unit: PythonTranslationUnit = None, parent=None,
-                 start_offset: Optional[int] = None, length: Optional[int] = None, insert_kind: Optional[str] = None):
+    def __init__(self, node: ast.AST, translation_unit: PythonTranslationUnit = None, parent=None):
         super().__init__(self if parent is None else parent.root)
         self.node = node
         self._parent = parent
@@ -217,15 +225,13 @@ class PythonASTNode(ASTNode):
             self._offset = 0
             self.translation_unit = None
 
-        if (isinstance(node, str)):
+        if isinstance(node, str):
             self._kind = 'Name'
             return
 
-        id = self.derive_id(node)
-
-        if id.startswith(MATCH_ONE):
+        if self._name.startswith(MATCH_ONE):
             self._kind = MATCH_ONE
-        elif id.startswith(MATCH_ALL):
+        elif self._name.startswith(MATCH_ALL):
             self._kind = MATCH_ALL
 
         for name in node._fields:
@@ -253,21 +259,11 @@ class PythonASTNode(ASTNode):
                 print(e)
                 continue
 
-    def derive_id(self, node: ast.AST) -> str:
-        node_id = ''
-        if isinstance(node, ast.arg):
-            node_id = node.arg
-        elif isinstance(node, ast.Name):
-            node_id = node.id
-        elif isinstance(node, ast.Expr) and isinstance(node.value, ast.Name):
-            node_id = node.value.id
-        return node_id
-
     def __eq__(self, other):
-        if (not other or not isinstance(other, type(self))
-                or self.kind != other.kind):
-            return False
-        return is_match(self, other)
+        return (isinstance(other, type(self))
+            and self.kind == other.kind
+            and self.match_props(other.properties)
+            and self.match_children(other.children))    
 
     def __contains__(self, item):
         if isinstance(item, self.__class__):
@@ -289,14 +285,17 @@ class PythonASTNode(ASTNode):
             return self.properties[key]
         raise TypeError(f"Indices must be integers or slices, not {type(key)}")
 
-    def find_all(self, pattern: Sequence) -> Sequence[PatternMatch]:
-        return match_pattern(self.children, pattern)
+
+    def match_props(self, properties) -> bool:
+        all_keys = (self.properties.keys() | properties.keys()) - IRRELEVANT_PROPS
+        return all(self.properties.get(n) == properties.get(n) for n in all_keys)
+
+    def match_children(self, children):
+        return all(self[i] == child for i, child in enumerate(children))
+        
 
     def derive_position(self, node: ast.AST, translation_unit: PythonTranslationUnit, parent):
         if node._attributes:
-            located = isinstance(node, ast.expr) or isinstance(node, ast.stmt) or isinstance(node, ast.arg) or isinstance(node, ast.pattern)
-            if located:
-                located_node = node  # type: ignore[assignment]
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)) and node.decorator_list:
                 self._offset = self.translation_unit.convert(node.decorator_list[0].lineno,
                                                              node.decorator_list[0].col_offset) - 1
@@ -330,8 +329,11 @@ class PythonASTNode(ASTNode):
         return root_node
 
     def _derive_name(self):
-        if isinstance(self.node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.Global, ast.ExceptHandler)) and self.node.name:
+
+        if isinstance(self.node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.ExceptHandler, ast.Global)) and self.node.name:
             name = self.node.name
+        elif isinstance(self.node, ast.Global) and self.node.names:
+            name = ', '.join(self.node.names)
         elif isinstance(self.node, (ast.AnnAssign, ast.AugAssign)) and isinstance(self.node.target, ast.Name):
             name = self.node.target.id
         elif isinstance(self.node, ast.Assign) and len(self.node.targets) == 1:
@@ -340,8 +342,10 @@ class PythonASTNode(ASTNode):
                 name = target.id
             else:
                 name = self.kind
-        elif isinstance(self.node, (ast.Name, ast.arg)):
-            name = self.node.id if isinstance(self.node, ast.Name) else self.node.arg
+        elif isinstance(self.node, ast.Name):
+            name = self.node.id
+        elif isinstance(self.node, ast.arg):
+            name = self.node.arg
         elif isinstance(self.node, ast.Match) and isinstance(self.node.subject, ast.Name):
             name = self.node.subject.id
         elif isinstance(self.node, ast.Import) and len(self.node.names) == 1:
@@ -350,6 +354,11 @@ class PythonASTNode(ASTNode):
             name = self.node.names[0].name
         elif isinstance(self.node, (ast.Assert, ast.Break, ast.Pass, ast.Raise, ast.Continue)):
             name = ''
+        elif isinstance(self.node, (ast.For, ast.AsyncFor)):
+            if isinstance(self.node.target, Tuple):
+                name = getattr(self.node.target.dims[1],'id')
+            else:
+                name = self.node.target.id
 
         elif 'body' not in self.node._fields:
             name = unparse(self.node)
@@ -420,43 +429,20 @@ class PythonASTNode(ASTNode):
     @property
     def referenced_by(self) -> Sequence[ASTReference]:
         self.translation_unit.lazy_create_refers(self)
-        node_id = self.node.name if isinstance(self.node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.ExceptHandler, ast.Global)) else (self.node.id if isinstance(self.node, ast.Name) else '')
-        ref_by = self.translation_unit._referenced_by.get(node_id, [])
-        # if both the function declaration and function definition are avaible 
-        # the references are stored in the function definition
-        # but we want them to also show up in the declaration
-        if len(ref_by) == 0:
-            definition = None
-            if definition:
-                ref_by = self.translation_unit._referenced_by.get(node_id, [])
-        return Stream(ref_by) \
-            .map(
-            lambda ref: ASTReference(self.translation_unit._nodes[ref.node_id], ref.ref_kind, ref.properties)).to_list()
+        return self.translation_unit.get_referenced_by(self.name)
 
-    @property
-    @override
-    def extended_end_offset(self) -> int:
-        return self.offset + self.length
 
     @override
     @property
     def references(self) -> list[ASTReference]:
         self.translation_unit.lazy_create_refers(self)
-        node_id = ''
-        match self.kind:
-            case 'FunctionDef':
-                node_id = self.name
-            case 'Call':
-                node_id = self.name
-            case 'ClassDef':
-                node_id = self.name
-            case 'Name':
-                node_id = self.name
-            case 'arg':
-                node_id = self.name
-        return Stream(self.translation_unit._references.get(node_id, [])) \
-            .map(
-            lambda ref: ASTReference(self.translation_unit._nodes[ref.node_id], ref.ref_kind, ref.properties)).to_list()
+        return self.translation_unit.get_references(self.name)
+    
+    @property
+    @override
+    def extended_end_offset(self) -> int:
+        return self.offset + self.length
+
 
     def add_node(self):
         self.translation_unit.add(self)
@@ -473,4 +459,4 @@ class PythonASTNode(ASTNode):
             return self.parent.get_container_parent()
 
 
-types = ['int', 'float', 'str', 'list', 'set', 'tuple', 'Mapping', 'dict', 'Optional']
+
