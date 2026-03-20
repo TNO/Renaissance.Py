@@ -122,8 +122,8 @@ class Stream[T]:
     def find_last(self) -> StreamOptional[T]:
         try:
             # get the latest element from the iterable
-            return StreamOptional(list(self.__iterable)[-1]) 
-        except:
+            return StreamOptional(list(self.__iterable)[-1])
+        except IndexError:
             return StreamOptional(None)
 
     def find_any(self) -> StreamOptional[T]:

@@ -3,8 +3,6 @@ import subprocess
 import sys
 import tempfile
 
-import black
-
 def fix_indent(code_string):
     with tempfile.NamedTemporaryFile(suffix='.py', mode='w+', delete=False) as temp_file:
         file_path = temp_file.name

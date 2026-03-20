@@ -227,8 +227,8 @@ class MatchFinder:
 
     @staticmethod
     def find_all(
-            src_nodes: Sequence[AstProtocol],
-            *patterns: Sequence[AstProtocol],
+            src_nodes,
+            *patterns,
             recursive: bool = True,
     ) -> Stream[PatternMatch]:
         """
@@ -252,4 +252,4 @@ class MatchFinder:
         PatternMatch]:
         return match_pattern(src_nodes, patterns, recursive)
 
-# TODO check with pierre whether we should take the highest or the deepest match re imple backtracking to find the best match
+# TODO check with pierre whether we should take the highest or the deepest match re implementation backtracking to find the best match

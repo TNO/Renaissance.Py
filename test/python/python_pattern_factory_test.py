@@ -230,6 +230,6 @@ class TestPythonFactory:
     def test_create_kwargs(self):
         pattern = self.pattern_factory.create_statement('fun($c=0, $d=2312)')
         kwargs = [PythonASTNode(kwarg) for kwarg in pattern.node.value.keywords]
-        it = self.pattern_factory.create_kwargs('$c=0, $d=2312')
+        it = create_kwargs('$c=0, $d=2312')
         assert_that(it[0], is_(kwargs[0]))
 

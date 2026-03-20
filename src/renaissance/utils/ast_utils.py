@@ -5,14 +5,10 @@ from renaissance.syntax_tree.ast_rewriter import ASTRewriter
 
 class ASTUtils:
     @staticmethod
-    def commit(
-        rewriter: ASTRewriter, factory: ASTFactory, in_memory: bool = False
-    ):
+    def commit(rewriter: ASTRewriter, factory: ASTFactory, in_memory: bool = False):
         rewriter.apply_to_string()
         if in_memory:
-            atu = factory.create_from_text(
-                rewriter.apply_to_string(), rewriter.get_filename()
-            )
+            atu = factory.create_from_text(rewriter.apply_to_string(), rewriter.get_filename())
             return atu, ASTRewriter(atu)
         else:
             # save file first then reload it

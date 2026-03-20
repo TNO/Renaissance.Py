@@ -20,7 +20,6 @@ class BatchASTProcessor:
         Initialize the BatchASTProcessor.
 
         Args:
-            user_objects (Optional[dict[str, Any]]): A dictionary of user-defined objects. Defaults to None.
             in_memory (bool): Flag to indicate if processing should be done in memory. Defaults to False.
             max_processes (int): The maximum number of processes to use. Defaults to 4.
         """
@@ -106,9 +105,9 @@ class BatchASTProcessor:
             for results in executor.map(
                 partial_process_item, filter(is_eligible, iterable)
             ):
-                for callable in results:
+                for my_callable in results:
                     # the post-processing is done in the main thread
-                    callable()
+                    my_callable()
 
     def _replace_if_in_memory(self, item: AST_FACTORY_AND_ATU) -> AST_FACTORY_AND_ATU:
         if self.in_memory and self.in_memory_files.get(
@@ -139,7 +138,7 @@ def process_atu(
 ) -> Sequence[Callable[[], None]]:
     atu = self._replace_if_in_memory(atu)
     ast_processor = ASTProcessor(atu[1], atu[0], in_memory)
-    results: Sequence[Callable[[], None]] = []
+    results: list[Callable[[], None]] = []
 
     for repeat in range(max_repeat):
         for action in actions:

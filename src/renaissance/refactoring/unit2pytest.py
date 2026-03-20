@@ -12,7 +12,7 @@ class Unit2Pytest:
     def __init__(self, file):
         self.file = file
         self.factory = ASTFactory(PythonASTNode, [])
-        self.pattern_factory = PythonPatternFactory(self.factory, None)
+        self.pattern_factory = PythonPatternFactory(self.factory)
         self.atu = self.factory.create(file)
         self.stmts = self.atu.children
         self.rewriter = ASTRewriter(self.atu)
