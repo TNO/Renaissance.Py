@@ -80,7 +80,94 @@ class PythonTranslationUnit():
         if (line_nr > len(self.lines)):
             return 0
         return sum(len(self.lines[i]) + 1 for i in range(line_nr - 1)) + col
+        # add node to the node list for references
+    def add(self, node):
+        match node.kind:
+            case 'Name':
+                if node.node.id not in self._nodes and node.node.id not in types:
+                    self._nodes[node.node.id] = node
+            case 'FunctionDef':
+                if node.node.name not in self._nodes:
+                    self._nodes[node.node.name] = node
+            case 'Call':
+                if node.name not in self._nodes:
+                    self._nodes[node.name] = node
+            case 'ClassDef':
+                if node.name not in self._nodes:
+                    self._nodes[node.name] = node
+            case 'arg':
+                if node.name != 'self':
+                    if node.name not in self._nodes:
+                        self._nodes[node.name] = node
 
+class ReferenceHelper:
+    @staticmethod
+    def create_references(ast_node) -> None:
+        assert isinstance(ast_node, PythonASTNode), f'Expected PythonASTNode but got {type(ast_node)}'
+        try:
+            match ast_node.kind:
+                case 'arg':
+                    if ast_node.name != 'self':
+                        if hasattr(ast_node.node, 'arg') and hasattr(ast_node.node, 'annotation'):
+                            node_id = ast_node.name
+                            ref_id = ast_node.node.annotation.id
+                            ref_kind = 'TypeRef'
+                            ReferenceHelper.add_reference(ast_node, node_id, ref_id, ref_kind)
+                case 'Assign':
+                    for n in ast_node.node.targets:
+                        if isinstance(n, ast.Name) and isinstance(ast_node.node.value, ast.Call):
+                            node_id = n.id
+                            ref_id = ast_node.node.value.func.id
+                            ref_kind = 'CallRef'
+                            ReferenceHelper.add_reference(ast_node, node_id, ref_id, ref_kind)
+                case 'AnnAssign':
+                    if ast_node.node.annotation:
+                        node_id = ast_node.node.target.id
+                        ref_id = ast_node.node.annotation.id
+                        ref_kind = 'TypeRef'
+                    ReferenceHelper.add_reference(ast_node, node_id, ref_id, ref_kind)
+                case 'ClassDef':
+                    node = ast_node.node
+                    node_id = ast_node.node.name
+                    if node.bases:
+                        ref_node = node.bases[0]
+                        ref_id = ref_node.id
+                        ref_kind = 'Inherit'
+                        ReferenceHelper.add_reference(ast_node, node_id, ref_id, ref_kind)
+                    # add functions and attributes to class
+
+                case 'Call':
+                    # obj.function. then obj refers to function
+                    if hasattr(ast_node.node, 'func') and hasattr(ast_node.node.func, 'attr'):
+                        node_id = ast_node.name
+                        ref_id = ast_node.node.func.attr
+                        ref_kind = 'FuncCall'
+                        ReferenceHelper.add_reference(ast_node, node_id, ref_id, ref_kind)
+                    # call function a in function b, then b refers to a
+                    container = ast_node.get_container_parent()
+                    if container.kind == 'FunctionDef':
+                        node_id = container.name
+                        ref_id = ast_node.node.func.id
+                        ref_kind = 'FuncCall'
+                        ReferenceHelper.add_reference(ast_node, node_id, ref_id, ref_kind)
+        except:
+            pass
+
+    @staticmethod
+    def add_reference(ast_node, node_id: str, ref_id: str, ref_kind: str) -> None:
+        properties = []
+        if node_id == ref_id:
+            return
+        reference = PythonASTReference(ref_id, ref_kind, properties)
+        referenced_by = PythonASTReference(node_id, ref_kind, properties)
+        try:
+            ast_node.translation_unit._references[node_id].append(reference)
+        except:
+            ast_node.translation_unit._references[node_id] = [reference]
+        try:
+            ast_node.translation_unit._referenced_by[ref_id].append(referenced_by)
+        except:
+            ast_node.translation_unit._referenced_by[ref_id] = [referenced_by]
 
 class ImplicitNode(ast.Name):
     def __init__(self, name, children):
@@ -351,24 +438,8 @@ class PythonASTNode(ASTNode):
             lambda ref: ASTReference(self.translation_unit._nodes[ref.node_id], ref.ref_kind, ref.properties)).to_list()
 
     def add_node(self):
-        # add node to the node list for references
-        match self.kind:
-            case 'Name':
-                if self.node.id not in self.translation_unit._nodes and self.node.id not in types:
-                    self.translation_unit._nodes[self.node.id] = self
-            case 'FunctionDef':
-                if self.node.name not in self.translation_unit._nodes:
-                    self.translation_unit._nodes[self.node.name] = self
-            case 'Call':
-                if self.name not in self.translation_unit._nodes:
-                    self.translation_unit._nodes[self.name] = self
-            case 'ClassDef':
-                if self.name not in self.translation_unit._nodes:
-                    self.translation_unit._nodes[self.name] = self
-            case 'arg':
-                if self.name != 'self':
-                    if self.name not in self.translation_unit._nodes:
-                        self.translation_unit._nodes[self.name] = self
+        self.translation_unit.add(self)
+
 
     def get_container_parent(self):
         # Get the containing definition parent
@@ -382,74 +453,7 @@ class PythonASTNode(ASTNode):
             return self.parent.get_container_parent()
 
 
-class ReferenceHelper:
-    @staticmethod
-    def create_references(ast_node: PythonASTNode) -> None:
-        assert isinstance(ast_node, PythonASTNode), f'Expected PythonASTNode but got {type(ast_node)}'
-        try:
-            match ast_node.kind:
-                case 'arg':
-                    if ast_node.name != 'self':
-                        if hasattr(ast_node.node, 'arg') and hasattr(ast_node.node, 'annotation'):
-                            node_id = ast_node.name
-                            ref_id = ast_node.node.annotation.id
-                            ref_kind = 'TypeRef'
-                            ReferenceHelper.add_reference(ast_node, node_id, ref_id, ref_kind)
-                case 'Assign':
-                    for n in ast_node.node.targets:
-                        if isinstance(n, ast.Name) and isinstance(ast_node.node.value, ast.Call):
-                            node_id = n.id
-                            ref_id = ast_node.node.value.func.id
-                            ref_kind = 'CallRef'
-                            ReferenceHelper.add_reference(ast_node, node_id, ref_id, ref_kind)
-                case 'AnnAssign':
-                    if ast_node.node.annotation:
-                        node_id = ast_node.node.target.id
-                        ref_id = ast_node.node.annotation.id
-                        ref_kind = 'TypeRef'
-                    ReferenceHelper.add_reference(ast_node, node_id, ref_id, ref_kind)
-                case 'ClassDef':
-                    node = ast_node.node
-                    node_id = ast_node.node.name
-                    if node.bases:
-                        ref_node = node.bases[0]
-                        ref_id = ref_node.id
-                        ref_kind = 'Inherit'
-                        ReferenceHelper.add_reference(ast_node, node_id, ref_id, ref_kind)
-                    # add functions and attributes to class
 
-                case 'Call':
-                    # obj.function. then obj refers to function
-                    if hasattr(ast_node.node, 'func') and hasattr(ast_node.node.func, 'attr'):
-                        node_id = ast_node.name
-                        ref_id = ast_node.node.func.attr
-                        ref_kind = 'FuncCall'
-                        ReferenceHelper.add_reference(ast_node, node_id, ref_id, ref_kind)
-                    # call function a in function b, then b refers to a
-                    container = ast_node.get_container_parent()
-                    if container.kind == 'FunctionDef':
-                        node_id = container.name
-                        ref_id = ast_node.node.func.id
-                        ref_kind = 'FuncCall'
-                        ReferenceHelper.add_reference(ast_node, node_id, ref_id, ref_kind)
-        except:
-            pass
-
-    @staticmethod
-    def add_reference(ast_node: PythonASTNode, node_id: str, ref_id: str, ref_kind: str) -> None:
-        properties = []
-        if node_id == ref_id:
-            return
-        reference = PythonASTReference(ref_id, ref_kind, properties)
-        referenced_by = PythonASTReference(node_id, ref_kind, properties)
-        try:
-            ast_node.translation_unit._references[node_id].append(reference)
-        except:
-            ast_node.translation_unit._references[node_id] = [reference]
-        try:
-            ast_node.translation_unit._referenced_by[ref_id].append(referenced_by)
-        except:
-            ast_node.translation_unit._referenced_by[ref_id] = [referenced_by]
 
 
 types = ['int', 'float', 'str', 'list', 'set', 'tuple', 'Mapping', 'dict', 'Optional']

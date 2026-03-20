@@ -25,14 +25,14 @@ class SimplifyRenaissance:
 
     def simplify(self):
         print(f"simplify {self.file}")
-
-        self.replace("factory = ASTFactory(PythonASTNode)\n$atu = factory.create_from_text('$code', '$name')",
-            "PythonASTNode.load_from_text('$code', '$name')")
-
+        self.replace('unittest.main()', 'pytest.main()')
+        self.replace('import unittest', 'import pytest\nfrom hamcrest import *')
+        self.replace("factory = ASTFactory(PythonASTNode)\n$atu = factory.create_from_text($code, $name)",
+            "PythonASTNode.load_from_text($code, $name)")
 
     def replace(self, find, repl):
         pattern = self.pattern_factory.create_statements(find)
-        for match in match_pattern(self.stmts, pattern):
+        for match in match_pattern(self.stmts[-1].body[0].body, pattern):
             replacement = repl
             for exp in match.expansions:
                 arg_str = ', '.join([self.to_str(node) for node in match.expansions[exp]])
