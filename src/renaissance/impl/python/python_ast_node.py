@@ -50,7 +50,7 @@ class PythonTranslationUnit():
 
     def __init__(self, content, file_name: str):
         self.content = content.encode(sys.getfilesystemencoding())
-        self.atu = parse(content, file_name,type_comments=True)
+        self.atu = parse(content, file_name, type_comments=True)
         self.file_name = file_name
         self.references_initialized = False
         PythonTranslationUnit.cache[file_name] = content
@@ -73,7 +73,7 @@ class PythonTranslationUnit():
     def lazy_create_refers(self, node: 'ASTNode') -> None:
         if self.references_initialized:
             return
-        node.root.process(ReferenceHelper.create_references)
+        node.root.process(self.create_references)
         self.references_initialized = True
 
     def convert(self, line_nr, col):
@@ -81,6 +81,7 @@ class PythonTranslationUnit():
             return 0
         return sum(len(self.lines[i]) + 1 for i in range(line_nr - 1)) + col
         # add node to the node list for references
+
     def add(self, node):
         match node.kind:
             case 'Name':
@@ -100,7 +101,6 @@ class PythonTranslationUnit():
                     if node.name not in self._nodes:
                         self._nodes[node.name] = node
 
-class ReferenceHelper:
     @staticmethod
     def create_references(ast_node) -> None:
         assert isinstance(ast_node, PythonASTNode), f'Expected PythonASTNode but got {type(ast_node)}'
@@ -112,20 +112,20 @@ class ReferenceHelper:
                             node_id = ast_node.name
                             ref_id = ast_node.node.annotation.id
                             ref_kind = 'TypeRef'
-                            ReferenceHelper.add_reference(ast_node, node_id, ref_id, ref_kind)
+                            PythonTranslationUnit.add_reference(ast_node, node_id, ref_id, ref_kind)
                 case 'Assign':
                     for n in ast_node.node.targets:
                         if isinstance(n, ast.Name) and isinstance(ast_node.node.value, ast.Call):
                             node_id = n.id
                             ref_id = ast_node.node.value.func.id
                             ref_kind = 'CallRef'
-                            ReferenceHelper.add_reference(ast_node, node_id, ref_id, ref_kind)
+                            PythonTranslationUnit.add_reference(ast_node, node_id, ref_id, ref_kind)
                 case 'AnnAssign':
                     if ast_node.node.annotation:
                         node_id = ast_node.node.target.id
                         ref_id = ast_node.node.annotation.id
                         ref_kind = 'TypeRef'
-                    ReferenceHelper.add_reference(ast_node, node_id, ref_id, ref_kind)
+                    PythonTranslationUnit.add_reference(ast_node, node_id, ref_id, ref_kind)
                 case 'ClassDef':
                     node = ast_node.node
                     node_id = ast_node.node.name
@@ -133,7 +133,7 @@ class ReferenceHelper:
                         ref_node = node.bases[0]
                         ref_id = ref_node.id
                         ref_kind = 'Inherit'
-                        ReferenceHelper.add_reference(ast_node, node_id, ref_id, ref_kind)
+                        PythonTranslationUnit.add_reference(ast_node, node_id, ref_id, ref_kind)
                     # add functions and attributes to class
 
                 case 'Call':
@@ -142,14 +142,14 @@ class ReferenceHelper:
                         node_id = ast_node.name
                         ref_id = ast_node.node.func.attr
                         ref_kind = 'FuncCall'
-                        ReferenceHelper.add_reference(ast_node, node_id, ref_id, ref_kind)
+                        PythonTranslationUnit.add_reference(ast_node, node_id, ref_id, ref_kind)
                     # call function a in function b, then b refers to a
                     container = ast_node.get_container_parent()
                     if container.kind == 'FunctionDef':
                         node_id = container.name
                         ref_id = ast_node.node.func.id
                         ref_kind = 'FuncCall'
-                        ReferenceHelper.add_reference(ast_node, node_id, ref_id, ref_kind)
+                        PythonTranslationUnit.add_reference(ast_node, node_id, ref_id, ref_kind)
         except:
             pass
 
@@ -169,6 +169,7 @@ class ReferenceHelper:
         except:
             ast_node.translation_unit._referenced_by[ref_id] = [referenced_by]
 
+
 class ImplicitNode(ast.Name):
     def __init__(self, name, children):
         super().__init__(name)
@@ -182,7 +183,6 @@ class ImplicitNode(ast.Name):
         'id',
         'body',
     )
-
 
 
 class PythonASTNode(ASTNode):
@@ -257,15 +257,14 @@ class PythonASTNode(ASTNode):
 
     def __eq__(self, other):
         if (not other or not isinstance(other, type(self))
-            or self.kind != other.kind):
+                or self.kind != other.kind):
             return False
-        return is_match(self,other)
+        return is_match(self, other)
 
     def __contains__(self, item):
         if isinstance(item, self.__class__):
             item = [item]
-        return find_in_list(self.children,item )
-
+        return find_in_list(self.children, item)
 
     def __getitem__(self, key):
         """Allow indexing/slicing into node to access children.
@@ -282,15 +281,17 @@ class PythonASTNode(ASTNode):
             return self.properties[key]
         raise TypeError(f"Indices must be integers or slices, not {type(key)}")
 
-    def find_all(self, pattern: Sequence)-> Sequence[PatternMatch]:
+    def find_all(self, pattern: Sequence) -> Sequence[PatternMatch]:
         return match_pattern(self.children, pattern)
+
     def derive_position(self, node: ast.AST, translation_unit: PythonTranslationUnit, parent):
         if node._attributes:
             if 'decorator_list' in self.node._fields and self.node.decorator_list:
-                self._offset = self.translation_unit.convert(self.node.decorator_list[0].lineno, self.node.decorator_list[0].col_offset) -1
+                self._offset = self.translation_unit.convert(self.node.decorator_list[0].lineno,
+                                                             self.node.decorator_list[0].col_offset) - 1
             elif parent.name == 'decorator_list':
                 # also include the @ in the decorator
-                self._offset = self.translation_unit.convert(self.node.lineno, self.node.col_offset) -1
+                self._offset = self.translation_unit.convert(self.node.lineno, self.node.col_offset) - 1
             else:
                 self._offset = self.translation_unit.convert(self.node.lineno, self.node.col_offset)
             self._length = self.translation_unit.convert(self.node.end_lineno, self.node.end_col_offset) - self.offset
@@ -310,7 +311,8 @@ class PythonASTNode(ASTNode):
 
     @override
     @staticmethod
-    def load_from_text(text: str, file_name: str='test.py', extra_args: Sequence[str]=None, working_dir: Path=None) -> "PythonASTNode":
+    def load_from_text(text: str, file_name: str = 'test.py', extra_args: Sequence[str] = None,
+                       working_dir: Path = None) -> "PythonASTNode":
         translation_unit = PythonTranslationUnit(text, file_name=str(file_name))
         translation_unit.check_diagnostics()
         root_node = PythonASTNode(translation_unit.atu, translation_unit, None)
@@ -320,17 +322,17 @@ class PythonASTNode(ASTNode):
     def _derive_name(self):
         if 'name' in self.node._fields and self.node.name:
             name = self.node.name
-        elif 'target' in self.node._fields and hasattr(self.node.target,'id'):
+        elif 'target' in self.node._fields and hasattr(self.node.target, 'id'):
             name = self.node.target.id
-        elif 'targets' in self.node._fields and len(self.node.targets)==1 and hasattr(self.node.targets[0],'id'):
+        elif 'targets' in self.node._fields and len(self.node.targets) == 1 and hasattr(self.node.targets[0], 'id'):
             name = self.node.targets[0].id
         elif 'id' in self.node._fields and self.node.id:
             name = self.node.id
         elif self.kind == 'Match':
             name = self.node.subject.id
-        elif self.kind in ['Import','ImportFrom'] and len(self.node.names) ==1:
+        elif self.kind in ['Import', 'ImportFrom'] and len(self.node.names) == 1:
             name = self.node.names[0].name
-        elif self.kind in ['Assert', 'Break', 'Pass', 'Raise','Continue']:
+        elif self.kind in ['Assert', 'Break', 'Pass', 'Raise', 'Continue']:
             name = ''
 
         elif 'body' not in self.node._fields:
@@ -347,7 +349,7 @@ class PythonASTNode(ASTNode):
     def value(self):
         if self.kind == 'Assert':
             return 0
-        return self.node.value.value if hasattr(self.node,'value') else None
+        return self.node.value.value if hasattr(self.node, 'value') else None
 
     @property
     def expr(self):
@@ -364,19 +366,20 @@ class PythonASTNode(ASTNode):
         else:
             return None
 
-
     @property
     def operator(self):
         node_type = type(self.node).__name__
-        op   = type(self.node.op).__name__ if 'op' in self.node._fields else ""
-        return OPERATOR_MAP.get(node_type+op,'')
+        op = type(self.node.op).__name__ if 'op' in self.node._fields else ""
+        return OPERATOR_MAP.get(node_type + op, '')
+
     @override
     @property
     def signature(self) -> str:
         sig = self.binary_file_content().decode(sys.getfilesystemencoding())
         if self.parent and self.parent.name == 'decorator_list' and not sig.startswith('@'):
-            sig = '@'+sig
+            sig = '@' + sig
         return sig
+
     @override
     def binary_file_content(self) -> bytes:
         return self.translation_unit.content[self.offset:self.end_offset] if self.translation_unit else unparse(
@@ -416,7 +419,8 @@ class PythonASTNode(ASTNode):
     @property
     @override
     def extended_end_offset(self) -> int:
-        return self.offset+self.length
+        return self.offset + self.length
+
     @override
     @property
     def references(self) -> list[ASTReference]:
@@ -440,7 +444,6 @@ class PythonASTNode(ASTNode):
     def add_node(self):
         self.translation_unit.add(self)
 
-
     def get_container_parent(self):
         # Get the containing definition parent
         if self.parent and self.parent.kind == 'FunctionDef':
@@ -451,9 +454,6 @@ class PythonASTNode(ASTNode):
             return self.parent
         else:
             return self.parent.get_container_parent()
-
-
-
 
 
 types = ['int', 'float', 'str', 'list', 'set', 'tuple', 'Mapping', 'dict', 'Optional']
