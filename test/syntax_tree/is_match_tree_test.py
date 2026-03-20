@@ -169,7 +169,7 @@ class TestMatchTree:
         src = self.pattern_factory.create_statements('2\n3\n4\n5\n61\n2\n3\n4\n5\n7\n8\n9')
         pattern = self.pattern_factory.create_statements('1')
 
-        assert_that(find_in_list(src, pattern, {}) , less_than(0))
+        assert_that(find_in_list(src, pattern, {}), less_than(0))
 
     def test_find_in_list_returns_last_pos(self):
         src = self.pattern_factory.create_statements('0\n1\n2\n3\n4\n5\n61\n2\n3\n4\n5\n7\n8\n9')
@@ -216,28 +216,27 @@ class TestMatchTree:
         assert_that(matches[0].expansions['$3'][0].name, is_('3'))
 
     def test_find_all_in_python_list_with_expansion(self):
-
-        atu = self.factory.create_from_text('''
-from unittest import TestCase
-
-class TestExample(TestCase):
-    def test_case_example(self):
-        # arrange
-        factory = {}
-    
-        # act
-        factory['a']= 1
-    
-        # assert
-        self.assertEqual(len(factory), 1)
-''', 'test_file.py')
+        atu = self.factory.create_from_text(textwrap.dedent('''
+        from unittest import TestCase
+        
+        class TestExample(TestCase):
+            def test_case_example(self):
+                # arrange
+                factory = {}
+            
+                # act
+                factory['a']= 1
+            
+                # assert
+                self.assertEqual(len(factory), 1)
+        '''), 'test_file.py')
         pattern = self.pattern_factory.create_statements('class $name(TestCase):\n    $$cases')
+        ASTShower.show_node(pattern[0])
         matches = MatchFinder.find_all(atu.children, pattern).to_list()
         assert_that(matches, has_length(1))
-        assert_that(['TestExample'], is_(matches[0].expansions['$name']))
+        assert_that(matches[0].expansions['$name'][0], is_('TestExample'))
 
     def test_find_all_in_python_arg_list_with_expansion(self):
-
         atu = self.factory.create_from_text('class klass: pass', 'test_file.py')
         statement = self.pattern_factory.create_statements('assertEqual(1,2,34,5,6,7,7,8)')
         pattern = self.pattern_factory.create_statements('assertEqual($$args)')
@@ -260,7 +259,6 @@ class TestExample(TestCase):
         assert_that(matches, has_length(2))
         assert_that(matches[0].expansions['$x'], is_not(empty()))
 
-
     def test_match_one_and_all_params(self):
         sample = textwrap.dedent('''
         context_stub=0
@@ -271,9 +269,8 @@ class TestExample(TestCase):
                       TAUT.TestDoubles(module=EMRMxAPxData_data_rep, context=context_stub)
                 )
         ''')
-        atu = self.factory.create_from_text(sample,'sample.py')
+        atu = self.factory.create_from_text(sample, 'sample.py')
         ASTShower.show_node(atu)
         kwargs = self.pattern_factory.create_kwargs('$c=context_stub')
         matches = MatchFinder.match_pattern(atu.children, kwargs)
         assert_that(matches, has_length(1))
-

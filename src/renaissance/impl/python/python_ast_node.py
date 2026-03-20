@@ -207,8 +207,7 @@ class PythonASTNode(ASTNode):
         super().__init__(self if parent is None else parent.root)
         self.node = node
         self._parent = parent
-        cls = type(node)
-        self._kind = cls.__name__
+        self._kind = self.derive_kind()
         self.indent = ''
         self._name = self._derive_name()
         self.show_props = False
@@ -224,15 +223,6 @@ class PythonASTNode(ASTNode):
             self._length = 0
             self._offset = 0
             self.translation_unit = None
-
-        if isinstance(node, str):
-            self._kind = 'Name'
-            return
-
-        if self._name.startswith(MATCH_ONE):
-            self._kind = MATCH_ONE
-        elif self._name.startswith(MATCH_ALL):
-            self._kind = MATCH_ALL
 
         for name in node._fields:
             try:
@@ -275,16 +265,21 @@ class PythonASTNode(ASTNode):
 
         Usage: node[0] == node.children[0]
         """
-        # support integer index and slice
-        if isinstance(key, int):
-            return self.children[key]
-        if isinstance(key, slice):
-            return self.children[key]
-        # support string keys to access properties (e.g., node['name'])
-        if isinstance(key, str):
-            return self.properties[key]
-        raise TypeError(f"Indices must be integers or slices, not {type(key)}")
+        return self.children[key]
 
+    def derive_kind(self) -> str:
+        signature = ''
+        if isinstance(self.node, ast.arg):
+            signature = self.node.arg
+        elif isinstance(self.node, ast.Name):
+            signature = self.node.id
+        elif isinstance(self.node, ast.Expr) and isinstance(self.node.value, ast.Name):
+            signature = self.node.value.id
+        if (signature.startswith(MATCH_ALL) or signature.startswith("$$") ) and ' ' not in signature and '(' not in signature:  # legacy compatibility
+            return MATCH_ALL
+        elif (signature.startswith(MATCH_ONE) or signature.startswith("$")) and ' ' not in signature and '(' not in signature:
+            return MATCH_ONE
+        return type(self.node).__name__
 
     def match_props(self, properties) -> bool:
         all_keys = (self.properties.keys() | properties.keys()) - IRRELEVANT_PROPS
@@ -330,10 +325,10 @@ class PythonASTNode(ASTNode):
 
     def _derive_name(self):
 
-        if isinstance(self.node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.ExceptHandler, ast.Global)) and self.node.name:
+        if isinstance(self.node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.ExceptHandler)) and self.node.name:
             name = self.node.name
-        elif isinstance(self.node, ast.Global) and self.node.names:
-            name = ', '.join(self.node.names)
+        elif isinstance(self.node, ast.Global) and len(self.node.names)==1:
+            name = self.node.names[0]
         elif isinstance(self.node, (ast.AnnAssign, ast.AugAssign)) and isinstance(self.node.target, ast.Name):
             name = self.node.target.id
         elif isinstance(self.node, ast.Assign) and len(self.node.targets) == 1:
@@ -357,9 +352,10 @@ class PythonASTNode(ASTNode):
         elif isinstance(self.node, (ast.For, ast.AsyncFor)):
             if isinstance(self.node.target, Tuple):
                 name = getattr(self.node.target.dims[1],'id')
-            else:
+            elif isinstance(self.node.target, Name):
                 name = self.node.target.id
-
+            else:
+                name = str(self.node.target)
         elif 'body' not in self.node._fields:
             name = unparse(self.node)
         else:

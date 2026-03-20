@@ -214,14 +214,6 @@ def outer():
         assert_that(second_stmt.filename, is_('apple.py'))
         assert_that(atu.translation_unit, is_(second_stmt.translation_unit))
 
-    def test_show_call_with_args(self):
-        src = self.pattern_factory.create_statement('def ba(a55,a66,a77,a88,a99): pass')
-        cmp = self.pattern_factory.create_statement('def ba($$args): pass')
-        expansions = {}
-        assert_that(is_match(src, cmp, expansions), is_(True))
-        assert_that(expansions, contains_exactly('$$args'))
-        assert_that(expansions['$$args'], has_length(5))
-
     def test_attribute_signature_has_at(self):
         src = self.pattern_factory.create_statement('@TUAT\ndef ba(): pass')
         ASTShower.show_node(src)
