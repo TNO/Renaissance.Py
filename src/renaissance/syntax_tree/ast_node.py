@@ -18,7 +18,7 @@ class VisitorResult(Enum):
 
 class ASTReference:
     def __init__(
-            self, ast_node: Self, ref_kind: str, properties: dict[str, Any]
+            self, ast_node: ASTNode, ref_kind: str, properties: dict[str, Any]
     ) -> None:
         self._node = ast_node
         self._ref_kind = ref_kind

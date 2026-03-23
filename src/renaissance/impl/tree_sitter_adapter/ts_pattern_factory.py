@@ -1,10 +1,7 @@
-import ast
-from typing import Optional, Sequence
+from typing import Sequence
 
-from renaissance.common import Stream
-from renaissance.impl.python import PythonASTNode
 from renaissance.impl.tree_sitter_adapter.tree_sitter_adapter import TreeSitterAdapter
-from renaissance.syntax_tree import ASTNode, ASTShower
+from renaissance.lst.lst import LSTNode, LST
 from renaissance.utils.node_util import replace_dollar
 
 SHOW_NODE = False
@@ -12,71 +9,27 @@ SHOW_NODE = False
 
 class TsPatternFactory:
 
-    def __init__(
-        self,
-        adapter: TreeSitterAdapter,
-        ref_node: Optional[ASTNode] = None,
-        language: str = "python",
-    ):
+    def __init__(self, adapter: TreeSitterAdapter, language: str = "python"):
         self.adapter = adapter
         self.language = language
-        self.header = ""
 
-
-
-
-    def create_expression(
-        self, text: str, extra_declarations: Sequence[str] = []
-    ) -> ASTNode:
+    def create(self, text: str) -> LST:
         text = replace_dollar(text)
-        return PythonASTNode(ast.parse(text).body[0].value)
+        if isinstance(self.adapter, TreeSitterAdapter):
+            tree = self.adapter.parse_code(text)
+            return self.adapter.to_lst(text,tree).root
+        else:
+            return self.adapter.to_lst(text).root
 
-
-
-    def create_statements(
-        self,
-        text: str,
-        types: Sequence[str] = [],
-        extra_declarations: Sequence[str] = [],
-        kind: str = ".*",
-    ) -> Sequence[ASTNode]:
+    def create_python_pattern(self, text: str) -> LSTNode:
         text = replace_dollar(text)
-        return self.adapter.to_lst(text, self.adapter.parse_code(text)).root.children
+        return self.create(text).root
 
-    def create_python_pattern(self, text: str) -> PythonASTNode:
-        # create python node from string
-        # the output could be different, the comments are removed
-        # Return PythonASTNode
-        text = self.replace_dollar(text)
-        return PythonASTNode(ast.parse(text).body[0])
+    def create_statements(self, text: str) -> Sequence[LSTNode]:
+        return self.create(text).children
 
-    def create(self, text: str, kind: Optional[str] = None) -> ASTNode:
-        # create python from text
-        # the comments are removed
-        # Return Module
-        text = replace_dollar(text)
-        return self._create(text)
+    def create_statement(self, text: str) -> LSTNode:
+        return self.create_statements(text)[-1]
 
-    def create_statement(
-        self,
-        text: str,
-        types: Sequence[str] = [],
-        extra_declarations: Sequence[str] = [],
-        kind: str = ".*",
-    ) -> ASTNode:
-        text = replace_dollar(text)
-        return self.adapter.to_lst(text, self.adapter.parse_code(text)).root.children[-1]
-
-    def _create(self, text: str) -> ASTNode:
-        atu = self.factory.create_from_text(text, "test.py")
-        if SHOW_NODE:
-            ASTShower.show_node(atu)
-        return atu.children[0]
-
-
-if __name__ == "__main__":
-    print(
-        TsPatternFactory._get_dollar_keywords_from_text(
-            "struct $type;struct $name; $type a = $name; int b = 4; $$x = $$y"
-        )
-    )
+    def create_expression(self, text: str) -> LSTNode:
+        return self.create_statement(text).children[-1]

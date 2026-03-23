@@ -15,23 +15,30 @@ class LSTNode:
             parent: Self | None = None,
             root: Self | None = None,
     ):
-        self.kind = node_type
-        self.properties = properties
-        self.signature = signature
-        self.offset = offset
-        self.children = [] if children is None else children
+
+
+
+
+
+        self.root = root if root else self
         self.parent = parent
+        self.children = [] if children is None else children
+        self.properties = properties
+        self.kind = node_type
+
         self.show_props = False
         self.indent = ''
-        self.length = len(signature)
-        self.end_offset = self.offset + self.length
-        self.extended_end_offset = self.end_offset
+
         self.is_statement = node_type == 'Expr'
         self.referenced_by = []
         self.references = []
-        self.root = root if root else self
 
+        self.signature = signature
         self.filename = 'unknown'
+        self.length = len(signature)
+        self.offset = offset
+        self.end_offset = self.offset + self.length
+        self.extended_end_offset = self.end_offset
 
     def add_child(self, child):  # LSTNode):
         self.children.append(child)
@@ -43,11 +50,11 @@ class LSTNode:
 
     @property
     def next_sibling(self) -> Self | None:
-        next_sibling(self)
+        return next_sibling(self)
 
     @property
-    def name(self):
-        return self.properties.get('name')
+    def name(self)->str:
+        return self.properties.get('name','')
 
     def binary_file_content(self):
         return self.properties.get('source_code').encode(sys.getfilesystemencoding())
@@ -63,7 +70,7 @@ class LSTNode:
                 f"{properties_text}:{''.join(formatted_lines)}\n")
 
     def is_part_of_translation_unit(self):
-        return True
+        return self.root is not None
 
 
 class LST:

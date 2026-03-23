@@ -35,7 +35,7 @@ def get_methods_with_decorator(cls: Any, decorator: TFunc):
 def final_action() -> TFunc:
     def final_action_decorator(func: TFunc) -> TFunc:
         @functools.wraps(func)
-        def final_action_wrapper(recipe: TFunc, *args: str, **kwargs: int):
+        def final_action_wrapper(recipe: TFunc):
             func(recipe)
 
         return final_action_wrapper
@@ -49,10 +49,7 @@ def recipe_step(order: int = 0, repeat: bool = False) -> TFunc:
         def recipe_step_wrapper(
             step: int,
             recipe: TFunc,
-            ast_processor: ASTProcessor,
-            *args: str,
-            **kwargs: int
-        ):
+            ast_processor: ASTProcessor):
             if step == order:
                 if repeat or ast_processor.repeat_step == 0:
                     result = func(recipe, ast_processor)
@@ -73,9 +70,7 @@ def recipe_step(order: int = 0, repeat: bool = False) -> TFunc:
 def after_step(step: str) -> TFunc:
     def after_step_decorator(func: TFunc) -> TFunc:
         @functools.wraps(func)
-        def after_step_wrapper(
-            preceding_methods: Sequence[str], recipe: TFunc, *args: str, **kwargs: int
-        ):
+        def after_step_wrapper(preceding_methods: Sequence[str], recipe: TFunc):
             if step in preceding_methods:
                 func(recipe)
 
@@ -94,7 +89,7 @@ class RecipeASTProcessor:
         in_memory: bool = False,
         max_processes: int = 4,
     ):
-        self.__recipe = recipe
+        self.__recipe:TFunc = recipe
         self.__batch_processor = BatchASTProcessor(
             in_memory=in_memory, max_processes=max_processes
         )
@@ -102,10 +97,10 @@ class RecipeASTProcessor:
         self.__file_filter = file_filter
 
     def run(self):
-        actions : Sequence[TFunc] = []
-        results : Sequence[Any] = []
+        actions : list[TFunc] = []
+        results : list[Any] = []
         for idx, recipe_step_method in enumerate(
-            get_methods_with_decorator(self.__recipe.__class__, recipe_step)
+            get_methods_with_decorator(type(self.__recipe), recipe_step)
         ):
             results.append(None)
 
@@ -116,10 +111,8 @@ class RecipeASTProcessor:
 
             actions.append(recipe_action)
         
-        after_step_actions : Sequence[TFunc] = []
-        for after_step_method in get_methods_with_decorator(
-            self.__recipe.__class__, after_step
-        ):
+        after_step_actions : list[TFunc] = []
+        for after_step_method in get_methods_with_decorator(self.__recipe.__class__, after_step):
 
             def after_step_action():
                 after_step_method(results, self.__recipe)

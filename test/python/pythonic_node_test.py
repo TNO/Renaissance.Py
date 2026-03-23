@@ -15,5 +15,10 @@ class TestPythonicNode:
         it = PythonASTNode(ast.parse('def fun():  pass'))
         assert_that(it[0], is_(it.children[0]))
 
+    def test_it_has_multiple_elements(self):
+        it = PythonASTNode(ast.parse('def fun():  pass'))
+        it = PythonASTNode(ast.parse('0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n'))
+        assert_that(it[1:3], is_(it.children[1:3]))
+
 
 

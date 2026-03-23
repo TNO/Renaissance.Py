@@ -2,13 +2,11 @@ import re
 from typing import Optional, Sequence
 
 from renaissance.common import Stream
-from renaissance.syntax_tree import ASTNode
-from renaissance.utils.cpp_utils import CPPUtils
-from renaissance.syntax_tree.ast_node import ASTNode
-from renaissance.syntax_tree.ast_shower import ASTShower
-
 from renaissance.syntax_tree.ast_factory import ASTFactory
 from renaissance.syntax_tree.ast_finder import ASTFinder
+from renaissance.syntax_tree.ast_node import ASTNode
+from renaissance.syntax_tree.ast_shower import ASTShower
+from renaissance.utils.cpp_utils import CPPUtils
 
 SHOW_NODE = False
 
@@ -26,12 +24,10 @@ def derive_header_text(language: str, ref_node: ASTNode | None):
             for c in ref_node.children:
                 if c.is_part_of_translation_unit() and c.kind in matcher_set:
                     header += c.signature + '\n'
-        hj2 = [c for c in ref_node.children if c.kind != 'INCLUSION_DIRECTIVE']
-        hj3 = min(c.offset for c in hj2)
         offset = (
             Stream(ref_node.children)
             .filter(lambda n: n.is_part_of_translation_unit())
-            .filter(lambda c: not ASTFinder.matches_kind(c, "(?i)Inclusion_?Directive"))
+            .filter(lambda cls: not ASTFinder.matches_kind(c, "(?i)Inclusion_?Directive"))
             .map(lambda n: n.offset)
             .reduce(min)
             .or_else(0)
@@ -40,17 +36,12 @@ def derive_header_text(language: str, ref_node: ASTNode | None):
         header = (
             CPatternFactory.remove_indent(ref_node.content(0, offset))
         )
-        hj4 = [c for c in ref_node.children if c.is_part_of_translation_unit()]
-        matcher_set = {'FUNCTION_DECL', 'VAR_DECL', 'TYPE_DEF', 'MACRO_DEFINITION'}
-        hj5 = '\n'.join(c.text for c in hj4 if c.kind in matcher_set) + '\n'
         header += (
                 Stream(ref_node.children)
                 .filter(lambda n: n.is_part_of_translation_unit())
-                .filter(lambda c: ASTFinder.matches_kind(c, "(?i)(Function|Var|Typedef)_?Decl|MACRO_?DEFINITION"))
-                .filter(
-                    lambda c: ASTFinder.find_kind(c, "(?i)Compound_?Stmt").count() == 0
-                )
-                .map(lambda c: c.text + ";")
+                .filter(lambda cls: ASTFinder.matches_kind(cls, "(?i)(Function|Var|Typedef)_?Decl|MACRO_?DEFINITION"))
+                .filter(lambda cls: ASTFinder.find_kind(cls, "(?i)Compound_?Stmt").count() == 0)
+                .map(lambda cls: cls.text + ";")
                 .collect(lambda n: "\n".join(n))
                 + "\n"
         )
@@ -181,6 +172,7 @@ class CPatternFactory:
 
         Args:
             text (str): The input text used to create the object.
+            kind (str, optional): The kind of the node to be returned. Defaults to None.
 
         Returns:
             object: The object created by the factory.
@@ -263,9 +255,7 @@ class CPatternFactory:
         return list(set(re.findall(pattern, text)))
 
     @staticmethod
-    def _get_non_dollar_keywords_from_text(
-            text: str, prefix: str = "void* ", postfix: str = ";"
-    ) -> Sequence[str]:
+    def _get_non_dollar_keywords_from_text(text: str) -> Sequence[str]:
         pattern = re.compile(r"[^$][a-zA-Z]\w*")
         return list(set(re.findall(pattern, text)))
 
@@ -292,9 +282,8 @@ class CPPPatternFactory(CPatternFactory):
         if class_and_args:
             class_name = class_and_args.group(1)
             args = class_and_args.group(2).split(",")
-        # TODO: implement else or use default values for class_name and args
-        return self._create_constructor_call(class_name, args)
-
+            return self._create_constructor_call(class_name, args)
+        return None
     def _create_constructor_call(self, class_name: str, args=None):
         if args is None:
             args = []
@@ -333,14 +322,3 @@ class CPPPatternFactory(CPatternFactory):
         # return the constrained pattern where the first node must be of type TypeRef
 
         return call_expr
-
-
-if __name__ == "__main__":
-    print(
-        CPatternFactory._get_dollar_keywords_from_text(
-            "struct $type;struct $name; $type a = $name; int b = 4; $$x = $$y"
-        )
-    )
-    # factory = ASTFactory(ClangASTNode)
-    # patternFactory = CPatternFactory(factory)
-    # ASTShower.show_node(patternFactory.create_expression('a == $hallo'))

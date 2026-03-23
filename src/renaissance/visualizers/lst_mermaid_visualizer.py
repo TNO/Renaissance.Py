@@ -1,6 +1,12 @@
 from renaissance.lst.lst import LST
 import re
 
+
+def _clean_signature(signature):
+    text = signature.replace("\n", " ")
+    return re.sub(r"[^\w\s]", "", text)[:30]  # Remove punctuation, limit length
+
+
 class LSTMermaidVisualizer:
     def __init__(self):
         self.lines = ["graph TD"]
@@ -13,19 +19,16 @@ class LSTMermaidVisualizer:
             self.node_ids[node] = f"n{self.counter}"
         return self.node_ids[node]
 
-    def _escape_label(self, text):
+    @staticmethod
+    def _escape_label(text):
         return text.replace('"', '\\"').replace("\n", " ").strip()
-
-    def _clean_signature(self, signature):
-        text = signature.replace("\n", " ")
-        return re.sub(r"[^\w\s]", "", text)[:30]  # Remove punctuation, limit length
 
     def _render_node(self, node):
         node_id = self._get_node_id(node)
         label = f"""\
 {node_id}: {node.kind} {{
 offset: {node.offset}
-signature: {self._clean_signature(node.signature)}
+signature: {_clean_signature(node.signature)}
 }}"""
         label = label.replace("\n", "<br>")
         self.lines.append(f'{node_id}["{label}"]')

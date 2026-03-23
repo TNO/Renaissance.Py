@@ -13,7 +13,7 @@ class BaseCodeGraphExtractor:
     def __init__(self, language: str, lib_path: str):
         self.language = language
         self.lib_path = lib_path
-        self.adapter = TreeSitterAdapter(lib_path, language)
+        self.adapter = TreeSitterAdapter(lib_path)
         self.graph = nx.DiGraph()
 
     def extract(self, files: List[str]):

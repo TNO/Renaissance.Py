@@ -1,14 +1,11 @@
 #! /usr/bin/python3
+import argparse
 import fnmatch
-import glob
+import os
 from pathlib import Path
 
 from renaissance.refactoring.taut2pyunit import *
 from renaissance.syntax_tree import ASTFactory
-from renaissance.impl.python import PythonASTNode
-import sys
-import argparse
-import os
 
 factory = ASTFactory(PythonASTNode, [])
 

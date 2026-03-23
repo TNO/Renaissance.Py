@@ -1,6 +1,8 @@
-from hamcrest import assert_that, is_
+from hamcrest import assert_that, is_, contains_exactly, has_length
 
-from renaissance.syntax_tree import PatternMatch, MatchFinder
+from renaissance.syntax_tree import PatternMatch, MatchFinder, ASTShower
+from renaissance.syntax_tree.match_finder import is_match
+
 
 class TestPatternMatch:
     def test_match_referenced_by(self,mocker):

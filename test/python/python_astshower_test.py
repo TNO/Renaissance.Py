@@ -11,10 +11,10 @@ class TestPythonShower:
     def setup(self):
         self.factory = ASTFactory(PythonASTNode, [])
         self.atu = self.factory.create_from_text('ba(55)\nca(555)\nlo(4444)\nna=55', 'test.py')
-        self.pattern_factory = PythonPatternFactory(self.factory, self.atu)
+        self.pattern_factory = PythonPatternFactory(self.factory)
 
     def test_show_call_using_repr(self):
-        simple = self.pattern_factory.create('$pa($55)')
+        simple = self.pattern_factory.create_statement('$pa($55)')
         assert_that(str(simple), is_('(Expr, $pa($55), test.py[0:28]): |_MatchOne__pa(_MatchOne__55)|\n'))
 
     def test_show_module(self):

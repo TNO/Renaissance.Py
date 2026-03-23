@@ -37,7 +37,7 @@ class Rewriter:
         """
         for r in self.__rewrites:
             # if r partially overlaps with start and end then append the new content to the existing replacement
-            if r.start <= start and r.end >= start:
+            if r.start <= start <= r.end:
                 r.replacement += new_content
                 r.start = min(r.start, start)
                 r.end = max(r.end, end)

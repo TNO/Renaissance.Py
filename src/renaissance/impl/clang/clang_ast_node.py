@@ -20,7 +20,7 @@ STMT_PARENTS = ['COMPOUND_STMT', 'TRANSLATION_UNIT']
 PRINT_ALL_NODES = False
 
 
-class ClangASTReference():
+class Clangastreference:
     def __init__(self, node_id: str, ref_kind: str, properties: dict[str, Any]) -> None:
         self.node_id = node_id
         self.ref_kind = ref_kind
@@ -37,9 +37,9 @@ class ClangTranslationUnit:
         # print_node_kind(clang_atu.cursor)
         self.macro_expansions = ClangTranslationUnit._collect_expansions(clang_atu)
         # references are used as a cache to store the references of a node
-        # the are stored as id for lazy creation
-        self._references: dict[str, list[ClangASTReference]] = {}
-        self._referenced_by: dict[str, list[ClangASTReference]] = {}
+        # they are stored as id for lazy creation
+        self._references: dict[str, list[Clangastreference]] = {}
+        self._referenced_by: dict[str, list[Clangastreference]] = {}
         self._nodes: dict[str, 'ClangASTNode'] = {}
 
     def lazy_create_references(self, node: 'ClangASTNode') -> None:
@@ -102,8 +102,8 @@ class ClangASTNode(ASTNode):
             insert_child._children = []
             self.__inserted_children.append(insert_child)
             if self.node.type.get_declaration().kind is CursorKind.NO_DECL_FOUND:  # type: ignore
-                type = self.node.type if self.node.result_type.kind == TypeKind.INVALID else self.node.result_type  # type: ignore
-                length_ref = len(type.spelling.encode(sys.getdefaultencoding()))
+                my_type = self.node.type if self.node.result_type.kind == TypeKind.INVALID else self.node.result_type  # type: ignore
+                length_ref = len(my_type.spelling.encode(sys.getdefaultencoding()))
                 insert_child = ClangASTNode(self.node, self.translation_unit, self, self._offset, length_ref,
                                             CursorKind.TYPE_REF.name)  # type: ignore
                 insert_child._children = []
@@ -132,19 +132,21 @@ class ClangASTNode(ASTNode):
 
     @override
     @staticmethod
-    def load_from_text(text: str, file_name: str, extra_args: Sequence[str]=[], working_dir: Path=None) -> "ClangASTNode":
+    def load_from_text(text: str, file_name: str, extra_args: Sequence[str]=None, working_dir: Path=None) -> "ClangASTNode":
         # Convert file_content to bytes
         file_content_bytes = text.encode(sys.getfilesystemencoding())
         # add to cache to avoid reading the file again
         ASTNode.cache[file_name] = file_content_bytes
+        args = [*ClangASTNode.parse_args, *extra_args] if extra_args is not None else [*ClangASTNode.parse_args]
         translation_unit: TranslationUnit = ClangASTNode.index.parse(file_name, unsaved_files=[(file_name, text)],
-                                                                     args=[*ClangASTNode.parse_args, *extra_args])
+                                                                     args=args)
         ClangASTNode.check_diagnostics(translation_unit, file_name)
         try:
             root_node = ClangASTNode(translation_unit.cursor,
                                      ClangTranslationUnit(translation_unit, file_name=str(file_name)), None)
         except Exception as e:
             print(e)
+            return None
         ClangASTNode.check_diagnostics(translation_unit, file_name)
         return root_node
 
@@ -185,12 +187,12 @@ class ClangASTNode(ASTNode):
     @property
     def extended_end_offset(self) -> int:
         try:
-            endOffset = self._offset + self._length
+            end_offset = self._offset + self._length
             if (not self._is_statement_or_declaration()) and (self.parent and self.parent.kind in STMT_PARENTS) and self.kind not in ['MACRO_DEFINITION']:
                 content = self.root.binary_file_content()
-                while endOffset < len(content) and not content[endOffset - 1] in b';':
-                    endOffset += 1
-            return endOffset
+                while end_offset < len(content) and not content[end_offset - 1] in b';':
+                    end_offset += 1
+            return end_offset
         except:
             return 0
 
@@ -239,9 +241,9 @@ class ClangASTNode(ASTNode):
             # next statement works in C++ but not in Python (yet) will be released later
             # result['operator'] =  self.node.getOpCode()
         elif self.kind.endswith('_LITERAL'):
-            self._addTokens(result, 'LITERAL')
+            self._add_tokens(result, 'LITERAL')
         elif self.kind == 'DECL_REF_EXPR':
-            self._addTokens(result, 'LITERAL')
+            self._add_tokens(result, 'LITERAL')
 
         is_all = {attr[len('is_'):]: True for attr in dir(self.node) if
                   attr.startswith('is_') and callable(getattr(self.node, attr) and getattr(self.node, attr)() == True)}
@@ -259,8 +261,8 @@ class ClangASTNode(ASTNode):
         self.translation_unit.lazy_create_references(self)
         node_id = self.node.hash
         ref_by = self.translation_unit._referenced_by.get(node_id, EMPTY_LIST)
-        # if both the function declaration and function definition are avaible
-        # the references are stored in the function definition
+        # if both the function declaration and function definition are available
+        # the references are stored in the function definition,
         # but we want them to also show up in the declaration
         if len(ref_by) == 0:
             definition = self._get_function_definition()
@@ -300,7 +302,7 @@ class ClangASTNode(ASTNode):
             .map(
             lambda ref: ASTReference(self.translation_unit._nodes[ref.node_id], ref.ref_kind, ref.properties)).to_list()
 
-    def _addTokens(self, result: dict[str, str], *token_kind):
+    def _add_tokens(self, result: dict[str, str], *token_kind):
         for token in self.node.get_tokens():
             # find all attr of token that are of type str or int
             kind = str(token.kind).split('.')[-1]
@@ -320,12 +322,12 @@ class ClangASTNode(ASTNode):
     def __derive_length(self) -> int:
         try:
             if self.node.kind.name in ['VAR_DECL', 'STRUCT_DECL']:
-                endOffset = self.node.extent.end.offset+1
+                end_offset = self.node.extent.end.offset+1
             elif self.node.kind.name in ['MACRO_DEFINITION']:
-                endOffset = self.node.extent.end.offset
+                end_offset = self.node.extent.end.offset
             else:
-                endOffset = self.node.extent.end.offset
-            return endOffset - self.__derive_start_offset()
+                end_offset = self.node.extent.end.offset
+            return end_offset - self.__derive_start_offset()
         except:
             return 0
 
@@ -339,7 +341,7 @@ class ClangASTNode(ASTNode):
                 elif self.node.displayname.startswith('$') and ' ' not in self.node.displayname:
                     return MATCH_ONE
             return str(self.node.kind.name)
-        except Exception as e:
+        except Exception:
             return EMPTY_STR
 
     @staticmethod
@@ -353,6 +355,7 @@ class ClangASTNode(ASTNode):
 
     @staticmethod
     def _is_reference(node):
+        # refactor this
         try:
             print(type(node))
             print(vars(node))
@@ -371,6 +374,10 @@ class ClangASTNode(ASTNode):
     @staticmethod
     def _is_wrapped(cursor):
         return cursor.kind.is_unexposed() and len(list(cursor.children)) == 1
+
+    @property
+    def is_implicit(self):
+        return self.is_part_of_translation_unit()
 
 SYSTEM_MACROS= {'linux',
      'unix',
@@ -405,8 +412,8 @@ class ReferenceHelper():
                 properties = {k: p for k, p in element.__dict__.items() if not k.startswith('_') and k != 'hash'}
                 if node_id == ref_id:
                     return
-                reference = ClangASTReference(ref_id, ref_kind, properties)
-                referenced_by = ClangASTReference(node_id, ref_kind,
+                reference = Clangastreference(ref_id, ref_kind, properties)
+                referenced_by = Clangastreference(node_id, ref_kind,
                                                   {k: p for k, p in ast_node.node.__dict__.items() if k != 'hash'})
                 try:
                     ast_node.translation_unit._referenced_by[ref_id].append(referenced_by)
