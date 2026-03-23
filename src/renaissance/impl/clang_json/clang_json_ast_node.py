@@ -527,6 +527,9 @@ class ClangJsonASTNode(ASTNode):
         except:
             return default
 
+    @property
+    def is_implicit(self):
+        self.is_part_of_translation_unit()
 
 class ReferenceHelper:
 
@@ -679,3 +682,4 @@ class ReferenceHelper:
     @cache
     def _is_child_node(key):
         return key in ["inner"]
+

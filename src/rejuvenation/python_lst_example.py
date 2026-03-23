@@ -55,11 +55,11 @@ def python_lst_smoke_test():
     print(result)
 
     def add_children(parent):
-        uml =""
+        my_uml =""
         for child in parent.children:
-            uml += f'"{parent.kind}"->"{child.kind}"\n'
-            uml +=add_children(child)
-        return uml
+            my_uml += f'"{parent.kind}"->"{child.kind}"\n'
+            my_uml +=add_children(child)
+        return my_uml
 
     uml = add_children( lst.root)
     print(uml)

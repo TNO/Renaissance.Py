@@ -27,5 +27,5 @@ class Assignment:
     pass
 class Other:
     def __init__(self,kind):
-        self.knid = kind
+        self.kind = kind
 

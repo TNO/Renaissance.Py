@@ -42,7 +42,7 @@ class Stream[T]:
         return self
 
     def map[U](self, func_or_type: type[U]|Callable[[T], Optional[U]]) -> Stream[Optional[U]]:
-        # removed template type, it cause the test to fail
+        # removed template type, it causes the test to fail
         if type(func_or_type) is type:
             cast : Callable[[T], Optional[U]] = lambda x: Stream.__cast(x, func_or_type)
             mapped = map(cast, self.__iterable)
@@ -138,6 +138,6 @@ class Stream[T]:
 def first_occurrences(lst: list[T]) -> list[T]:
     """
     Returns a new list containing only the first occurrence of each element in lst, preserving order.
-    Uses more-itertools' unique_everseen for efficiency.
+    Uses 'more-itertools' unique ever seen for efficiency.
     """
     return list(unique_everseen(lst))

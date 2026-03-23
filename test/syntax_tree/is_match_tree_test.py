@@ -271,6 +271,6 @@ class TestMatchTree:
         ''')
         atu = self.factory.create_from_text(sample, 'sample.py')
         ASTShower.show_node(atu)
-        kwargs = create_kwargs('$c=context_stub')
+        kwargs = self.pattern_factory.create_kwargs('$c=context_stub')
         matches = MatchFinder.match_pattern(atu.children, kwargs)
         assert_that(matches, has_length(1))

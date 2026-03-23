@@ -25,7 +25,7 @@ def _setup(input_code: str, match_str: str):
     factory = _get_factory()
     atu = factory.create_from_text(input_code, 'temp.py')
     rewriter = ASTRewriter(atu)
-    pattern = PythonPatternFactory(factory, atu).create_python_pattern(match_str)
+    pattern = PythonPatternFactory(factory).create_python_pattern(match_str)
     return atu, rewriter, pattern
 
 def _apply(rewriter: ASTRewriter) -> str:

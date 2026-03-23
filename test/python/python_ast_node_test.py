@@ -19,7 +19,7 @@ class TestPythonASTNode:
         self.factory = ASTFactory(PythonASTNode, [])
         self.atu = self.factory.create_from_text('a = 0', 'all.py')
         # create a pattern factory atu is passed to the pattern factory for use of all # includes, #defines and declarations
-        self.pattern_factory = PythonPatternFactory(self.factory, self.atu)
+        self.pattern_factory = PythonPatternFactory(self.factory)
 
     @pytest.mark.parametrize("raw, kind", [
         ('i:int=0', 'AnnAssign'),
@@ -46,7 +46,7 @@ class TestPythonASTNode:
         ('while True: pass', 'While'),
     ])
     def test_stmt_kind(self, raw, kind):
-        it = self.pattern_factory.create(raw)
+        it = self.pattern_factory.create_statement(raw)
         assert_that(kind, is_(it.kind))
 
     @pytest.mark.parametrize("raw, kind", [
@@ -111,11 +111,11 @@ def outer():
         assert_that(it.children[1].kind, is_('Slice'))
 
     def test_named_expr(self):
-        it = self.pattern_factory.create('if n:= len(items): pass')
+        it = self.pattern_factory.create_statement('if n:= len(items): pass')
         assert_that(it.children[0].kind, is_('NamedExpr'))
 
     def test_starred(self):
-        it = self.pattern_factory.create('*x =[1,2]')
+        it = self.pattern_factory.create_statement('*x =[1,2]')
         assert_that(it.children[0].children[0].kind, is_('Starred'))
 
     def test_formatted_value(self):
@@ -123,7 +123,7 @@ def outer():
         assert_that(it.children[0].kind, is_('FormattedValue'))
 
     def test_except_handler(self):
-        it = self.pattern_factory.create('try: pass\nexcept NameError:pass')
+        it = self.pattern_factory.create_statement('try: pass\nexcept NameError:pass')
         assert_that(it.children[1].children[0].kind, is_('ExceptHandler'))
 
     @pytest.mark.parametrize("raw, kind", [
@@ -158,12 +158,12 @@ def outer():
     ])
     def test_match_patterns(self, raw, kind):
         sample_code = f"match data:\n  {raw}\n  case _: pass"
-        stmt = self.pattern_factory.create(sample_code)
+        stmt = self.pattern_factory.create_statement(sample_code)
         assert_that(kind, is_(stmt.children[1].children[0].children[0].kind))
 
     def test_match_stmt(self):
         sample_code = 'match data:\n  case [first, *rest]: return f"List with first element {first} and {len(rest)} more items"\n  case _: pass'
-        stmt = self.pattern_factory.create(sample_code)
+        stmt = self.pattern_factory.create_statement(sample_code)
         assert_that(stmt.kind, is_('Match'))
         assert_that(stmt.children[1].children[0].kind, is_('match_case'))
         assert_that(stmt.children[1].children[0].children[0].children[1].kind, is_('MatchStar'))

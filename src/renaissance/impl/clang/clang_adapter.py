@@ -15,25 +15,22 @@ class ClangAdapter:
         translation_unit = index.parse(file_path, args=self.args)
         return LST(self._convert_node(translation_unit.cursor))
 
-    def load_from_text(self,text: str, file_name: str) -> "ClangASTNode":
+    def load_from_text(self,text: str, file_name: str):
         index = cindex.Index.create()
         translation_unit  = index.parse(file_name, unsaved_files=[(file_name, text)], args=[])
         return LST(self._convert_node(translation_unit.cursor))
 
-    def to_lst(self, source_code: str, tree) -> LST:
+    def to_lst(self, source_code: str) -> LST:
         # source_code= replace_dollar(source_code)
         return self.load_from_text(source_code, "no_src.cpp")
 
-    def parse_code(self, source_code: str):
-        return ''
-
-    def _convert_node(
-        self, cursor: cindex.Cursor, parent: Optional[LSTNode] = None
+    def _convert_node(self, cursor: cindex.Cursor, parent: Optional[LSTNode] = None
     ) -> LSTNode:
         try:
             kind = cursor.kind.name
         except Exception as e:
-            kind = f"invalid {cursor._kind_id}"
+            print(e.__cause__)
+            kind = f"invalid kind"
         signature = cursor.spelling or cursor.displayname or kind
 
         is_ph, coerced_type, ph_name = detect_placeholder(signature, kind)
@@ -55,9 +52,11 @@ class ClangAdapter:
                     if is_ph
                     else {}
                 ),
+
             },
             signature=signature,
             offset=cursor.extent.start.offset,
+            parent=parent
         )
 
         for child in cursor.get_children():

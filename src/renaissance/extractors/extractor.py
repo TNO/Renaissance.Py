@@ -1,3 +1,5 @@
+from typing import runtime_checkable
+
 from renaissance.impl.tree_sitter_adapter.ts_pattern_factory import TsPatternFactory
 from renaissance.syntax_tree import MatchFinder, PatternMatch
 

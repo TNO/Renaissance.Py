@@ -372,7 +372,7 @@ def test_match_pattern_for_parameterized_finds_one_match():
             pass
     ''')
     factory = ASTFactory(PythonASTNode, [])
-    pattern_factory = PythonPatternFactory(factory, None)
+    pattern_factory = PythonPatternFactory(factory)
     atu = PythonASTNode.load_from_text(code)
     unittest = pattern_factory.create_statements(
         '@parameterized.expand($$parameters)\ndef $fun($$args, *$$vargs):\n    $$stmts')

@@ -455,4 +455,8 @@ class PythonASTNode(ASTNode):
             return self.parent.get_container_parent()
 
 
+    @property
+    def is_implicit(self):
+        return self.is_part_of_translation_unit() and self.kind not in IMPLICIT
 
+IMPLICIT = ['ImplicitNode']

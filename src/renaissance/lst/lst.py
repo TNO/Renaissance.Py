@@ -53,8 +53,8 @@ class LSTNode:
         return next_sibling(self)
 
     @property
-    def name(self):
-        return self.properties.get('name')
+    def name(self)->str:
+        return self.properties.get('name','')
 
     def binary_file_content(self):
         return self.properties.get('source_code').encode(sys.getfilesystemencoding())

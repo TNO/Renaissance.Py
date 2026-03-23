@@ -14,14 +14,19 @@ class TsPatternFactory:
         self.language = language
 
     def create(self, text: str) -> LST:
-        return self.adapter.to_lst(text, self.adapter.parse_code(text))
+        text = replace_dollar(text)
+        if isinstance(self.adapter, TreeSitterAdapter):
+            tree = self.adapter.parse_code(text)
+            return self.adapter.to_lst(text,tree).root
+        else:
+            return self.adapter.to_lst(text).root
 
     def create_python_pattern(self, text: str) -> LSTNode:
         text = replace_dollar(text)
         return self.create(text).root
 
     def create_statements(self, text: str) -> Sequence[LSTNode]:
-        return self.create_python_pattern(text).children
+        return self.create(text).children
 
     def create_statement(self, text: str) -> LSTNode:
         return self.create_statements(text)[-1]

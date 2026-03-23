@@ -227,16 +227,16 @@ class MatchFinder:
 
     @staticmethod
     def find_all(
-            src_nodes,
-            *patterns,
+            src_nodes: Sequence[AstProtocol],
+            *patterns: Sequence[AstProtocol],
             recursive: bool = True,
     ) -> Stream[PatternMatch]:
         """
         Finds all pattern matches in the given source nodes.
 
         Args:
-            src_nodes (Sequence[ASTNode] | ASTNode): The source nodes to search within. Can be a single ASTNode or a list of ASTNodes.
-            *patterns (Sequence[ASTNode]): One or more lists of ASTNodes representing the patterns to match.
+            src_nodes (Sequence[AstProtocol]): The source nodes to search within.
+            *patterns (Sequence[AstProtocol]): One or more lists of nodes representing the patterns to match.
             recursive (bool, optional): Whether to search recursively within the source nodes. Defaults to True.
 
         Returns:

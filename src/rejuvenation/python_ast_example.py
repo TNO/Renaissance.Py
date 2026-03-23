@@ -20,7 +20,7 @@ pa(54)
 def python_ast_smoke_test():
     factory = ASTFactory(PythonASTNode)
     atu = factory.create_from_text(example_code, 'test.py')
-    pattern_factory = PythonPatternFactory(factory, atu)
+    pattern_factory = PythonPatternFactory(factory,)
 
     pattern1 = pattern_factory.create_statements('if pa(): $$stmts')
     pattern2 = pattern_factory.create_expression('na($a)')
