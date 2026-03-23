@@ -1,6 +1,5 @@
-
-#This script demonstrates the use of the syntax_tree library to parse and rewrite C code.
-#It specifically showcases the replacement of if-else statements with ternary operators.
+# This script demonstrates the use of the syntax_tree library to parse and rewrite C code.
+# It specifically showcases the replacement of if-else statements with ternary operators.
 from renaissance.syntax_tree import ASTFactory, MatchFinder, ASTRewriter
 from renaissance.impl.clang import ClangASTNode, CPatternFactory
 
@@ -33,6 +32,7 @@ expected_result = """
         }
         """.strip()
 
+
 def replace_if_with_ternary():
     """
     Replaces if-else statements in the given C code with ternary operator expressions.
@@ -53,16 +53,19 @@ def replace_if_with_ternary():
     factory = ASTFactory(ClangASTNode, [])
     # Create a pattern factory (using the factory (hence also its args)
     pattern_factory = CPatternFactory(factory)
-    if_else_patterns = pattern_factory.create_statements('if($exp){$$before;b=$d1;$$after;}else{$$before;b=$d2;$$after;}')
+    if_else_patterns = pattern_factory.create_statements("if($exp){$$before;b=$d1;$$after;}else{$$before;b=$d2;$$after;}")
 
     # Create translation unit
-    atu = factory.create_from_text(example_code, 'test.c')
+    atu = factory.create_from_text(example_code, "test.c")
     # Create an ASTRewriter
     rewriter = ASTRewriter(atu)
     # Search matches and replace them
-    MatchFinder.find_all(atu.children, if_else_patterns).for_each(lambda match: rewriter.replace('$$before; b=($exp) ? $d1:$d2; $$after;',match))
+    MatchFinder.find_all(atu.children, if_else_patterns).for_each(
+        lambda match: rewriter.replace("$$before; b=($exp) ? $d1:$d2; $$after;", match)
+    )
     # Return the rewritten code
     return rewriter.apply_to_string().strip()
+
 
 if __name__ == "__main__":
 

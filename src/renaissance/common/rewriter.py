@@ -1,5 +1,6 @@
 import sys
 
+
 class Rewrite:
     def __init__(self, start: int, end: int, replacement: bytes) -> None:
         self.start = start
@@ -42,9 +43,7 @@ class Rewriter:
                 r.start = min(r.start, start)
                 r.end = max(r.end, end)
                 return
-        real_start = (
-            len(self.__content) if start > len(self.__content) or start < 0 else start
-        )
+        real_start = len(self.__content) if start > len(self.__content) or start < 0 else start
         real_end = len(self.__content) if end > len(self.__content) or end < 0 else end
         self.__rewrites.append(Rewrite(real_start, real_end, new_content))
 

@@ -15,7 +15,7 @@ class TreeSitterAdapter:
 
     def to_lst(self, source_code: str, tree) -> LST:
         root_node = tree.root_node
-        source_code= replace_dollar(source_code)
+        source_code = replace_dollar(source_code)
         return LST(self._convert_node(root_node, source_code, None))
 
     def _convert_node(self, node, source_code: str, parent, root=None) -> LSTNode:
@@ -28,7 +28,7 @@ class TreeSitterAdapter:
                 "start_point": node.start_point,
                 "end_point": node.end_point,
                 "source_code": source_code,
-                'name': ph_name,
+                "name": ph_name,
                 "is_named": node.is_named,
                 **(
                     {
@@ -39,18 +39,17 @@ class TreeSitterAdapter:
                     if is_ph
                     else {}
                 ),
-
             },
             signature=signature,
             offset=node.start_byte,
-            children = [],
+            children=[],
             parent=parent,
-            root=root
+            root=root,
         )
         if not root:
             root = lst_node
 
         for child in node.children:
-            lst_child = self._convert_node(child, source_code,lst_node,root)
+            lst_child = self._convert_node(child, source_code, lst_node, root)
             lst_node.add_child(lst_child)
         return lst_node

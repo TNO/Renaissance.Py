@@ -5,9 +5,11 @@ from typing import Callable, Iterator, Sequence
 
 from renaissance.common import Stream
 from renaissance.syntax_tree.ast_rewriter import ASTRewriter
-from renaissance.syntax_tree.match_finder import ASTNode,  PatternMatch,  MatchFinder
+from renaissance.syntax_tree.match_finder import ASTNode, PatternMatch, MatchFinder
 from renaissance.syntax_tree.ast_finder import ASTFinder
 from renaissance.syntax_tree.ast_factory import ASTFactory
+
+
 class ASTProcessor:
     def __init__(
         self,
@@ -42,9 +44,7 @@ class ASTProcessor:
         include_whitespace: bool = True,
         include_comments: bool = True,
     ) -> None:
-        self.__rewriter.replace(
-            new_content, target, include_whitespace, include_comments
-        )
+        self.__rewriter.replace(new_content, target, include_whitespace, include_comments)
 
     def remove(
         self,
@@ -61,9 +61,7 @@ class ASTProcessor:
         include_whitespace: bool = True,
         include_comments: bool = True,
     ) -> None:
-        self.__rewriter.insert_before(
-            new_content, target, include_whitespace, include_comments
-        )
+        self.__rewriter.insert_before(new_content, target, include_whitespace, include_comments)
 
     def insert_after(
         self,
@@ -72,13 +70,9 @@ class ASTProcessor:
         include_whitespace: bool = True,
         include_comments: bool = True,
     ) -> None:
-        self.__rewriter.insert_after(
-            new_content, target, include_whitespace, include_comments
-        )
+        self.__rewriter.insert_after(new_content, target, include_whitespace, include_comments)
 
-    def find_all(
-        self, function: Callable[[ASTNode], Iterator[ASTNode] | bool]
-    ) -> Stream[ASTNode]:
+    def find_all(self, function: Callable[[ASTNode], Iterator[ASTNode] | bool]) -> Stream[ASTNode]:
         return ASTFinder.find_all(self.__root_node, function)
 
     def find_kind(self, kind: str) -> Stream[ASTNode]:
@@ -88,7 +82,7 @@ class ASTProcessor:
         self,
         *patterns_list,
         recursive: bool = True,
-        exclude_kind: str =MatchFinder.DEFAULT_EXCLUDE_KIND
+        exclude_kind: str = MatchFinder.DEFAULT_EXCLUDE_KIND,
     ) -> Stream[PatternMatch]:
         return MatchFinder.find_all(
             self.__root_node,
@@ -121,9 +115,7 @@ class ASTProcessor:
             return self
 
         if self.in_memory:
-            atu = self.__ast_factory.create_from_text(
-                new_code, str(Path(self.get_filename()).name)
-            )
+            atu = self.__ast_factory.create_from_text(new_code, str(Path(self.get_filename()).name))
         else:
             # save file first then reload it
             with open(self.get_filename(), "wb") as f:
@@ -131,7 +123,6 @@ class ASTProcessor:
             # TODO check errors
             atu = self.__ast_factory.create(Path(self.get_filename()))
         return ASTProcessor(atu, self.__ast_factory, self.in_memory)
-
 
 
 # main

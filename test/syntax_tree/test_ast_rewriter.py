@@ -13,224 +13,906 @@ from utils_for_tests import compress, debug_print
 
 class TestCommentLocation:
 
-    @pytest.mark.parametrize("_, start_offset, stop_offset, content, expected",[
-        ("single_line_comment", 0, 50, b"Some code // this is a comment\nMore code", (10, 30)),
-        ("double_line_comment", 0, 50, b"Some code// one\n // two\nMore code", (17, 23)),
-        ("block_comment", 0, 50, b"Some code /* this is a block comment */ More code", (10, 39)),
-        ("hash_comment", 0, 50, b"Some code # this is a hash comment\nMore code", (10, 34)),
-        ("no_comment", 0, 50, b"Some code with no comment\nMore code", (-1, -1)),
-        ("comment_outside_range", 0, 10, b"Some code // this is a comment\nMore code", (-1, -1)),
-        ("multiple_comments", 0, 50, b"Some code // first comment\nMore code /* second comment */", (10, 26)),
-    ])
-    def test(self, _, start_offset: int, stop_offset: int, content: bytes, expected: tuple[int, int]):
+    @pytest.mark.parametrize(
+        "_, start_offset, stop_offset, content, expected",
+        [
+            (
+                "single_line_comment",
+                0,
+                50,
+                b"Some code // this is a comment\nMore code",
+                (10, 30),
+            ),
+            (
+                "double_line_comment",
+                0,
+                50,
+                b"Some code// one\n // two\nMore code",
+                (17, 23),
+            ),
+            (
+                "block_comment",
+                0,
+                50,
+                b"Some code /* this is a block comment */ More code",
+                (10, 39),
+            ),
+            (
+                "hash_comment",
+                0,
+                50,
+                b"Some code # this is a hash comment\nMore code",
+                (10, 34),
+            ),
+            ("no_comment", 0, 50, b"Some code with no comment\nMore code", (-1, -1)),
+            (
+                "comment_outside_range",
+                0,
+                10,
+                b"Some code // this is a comment\nMore code",
+                (-1, -1),
+            ),
+            (
+                "multiple_comments",
+                0,
+                50,
+                b"Some code // first comment\nMore code /* second comment */",
+                (10, 26),
+            ),
+        ],
+    )
+    def test(
+        self,
+        _,
+        start_offset: int,
+        stop_offset: int,
+        content: bytes,
+        expected: tuple[int, int],
+    ):
         result = ASTRewriter._get_comment_location(start_offset, stop_offset, content)
         # converted print but what to do it true???
         # assert_that(result, is_not((-1, -1)), f"first char={content[result[0]:result[1]]}")
         assert_that(expected, is_(result))
+
 
 class TestRewrites:
     def test_passing_case_in_clang(self):
         # action: Callable[[ASTRewriter, str, Sequence[ASTNode], bool, bool], None],
         # factory: ASTFactory,code: str, replacement: str, include_whitespace: bool, include_comments: bool, expected: str):
         factory = ASTFactory(ClangASTNode, [])
-        atu = factory.create_from_text("void f() { /* c1 */ /* c2 */ int a=3;\n}", 'test.cpp')
+        atu = factory.create_from_text("void f() { /* c1 */ /* c2 */ int a=3;\n}", "test.cpp")
         pattern_factory = CPatternFactory(factory)
-        declaration_pattern = pattern_factory.create_declarations('int a=3;')
+        declaration_pattern = pattern_factory.create_declarations("int a=3;")
         found = MatchFinder.find_all(atu.children, declaration_pattern).to_list()
 
         rewriter = ASTRewriter(atu)
         for match in found:  # .map(lambda m: m.nodes).to_iterable():
             nodes = match.nodes
-            rewriter.insert_before('int b=4;int c=5;', nodes, True, True)
-        assert_that(rewriter.apply_to_string(), is_('void f() { /* c1 */ int b=4;int c=5;\n /* c2 */ int a=3;\n}'))
+            rewriter.insert_before("int b=4;int c=5;", nodes, True, True)
+        assert_that(
+            rewriter.apply_to_string(),
+            is_("void f() { /* c1 */ int b=4;int c=5;\n /* c2 */ int a=3;\n}"),
+        )
 
     def test_failing_case(self):
         # action: Callable[[ASTRewriter, str, Sequence[ASTNode], bool, bool], None],
         # factory: ASTFactory,code: str, replacement: str, include_whitespace: bool, include_comments: bool, expected: str):
         factory = ASTFactory(ClangASTNode, [])
-        atu = factory.create_from_text("void f() { /* c1 */ /* c2 */ int a=3;\n}", 'test.cpp')
+        atu = factory.create_from_text("void f() { /* c1 */ /* c2 */ int a=3;\n}", "test.cpp")
         pattern_factory = CPatternFactory(factory)
-        declaration_pattern = pattern_factory.create_declarations('int a=3;')
+        declaration_pattern = pattern_factory.create_declarations("int a=3;")
         found = MatchFinder.find_all(atu.children, declaration_pattern).to_list()
 
         rewriter = ASTRewriter(atu)
         for match in found:  # .map(lambda m: m.nodes).to_iterable():
             nodes = match.nodes
-            rewriter.insert_before('int b=4;int c=5;', nodes, True, True)
-        assert_that(rewriter.apply_to_string(), is_('void f() { /* c1 */ int b=4;int c=5;\n /* c2 */ int a=3;\n}'))
+            rewriter.insert_before("int b=4;int c=5;", nodes, True, True)
+        assert_that(
+            rewriter.apply_to_string(),
+            is_("void f() { /* c1 */ int b=4;int c=5;\n /* c2 */ int a=3;\n}"),
+        )
 
     @staticmethod
-    def do_test(action: Any, factory: ASTFactory, code: str, replacement: str, include_whitespace: bool, include_comments: bool, expected: str):
-        atu = factory.create_from_text(code, 'test.cpp')
+    def do_test(
+        action: Any,
+        factory: ASTFactory,
+        code: str,
+        replacement: str,
+        include_whitespace: bool,
+        include_comments: bool,
+        expected: str,
+    ):
+        atu = factory.create_from_text(code, "test.cpp")
         pattern_factory = CPatternFactory(factory)
-        declaration_pattern = pattern_factory.create_declarations('int a=3;')
+        declaration_pattern = pattern_factory.create_declarations("int a=3;")
         rewriter = ASTRewriter(atu)
-        found =MatchFinder.find_all(atu.children, declaration_pattern).to_list()
+        found = MatchFinder.find_all(atu.children, declaration_pattern).to_list()
 
-        for match in found: # .map(lambda m: m.nodes).to_iterable():
+        for match in found:  # .map(lambda m: m.nodes).to_iterable():
             nodes = match.nodes
-            action(rewriter,replacement, nodes, include_whitespace, include_comments)
-        expected_result = factory.create_from_text(expected, 'test.cpp')
+            action(rewriter, replacement, nodes, include_whitespace, include_comments)
+        expected_result = factory.create_from_text(expected, "test.cpp")
         actual = rewriter.apply_to_string()
-        actual_result = factory.create_from_text(rewriter.apply_to_string(), 'test.cpp')
-        debug_print(actual, actual_result, atu, code, expected, expected_result, include_comments,
-                         include_whitespace)
+        actual_result = factory.create_from_text(rewriter.apply_to_string(), "test.cpp")
+        debug_print(
+            actual,
+            actual_result,
+            atu,
+            code,
+            expected,
+            expected_result,
+            include_comments,
+            include_whitespace,
+        )
 
         assert_that(actual, is_(expected))
 
 
-
 class TestRemove(TestRewrites):
 
-    @pytest.mark.parametrize("name, factory, code, include_whitespace, include_comments, expected",list(Factories.extend( [
-        ("void f() { /* c1 */ int a=3;\n}", True, True, 'void f() {\n}'),
-        ("void f() { int x=2; //x cmt\n  int a=3;\n}", True, True, 'void f() { int x=2; //x cmt\n}'),
-         ])))
-    def test(self, name: str, factory: ASTFactory, code: str, include_whitespace: Any, include_comments: Any, expected: Any):
+    @pytest.mark.parametrize(
+        "name, factory, code, include_whitespace, include_comments, expected",
+        list(
+            Factories.extend(
+                [
+                    ("void f() { /* c1 */ int a=3;\n}", True, True, "void f() {\n}"),
+                    (
+                        "void f() { int x=2; //x cmt\n  int a=3;\n}",
+                        True,
+                        True,
+                        "void f() { int x=2; //x cmt\n}",
+                    ),
+                ]
+            )
+        ),
+    )
+    def test(
+        self,
+        name: str,
+        factory: ASTFactory,
+        code: str,
+        include_whitespace: Any,
+        include_comments: Any,
+        expected: Any,
+    ):
 
         reemove = lambda s, _, n, ws, cm: ASTRewriter.remove(s, n, ws, cm)
-        self.do_test(reemove, factory, code, 'int aa=4;', include_whitespace, include_comments, expected)
+        self.do_test(
+            reemove,
+            factory,
+            code,
+            "int aa=4;",
+            include_whitespace,
+            include_comments,
+            expected,
+        )
 
 
 class TestReplace(TestRewrites):
 
-    @pytest.mark.parametrize("name, factory, code, include_whitespace, include_comments, expected",list(Factories.extend( [
-        ("void f() { /* c1 */ int a=3;\n}", True, True, 'void f() { int aa=4;\n}'),
-        ("void f() { /* c1 */ /* c2 */ int a=3;\n}", True, True, 'void f() { /* c1 */ int aa=4;\n}'),
-        ("void f() { // c1\n int a=3;\n}", True, True, 'void f() { int aa=4;\n}'),
-        ("void f() { // c1\n //c2\n int a=3;\n}", True, True, 'void f() { // c1\n int aa=4;\n}'),
-        ("void f() { int a=3;    \n}", True, True, 'void f() { int aa=4;\n}'),
-        ("void f() { int a=3; //c1    \n}", True, True, 'void f() { int aa=4;\n}'),
-        ("void f() { int a=3; /*c1    \n */ }", True, True, 'void f() { int aa=4; }'),
-        ("void f() { int a=3; /*c1    \n */ }", False, True, 'void f() { int aa=4; }'),
-        ("void f() { int a=3; /*c1    \n */ }", False, False, 'void f() { int aa=4; /*c1    \n */ }'),
-        ("/* out scope */ void f() { int a=3; /*c1    \n */ }", True, True, '/* out scope */ void f() { int aa=4; }'),
-        ("/* out scope */ void f() { int a=3; /*c1    \n */ }", False, True, '/* out scope */ void f() { int aa=4; }'),
-        ("/* out scope */ void f() { int a=3; /*c1    \n */ }", False, False, '/* out scope */ void f() { int aa=4; /*c1    \n */ }'),
-        ("void f() { int a=3; /*c1    \n */ }", True, False, 'void f() { int aa=4; /*c1    \n */ }'),
-        ("void f() { int a=3; /*c1    \n */ }", False, False, 'void f() { int aa=4; /*c1    \n */ }'),
-        #siblings with comments
-        ("void f() { int x=2; /* c1 */ int a=3; //c2\n int b=4; }", True, True, 'void f() { int x=2; /* c1 */ int aa=4;\n int b=4; }'),
-        ("void f() { //cx\nint x=2; //ca\n int a=3; //caa\n int b=4;//cb \n}", True, True, 'void f() { //cx\nint x=2; //ca\n int aa=4;\n int b=4;//cb \n}'),
-        ("void f() { int x=2; /*ca*/ int a=3; /*caa \n nl*/ int b=4; }", True, True, 'void f() { int x=2; /*ca*/ int aa=4; int b=4; }'),
-
-
-         ])))
-    def test(self, name: str, factory: ASTFactory, code: str, include_whitespace: Any, include_comments: Any, expected: Any):
-        self.do_test(ASTRewriter.replace, factory, code, 'int aa=4;',include_whitespace, include_comments, expected)
+    @pytest.mark.parametrize(
+        "name, factory, code, include_whitespace, include_comments, expected",
+        list(
+            Factories.extend(
+                [
+                    (
+                        "void f() { /* c1 */ int a=3;\n}",
+                        True,
+                        True,
+                        "void f() { int aa=4;\n}",
+                    ),
+                    (
+                        "void f() { /* c1 */ /* c2 */ int a=3;\n}",
+                        True,
+                        True,
+                        "void f() { /* c1 */ int aa=4;\n}",
+                    ),
+                    (
+                        "void f() { // c1\n int a=3;\n}",
+                        True,
+                        True,
+                        "void f() { int aa=4;\n}",
+                    ),
+                    (
+                        "void f() { // c1\n //c2\n int a=3;\n}",
+                        True,
+                        True,
+                        "void f() { // c1\n int aa=4;\n}",
+                    ),
+                    (
+                        "void f() { int a=3;    \n}",
+                        True,
+                        True,
+                        "void f() { int aa=4;\n}",
+                    ),
+                    (
+                        "void f() { int a=3; //c1    \n}",
+                        True,
+                        True,
+                        "void f() { int aa=4;\n}",
+                    ),
+                    (
+                        "void f() { int a=3; /*c1    \n */ }",
+                        True,
+                        True,
+                        "void f() { int aa=4; }",
+                    ),
+                    (
+                        "void f() { int a=3; /*c1    \n */ }",
+                        False,
+                        True,
+                        "void f() { int aa=4; }",
+                    ),
+                    (
+                        "void f() { int a=3; /*c1    \n */ }",
+                        False,
+                        False,
+                        "void f() { int aa=4; /*c1    \n */ }",
+                    ),
+                    (
+                        "/* out scope */ void f() { int a=3; /*c1    \n */ }",
+                        True,
+                        True,
+                        "/* out scope */ void f() { int aa=4; }",
+                    ),
+                    (
+                        "/* out scope */ void f() { int a=3; /*c1    \n */ }",
+                        False,
+                        True,
+                        "/* out scope */ void f() { int aa=4; }",
+                    ),
+                    (
+                        "/* out scope */ void f() { int a=3; /*c1    \n */ }",
+                        False,
+                        False,
+                        "/* out scope */ void f() { int aa=4; /*c1    \n */ }",
+                    ),
+                    (
+                        "void f() { int a=3; /*c1    \n */ }",
+                        True,
+                        False,
+                        "void f() { int aa=4; /*c1    \n */ }",
+                    ),
+                    (
+                        "void f() { int a=3; /*c1    \n */ }",
+                        False,
+                        False,
+                        "void f() { int aa=4; /*c1    \n */ }",
+                    ),
+                    # siblings with comments
+                    (
+                        "void f() { int x=2; /* c1 */ int a=3; //c2\n int b=4; }",
+                        True,
+                        True,
+                        "void f() { int x=2; /* c1 */ int aa=4;\n int b=4; }",
+                    ),
+                    (
+                        "void f() { //cx\nint x=2; //ca\n int a=3; //caa\n int b=4;//cb \n}",
+                        True,
+                        True,
+                        "void f() { //cx\nint x=2; //ca\n int aa=4;\n int b=4;//cb \n}",
+                    ),
+                    (
+                        "void f() { int x=2; /*ca*/ int a=3; /*caa \n nl*/ int b=4; }",
+                        True,
+                        True,
+                        "void f() { int x=2; /*ca*/ int aa=4; int b=4; }",
+                    ),
+                ]
+            )
+        ),
+    )
+    def test(
+        self,
+        name: str,
+        factory: ASTFactory,
+        code: str,
+        include_whitespace: Any,
+        include_comments: Any,
+        expected: Any,
+    ):
+        self.do_test(
+            ASTRewriter.replace,
+            factory,
+            code,
+            "int aa=4;",
+            include_whitespace,
+            include_comments,
+            expected,
+        )
 
 
 class TestInsertBeforeSingleLine(TestRewrites):
 
-        @pytest.mark.parametrize("name, factory, code, include_whitespace, include_comments, expected",list(Factories.extend( [
-            ("/* out scope */ void f() { int a=3; /*c1    \n */ }", False, False, "/* out scope */ void f() { int aa=4;int a=3; /*c1    \n */ }"),
-            ("/* out scope */ void f() { int a=3; /*c1    \n */ }", False, True, "/* out scope */ void f() { int aa=4;int a=3; /*c1    \n */ }"),
-            ("/* out scope */ void f() { int a=3; /*c1    \n */ }", True, True, "/* out scope */ void f() { int aa=4; int a=3; /*c1    \n */ }"),
-            ("void f() { /* c1 */ /* c2 */ int a=3;\n}", True, True, "void f() { /* c1 */ int aa=4;\n /* c2 */ int a=3;\n}"),
-            ("void f() { /* c1 */ int a=3;\n}", True, True, "void f() { int aa=4;\n /* c1 */ int a=3;\n}"),
-            ("void f() { // c1\n //c2\n int a=3;\n}", True, True, "void f() { // c1\n int aa=4;\n //c2\n int a=3;\n}"),
-            ("void f() { // c1\n int a=3;\n}", True, True, "void f() { int aa=4;\n // c1\n int a=3;\n}"),
-            ("void f() { //cx\n int x=2; //ca\n int a=3; //caa\n int b=4;//cb \n}", True, True, "void f() { //cx\n int x=2; //ca\n int aa=4;\n int a=3; //caa\n int b=4;//cb \n}"),
-            ("void f() { int a=3;    \n}", True, True, "void f() { int aa=4;\n int a=3;    \n}"),
-            ("void f() { int a=3; /*c1    \n */ }", False, False, "void f() { int aa=4;int a=3; /*c1    \n */ }"),
-            ("void f() { int a=3; /*c1    \n */ }", False, True, "void f() { int aa=4;int a=3; /*c1    \n */ }"),
-            ("void f() { int a=3; /*c1    \n */ }", True, False, "void f() { int aa=4; int a=3; /*c1    \n */ }"),
-            ("void f() { int a=3; /*c1    \n */ }", True, True, "void f() { int aa=4; int a=3; /*c1    \n */ }"),
-            ("void f() { int a=3; //c1    \n}", True, True, "void f() { int aa=4;\n int a=3; //c1    \n}"),
-            ("void f() { int x=2; /*ca*/ int a=3; /*caa \n nl*/ int b=4; }", True, True, "void f() { int x=2; /*ca*/ int aa=4; int a=3; /*caa \n nl*/ int b=4; }"),
-            ("void f() { int x=2; /* c1 */ int a=3; //c2\n int b=4; }", True, True, "void f() { int x=2; /* c1 */ int aa=4;\n int a=3; //c2\n int b=4; }"),
-            ("void f() { int x=2; //c1\n int a=3; //caa\n int b=4;//cb \n}", True, True, "void f() { int x=2; //c1\n int aa=4;\n int a=3; //caa\n int b=4;//cb \n}")
-             ])))
-        def test(self, name: str, factory: ASTFactory, code: str, include_whitespace: Any, include_comments: Any, expected: Any):
-            self.do_test(ASTRewriter.insert_before, factory, code,'int aa=4;', include_whitespace, include_comments, expected)
+    @pytest.mark.parametrize(
+        "name, factory, code, include_whitespace, include_comments, expected",
+        list(
+            Factories.extend(
+                [
+                    (
+                        "/* out scope */ void f() { int a=3; /*c1    \n */ }",
+                        False,
+                        False,
+                        "/* out scope */ void f() { int aa=4;int a=3; /*c1    \n */ }",
+                    ),
+                    (
+                        "/* out scope */ void f() { int a=3; /*c1    \n */ }",
+                        False,
+                        True,
+                        "/* out scope */ void f() { int aa=4;int a=3; /*c1    \n */ }",
+                    ),
+                    (
+                        "/* out scope */ void f() { int a=3; /*c1    \n */ }",
+                        True,
+                        True,
+                        "/* out scope */ void f() { int aa=4; int a=3; /*c1    \n */ }",
+                    ),
+                    (
+                        "void f() { /* c1 */ /* c2 */ int a=3;\n}",
+                        True,
+                        True,
+                        "void f() { /* c1 */ int aa=4;\n /* c2 */ int a=3;\n}",
+                    ),
+                    (
+                        "void f() { /* c1 */ int a=3;\n}",
+                        True,
+                        True,
+                        "void f() { int aa=4;\n /* c1 */ int a=3;\n}",
+                    ),
+                    (
+                        "void f() { // c1\n //c2\n int a=3;\n}",
+                        True,
+                        True,
+                        "void f() { // c1\n int aa=4;\n //c2\n int a=3;\n}",
+                    ),
+                    (
+                        "void f() { // c1\n int a=3;\n}",
+                        True,
+                        True,
+                        "void f() { int aa=4;\n // c1\n int a=3;\n}",
+                    ),
+                    (
+                        "void f() { //cx\n int x=2; //ca\n int a=3; //caa\n int b=4;//cb \n}",
+                        True,
+                        True,
+                        "void f() { //cx\n int x=2; //ca\n int aa=4;\n int a=3; //caa\n int b=4;//cb \n}",
+                    ),
+                    (
+                        "void f() { int a=3;    \n}",
+                        True,
+                        True,
+                        "void f() { int aa=4;\n int a=3;    \n}",
+                    ),
+                    (
+                        "void f() { int a=3; /*c1    \n */ }",
+                        False,
+                        False,
+                        "void f() { int aa=4;int a=3; /*c1    \n */ }",
+                    ),
+                    (
+                        "void f() { int a=3; /*c1    \n */ }",
+                        False,
+                        True,
+                        "void f() { int aa=4;int a=3; /*c1    \n */ }",
+                    ),
+                    (
+                        "void f() { int a=3; /*c1    \n */ }",
+                        True,
+                        False,
+                        "void f() { int aa=4; int a=3; /*c1    \n */ }",
+                    ),
+                    (
+                        "void f() { int a=3; /*c1    \n */ }",
+                        True,
+                        True,
+                        "void f() { int aa=4; int a=3; /*c1    \n */ }",
+                    ),
+                    (
+                        "void f() { int a=3; //c1    \n}",
+                        True,
+                        True,
+                        "void f() { int aa=4;\n int a=3; //c1    \n}",
+                    ),
+                    (
+                        "void f() { int x=2; /*ca*/ int a=3; /*caa \n nl*/ int b=4; }",
+                        True,
+                        True,
+                        "void f() { int x=2; /*ca*/ int aa=4; int a=3; /*caa \n nl*/ int b=4; }",
+                    ),
+                    (
+                        "void f() { int x=2; /* c1 */ int a=3; //c2\n int b=4; }",
+                        True,
+                        True,
+                        "void f() { int x=2; /* c1 */ int aa=4;\n int a=3; //c2\n int b=4; }",
+                    ),
+                    (
+                        "void f() { int x=2; //c1\n int a=3; //caa\n int b=4;//cb \n}",
+                        True,
+                        True,
+                        "void f() { int x=2; //c1\n int aa=4;\n int a=3; //caa\n int b=4;//cb \n}",
+                    ),
+                ]
+            )
+        ),
+    )
+    def test(
+        self,
+        name: str,
+        factory: ASTFactory,
+        code: str,
+        include_whitespace: Any,
+        include_comments: Any,
+        expected: Any,
+    ):
+        self.do_test(
+            ASTRewriter.insert_before,
+            factory,
+            code,
+            "int aa=4;",
+            include_whitespace,
+            include_comments,
+            expected,
+        )
+
 
 class TestInsertBeforeMultiLine(TestRewrites):
 
-        @pytest.mark.parametrize("name, factory, code, include_whitespace, include_comments, expected",list(Factories.extend( [
-            ("/* out scope */ void f() { int a=3; /*c1    \n */ }", False, False, "/* out scope */ void f() { int aa=4;\n int bb=5;int a=3; /*c1    \n */ }"),
-            ("/* out scope */ void f() { int a=3; /*c1    \n */ }", False, True, "/* out scope */ void f() { int aa=4;\n int bb=5;int a=3; /*c1    \n */ }"),
-            ("/* out scope */ void f() { int a=3; /*c1    \n */ }", True, True, "/* out scope */ void f() { int aa=4;\n int bb=5; int a=3; /*c1    \n */ }"),
-            ("/* indent 2 */ void f() {\n  int a=3; /*c1    \n */ }", False, False, "/* indent 2 */ void f() {\n  int aa=4;\n  int bb=5;int a=3; /*c1    \n */ }"),
-            ("/* indent 2 */ void f() {\n  int a=3; /*c1    \n */ }", False, True, "/* indent 2 */ void f() {\n  int aa=4;\n  int bb=5;int a=3; /*c1    \n */ }"),
-            ("/* indent 2 */ void f() {\n  int a=3; /*c1    \n */ }", True, True, "/* indent 2 */ void f() {\n  int aa=4;\n  int bb=5;  int a=3; /*c1    \n */ }"),
-            ("void f() { /* c1 */ /* c2 */ int a=3;\n}", True, True, "void f() { /* c1 */ int aa=4;\n int bb=5;\n /* c2 */ int a=3;\n}"),
-            ("void f() { /* c1 */ int a=3;\n}", True, True, "void f() { int aa=4;\n int bb=5;\n /* c1 */ int a=3;\n}"),
-            ("void f() { // c1\n //c2\n int a=3;\n}", True, True, "void f() { // c1\n int aa=4;\n int bb=5;\n //c2\n int a=3;\n}"),
-            ("void f() { // c1\n int a=3;\n}", True, True, "void f() { int aa=4;\n int bb=5;\n // c1\n int a=3;\n}"),
-            ("void f() { //cx\n int x=2; //ca\n int a=3; //caa\n int b=4;//cb \n}", True, True, "void f() { //cx\n int x=2; //ca\n int aa=4;\n int bb=5;\n int a=3; //caa\n int b=4;//cb \n}"),
-            ("void f() { int a=3;    \n}", True, True, "void f() { int aa=4;\n int bb=5;\n int a=3;    \n}"),
-            ("void f() { int a=3; /*c1    \n */ }", False, False, "void f() { int aa=4;\n int bb=5;int a=3; /*c1    \n */ }"),
-            ("void f() { int a=3; /*c1    \n */ }", False, True, "void f() { int aa=4;\n int bb=5;int a=3; /*c1    \n */ }"),
-            ("void f() { int a=3; /*c1    \n */ }", True, False, "void f() { int aa=4;\n int bb=5; int a=3; /*c1    \n */ }"),
-            ("void f() { int a=3; /*c1    \n */ }", True, True, "void f() { int aa=4;\n int bb=5; int a=3; /*c1    \n */ }"),
-            ("void f() { int a=3; //c1    \n}", True, True, "void f() { int aa=4;\n int bb=5;\n int a=3; //c1    \n}"),
-            ("void f() { int x=2; /*ca*/ int a=3; /*caa \n nl*/ int b=4; }", True, True, "void f() { int x=2; /*ca*/ int aa=4;\n int bb=5; int a=3; /*caa \n nl*/ int b=4; }"),
-            ("void f() { int x=2; /* c1 */ int a=3; //c2\n int b=4; }", True, True, "void f() { int x=2; /* c1 */ int aa=4;\n int bb=5;\n int a=3; //c2\n int b=4; }"),
-            ("void f() { int x=2; //c1\n int a=3; //caa\n int b=4;//cb \n}", True, True, "void f() { int x=2; //c1\n int aa=4;\n int bb=5;\n int a=3; //caa\n int b=4;//cb \n}"),
+    @pytest.mark.parametrize(
+        "name, factory, code, include_whitespace, include_comments, expected",
+        list(
+            Factories.extend(
+                [
+                    (
+                        "/* out scope */ void f() { int a=3; /*c1    \n */ }",
+                        False,
+                        False,
+                        "/* out scope */ void f() { int aa=4;\n int bb=5;int a=3; /*c1    \n */ }",
+                    ),
+                    (
+                        "/* out scope */ void f() { int a=3; /*c1    \n */ }",
+                        False,
+                        True,
+                        "/* out scope */ void f() { int aa=4;\n int bb=5;int a=3; /*c1    \n */ }",
+                    ),
+                    (
+                        "/* out scope */ void f() { int a=3; /*c1    \n */ }",
+                        True,
+                        True,
+                        "/* out scope */ void f() { int aa=4;\n int bb=5; int a=3; /*c1    \n */ }",
+                    ),
+                    (
+                        "/* indent 2 */ void f() {\n  int a=3; /*c1    \n */ }",
+                        False,
+                        False,
+                        "/* indent 2 */ void f() {\n  int aa=4;\n  int bb=5;int a=3; /*c1    \n */ }",
+                    ),
+                    (
+                        "/* indent 2 */ void f() {\n  int a=3; /*c1    \n */ }",
+                        False,
+                        True,
+                        "/* indent 2 */ void f() {\n  int aa=4;\n  int bb=5;int a=3; /*c1    \n */ }",
+                    ),
+                    (
+                        "/* indent 2 */ void f() {\n  int a=3; /*c1    \n */ }",
+                        True,
+                        True,
+                        "/* indent 2 */ void f() {\n  int aa=4;\n  int bb=5;  int a=3; /*c1    \n */ }",
+                    ),
+                    (
+                        "void f() { /* c1 */ /* c2 */ int a=3;\n}",
+                        True,
+                        True,
+                        "void f() { /* c1 */ int aa=4;\n int bb=5;\n /* c2 */ int a=3;\n}",
+                    ),
+                    (
+                        "void f() { /* c1 */ int a=3;\n}",
+                        True,
+                        True,
+                        "void f() { int aa=4;\n int bb=5;\n /* c1 */ int a=3;\n}",
+                    ),
+                    (
+                        "void f() { // c1\n //c2\n int a=3;\n}",
+                        True,
+                        True,
+                        "void f() { // c1\n int aa=4;\n int bb=5;\n //c2\n int a=3;\n}",
+                    ),
+                    (
+                        "void f() { // c1\n int a=3;\n}",
+                        True,
+                        True,
+                        "void f() { int aa=4;\n int bb=5;\n // c1\n int a=3;\n}",
+                    ),
+                    (
+                        "void f() { //cx\n int x=2; //ca\n int a=3; //caa\n int b=4;//cb \n}",
+                        True,
+                        True,
+                        "void f() { //cx\n int x=2; //ca\n int aa=4;\n int bb=5;\n int a=3; //caa\n int b=4;//cb \n}",
+                    ),
+                    (
+                        "void f() { int a=3;    \n}",
+                        True,
+                        True,
+                        "void f() { int aa=4;\n int bb=5;\n int a=3;    \n}",
+                    ),
+                    (
+                        "void f() { int a=3; /*c1    \n */ }",
+                        False,
+                        False,
+                        "void f() { int aa=4;\n int bb=5;int a=3; /*c1    \n */ }",
+                    ),
+                    (
+                        "void f() { int a=3; /*c1    \n */ }",
+                        False,
+                        True,
+                        "void f() { int aa=4;\n int bb=5;int a=3; /*c1    \n */ }",
+                    ),
+                    (
+                        "void f() { int a=3; /*c1    \n */ }",
+                        True,
+                        False,
+                        "void f() { int aa=4;\n int bb=5; int a=3; /*c1    \n */ }",
+                    ),
+                    (
+                        "void f() { int a=3; /*c1    \n */ }",
+                        True,
+                        True,
+                        "void f() { int aa=4;\n int bb=5; int a=3; /*c1    \n */ }",
+                    ),
+                    (
+                        "void f() { int a=3; //c1    \n}",
+                        True,
+                        True,
+                        "void f() { int aa=4;\n int bb=5;\n int a=3; //c1    \n}",
+                    ),
+                    (
+                        "void f() { int x=2; /*ca*/ int a=3; /*caa \n nl*/ int b=4; }",
+                        True,
+                        True,
+                        "void f() { int x=2; /*ca*/ int aa=4;\n int bb=5; int a=3; /*caa \n nl*/ int b=4; }",
+                    ),
+                    (
+                        "void f() { int x=2; /* c1 */ int a=3; //c2\n int b=4; }",
+                        True,
+                        True,
+                        "void f() { int x=2; /* c1 */ int aa=4;\n int bb=5;\n int a=3; //c2\n int b=4; }",
+                    ),
+                    (
+                        "void f() { int x=2; //c1\n int a=3; //caa\n int b=4;//cb \n}",
+                        True,
+                        True,
+                        "void f() { int x=2; //c1\n int aa=4;\n int bb=5;\n int a=3; //caa\n int b=4;//cb \n}",
+                    ),
+                ]
+            )
+        ),
+    )
+    def test(
+        self,
+        name: str,
+        factory: ASTFactory,
+        code: str,
+        include_whitespace: Any,
+        include_comments: Any,
+        expected: Any,
+    ):
+        self.do_test(
+            ASTRewriter.insert_before,
+            factory,
+            code,
+            "int aa=4;\nint bb=5;",
+            include_whitespace,
+            include_comments,
+            expected,
+        )
 
-
-             ])))
-        def test(self, name: str, factory: ASTFactory, code: str, include_whitespace: Any, include_comments: Any, expected: Any):
-            self.do_test(ASTRewriter.insert_before, factory, code,'int aa=4;\nint bb=5;', include_whitespace, include_comments, expected)
 
 class TestInsertAfterSingleLine(TestRewrites):
 
-        @pytest.mark.parametrize("name, factory, code, include_whitespace, include_comments, expected",list(Factories.extend( [
-            ("/* out scope */ void f() { int a=3; /*c1    \n */ }", False, False, "/* out scope */ void f() { int a=3;int aa=4; /*c1    \n */ }"),
-            ("/* out scope */ void f() { int a=3; /*c1    \n */ }", False, True, "/* out scope */ void f() { int a=3; /*c1    \n */int aa=4; }"),
-            ("/* out scope */ void f() { int a=3; /*c1    \n */ }", True, True, "/* out scope */ void f() { int a=3; /*c1    \n */ int aa=4; }"),
-            ("void f() { /* c1 */ /* c2 */ int a=3;\n}", True, True, "void f() { /* c1 */ /* c2 */ int a=3;\n int aa=4;\n}"),
-            ("void f() { /* c1 */ int a=3;\n}", True, True, "void f() { /* c1 */ int a=3;\n int aa=4;\n}"),
-            ("void f() { // c1\n //c2\n int a=3;\n}", True, True, "void f() { // c1\n //c2\n int a=3;\n int aa=4;\n}"),
-            ("void f() { // c1\n int a=3;\n}", True, True, "void f() { // c1\n int a=3;\n int aa=4;\n}"),
-            ("void f() { //cx\nint x=2; //ca\n int a=3; //caa\n int b=4;//cb \n}", True, True, "void f() { //cx\nint x=2; //ca\n int a=3; //caa\n int aa=4;\n int b=4;//cb \n}"),
-            ("void f() { int a=3;    \n}", True, True, "void f() { int a=3;    \n int aa=4;\n}"),
-            ("void f() { int a=3; /*c1    \n */ }", False, False, "void f() { int a=3;int aa=4; /*c1    \n */ }"),
-            ("void f() { int a=3; /*c1    \n */ }", False, True, "void f() { int a=3; /*c1    \n */int aa=4; }"),
-            ("void f() { int a=3; /*c1    \n */ }", True, False, "void f() { int a=3; int aa=4; /*c1    \n */ }"),
-            ("void f() { int a=3; /*c1    \n */ }", True, True, "void f() { int a=3; /*c1    \n */ int aa=4; }"),
-            ("void f() { int a=3; //c1    \n}", True, True, "void f() { int a=3; //c1    \n int aa=4;\n}"),
-            ("void f() { int x=2; /*ca*/ int a=3; /*caa \n nl*/ int b=4; }", True, True, "void f() { int x=2; /*ca*/ int a=3; /*caa \n nl*/ int aa=4; int b=4; }"),
-            ("void f() { int x=2; /* c1 */ int a=3; //c2\n int b=4; }", True, True, "void f() { int x=2; /* c1 */ int a=3; //c2\n int aa=4;\n int b=4; }"),
-            ("void f() { int x=2; //c1\n int a=3; //caa\n int b=4;//cb \n}", True, True, "void f() { int x=2; //c1\n int a=3; //caa\n int aa=4;\n int b=4;//cb \n}"),
-        ])))
-        def test(self, name: str, factory: ASTFactory, code: str, include_whitespace: Any, include_comments: Any, expected: Any):
-            self.do_test(ASTRewriter.insert_after, factory, code,'int aa=4;', include_whitespace, include_comments, expected)
+    @pytest.mark.parametrize(
+        "name, factory, code, include_whitespace, include_comments, expected",
+        list(
+            Factories.extend(
+                [
+                    (
+                        "/* out scope */ void f() { int a=3; /*c1    \n */ }",
+                        False,
+                        False,
+                        "/* out scope */ void f() { int a=3;int aa=4; /*c1    \n */ }",
+                    ),
+                    (
+                        "/* out scope */ void f() { int a=3; /*c1    \n */ }",
+                        False,
+                        True,
+                        "/* out scope */ void f() { int a=3; /*c1    \n */int aa=4; }",
+                    ),
+                    (
+                        "/* out scope */ void f() { int a=3; /*c1    \n */ }",
+                        True,
+                        True,
+                        "/* out scope */ void f() { int a=3; /*c1    \n */ int aa=4; }",
+                    ),
+                    (
+                        "void f() { /* c1 */ /* c2 */ int a=3;\n}",
+                        True,
+                        True,
+                        "void f() { /* c1 */ /* c2 */ int a=3;\n int aa=4;\n}",
+                    ),
+                    (
+                        "void f() { /* c1 */ int a=3;\n}",
+                        True,
+                        True,
+                        "void f() { /* c1 */ int a=3;\n int aa=4;\n}",
+                    ),
+                    (
+                        "void f() { // c1\n //c2\n int a=3;\n}",
+                        True,
+                        True,
+                        "void f() { // c1\n //c2\n int a=3;\n int aa=4;\n}",
+                    ),
+                    (
+                        "void f() { // c1\n int a=3;\n}",
+                        True,
+                        True,
+                        "void f() { // c1\n int a=3;\n int aa=4;\n}",
+                    ),
+                    (
+                        "void f() { //cx\nint x=2; //ca\n int a=3; //caa\n int b=4;//cb \n}",
+                        True,
+                        True,
+                        "void f() { //cx\nint x=2; //ca\n int a=3; //caa\n int aa=4;\n int b=4;//cb \n}",
+                    ),
+                    (
+                        "void f() { int a=3;    \n}",
+                        True,
+                        True,
+                        "void f() { int a=3;    \n int aa=4;\n}",
+                    ),
+                    (
+                        "void f() { int a=3; /*c1    \n */ }",
+                        False,
+                        False,
+                        "void f() { int a=3;int aa=4; /*c1    \n */ }",
+                    ),
+                    (
+                        "void f() { int a=3; /*c1    \n */ }",
+                        False,
+                        True,
+                        "void f() { int a=3; /*c1    \n */int aa=4; }",
+                    ),
+                    (
+                        "void f() { int a=3; /*c1    \n */ }",
+                        True,
+                        False,
+                        "void f() { int a=3; int aa=4; /*c1    \n */ }",
+                    ),
+                    (
+                        "void f() { int a=3; /*c1    \n */ }",
+                        True,
+                        True,
+                        "void f() { int a=3; /*c1    \n */ int aa=4; }",
+                    ),
+                    (
+                        "void f() { int a=3; //c1    \n}",
+                        True,
+                        True,
+                        "void f() { int a=3; //c1    \n int aa=4;\n}",
+                    ),
+                    (
+                        "void f() { int x=2; /*ca*/ int a=3; /*caa \n nl*/ int b=4; }",
+                        True,
+                        True,
+                        "void f() { int x=2; /*ca*/ int a=3; /*caa \n nl*/ int aa=4; int b=4; }",
+                    ),
+                    (
+                        "void f() { int x=2; /* c1 */ int a=3; //c2\n int b=4; }",
+                        True,
+                        True,
+                        "void f() { int x=2; /* c1 */ int a=3; //c2\n int aa=4;\n int b=4; }",
+                    ),
+                    (
+                        "void f() { int x=2; //c1\n int a=3; //caa\n int b=4;//cb \n}",
+                        True,
+                        True,
+                        "void f() { int x=2; //c1\n int a=3; //caa\n int aa=4;\n int b=4;//cb \n}",
+                    ),
+                ]
+            )
+        ),
+    )
+    def test(
+        self,
+        name: str,
+        factory: ASTFactory,
+        code: str,
+        include_whitespace: Any,
+        include_comments: Any,
+        expected: Any,
+    ):
+        self.do_test(
+            ASTRewriter.insert_after,
+            factory,
+            code,
+            "int aa=4;",
+            include_whitespace,
+            include_comments,
+            expected,
+        )
+
 
 class TestInsertAfterMultiLine(TestRewrites):
 
-        @pytest.mark.parametrize("name, factory, code, include_whitespace, include_comments, expected",list(Factories.extend( [
-            ("/* indent 2 */ void f() {\n  int a=3; /*c1    \n */ }", False, False, "/* indent 2 */ void f() {\n  int a=3;int aa=4;\n  int bb=5; /*c1    \n */ }"),
-            ("/* indent 2 */ void f() {\n  int a=3; /*c1    \n */ }", False, True, "/* indent 2 */ void f() {\n  int a=3; /*c1    \n */int aa=4;\n  int bb=5; }"),
-            ("/* indent 2 */ void f() {\n  int a=3; /*c1    \n */ }", True, True, "/* indent 2 */ void f() {\n  int a=3; /*c1    \n */  int aa=4;\n  int bb=5; }"),
-            ("/* out scope */ void f() { int a=3; /*c1    \n */ }", False, False, "/* out scope */ void f() { int a=3;int aa=4;\n int bb=5; /*c1    \n */ }"),
-            ("/* out scope */ void f() { int a=3; /*c1    \n */ }", False, True, "/* out scope */ void f() { int a=3; /*c1    \n */int aa=4;\n int bb=5; }"),
-            ("/* out scope */ void f() { int a=3; /*c1    \n */ }", True, True, "/* out scope */ void f() { int a=3; /*c1    \n */ int aa=4;\n int bb=5; }"),
-            ("void f() { /* c1 */ /* c2 */ int a=3;\n}", True, True, "void f() { /* c1 */ /* c2 */ int a=3;\n int aa=4;\n int bb=5;\n}"),
-            ("void f() { /* c1 */ int a=3;\n}", True, True, "void f() { /* c1 */ int a=3;\n int aa=4;\n int bb=5;\n}"),
-            ("void f() { // c1\n //c2\n int a=3;\n}", True, True, "void f() { // c1\n //c2\n int a=3;\n int aa=4;\n int bb=5;\n}"),
-            ("void f() { // c1\n int a=3;\n}", True, True, "void f() { // c1\n int a=3;\n int aa=4;\n int bb=5;\n}"),
-            ("void f() { //cx\nint x=2; //ca\n int a=3; //caa\n int b=4;//cb \n}", True, True, "void f() { //cx\nint x=2; //ca\n int a=3; //caa\n int aa=4;\n int bb=5;\n int b=4;//cb \n}"),
-            ("void f() { int a=3;    \n}", True, True, "void f() { int a=3;    \n int aa=4;\n int bb=5;\n}"),
-            ("void f() { int a=3; /*c1    \n */ }", False, False, "void f() { int a=3;int aa=4;\n int bb=5; /*c1    \n */ }"),
-            ("void f() { int a=3; /*c1    \n */ }", False, True, "void f() { int a=3; /*c1    \n */int aa=4;\n int bb=5; }"),
-            ("void f() { int a=3; /*c1    \n */ }", True, False, "void f() { int a=3; int aa=4;\n int bb=5; /*c1    \n */ }"),
-            ("void f() { int a=3; /*c1    \n */ }", True, True, "void f() { int a=3; /*c1    \n */ int aa=4;\n int bb=5; }"),
-            ("void f() { int a=3; //c1    \n}", True, True, "void f() { int a=3; //c1    \n int aa=4;\n int bb=5;\n}"),
-            ("void f() { int x=2; /*ca*/ int a=3; /*caa \n nl*/ int b=4; }", True, True, "void f() { int x=2; /*ca*/ int a=3; /*caa \n nl*/ int aa=4;\n int bb=5; int b=4; }"),
-            ("void f() { int x=2; /* c1 */ int a=3; //c2\n int b=4; }", True, True, "void f() { int x=2; /* c1 */ int a=3; //c2\n int aa=4;\n int bb=5;\n int b=4; }"),
-            ("void f() { int x=2; //c1\n int a=3; //caa\n int b=4;//cb \n}", True, True, "void f() { int x=2; //c1\n int a=3; //caa\n int aa=4;\n int bb=5;\n int b=4;//cb \n}"),
-        ])))
-        def test(self, name: str, factory: ASTFactory, code: str, include_whitespace: Any, include_comments: Any, expected: Any):
-            self.do_test(ASTRewriter.insert_after, factory, code, 'int aa=4;\nint bb=5;', include_whitespace, include_comments, expected)
+    @pytest.mark.parametrize(
+        "name, factory, code, include_whitespace, include_comments, expected",
+        list(
+            Factories.extend(
+                [
+                    (
+                        "/* indent 2 */ void f() {\n  int a=3; /*c1    \n */ }",
+                        False,
+                        False,
+                        "/* indent 2 */ void f() {\n  int a=3;int aa=4;\n  int bb=5; /*c1    \n */ }",
+                    ),
+                    (
+                        "/* indent 2 */ void f() {\n  int a=3; /*c1    \n */ }",
+                        False,
+                        True,
+                        "/* indent 2 */ void f() {\n  int a=3; /*c1    \n */int aa=4;\n  int bb=5; }",
+                    ),
+                    (
+                        "/* indent 2 */ void f() {\n  int a=3; /*c1    \n */ }",
+                        True,
+                        True,
+                        "/* indent 2 */ void f() {\n  int a=3; /*c1    \n */  int aa=4;\n  int bb=5; }",
+                    ),
+                    (
+                        "/* out scope */ void f() { int a=3; /*c1    \n */ }",
+                        False,
+                        False,
+                        "/* out scope */ void f() { int a=3;int aa=4;\n int bb=5; /*c1    \n */ }",
+                    ),
+                    (
+                        "/* out scope */ void f() { int a=3; /*c1    \n */ }",
+                        False,
+                        True,
+                        "/* out scope */ void f() { int a=3; /*c1    \n */int aa=4;\n int bb=5; }",
+                    ),
+                    (
+                        "/* out scope */ void f() { int a=3; /*c1    \n */ }",
+                        True,
+                        True,
+                        "/* out scope */ void f() { int a=3; /*c1    \n */ int aa=4;\n int bb=5; }",
+                    ),
+                    (
+                        "void f() { /* c1 */ /* c2 */ int a=3;\n}",
+                        True,
+                        True,
+                        "void f() { /* c1 */ /* c2 */ int a=3;\n int aa=4;\n int bb=5;\n}",
+                    ),
+                    (
+                        "void f() { /* c1 */ int a=3;\n}",
+                        True,
+                        True,
+                        "void f() { /* c1 */ int a=3;\n int aa=4;\n int bb=5;\n}",
+                    ),
+                    (
+                        "void f() { // c1\n //c2\n int a=3;\n}",
+                        True,
+                        True,
+                        "void f() { // c1\n //c2\n int a=3;\n int aa=4;\n int bb=5;\n}",
+                    ),
+                    (
+                        "void f() { // c1\n int a=3;\n}",
+                        True,
+                        True,
+                        "void f() { // c1\n int a=3;\n int aa=4;\n int bb=5;\n}",
+                    ),
+                    (
+                        "void f() { //cx\nint x=2; //ca\n int a=3; //caa\n int b=4;//cb \n}",
+                        True,
+                        True,
+                        "void f() { //cx\nint x=2; //ca\n int a=3; //caa\n int aa=4;\n int bb=5;\n int b=4;//cb \n}",
+                    ),
+                    (
+                        "void f() { int a=3;    \n}",
+                        True,
+                        True,
+                        "void f() { int a=3;    \n int aa=4;\n int bb=5;\n}",
+                    ),
+                    (
+                        "void f() { int a=3; /*c1    \n */ }",
+                        False,
+                        False,
+                        "void f() { int a=3;int aa=4;\n int bb=5; /*c1    \n */ }",
+                    ),
+                    (
+                        "void f() { int a=3; /*c1    \n */ }",
+                        False,
+                        True,
+                        "void f() { int a=3; /*c1    \n */int aa=4;\n int bb=5; }",
+                    ),
+                    (
+                        "void f() { int a=3; /*c1    \n */ }",
+                        True,
+                        False,
+                        "void f() { int a=3; int aa=4;\n int bb=5; /*c1    \n */ }",
+                    ),
+                    (
+                        "void f() { int a=3; /*c1    \n */ }",
+                        True,
+                        True,
+                        "void f() { int a=3; /*c1    \n */ int aa=4;\n int bb=5; }",
+                    ),
+                    (
+                        "void f() { int a=3; //c1    \n}",
+                        True,
+                        True,
+                        "void f() { int a=3; //c1    \n int aa=4;\n int bb=5;\n}",
+                    ),
+                    (
+                        "void f() { int x=2; /*ca*/ int a=3; /*caa \n nl*/ int b=4; }",
+                        True,
+                        True,
+                        "void f() { int x=2; /*ca*/ int a=3; /*caa \n nl*/ int aa=4;\n int bb=5; int b=4; }",
+                    ),
+                    (
+                        "void f() { int x=2; /* c1 */ int a=3; //c2\n int b=4; }",
+                        True,
+                        True,
+                        "void f() { int x=2; /* c1 */ int a=3; //c2\n int aa=4;\n int bb=5;\n int b=4; }",
+                    ),
+                    (
+                        "void f() { int x=2; //c1\n int a=3; //caa\n int b=4;//cb \n}",
+                        True,
+                        True,
+                        "void f() { int x=2; //c1\n int a=3; //caa\n int aa=4;\n int bb=5;\n int b=4;//cb \n}",
+                    ),
+                ]
+            )
+        ),
+    )
+    def test(
+        self,
+        name: str,
+        factory: ASTFactory,
+        code: str,
+        include_whitespace: Any,
+        include_comments: Any,
+        expected: Any,
+    ):
+        self.do_test(
+            ASTRewriter.insert_after,
+            factory,
+            code,
+            "int aa=4;\nint bb=5;",
+            include_whitespace,
+            include_comments,
+            expected,
+        )
+
 
 class TestComposeReplacement:
 
-        @pytest.mark.parametrize("_, factory, statements, extra_declarations, replacement",Factories.extend([
-        ('if($exp){$$before;b=$d1;$$after;}else{$$before;b=$d2;$$after;}',[],{'$$before; b = ($exp) ? $d1:$d2; $$after;': "int a=1;int b=2;int c=3;int d=4;void f(){c++;b=(a==1)?2:3;d++;}"}),
-    ]))
-        def test_args(self, _: Any, factory: ASTFactory, statements: Any, extra_declarations: Any, replacement: Any):
-            code = """
+    @pytest.mark.parametrize(
+        "_, factory, statements, extra_declarations, replacement",
+        Factories.extend(
+            [
+                (
+                    "if($exp){$$before;b=$d1;$$after;}else{$$before;b=$d2;$$after;}",
+                    [],
+                    {"$$before; b = ($exp) ? $d1:$d2; $$after;": "int a=1;int b=2;int c=3;int d=4;void f(){c++;b=(a==1)?2:3;d++;}"},
+                ),
+            ]
+        ),
+    )
+    def test_args(
+        self,
+        _: Any,
+        factory: ASTFactory,
+        statements: Any,
+        extra_declarations: Any,
+        replacement: Any,
+    ):
+        code = """
             int a = 1;
             int b = 2;
             int c = 3;
@@ -248,41 +930,43 @@ class TestComposeReplacement:
                 }
             }
             """
-            atu = factory.create_from_text(code, 'test.cpp')
-            stmt_nodes = CPatternFactory(factory).create_statements(statements, extra_declarations=extra_declarations)
-            matches = MatchFinder.find_all([atu],stmt_nodes).filter(lambda m: m.nodes[0].is_part_of_translation_unit()).to_list()
+        atu = factory.create_from_text(code, "test.cpp")
+        stmt_nodes = CPatternFactory(factory).create_statements(statements, extra_declarations=extra_declarations)
+        matches = MatchFinder.find_all([atu], stmt_nodes).filter(lambda m: m.nodes[0].is_part_of_translation_unit()).to_list()
 
-            for match, exp in zip(matches, replacement.items()):
-                rewriter = ASTRewriter(match.nodes[0].root)
-                org, expected = exp
-                rewriter.replace(org, match)
-                actual = rewriter.apply_to_string()
-                assert_that(compress(expected), is_(compress(actual)))
+        for match, exp in zip(matches, replacement.items()):
+            rewriter = ASTRewriter(match.nodes[0].root)
+            org, expected = exp
+            rewriter.replace(org, match)
+            actual = rewriter.apply_to_string()
+            assert_that(compress(expected), is_(compress(actual)))
+
 
 def test_get_node_in_match_pattern(mocker):
-        node = mocker.Mock()
-        reference = mocker.Mock()
-        node.referenced_by = [reference, reference]
-        reference.node = node
-        pattern_match = PatternMatch([node, node, node], {}, [])
-        n = _RewriteAction._get_nodes([pattern_match])[0]
-        assert_that(n, is_(node))
+    node = mocker.Mock()
+    reference = mocker.Mock()
+    node.referenced_by = [reference, reference]
+    reference.node = node
+    pattern_match = PatternMatch([node, node, node], {}, [])
+    n = _RewriteAction._get_nodes([pattern_match])[0]
+    assert_that(n, is_(node))
+
 
 @pytest.mark.skip("fail on empty nodes")
 def test_get_node_in_match_pattern():
     it = _RewriteActions([], sys.getfilesystemencoding(), True)
-    text = getattr(it, '_RewriteActions__get_texts')([])
-    assert_that(text, is_('node'))
+    text = getattr(it, "_RewriteActions__get_texts")([])
+    assert_that(text, is_("node"))
 
 
 def test_get_text_from_rewrite(mocker):
     node = mocker.Mock()
     node.root = node
-    node.binary_file_content = lambda: b'int x =0;'
+    node.binary_file_content = lambda: b"int x =0;"
     node.offset = 0
     node.extended_end_offset = 8
-    node.text = 'int x =0'
+    node.text = "int x =0"
 
     it = _RewriteActions([node], sys.getfilesystemencoding(), True)
-    text = getattr(it, '_RewriteActions__get_texts')([node])
-    assert_that(text, is_('int x =0'))
+    text = getattr(it, "_RewriteActions__get_texts")([node])
+    assert_that(text, is_("int x =0"))

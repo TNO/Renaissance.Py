@@ -7,9 +7,8 @@ from .ast_processor import ASTProcessor
 from .ast_factory import ASTFactory
 from .ast_node import ASTNode
 
-
 AST_FACTORY_AND_ATU = tuple[ASTFactory, ASTNode]
-Action = Callable[[ASTProcessor], Callable[[], Any] | None ]
+Action = Callable[[ASTProcessor], Callable[[], Any] | None]
 IterableProvider = Callable[[], Iterable[AST_FACTORY_AND_ATU]]
 
 
@@ -29,9 +28,7 @@ class BatchASTProcessor:
 
     def once(
         self,
-        iterable: (
-            Iterable[AST_FACTORY_AND_ATU] | IterableProvider
-        ),
+        iterable: Iterable[AST_FACTORY_AND_ATU] | IterableProvider,
         actions: Action | Sequence[Action],
         file_filter: Optional[str | re.Pattern[str]] = None,
     ) -> None:
@@ -54,7 +51,7 @@ class BatchASTProcessor:
         iterable_provider: IterableProvider,
         actions: Action | Sequence[Action],
         file_filter: Optional[str | re.Pattern[str]] = None,
-        max_repeat: int =5,
+        max_repeat: int = 5,
     ) -> None:
         """
         Repeats the processing of items provided by the iterableProvider until no changes left.
@@ -69,22 +66,18 @@ class BatchASTProcessor:
         Returns:
             bool: True if the processing still yields changes, False otherwise.
         """
-        self.__process(
-            iterable_provider(), actions, self.in_memory, file_filter, max_repeat
-        )
+        self.__process(iterable_provider(), actions, self.in_memory, file_filter, max_repeat)
 
     def __process(
         self,
         iterable: Iterable[tuple[ASTFactory, ASTNode]],
         actions: Action | Sequence[Action],
-        in_memory: bool =False,
+        in_memory: bool = False,
         file_filter: Optional[str | re.Pattern[str]] = None,
-        max_repeat: int =1,
+        max_repeat: int = 1,
     ) -> None:
         filter_pattern = (
-            file_filter
-            if isinstance(file_filter, re.Pattern)
-            else re.compile(file_filter) if file_filter is not None else None
+            file_filter if isinstance(file_filter, re.Pattern) else re.compile(file_filter) if file_filter is not None else None
         )
 
         def is_eligible(item: tuple[ASTFactory, ASTNode]) -> bool:
@@ -99,20 +92,14 @@ class BatchASTProcessor:
             in_memory=in_memory,
             max_repeat=max_repeat,
         )
-        with concurrent.futures.ThreadPoolExecutor(
-            max_workers=self.max_processes
-        ) as executor:
-            for results in executor.map(
-                partial_process_item, filter(is_eligible, iterable)
-            ):
+        with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_processes) as executor:
+            for results in executor.map(partial_process_item, filter(is_eligible, iterable)):
                 for my_callable in results:
                     # the post-processing is done in the main thread
                     my_callable()
 
     def _replace_if_in_memory(self, item: AST_FACTORY_AND_ATU) -> AST_FACTORY_AND_ATU:
-        if self.in_memory and self.in_memory_files.get(
-                item[1].filename
-        ):
+        if self.in_memory and self.in_memory_files.get(item[1].filename):
             return item[0], item[0].create_from_text(
                 self.in_memory_files[item[1].filename],
                 item[1].filename,
@@ -120,13 +107,8 @@ class BatchASTProcessor:
         return item
 
     @staticmethod
-    def __eligible_file(
-        file_filter: Optional[re.Pattern[str]], item: AST_FACTORY_AND_ATU
-    ) -> bool:
-        return (
-                file_filter is None
-                or file_filter.match(item[1].filename) is not None
-        )
+    def __eligible_file(file_filter: Optional[re.Pattern[str]], item: AST_FACTORY_AND_ATU) -> bool:
+        return file_filter is None or file_filter.match(item[1].filename) is not None
 
 
 def process_atu(
@@ -151,7 +133,5 @@ def process_atu(
             return results
         ast_processor = ast_processor.commit()
         if self.in_memory:
-            self.in_memory_files[ast_processor.get_filename()] = (
-                ast_processor.apply_to_string()
-            )
+            self.in_memory_files[ast_processor.get_filename()] = ast_processor.apply_to_string()
     return results

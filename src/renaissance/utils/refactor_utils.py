@@ -3,8 +3,9 @@ import subprocess
 import sys
 import tempfile
 
+
 def fix_indent(code_string):
-    with tempfile.NamedTemporaryFile(suffix='.py', mode='w+', delete=False) as temp_file:
+    with tempfile.NamedTemporaryFile(suffix=".py", mode="w+", delete=False) as temp_file:
         file_path = temp_file.name
         temp_file.write(code_string)
 
@@ -19,20 +20,27 @@ def fix_indent(code_string):
 
         # Step 2: Auto-fix with autopep8
         print("Auto-fixing with autopep8...")
-        subprocess.run([
-            sys.executable, "-m", "autopep8",
-            "--in-place", "--aggressive", "--aggressive", file_path
-        ])
+        subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "autopep8",
+                "--in-place",
+                "--aggressive",
+                "--aggressive",
+                file_path,
+            ]
+        )
 
         # Step 3: Run flake8 again to verify
         print("Re-running flake8 after fixes...")
         subprocess.run([sys.executable, "-m", "flake8", file_path])
 
         # Read the fixed code
-        with open(file_path, 'r') as file:
+        with open(file_path, "r") as file:
             fixed_code = file.read()
 
-        #black format
+        # black format
         # return format_str(fixed_code, mode=FileMode())
         return fixed_code
     except Exception as e:
@@ -43,9 +51,10 @@ def fix_indent(code_string):
         if os.path.exists(file_path):
             os.remove(file_path)
 
-def adjust_indent(code, counter:int, spaces=4):
+
+def adjust_indent(code, counter: int, spaces=4):
     # Create the indentation string
-    indent = ' ' * int(counter/spaces) * spaces
+    indent = " " * int(counter / spaces) * spaces
 
     # Split the code into lines
     lines = code.splitlines()
@@ -61,13 +70,14 @@ def adjust_indent(code, counter:int, spaces=4):
     else:
         # move to left, remove indent
         indented_lines = [lines[0]] + [line.lstrip() for line in lines[1:]]
-    indented_code = '\n'.join(indented_lines)
+    indented_code = "\n".join(indented_lines)
 
     return indented_code
 
+
 def remove_indent(code, spaces=4):
     # Create the indentation string
-    indent = ' ' * spaces
+    indent = " " * spaces
 
     # Split the code into lines
     lines = code.splitlines()
@@ -78,9 +88,10 @@ def remove_indent(code, spaces=4):
 
     # Keep the first line unchanged, remove indentation to the rest
     indented_lines = [lines[0]] + [line.lstrip() for line in lines[1:]]
-    indented_code = '\n'.join(indented_lines)
+    indented_code = "\n".join(indented_lines)
 
     return indented_code
+
 
 def is_block_statement(statement):
     """
@@ -104,46 +115,47 @@ def is_block_statement(statement):
     """
     # Strip whitespace and comments
     statement = statement.strip()
-    if '#' in statement:
-        statement = statement[:statement.find('#')].strip()
+    if "#" in statement:
+        statement = statement[: statement.find("#")].strip()
 
     # Check if the statement is empty after stripping
     if not statement:
         return False
 
     # Check for if, elif, else statements
-    if statement.startswith('if '):
+    if statement.startswith("if "):
         return True
-    if statement.startswith('elif '):
+    if statement.startswith("elif "):
         return True
-    if statement == 'else:':
+    if statement == "else:":
         return True
 
     # Check for with statements
-    if statement.startswith('with '):
+    if statement.startswith("with "):
         return True
 
     # Check for try, except, finally statements
-    if statement == 'try:':
+    if statement == "try:":
         return True
-    if statement.startswith('except'):
+    if statement.startswith("except"):
         return True
-    if statement == 'finally:':
+    if statement == "finally:":
         return True
 
     # Check for loops
-    if statement.startswith('for '):
+    if statement.startswith("for "):
         return True
-    if statement.startswith('while '):
+    if statement.startswith("while "):
         return True
 
     # Check for function and class definitions
-    if statement.startswith('def '):
+    if statement.startswith("def "):
         return True
-    if statement.startswith('class '):
+    if statement.startswith("class "):
         return True
 
     return False
+
 
 def get_indentation_level(code, snippets):
     """

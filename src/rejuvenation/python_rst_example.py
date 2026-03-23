@@ -5,7 +5,6 @@ from renaissance.syntax_tree import ASTShower, ASTFinder, ASTRewriter
 from renaissance.syntax_tree.match_finder import match_pattern
 from renaissance.utils.node_util import replace_dollar
 
-
 # def add_children(parent):
 #     uml =""
 #     for child in parent.children:
@@ -37,10 +36,9 @@ if True:
     root = ast.parse(code)
     ASTShower.show_node(root)
 
-    nodes=ASTFinder.find_kind(root, "If").to_list()
+    nodes = ASTFinder.find_kind(root, "If").to_list()
 
     ASTShower.show_node(nodes[0])
-
 
     pattern = ast.parse(replace_dollar("$greet($arg)")).body
 
@@ -63,8 +61,4 @@ if True:
     # uml = add_children(root)
     # print(uml)
 
-    return '' #result
-
-
-
-
+    return ""  # result

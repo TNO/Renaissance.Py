@@ -49,9 +49,7 @@ class PythonScanner(ProjectScanner):
 
 
 class BearCppScanner(CppScanner):
-    def __init__(
-            self, build_dir: str = ".", compile_commands_path: str = "compile_commands.json"
-    ):
+    def __init__(self, build_dir: str = ".", compile_commands_path: str = "compile_commands.json"):
         super().__init__(compile_commands_path)
         self.build_dir = build_dir
 

@@ -1,4 +1,3 @@
-
 from termcolor import colored
 
 from renaissance.syntax_tree import PatternMatch

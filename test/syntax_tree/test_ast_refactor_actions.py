@@ -18,7 +18,7 @@ class TestASTRefactorActions:
         proc = mocker.Mock()
         factory = mocker.Mock()
         refactor_actions = ASTRefactorActions(proc, factory)
-        refactor_actions.replace_expr('name','my_awsome_name','Name')
+        refactor_actions.replace_expr("name", "my_awsome_name", "Name")
         assert_that(proc.find_all.called)
 
     def test_replace_name(self, mocker):
@@ -26,36 +26,33 @@ class TestASTRefactorActions:
         proc = mocker.Mock()
         factory = mocker.Mock()
         refactor_actions = ASTRefactorActions(proc, factory)
-        proc.find_all = lambda name: Stream([node,node])
+        proc.find_all = lambda name: Stream([node, node])
 
-        refactor_actions.replace_name('name','my_awsome_name','Name', 'Call')
+        refactor_actions.replace_name("name", "my_awsome_name", "Name", "Call")
 
         assert_that(proc.replace.called)
 
-
-    def test_replace_text(self,mocker):
+    def test_replace_text(self, mocker):
         node = mocker.Mock()
         proc = mocker.Mock()
         factory = mocker.Mock()
         refactor_actions = ASTRefactorActions(proc, factory)
         proc.find_all = lambda name: Stream([node, node])
 
-        refactor_actions.replace_text('text', 'my_awsome_text', 'StringLiteral', 'Call')
+        refactor_actions.replace_text("text", "my_awsome_text", "StringLiteral", "Call")
 
         assert_that(proc.replace.called)
-
 
     def test_replace_declaration(self, mocker):
         node = mocker.Mock()
         proc = mocker.Mock()
         factory = mocker.Mock()
         refactor_actions = ASTRefactorActions(proc, factory)
-        refactor_actions.find_declaration= lambda decl: [node]
+        refactor_actions.find_declaration = lambda decl: [node]
 
-        refactor_actions.replace_declaration('decl', 'my_awsome_decl')
+        refactor_actions.replace_declaration("decl", "my_awsome_decl")
 
         assert_that(proc.replace.called)
-
 
     def test_replace_patterns(self, mocker):
         node = mocker.Mock()
@@ -65,17 +62,16 @@ class TestASTRefactorActions:
         refactor_actions = ASTRefactorActions(proc, factory)
         proc.find_all = lambda name: Stream([node, node])
 
-        refactor_actions._replace_patterns(node, 'my_awsome_text', [[node]], 'Call')
+        refactor_actions._replace_patterns(node, "my_awsome_text", [[node]], "Call")
 
         assert_that(proc.replace.called)
         assert_that(is_match_mock.called)
-
 
     def test_find_declaration(self, mocker):
         proc = mocker.Mock()
         factory = mocker.Mock()
         refactor_actions = ASTRefactorActions(proc, factory)
-        refactor_actions.find_declaration('decl_pattern')
+        refactor_actions.find_declaration("decl_pattern")
         assert_that(proc.find_match.called)
 
     def test_collect(self, mocker):
@@ -83,5 +79,5 @@ class TestASTRefactorActions:
         proc.find_match = lambda root: Stream([])
         factory = mocker.Mock()
         refactor_actions = ASTRefactorActions(proc, factory)
-        result = refactor_actions.collect('pattern', 'pattern_kind')
+        result = refactor_actions.collect("pattern", "pattern_kind")
         assert_that(result, hamcrest.has_length(0))

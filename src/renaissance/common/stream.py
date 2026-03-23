@@ -1,64 +1,66 @@
-#TODO: Why our own implementation?
-#TODO: Why not use itertools? 
-#TODO: Why not use RxPy?
+# TODO: Why our own implementation?
+# TODO: Why not use itertools?
+# TODO: Why not use RxPy?
 
 from __future__ import annotations
 from typing import Iterable, Callable, Any, Optional, TypeVar
 from functools import reduce
 from more_itertools import unique_everseen
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 class StreamOptional[T]:
-    """ Creates an Optional result similar to java.util.Optional"""
+    """Creates an Optional result similar to java.util.Optional"""
+
     def __init__(self, value: Optional[T]):
         self.__value = value
 
     def is_present(self) -> bool:
         return self.__value is not None
-    
+
     def get(self) -> T:
         """return the value if present, otherwise raise an exception"""
         if self.__value is None:
             raise ValueError("No value present")
         return self.__value
-    
-    def or_else[U](self, other: U) -> T|U:
+
+    def or_else[U](self, other: U) -> T | U:
         return self.__value if not self.__value is None else other
-    
-  
+
+
 class Stream[T]:
     """A Stream similar to java.util.Stream"""
+
     def __init__(self, iterable: Iterable[T]):
         self.__iterable: Iterable[T] = iterable
-                            #TODO: correctly solved Iterator[T@Stream] iso Iterable[T@Stream]?
+        # TODO: correctly solved Iterator[T@Stream] iso Iterable[T@Stream]?
 
     def to_iterable(self) -> Iterable[T]:
-        return self.__iterable 
+        return self.__iterable
 
     def filter(self, func: Callable[[T], bool]) -> Stream[T]:
-        self.__iterable = filter(func, self.__iterable) 
+        self.__iterable = filter(func, self.__iterable)
         return self
 
-    def map[U](self, func_or_type: type[U]|Callable[[T], Optional[U]]) -> Stream[Optional[U]]:
+    def map[U](self, func_or_type: type[U] | Callable[[T], Optional[U]]) -> Stream[Optional[U]]:
         # removed template type, it causes the test to fail
         if type(func_or_type) is type:
-            cast : Callable[[T], Optional[U]] = lambda x: Stream.__cast(x, func_or_type)
+            cast: Callable[[T], Optional[U]] = lambda x: Stream.__cast(x, func_or_type)
             mapped = map(cast, self.__iterable)
-        else: 
-            mapped = map(func_or_type, self.__iterable) 
+        else:
+            mapped = map(func_or_type, self.__iterable)
         filtered = filter(lambda t: t is not None, mapped)
         return Stream(filtered)
 
-    def flat_map[U](self, func: Callable[[T], Iterable[U]|Stream[U]]) -> Stream[U]:
-        def get_iterable(x: T): 
+    def flat_map[U](self, func: Callable[[T], Iterable[U] | Stream[U]]) -> Stream[U]:
+        def get_iterable(x: T):
             result = func(x)
             if isinstance(result, Stream):
                 return result.__iterable
             return result
-            
-        flat_map = (item for sublist in map(get_iterable, self.__iterable) for item in sublist) 
+
+        flat_map = (item for sublist in map(get_iterable, self.__iterable) for item in sublist)
         return Stream(flat_map)
 
     def distinct(self) -> Stream[T]:
@@ -87,33 +89,33 @@ class Stream[T]:
 
     def for_each(self, func: Callable[[T], Any]) -> None:
         for item in self.__iterable:
-            func(item) 
+            func(item)
 
     def to_list(self) -> list[T]:
-        return list(self.__iterable) 
+        return list(self.__iterable)
 
     def reduce(self, func: Callable[[T, T], T]) -> StreamOptional[T]:
         for item in self.__iterable:
             initial = item
-            #TODO: first item is used twice - as initial value and first value
-            return StreamOptional(reduce(func, self.__iterable, initial)) 
+            # TODO: first item is used twice - as initial value and first value
+            return StreamOptional(reduce(func, self.__iterable, initial))
         return StreamOptional(None)
 
     def collect(self, collector: Callable[[Iterable[T]], Any]) -> Any:
-        return collector(self.__iterable) 
+        return collector(self.__iterable)
 
     def count(self) -> int:
         return sum(1 for _ in self.__iterable)
 
     def any_match(self, predicate: Callable[[T], bool]) -> bool:
-        return any(predicate(x) for x in self.__iterable) 
+        return any(predicate(x) for x in self.__iterable)
 
     def all_match(self, predicate: Callable[[T], bool]) -> bool:
-        return all(predicate(x) for x in self.__iterable) 
+        return all(predicate(x) for x in self.__iterable)
 
     def none_match(self, predicate: Callable[[T], bool]) -> bool:
-        return not any(predicate(x) for x in self.__iterable) 
-    
+        return not any(predicate(x) for x in self.__iterable)
+
     def find_first(self) -> StreamOptional[T]:
         for item in self.__iterable:
             return StreamOptional(item)
@@ -130,10 +132,11 @@ class Stream[T]:
         return self.find_first()
 
     @staticmethod
-    def __cast[U](obj : object, typ : type[U]) -> Optional[U]: 
+    def __cast[U](obj: object, typ: type[U]) -> Optional[U]:
         if isinstance(obj, typ):
             return obj
         return None
+
 
 def first_occurrences(lst: list[T]) -> list[T]:
     """

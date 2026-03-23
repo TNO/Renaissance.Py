@@ -28,9 +28,7 @@ class TestMatchers:
             "try { risky_operation(); } catch (Exception e) { handle_error(e); }",
             adapter,
         )
-        self.class_node = make_pattern(
-            "class MyClass { method(self) { pass; } }", adapter
-        )
+        self.class_node = make_pattern("class MyClass { method(self) { pass; } }", adapter)
 
     def test_if_pattern_match(self):
         adapter = TreeSitterAdapter(tscpp)

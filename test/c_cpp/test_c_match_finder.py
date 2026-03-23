@@ -6,7 +6,13 @@ from hamcrest import *
 from c_cpp.factories import Factories
 from renaissance.impl.clang import ClangASTNode, CPatternFactory
 from renaissance.impl.clang_json import ClangJsonASTNode
-from renaissance.syntax_tree import ASTFactory, ASTFinder, ASTShower, ASTNode, MatchFinder
+from renaissance.syntax_tree import (
+    ASTFactory,
+    ASTFinder,
+    ASTShower,
+    ASTNode,
+    MatchFinder,
+)
 from renaissance.syntax_tree.match_finder import exclude_nodes_by_kind, match_pattern
 from utils_for_tests import compress, show_node, debug_mismatch
 
@@ -35,9 +41,9 @@ class TestCMatchFinder:
     def test_simple_pattern(self):
 
         factory = ASTFactory(ClangASTNode, [])
-        patterns = CPatternFactory(factory).create_statements('b--;')
+        patterns = CPatternFactory(factory).create_statements("b--;")
 
-        atu = factory.create_from_text('void fun(){int a,b;\nb--;\na==4;\nb==5;}', "test.c")
+        atu = factory.create_from_text("void fun(){int a,b;\nb--;\na==4;\nb==5;}", "test.c")
         matches = MatchFinder.find_all(atu.children, patterns).to_list()
         assert_that(matches, has_length(1))
 
@@ -45,8 +51,11 @@ class TestCMatchFinder:
     def do_test(factory: ASTFactory, cpp_code, patterns: list[ASTNode], recursive: bool):
         atu = factory.create_from_text(cpp_code, "test.c")
         # find all if and while statements
-        matches = MatchFinder.find_all(atu.children, patterns, recursive=recursive).filter(
-            lambda match: match.nodes[0].is_part_of_translation_unit()).to_list()
+        matches = (
+            MatchFinder.find_all(atu.children, patterns, recursive=recursive)
+            .filter(lambda match: match.nodes[0].is_part_of_translation_unit())
+            .to_list()
+        )
         debug_mismatch(True, atu, patterns, matches)
         return matches
 
@@ -62,55 +71,125 @@ class TestCMatchFinder:
 class TestExpressions(TestCMatchFinder):
     def test_match_expr(self):
         factory = ASTFactory(ClangJsonASTNode, [])
-        expr_node = CPatternFactory(factory).create_expression('a == $x')
+        expr_node = CPatternFactory(factory).create_expression("a == $x")
         ASTShower.show_node(expr_node)
-        atu = factory.create_from_text('void fun(){int a,b;\nb==5;\na==3;\na==4;}', "test.c")
+        atu = factory.create_from_text("void fun(){int a,b;\nb==5;\na==3;\na==4;}", "test.c")
 
         show_node(atu, "CPP code")
         # find all if and while statements
-        matches = MatchFinder.find_all(atu.children, [expr_node]). \
-            filter(lambda match: match.nodes[0].is_part_of_translation_unit()).to_list()
+        matches = (
+            MatchFinder.find_all(atu.children, [expr_node]).filter(lambda match: match.nodes[0].is_part_of_translation_unit()).to_list()
+        )
         assert_that(matches, has_length(2))
 
-    @pytest.mark.parametrize("_, factory, expression, expected_full_matches, expected_dicts_per_match",
-                             Factories.extend([
-                                 ('a == 3', ['a==3'], [{}]),
-                                 ('a == $x', ['a==3', 'a==4'], [{'$x': ['3']}, {'$x': ['4']}]),
-                                 ('$y == $x', ['a==3', 'a==4', 'b==5'],
-                                  [{'$y': ['a'], '$x': ['3']}, {'$y': ['a'], '$x': ['4']}, {'$y': ['b'], '$x': ['5']}]),
-                                 ('b--', ['b--;'], [{}]),
-                                 ('b++', [], []),
-                                 ('--b', [], []),
-                                 ('++b', [], []),
-                                 ('$x--', ['b--;'], [{'$x': ['b']}]),
-                                 ('$x++', [], []),
-                                 ('--$x', [], []),
-                                 ('++$x', [], []),
-                             ]))
-    def test(self, _, factory, expression, expected_full_matches: list[str],
-             expected_dicts_per_match: list[dict[str, list[str]]]):
+    @pytest.mark.parametrize(
+        "_, factory, expression, expected_full_matches, expected_dicts_per_match",
+        Factories.extend(
+            [
+                ("a == 3", ["a==3"], [{}]),
+                ("a == $x", ["a==3", "a==4"], [{"$x": ["3"]}, {"$x": ["4"]}]),
+                (
+                    "$y == $x",
+                    ["a==3", "a==4", "b==5"],
+                    [
+                        {"$y": ["a"], "$x": ["3"]},
+                        {"$y": ["a"], "$x": ["4"]},
+                        {"$y": ["b"], "$x": ["5"]},
+                    ],
+                ),
+                ("b--", ["b--;"], [{}]),
+                ("b++", [], []),
+                ("--b", [], []),
+                ("++b", [], []),
+                ("$x--", ["b--;"], [{"$x": ["b"]}]),
+                ("$x++", [], []),
+                ("--$x", [], []),
+                ("++$x", [], []),
+            ]
+        ),
+    )
+    def test(
+        self,
+        _,
+        factory,
+        expression,
+        expected_full_matches: list[str],
+        expected_dicts_per_match: list[dict[str, list[str]]],
+    ):
         expr_node = CPatternFactory(factory).create_expression(expression)
         found_matches = self.do_test(factory, TestStatements.SIMPLE_CPP, [expr_node], recursive=True)
-        assert_that(expected_full_matches, is_([compress(match.nodes[0].text) for match in found_matches]))
+        assert_that(
+            expected_full_matches,
+            is_([compress(match.nodes[0].text) for match in found_matches]),
+        )
         self.assert_matches(expected_dicts_per_match, found_matches)
 
 
 class TestStatements(TestCMatchFinder):
 
-    @pytest.mark.parametrize("_, factory, statements, expected_dicts_per_match", Factories.extend([
-        ('$x;$y;', [{'$x': ['int a = 3;'], '$y': ['int b = 4;']}, {'$x': [
-            'if(a == 3){\n                b=5;\n            }\n            else{\n                b--;\n            }'],
-                                                                   '$y': [
-                                                                       'while(a != 3){\n                if  (a == 4 && b == 5){\n                    b = a;\n                }\n            }']}]),
-        ('if($x){$$stmts;}', [{'$x': ['a == 4 && b == 5'], '$$stmts': ['b = a;']}]),
-        ('if($x){$$stmts;}else{$single;$$multi;}',
-         [{'$x': ['a == 3'], '$$stmts': ['b=5;'], '$single': ['b--;'], '$$multi': []}]),
-        ('if($x){$$stmts;}else{$$multi;$single;}',
-         [{'$x': ['a == 3'], '$$stmts': ['b=5;'], '$single': ['b--;'], '$$multi': []}]),
-        ('while(a!=$x){$$stmts;}',
-         [{'$x': ['3'], '$$stmts': ['if  (a == 4 && b == 5){\n                    b = a;\n                }']}]),
-    ]))
-    def test(self, _, factory, statements, expected_dicts_per_match: list[dict[str, list[str]]]):
+    @pytest.mark.parametrize(
+        "_, factory, statements, expected_dicts_per_match",
+        Factories.extend(
+            [
+                (
+                    "$x;$y;",
+                    [
+                        {"$x": ["int a = 3;"], "$y": ["int b = 4;"]},
+                        {
+                            "$x": [
+                                "if(a == 3){\n                b=5;\n            }\n            else{\n                b--;\n            }"
+                            ],
+                            "$y": [
+                                "while(a != 3){\n                if  (a == 4 && b == 5){\n                    b = a;\n                }\n            }"
+                            ],
+                        },
+                    ],
+                ),
+                (
+                    "if($x){$$stmts;}",
+                    [{"$x": ["a == 4 && b == 5"], "$$stmts": ["b = a;"]}],
+                ),
+                (
+                    "if($x){$$stmts;}else{$single;$$multi;}",
+                    [
+                        {
+                            "$x": ["a == 3"],
+                            "$$stmts": ["b=5;"],
+                            "$single": ["b--;"],
+                            "$$multi": [],
+                        }
+                    ],
+                ),
+                (
+                    "if($x){$$stmts;}else{$$multi;$single;}",
+                    [
+                        {
+                            "$x": ["a == 3"],
+                            "$$stmts": ["b=5;"],
+                            "$single": ["b--;"],
+                            "$$multi": [],
+                        }
+                    ],
+                ),
+                (
+                    "while(a!=$x){$$stmts;}",
+                    [
+                        {
+                            "$x": ["3"],
+                            "$$stmts": ["if  (a == 4 && b == 5){\n                    b = a;\n                }"],
+                        }
+                    ],
+                ),
+            ]
+        ),
+    )
+    def test(
+        self,
+        _,
+        factory,
+        statements,
+        expected_dicts_per_match: list[dict[str, list[str]]],
+    ):
         patterns = CPatternFactory(factory).create_statements(statements)
 
         atu = factory.create_from_text(TestStatements.SIMPLE_CPP, "test.c")
@@ -122,18 +201,48 @@ class TestStatements(TestCMatchFinder):
 
 class TestFunctionCallStatements(TestCMatchFinder):
 
-    @pytest.mark.parametrize("_, factory, statements, extra_declarations, expected_dicts_per_match", Factories.extend([
-        ('$f($a);', ['int $f(int);'], [{'$f': ['one'], '$a': ['a']}]),
-        ('$f($a, $$all);', ['int $f(int,int);'],
-         [{'$f': ['one'], '$a': ['a'], '$$all': []}, {'$f': ['two'], '$a': ['a'], '$$all': ['b']},
-          {'$f': ['three'], '$a': ['a'], '$$all': ['b', 'c']}]),
-        ('$f($$all, $a);', ['int $f(int,int);'],
-         [{'$f': ['one'], '$$all': [], '$a': ['a']}, {'$f': ['two'], '$$all': ['a'], '$a': ['b']},
-          {'$f': ['three'], '$$all': ['a', 'b'], '$a': ['c']}]),
-        ('$f($a, $$all, $b);', ['int $f(int,int,int);'], [{'$f': ['two'], '$a': ['a'], '$$all': [], '$b': ['b']},
-                                                          {'$f': ['three'], '$a': ['a'], '$$all': ['b'], '$b': ['c']}]),
-    ]))
-    def test(self, _, factory, statements, extra_declarations, expected_dicts_per_match: list[dict[str, list[str]]]):
+    @pytest.mark.parametrize(
+        "_, factory, statements, extra_declarations, expected_dicts_per_match",
+        Factories.extend(
+            [
+                ("$f($a);", ["int $f(int);"], [{"$f": ["one"], "$a": ["a"]}]),
+                (
+                    "$f($a, $$all);",
+                    ["int $f(int,int);"],
+                    [
+                        {"$f": ["one"], "$a": ["a"], "$$all": []},
+                        {"$f": ["two"], "$a": ["a"], "$$all": ["b"]},
+                        {"$f": ["three"], "$a": ["a"], "$$all": ["b", "c"]},
+                    ],
+                ),
+                (
+                    "$f($$all, $a);",
+                    ["int $f(int,int);"],
+                    [
+                        {"$f": ["one"], "$$all": [], "$a": ["a"]},
+                        {"$f": ["two"], "$$all": ["a"], "$a": ["b"]},
+                        {"$f": ["three"], "$$all": ["a", "b"], "$a": ["c"]},
+                    ],
+                ),
+                (
+                    "$f($a, $$all, $b);",
+                    ["int $f(int,int,int);"],
+                    [
+                        {"$f": ["two"], "$a": ["a"], "$$all": [], "$b": ["b"]},
+                        {"$f": ["three"], "$a": ["a"], "$$all": ["b"], "$b": ["c"]},
+                    ],
+                ),
+            ]
+        ),
+    )
+    def test(
+        self,
+        _,
+        factory,
+        statements,
+        extra_declarations,
+        expected_dicts_per_match: list[dict[str, list[str]]],
+    ):
         code = """
             int one(int a);
             int two(int a, int b);
@@ -153,14 +262,34 @@ class TestFunctionCallStatements(TestCMatchFinder):
 
 class TestMultiAssignments(TestCMatchFinder):
 
-    @pytest.mark.parametrize("_, factory, statements, extra_declarations, expected_dicts_per_match", Factories.extend([
-        ('$f($$all1);$f($$all2);', ['int $f(int);'],
-         [{'$f': ['fc'], '$$all1': ['1', '2', '3', '4', '5'], '$$all2': ['1', '2', '6', '4', '5']}]),
-        # skip the advanced undeterministic all placeholder
-        # ('$f($$before, $a, $$after);$f($$before, $b, $$after);',['int $f(int,int,int);'],[{'$f': ['fc'], '$$before': ['1', '2'], '$a': ['3'], '$$after': ['4', '5'], '$b': ['6']}]),
-    ]))
-    def test_args(self, _, factory, statements, extra_declarations,
-                  expected_dicts_per_match: list[dict[str, list[str]]]):
+    @pytest.mark.parametrize(
+        "_, factory, statements, extra_declarations, expected_dicts_per_match",
+        Factories.extend(
+            [
+                (
+                    "$f($$all1);$f($$all2);",
+                    ["int $f(int);"],
+                    [
+                        {
+                            "$f": ["fc"],
+                            "$$all1": ["1", "2", "3", "4", "5"],
+                            "$$all2": ["1", "2", "6", "4", "5"],
+                        }
+                    ],
+                ),
+                # skip the advanced undeterministic all placeholder
+                # ('$f($$before, $a, $$after);$f($$before, $b, $$after);',['int $f(int,int,int);'],[{'$f': ['fc'], '$$before': ['1', '2'], '$a': ['3'], '$$after': ['4', '5'], '$b': ['6']}]),
+            ]
+        ),
+    )
+    def test_args(
+        self,
+        _,
+        factory,
+        statements,
+        extra_declarations,
+        expected_dicts_per_match: list[dict[str, list[str]]],
+    ):
         code = """
             int fc(int a, int b, int c, int d, int e);
             int fc_else(int a, int b, int c, int d, int e);
@@ -177,13 +306,34 @@ class TestMultiAssignments(TestCMatchFinder):
         matches = self.do_test(factory, code, stmt_nodes, recursive=True)
         self.assert_matches(expected_dicts_per_match, matches)
 
-    @pytest.mark.parametrize("_, factory, statements, extra_declarations, expected_dicts_per_match", Factories.extend([
-        ('if ($c) {$$before; c=3; $$after;} else {$$before; c=6; $$after;}', [],
-         [{'$c': ['1'], '$$before': ['a=1;', 'b=2;'], '$true': ['c=3;'], '$$after': ['d=4;', 'e=5;'],
-           '$false': ['c=6;']}]),
-    ]))
-    def test_statements(self, _, factory, statements, extra_declarations,
-                        expected_dicts_per_match: list[dict[str, list[str]]]):
+    @pytest.mark.parametrize(
+        "_, factory, statements, extra_declarations, expected_dicts_per_match",
+        Factories.extend(
+            [
+                (
+                    "if ($c) {$$before; c=3; $$after;} else {$$before; c=6; $$after;}",
+                    [],
+                    [
+                        {
+                            "$c": ["1"],
+                            "$$before": ["a=1;", "b=2;"],
+                            "$true": ["c=3;"],
+                            "$$after": ["d=4;", "e=5;"],
+                            "$false": ["c=6;"],
+                        }
+                    ],
+                ),
+            ]
+        ),
+    )
+    def test_statements(
+        self,
+        _,
+        factory,
+        statements,
+        extra_declarations,
+        expected_dicts_per_match: list[dict[str, list[str]]],
+    ):
         code = """
             
             void f(){
@@ -213,16 +363,55 @@ class TestMultiAssignments(TestCMatchFinder):
 
 
 class TestUseAtuToCreatePattern(TestCMatchFinder):
-    @pytest.mark.parametrize("_, factory, statements, pattern_type, expected, names", Factories.extend([
-        ('void f() {const char* bar = BAR;}', '(?i)Decl_?Stmt', ['const char* bar = BAR;'], {}),
-        ('void f() {const char* foo = FOO;}', '(?i)Decl_?Stmt', ['const char* foo = FOO;'], {}),
-        ('void f() {const char* same = SAME;}', '(?i)Decl_?Stmt', ['const char* same = SAME;'], {}),
-        ('void f() {const char* $name = BAR;}', '(?i)Decl_?Stmt', ['const char* bar = BAR;'], {'$name': ['bar']}),
-        ('void f() {const char* $name = FOO;}', '(?i)Decl_?Stmt', ['const char* foo = FOO;'], {'$name': ['foo']}),
-        ('void f() {const char* $name = SAME;}', '(?i)Decl_?Stmt', ['const char* same = SAME;'], {'$name': ['same']}),
-        ('const char* $$args; void f() { print($$args);}', '(?i)Call_?Expr', ['print("%s %s %s", foo, bar, same);'],
-         {'$$args': ['"%s %s %s"', 'foo', 'bar', 'same']}),
-    ]))
+    @pytest.mark.parametrize(
+        "_, factory, statements, pattern_type, expected, names",
+        Factories.extend(
+            [
+                (
+                    "void f() {const char* bar = BAR;}",
+                    "(?i)Decl_?Stmt",
+                    ["const char* bar = BAR;"],
+                    {},
+                ),
+                (
+                    "void f() {const char* foo = FOO;}",
+                    "(?i)Decl_?Stmt",
+                    ["const char* foo = FOO;"],
+                    {},
+                ),
+                (
+                    "void f() {const char* same = SAME;}",
+                    "(?i)Decl_?Stmt",
+                    ["const char* same = SAME;"],
+                    {},
+                ),
+                (
+                    "void f() {const char* $name = BAR;}",
+                    "(?i)Decl_?Stmt",
+                    ["const char* bar = BAR;"],
+                    {"$name": ["bar"]},
+                ),
+                (
+                    "void f() {const char* $name = FOO;}",
+                    "(?i)Decl_?Stmt",
+                    ["const char* foo = FOO;"],
+                    {"$name": ["foo"]},
+                ),
+                (
+                    "void f() {const char* $name = SAME;}",
+                    "(?i)Decl_?Stmt",
+                    ["const char* same = SAME;"],
+                    {"$name": ["same"]},
+                ),
+                (
+                    "const char* $$args; void f() { print($$args);}",
+                    "(?i)Call_?Expr",
+                    ['print("%s %s %s", foo, bar, same);'],
+                    {"$$args": ['"%s %s %s"', "foo", "bar", "same"]},
+                ),
+            ]
+        ),
+    )
     def test(self, _, factory, statements, pattern_type, expected, names):
         code = """
             #define FOO "foo"
@@ -244,7 +433,7 @@ class TestUseAtuToCreatePattern(TestCMatchFinder):
     
             }
             """
-        atu = factory.create_from_text(code, 'test.c')
+        atu = factory.create_from_text(code, "test.c")
         pattern_factory = CPatternFactory(factory, ref_node=atu)
         statements_atu = pattern_factory.create(statements)
         statements = ASTFinder.find_kind(statements_atu, pattern_type).find_last().get()  # pick the last statement

@@ -8,7 +8,12 @@ from c_cpp.factories import Factories
 from renaissance.impl.clang import CPatternFactory
 from renaissance.impl.python import PythonASTNode
 from renaissance.syntax_tree import ASTFactory
-from renaissance.syntax_tree.match_finder import is_match, find_in_list, MatchFinder, match_pattern
+from renaissance.syntax_tree.match_finder import (
+    is_match,
+    find_in_list,
+    MatchFinder,
+    match_pattern,
+)
 
 
 class FindMatchTest(unittest.TestCase):
@@ -35,30 +40,28 @@ class FindMatchTest(unittest.TestCase):
     # def tearDownClass(cls):
     #     cls.code_text: str = None
 
-
     def test_is_match(self):
 
-        #plain assert
+        # plain assert
         assert self.a in [self.a], "An expression matches itself"
 
         self.assertEqual(self.a, 5)
         self.assertEqual(55, self.b)
-        self.assertTrue(self.a==self.a, "A statement matches itself")
-        self.assertFalse('statement1_pattern' == self.a, "A statement doesn't match an expression")
+        self.assertTrue(self.a == self.a, "A statement matches itself")
+        self.assertFalse("statement1_pattern" == self.a, "A statement doesn't match an expression")
 
     @parameterized.expand(Factories.factories)
     def test_case(self, _: str, factory: ASTFactory):
         pattern_factory = CPatternFactory(factory)
         code_pattern = factory.create_from_text(self.code_text, "text.c")
         outer_pattern = pattern_factory.create_statement(self.outer_text)
-        inner_pattern = pattern_factory.create_expression(
-            self.inner_text, self.extra_declarations_inner_text
-        )
+        inner_pattern = pattern_factory.create_expression(self.inner_text, self.extra_declarations_inner_text)
         results = match_pattern([code_pattern], [outer_pattern])
 
         # test length
         count: int = len(results)
         assert 0 == count, "count = " + str(count)
+
 
 # no namespace
 class TestBasicNoNamespace(TestCase):
@@ -75,7 +78,7 @@ class TestBasicNoNamespace(TestCase):
     placeholder_text: str = "$f()"
     extra_declarations_placeholder_text: list[str] = ["int $f();"]
 
-    #parameterised
+    # parameterised
     @parameterized.expand(
         list(
             Factories.extend(
@@ -88,23 +91,21 @@ class TestBasicNoNamespace(TestCase):
     )
     @unittest.skip("stmt and expr are the same")
     # unused param
-    def test_snippet(
-            self, _: str, factory: ASTFactory, snippet: str, extra_declarations: list[str]
-    ):
+    def test_snippet(self, _: str, factory: ASTFactory, snippet: str, extra_declarations: list[str]):
         pattern_factory = CPatternFactory(factory)
-        code_pattern = factory.create_from_text(
-            self.code_text, "text.c"
-        )  # file extension consistent with C Pattern Factory
+        code_pattern = factory.create_from_text(self.code_text, "text.c")  # file extension consistent with C Pattern Factory
         snippet_pattern = pattern_factory.create_expression(snippet, extra_declarations)
         results = MatchFinder.find_all(code_pattern.children, [snippet_pattern]).to_list()
         count: int = len(results)
         # plain assert_with_msg
-        self.assertEqual(1 , count, "count = " + str(count))
+        self.assertEqual(1, count, "count = " + str(count))
+
 
 def test_it_can_be_created():
     it = PythonASTNode(ast.Pass())
     assert it
 
+
 def test_it_has_elements():
-    it = PythonASTNode(ast.parse('def fun():  pass'))
+    it = PythonASTNode(ast.parse("def fun():  pass"))
     assert it[0] == it.children[0]

@@ -4,13 +4,15 @@ from renaissance.syntax_tree.recipe_ast_processor import (
     RecipeASTProcessor,
     recipe_step,
     final_action,
-    BatchASTProcessor, annotate_decorator, get_methods_with_decorator,
+    BatchASTProcessor,
+    annotate_decorator,
+    get_methods_with_decorator,
 )
 
 
 class TestRecipeASTProcessor:
     def test_receipe_proc(self):
-        it = RecipeASTProcessor(lambda n:n, lambda : (), '')
+        it = RecipeASTProcessor(lambda n: n, lambda: (), "")
         assert_that(it, is_(RecipeASTProcessor))
 
     def test_run(self, mocker):
@@ -22,9 +24,10 @@ class TestRecipeASTProcessor:
             @recipe_step(order=0)
             def do_step(self, _):
                 def work():
-                    self.ran.append('done')
+                    self.ran.append("done")
 
                 return work
+
         # patch BatchASTProcessor.repeat to immediately invoke actions with a dummy ASTProcessor
         def fake_repeat(_, _1, actions, _2):
             dummy = mocker.Mock()
@@ -35,17 +38,17 @@ class TestRecipeASTProcessor:
         recipe = SimpleRecipe()
         iterable_provider = lambda: []
 
-        mocker.patch.object(BatchASTProcessor, 'repeat', new=fake_repeat)
+        mocker.patch.object(BatchASTProcessor, "repeat", new=fake_repeat)
 
-        processor = RecipeASTProcessor(recipe, iterable_provider, '')
+        processor = RecipeASTProcessor(recipe, iterable_provider, "")
         processor.run()
 
-        assert_that(recipe.ran, is_(['done']))
+        assert_that(recipe.ran, is_(["done"]))
 
 
 def test_annotate_decorator():
     foreign = lambda f: f
-    decorator = annotate_decorator(foreign, 'test_decorator')
+    decorator = annotate_decorator(foreign, "test_decorator")
     # the returned decorator keeps the foreign decorator's __name__
     assert_that(decorator.__name__, is_(foreign.__name__))
 
@@ -54,7 +57,7 @@ def test_annotate_decorator():
     def sample():
         return 1
 
-    assert_that(sample.recipe_action, is_('test_decorator'))
+    assert_that(sample.recipe_action, is_("test_decorator"))
 
 
 def test_get_methods_with_decorator():
@@ -65,7 +68,7 @@ def test_get_methods_with_decorator():
 
     methods = list(get_methods_with_decorator(Sample, recipe_step))
     assert_that(methods, has_length(1))
-    assert_that(methods[0].__name__, is_('step1'))
+    assert_that(methods[0].__name__, is_("step1"))
 
 
 def test_final_action():
@@ -76,4 +79,4 @@ def test_final_action():
 
     methods = list(get_methods_with_decorator(Sample, final_action))
     assert_that(methods, has_length(1))
-    assert_that(methods[0].__name__, is_('final'))
+    assert_that(methods[0].__name__, is_("final"))

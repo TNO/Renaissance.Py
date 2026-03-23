@@ -23,7 +23,7 @@ class PatternMatch:
         self._remaining_nodes: list[ASTNode] = []
 
     def __str__(self):
-        res = ''
+        res = ""
         for node in self.nodes:
             res += node.signature
         return res
@@ -31,10 +31,7 @@ class PatternMatch:
     def get_raw_signatures(self):
         return str(self)
 
-    def match_referenced_by(
-            self,
-            patterns: Sequence[list],
-            recursive: bool = True) -> Stream[Self]:
+    def match_referenced_by(self, patterns: Sequence[list], recursive: bool = True) -> Stream[Self]:
         found_matches = []
         for node in self.nodes:
             for ref in node.referenced_by:
@@ -42,10 +39,7 @@ class PatternMatch:
                     found_matches.extend(MatchFinder.match_pattern([ref.node], pattern, recursive))
         return Stream(found_matches)
 
-    def match_references(
-            self,
-            patterns: Iterable[list],
-            recursive: bool = True) -> Stream[Self]:
+    def match_references(self, patterns: Iterable[list], recursive: bool = True) -> Stream[Self]:
         found_matches = []
         for node in self.nodes:
             for ref in node.references:
@@ -81,8 +75,8 @@ def find_in_list(src: Sequence, cmp: Sequence, exp=None):
     while i < len(src):
         if found_position >= len(cmp):
             break
-        if getattr(cmp[found_position], 'kind', 'unknown') == MATCH_ALL:
-            current_name = getattr(cmp[found_position], 'name', 'unknown')
+        if getattr(cmp[found_position], "kind", "unknown") == MATCH_ALL:
+            current_name = getattr(cmp[found_position], "name", "unknown")
             if current_name in exp:
                 end = i + len(exp[current_name])
                 if is_match_tree(exp[current_name], src[i:end], {}):
@@ -104,8 +98,7 @@ def find_in_list(src: Sequence, cmp: Sequence, exp=None):
             i += 1
         else:
             return -1
-    if found_position == len(cmp) - 1 and isinstance(cmp[found_position], ASTNode) and cmp[
-        found_position].kind == MATCH_ALL:
+    if found_position == len(cmp) - 1 and isinstance(cmp[found_position], ASTNode) and cmp[found_position].kind == MATCH_ALL:
         if cmp[found_position].name in exp:
             if exp[cmp[found_position].name]:
                 for p in cmp:
@@ -119,9 +112,13 @@ def find_in_list(src: Sequence, cmp: Sequence, exp=None):
         if i < len(src) and greedy:
             exp[greedy] = src[expansion_start:]
             i = len(src)
-        elif len(cmp) >= 2 and isinstance(cmp[-2], ASTNode) and cmp[-2].kind == MATCH_ALL and isinstance(cmp[-1],
-                                                                                                         ASTNode) and \
-                cmp[-1].kind == MATCH_ONE:
+        elif (
+            len(cmp) >= 2
+            and isinstance(cmp[-2], ASTNode)
+            and cmp[-2].kind == MATCH_ALL
+            and isinstance(cmp[-1], ASTNode)
+            and cmp[-1].kind == MATCH_ONE
+        ):
             exp[cmp[-2].name] = src[expansion_start:-1]
             exp[cmp[-1].name] = src[-1:]
             i = len(src)
@@ -137,7 +134,7 @@ def is_match(src: AstProtocol, cmp: AstProtocol, expansions=None) -> bool:
     assert isinstance(src, AstProtocol)
     assert isinstance(cmp, AstProtocol)
     # 'FUNCTION_DECL',
-    if src.kind not in ['Module', 'TRANSLATION_UNIT'] and cmp.kind == MATCH_ONE and cmp.name:
+    if src.kind not in ["Module", "TRANSLATION_UNIT"] and cmp.kind == MATCH_ONE and cmp.name:
         if cmp.name in expansions:
             return is_match(src, expansions[cmp.name][0])
         else:
@@ -158,37 +155,40 @@ def is_match(src: AstProtocol, cmp: AstProtocol, expansions=None) -> bool:
     #             return True
     #     return src == cmp
     elif isinstance(src, AstProtocol) and isinstance(cmp, AstProtocol):
-        return (is_match_dict(src.properties, cmp.properties, expansions)
-                and is_match_tree(exclude_nodes_by_kind(src.children), cmp.children, expansions))
+        return is_match_dict(src.properties, cmp.properties, expansions) and is_match_tree(
+            exclude_nodes_by_kind(src.children), cmp.children, expansions
+        )
     else:
         return src == cmp
 
 
-DEFAULT_EXCLUDE_KIND = {'FullComment', 'MACRO_DEFINITION'}
+DEFAULT_EXCLUDE_KIND = {"FullComment", "MACRO_DEFINITION"}
 
 
 def exclude_nodes_by_kind(src: list[AstProtocol]) -> list[AstProtocol]:
     return [c for c in src if c.kind not in DEFAULT_EXCLUDE_KIND]
 
 
-IRRELEVANT_PROPS = {'macro_expansion', 'start_point', 'end_point', 'source_code'}
+IRRELEVANT_PROPS = {"macro_expansion", "start_point", "end_point", "source_code"}
 
 
-def is_match_dict(src: dict, cmp: dict, expansions: dict=None) -> bool:
+def is_match_dict(src: dict, cmp: dict, expansions: dict = None) -> bool:
     if expansions is None:
         expansions = {}
+
     def match_property(n):
         c = cmp.get(n)
         s = src.get(n)
-        if isinstance(c, str) and (use_dollar(c).startswith('$')):
+        if isinstance(c, str) and (use_dollar(c).startswith("$")):
             if c in expansions:
                 return s == expansions[use_dollar(c)][0]
             else:
                 expansions[use_dollar(c)] = [s]
                 return True
         return s == c
+
     all_keys = (src.keys() | cmp.keys()) - IRRELEVANT_PROPS
-    return all(match_property(n)  for n in all_keys)
+    return all(match_property(n) for n in all_keys)
 
 
 def match_pattern(src_nodes: Sequence[AstProtocol], patterns: Sequence[AstProtocol], recursive=True) -> Sequence[PatternMatch]:
@@ -209,14 +209,18 @@ def match_pattern(src_nodes: Sequence[AstProtocol], patterns: Sequence[AstProtoc
         found_expansions = {}
         found_position = find_in_list(to_do, patterns, found_expansions)
         if found_position >= 0:
-            match = PatternMatch(to_do[:found_position + 1], found_expansions, patterns)
+            match = PatternMatch(to_do[: found_position + 1], found_expansions, patterns)
             found_statements.append(match)
-            to_do = to_do[found_position + 1:]
+            to_do = to_do[found_position + 1 :]
         else:
             if recursive:
                 found_statements.extend(
-                    MatchFinder.match_pattern(exclude_nodes_by_kind(getattr(to_do[0], 'children', [])), patterns,
-                                              recursive))
+                    MatchFinder.match_pattern(
+                        exclude_nodes_by_kind(getattr(to_do[0], "children", [])),
+                        patterns,
+                        recursive,
+                    )
+                )
             to_do = to_do[1:]
 
     return found_statements
@@ -227,9 +231,9 @@ class MatchFinder:
 
     @staticmethod
     def find_all(
-            src_nodes: Sequence[AstProtocol],
-            *patterns: Sequence[AstProtocol],
-            recursive: bool = True,
+        src_nodes: Sequence[AstProtocol],
+        *patterns: Sequence[AstProtocol],
+        recursive: bool = True,
     ) -> Stream[PatternMatch]:
         """
         Finds all pattern matches in the given source nodes.
@@ -248,8 +252,12 @@ class MatchFinder:
         return Stream(found_matches)
 
     @staticmethod
-    def match_pattern(src_nodes: Sequence[AstProtocol], patterns: Sequence[AstProtocol], recursive=True) -> Sequence[
-        PatternMatch]:
+    def match_pattern(
+        src_nodes: Sequence[AstProtocol],
+        patterns: Sequence[AstProtocol],
+        recursive=True,
+    ) -> Sequence[PatternMatch]:
         return match_pattern(src_nodes, patterns, recursive)
+
 
 # TODO check with pierre whether we should take the highest or the deepest match re implementation backtracking to find the best match

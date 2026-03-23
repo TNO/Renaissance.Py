@@ -20,9 +20,7 @@ class ASTFactory:
         working_dir: Optional[Path] = None,
     ) -> None:
         self.clazz = clazz
-        self.extra_args: Sequence[str] = (
-            extra_args if isinstance(extra_args, Sequence) else []
-        )
+        self.extra_args: Sequence[str] = extra_args if isinstance(extra_args, Sequence) else []
         # TODO: Why not
         # self.extra_args: Sequence[str] = [] if extra_args is None else extra_args    or
         # self.extra_args: Sequence[str] = extra_args if extra_args else []             ?
@@ -36,18 +34,12 @@ class ASTFactory:
             extra_args=self.extra_args,
             working_dir=self.working_dir,
         )
-        assert isinstance(
-            atu, self.clazz
-        ), "The loaded AST node is not an instance of the expected type"
+        assert isinstance(atu, self.clazz), "The loaded AST node is not an instance of the expected type"
         return atu
 
     def create_from_text(self, text: str, file_name: str) -> ASTNode:
-        atu = self.clazz.load_from_text(
-            text, file_name, extra_args=self.extra_args, working_dir=self.working_dir
-        )
-        assert isinstance(
-            atu, self.clazz
-        ), "The loaded AST node is not an instance of the expected type"
+        atu = self.clazz.load_from_text(text, file_name, extra_args=self.extra_args, working_dir=self.working_dir)
+        assert isinstance(atu, self.clazz), "The loaded AST node is not an instance of the expected type"
         return atu
 
 

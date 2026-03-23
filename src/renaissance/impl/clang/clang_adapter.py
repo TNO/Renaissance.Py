@@ -15,17 +15,16 @@ class ClangAdapter:
         translation_unit = index.parse(file_path, args=self.args)
         return LST(self._convert_node(translation_unit.cursor))
 
-    def load_from_text(self,text: str, file_name: str):
+    def load_from_text(self, text: str, file_name: str):
         index = cindex.Index.create()
-        translation_unit  = index.parse(file_name, unsaved_files=[(file_name, text)], args=[])
+        translation_unit = index.parse(file_name, unsaved_files=[(file_name, text)], args=[])
         return LST(self._convert_node(translation_unit.cursor))
 
     def to_lst(self, source_code: str) -> LST:
         # source_code= replace_dollar(source_code)
         return self.load_from_text(source_code, "no_src.cpp")
 
-    def _convert_node(self, cursor: cindex.Cursor, parent: Optional[LSTNode] = None
-    ) -> LSTNode:
+    def _convert_node(self, cursor: cindex.Cursor, parent: Optional[LSTNode] = None) -> LSTNode:
         try:
             kind = cursor.kind.name
         except Exception as e:
@@ -52,11 +51,10 @@ class ClangAdapter:
                     if is_ph
                     else {}
                 ),
-
             },
             signature=signature,
             offset=cursor.extent.start.offset,
-            parent=parent
+            parent=parent,
         )
 
         for child in cursor.get_children():

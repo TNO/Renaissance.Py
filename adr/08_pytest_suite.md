@@ -1,1 +1,2 @@
-pytest covers a wide range of testing and linting facilities that is coherent 
+pytest covers a wide range of testing and linting facilities that is coherent
+with the Python ecosystem. It is a mature and widely adopted testing framework that provides a rich set of features for writing and running tests.

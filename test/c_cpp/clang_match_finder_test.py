@@ -4,8 +4,7 @@ import pytest
 from hamcrest import *
 
 from renaissance.impl.clang import ClangASTNode, CPatternFactory
-from renaissance.syntax_tree import ASTFactory, ASTFinder, MatchFinder,  ASTShower
-
+from renaissance.syntax_tree import ASTFactory, ASTFinder, MatchFinder, ASTShower
 
 
 class ClangMatchFinderTest:
@@ -20,10 +19,10 @@ class ClangMatchFinderTest:
             const char* bar = BAR;
         }
         """
-        fun='void f() {const char* bar = BAR;  }'
-        pattern_type='(?i)Decl_?Stmt'
+        fun = "void f() {const char* bar = BAR;  }"
+        pattern_type = "(?i)Decl_?Stmt"
         factory = ASTFactory(ClangASTNode, [])
-        atu = factory.create_from_text(code, 'test.c')
+        atu = factory.create_from_text(code, "test.c")
         pattern_factory = CPatternFactory(factory, ref_node=atu)
         statements_atu = pattern_factory.create(fun)
         statements = ASTFinder.find_kind(statements_atu, pattern_type).find_last().get()
@@ -36,6 +35,10 @@ class ClangMatchFinderTest:
         factory = ASTFactory(ClangASTNode, [])
         pattern_factory = CPatternFactory(factory)
 
-        pattern1 = pattern_factory.create_declarations('old $name = $value;', extra_declarations=['typedef int old;'], parameters=['$value'])
+        pattern1 = pattern_factory.create_declarations(
+            "old $name = $value;",
+            extra_declarations=["typedef int old;"],
+            parameters=["$value"],
+        )
 
-        assert_that(pattern1[0].children[0].name, is_('$name'))
+        assert_that(pattern1[0].children[0].name, is_("$name"))
