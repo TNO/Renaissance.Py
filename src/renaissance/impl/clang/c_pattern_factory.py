@@ -30,25 +30,17 @@ def derive_header_text(language: str, ref_node: ASTNode | None):
             for c in ref_node.children:
                 if c.is_part_of_translation_unit() and c.kind in matcher_set:
                     header += c.signature + "\n"
-        # offset = (
-        #     Stream(ref_node.children)
-        #     .filter(lambda n: n.is_part_of_translation_unit())
-        #     .filter(lambda cls: not ASTFinder.matches_kind(c, "(?i)Inclusion_?Directive"))
-        #     .map(lambda n: n.offset)
-        #     .reduce(min)
-        #     .or_else(0)
-        # )
-        #
-        # header = CPatternFactory.remove_indent(ref_node.content(0, offset))
-        # header += (
-        #     Stream(ref_node.children)
-        #     .filter(lambda n: n.is_part_of_translation_unit())
-        #     .filter(lambda cls: ASTFinder.matches_kind(cls, "(?i)(Function|Var|Typedef)_?Decl|MACRO_?DEFINITION"))
-        #     .filter(lambda cls: ASTFinder.find_kind(cls, "(?i)Compound_?Stmt").count() == 0)
-        #     .map(lambda cls: cls.text + ";")
-        #     .collect(lambda n: "\n".join(n))
-        #     + "\n"
-        # )
+        offset = min(n.offset for n in ref_node.children
+                     if n.is_part_of_translation_unit() and not ASTFinder.matches_kind(n, "(?i)Inclusion_?Directive"))
+
+        header = CPatternFactory.remove_indent(ref_node.content(0, offset))
+        header += (
+            "\n".join( n.text+';' for n in ref_node.children
+            if n.is_part_of_translation_unit()
+            and ASTFinder.matches_kind(n, "(?i)(Function|Var|Typedef)_?Decl|MACRO_?DEFINITION")
+            and ASTFinder.find_kind(n, "(?i)Compound_?Stmt").count() == 0))
+        header +="\n"
+
 
     return header, language
 

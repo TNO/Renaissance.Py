@@ -1,16 +1,15 @@
 # use clang to load and walk a compilation database
 from more_itertools import last
+from typing_extensions import Iterable
 
-from renaissance.common.stream import Stream
+from renaissance.impl.clang import ClangASTNode, CPPPatternFactory
+from renaissance.impl.clang_json import ClangJsonASTNode
 from renaissance.syntax_tree import (
     ASTFinder,
     ASTRefactorActions,
     RecipeASTProcessor,
     recipe_step,
 )
-from typing_extensions import Iterable
-from renaissance.impl.clang import ClangASTNode, CPPPatternFactory
-from renaissance.impl.clang_json import ClangJsonASTNode
 from renaissance.syntax_tree import ASTProcessor, ASTNode, TextUtils, ASTFactory
 
 example_1 = TextUtils.strip_indent("""
