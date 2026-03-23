@@ -1,6 +1,5 @@
 import hamcrest
 from hamcrest import assert_that, is_
-from networkx.classes import is_empty
 
 from renaissance.common import Stream
 from renaissance.syntax_tree import ASTRefactorActions

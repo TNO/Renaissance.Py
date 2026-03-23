@@ -119,9 +119,9 @@ class TestExamplesDifferentStyles:
                     ("function", example_use_ast_function_finder),
                     # TODO: fix this 2 test
                     # cmt macro got replace replaced to int in clang impl.
-                    # ('cmt',example_add_comment_and_commit),
+                    ('cmt',example_add_comment_and_commit),
                     # $old $name is ambiguous (int) (a); or (int) (a=0);.
-                    # ('match',example_replace_old_by_fancy_new),
+                    ('match',example_replace_old_by_fancy_new),
                 ]
             )
         ),

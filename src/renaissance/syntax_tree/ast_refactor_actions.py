@@ -34,7 +34,7 @@ class ASTRefactorActions:
         matches_name: Callable[[Optional["ASTNode"]], bool] = (
             lambda n: (not kind or ASTFinder.matches_kind(n, kind))
             and (not skip_kind or not ASTFinder.matches_kind(n, skip_kind))
-            and n.name == name  # TODO: prevent get_name on None
+            and n and n.name == name
         )
         self.processor.find_all(matches_name).filter(lambda n: not n.offset in self.replaced).action(
             lambda n: self.replaced.add(n.offset)

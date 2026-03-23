@@ -41,7 +41,7 @@ class TestFindDescendantMatch:
         code_pattern = factory.create_from_text(self.code_text, "text.c")
         outer_pattern = pattern_factory.create_statement(self.outer_text)
         inner_pattern = pattern_factory.create_expression(self.inner_text, self.extra_declarations_inner_text)
-        results = find_descendant_match(code_pattern, outer_pattern, inner_pattern).to_list()
+        results = find_descendant_match(code_pattern, outer_pattern, inner_pattern)
 
         assert_that(results, has_length(3), f"length of results = {len(results)}")
 
