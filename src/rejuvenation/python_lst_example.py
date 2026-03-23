@@ -22,7 +22,7 @@ def python_lst_smoke_test():
     # Show the root of the LST
     ASTShower.show_node(lst.root)
 
-    nodes = ASTFinder.find_kind(lst.root, "identifier").to_list()
+    nodes = ASTFinder.find_kind(lst.root, "identifier")
 
     ASTShower.show_node(nodes[0])
 

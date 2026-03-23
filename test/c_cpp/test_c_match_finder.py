@@ -2,6 +2,7 @@ import logging
 
 import pytest
 from hamcrest import *
+from more_itertools.more import last
 
 from c_cpp.factories import Factories
 from renaissance.impl.clang import ClangASTNode, CPatternFactory
@@ -433,7 +434,7 @@ class TestUseAtuToCreatePattern(TestCMatchFinder):
         atu = factory.create_from_text(code, "test.c")
         pattern_factory = CPatternFactory(factory, ref_node=atu)
         statements_atu = pattern_factory.create(statements)
-        statements = ASTFinder.find_kind(statements_atu, pattern_type).find_last().get()  # pick the last statement
+        statements = last(ASTFinder.find_kind(statements_atu, pattern_type))  # pick the last statement
         func_body = atu.children[-1].children
         result = match_pattern(func_body, [statements], recursive=True)
         # should find multiple matches, at least the one in the pattern and the one in the function body

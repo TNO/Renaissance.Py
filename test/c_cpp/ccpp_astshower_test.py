@@ -30,7 +30,7 @@ class TestCcppShower:
         void fff() {
         $pa($xx);
         }""")
-        simple = ASTFinder.find_kind(pattern, "(?i)Call_?Expr").to_list()[0]
+        simple = ASTFinder.find_kind(pattern, "(?i)Call_?Expr")[0]
 
         assert_that(
             str(simple),
@@ -136,7 +136,7 @@ else
         real_children = list(filter(lambda n: n.kind != "MACRO_DEFINITION", atu.children))[1]
 
         # expect this to work
-        ifstmt = ASTFinder.find_kind(real_children, "ifstmt").to_list()[0]
+        ifstmt = ASTFinder.find_kind(real_children, "ifstmt")[0]
 
         text = ASTShower.get_node(ifstmt)
         assert_that(

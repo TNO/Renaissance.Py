@@ -224,9 +224,8 @@ def remove_decorator(ast_refactor):
 
 
 def convert_assert(ast_refactor):
-    ast_refactor.find_kind("Attribute").filter(lambda node: node.name == "self.assert_equal").for_each(
-        lambda node: ast_refactor.replace("self.assertEqual", node, False, False)
-    )
+    (ast_refactor.replace("self.assertEqual", node, False, False)
+     for node in ast_refactor.find_kind("Attribute") if node.name == "self.assert_equal")
 
 
 def insert_doc_func(input_code, date):
@@ -246,12 +245,10 @@ def replace_taut(ast_refactor):
     """
     replace TAUT.TestCase by unittest.TestCase
     """
-    ast_refactor.find_kind("Attribute").filter(lambda node: node.name == "TAUT.TestCase").for_each(
-        lambda node: ast_refactor.replace("unittest.TestCase", node, False, False)
-    )
-    ast_refactor.find_kind("Name").filter(lambda node: node.name == "TestCase").for_each(
-        lambda node: ast_refactor.replace("unittest.TestCase", node, False, False)
-    )
+    (ast_refactor.replace("unittest.TestCase", node, False, False)
+     for node in ast_refactor.find_kind("Attribute") if node.name == "TAUT.TestCase")
+    (ast_refactor.replace("unittest.TestCase", node, False, False)
+     for node in ast_refactor.find_kind("Name") if node.name == "TestCase")
 
 
 def replace_mock_import(input_code):

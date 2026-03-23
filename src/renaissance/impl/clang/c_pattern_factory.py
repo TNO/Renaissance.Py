@@ -1,7 +1,9 @@
 import re
 from typing import Optional, Sequence
 
-from renaissance.common import Stream
+from more_itertools import first
+from more_itertools.more import last
+
 from renaissance.syntax_tree.ast_factory import ASTFactory
 from renaissance.syntax_tree.ast_finder import ASTFinder
 from renaissance.syntax_tree.ast_node import ASTNode
@@ -30,15 +32,15 @@ def derive_header_text(language: str, ref_node: ASTNode | None):
             for c in ref_node.children:
                 if c.is_part_of_translation_unit() and c.kind in matcher_set:
                     header += c.signature + "\n"
-        offset = min(n.offset for n in ref_node.children
-                     if n.is_part_of_translation_unit() and not ASTFinder.matches_kind(n, "(?i)Inclusion_?Directive"))
+        offset = min((n.offset for n in ref_node.children if n.is_part_of_translation_unit()
+                      and not ASTFinder.matches_kind(n, "(?i)Inclusion_?Directive")), default=0)
 
         header = CPatternFactory.remove_indent(ref_node.content(0, offset))
         header += (
             "\n".join( n.text+';' for n in ref_node.children
             if n.is_part_of_translation_unit()
             and ASTFinder.matches_kind(n, "(?i)(Function|Var|Typedef)_?Decl|MACRO_?DEFINITION")
-            and ASTFinder.find_kind(n, "(?i)Compound_?Stmt").count() == 0))
+            and len(ASTFinder.find_kind(n, "(?i)Compound_?Stmt")) == 0))
         header +="\n"
 
 
@@ -78,13 +80,8 @@ class CPatternFactory:
         )
         root = self._create(full_text)
         # return the first expression found in the tree as a ASTNode
-        return (
-            ASTFinder.find_kind(root.children[-1], "(?i)PAREN_?EXPR")
-            .filter(ASTNode.is_part_of_translation_unit)
-            .find_last()
-            .get()
-            .children[0]
-        )
+        return last(n.children[0] for n in  ASTFinder.find_kind(root.children[-1], "(?i)PAREN_?EXPR") if n.is_part_of_translation_unit)
+
 
     def create_declarations(
         self,
@@ -205,12 +202,9 @@ class CPatternFactory:
         # from the children of the compound statement that contains the text, get for each child the first
         # node of the specified kind
 
-        return (
-            Stream(ASTFinder.find_kind(root.children[-1], "(?i)COMPOUND_?STMT").find_first().get().children)
-            .filter(ASTNode.is_part_of_translation_unit)
-            .map(lambda n: ASTFinder.find_kind(n, kind).find_first().get())
-            .to_list()
-        )
+        body = first(ASTFinder.find_kind(root.children[-1], "(?i)COMPOUND_?STMT")).children
+        return list(n for n in body if n.is_part_of_translation_unit and first(ASTFinder.find_kind(n, kind)))
+
 
     def _create(self, text: str) -> ASTNode:
         atu = self.factory.create_from_text(text, "test." + self.language)

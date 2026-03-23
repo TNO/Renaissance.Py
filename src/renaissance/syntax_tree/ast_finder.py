@@ -1,24 +1,25 @@
 import re
-from typing import Callable, Iterator, Optional
+from typing import Callable, Iterator, Optional,Sequence
+
 
 from .ast_node import ASTNode
-from renaissance.common import Stream
+
 
 
 class ASTFinder:
     KIND_MATCH = re.compile(r"[\W_]+")
 
     @staticmethod
-    def find_all(ast_node: ASTNode, function: Callable[[ASTNode], Iterator[ASTNode] | bool]) -> Stream[ASTNode]:
-        return Stream(ASTFinder.__find_all(ast_node, function))
+    def find_all(ast_node: ASTNode, function: Callable[[ASTNode], Iterator[ASTNode] | bool]) -> Sequence[ASTNode]:
+        return list(ASTFinder.__find_all(ast_node, function))
 
     @staticmethod
-    def find_kind(ast_node: ASTNode, kind: str | re.Pattern[str]) -> Stream[ASTNode]:
-        return Stream(ASTFinder.__matches_kind(ast_node, kind))
+    def find_kind(ast_node: ASTNode, kind: str | re.Pattern[str]) -> Sequence[ASTNode]:
+        return list(ASTFinder.__matches_kind(ast_node, kind))
 
     @staticmethod
-    def find(ast_node: ASTNode, kind: str | re.Pattern[str]) -> Stream[ASTNode]:
-        return ASTFinder.__matches_kind(ast_node, kind)
+    def find(ast_node: ASTNode, kind: str | re.Pattern[str]) -> Sequence[ASTNode]:
+        return list(ASTFinder.__matches_kind(ast_node, kind))
 
     @staticmethod
     def matches_kind(ast_node: Optional[ASTNode], kind: str | re.Pattern[str]) -> bool:

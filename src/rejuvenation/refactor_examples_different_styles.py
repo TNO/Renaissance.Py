@@ -120,9 +120,8 @@ def example_use_ast_kind_finder(factory, _):
     rewriter = ASTRewriter(atu)
 
     # Find all nodes of kind TYPE_REF (case insensitive) and filter those with name 'old'
-    ASTFinder.find_kind(atu, "(?i)TYPE.?REF").filter(lambda node: node.name == "old").for_each(
-        lambda node: rewriter.replace("fancy_new", node)
-    )
+    (rewriter.replace("fancy_new", node) for node in ASTFinder.find_kind(atu, "(?i)TYPE.?REF")
+     if node.name == "old")
 
     # Print the results after replacing the old type by fancy_new
     print("results after replacing the old type by fancy_new using ASTFinder.find_kind")

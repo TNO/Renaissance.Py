@@ -36,7 +36,7 @@ if True:
     root = ast.parse(code)
     ASTShower.show_node(root)
 
-    nodes = ASTFinder.find_kind(root, "If").to_list()
+    nodes = ASTFinder.find_kind(root, "If")
 
     ASTShower.show_node(nodes[0])
 

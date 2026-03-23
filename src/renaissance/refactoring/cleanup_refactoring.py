@@ -1,3 +1,5 @@
+from more_itertools import flatten
+
 from renaissance.syntax_tree import ASTFinder, ASTProcessor
 
 
@@ -10,8 +12,6 @@ class CleanupRefactoring:
         """
         Removes all unused variables from a function
         """
-        ast_refactor.find_kind("(?i)Compound_?Stmt").flat_map(lambda func: ASTFinder.find_kind(func, "(?i)Var_?Decl")).filter(
-            lambda node: len(node.referenced_by) == 0
-        ).map(lambda node: node.parent).for_each(
-            lambda node: ast_refactor.remove(node, True, True)
-        )  # type: ignore
+        refs = flatten(ASTFinder.find_kind(n, "(?i)Var_?Decl") for n in ast_refactor.find_kind("(?i)Compound_?Stmt"))
+        (ast_refactor.remove(ref.parent, True, True)
+         for ref in refs if len(ref.referenced_by) == 0)

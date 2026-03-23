@@ -60,9 +60,8 @@ def replace_if_with_ternary():
     # Create an ASTRewriter
     rewriter = ASTRewriter(atu)
     # Search matches and replace them
-    MatchFinder.find_all(atu.children, if_else_patterns).for_each(
-        lambda match: rewriter.replace("$$before; b=($exp) ? $d1:$d2; $$after;", match)
-    )
+    (rewriter.replace("$$before; b=($exp) ? $d1:$d2; $$after;", match)
+     for match in MatchFinder.find_all(atu.children, if_else_patterns))
     # Return the rewritten code
     return rewriter.apply_to_string().strip()
 

@@ -3,7 +3,6 @@ from typing import Sequence, Self, Iterable, Protocol, runtime_checkable
 from more_itertools import flatten
 
 from .ast_node import ASTNode
-from renaissance.common import Stream
 from renaissance.impl import MATCH_ALL, MATCH_ONE
 from ..utils.node_util import use_dollar
 
@@ -240,7 +239,7 @@ class MatchFinder:
         src_nodes: Sequence[AstProtocol],
         *patterns: Sequence[AstProtocol],
         recursive: bool = True,
-    ) -> Stream[PatternMatch]:
+    ) -> Sequence[PatternMatch]:
         """
         Finds all pattern matches in the given source nodes.
 
@@ -250,10 +249,10 @@ class MatchFinder:
             recursive (bool, optional): Whether to search recursively within the source nodes. Defaults to True.
 
         Returns:
-            Stream[PatternMatch]: A stream of pattern matches found in the source nodes.
+            Sequence[PatternMatch]: A stream of pattern matches found in the source nodes.
         """
 
-        return Stream(find_all(src_nodes, *patterns, recursive=recursive))
+        return find_all(src_nodes, *patterns, recursive=recursive)
 
     @staticmethod
     def match_pattern(

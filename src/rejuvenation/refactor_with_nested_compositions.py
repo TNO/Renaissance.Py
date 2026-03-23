@@ -79,7 +79,7 @@ def refactor_with_nested_compositions(args):
     ASTShower.show_node(pattern1[0], include_properties=True)
 
     # we only want to search the call expression as a pattern so it's searched using the kind
-    pattern2 = ASTFinder.find_kind(pattern2, "(?i)Call_?Expr").to_list()
+    pattern2 = ASTFinder.find_kind(pattern2, "(?i)Call_?Expr")
 
     # the replacement code strip indent is used to be agnostic to the indentation of the replacement
     pattern1replacement = TextUtils.strip_indent("""
