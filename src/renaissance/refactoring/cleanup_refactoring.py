@@ -13,5 +13,4 @@ class CleanupRefactoring:
         Removes all unused variables from a function
         """
         refs = flatten(ASTFinder.find_kind(n, "(?i)Var_?Decl") for n in ast_refactor.find_kind("(?i)Compound_?Stmt"))
-        (ast_refactor.remove(ref.parent, True, True)
-         for ref in refs if len(ref.referenced_by) == 0)
+        [ast_refactor.remove(ref.parent, True, True) for ref in refs if len(ref.referenced_by) == 0]

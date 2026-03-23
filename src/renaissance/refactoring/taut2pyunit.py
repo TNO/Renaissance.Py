@@ -185,18 +185,16 @@ def remove_import_taut(ast_refactor: ASTProcessor) -> None:
     """
     Removes import TAUT
     """
-    ast_refactor.find_kind("Import").filter(lambda node: node.name.find("TAUT") > 0).for_each(
-        lambda node: ast_refactor.remove(node, True, True)
-    )
+    [ast_refactor.remove(node, True, True)
+    for node in ast_refactor.find_kind("Import") if node.name.find("TAUT") > 0]
 
 
 def replace_taut_skip(ast_refactor):
     """
     replace @TAUT.skip_test by @unittest.skip
     """
-    ast_refactor.find_kind("Attribute").filter(lambda node: node.name == "TAUT.skip_test").for_each(
-        lambda node: ast_refactor.replace("@unittest.skip", node)
-    )
+    [ast_refactor.replace("@unittest.skip", node)
+     for node in ast_refactor.find_kind("Attribute") if node.name == "TAUT.skip_test"]
 
 
 def add_self(ast_refactor):
@@ -211,21 +209,19 @@ def add_self(ast_refactor):
         "gtaaxtxmark",
         "mark_upd_q",
     ]
-    list = ast_refactor.find_kind("Name").filter(lambda node: node.name in matching).to_list()
-    ast_refactor.find_kind("Name").filter(lambda node: node.name in matching).for_each(
-        lambda node: ast_refactor.replace("self." + node.name, node, False, False)
-    )
+    # list = ast_refactor.find_kind("Name").filter(lambda node: node.name in matching).to_list()
+    [ast_refactor.replace("self." + node.name, node, False, False)
+     for node in ast_refactor.find_kind("Name") if node.name in matching]
+
 
 
 def remove_decorator(ast_refactor):
-    ast_refactor.find_kind("Attribute").filter(lambda node: node.name == "TAUT.log_stub").for_each(
-        lambda node: ast_refactor.remove(node, False, False)
-    )
-
+    [ast_refactor.remove(node, False, False)
+    for node in ast_refactor.find_kind("Attribute") if node.name == "TAUT.log_stub"]
 
 def convert_assert(ast_refactor):
-    (ast_refactor.replace("self.assertEqual", node, False, False)
-     for node in ast_refactor.find_kind("Attribute") if node.name == "self.assert_equal")
+    [ast_refactor.replace("self.assertEqual", node, False, False)
+     for node in ast_refactor.find_kind("Attribute") if node.name == "self.assert_equal"]
 
 
 def insert_doc_func(input_code, date):
@@ -245,10 +241,10 @@ def replace_taut(ast_refactor):
     """
     replace TAUT.TestCase by unittest.TestCase
     """
-    (ast_refactor.replace("unittest.TestCase", node, False, False)
-     for node in ast_refactor.find_kind("Attribute") if node.name == "TAUT.TestCase")
-    (ast_refactor.replace("unittest.TestCase", node, False, False)
-     for node in ast_refactor.find_kind("Name") if node.name == "TestCase")
+    [ast_refactor.replace("unittest.TestCase", node, False, False)
+     for node in ast_refactor.find_kind("Attribute") if node.name == "TAUT.TestCase"]
+    [ast_refactor.replace("unittest.TestCase", node, False, False)
+     for node in ast_refactor.find_kind("Name") if node.name == "TestCase"]
 
 
 def replace_mock_import(input_code):

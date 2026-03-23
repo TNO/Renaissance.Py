@@ -72,8 +72,8 @@ class ASTRefactorActions:
         if not patterns:
             self.processor.replace(replacement, matches)
             return
-        (self._replace_patterns(m.nodes[0], replacement, patterns[1:], list(matches) + [m])
-            for m in MatchFinder.find_all([node], patterns[0]))
+        [self._replace_patterns(m.nodes[0], replacement, patterns[1:], list(matches) + [m])
+            for m in MatchFinder.find_all([node], patterns[0])]
 
     @cache
     def find_declaration(self, decl_pattern: str):

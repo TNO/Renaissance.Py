@@ -77,8 +77,8 @@ def remove_unused_variable_low_level(node_type: type[ASTNode]):
     # search matches and replace them
     funcs = flatten( ASTFinder.find_kind(func, "(?i)Var_?Decl")
         for func in (ASTFinder.find_kind(atu, "(?i)Compound?Stmt")))
-    (rewriter.remove(node.parent, True, True)
-      for node in funcs if len(node.referenced_by) == 0)
+    [rewriter.remove(node.parent, True, True)
+      for node in funcs if len(node.referenced_by) == 0]
 
 
     # print the rewritten code
