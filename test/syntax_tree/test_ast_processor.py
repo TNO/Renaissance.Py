@@ -11,7 +11,7 @@ class TestAstProcessor:
         node = mocker.Mock()
         pattern_match = PatternMatch([node, node, node], {}, [])
         mock_matcher = mocker.patch(
-            "renaissance.syntax_tree.match_finder.MatchFinder.find_all",
+            "renaissance.syntax_tree.match_finder.find_all",
             return_value=[pattern_match],
         )
         atu = ClangASTNode.load_from_text("int main(){return 0;}", "test.c", [], None)

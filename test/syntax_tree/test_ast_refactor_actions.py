@@ -1,7 +1,7 @@
 import hamcrest
 from hamcrest import assert_that, is_
 
-from renaissance.common import Stream
+
 from renaissance.syntax_tree import ASTRefactorActions
 
 
@@ -62,7 +62,6 @@ class TestASTRefactorActions:
         factory = mocker.Mock()
         is_match_mock = mocker.patch("renaissance.syntax_tree.match_finder.is_match", return_value=True)
         refactor_actions = ASTRefactorActions(proc, factory)
-        proc.find_all = lambda name: Stream([node, node])
 
         refactor_actions._replace_patterns(node, "my_awsome_text", [[node]], "Call")
 
@@ -78,8 +77,8 @@ class TestASTRefactorActions:
 
     def test_collect(self, mocker):
         proc = mocker.Mock()
-        proc.find_match = lambda root: Stream([])
+        proc.find_match.return_value = []
         factory = mocker.Mock()
         refactor_actions = ASTRefactorActions(proc, factory)
         result = refactor_actions.collect("pattern", "pattern_kind")
-        assert_that(result, hamcrest.has_length(0))
+        assert_that(proc.find_match.called, is_(1))

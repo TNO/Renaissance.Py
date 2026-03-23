@@ -85,4 +85,4 @@ class ASTRefactorActions:
     def collect(self, pattern: str, pattern_kind: str):
         root = self.pattern_factory.create(pattern, pattern_kind)
 
-        return self.processor.find_match(root).to_list()
+        return self.processor.find_match(root)

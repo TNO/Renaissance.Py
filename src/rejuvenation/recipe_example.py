@@ -1,4 +1,5 @@
 # use clang to load and walk a compilation database
+from more_itertools import last
 
 from renaissance.common.stream import Stream
 from renaissance.syntax_tree import (
@@ -257,13 +258,7 @@ class MyRefactor:
                     # replace the constructor call with a ListViewCustom object
                     ast_processor.replace(f"ListViewCustom {var}({container});", parent)
                     # find reference to the declaration
-                    size_match = (
-                        Stream(parent.referenced_by)
-                        .map(lambda r: r.node)
-                        .map(lambda n: n.get_ancestor("Call_?Expr"))
-                        .find_last()
-                        .or_else(None)
-                    )
+                    size_match = last(ref.node.get_ancestor("Call_?Expr") for ref in parent.referenced_by)
 
                     for h in range(header_count):
                         ast_processor.insert_after(

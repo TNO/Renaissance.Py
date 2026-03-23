@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Callable, Iterator, Sequence
 
-from renaissance.common import Stream
+import renaissance.syntax_tree.match_finder
 from renaissance.syntax_tree.ast_rewriter import ASTRewriter
 from renaissance.syntax_tree.match_finder import ASTNode, PatternMatch, MatchFinder, find_all
 from renaissance.syntax_tree.ast_finder import ASTFinder
@@ -72,10 +72,10 @@ class ASTProcessor:
     ) -> None:
         self.__rewriter.insert_after(new_content, target, include_whitespace, include_comments)
 
-    def find_all(self, function: Callable[[ASTNode], Iterator[ASTNode] | bool]) -> Stream[ASTNode]:
+    def find_all(self, function: Callable[[ASTNode], Iterator[ASTNode] | bool]) -> Sequence[ASTNode]:
         return find_all(self.__root_node, function)
 
-    def find_kind(self, kind: str) -> Stream[ASTNode]:
+    def find_kind(self, kind: str) -> Sequence[ASTNode]:
         return ASTFinder.find_kind(self.__root_node, kind)
 
     def find_match(
@@ -83,8 +83,8 @@ class ASTProcessor:
         *patterns_list,
         recursive: bool = True,
         exclude_kind: str = MatchFinder.DEFAULT_EXCLUDE_KIND,
-    ) -> Stream[PatternMatch]:
-        return MatchFinder.find_all(
+    ) -> Sequence[PatternMatch]:
+        return renaissance.syntax_tree.match_finder.find_all(
             self.__root_node,
             *patterns_list,
             recursive=recursive,
