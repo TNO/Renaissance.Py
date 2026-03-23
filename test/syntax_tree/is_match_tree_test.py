@@ -20,7 +20,7 @@ from renaissance.syntax_tree import ASTFactory, ASTShower
 from renaissance.syntax_tree.match_finder import (
     is_match_tree,
     MatchFinder,
-    find_in_list,
+    find_in_list, match_pattern,
 )
 
 
@@ -218,12 +218,12 @@ class TestMatchTree:
         atu = factory.create_from_text("void ca(int a,int b,int c){ca(13,14,15); ca(13,14,15);}", "fut.c")
         src = atu.children[-1].children[-1].children
         pattern = factory.create_from_text("int $a,$$all;void $f(int a,int b){$f($a, $$all);}", "pat.c").children[-1].children[-1].children
-        assert_that(MatchFinder.find_all(src, pattern).to_list(), has_length(2))
+        assert_that(match_pattern(src, pattern), has_length(2))
 
     def test_find_all_in_list_with_expansion(self):
         src = self.pattern_factory.create_statements("2\n3\n4\n5\n61\n2\n3\n4\n5\n7\n8\n9")
         pattern = self.pattern_factory.create_statements("2\n$3\n4")
-        matches = MatchFinder.find_all(src, pattern).to_list()
+        matches = match_pattern(src, pattern)
         assert_that(matches, has_length(2))
         assert_that(matches[0].expansions["$3"][0].name, is_("3"))
 
@@ -247,7 +247,7 @@ class TestMatchTree:
         )
         pattern = self.pattern_factory.create_statements("class $name(TestCase):\n    $$cases")
         ASTShower.show_node(pattern[0])
-        matches = MatchFinder.find_all(atu.children, pattern).to_list()
+        matches = match_pattern(atu.children, pattern)
         assert_that(matches, has_length(1))
         assert_that(matches[0].expansions["$name"][0], is_("TestExample"))
 
@@ -255,14 +255,14 @@ class TestMatchTree:
         atu = self.factory.create_from_text("class klass: pass", "test_file.py")
         statement = self.pattern_factory.create_statements("assertEqual(1,2,34,5,6,7,7,8)")
         pattern = self.pattern_factory.create_statements("assertEqual($$args)")
-        matches = MatchFinder.find_all(statement, pattern).to_list()
+        matches = match_pattern(statement, pattern)
         assert_that(matches, has_length(1))
         assert_that(matches[0].expansions["$$args"], is_not(empty()))
 
     def test_find_all_in_python_arg_list_with_expansion(self):
         atu = self.factory.create_from_text("class klass:\n  def fun(a,b,c,d,f): pass", "test_file.py")
         pattern = self.pattern_factory.create_statements("def fun($$args): pass")
-        matches = MatchFinder.find_all(atu.children, pattern).to_list()
+        matches = match_pattern(atu.children, pattern)
         assert_that(matches, has_length(1))
         assert_that(matches[0].expansions["$$args"], is_not(empty()))
 
@@ -270,7 +270,7 @@ class TestMatchTree:
         factory = ASTFactory(ClangASTNode, [])
         pattern = CPatternFactory(factory).create_statements("a == $x;")
         src = CPatternFactory(factory).create_statements("a == 3;a == 4; b == 5;")
-        matches = MatchFinder.find_all(src, pattern).to_list()
+        matches = match_pattern(src, pattern)
         assert_that(matches, has_length(2))
         assert_that(matches[0].expansions["$x"], is_not(empty()))
 

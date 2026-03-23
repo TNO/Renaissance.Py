@@ -2,6 +2,7 @@ import pytest
 from pytest_bdd import given, when, then, scenario, parsers
 from renaissance.impl.python import PythonASTNode, PythonPatternFactory
 from renaissance.syntax_tree import ASTFactory, ASTRewriter, MatchFinder
+from renaissance.syntax_tree.match_finder import match_pattern
 from renaissance.utils.refactor_utils import fix_indent
 
 
@@ -54,7 +55,7 @@ def step_impl(context):
 def step_impl(context, old):
     pattern_factory = PythonPatternFactory(context["factory"], context["atu"])
     find = pattern_factory.create_statements(old)
-    context["result"] = MatchFinder.find_all(context["atu"].children, find).to_list()[0]
+    context["result"] = match_pattern(context["atu"].children, find)[0]
     assert context["result"]
 
 

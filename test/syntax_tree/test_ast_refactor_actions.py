@@ -15,6 +15,7 @@ class TestASTRefactorActions:
 
     def test_replace_expr(self, mocker):
         proc = mocker.Mock()
+        proc.find_all.return_value = []
         factory = mocker.Mock()
         refactor_actions = ASTRefactorActions(proc, factory)
         refactor_actions.replace_expr("name", "my_awsome_name", "Name")
@@ -22,10 +23,12 @@ class TestASTRefactorActions:
 
     def test_replace_name(self, mocker):
         node = mocker.Mock()
+        node.offset =1
         proc = mocker.Mock()
         factory = mocker.Mock()
+        proc.find_all.return_value = [node]
         refactor_actions = ASTRefactorActions(proc, factory)
-        proc.find_all = lambda name: Stream([node, node])
+
 
         refactor_actions.replace_name("name", "my_awsome_name", "Name", "Call")
 
@@ -36,7 +39,7 @@ class TestASTRefactorActions:
         proc = mocker.Mock()
         factory = mocker.Mock()
         refactor_actions = ASTRefactorActions(proc, factory)
-        proc.find_all = lambda name: Stream([node, node])
+        proc.find_all.return_value = [node, node]
 
         refactor_actions.replace_text("text", "my_awsome_text", "StringLiteral", "Call")
 

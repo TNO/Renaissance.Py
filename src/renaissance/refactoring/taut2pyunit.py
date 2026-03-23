@@ -422,14 +422,14 @@ def refactor_replace(input_code: str, before: str, after: str):
 def refactor_remove(input_code: str, match_str: str):
     atu, rewriter, matched_pattern = _setup(input_code, match_str)
 
-    for ma in MatchFinder.find_all([atu], [matched_pattern]).to_iterable():
+    for ma in match_pattern(atu.children, [matched_pattern]):
         rewriter.remove(ma.nodes)
     return _apply(rewriter)
 
 
 def refactor_insert_after(input_code: str, insert_code: str, match_str: str):
     atu, rewriter, matched_pattern = _setup(input_code, match_str)
-    matches = list(MatchFinder.find_all([atu], [matched_pattern]).to_iterable())
+    matches = match_pattern(atu.children, [matched_pattern])
     if not matches:
         return input_code  # No matches found, return original code
     matched = matches[0]
@@ -439,7 +439,7 @@ def refactor_insert_after(input_code: str, insert_code: str, match_str: str):
 
 def refactor_insert_before(input_code: str, insert_code: str, match_str: str):
     atu, rewriter, matched_pattern = _setup(input_code, match_str)
-    matches = list(MatchFinder.find_all([atu], [matched_pattern]).to_iterable())
+    matches = match_pattern(atu.children, [matched_pattern])
     if not matches:
         return input_code  # No matches found, return original code
     matched = matches[0]

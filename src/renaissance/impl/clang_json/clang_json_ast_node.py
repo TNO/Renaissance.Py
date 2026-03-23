@@ -12,7 +12,6 @@ from typing import Any, Optional, Sequence
 from typing_extensions import override
 import subprocess
 
-from renaissance.common import Stream
 from renaissance.impl import MATCH_ALL, MATCH_ONE
 from renaissance.syntax_tree import ASTNode, CPPUtils, ASTReference
 
@@ -71,14 +70,14 @@ class ClangJsonASTNode(ASTNode):
     ]
 
     def __init__(
-        self,
-        node: dict[str, Any],
-        translation_unit: ClangJsonTranslationUnit,
-        parent: Optional[ClangJsonASTNode] = None,
-        start_offset: Optional[int] = None,
-        length: Optional[int] = None,
-        insert_kind: Optional[str] = None,
-        insert_name: Optional[str] = None,
+            self,
+            node: dict[str, Any],
+            translation_unit: ClangJsonTranslationUnit,
+            parent: Optional[ClangJsonASTNode] = None,
+            start_offset: Optional[int] = None,
+            length: Optional[int] = None,
+            insert_kind: Optional[str] = None,
+            insert_name: Optional[str] = None,
     ) -> None:
         super().__init__(self if parent is None else parent.root)
         self.node: dict[str, Any] = node
@@ -103,7 +102,8 @@ class ClangJsonASTNode(ASTNode):
         # without the fake child pattern matching on types will be difficult
         self.__inserted_children: list[ClangJsonASTNode] = []
         type = self.node.get("type")
-        if insert_kind == None and type and not self.node.get("implicit") and re.fullmatch("(Var|Function|CxxMethod)Decl", self._kind):
+        if insert_kind == None and type and not self.node.get("implicit") and re.fullmatch(
+                "(Var|Function|CxxMethod)Decl", self._kind):
             declared_type = type["qualType"].replace("(", "").replace(")", "").strip()
             if self.node.get("loc"):
                 loc = self.node["loc"]
@@ -157,10 +157,10 @@ class ClangJsonASTNode(ASTNode):
     @override
     @staticmethod
     def load(
-        file_path: Path,
-        extra_args: Sequence[str],
-        working_dir: Path,
-        code: Optional[str] = None,
+            file_path: Path,
+            extra_args: Sequence[str],
+            working_dir: Path,
+            code: Optional[str] = None,
     ) -> ClangJsonASTNode:
         # in a shell process compile the file_path with clang compiler
         try:
@@ -268,7 +268,8 @@ class ClangJsonASTNode(ASTNode):
             # but expressions (without the semicolon)
             if (not self._is_statement_or_declaration()) and (self.parent and self.parent.kind in STMT_PARENTS):
                 content = self.root.binary_file_content()
-                while endOffset < len(content) and not content[endOffset - 1] in b";":  # Why use 'in' when list has one element, i.e. ';'?
+                while endOffset < len(content) and not content[
+                                                           endOffset - 1] in b";":  # Why use 'in' when list has one element, i.e. ';'?
                     endOffset += 1
             return endOffset
         except:
@@ -283,9 +284,9 @@ class ClangJsonASTNode(ASTNode):
         self_kind = self._kind
         node_kind = node.kind
         return (
-            self_kind == node_kind
-            or (self_kind.endswith("Literal") and node_kind == "DeclRefExpr")
-            or (self_kind == "DeclRefExpr" and node_kind.endswith("Literal"))
+                self_kind == node_kind
+                or (self_kind.endswith("Literal") and node_kind == "DeclRefExpr")
+                or (self_kind == "DeclRefExpr" and node_kind.endswith("Literal"))
         )
 
     @override
@@ -316,18 +317,10 @@ class ClangJsonASTNode(ASTNode):
         if definition_node_id:
             # try to find the definition which might have references
             ref_by += self.translation_unit._referenced_by.get(definition_node_id, EMPTY_LIST)
-        return (
-            Stream(ref_by)
-            .filter(lambda ref: ref.node_id != self.node["id"])
-            .map(
-                lambda ref: ASTReference(
-                    self.translation_unit._nodes[ref.node_id],
-                    ref.ref_kind,
-                    ref.properties,
-                )
-            )
-            .to_list()
-        )
+        return [ASTReference(
+            self.translation_unit._nodes[ref.node_id],
+            ref.ref_kind,
+            ref.properties) for ref in ref_by if ref.node_id != self.node["id"]]
 
     def _get_function_definition(self):
         refs = self.translation_unit._referenced_by.get(self.node["id"], EMPTY_LIST)
@@ -352,24 +345,14 @@ class ClangJsonASTNode(ASTNode):
         # remove duplicates
         refs = list({ref.node_id: ref for ref in refs}.values())
 
-        return (
-            Stream(refs)
-            .filter(lambda ref: ref.node_id != self.node["id"])
-            .map(
-                lambda ref: ASTReference(
-                    self.translation_unit._nodes[ref.node_id],
-                    ref.ref_kind,
-                    ref.properties,
-                )
-            )
-            .to_list()
-        )
+        return [ASTReference(self.translation_unit._nodes[ref.node_id],ref.ref_kind,ref.properties)
+             for ref in refs if ref.node_id != self.node["id"]]
 
     @override
     @property
     def is_statement(self) -> bool:
         return (
-            self.parent != None and self.parent.kind in STMT_PARENTS
+                self.parent != None and self.parent.kind in STMT_PARENTS
         )  # TODO: Why look at the kind of your parent and not at your own kind?
 
     def _derive_name(self) -> str:
@@ -380,7 +363,8 @@ class ClangJsonASTNode(ASTNode):
         decl_ref_name_path = ["referencedDecl", "name"]
         if kind == "CallExpr":
             # equalize with libclang
-            decl_ref_child = [inner["kind"] for inner in self.node.get("inner", []) if inner.get("kind") == "DeclRefExpr"]
+            decl_ref_child = [inner["kind"] for inner in self.node.get("inner", []) if
+                              inner.get("kind") == "DeclRefExpr"]
             if decl_ref_child:
                 return self._get_property(decl_ref_child[0], decl_ref_name_path, default=EMPTY_STR)
         if kind == "DeclRefExpr":
@@ -490,7 +474,8 @@ class ReferenceHelper:
         references = []
         node_id = ast_node.node["id"]
         ast_node.translation_unit._references[node_id] = references
-        refs = {k: v for k, v in ast_node.node.items() if not ReferenceHelper._is_child_node(k) and ClangJsonASTNode._is_reference(v)}
+        refs = {k: v for k, v in ast_node.node.items() if
+                not ReferenceHelper._is_child_node(k) and ClangJsonASTNode._is_reference(v)}
         for k in [k for k in ast_node.node.keys() if k in ON_NODE_ID_TAGS]:
             refs[k] = ast_node.node
             # add the node if it contains a reference for example in case of previousDecl
@@ -500,7 +485,8 @@ class ReferenceHelper:
             for n in ast_node.children:
                 if n.kind == "DeclRefExpr":
                     refChild = {
-                        k: v for k, v in n.node.items() if not ReferenceHelper._is_child_node(k) and ClangJsonASTNode._is_reference(v)
+                        k: v for k, v in n.node.items() if
+                        not ReferenceHelper._is_child_node(k) and ClangJsonASTNode._is_reference(v)
                     }
                     refs.update(refChild)
 

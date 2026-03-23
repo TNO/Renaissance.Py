@@ -7,7 +7,7 @@ from c_cpp.factories import Factories
 from rejuvenation.descendant_search import find_descendant_match
 from renaissance.impl.clang import CPatternFactory
 from renaissance.syntax_tree import ASTFactory, MatchFinder
-from renaissance.syntax_tree.match_finder import is_match, AstProtocol
+from renaissance.syntax_tree.match_finder import is_match, AstProtocol, match_pattern
 
 
 class TestFindDescendantMatch:
@@ -76,7 +76,7 @@ class TestBasic:
         pattern_factory = CPatternFactory(factory)
         code_pattern = factory.create_from_text(self.code_text, "text.c")  # file extension consistent with C Pattern Factory
         snippet_pattern = pattern_factory.create_expression(snippet, extra_declarations)
-        results = MatchFinder.find_all(code_pattern.children, [snippet_pattern]).to_list()
+        results = match_pattern(code_pattern.children, [snippet_pattern])
         assert_that(results, has_length(1), f"length of results = {len(results)}")
 
     @pytest.mark.parametrize("_, factory", Factories.factories)

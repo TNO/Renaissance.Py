@@ -7,7 +7,7 @@ from hamcrest import assert_that, is_not
 
 from renaissance.impl.python import PythonASTNode, PythonPatternFactory
 from renaissance.syntax_tree import ASTFactory, MatchFinder
-from renaissance.syntax_tree.match_finder import is_match
+from renaissance.syntax_tree.match_finder import is_match, match_pattern
 
 
 class TestPythonMatcher:
@@ -35,8 +35,8 @@ class TestPythonMatcher:
     def test_match_stmt_using_generic_matcher(self):
         atu = self.factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "test.py")
 
-        simple = self.pattern_factory.create_statement("$pa")
-        result = MatchFinder.find_all(atu.children, [simple]).to_list()
+        simple = self.pattern_factory.create_statements("$pa")
+        result = MatchFinder.match_pattern(atu.children, simple)
         assert_that(result, has_length(4))
 
     def test_find_all_using_generic_matcher(self):
@@ -53,30 +53,30 @@ class TestPythonMatcher:
     def test_match_one_fun_pattern_using_generic_matcher(self):
         atu = self.factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "test.py")
 
-        simple = self.pattern_factory.create_statement("$ca($sss)")
-        result = MatchFinder.find_all(atu.children, [simple]).to_list()
+        simple = self.pattern_factory.create_statements("$ca($sss)")
+        result = match_pattern(atu.children, simple)
         assert_that(result, has_length(3))
 
     def test_match_fun_using_generic_matcher(self):
         atu = self.factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "test.py")
 
-        simple = self.pattern_factory.create_statement("ca(555)")
-        result = MatchFinder.find_all(atu.children, [simple]).to_list()
+        simple = self.pattern_factory.create_statements("ca(555)")
+        result = MatchFinder.match_pattern(atu.children, simple)
         assert_that(result, has_length(1))
 
     def test_match_multi_fun_using_generic_matcher(self):
         atu = self.factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "test.py")
 
-        simple = self.pattern_factory.create_statement("ba(55)\nca(555)")
-        result = MatchFinder.find_all(atu.children, [simple]).to_list()
+        simple = self.pattern_factory.create_statements("ba(55)\nca(555)")
+        result = match_pattern(atu.children, simple)
         assert_that(result, has_length(1))
 
     def test_match_multi_fun_using_generic_matcher2(self):
         atu = self.factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "test.py")
         # create a pattern factory atu is passed to the pattern factory for use of all # includes, #defines and declarations
 
-        simple = self.pattern_factory.create_statement("ba(55)\nca(555)")
-        result = MatchFinder.find_all(atu.children, [simple]).to_list()
+        simple = self.pattern_factory.create_statements("ba(55)\nca(555)")
+        result = match_pattern(atu.children, simple)
         assert_that(result, has_length(1))
 
     def test_match_flat(self):

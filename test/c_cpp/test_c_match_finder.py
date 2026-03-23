@@ -44,18 +44,16 @@ class TestCMatchFinder:
         patterns = CPatternFactory(factory).create_statements("b--;")
 
         atu = factory.create_from_text("void fun(){int a,b;\nb--;\na==4;\nb==5;}", "test.c")
-        matches = MatchFinder.find_all(atu.children, patterns).to_list()
+        matches = match_pattern(atu.children, patterns)
         assert_that(matches, has_length(1))
 
     @staticmethod
     def do_test(factory: ASTFactory, cpp_code, patterns: list[ASTNode], recursive: bool):
         atu = factory.create_from_text(cpp_code, "test.c")
         # find all if and while statements
-        matches = (
-            MatchFinder.find_all(atu.children, patterns, recursive=recursive)
-            .filter(lambda match: match.nodes[0].is_part_of_translation_unit())
-            .to_list()
-        )
+        matches =  [match for match in match_pattern(atu.children, patterns, recursive=recursive)
+                   if match.nodes[0].is_part_of_translation_unit()]
+
         debug_mismatch(True, atu, patterns, matches)
         return matches
 
@@ -77,9 +75,8 @@ class TestExpressions(TestCMatchFinder):
 
         show_node(atu, "CPP code")
         # find all if and while statements
-        matches = (
-            MatchFinder.find_all(atu.children, [expr_node]).filter(lambda match: match.nodes[0].is_part_of_translation_unit()).to_list()
-        )
+        matches = [match for match in match_pattern(atu.children, [expr_node])
+            if match.nodes[0].is_part_of_translation_unit()]
         assert_that(matches, has_length(2))
 
     @pytest.mark.parametrize(
@@ -438,9 +435,9 @@ class TestUseAtuToCreatePattern(TestCMatchFinder):
         statements_atu = pattern_factory.create(statements)
         statements = ASTFinder.find_kind(statements_atu, pattern_type).find_last().get()  # pick the last statement
         func_body = atu.children[-1].children
-        result = MatchFinder.find_all(func_body, [statements], recursive=True)
+        result = match_pattern(func_body, [statements], recursive=True)
         # should find multiple matches, at least the one in the pattern and the one in the function body
-        assert_that(result.to_list(), has_length(greater_than_or_equal_to(1)))
+        assert_that(result, has_length(greater_than_or_equal_to(1)))
         # unreliable to check the exact number of matches due to the pattern also matching the pattern itself
         # text= result.filter(lambda match: match.patterns == names).map(lambda match: match.nodes[0]).filter(ASTNode.is_part_of_translation_unit).map(ASTNode.text).to_list()
         # assert_that(text, is_(expected))

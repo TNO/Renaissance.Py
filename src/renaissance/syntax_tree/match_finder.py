@@ -1,5 +1,7 @@
 from typing import Sequence, Self, Iterable, Protocol, runtime_checkable
 
+from more_itertools import flatten
+
 from .ast_node import ASTNode
 from renaissance.common import Stream
 from renaissance.impl import MATCH_ALL, MATCH_ONE
@@ -28,24 +30,25 @@ class PatternMatch:
             res += node.signature
         return res
 
-    def get_raw_signatures(self):
+    @property
+    def signature(self):
         return str(self)
 
-    def match_referenced_by(self, patterns: Sequence[list], recursive: bool = True) -> Stream[Self]:
+    def match_referenced_by(self, patterns: Sequence[list], recursive: bool = True) -> Sequence[Self]:
         found_matches = []
         for node in self.nodes:
             for ref in node.referenced_by:
                 for pattern in patterns:
                     found_matches.extend(MatchFinder.match_pattern([ref.node], pattern, recursive))
-        return Stream(found_matches)
+        return found_matches
 
-    def match_references(self, patterns: Iterable[list], recursive: bool = True) -> Stream[Self]:
+    def match_references(self, patterns: Iterable[list], recursive: bool = True) -> Sequence[Self]:
         found_matches = []
         for node in self.nodes:
             for ref in node.references:
                 for pattern in patterns:
                     found_matches.extend(MatchFinder.match_pattern([ref.node], pattern, recursive))
-        return Stream(found_matches)
+        return found_matches
 
 
 def is_match_tree(src: Sequence | None, cmp: Sequence | None, expansions=None):
@@ -225,6 +228,9 @@ def match_pattern(src_nodes: Sequence[AstProtocol], patterns: Sequence[AstProtoc
 
     return found_statements
 
+def find_all(src_nodes: Sequence[AstProtocol], *patterns: Sequence[AstProtocol], recursive: bool = True) -> Sequence[PatternMatch]:
+    return flatten(MatchFinder.match_pattern(src_nodes, pattern, recursive) for pattern in patterns)
+
 
 class MatchFinder:
     DEFAULT_EXCLUDE_KIND = "comment"
@@ -246,10 +252,8 @@ class MatchFinder:
         Returns:
             Stream[PatternMatch]: A stream of pattern matches found in the source nodes.
         """
-        found_matches = []
-        for pattern in patterns:
-            found_matches.extend(MatchFinder.match_pattern(src_nodes, pattern, recursive))
-        return Stream(found_matches)
+
+        return Stream(find_all(src_nodes, *patterns, recursive=recursive))
 
     @staticmethod
     def match_pattern(

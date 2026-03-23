@@ -95,7 +95,7 @@ class TestBasicNoNamespace(TestCase):
         pattern_factory = CPatternFactory(factory)
         code_pattern = factory.create_from_text(self.code_text, "text.c")  # file extension consistent with C Pattern Factory
         snippet_pattern = pattern_factory.create_expression(snippet, extra_declarations)
-        results = MatchFinder.find_all(code_pattern.children, [snippet_pattern]).to_list()
+        results = match_pattern(code_pattern.children, [snippet_pattern])
         count: int = len(results)
         # plain assert_with_msg
         self.assertEqual(1, count, "count = " + str(count))

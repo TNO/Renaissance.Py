@@ -8,6 +8,7 @@ from c_cpp.factories import Factories
 from renaissance.impl.clang import ClangASTNode, CPatternFactory
 from renaissance.syntax_tree import ASTRewriter, ASTFactory, MatchFinder, PatternMatch
 from renaissance.syntax_tree.ast_rewriter import _RewriteAction, _RewriteActions
+from renaissance.syntax_tree.match_finder import match_pattern
 from utils_for_tests import compress, debug_print
 
 
@@ -83,7 +84,7 @@ class TestRewrites:
         atu = factory.create_from_text("void f() { /* c1 */ /* c2 */ int a=3;\n}", "test.cpp")
         pattern_factory = CPatternFactory(factory)
         declaration_pattern = pattern_factory.create_declarations("int a=3;")
-        found = MatchFinder.find_all(atu.children, declaration_pattern).to_list()
+        found = match_pattern(atu.children, declaration_pattern)
 
         rewriter = ASTRewriter(atu)
         for match in found:  # .map(lambda m: m.nodes).to_iterable():
@@ -101,7 +102,7 @@ class TestRewrites:
         atu = factory.create_from_text("void f() { /* c1 */ /* c2 */ int a=3;\n}", "test.cpp")
         pattern_factory = CPatternFactory(factory)
         declaration_pattern = pattern_factory.create_declarations("int a=3;")
-        found = MatchFinder.find_all(atu.children, declaration_pattern).to_list()
+        found = match_pattern(atu.children, declaration_pattern)
 
         rewriter = ASTRewriter(atu)
         for match in found:  # .map(lambda m: m.nodes).to_iterable():
@@ -126,7 +127,7 @@ class TestRewrites:
         pattern_factory = CPatternFactory(factory)
         declaration_pattern = pattern_factory.create_declarations("int a=3;")
         rewriter = ASTRewriter(atu)
-        found = MatchFinder.find_all(atu.children, declaration_pattern).to_list()
+        found = match_pattern(atu.children, declaration_pattern)
 
         for match in found:  # .map(lambda m: m.nodes).to_iterable():
             nodes = match.nodes
@@ -932,7 +933,7 @@ class TestComposeReplacement:
             """
         atu = factory.create_from_text(code, "test.cpp")
         stmt_nodes = CPatternFactory(factory).create_statements(statements, extra_declarations=extra_declarations)
-        matches = MatchFinder.find_all([atu], stmt_nodes).filter(lambda m: m.nodes[0].is_part_of_translation_unit()).to_list()
+        matches = (match for match in match_pattern([atu], stmt_nodes) if match.nodes[0].is_part_of_translation_unit())
 
         for match, exp in zip(matches, replacement.items()):
             rewriter = ASTRewriter(match.nodes[0].root)

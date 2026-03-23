@@ -9,6 +9,7 @@ from renaissance.syntax_tree import (
     ASTFinder,
 )
 from renaissance.impl.clang import ClangASTNode, CPatternFactory
+from renaissance.syntax_tree.match_finder import match_pattern, find_all
 
 example_code = """
     typedef int fancy_new;
@@ -72,9 +73,10 @@ def example_add_comment_and_commit(factory, pattern_factory):
 
     # create an ASTRewriter
     rewriter = ASTRewriter(atu)
+
     # search matches and replace them
-    result = MatchFinder.find_all(atu.children, *patterns_list)
-    result.for_each(lambda match: rewriter.insert_before("// old has become obsolete", match))
+    for match in find_all(atu.children, *patterns_list):
+        rewriter.insert_before("// old has become obsolete", match)
 
     # commit
     atu, rewriter = ASTUtils.commit(rewriter, factory, in_memory=True)
@@ -102,8 +104,9 @@ def example_replace_old_by_fancy_new(factory, pattern_factory):
     atu = factory.create_from_text(example_code, "test.c")
     rewriter = ASTRewriter(atu)
 
-    matches = MatchFinder.find_all(atu.children, *patterns_list)
-    (matches.map(lambda match: match.expansions).filter(matches_old).for_each(lambda node: rewriter.replace("fancy_new", node)))
+    (rewriter.replace("fancy_new", match.expansions)
+     for match in match_pattern(atu.children, *patterns_list) if matches_old(match))
+
     print("results after replacing the old type by fancy_new using MatchFinder:")
     result = rewriter.apply_to_string().strip()
     print(result)

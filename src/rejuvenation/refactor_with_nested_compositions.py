@@ -3,6 +3,7 @@
 from renaissance.syntax_tree import ASTFactory, MatchFinder, ASTRewriter
 from renaissance.impl.clang import ClangASTNode, CPatternFactory
 from renaissance.syntax_tree import ASTShower, TextUtils, ASTFinder
+from renaissance.syntax_tree.match_finder import find_all
 
 example_code = """
 void f1(int a, int b, int c);
@@ -107,6 +108,7 @@ def refactor_with_nested_compositions(args):
 
         # create a refactoring that use different replacement code for different patterns
         def refactor(match):
+            print(f"peek: f{match.signature}")
             if match.patterns == pattern1:
                 replment_text = pattern1replacement
             else:
@@ -117,11 +119,12 @@ def refactor_with_nested_compositions(args):
             return rewriter.replace(replment_text, match.nodes)
 
         # search matches for pattern1 and pattern2 and replace them using the refactor function
-        MatchFinder.find_all(atu.children, pattern1, pattern2).peek(
-            lambda match: print("peek: " + str(match.get_raw_signatures()))
-        ).for_each(refactor)
+        for match in find_all(atu.children, pattern1, pattern2):
+            refactor(match)
 
-        # print the rewritten code
+
+
+             # print the rewritten code
         result = rewriter.apply_to_string()
         if rewriter.has_changed():
             atu = factory.create_from_text(result, "example.c")
