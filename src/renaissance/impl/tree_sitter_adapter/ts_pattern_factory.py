@@ -17,7 +17,7 @@ class TsPatternFactory:
         text = replace_dollar(text)
         if isinstance(self.adapter, TreeSitterAdapter):
             tree = self.adapter.parse_code(text)
-            return self.adapter.to_lst(text,tree).root
+            return self.adapter.to_lst(text, tree).root
         else:
             return self.adapter.to_lst(text).root
 

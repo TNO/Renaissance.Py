@@ -1,24 +1,25 @@
 import re
-from typing import Callable, Iterator, Optional
+from typing import Callable, Iterator, Optional,Sequence
+
 
 from .ast_node import ASTNode
-from renaissance.common import Stream
+
 
 
 class ASTFinder:
-    KIND_MATCH = re.compile(r'[\W_]+')
+    KIND_MATCH = re.compile(r"[\W_]+")
 
     @staticmethod
-    def find_all(ast_node: ASTNode, function: Callable[[ASTNode], Iterator[ASTNode] | bool]) -> Stream[ASTNode]:
-        return Stream(ASTFinder.__find_all(ast_node, function))
+    def find_all(ast_node: ASTNode, function: Callable[[ASTNode], Iterator[ASTNode] | bool]) -> Sequence[ASTNode]:
+        return list(ASTFinder.__find_all(ast_node, function))
 
     @staticmethod
-    def find_kind(ast_node: ASTNode, kind: str | re.Pattern[str]) -> Stream[ASTNode]:
-        return Stream(ASTFinder.__matches_kind(ast_node, kind))
+    def find_kind(ast_node: ASTNode, kind: str | re.Pattern[str]) -> Sequence[ASTNode]:
+        return list(ASTFinder.__matches_kind(ast_node, kind))
 
     @staticmethod
-    def find(ast_node: ASTNode, kind: str | re.Pattern[str]) -> Stream[ASTNode]:
-        return ASTFinder.__matches_kind(ast_node, kind)
+    def find(ast_node: ASTNode, kind: str | re.Pattern[str]) -> Sequence[ASTNode]:
+        return list(ASTFinder.__matches_kind(ast_node, kind))
 
     @staticmethod
     def matches_kind(ast_node: Optional[ASTNode], kind: str | re.Pattern[str]) -> bool:
@@ -26,7 +27,7 @@ class ASTFinder:
         # get kind of the ast_node with only word characters
         if ast_node is None:
             return False
-        ast_kind = ASTFinder.KIND_MATCH.sub('', ast_node.kind).lower()
+        ast_kind = ASTFinder.KIND_MATCH.sub("", ast_node.kind).lower()
         pattern = kind if isinstance(kind, re.Pattern) else re.compile(kind, re.IGNORECASE)
         return pattern.fullmatch(ast_kind) is not None
 
@@ -43,8 +44,8 @@ class ASTFinder:
     @staticmethod
     def __matches_kind(ast_node: ASTNode, kind: str | re.Pattern[str]) -> Iterator[ASTNode]:
         pattern = kind if isinstance(kind, re.Pattern) else re.compile(kind, re.IGNORECASE)
-        node_kind = ast_node.kind if ast_node.kind else ''
-        ast_kind = ASTFinder.KIND_MATCH.sub('', node_kind).lower()
+        node_kind = ast_node.kind if ast_node.kind else ""
+        ast_kind = ASTFinder.KIND_MATCH.sub("", node_kind).lower()
 
         if pattern.fullmatch(ast_kind):
             yield ast_node

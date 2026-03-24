@@ -1,20 +1,15 @@
 from functools import cache
 from typing import Callable, Optional, Sequence
 
-from renaissance.common import Stream
-from .match_finder import MatchFinder, PatternMatch
-
 from renaissance.impl.clang.c_pattern_factory import CPPPatternFactory
-
 from .ast_finder import ASTFinder
-from .ast_processor import ASTProcessor
 from .ast_node import ASTNode
+from .ast_processor import ASTProcessor
+from .match_finder import MatchFinder, PatternMatch
 
 
 class ASTRefactorActions:
-    def __init__(
-        self, processor: ASTProcessor, pattern_factory: CPPPatternFactory
-    ) -> None:
+    def __init__(self, processor: ASTProcessor, pattern_factory: CPPPatternFactory) -> None:
         self.processor = processor
         self.pattern_factory = pattern_factory
         self.replaced: set[int] = set()
@@ -24,69 +19,60 @@ class ASTRefactorActions:
             if (kind and ASTFinder.matches_kind(n, kind)) and n.name == name:
                 yield n
 
-        self.processor.find_all(test).for_each(
-            lambda n: self.processor.replace(
-                n.text.replace(n.name, replacement, 1), n
-            )
-        )
+        (self.processor.replace(found.text.replace(found.name, replacement, 1), found)
+         for found in self.processor.find_all(test))
 
     def replace_name(
-        self,
-        name: str,
-        replacement: str,
-        kind: Optional[str] = None,
-        skip_kind: Optional[str] = None,
+            self,
+            name: str,
+            replacement: str,
+            kind: Optional[str] = None,
+            skip_kind: Optional[str] = None,
     ):
         matches_name: Callable[[Optional["ASTNode"]], bool] = (
             lambda n: (not kind or ASTFinder.matches_kind(n, kind))
                       and (not skip_kind or not ASTFinder.matches_kind(n, skip_kind))
-                      and n.name == name        # TODO: prevent get_name on None
+                      and n and n.name == name
         )
-        self.processor.find_all(matches_name).filter(
-            lambda n: not n.offset in self.replaced
-        ).action(lambda n: self.replaced.add(n.offset)).for_each(
-            lambda n: self.processor.replace(
-                n.text.replace(n.name, replacement, 1), n
-            )
-        )
+        found_nodes = self.processor.find_all(matches_name)
+        (self.replaced.add(found.offset) for found in found_nodes if found.offset not in self.replaced)
+        for n in found_nodes:
+            self.processor.replace(n.text.replace(n.name, replacement, 1), n)
 
     def replace_text(
-        self,
-        text: str,
-        replacement: str,
-        kind: Optional[str] = None,
-        skip_kind: Optional[str] = None,
+            self,
+            text: str,
+            replacement: str,
+            kind: Optional[str] = None,
+            skip_kind: Optional[str] = None,
     ):
         matches_text: Callable[[Optional["ASTNode"]], bool] = (
             lambda n: (not kind or ASTFinder.matches_kind(n, kind))
                       and (not skip_kind or not ASTFinder.matches_kind(n, skip_kind))
-                      and n.text == text      # TODO: prevent get_text on None
+                      and n.text == text  # TODO: prevent get_text on None
         )
-        self.processor.find_all(matches_text).filter(
-            lambda n: not n.offset in self.replaced
-        ).action(lambda n: self.replaced.add(n.offset)).for_each(
-            lambda n: self.processor.replace(replacement, n)
-        )
+
+        found_nodes = self.processor.find_all(matches_text)
+        [self.replaced.add(found.offset) for found in found_nodes if found.offset not in self.replaced]
+
+        [self.processor.replace(n.text.replace(n.name, replacement, 1), n) for n in found_nodes]
 
     def replace_declaration(self, declaration: str, replacement: str):
-        matches = self.find_declaration(declaration)
-        Stream(matches).for_each(lambda m: self.processor.replace(replacement, m))
+        for match in self.find_declaration(declaration):
+            self.processor.replace(replacement, match)
 
     def _replace_patterns(
-        self,
-        node: ASTNode,
-        replacement: str,
-        patterns: Sequence[Sequence[ASTNode]],
-        matches: Sequence[PatternMatch],
+            self,
+            node: ASTNode,
+            replacement: str,
+            patterns: Sequence[Sequence[ASTNode]],
+            matches: Sequence[PatternMatch],
     ):
         if not patterns:
             self.processor.replace(replacement, matches)
             return
-        MatchFinder.find_all([node], patterns[0]).for_each(
-            lambda m: self._replace_patterns(
-                m.nodes[0], replacement, patterns[1:], list(matches) + [m]
-            )
-        )
+        [self._replace_patterns(m.nodes[0], replacement, patterns[1:], list(matches) + [m])
+         for m in MatchFinder.find_all([node], patterns[0])]
 
     @cache
     def find_declaration(self, decl_pattern: str):
@@ -97,5 +83,4 @@ class ASTRefactorActions:
     def collect(self, pattern: str, pattern_kind: str):
         root = self.pattern_factory.create(pattern, pattern_kind)
 
-        return self.processor.find_match(root).to_list()
-
+        return self.processor.find_match(root)

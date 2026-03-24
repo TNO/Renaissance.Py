@@ -1,7 +1,9 @@
 import re
 from typing import Optional, Sequence
 
-from renaissance.common import Stream
+from more_itertools import first
+from more_itertools.more import last
+
 from renaissance.syntax_tree.ast_factory import ASTFactory
 from renaissance.syntax_tree.ast_finder import ASTFinder
 from renaissance.syntax_tree.ast_node import ASTNode
@@ -20,47 +22,43 @@ def derive_header_text(language: str, ref_node: ASTNode | None):
         #             c.kind == 'FUNCTION_DECL' and c.children[-1].kind == 'COMPOUND_STMT'))
 
         if ref_node:
-            matcher_set = {'STRUCT_DECL', 'VAR_DECL', 'TYPE_DEF', 'MACRO_DEFINITION', 'INCLUSION_DIRECTIVE'}
+            matcher_set = {
+                "STRUCT_DECL",
+                "VAR_DECL",
+                "TYPE_DEF",
+                "MACRO_DEFINITION",
+                "INCLUSION_DIRECTIVE",
+            }
             for c in ref_node.children:
                 if c.is_part_of_translation_unit() and c.kind in matcher_set:
-                    header += c.signature + '\n'
-        offset = (
-            Stream(ref_node.children)
-            .filter(lambda n: n.is_part_of_translation_unit())
-            .filter(lambda cls: not ASTFinder.matches_kind(c, "(?i)Inclusion_?Directive"))
-            .map(lambda n: n.offset)
-            .reduce(min)
-            .or_else(0)
-        )
+                    header += c.signature + "\n"
+        offset = min((n.offset for n in ref_node.children if n.is_part_of_translation_unit()
+                      and not ASTFinder.matches_kind(n, "(?i)Inclusion_?Directive")), default=0)
 
-        header = (
-            CPatternFactory.remove_indent(ref_node.content(0, offset))
-        )
+        header = CPatternFactory.remove_indent(ref_node.content(0, offset))
         header += (
-                Stream(ref_node.children)
-                .filter(lambda n: n.is_part_of_translation_unit())
-                .filter(lambda cls: ASTFinder.matches_kind(cls, "(?i)(Function|Var|Typedef)_?Decl|MACRO_?DEFINITION"))
-                .filter(lambda cls: ASTFinder.find_kind(cls, "(?i)Compound_?Stmt").count() == 0)
-                .map(lambda cls: cls.text + ";")
-                .collect(lambda n: "\n".join(n))
-                + "\n"
-        )
+            "\n".join( n.text+';' for n in ref_node.children
+            if n.is_part_of_translation_unit()
+            and ASTFinder.matches_kind(n, "(?i)(Function|Var|Typedef)_?Decl|MACRO_?DEFINITION")
+            and len(ASTFinder.find_kind(n, "(?i)Compound_?Stmt")) == 0))
+        header +="\n"
+
 
     return header, language
+
+
 class CPatternFactory:
     reserved_function_name = "__rejuvenation__reserved__function__name__"
     reserved_variable_name = "__rejuvenation__reserved__variable__name__"
 
     def __init__(
-            self,
-            factory: ASTFactory,
-            ref_node: Optional[ASTNode] = None,
-            language: str = "c",
+        self,
+        factory: ASTFactory,
+        ref_node: Optional[ASTNode] = None,
+        language: str = "c",
     ):
         self.factory = factory
         self.header, self.language = derive_header_text(language, ref_node)
-
-
 
     @staticmethod
     def remove_indent(text: str) -> str:
@@ -68,39 +66,30 @@ class CPatternFactory:
         indent = split[0] if split else 0
         return "\n".join([line[indent:] for line in text.splitlines()])
 
-    def create_expression(
-            self, text: str, extra_declarations=None
-    ) -> ASTNode:
+    def create_expression(self, text: str, extra_declarations=None) -> ASTNode:
         if extra_declarations is None:
             extra_declarations = []
         keywords = CPatternFactory._get_keywords_from_text(text)
-        keywords = [
-            k for k in keywords if not any(k in ed for ed in extra_declarations)
-        ]
+        keywords = [k for k in keywords if not any(k in ed for ed in extra_declarations)]
         full_text = (
-                self.header
-                + "\n".join(extra_declarations)
-                + "\n"
-                + "\n".join(CPatternFactory._to_declaration(keywords))
-                + f"\nvoid {CPatternFactory.reserved_function_name}() {{ int {CPatternFactory.reserved_variable_name} = ({text}); }}"
+            self.header
+            + "\n".join(extra_declarations)
+            + "\n"
+            + "\n".join(CPatternFactory._to_declaration(keywords))
+            + f"\nvoid {CPatternFactory.reserved_function_name}() {{ int {CPatternFactory.reserved_variable_name} = ({text}); }}"
         )
         root = self._create(full_text)
         # return the first expression found in the tree as a ASTNode
-        return (
-            ASTFinder.find_kind(root.children[-1], "(?i)PAREN_?EXPR")
-            .filter(ASTNode.is_part_of_translation_unit)
-            .find_last()
-            .get()
-            .children[0]
-        )
+        return last(n.children[0] for n in  ASTFinder.find_kind(root.children[-1], "(?i)PAREN_?EXPR") if n.is_part_of_translation_unit)
+
 
     def create_declarations(
-            self,
-            text: str,
-            types=None,
-            parameters=None,
-            extra_declarations=None,
-            declarations=None,
+        self,
+        text: str,
+        types=None,
+        parameters=None,
+        extra_declarations=None,
+        declarations=None,
     ):
         if declarations is None:
             declarations = []
@@ -115,21 +104,19 @@ class CPatternFactory:
             k
             for k in keywords
             if not any(k in ed for ed in extra_declarations)
-               and not any(k in ed for ed in parameters)
-               and not any(k in ed for ed in types)
-               and not any(k in ed for ed in declarations)
+            and not any(k in ed for ed in parameters)
+            and not any(k in ed for ed in types)
+            and not any(k in ed for ed in declarations)
         ]
-        return self._create_body(
-            text, types, [*parameters, *keywords], extra_declarations, "(?i).*DECL.*"
-        )
+        return self._create_body(text, types, [*parameters, *keywords], extra_declarations, "(?i).*DECL.*")
 
     def create_declaration(
-            self,
-            text: str,
-            types=None,
-            parameters=None,
-            extra_declarations=None,
-            declarations=None,
+        self,
+        text: str,
+        types=None,
+        parameters=None,
+        extra_declarations=None,
+        declarations=None,
     ) -> ASTNode:
         if declarations is None:
             declarations = []
@@ -139,18 +126,16 @@ class CPatternFactory:
             parameters = []
         if types is None:
             types = []
-        result = self.create_declarations(
-            text, types, parameters, extra_declarations, declarations
-        )
+        result = self.create_declarations(text, types, parameters, extra_declarations, declarations)
         assert len(result) > 0, "At least one declaration is expected"
         return result[0]
 
     def create_statements(
-            self,
-            text: str,
-            types=None,
-            extra_declarations=None,
-            kind: str = ".*",
+        self,
+        text: str,
+        types=None,
+        extra_declarations=None,
+        kind: str = ".*",
     ) -> Sequence[ASTNode]:
         # create a reference for all used variables excluding the specified types
         if extra_declarations is None:
@@ -164,7 +149,7 @@ class CPatternFactory:
         ]
         return self._create_body(text, types, parameters, extra_declarations, kind)
 
-    def create(self, text: str, kind: str|None = None) -> ASTNode:
+    def create(self, text: str, kind: str | None = None) -> ASTNode:
         """
         Creates an object using the factory from the provided text.
         The object is created by the factory using the provided text and the header of the provided reference node.
@@ -178,19 +163,17 @@ class CPatternFactory:
             object: The object created by the factory.
         """
         # print(self.header + text)
-        root = self.factory.create_from_text(
-            self.header + text, "test." + self.language
-        )
+        root = self.factory.create_from_text(self.header + text, "test." + self.language)
         if kind:
             return ASTFinder.find_kind(root.children[-1], kind).find_first().get()
         return root
 
     def create_statement(
-            self,
-            text: str,
-            types=None,
-            extra_declarations=None,
-            kind: str = ".*",
+        self,
+        text: str,
+        types=None,
+        extra_declarations=None,
+        kind: str = ".*",
     ) -> ASTNode:
         if extra_declarations is None:
             extra_declarations = []
@@ -201,36 +184,27 @@ class CPatternFactory:
         return statements[0]
 
     def _create_body(
-            self,
-            text: str,
-            types: Sequence[str],
-            parameters: Sequence[str],
-            extra_declarations: Sequence[str],
-            kind: str,
+        self,
+        text: str,
+        types: Sequence[str],
+        parameters: Sequence[str],
+        extra_declarations: Sequence[str],
+        kind: str,
     ) -> list[ASTNode]:
         full_text = (
-                self.header + "\n".join(CPatternFactory._to_typedef(types)) + "\n"
-                                                                              "\n".join(
-            CPatternFactory._to_declaration(parameters)) + "\n"
-                                                           "\n".join(extra_declarations) + "\n"
-                                                                                           "\nvoid " + CPatternFactory.reserved_function_name + "(){\n" + text + "\n}"
+            self.header + "\n".join(CPatternFactory._to_typedef(types)) + "\n"
+            "\n".join(CPatternFactory._to_declaration(parameters)) + "\n"
+            "\n".join(extra_declarations) + "\n"
+            "\nvoid " + CPatternFactory.reserved_function_name + "(){\n" + text + "\n}"
         )
         root = self._create(full_text)
 
         # from the children of the compound statement that contains the text, get for each child the first
         # node of the specified kind
 
-        return (
-            Stream(
-                ASTFinder.find_kind(root.children[-1], "(?i)COMPOUND_?STMT")
-                .find_first()
-                .get()
-                .children
-            )
-            .filter(ASTNode.is_part_of_translation_unit)
-            .map(lambda n: ASTFinder.find_kind(n, kind).find_first().get())
-            .to_list()
-        )
+        body = first(ASTFinder.find_kind(root.children[-1], "(?i)COMPOUND_?STMT")).children
+        return list(n for n in body if n.is_part_of_translation_unit and first(ASTFinder.find_kind(n, kind)))
+
 
     def _create(self, text: str) -> ASTNode:
         atu = self.factory.create_from_text(text, "test." + self.language)
@@ -242,11 +216,7 @@ class CPatternFactory:
     def _get_keywords_from_text(text: str) -> Sequence[str]:
         # regex to get keywords that start with one of two dollars followed by a \\w+
         pattern = re.compile(r"\${0,2}[a-zA-Z]\w*")
-        return list(
-            k
-            for k in set(re.findall(pattern, text))
-            if k not in CPPUtils.RESERVED_KEYWORDS
-        )
+        return list(k for k in set(re.findall(pattern, text)) if k not in CPPUtils.RESERVED_KEYWORDS)
 
     @staticmethod
     def _get_dollar_keywords_from_text(text: str) -> Sequence[str]:
@@ -260,15 +230,11 @@ class CPatternFactory:
         return list(set(re.findall(pattern, text)))
 
     @staticmethod
-    def _to_declaration(
-            keywords: Sequence[str], prefix: str = "int ", postfix: str = ";"
-    ) -> Sequence[str]:
+    def _to_declaration(keywords: Sequence[str], prefix: str = "int ", postfix: str = ";") -> Sequence[str]:
         return [prefix + keyword + postfix for keyword in keywords]
 
     @staticmethod
-    def _to_typedef(
-            keywords: Sequence[str], prefix: str = "typedef int ", postfix: str = ";"
-    ) -> Sequence[str]:
+    def _to_typedef(keywords: Sequence[str], prefix: str = "typedef int ", postfix: str = ";") -> Sequence[str]:
         return [prefix + keyword + postfix for keyword in keywords]
 
 
@@ -284,6 +250,7 @@ class CPPPatternFactory(CPatternFactory):
             args = class_and_args.group(2).split(",")
             return self._create_constructor_call(class_name, args)
         return None
+
     def _create_constructor_call(self, class_name: str, args=None):
         if args is None:
             args = []
@@ -309,12 +276,7 @@ class CPPPatternFactory(CPatternFactory):
         if SHOW_NODE:
             ASTShower.show_node(target_class)
         # search the call expr and the preceding type ref
-        call_expr = (
-            ASTFinder.find_kind(target_class, "CallExpr")
-            .peek(lambda n: ASTShower.show_node(n))
-            .find_last()
-            .get()
-        )
+        call_expr = ASTFinder.find_kind(target_class, "CallExpr").peek(lambda n: ASTShower.show_node(n)).find_last().get()
         # include the preceding typeref
         assert isinstance(call_expr, ASTNode), "No call expression found"
         type_ref = call_expr.preceding_sibling

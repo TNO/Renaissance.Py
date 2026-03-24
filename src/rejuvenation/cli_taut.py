@@ -24,21 +24,20 @@ def get_migrated_path(file_path):
 
     return new_path
 
+
 def list_matching_files(root: str | Path, recursive: bool = True) -> list[Path]:
     patterns = ["*_unittest.py", "*_test.py", "*_stubs.py"]
     root = Path(root)
     candidates = root.rglob("*.py") if recursive else root.glob("*.py")
-    return [
-        p for p in candidates
-        if any(fnmatch.fnmatch(p.name, pat) for pat in patterns)
-    ]
+    return [p for p in candidates if any(fnmatch.fnmatch(p.name, pat) for pat in patterns)]
+
 
 def refactor():
     # Create argument parser
-    parser = argparse.ArgumentParser(description='Run my_function from the command line')
+    parser = argparse.ArgumentParser(description="Run my_function from the command line")
 
     # Add arguments corresponding to your function parameters
-    parser.add_argument('path', help='file to migrate')
+    parser.add_argument("path", help="file to migrate")
 
     # Parse arguments
     args = parser.parse_args()
@@ -56,12 +55,13 @@ def refactor():
     for file_path in unittest_files:
         try:
             result = convert_taut_to_unittest(file_path, get_migrated_path(file_path))
-            #result = insert_doc(result, "01-22-2026")
-            with open(get_migrated_path(file_path), 'w') as f:
+            # result = insert_doc(result, "01-22-2026")
+            with open(get_migrated_path(file_path), "w") as f:
                 f.write(result)
                 # print(result)
         except FileNotFoundError:
             print(f"Error: File '{file_path}' not found.")
+
 
 if __name__ == "__main__":
     refactor()

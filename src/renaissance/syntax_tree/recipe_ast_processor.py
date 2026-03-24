@@ -10,9 +10,7 @@ TFunc = Callable[..., Any]
 
 def annotate_decorator(foreign_decorator: TFunc, name: str):
     def new_decorator(func: TFunc) -> TFunc:
-        r = foreign_decorator(
-            func
-        )  # apply foreignDecorator, like call to foreignDecorator(method) would have done
+        r = foreign_decorator(func)  # apply foreignDecorator, like call to foreignDecorator(method) would have done
         r.decorator = new_decorator  # keep track of decorator
         r.recipe_action = name
         return r
@@ -46,10 +44,7 @@ def final_action() -> TFunc:
 def recipe_step(order: int = 0, repeat: bool = False) -> TFunc:
     def recipe_step_decorator(func: TFunc) -> TFunc:
         @functools.wraps(func)
-        def recipe_step_wrapper(
-            step: int,
-            recipe: TFunc,
-            ast_processor: ASTProcessor):
+        def recipe_step_wrapper(step: int, recipe: TFunc, ast_processor: ASTProcessor):
             if step == order:
                 if repeat or ast_processor.repeat_step == 0:
                     result = func(recipe, ast_processor)
@@ -89,29 +84,25 @@ class RecipeASTProcessor:
         in_memory: bool = False,
         max_processes: int = 4,
     ):
-        self.__recipe:TFunc = recipe
-        self.__batch_processor = BatchASTProcessor(
-            in_memory=in_memory, max_processes=max_processes
-        )
+        self.__recipe: TFunc = recipe
+        self.__batch_processor = BatchASTProcessor(in_memory=in_memory, max_processes=max_processes)
         self.__iterableProvider = iterable_provider
         self.__file_filter = file_filter
 
     def run(self):
-        actions : list[TFunc] = []
-        results : list[Any] = []
-        for idx, recipe_step_method in enumerate(
-            get_methods_with_decorator(type(self.__recipe), recipe_step)
-        ):
+        actions: list[TFunc] = []
+        results: list[Any] = []
+        for idx, recipe_step_method in enumerate(get_methods_with_decorator(type(self.__recipe), recipe_step)):
             results.append(None)
 
-            def recipe_action(ast_processor : ASTProcessor):
+            def recipe_action(ast_processor: ASTProcessor):
                 result = recipe_step_method(step, self.__recipe, ast_processor)
                 if result:
                     results[idx] = result
 
             actions.append(recipe_action)
-        
-        after_step_actions : list[TFunc] = []
+
+        after_step_actions: list[TFunc] = []
         for after_step_method in get_methods_with_decorator(self.__recipe.__class__, after_step):
 
             def after_step_action():
@@ -123,9 +114,7 @@ class RecipeASTProcessor:
         while len(actions) > 0:
             for idx in range(len(results)):
                 results[idx] = None
-            self.__batch_processor.repeat(
-                self.__iterableProvider, actions, self.__file_filter
-            )
+            self.__batch_processor.repeat(self.__iterableProvider, actions, self.__file_filter)
             if all([result is None for result in results]):
                 break
             for after_step_action in after_step_actions:

@@ -7,15 +7,14 @@ from typing import Any, Optional, Sequence, override
 import clang.native
 from clang.cindex import TranslationUnit, Config, Index, TypeKind, CursorKind
 
-from renaissance.common import Stream
 from renaissance.impl import MATCH_ALL, MATCH_ONE
 from renaissance.syntax_tree import ASTNode, ASTReference
 
 EMPTY_DICT = {}
-EMPTY_STR = ''
+EMPTY_STR = ""
 EMPTY_LIST = []
 
-STMT_PARENTS = ['COMPOUND_STMT', 'TRANSLATION_UNIT']
+STMT_PARENTS = ["COMPOUND_STMT", "TRANSLATION_UNIT"]
 
 PRINT_ALL_NODES = False
 
@@ -40,20 +39,28 @@ class ClangTranslationUnit:
         # they are stored as id for lazy creation
         self._references: dict[str, list[Clangastreference]] = {}
         self._referenced_by: dict[str, list[Clangastreference]] = {}
-        self._nodes: dict[str, 'ClangASTNode'] = {}
+        self._nodes: dict[str, "ClangASTNode"] = {}
 
-    def lazy_create_references(self, node: 'ClangASTNode') -> None:
+    def lazy_create_references(self, node: "ClangASTNode") -> None:
         if self.references_initialized:
             return
         node.root.process(ReferenceHelper.create_references)
         self.references_initialized = True
 
     @staticmethod
-    def _collect_expansions(translation_unit: TranslationUnit) -> set[tuple[str, int, int]]:
+    def _collect_expansions(
+            translation_unit: TranslationUnit,
+    ) -> set[tuple[str, int, int]]:
         result: set[tuple[str, int, int]] = set()
         for child in translation_unit.cursor.get_children():
-            if child.kind.name == 'MACRO_INSTANTIATION':
-                result.add((child.extent.start.file, child.extent.start.offset, child.extent.end.offset))
+            if child.kind.name == "MACRO_INSTANTIATION":
+                result.add(
+                    (
+                        child.extent.start.file,
+                        child.extent.start.offset,
+                        child.extent.end.offset,
+                    )
+                )
         return result
 
 
@@ -67,11 +74,23 @@ class ClangASTNode(ASTNode):
 
     set_library_path()
     index = Index.create()
-    parse_args = ['-fparse-all-comments', '-ferror-limit=0', '-Xclang', '-detailed-preprocessing-record',
-                  '-fsyntax-only']
+    parse_args = [
+        "-fparse-all-comments",
+        "-ferror-limit=0",
+        "-Xclang",
+        "-detailed-preprocessing-record",
+        "-fsyntax-only",
+    ]
 
-    def __init__(self, node, translation_unit: ClangTranslationUnit, parent=None, start_offset: Optional[int] = None,
-                 length: Optional[int] = None, insert_kind: Optional[str] = None):
+    def __init__(
+            self,
+            node,
+            translation_unit: ClangTranslationUnit,
+            parent=None,
+            start_offset: Optional[int] = None,
+            length: Optional[int] = None,
+            insert_kind: Optional[str] = None,
+    ):
         super().__init__(self if parent is None else parent.root)
         self.node = node
         self._children = None
@@ -89,7 +108,7 @@ class ClangASTNode(ASTNode):
         self._offset = start_offset if start_offset is not None else self.__derive_start_offset()
         self._length = length if length is not None else self.__derive_length()
         self._kind = insert_kind if insert_kind is not None else self.__derive_kind()
-        self.indent = ''
+        self.indent = ""
         # TODO: TextUtils.get_indent(self.content, self._offset)
         # an fake child is introduced to handle the case where the type of a declaration is not found
         # for example in the case of a base type.
@@ -98,14 +117,20 @@ class ClangASTNode(ASTNode):
         if insert_kind is None and not self.node.location.is_in_system_header and self.node.kind.is_declaration() and self.node.type.kind != TypeKind.INVALID:  # type: ignore
             loc_offset: int = self.node.location.offset
             length = len(self.node.spelling.encode(sys.getdefaultencoding()))
-            insert_child = ClangASTNode(self.node, self.translation_unit, self, loc_offset, length, 'DECL_LOC')
+            insert_child = ClangASTNode(self.node, self.translation_unit, self, loc_offset, length, "DECL_LOC")
             insert_child._children = []
             self.__inserted_children.append(insert_child)
             if self.node.type.get_declaration().kind is CursorKind.NO_DECL_FOUND:  # type: ignore
                 my_type = self.node.type if self.node.result_type.kind == TypeKind.INVALID else self.node.result_type  # type: ignore
                 length_ref = len(my_type.spelling.encode(sys.getdefaultencoding()))
-                insert_child = ClangASTNode(self.node, self.translation_unit, self, self._offset, length_ref,
-                                            CursorKind.TYPE_REF.name)  # type: ignore
+                insert_child = ClangASTNode(
+                    self.node,
+                    self.translation_unit,
+                    self,
+                    self._offset,
+                    length_ref,
+                    CursorKind.TYPE_REF.name,
+                )  # type: ignore
                 insert_child._children = []
                 self.__inserted_children.append(insert_child)
 
@@ -113,26 +138,34 @@ class ClangASTNode(ASTNode):
         for n in self.__inserted_children:
             self._children.append(n)
         for n in self.node.get_children():
-            if not is_system_macro(n) and n.kind.name != 'MACRO_INSTANTIATION':
+            if not is_system_macro(n) and n.kind.name != "MACRO_INSTANTIATION":
                 self._children.append(ClangASTNode(ClangASTNode.remove_wrapper(n), self.translation_unit, self))
 
         self._properties = self._derive_properties()
-        if self.kind == 'DECL_REF_EXPR':
-            self._properties['name'] = self._name
+        if self.kind == "DECL_REF_EXPR":
+            self._properties["name"] = self._name
 
     @override
     @staticmethod
-    def load(file_path: Path, extra_args: Sequence[str], working_dir: Path) -> 'ClangASTNode':
+    def load(file_path: Path, extra_args: Sequence[str], working_dir: Path) -> "ClangASTNode":
         args = [*extra_args, *ClangASTNode.parse_args]
         translation_unit: TranslationUnit = ClangASTNode.index.parse(working_dir / file_path, args=args[3:])
         ClangASTNode.check_diagnostics(translation_unit, file_path.name)
-        root_node = ClangASTNode(translation_unit.cursor,
-                                 ClangTranslationUnit(translation_unit, file_name=str(file_path)), None)
+        root_node = ClangASTNode(
+            translation_unit.cursor,
+            ClangTranslationUnit(translation_unit, file_name=str(file_path)),
+            None,
+        )
         return root_node
 
     @override
     @staticmethod
-    def load_from_text(text: str, file_name: str, extra_args: Sequence[str]=None, working_dir: Path=None) -> "ClangASTNode":
+    def load_from_text(
+            text: str,
+            file_name: str,
+            extra_args: Sequence[str] = None,
+            working_dir: Path = None,
+    ) -> "ClangASTNode":
         # Convert file_content to bytes
         file_content_bytes = text.encode(sys.getfilesystemencoding())
         # add to cache to avoid reading the file again
@@ -142,8 +175,11 @@ class ClangASTNode(ASTNode):
                                                                      args=args)
         ClangASTNode.check_diagnostics(translation_unit, file_name)
         try:
-            root_node = ClangASTNode(translation_unit.cursor,
-                                     ClangTranslationUnit(translation_unit, file_name=str(file_name)), None)
+            root_node = ClangASTNode(
+                translation_unit.cursor,
+                ClangTranslationUnit(translation_unit, file_name=str(file_name)),
+                None,
+            )
         except Exception as e:
             print(e)
             return None
@@ -153,14 +189,14 @@ class ClangASTNode(ASTNode):
     @staticmethod
     def check_diagnostics(translation_unit: TranslationUnit, file_name: str) -> None:
         has_error = False
-        errors = ''
+        errors = ""
         for d in translation_unit.diagnostics:
             if d.severity >= 3:
                 has_error = True
-                errors += f'{d.severity}: {d.spelling} at {d.location}\n'
-            print(f'{d.severity}: {d.spelling} at {d.location}')
+                errors += f"{d.severity}: {d.spelling} at {d.location}\n"
+            print(f"{d.severity}: {d.spelling} at {d.location}")
         if has_error:
-            raise Exception(f'Error parsing: {file_name} \n+ errors: {errors}')
+            raise Exception(f"Error parsing: {file_name} \n+ errors: {errors}")
 
     def _derive_name(self) -> str:
         try:
@@ -188,40 +224,45 @@ class ClangASTNode(ASTNode):
     def extended_end_offset(self) -> int:
         try:
             end_offset = self._offset + self._length
-            if (not self._is_statement_or_declaration()) and (self.parent and self.parent.kind in STMT_PARENTS) and self.kind not in ['MACRO_DEFINITION']:
+            if (
+                    (not self._is_statement_or_declaration())
+                    and (self.parent and self.parent.kind in STMT_PARENTS)
+                    and self.kind not in ["MACRO_DEFINITION"]
+            ):
                 content = self.root.binary_file_content()
-                while end_offset < len(content) and not content[end_offset - 1] in b';':
+                while end_offset < len(content) and not content[end_offset - 1] in b";":
                     end_offset += 1
             return end_offset
         except:
             return 0
 
     def _is_statement_or_declaration(self):
-        return re.match('.*(_STMT|_DECL|CXX_METHOD)', self.kind)
+        return re.match(".*(_STMT|_DECL|CXX_METHOD)", self.kind)
 
     @override
     def matches_kind(self, node: ASTNode) -> bool:
-        return self._kind == node.kind or \
-            (self._kind.endswith('_LITERAL') and node.kind == 'DECL_REF_EXPR') or \
-            (self._kind == 'DECL_REF_EXPR' and node.kind.endswith('_LITERAL')) \
- \
-    @cache
+        return (
+                self._kind == node.kind
+                or (self._kind.endswith("_LITERAL") and node.kind == "DECL_REF_EXPR")
+                or (self._kind == "DECL_REF_EXPR" and node.kind.endswith("_LITERAL")) @ cache
+        )
+
     def _derive_properties(self) -> dict[str, int | str]:
         result = {}
         offsets = (self.filename, self.offset, self.end_offset)
         if offsets in self.translation_unit.macro_expansions:
-            result['macro_expansion'] = self.text
+            result["macro_expansion"] = self.text
 
-        if self.kind == 'BINARY_OPERATOR':
+        if self.kind == "BINARY_OPERATOR":
             # TODO remove below code after clang release that supports the getOpCode() statement
             children = self.children
             start_offset = children[0].offset + children[0].length
             end_offset = children[1].offset
             operator = self.content(start_offset, end_offset)
-            result['operator'] = operator.strip()
+            result["operator"] = operator.strip()
             # next statement works in C++ but not in Python (yet) will be released later
             # result['operator'] =  self.node.getOpCode()
-        elif self.kind == 'UNARY_OPERATOR':
+        elif self.kind == "UNARY_OPERATOR":
             # TODO remove below code after clang release that supports the getOpCode() statement
             child = self.children[0]
             # list all attributes of self.node excluding the once starting with _
@@ -236,17 +277,20 @@ class ClangASTNode(ASTNode):
                 prefix_operator = False
 
             operator = self.content(start_offset, end_offset)
-            result['operator'] = operator.strip()
-            result['prefixOperator'] = prefix_operator
+            result["operator"] = operator.strip()
+            result["prefixOperator"] = prefix_operator
             # next statement works in C++ but not in Python (yet) will be released later
             # result['operator'] =  self.node.getOpCode()
-        elif self.kind.endswith('_LITERAL'):
-            self._add_tokens(result, 'LITERAL')
-        elif self.kind == 'DECL_REF_EXPR':
-            self._add_tokens(result, 'LITERAL')
+        elif self.kind.endswith("_LITERAL"):
+            self._add_tokens(result, "LITERAL")
+        elif self.kind == "DECL_REF_EXPR":
+            self._add_tokens(result, "LITERAL")
 
-        is_all = {attr[len('is_'):]: True for attr in dir(self.node) if
-                  attr.startswith('is_') and callable(getattr(self.node, attr) and getattr(self.node, attr)() == True)}
+        is_all = {
+            attr[len("is_"):]: True
+            for attr in dir(self.node)
+            if attr.startswith("is_") and callable(getattr(self.node, attr) and getattr(self.node, attr)() == True)
+        }
         result.update(is_all)
         return result
 
@@ -268,9 +312,8 @@ class ClangASTNode(ASTNode):
             definition = self._get_function_definition()
             if definition:
                 ref_by = self.translation_unit._referenced_by.get(definition.node.hash, EMPTY_LIST)
-        return Stream(ref_by) \
-            .map(
-            lambda ref: ASTReference(self.translation_unit._nodes[ref.node_id], ref.ref_kind, ref.properties)).to_list()
+        return list(ASTReference(self.translation_unit._nodes[ref.node_id], ref.ref_kind, ref.properties, )
+                for ref in ref_by)
 
     def _get_function_definition(self):
         if self.node.type.kind == TypeKind.FUNCTIONPROTO:  # type: ignore
@@ -281,10 +324,14 @@ class ClangASTNode(ASTNode):
                 return any(c.kind == CursorKind.COMPOUND_STMT for c in node.node.get_children())  # type: ignore
 
             def is_match(node):
-                if node._kind != self._kind: return False
-                if node.node.type.kind != TypeKind.FUNCTIONPROTO: return False  # type: ignore
-                if node.node.semantic_parent.hash != semantic_parent: return False
-                if node.node.displayname != signature: return False
+                if node._kind != self._kind:
+                    return False
+                if node.node.type.kind != TypeKind.FUNCTIONPROTO:
+                    return False  # type: ignore
+                if node.node.semantic_parent.hash != semantic_parent:
+                    return False
+                if node.node.displayname != signature:
+                    return False
                 return has_body(node)
 
             if has_body(self):
@@ -298,21 +345,20 @@ class ClangASTNode(ASTNode):
     @property
     def references(self) -> Sequence[ASTReference]:
         self.translation_unit.lazy_create_references(self)
-        return Stream(self.translation_unit._references.get(self.node.hash, EMPTY_LIST)) \
-            .map(
-            lambda ref: ASTReference(self.translation_unit._nodes[ref.node_id], ref.ref_kind, ref.properties)).to_list()
+        return list(ASTReference(self.translation_unit._nodes[ref.node_id], ref.ref_kind, ref.properties, )
+                for ref in self.translation_unit._references.get(self.node.hash, EMPTY_LIST))
 
     def _add_tokens(self, result: dict[str, str], *token_kind):
         for token in self.node.get_tokens():
             # find all attr of token that are of type str or int
-            kind = str(token.kind).split('.')[-1]
+            kind = str(token.kind).split(".")[-1]
             if kind in token_kind:
                 result[kind] = token.spelling
 
     def __derive_start_offset(self) -> int:
         try:
-            if self.node.kind.name == 'MACRO_DEFINITION':
-                    return self.node.extent.start.offset-8
+            if self.node.kind.name == "MACRO_DEFINITION":
+                return self.node.extent.start.offset - 8
 
             return self.node.extent.start.offset
 
@@ -321,9 +367,9 @@ class ClangASTNode(ASTNode):
 
     def __derive_length(self) -> int:
         try:
-            if self.node.kind.name in ['VAR_DECL', 'STRUCT_DECL']:
-                end_offset = self.node.extent.end.offset+1
-            elif self.node.kind.name in ['MACRO_DEFINITION']:
+            if self.node.kind.name in ["VAR_DECL", "STRUCT_DECL"]:
+                end_offset = self.node.extent.end.offset + 1
+            elif self.node.kind.name in ["MACRO_DEFINITION"]:
                 end_offset = self.node.extent.end.offset
             else:
                 end_offset = self.node.extent.end.offset
@@ -333,12 +379,12 @@ class ClangASTNode(ASTNode):
 
     def __derive_kind(self) -> str:
         try:
-            if self.node.kind.name == 'MACRO_DEFINITION':
+            if self.node.kind.name == "MACRO_DEFINITION":
                 return str(self.node.kind.name)
-            elif self.node.kind.name in ['UNEXPOSED_EXPR', 'VAR_DECL', 'DECL_REF_EXPR']:
-                if self.node.displayname.startswith('$$') and ' ' not in self.node.displayname:
+            elif self.node.kind.name in ["UNEXPOSED_EXPR", "VAR_DECL", "DECL_REF_EXPR"]:
+                if self.node.displayname.startswith("$$") and " " not in self.node.displayname:
                     return MATCH_ALL
-                elif self.node.displayname.startswith('$') and ' ' not in self.node.displayname:
+                elif self.node.displayname.startswith("$") and " " not in self.node.displayname:
                     return MATCH_ONE
             return str(self.node.kind.name)
         except Exception:
@@ -361,7 +407,7 @@ class ClangASTNode(ASTNode):
             print(vars(node))
             print(dir(node))
             print(node.__dict__)
-            node.__dict__['id']
+            node.__dict__["id"]
             return True
         except:
             return False
@@ -369,7 +415,7 @@ class ClangASTNode(ASTNode):
     @staticmethod
     @cache
     def __is_property(key, value):
-        return callable(value) and any(key.startswith(tag) for tag in ['is_', 'get'])
+        return callable(value) and any(key.startswith(tag) for tag in ["is_", "get"])
 
     @staticmethod
     def _is_wrapped(cursor):
@@ -379,42 +425,51 @@ class ClangASTNode(ASTNode):
     def is_implicit(self):
         return self.is_part_of_translation_unit()
 
-SYSTEM_MACROS= {'linux',
-     'unix',
-     '_LP64',
-     '_WIN32',
-     '_WIN64',
-     '_ISO_VOLATILE',
-     '_INTEGRAL_MAX_BITS'}
+
+SYSTEM_MACROS = {
+    "linux",
+    "unix",
+    "_LP64",
+    "_WIN32",
+    "_WIN64",
+    "_ISO_VOLATILE",
+    "_INTEGRAL_MAX_BITS",
+}
+
+
 def is_system_macro(n):
-    return (n.kind.name == 'MACRO_DEFINITION'
-        and (n.displayname.startswith('__')
-          or n.displayname.startswith('_MS')
-          or n.displayname.startswith('_M_')
-          or n.displayname in SYSTEM_MACROS ))
+    return n.kind.name == "MACRO_DEFINITION" and (
+            n.displayname.startswith("__")
+            or n.displayname.startswith("_MS")
+            or n.displayname.startswith("_M_")
+            or n.displayname in SYSTEM_MACROS
+    )
 
 
-class ReferenceHelper():
+class ReferenceHelper:
     @staticmethod
     def create_references(ast_node: ClangASTNode) -> None:
-        assert isinstance(ast_node, ClangASTNode), f'Expected ClangASTNode but got {type(ast_node)}'
+        assert isinstance(ast_node, ClangASTNode), f"Expected ClangASTNode but got {type(ast_node)}"
         references = []
         node_id: str = ast_node.node.hash
         ast_node.translation_unit._references[node_id] = references
-        ref_fields = ['referenced']  # , 'type.get_declaration()']
+        ref_fields = ["referenced"]  # , 'type.get_declaration()']
         for field in ref_fields:
             try:
-                element = eval('ast_node.node.' + field)
-                if element.kind.name == 'NO_DECL_FOUND':
+                element = eval("ast_node.node." + field)
+                if element.kind.name == "NO_DECL_FOUND":
                     continue
                 ref_id = element.hash
                 ref_kind = field.split(".")[0]
-                properties = {k: p for k, p in element.__dict__.items() if not k.startswith('_') and k != 'hash'}
+                properties = {k: p for k, p in element.__dict__.items() if not k.startswith("_") and k != "hash"}
                 if node_id == ref_id:
                     return
                 reference = Clangastreference(ref_id, ref_kind, properties)
-                referenced_by = Clangastreference(node_id, ref_kind,
-                                                  {k: p for k, p in ast_node.node.__dict__.items() if k != 'hash'})
+                referenced_by = Clangastreference(
+                    node_id,
+                    ref_kind,
+                    {k: p for k, p in ast_node.node.__dict__.items() if k != "hash"},
+                )
                 try:
                     ast_node.translation_unit._referenced_by[ref_id].append(referenced_by)
                 except:
@@ -422,4 +477,3 @@ class ReferenceHelper():
                 references.append(reference)
             except:
                 pass
-

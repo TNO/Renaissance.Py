@@ -28,9 +28,7 @@ class TestMatchers:
             "try { risky_operation(); } catch (Exception e) { handle_error(e); }",
             adapter,
         )
-        self.class_node = make_pattern(
-            "class MyClass { method(self) { pass; } }", adapter
-        )
+        self.class_node = make_pattern("class MyClass { method(self) { pass; } }", adapter)
 
     def test_if_pattern_match(self):
         adapter = TreeSitterAdapter(tscpp)
@@ -62,12 +60,12 @@ class TestMatchers:
         assert_that(is_match(self.class_node, pattern))
 
     def test_node_type_match(self):
-        matches = ASTFinder.find_kind(self.if_node, "call_?expression").to_list()
+        matches = ASTFinder.find_kind(self.if_node, "call_?expression")
         assert_that(matches, has_length(1))
 
     @pytest.mark.skip("I expect 'call_expression' to work, or a defined way to get kind")
     def test_node_type_match_exact_type(self):
-        matches = ASTFinder.find_kind(self.if_node, "call_expression").to_list()
+        matches = ASTFinder.find_kind(self.if_node, "call_expression")
         assert_that(matches, has_length(1))
 
 

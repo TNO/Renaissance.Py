@@ -10,16 +10,16 @@ from typing import Any, Callable, Sequence, Self
 from renaissance.utils.node_util import preceding_sibling, next_sibling
 from renaissance.utils.text_utils import TextUtils
 
+
 # enum with ABORT, CONTINUE and SKIP
 class VisitorResult(Enum):
     ABORT = 0
     CONTINUE = 1
     SKIP = 2
 
+
 class ASTReference:
-    def __init__(
-            self, ast_node: ASTNode, ref_kind: str, properties: dict[str, Any]
-    ) -> None:
+    def __init__(self, ast_node: ASTNode, ref_kind: str, properties: dict[str, Any]) -> None:
         self._node = ast_node
         self._ref_kind = ref_kind
         self._properties = properties
@@ -57,13 +57,13 @@ class ASTNode(ABC):
         self._filename = None
         self.root: Self = root
         self._properties = {}
-        self._name = ''
+        self._name = ""
         self.node = None
-        self.indent = ''
+        self.indent = ""
 
     def __repr__(self):
         raw_lines = self.signature.splitlines()
-        properties_text = '' if not self.show_props else self.properties
+        properties_text = "" if not self.show_props else self.properties
         prefix = " " if len(raw_lines) < 2 else f"\n    {self.indent}"
         formatted_lines = [f"{prefix}|{line}|" for line in raw_lines]
         return f"{self.indent}({self.kind}, {self.name}, {self.filename}[{self.offset}:{self.offset + self.length}]){properties_text}:{''.join(formatted_lines)}\n"
@@ -84,14 +84,11 @@ class ASTNode(ABC):
 
     @property
     def text(self) -> str:
-        return TextUtils.shift_left(
-            self.signature, len(self.indent), start_line=1
-        )
+        return TextUtils.shift_left(self.signature, len(self.indent), start_line=1)
 
     def content(self, start: int, end: int) -> str:
         content = self.root.binary_file_content()
         return str(content[start:end], sys.getfilesystemencoding())
-
 
     def binary_file_content(self, file_path: str | None = None) -> bytes:
         if not file_path:
@@ -153,16 +150,12 @@ class ASTNode(ABC):
 
     @staticmethod
     @abstractmethod
-    def load(
-            file_path: Path, extra_args: Sequence[str], working_dir: Path
-    ) -> Self:
+    def load(file_path: Path, extra_args: Sequence[str], working_dir: Path) -> Self:
         pass
 
     @staticmethod
     @abstractmethod
-    def load_from_text(
-            text: str, file_name: str, extra_args: list[str], working_dir: Path
-    ) -> Self:
+    def load_from_text(text: str, file_name: str, extra_args: list[str], working_dir: Path) -> Self:
         pass
 
     @property

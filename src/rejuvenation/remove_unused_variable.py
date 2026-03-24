@@ -1,7 +1,16 @@
 # This script demonstrates the use of the syntax_tree library to parse and rewrite C code.
 # It specifically showcases the replacement of if-else statements with ternary operators.
+from more_itertools import flatten
+
 from renaissance.refactoring import CleanupRefactoring
-from renaissance.syntax_tree import ASTFactory, ASTFinder, ASTRewriter, ASTShower, ASTProcessor, ASTNode
+from renaissance.syntax_tree import (
+    ASTFactory,
+    ASTFinder,
+    ASTRewriter,
+    ASTShower,
+    ASTProcessor,
+    ASTNode,
+)
 from renaissance.impl.clang import ClangASTNode
 from renaissance.impl.clang_json import ClangJsonASTNode
 
@@ -66,13 +75,11 @@ def remove_unused_variable_low_level(node_type: type[ASTNode]):
 
     ASTShower.show_node(atu)
     # search matches and replace them
-    ASTFinder.find_kind(atu, "(?i)Compound?Stmt").flat_map(
-        lambda func: ASTFinder.find_kind(func, "(?i)Var_?Decl")
-    ).filter(lambda node: len(node.referenced_by) == 0).map(
-        lambda node: node.parent
-    ).for_each(
-        lambda node: rewriter.remove(node, True, True)
-    )
+    funcs = flatten( ASTFinder.find_kind(func, "(?i)Var_?Decl")
+        for func in (ASTFinder.find_kind(atu, "(?i)Compound?Stmt")))
+    [rewriter.remove(node.parent, True, True)
+      for node in funcs if len(node.referenced_by) == 0]
+
 
     # print the rewritten code
     print(f"Low level results using {node_type.__name__}:")

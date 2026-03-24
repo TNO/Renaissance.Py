@@ -87,7 +87,10 @@ def test_commit_writes_and_rebuilds_when_changed():
     subject.factory.create_from_text.return_value = new_atu
 
     with patch("builtins.open", mock_open()):
-        with patch("renaissance.refactoring.unit2pytest.ASTRewriter", return_value="next-rewriter"):
+        with patch(
+            "renaissance.refactoring.unit2pytest.ASTRewriter",
+            return_value="next-rewriter",
+        ):
             subject.commit()
 
     subject.factory.create_from_text.assert_called_once_with("updated", subject.file)
@@ -114,7 +117,10 @@ def test_convert_test_class_updates_only_testcase_bases(mocker):
         {"$klass": ["OtherClass"], "$test_class": [_sig("BaseClass")]},
         [SimpleNamespace(signature="class OtherClass(BaseClass):")],
     )
-    mocker.patch("renaissance.refactoring.unit2pytest.match_pattern", return_value=[match_a, match_b])
+    mocker.patch(
+        "renaissance.refactoring.unit2pytest.match_pattern",
+        return_value=[match_a, match_b],
+    )
 
     subject.convert_test_class()
 
@@ -140,7 +146,10 @@ def test_convert_test_setup_adds_pytest_fixture_decorator(mocker):
     subject = _subject()
     subject.pattern_factory.create_statements.return_value = "pattern"
     node = SimpleNamespace(signature="def setUp(self):\n    pass")
-    mocker.patch("renaissance.refactoring.unit2pytest.match_pattern", return_value=[_match({}, [node])])
+    mocker.patch(
+        "renaissance.refactoring.unit2pytest.match_pattern",
+        return_value=[_match({}, [node])],
+    )
 
     subject.convert_test_setup()
 
@@ -208,10 +217,14 @@ def test_convert_parameterized_test_handles_vararg_and_indented_signature(mocker
     subject.pattern_factory.create_statements.return_value = "pattern"
     arg_self = SimpleNamespace(node=SimpleNamespace(arg="self"))
     arg_factory = SimpleNamespace(node=SimpleNamespace(arg="factory"))
-    fun = SimpleNamespace(
-        signature="    @parameterized.expand(x)\n@unittest.skip('n')\n    def t(self, factory, *args):\n        pass"
+    fun = SimpleNamespace(signature="    @parameterized.expand(x)\n@unittest.skip('n')\n    def t(self, factory, *args):\n        pass")
+    m = _match(
+        {
+            "$$args": [arg_self, arg_factory],
+            "$$varg": [SimpleNamespace(signature="args")],
+        },
+        [fun],
     )
-    m = _match({"$$args": [arg_self, arg_factory], "$$varg": [SimpleNamespace(signature="args")]}, [fun])
     mocker.patch("renaissance.refactoring.unit2pytest.match_pattern", return_value=[m])
 
     subject.convert_parameterized_test()
@@ -247,21 +260,24 @@ def test_remove_print_removes_print_node_when_function_has_other_statements(mock
 
 
 def test_convert_plain_assert_same_length_rewrites_to_has_length(mocker):
-    code = textwrap.dedent('''
+    code = textwrap.dedent("""
     def test_asert():
         results = ['1']
         count: int = len(results)
         assert 1 == count, "count = " + str(count)
-    ''')
-    mocker.patch("renaissance.syntax_tree.ast_factory.ASTFactory.create", return_value=PythonASTNode.load_from_text(code))
+    """)
+    mocker.patch(
+        "renaissance.syntax_tree.ast_factory.ASTFactory.create",
+        return_value=PythonASTNode.load_from_text(code),
+    )
 
-    expected = textwrap.dedent('''
+    expected = textwrap.dedent("""
     def test_asert():
         results = ['1']
         assert_that(results, has_length(1), f"length of results = {len(results)}")
-    ''')
+    """)
 
-    subject = Unit2Pytest('file.py')
+    subject = Unit2Pytest("file.py")
     subject.convert_plain_assert_same_length()
     assert_that(subject.rewriter.apply_to_string(), is_(expected))
 
@@ -362,7 +378,7 @@ def test_convert_file_to_test_class_uses_filename_convention():
 
 
 def test_match_pattern_for_parameterized_finds_one_match():
-    code = textwrap.dedent('''
+    code = textwrap.dedent("""
     from parameterized import parameterized
 
     class TestASTReference:
@@ -370,13 +386,10 @@ def test_match_pattern_for_parameterized_finds_one_match():
         @parameterized.expand(Factories.extend())
         def test_definition_declaration_references(self, _, factory, code, *args):
             pass
-    ''')
+    """)
     factory = ASTFactory(PythonASTNode, [])
     pattern_factory = PythonPatternFactory(factory)
     atu = PythonASTNode.load_from_text(code)
-    unittest = pattern_factory.create_statements(
-        '@parameterized.expand($$parameters)\ndef $fun($$args, *$$vargs):\n    $$stmts')
+    unittest = pattern_factory.create_statements("@parameterized.expand($$parameters)\ndef $fun($$args, *$$vargs):\n    $$stmts")
     found = list(match_pattern(atu.children, unittest))
     assert_that(found, has_length(1))
-
-

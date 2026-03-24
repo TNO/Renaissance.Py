@@ -7,17 +7,20 @@ from renaissance.impl.python import PythonASTNode
 from renaissance.refactoring.unit2pytest import Unit2Pytest
 from renaissance.syntax_tree import ASTFactory
 
+
 class Ast:
     def __init__(self):
         self.file = ""
-        self.atu =None
+        self.atu = None
         self.signature = None
+
+
 @pytest.fixture
 def context():
     return Ast
 
 
-@scenario('../convert-unit-to-pytest.feature', 'convert unittest to pytest')
+@scenario("../convert-unit-to-pytest.feature", "convert unittest to pytest")
 def test_convert_unit_to_pytest():
     pass
 
@@ -39,14 +42,17 @@ def step_given_contains(context, statement):
 @given("an AST extracted from that source file without errors")
 @then("AST extracted from that conversion should without errors")
 def step_given_ast_no_errors(context):
-    assert_that(calling(context.atu.translation_unit.check_diagnostics), is_not(raises(Exception)))
+    assert_that(
+        calling(context.atu.translation_unit.check_diagnostics),
+        is_not(raises(Exception)),
+    )
+
 
 @when("I convert it to pytest")
 def step_when_convert(context):
     converter = Unit2Pytest(context.file)
     converter.convert_pytest()
     context.atu = context.factory.create(context.file)
-
 
 
 @then(parsers.parse("it should not contain '{statement}'"))
