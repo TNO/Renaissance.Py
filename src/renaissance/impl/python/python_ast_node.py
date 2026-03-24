@@ -314,7 +314,7 @@ class PythonASTNode(ASTNode):
 
     @override
     @staticmethod
-    def load(file_path: Path, extra_args: Sequence[str], working_dir: Path) -> "PythonASTNode":
+    def load(file_path: Path, extra_args: Sequence[str] =None, working_dir: Path=Path('.')) -> "PythonASTNode":
         with open(working_dir / file_path, "r") as file:
             content = file.read()
             return PythonASTNode.load_from_text(content, str(file_path), extra_args, working_dir)

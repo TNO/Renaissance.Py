@@ -227,8 +227,9 @@ def match_pattern(src_nodes: Sequence[AstProtocol], patterns: Sequence[AstProtoc
 
     return found_statements
 
+
 def find_all(src_nodes: Sequence[AstProtocol], *patterns: Sequence[AstProtocol], recursive: bool = True) -> Sequence[PatternMatch]:
-    return flatten(MatchFinder.match_pattern(src_nodes, pattern, recursive) for pattern in patterns)
+    return list(flatten(MatchFinder.match_pattern(src_nodes, pattern, recursive) for pattern in patterns))
 
 
 class MatchFinder:

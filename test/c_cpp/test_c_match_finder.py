@@ -52,8 +52,9 @@ class TestCMatchFinder:
     def do_test(factory: ASTFactory, cpp_code, patterns: list[ASTNode], recursive: bool):
         atu = factory.create_from_text(cpp_code, "test.c")
         # find all if and while statements
-        matches =  [match for match in match_pattern(atu.children, patterns, recursive=recursive)
-                   if match.nodes[0].is_part_of_translation_unit()]
+        matches = [
+            match for match in match_pattern(atu.children, patterns, recursive=recursive) if match.nodes[0].is_part_of_translation_unit()
+        ]
 
         debug_mismatch(True, atu, patterns, matches)
         return matches
@@ -76,8 +77,7 @@ class TestExpressions(TestCMatchFinder):
 
         show_node(atu, "CPP code")
         # find all if and while statements
-        matches = [match for match in match_pattern(atu.children, [expr_node])
-            if match.nodes[0].is_part_of_translation_unit()]
+        matches = [match for match in match_pattern(atu.children, [expr_node]) if match.nodes[0].is_part_of_translation_unit()]
         assert_that(matches, has_length(2))
 
     @pytest.mark.parametrize(

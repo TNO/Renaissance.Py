@@ -122,9 +122,7 @@ def refactor_with_nested_compositions(args):
         for match in find_all(atu.children, pattern1, pattern2):
             refactor(match)
 
-
-
-             # print the rewritten code
+            # print the rewritten code
         result = rewriter.apply_to_string()
         if rewriter.has_changed():
             atu = factory.create_from_text(result, "example.c")

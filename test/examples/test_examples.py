@@ -116,7 +116,6 @@ class TestExamplesDifferentStyles:
             )
         ),
     )
-
     def test(
         self,
         _,
@@ -128,8 +127,6 @@ class TestExamplesDifferentStyles:
         result, expected = method(factory, pattern_factory)
 
         assert_that(expected, is_(result))
-
-
 
     def test_example_add_comment_and_commit(self):
         factory = ASTFactory(ClangASTNode)

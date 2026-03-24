@@ -1,11 +1,12 @@
 import os
 import textwrap
-from typing import Any
+from typing import Sequence
 
 from renaissance.impl.python import PythonASTNode, PythonPatternFactory
-from renaissance.syntax_tree import ASTRewriter, ASTFactory, ASTFinder, PatternMatch
-from renaissance.syntax_tree.match_finder import match_pattern
-from renaissance.utils.text_utils import TextUtils
+from renaissance.impl.python.python_ast_util import to_str, convert_function
+from renaissance.syntax_tree import ASTRewriter, ASTFactory, ASTFinder
+from renaissance.syntax_tree.match_finder import match_pattern, AstProtocol
+from renaissance.utils.ast_utils import ASTUtils
 
 
 class Unit2Pytest:
@@ -14,14 +15,9 @@ class Unit2Pytest:
         self.factory = ASTFactory(PythonASTNode, [])
         self.pattern_factory = PythonPatternFactory(self.factory)
         self.atu = self.factory.create(file)
-        self.stmts = self.atu.children
+        self.stmts:Sequence[AstProtocol] = self.atu.children
         self.rewriter = ASTRewriter(self.atu)
 
-    def raw(self, nodes):
-        res = ""
-        for node in nodes:
-            res += "\n\n    " + node.text
-        return res + "\n    "
 
     def convert_pytest(self):
         print(f"refactoring {self.file}")
@@ -41,7 +37,6 @@ class Unit2Pytest:
             "import pytest\nfrom hamcrest import *",
         )
         self.replace("from unittest import TestCase", "import pytest\nfrom hamcrest import *")
-        self.commit()
 
         # 2: class level changes
         self.convert_parameterized_test()
@@ -125,15 +120,12 @@ class Unit2Pytest:
 
     def commit(self) -> None:
         if self.rewriter.has_changed():
-            with open(self.file, "w") as f:
-                f.write(self.rewriter.apply_to_string())
-            self.atu = self.factory.create_from_text(self.rewriter.apply_to_string(), self.file)
+            self.atu, self.rewriter = ASTUtils.commit(self.rewriter, self.factory)
             self.stmts = self.atu.children
-            self.rewriter = ASTRewriter(self.atu)
 
     def convert_test_class(self):
         test_main = self.pattern_factory.create_statements("class $klass($test_class):\n    $$test_cases\n")
-        for match in match_pattern(self.atu.children, test_main):
+        for match in match_pattern(self.stmts, test_main):
             klass = match.expansions["$klass"][0]
             test_class = match.expansions["$test_class"][0].signature
             if test_class.endswith("TestCase"):
@@ -170,17 +162,12 @@ class Unit2Pytest:
         for match in match_pattern(self.stmts, pattern):
             replacement = repl
             for exp in match.expansions:
-                arg_str = ", ".join([self.to_str(node) for node in match.expansions[exp]])
+                arg_str = ", ".join([to_str(node) for node in match.expansions[exp]])
                 replacement = replacement.replace(exp, arg_str)
 
             replacement = replacement.replace(" ,)", ")").replace(", )", ")")
             self.rewriter.replace(replacement, match.nodes, False, False)
 
-    def to_str(self, node) -> Any:
-        if hasattr(node, "signature"):
-            return node.signature
-        else:
-            return str(node)
 
     def convert_parameterized_test(self):
 
@@ -228,13 +215,13 @@ class Unit2Pytest:
 
     def convert_skip_test(self):
 
-        nodes = ASTFinder.find_kind(self.atu, "Attribute").to_iterable()
+        nodes = ASTFinder.find_kind(self.atu, "Attribute")
         for node in nodes:
             if node.signature == "unittest.skip":
                 self.rewriter.replace("pytest.mark.skip", node, False, False)
 
     def swap_expected_and_actual(self):
-        pattern = self.pattern_factory.create_statements("assert_that($exp, is_($act))")
+        pattern:Sequence[AstProtocol] = self.pattern_factory.create_statements("assert_that($exp, is_($act))")
         for match in match_pattern(self.stmts, pattern):
             if match.expansions["$exp"][0].kind in ["Constant"]:
                 repl = "assert_that($act, is_($exp))"
@@ -256,21 +243,14 @@ class Unit2Pytest:
             if len(clss) < 1:
                 cls = f"class {self.convert_file_to_test_class()}:\n"
                 for fun in funs:
-                    cls += self.convert_function(fun)
+                    cls += convert_function(fun)
                 self.rewriter.replace(cls, funs)
             else:
                 for fun in funs:
                     # assuming the class comes first
-                    meth = self.convert_function(fun)
+                    meth = convert_function(fun)
                     self.rewriter.replace(meth, fun)
 
-    def convert_function(self, fun):
-        signature: str = fun.signature + "\n\n\n"
-        if len(fun.node.args.args) == 0:
-            signature = signature.replace(f"{fun.name}()", f"{fun.name}(self)", 1)
-        else:
-            signature = signature.replace(f"{fun.name}(", f"{fun.name}(self,", 1)
-        return textwrap.indent(signature, "    ")
 
     def convert_file_to_test_class(self):
         stem = os.path.splitext(os.path.basename(self.file))[0]

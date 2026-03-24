@@ -23,12 +23,11 @@ class TestASTRefactorActions:
 
     def test_replace_name(self, mocker):
         node = mocker.Mock()
-        node.offset =1
+        node.offset = 1
         proc = mocker.Mock()
         factory = mocker.Mock()
         proc.find_all.return_value = [node]
         refactor_actions = ASTRefactorActions(proc, factory)
-
 
         refactor_actions.replace_name("name", "my_awsome_name", "Name", "Call")
 

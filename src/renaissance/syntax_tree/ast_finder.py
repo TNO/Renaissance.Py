@@ -1,9 +1,8 @@
 import re
-from typing import Callable, Iterator, Optional,Sequence
+from typing import Callable, Iterator, Optional, Sequence
 
 
 from .ast_node import ASTNode
-
 
 
 class ASTFinder:

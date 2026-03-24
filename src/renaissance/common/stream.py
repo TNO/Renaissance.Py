@@ -9,7 +9,6 @@ from more_itertools import unique_everseen
 T = TypeVar("T")
 
 
-@DeprecationWarning("use iter-tools instead")
 class StreamOptional[T]:
     """Creates an Optional result similar to java.util.Optional"""
 

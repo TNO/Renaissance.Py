@@ -2,6 +2,8 @@ from io import StringIO
 import io
 from typing import Protocol, runtime_checkable, Self
 
+from termcolor import colored
+
 
 @runtime_checkable
 class Displayable(Protocol):
@@ -11,7 +13,9 @@ class Displayable(Protocol):
     show_props: bool
 
 
+
 class ASTShower:
+    focus:str = "NO-FOCUS-DEFINED"
     @staticmethod
     def show_node(node, include_properties: bool = False) -> None:
         print("\n" + ASTShower.get_node(node, include_properties))
@@ -36,11 +40,16 @@ class ASTShower:
 
     @staticmethod
     def _process_node(output: StringIO, indent: str, node: Displayable, include_properties: bool) -> None:
-
         if node.is_implicit:
             node.indent = indent
             node.show_props = include_properties
-            output.write(str(node))
+            raw = str(node)
+            if ASTShower.focus in raw :
+                raw = colored(raw, "red", attrs=["bold"])
+
+            output.write(raw)
         if node.children:
             for child in node.children:
                 ASTShower._process_node(output, indent + "  ", child, include_properties)
+
+

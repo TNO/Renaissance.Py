@@ -1,11 +1,8 @@
-import os
-import textwrap
 from typing import Any
 
 from renaissance.impl.python import PythonASTNode, PythonPatternFactory
-from renaissance.syntax_tree import ASTRewriter, ASTFactory, ASTFinder, PatternMatch
+from renaissance.syntax_tree import ASTRewriter, ASTFactory
 from renaissance.syntax_tree.match_finder import match_pattern
-from renaissance.utils.text_utils import TextUtils
 
 
 class SimplifyRenaissance:
