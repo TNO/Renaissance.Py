@@ -49,7 +49,7 @@ class ASTRefactorActions:
         matches_text: Callable[[Optional["ASTNode"]], bool] = (
             lambda n: (not kind or ASTFinder.matches_kind(n, kind))
             and (not skip_kind or not ASTFinder.matches_kind(n, skip_kind))
-            and n.text == text  # TODO: prevent get_text on None
+            and n is not None and n.text == text
         )
 
         found_nodes = self.processor.find_all(matches_text)

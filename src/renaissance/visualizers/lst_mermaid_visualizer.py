@@ -1,10 +1,7 @@
 from renaissance.lst.lst import LST
 import re
 
-
-def _clean_signature(signature):
-    text = signature.replace("\n", " ")
-    return re.sub(r"[^\w\s]", "", text)[:30]  # Remove punctuation, limit length
+from renaissance.utils.text_utils import TextUtils
 
 
 class LSTMermaidVisualizer:
@@ -19,16 +16,13 @@ class LSTMermaidVisualizer:
             self.node_ids[node] = f"n{self.counter}"
         return self.node_ids[node]
 
-    @staticmethod
-    def _escape_label(text):
-        return text.replace('"', '\\"').replace("\n", " ").strip()
 
     def _render_node(self, node):
         node_id = self._get_node_id(node)
         label = f"""\
 {node_id}: {node.kind} {{
 offset: {node.offset}
-signature: {_clean_signature(node.signature)}
+signature: {TextUtils.clean_signature(node.signature)}
 }}"""
         label = label.replace("\n", "<br>")
         self.lines.append(f'{node_id}["{label}"]')
@@ -40,3 +34,4 @@ signature: {_clean_signature(node.signature)}
     def render(self, lst: LST):
         self._render_node(lst.root)
         return "\n".join(self.lines)
+
