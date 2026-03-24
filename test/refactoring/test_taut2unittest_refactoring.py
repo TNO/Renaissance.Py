@@ -6,13 +6,8 @@ import test_data.test_code as tst_code
 import test_data.test_insert as tst_insert
 from renaissance.impl.python import PythonASTNode
 from renaissance.syntax_tree import ASTFactory, ASTProcessor
-from test_data.test_testdoubles import (
-    test_doubles_fun,
-    test_doubles_fun_new,
-    test_doubles_class,
-    test_doubles_class_new,
-)
-
+from test_data.test_testdoubles import (test_doubles_fun, test_doubles_fun_new, test_doubles_class, \
+                                        test_doubles_class_new)
 
 class TestTaut2Unittest:
 
@@ -29,7 +24,6 @@ class TestTaut2Unittest:
             ),
         ],
     )
-    @pytest.mark.skip("still failing")
     def test_remove_import_taut(self, input_code, expected_code):
         atu = self.factory.create_from_text(input_code, "import.py")
         # ASTShower.show_node(atu)
@@ -48,7 +42,7 @@ class TestTaut2Unittest:
         ],
     )
     def test_remove_import(self, input_code, expected_code):
-        result = taut_refactor.remove_taut_import(input_code)
+        result = taut_refactor.replace_taut_import(input_code)
         assert result == expected_code
 
     @pytest.mark.parametrize(
@@ -111,6 +105,7 @@ class TestTaut2Unittest:
                 "self.assertEqual(emrwxread.method_called(0))",
                 "self.assertEqual(self.emrwxread.method_called(0))",
             ),
+            #('EMRWxREAD.emrwxread.set_retval(0)', 'self.emrwxread.set_retval(0)')
         ],
     )
     def test_add_self(self, input_code, expected_code):
