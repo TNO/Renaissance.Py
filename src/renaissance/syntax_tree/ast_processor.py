@@ -5,7 +5,7 @@ from typing import Callable, Iterator, Sequence
 
 import renaissance.syntax_tree.match_finder
 from renaissance.syntax_tree.ast_rewriter import ASTRewriter
-from renaissance.syntax_tree.match_finder import ASTNode, PatternMatch, MatchFinder, find_all
+from renaissance.syntax_tree.match_finder import ASTNode, PatternMatch
 from renaissance.syntax_tree.ast_finder import ASTFinder
 from renaissance.syntax_tree.ast_factory import ASTFactory
 
@@ -18,6 +18,7 @@ class ASTProcessor:
         in_memory: bool = False,
     ) -> None:
         self.__root_node = root
+        self.__stmts: Sequence[AstProtocol] = root.children  # type: ignore[assignment]
         self.__rewriter = ASTRewriter(root)
         self.__ast_factory = ast_factory
         self.in_memory = in_memory
@@ -73,7 +74,7 @@ class ASTProcessor:
         self.__rewriter.insert_after(new_content, target, include_whitespace, include_comments)
 
     def find_all(self, function: Callable[[ASTNode], Iterator[ASTNode] | bool]) -> Sequence[ASTNode]:
-        return find_all(self.__root_node, function)
+        return ASTFinder.find_all(self.__root_node, function)
 
     def find_kind(self, kind: str) -> Sequence[ASTNode]:
         return ASTFinder.find_kind(self.__root_node, kind)
@@ -81,11 +82,10 @@ class ASTProcessor:
     def find_match(
         self,
         *patterns_list,
-        recursive: bool = True,
-        exclude_kind: str = MatchFinder.DEFAULT_EXCLUDE_KIND,
+        recursive: bool = True
     ) -> Sequence[PatternMatch]:
         return renaissance.syntax_tree.match_finder.find_all(
-            self.__root_node,
+            self.__stmts,
             *patterns_list,
             recursive=recursive,
         )

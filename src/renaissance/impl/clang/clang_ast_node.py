@@ -181,7 +181,7 @@ class ClangASTNode(ASTNode):
             )
         except Exception as e:
             print(e)
-            return None
+            raise e
         ClangASTNode.check_diagnostics(translation_unit, file_name)
         return root_node
 

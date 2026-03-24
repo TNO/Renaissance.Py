@@ -1,4 +1,4 @@
-# in currewnt  code we use iter-tools and more iter-tools
+# in current  code we use iter-tools and more iter-tools
 
 
 from __future__ import annotations

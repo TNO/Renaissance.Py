@@ -1,7 +1,7 @@
 from typing import Sequence
 
 from renaissance.impl.tree_sitter_adapter.tree_sitter_adapter import TreeSitterAdapter
-from renaissance.lst.lst import LSTNode, LST
+from renaissance.lst.lst import LSTNode
 from renaissance.utils.node_util import replace_dollar
 
 SHOW_NODE = False
@@ -13,13 +13,13 @@ class TsPatternFactory:
         self.adapter = adapter
         self.language = language
 
-    def create(self, text: str) -> LST:
+    def create(self, text: str) -> LSTNode:
         text = replace_dollar(text)
         if isinstance(self.adapter, TreeSitterAdapter):
             tree = self.adapter.parse_code(text)
             return self.adapter.to_lst(text, tree).root
         else:
-            return self.adapter.to_lst(text).root
+            return self.adapter.to_lst(text, None).root
 
     def create_python_pattern(self, text: str) -> LSTNode:
         text = replace_dollar(text)

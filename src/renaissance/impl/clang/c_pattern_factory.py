@@ -171,7 +171,7 @@ class CPatternFactory:
         # print(self.header + text)
         root = self.factory.create_from_text(self.header + text, "test." + self.language)
         if kind:
-            return ASTFinder.find_kind(root.children[-1], kind).find_first().get()
+            return first(ASTFinder.find_kind(root.children[-1], kind))
         return root
 
     def create_statement(
@@ -281,8 +281,8 @@ class CPPPatternFactory(CPatternFactory):
         if SHOW_NODE:
             ASTShower.show_node(target_class)
         # search the call expr and the preceding type ref
-        call_expr = ASTFinder.find_kind(target_class, "CallExpr").peek(lambda n: ASTShower.show_node(n)).find_last().get()
-        # include the preceding typeref
+        call_expr = last(ASTFinder.find_kind(target_class, "CallExpr"))
+        # include the preceding type ref
         assert isinstance(call_expr, ASTNode), "No call expression found"
         type_ref = call_expr.preceding_sibling
         assert isinstance(type_ref, ASTNode), "No type ref found"

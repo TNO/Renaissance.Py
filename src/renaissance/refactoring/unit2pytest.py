@@ -15,7 +15,7 @@ class Unit2Pytest:
         self.factory = ASTFactory(PythonASTNode, [])
         self.pattern_factory = PythonPatternFactory(self.factory)
         self.atu = self.factory.create(file)
-        self.stmts:Sequence[AstProtocol] = self.atu.children
+        self.stmts: Sequence[AstProtocol] = self.atu.children  # type: ignore[assignment]
         self.rewriter = ASTRewriter(self.atu)
 
 
@@ -121,10 +121,10 @@ class Unit2Pytest:
     def commit(self) -> None:
         if self.rewriter.has_changed():
             self.atu, self.rewriter = ASTUtils.commit(self.rewriter, self.factory)
-            self.stmts = self.atu.children
+            self.stmts: Sequence[AstProtocol] = self.atu.children  # type: ignore[assignment]
 
     def convert_test_class(self):
-        test_main = self.pattern_factory.create_statements("class $klass($test_class):\n    $$test_cases\n")
+        test_main: Sequence[AstProtocol] = self.pattern_factory.create_statements("class $klass($test_class):\n    $$test_cases\n")  # type: ignore[assignment]
         for match in match_pattern(self.stmts, test_main):
             klass = match.expansions["$klass"][0]
             test_class = match.expansions["$test_class"][0].signature
@@ -138,15 +138,16 @@ class Unit2Pytest:
                 self.rewriter.replace(repl, match.nodes, False, False)
 
     def convert_test_setup(self):
-        test_main = self.pattern_factory.create_statements("def setUp(self): $$stmts")
-        for match in match_pattern(self.atu.children, test_main):
+        test_main: Sequence[AstProtocol] = self.pattern_factory.create_statements("def setUp(self): $$stmts")  # type: ignore[assignment]
+        children: Sequence[AstProtocol] = self.atu.children  # type: ignore[assignment]
+        for match in match_pattern(children, test_main):
             # stmts = self.raw(match.expansions['$$stmts'])
             repl = f"@pytest.fixture(autouse=True)\n{match.nodes[0].signature}"
             self.rewriter.replace(repl, match.nodes, False, False)
 
     def convert_assert(self, pattern, replacement):
-        pattern = self.pattern_factory.create_statements(pattern)
-        for match in match_pattern(self.stmts, pattern):
+        pat: Sequence[AstProtocol] = self.pattern_factory.create_statements(pattern)  # type: ignore[assignment]
+        for match in match_pattern(self.stmts, pat):
             repl = replacement
             if match.expansions["$exp"][0].kind in ["Constant"]:
                 exp = match.expansions["$act"][0].signature
@@ -158,7 +159,7 @@ class Unit2Pytest:
             self.rewriter.replace(repl, match.nodes, False, False)
 
     def replace(self, find, repl):
-        pattern = self.pattern_factory.create_statements(find)
+        pattern: Sequence[AstProtocol] = self.pattern_factory.create_statements(find)  # type: ignore[assignment]
         for match in match_pattern(self.stmts, pattern):
             replacement = repl
             for exp in match.expansions:
@@ -168,13 +169,10 @@ class Unit2Pytest:
             replacement = replacement.replace(" ,)", ")").replace(", )", ")")
             self.rewriter.replace(replacement, match.nodes, False, False)
 
-
     def convert_parameterized_test(self):
-
-        unittest = self.pattern_factory.create_statements(
+        unittest: Sequence[AstProtocol] = self.pattern_factory.create_statements(  # type: ignore[assignment]
             "@parameterized.expand($$parameters)\n@$$decorator\ndef $fun($$args, *$$varg):\n    $$stmts"
         )
-
         for match in match_pattern(self.stmts, unittest):
             fun = match.nodes[0]
             args = ", ".join([arg.node.arg for arg in match.expansions["$$args"]])
@@ -192,7 +190,7 @@ class Unit2Pytest:
             self.rewriter.replace(repl, fun, False, False)
 
     def remove_print(self):
-        print_msg = self.pattern_factory.create_statements("print($$msg)")
+        print_msg: Sequence[AstProtocol] = self.pattern_factory.create_statements("print($$msg)")  # type: ignore[assignment]
         for match in match_pattern(self.stmts, print_msg):
             if len(match.nodes[0].parent.parent.body) == 1:
                 self.rewriter.remove([match.nodes[0].parent.parent], False, False)
@@ -200,9 +198,7 @@ class Unit2Pytest:
                 self.rewriter.remove(match.nodes, False, False)
 
     def convert_plain_assert_same_length(self):
-
-        pattern = self.pattern_factory.create_statements('$act: int = len($real)\nassert $exp == $act, "$act = " + str($act)')
-
+        pattern: Sequence[AstProtocol] = self.pattern_factory.create_statements('$act: int = len($real)\nassert $exp == $act, "$act = " + str($act)')  # type: ignore[assignment]
         for match in match_pattern(self.stmts, pattern):
             repl = 'assert_that($real, has_length($exp), f"length of $real = {len($real)}")'
             real = match.expansions["$real"][0].signature
@@ -221,7 +217,7 @@ class Unit2Pytest:
                 self.rewriter.replace("pytest.mark.skip", node, False, False)
 
     def swap_expected_and_actual(self):
-        pattern:Sequence[AstProtocol] = self.pattern_factory.create_statements("assert_that($exp, is_($act))")
+        pattern: Sequence[AstProtocol] = self.pattern_factory.create_statements("assert_that($exp, is_($act))")  # type: ignore[assignment]
         for match in match_pattern(self.stmts, pattern):
             if match.expansions["$exp"][0].kind in ["Constant"]:
                 repl = "assert_that($act, is_($exp))"

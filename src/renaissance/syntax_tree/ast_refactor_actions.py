@@ -19,7 +19,8 @@ class ASTRefactorActions:
             if (kind and ASTFinder.matches_kind(n, kind)) and n.name == name:
                 yield n
 
-        (self.processor.replace(found.text.replace(found.name, replacement, 1), found) for found in self.processor.find_all(test))
+        [self.processor.replace(found.text.replace(found.name, replacement, 1), found)
+         for found in self.processor.find_all(test)]
 
     def replace_name(
         self,
@@ -29,13 +30,13 @@ class ASTRefactorActions:
         skip_kind: Optional[str] = None,
     ):
         matches_name: Callable[[Optional["ASTNode"]], bool] = (
-            lambda n: (not kind or ASTFinder.matches_kind(n, kind))
-            and (not skip_kind or not ASTFinder.matches_kind(n, skip_kind))
-            and n
-            and n.name == name
+            lambda n1: (not kind or ASTFinder.matches_kind(n1, kind))
+            and (not skip_kind or not ASTFinder.matches_kind(n1, skip_kind))
+            and n1
+            and n1.name == name
         )
         found_nodes = self.processor.find_all(matches_name)
-        (self.replaced.add(found.offset) for found in found_nodes if found.offset not in self.replaced)
+        [self.replaced.add(found.offset) for found in found_nodes if found.offset not in self.replaced]
         for n in found_nodes:
             self.processor.replace(n.text.replace(n.name, replacement, 1), n)
 
@@ -79,7 +80,7 @@ class ASTRefactorActions:
     @cache
     def find_declaration(self, decl_pattern: str):
         pattern = self.pattern_factory.create_declaration(decl_pattern)
-        return self.processor.find_match(pattern).to_list()
+        return self.processor.find_match(pattern)
 
     @cache
     def collect(self, pattern: str, pattern_kind: str):
