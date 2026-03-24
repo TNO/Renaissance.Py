@@ -254,6 +254,18 @@ class TestPythonMatcher:
         atu = PythonASTNode.load_from_text(example_code)
         assert_that(atu, is_not(None))
 
+    def test_find_pattern_four_depth(self):
+        example_code = """class CommonTestUtils():
+    def foo():
+        self.tds = [
+            TestDoubles(a=ImprovedStub(read)),
+            TestDoubles(b=ImprovedStub(write)),
+        ]
+        """
+        atu = PythonASTNode.load_from_text(example_code)
+        pattern = self.pattern_factory.create_statements("TestDoubles($a=ImprovedStub($b))")
+        assert_that(match_pattern(atu.children, pattern), has_length(2))
+
 
 if __name__ == "__main__":
     pytest.main()
