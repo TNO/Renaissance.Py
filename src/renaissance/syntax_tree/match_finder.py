@@ -2,7 +2,6 @@ from typing import Sequence, Self, Iterable, Protocol, runtime_checkable
 
 from more_itertools import flatten
 
-from .ast_node import ASTNode
 from renaissance.impl import MATCH_ALL, MATCH_ONE
 from ..utils.node_util import use_dollar
 
@@ -21,7 +20,7 @@ class PatternMatch:
         self.nodes = nodes
         self.expansions = expansions
         self.patterns = patterns
-        self._remaining_nodes: list[ASTNode] = []
+        self._remaining_nodes: list[AstProtocol] = []
 
     def __str__(self):
         res = ""
@@ -61,7 +60,7 @@ def is_match_tree(src: Sequence | None, cmp: Sequence | None, expansions=None):
     # src and cmp are both lists
     if len(cmp) == 0 or len(src) == 0:
         return src == cmp
-    if len(cmp) == 1 and isinstance(cmp0 := cmp[0], ASTNode) and cmp0.kind == MATCH_ALL:
+    if len(cmp) == 1 and isinstance(cmp0 := cmp[0], AstProtocol) and cmp0.kind == MATCH_ALL:
         expansions[cmp0.name] = src
         return True
     return find_in_list(src, cmp, expansions) + 1 == len(src)
@@ -100,11 +99,11 @@ def find_in_list(src: Sequence, cmp: Sequence, exp=None):
             i += 1
         else:
             return -1
-    if found_position == len(cmp) - 1 and isinstance(cmp[found_position], ASTNode) and cmp[found_position].kind == MATCH_ALL:
+    if found_position == len(cmp) - 1 and isinstance(cmp[found_position], AstProtocol) and cmp[found_position].kind == MATCH_ALL:
         if cmp[found_position].name in exp:
             if exp[cmp[found_position].name]:
                 for p in cmp:
-                    if isinstance(p, ASTNode) and p.name in exp:
+                    if isinstance(p, AstProtocol) and p.name in exp:
                         exp.pop(p.name)
                 return -1
         else:
@@ -116,9 +115,9 @@ def find_in_list(src: Sequence, cmp: Sequence, exp=None):
             i = len(src)
         elif (
             len(cmp) >= 2
-            and isinstance(cmp[-2], ASTNode)
+            and isinstance(cmp[-2], AstProtocol)
             and cmp[-2].kind == MATCH_ALL
-            and isinstance(cmp[-1], ASTNode)
+            and isinstance(cmp[-1], AstProtocol)
             and cmp[-1].kind == MATCH_ONE
         ):
             exp[cmp[-2].name] = src[expansion_start:-1]
@@ -193,7 +192,7 @@ def is_match_dict(src: dict, cmp: dict, expansions: dict = None) -> bool:
     return all(match_property(n) for n in all_keys)
 
 
-def match_pattern(src_nodes: Sequence[AstProtocol], patterns: Sequence[AstProtocol], recursive=True) -> Sequence[PatternMatch]:
+def match_pattern(src_nodes, patterns, recursive=True) -> Sequence[PatternMatch]:
     """
     Matches a given source node or list of source nodes against a list of pattern nodes.
 
@@ -228,7 +227,19 @@ def match_pattern(src_nodes: Sequence[AstProtocol], patterns: Sequence[AstProtoc
     return found_statements
 
 
-def find_all(src_nodes: Sequence[AstProtocol], *patterns: Sequence[AstProtocol], recursive: bool = True) -> Sequence[PatternMatch]:
+"""
+Finds all pattern matches in the given source nodes.
+
+Args:
+    src_nodes (Sequence[AstProtocol]): The source nodes to search within.
+    *patterns (Sequence[AstProtocol]): One or more lists of nodes representing the patterns to match.
+    recursive (bool, optional): Whether to search recursively within the source nodes. Defaults to True.
+
+Returns:
+    Sequence[PatternMatch]: A list of pattern matches found in the source nodes.
+"""
+
+def find_all(src_nodes, *patterns, recursive: bool = True) -> Sequence[PatternMatch]:
     return list(flatten(MatchFinder.match_pattern(src_nodes, pattern, recursive) for pattern in patterns))
 
 
@@ -241,17 +252,6 @@ class MatchFinder:
         *patterns: Sequence[AstProtocol],
         recursive: bool = True,
     ) -> Sequence[PatternMatch]:
-        """
-        Finds all pattern matches in the given source nodes.
-
-        Args:
-            src_nodes (Sequence[AstProtocol]): The source nodes to search within.
-            *patterns (Sequence[AstProtocol]): One or more lists of nodes representing the patterns to match.
-            recursive (bool, optional): Whether to search recursively within the source nodes. Defaults to True.
-
-        Returns:
-            Sequence[PatternMatch]: A list of pattern matches found in the source nodes.
-        """
 
         return find_all(src_nodes, *patterns, recursive=recursive)
 

@@ -1,5 +1,4 @@
 from renaissance.lst.lst import LST
-import re
 
 from renaissance.utils.text_utils import TextUtils
 

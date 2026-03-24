@@ -75,7 +75,7 @@ class TestBatchASTProcessor:
         mock_ast_proc = mocker.Mock()
         mock_ast_proc.has_changed.return_value = False
         mock_ast_proc.commit.return_value = mock_ast_proc
-        mock_ast_proc.get_filename.return_value = "file"
+        mock_ast_proc.filename.return_value = "file"
         mock_ast_proc.apply_to_string.return_value = "content"
         mocker.patch(
             "renaissance.syntax_tree.batch_ast_processor.ASTProcessor",

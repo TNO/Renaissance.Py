@@ -1,13 +1,14 @@
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Callable, Iterator, Sequence
 
 import renaissance.syntax_tree.match_finder
-from renaissance.syntax_tree.ast_rewriter import ASTRewriter
-from renaissance.syntax_tree.match_finder import ASTNode, PatternMatch
-from renaissance.syntax_tree.ast_finder import ASTFinder
+from renaissance.syntax_tree import ASTNode
 from renaissance.syntax_tree.ast_factory import ASTFactory
+from renaissance.syntax_tree.ast_finder import ASTFinder
+from renaissance.syntax_tree.ast_rewriter import ASTRewriter
+from renaissance.syntax_tree.match_finder import PatternMatch
+from renaissance.utils.ast_utils import ASTUtils
 
 
 class ASTProcessor:
@@ -18,7 +19,6 @@ class ASTProcessor:
         in_memory: bool = False,
     ) -> None:
         self.__root_node = root
-        self.__stmts: Sequence[AstProtocol] = root.children  # type: ignore[assignment]
         self.__rewriter = ASTRewriter(root)
         self.__ast_factory = ast_factory
         self.in_memory = in_memory
@@ -32,10 +32,12 @@ class ASTProcessor:
     def node(self) -> ASTNode:
         return self.__root_node
 
-    def get_filename(self) -> str:
+    @property
+    def filename(self) -> str:
         return self.__rewriter.get_filename()
 
-    def get_root(self) -> ASTNode:
+    @property
+    def root(self) -> ASTNode:
         return self.__root_node
 
     def replace(
@@ -85,7 +87,7 @@ class ASTProcessor:
         recursive: bool = True
     ) -> Sequence[PatternMatch]:
         return renaissance.syntax_tree.match_finder.find_all(
-            self.__stmts,
+            self.__root_node.children,
             *patterns_list,
             recursive=recursive,
         )
@@ -110,19 +112,10 @@ class ASTProcessor:
         Raises:
             IOError: If there is an error writing to the file.
         """
-        new_code = self.apply_to_string()
         if not self.__rewriter.has_changed():
             return self
-
-        if self.in_memory:
-            atu = self.__ast_factory.create_from_text(new_code, str(Path(self.get_filename()).name))
-        else:
-            # save file first then reload it
-            with open(self.get_filename(), "wb") as f:
-                f.write(self.__rewriter.apply())
-            # TODO check errors
-            atu = self.__ast_factory.create(Path(self.get_filename()))
-        return ASTProcessor(atu, self.__ast_factory, self.in_memory)
+        self.__root_node, self.__rewriter = ASTUtils.commit(self.__rewriter, self.__ast_factory, self.in_memory)
+        return ASTProcessor(self.__root_node, self.__ast_factory, self.in_memory)
 
 
 # main

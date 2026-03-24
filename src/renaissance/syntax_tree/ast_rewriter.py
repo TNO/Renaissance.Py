@@ -133,8 +133,9 @@ class _RewriteAction:
         if len(target) > 0:
             if isinstance(target[0], ASTNode):
                 return [n for n in target if isinstance(n, ASTNode)]
-            if isinstance(target[-1], PatternMatch):
-                return target[-1].nodes
+            last = target[-1]
+            if isinstance(last, PatternMatch):
+                return last.nodes
         return []
 
 
@@ -151,7 +152,7 @@ class _RewriteActions:
         rewrites: Optional[list[_RewriteAction]] = None,
     ) -> None:
         self.rewrites: list[_RewriteAction] = rewrites if rewrites else []
-        self.nodes = nodes if isinstance(nodes, Sequence) else nodes.src_nodes if isinstance(nodes, PatternMatch) else [nodes]
+        self.nodes = nodes if isinstance(nodes, Sequence) else nodes.nodes if isinstance(nodes, PatternMatch) else [nodes]
         self.encoding = encoding
         self.content = self.nodes[0].root.binary_file_content()[self.nodes[0].offset : self.nodes[-1].extended_end_offset]
         self.correct_indent = correct_indent
@@ -397,7 +398,7 @@ class _RewriteActions:
             if rs != org_rs:
                 rewriter.replace(rs, node)
         result = rewriter.apply_to_string()
-        indent = self.derive_indent(nodes[0].start_offset)
+        indent = self.derive_indent(nodes[0].offset)
         return TextUtils.shift_left(result, indent, start_line=1)
 
     def __get_text(self, node: ASTNode) -> str:

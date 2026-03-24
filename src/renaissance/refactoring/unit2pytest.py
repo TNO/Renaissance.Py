@@ -2,41 +2,34 @@ import os
 import textwrap
 from typing import Sequence
 
-from renaissance.impl.python import PythonASTNode, PythonPatternFactory
-from renaissance.impl.python.python_ast_util import to_str, convert_function
-from renaissance.syntax_tree import ASTRewriter, ASTFactory, ASTFinder
+from renaissance.impl.python.python_ast_util import convert_function
+from renaissance.refactoring.PythonRefactoring import PythonRefactoring
+from renaissance.syntax_tree import ASTFinder
 from renaissance.syntax_tree.match_finder import match_pattern, AstProtocol
-from renaissance.utils.ast_utils import ASTUtils
 
 
-class Unit2Pytest:
+class Unit2Pytest(PythonRefactoring):
     def __init__(self, file):
-        self.file = file
-        self.factory = ASTFactory(PythonASTNode, [])
-        self.pattern_factory = PythonPatternFactory(self.factory)
-        self.atu = self.factory.create(file)
-        self.stmts: Sequence[AstProtocol] = self.atu.children  # type: ignore[assignment]
-        self.rewriter = ASTRewriter(self.atu)
-
+        super().__init__(file)
 
     def convert_pytest(self):
-        print(f"refactoring {self.file}")
+        print(f"refactoring {self.filename}")
 
         self.convert_test_class()
         self.restructure_module()
 
         # 1: file level changes
-        self.replace("unittest.main()", "pytest.main()")
-        self.replace("import unittest", "import pytest\nfrom hamcrest import *")
-        self.replace(
+        self.replace_stmt("unittest.main()", "pytest.main()")
+        self.replace_stmt("import unittest", "import pytest\nfrom hamcrest import *")
+        self.replace_stmt(
             "from parameterized import parameterized",
             "import pytest\nfrom hamcrest import *",
         )
-        self.replace(
+        self.replace_stmt(
             "from unittest import TestCase,$$symbols",
             "import pytest\nfrom hamcrest import *",
         )
-        self.replace("from unittest import TestCase", "import pytest\nfrom hamcrest import *")
+        self.replace_stmt("from unittest import TestCase", "import pytest\nfrom hamcrest import *")
 
         # 2: class level changes
         self.convert_parameterized_test()
@@ -49,9 +42,9 @@ class Unit2Pytest:
 
         # 3: function level changes
 
-        self.replace("assert $stmt, $$msg", "assert_that($stmt, is_(True), $$msg)")
-        self.replace("self.assertTrue($exp,$$msg)", "assert_that($exp, is_(True), $$msg)")
-        self.replace("self.assertFalse($exp, $$msg)", "assert_that($exp, is_(False), $$msg)")
+        self.replace_stmt("assert $stmt, $$msg", "assert_that($stmt, is_(True), $$msg)")
+        self.replace_stmt("self.assertTrue($exp,$$msg)", "assert_that($exp, is_(True), $$msg)")
+        self.replace_stmt("self.assertFalse($exp, $$msg)", "assert_that($exp, is_(False), $$msg)")
 
         self.convert_assert("self.assertEqual($exp, $act)", "assert_that($exp, is_($act))")
         self.convert_assert(
@@ -66,66 +59,61 @@ class Unit2Pytest:
         self.convert_assert("self.assertLesser($exp, $act)", "assert_that($exp, less_than($act))")
         self.convert_assert("self.assertMultiLineEqual($act, $exp)", "assert_that($act, is_($exp))")
 
-        self.replace("self.assertIn($act, $exp)", "assert_that($exp, contain_string($act))")
-        self.replace("self.assertIsInstance($act, $exp)", "assert_that($act, is_($exp))")
-        self.replace(
+        self.replace_stmt("self.assertIn($act, $exp)", "assert_that($exp, contain_string($act))")
+        self.replace_stmt("self.assertIsInstance($act, $exp)", "assert_that($act, is_($exp))")
+        self.replace_stmt(
             "with self.assertRaises($exception): $call()",
             "assert_that(calling($call), raises($exception))",
         )
 
         # 4: improve to mor concise asserts
-        while self.rewriter.has_changed():
+        while self.has_changed():
             self.commit()
-            self.replace("assert_that($exp)", "assert_that($exp, is_(True))")
-            self.replace("assert_that(isinstance($exp, $act))", "assert_that($exp, is_($act))")
-            self.replace("assert_that(len($exp), $act)", "assert_that($exp, has_length($act))")
-            self.replace("assert_that(len($exp) >= 1)", "assert_that($exp, is_not(empty()))")
-            self.replace(
+            self.replace_stmt("assert_that($exp)", "assert_that($exp, is_(True))")
+            self.replace_stmt("assert_that(isinstance($exp, $act))", "assert_that($exp, is_($act))")
+            self.replace_stmt("assert_that(len($exp), $act)", "assert_that($exp, has_length($act))")
+            self.replace_stmt("assert_that(len($exp) >= 1)", "assert_that($exp, is_not(empty()))")
+            self.replace_stmt(
                 "assert_that(len($exp) >= 1, is_(True))",
                 "assert_that($exp, is_not(empty()))",
             )
-            self.replace(
+            self.replace_stmt(
                 "assert_that(len($exp) == $length)",
                 "assert_that($exp, has_length($length))",
             )
-            self.replace("assert_that($exp == $act)", "assert_that($exp, is_($act), $$msg)")
-            self.replace(
+            self.replace_stmt("assert_that($exp == $act)", "assert_that($exp, is_($act), $$msg)")
+            self.replace_stmt(
                 "assert_that($exp == $act, is_(True), $$msg)",
                 "assert_that($exp, is_($act), $$msg)",
             )
-            self.replace(
+            self.replace_stmt(
                 "assert_that(not $stmt, is_(True), $$msg)",
                 "assert_that($stmt, is_(False) ,$$msg)",
             )
-            self.replace(
+            self.replace_stmt(
                 "assert_that($stmt, is_not(True), $$msg)",
                 "assert_that($stmt, is_(False) ,$$msg)",
             )
-            self.replace("assert_that(not $stmt)", "assert_that($stmt, is_(False))")
-            self.replace(
+            self.replace_stmt("assert_that(not $stmt)", "assert_that($stmt, is_(False))")
+            self.replace_stmt(
                 "assert_that($element in $collection, is_(True))",
                 "assert_that($collection, contains_exactly($element))",
             )
-            self.replace(
+            self.replace_stmt(
                 "assert_that($exp, has_length(is_($act)))",
                 "assert_that($exp, has_length($act))",
             )
             self.swap_expected_and_actual()
             self.convert_skip_test()
 
-        self.replace("assert_that(not $stmt)", "assert_that($stmt, is_(False))")
-        self.replace("assert_that($exp.startswith($act))", "assert_that($exp, starts_with($act))")
+        self.replace_stmt("assert_that(not $stmt)", "assert_that($stmt, is_(False))")
+        self.replace_stmt("assert_that($exp.startswith($act))", "assert_that($exp, starts_with($act))")
 
         self.commit()
 
-    def commit(self) -> None:
-        if self.rewriter.has_changed():
-            self.atu, self.rewriter = ASTUtils.commit(self.rewriter, self.factory)
-            self.stmts: Sequence[AstProtocol] = self.atu.children  # type: ignore[assignment]
-
     def convert_test_class(self):
         test_main: Sequence[AstProtocol] = self.pattern_factory.create_statements("class $klass($test_class):\n    $$test_cases\n")  # type: ignore[assignment]
-        for match in match_pattern(self.stmts, test_main):
+        for match in match_pattern(self.root.children, test_main):
             klass = match.expansions["$klass"][0]
             test_class = match.expansions["$test_class"][0].signature
             if test_class.endswith("TestCase"):
@@ -135,7 +123,7 @@ class Unit2Pytest:
                     repl = match.nodes[0].signature.replace(f"({test_class}):", ":")
 
                 # repl = f'class {match.expansions["$klass"][0]}:\n{raw(match.expansions["$$test_cases"])}'
-                self.rewriter.replace(repl, match.nodes, False, False)
+                self.replace(repl, match.nodes, False, False)
 
     def convert_test_setup(self):
         test_main: Sequence[AstProtocol] = self.pattern_factory.create_statements("def setUp(self): $$stmts")  # type: ignore[assignment]
@@ -143,11 +131,11 @@ class Unit2Pytest:
         for match in match_pattern(children, test_main):
             # stmts = self.raw(match.expansions['$$stmts'])
             repl = f"@pytest.fixture(autouse=True)\n{match.nodes[0].signature}"
-            self.rewriter.replace(repl, match.nodes, False, False)
+            self.replace(repl, match.nodes, False, False)
 
     def convert_assert(self, pattern, replacement):
         pat: Sequence[AstProtocol] = self.pattern_factory.create_statements(pattern)  # type: ignore[assignment]
-        for match in match_pattern(self.stmts, pat):
+        for match in match_pattern(self.root.children, pat):
             repl = replacement
             if match.expansions["$exp"][0].kind in ["Constant"]:
                 exp = match.expansions["$act"][0].signature
@@ -156,24 +144,13 @@ class Unit2Pytest:
                 act = match.expansions["$act"][0].signature
                 exp = match.expansions["$exp"][0].signature
             repl = repl.replace("$exp", exp).replace("$act", act)
-            self.rewriter.replace(repl, match.nodes, False, False)
-
-    def replace(self, find, repl):
-        pattern: Sequence[AstProtocol] = self.pattern_factory.create_statements(find)  # type: ignore[assignment]
-        for match in match_pattern(self.stmts, pattern):
-            replacement = repl
-            for exp in match.expansions:
-                arg_str = ", ".join([to_str(node) for node in match.expansions[exp]])
-                replacement = replacement.replace(exp, arg_str)
-
-            replacement = replacement.replace(" ,)", ")").replace(", )", ")")
-            self.rewriter.replace(replacement, match.nodes, False, False)
+            self.replace(repl, match.nodes, False, False)
 
     def convert_parameterized_test(self):
         unittest: Sequence[AstProtocol] = self.pattern_factory.create_statements(  # type: ignore[assignment]
             "@parameterized.expand($$parameters)\n@$$decorator\ndef $fun($$args, *$$varg):\n    $$stmts"
         )
-        for match in match_pattern(self.stmts, unittest):
+        for match in match_pattern(self.root.children, unittest):
             fun = match.nodes[0]
             args = ", ".join([arg.node.arg for arg in match.expansions["$$args"]])
             if varg := match.expansions["$$varg"]:
@@ -187,19 +164,19 @@ class Unit2Pytest:
             else:
                 repl = repl.replace("@parameterized.expand(", f'@pytest.mark.parametrize("{args}",')
                 repl = repl.replace("@unittest.skip(", f"@pytest.mark.skip(")
-            self.rewriter.replace(repl, fun, False, False)
+            self.replace(repl, fun, False, False)
 
     def remove_print(self):
         print_msg: Sequence[AstProtocol] = self.pattern_factory.create_statements("print($$msg)")  # type: ignore[assignment]
-        for match in match_pattern(self.stmts, print_msg):
+        for match in match_pattern(self.root.children, print_msg):
             if len(match.nodes[0].parent.parent.body) == 1:
-                self.rewriter.remove([match.nodes[0].parent.parent], False, False)
+                self.remove([match.nodes[0].parent.parent], False, False)
             else:
-                self.rewriter.remove(match.nodes, False, False)
+                self.remove(match.nodes, False, False)
 
     def convert_plain_assert_same_length(self):
         pattern: Sequence[AstProtocol] = self.pattern_factory.create_statements('$act: int = len($real)\nassert $exp == $act, "$act = " + str($act)')  # type: ignore[assignment]
-        for match in match_pattern(self.stmts, pattern):
+        for match in match_pattern(self.root.children, pattern):
             repl = 'assert_that($real, has_length($exp), f"length of $real = {len($real)}")'
             real = match.expansions["$real"][0].signature
             if match.expansions["$exp"][0].kind in ["Constant"]:
@@ -207,29 +184,29 @@ class Unit2Pytest:
             else:  # original is wrong
                 exp = match.expansions["$act"][0].signature
             repl = repl.replace("$exp", exp).replace("$real", real)
-            self.rewriter.replace(repl, match.nodes, False, False)
+            self.replace(repl, match.nodes, False, False)
 
     def convert_skip_test(self):
 
-        nodes = ASTFinder.find_kind(self.atu, "Attribute")
+        nodes = ASTFinder.find_kind(self.root, "Attribute")
         for node in nodes:
             if node.signature == "unittest.skip":
-                self.rewriter.replace("pytest.mark.skip", node, False, False)
+                self.replace("pytest.mark.skip", node, False, False)
 
     def swap_expected_and_actual(self):
         pattern: Sequence[AstProtocol] = self.pattern_factory.create_statements("assert_that($exp, is_($act))")  # type: ignore[assignment]
-        for match in match_pattern(self.stmts, pattern):
+        for match in match_pattern(self.root.children, pattern):
             if match.expansions["$exp"][0].kind in ["Constant"]:
                 repl = "assert_that($act, is_($exp))"
                 act = match.expansions["$act"][0].signature
                 exp = match.expansions["$exp"][0].signature
                 repl = repl.replace("$exp", exp).replace("$act", act)
-                self.rewriter.replace(repl, match.nodes, False, False)
+                self.replace(repl, match.nodes, False, False)
 
     def restructure_module(self):
         funs = []
         clss = []
-        for stmt in self.stmts:
+        for stmt in self.root.children:
             if stmt.kind == "FunctionDef":
                 funs.append(stmt)
             elif stmt.kind == "ClassDef":
@@ -240,16 +217,16 @@ class Unit2Pytest:
                 cls = f"class {self.convert_file_to_test_class()}:\n"
                 for fun in funs:
                     cls += convert_function(fun)
-                self.rewriter.replace(cls, funs)
+                self.replace(cls, funs)
             else:
                 for fun in funs:
                     # assuming the class comes first
                     meth = convert_function(fun)
-                    self.rewriter.replace(meth, fun)
+                    self.replace(meth, fun)
 
 
     def convert_file_to_test_class(self):
-        stem = os.path.splitext(os.path.basename(self.file))[0]
+        stem = os.path.splitext(os.path.basename(self.filename))[0]
         parts = stem.split("_")
         if parts[-1].lower() == "test":
             parts = parts[:-1]
