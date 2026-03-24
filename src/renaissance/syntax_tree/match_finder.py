@@ -249,7 +249,7 @@ class MatchFinder:
             recursive (bool, optional): Whether to search recursively within the source nodes. Defaults to True.
 
         Returns:
-            Sequence[PatternMatch]: A stream of pattern matches found in the source nodes.
+            Sequence[PatternMatch]: A list of pattern matches found in the source nodes.
         """
 
         return find_all(src_nodes, *patterns, recursive=recursive)
