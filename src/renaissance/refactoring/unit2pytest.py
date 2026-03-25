@@ -13,7 +13,6 @@ class Unit2Pytest(PythonRefactoring):
         super().__init__(file)
 
     def convert_pytest(self):
-        print(f"refactoring {self.filename}")
 
         self.convert_test_class()
         self.restructure_module()
@@ -205,15 +204,15 @@ class Unit2Pytest(PythonRefactoring):
 
     def restructure_module(self):
         funs = []
-        clss = []
+        test_classes = []
         for stmt in self.root.children:
             if stmt.kind == "FunctionDef":
                 funs.append(stmt)
-            elif stmt.kind == "ClassDef":
-                clss.append(stmt)
+            elif stmt.kind == "ClassDef" and stmt.name.startswith('Test'):
+                test_classes.append(stmt)
 
         if len(funs) > 0:
-            if len(clss) < 1:
+            if len(test_classes) < 1:
                 cls = f"class {self.convert_file_to_test_class()}:\n"
                 for fun in funs:
                     cls += convert_function(fun)
@@ -222,7 +221,8 @@ class Unit2Pytest(PythonRefactoring):
                 for fun in funs:
                     # assuming the class comes first
                     meth = convert_function(fun)
-                    self.replace(meth, fun)
+                    self.insert_after(meth, test_classes[-1].body[-1])
+                    self.remove(fun)
 
     def convert_file_to_test_class(self):
         stem = os.path.splitext(os.path.basename(self.filename))[0]
