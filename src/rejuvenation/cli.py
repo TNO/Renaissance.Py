@@ -20,5 +20,5 @@ if __name__ == "__main__":
         print(f"inspect {Path(".").resolve()}")
         file = sys.argv[2]
         ASTShower.focus = f"|{sys.argv[3]}"
-        atu = PythonASTNode.load(file)
+        atu = PythonASTNode.load(Path(file))
         ASTShower.show_nodes(atu)

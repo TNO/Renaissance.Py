@@ -1,6 +1,6 @@
 from io import StringIO
 import io
-from typing import Protocol, runtime_checkable, Self
+from typing import Protocol, runtime_checkable, Self, Sequence
 
 from termcolor import colored
 
@@ -21,7 +21,7 @@ class ASTShower:
         print("\n" + ASTShower.get_node(node, include_properties))
 
     @staticmethod
-    def show_nodes(ast_nodes: list[Displayable], include_properties: bool = False) -> None:
+    def show_nodes(ast_nodes: Sequence, include_properties: bool = False) -> None:
         for ast_node in ast_nodes:
             ASTShower.show_node(ast_node, include_properties)
 

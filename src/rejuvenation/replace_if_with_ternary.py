@@ -1,7 +1,8 @@
 # This script demonstrates the use of the syntax_tree library to parse and rewrite C code.
 # It specifically showcases the replacement of if-else statements with ternary operators.
-from renaissance.syntax_tree import ASTFactory, MatchFinder, ASTRewriter
 from renaissance.impl.clang import ClangASTNode, CPatternFactory
+from renaissance.syntax_tree import ASTFactory, ASTRewriter
+from renaissance.syntax_tree.match_finder import find_all
 
 example_code = """
         int a = 1;
@@ -60,7 +61,7 @@ def replace_if_with_ternary():
     # Create an ASTRewriter
     rewriter = ASTRewriter(atu)
     # Search matches and replace them
-    for match in MatchFinder.find_all(atu.children, if_else_patterns):
+    for match in find_all(atu.children, if_else_patterns):
         rewriter.replace("$$before; b=($exp) ? $d1:$d2; $$after;", match)
     # Return the rewritten code
     return rewriter.apply_to_string().strip()

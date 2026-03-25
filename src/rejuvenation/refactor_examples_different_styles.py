@@ -2,7 +2,6 @@
 # It showcases how to add comments, replace types, and find specific nodes in the AST using different methods.
 from renaissance.syntax_tree import (
     ASTFactory,
-    MatchFinder,
     ASTRewriter,
     ASTUtils,
     ASTShower,
@@ -64,7 +63,7 @@ def example_add_comment_and_commit(factory, pattern_factory):
 
     ASTShower.show_node(pattern1[0])
     # if you want to find both statements in one go, you should pass a list of patterns
-    # if you don't do that that a sequence of the patterns is searched for
+    # if you don't do that a sequence of the patterns is searched for
 
     # create translation unit
     atu = factory.create_from_text(example_code, "test.c")
@@ -95,7 +94,7 @@ def example_replace_old_by_fancy_new(factory, pattern_factory):
     # put the patterns in a matrix because we want to find both statements in one go and not a sequence
     patterns_list = [pattern1, pattern2]
 
-    # a example of how to use a function iso of lambda to filter the nodes
+    # an example of how to use a function iso of lambda to filter the nodes
     def matches_old(node):
         if "$old" in node and node["$old"][0].name == "old":
             return True
@@ -104,7 +103,7 @@ def example_replace_old_by_fancy_new(factory, pattern_factory):
     atu = factory.create_from_text(example_code, "test.c")
     rewriter = ASTRewriter(atu)
 
-    (rewriter.replace("fancy_new", match.expansions) for match in match_pattern(atu.children, *patterns_list) if matches_old(match))
+    [rewriter.replace("fancy_new", match.nodes) for match in match_pattern(atu.children, *patterns_list) if matches_old(match.expansions)]
 
     print("results after replacing the old type by fancy_new using MatchFinder:")
     result = rewriter.apply_to_string().strip()
@@ -118,7 +117,7 @@ def example_use_ast_kind_finder(factory, _):
     # Create an ASTRewriter for the translation unit
     rewriter = ASTRewriter(atu)
 
-    # Find all nodes of kind TYPE_REF (case insensitive) and filter those with name 'old'
+    # Find all nodes of kind TYPE_REF (case-insensitive) and filter those with name 'old'
     [rewriter.replace("fancy_new", node) for node in ASTFinder.find_kind(atu, "(?i)TYPE.?REF") if node.name == "old"]
 
     # Print the results after replacing the old type by fancy_new
@@ -138,8 +137,8 @@ def example_use_ast_function_finder(factory, _):
 
     # Define a match function to find nodes of kind TYPE_REF with name 'old'
     def match(node):
-        result = ASTFinder.matches_kind(node, "TYPE_?REF") and node.name == "old"
-        return result
+        res = ASTFinder.matches_kind(node, "TYPE_?REF") and node.name == "old"
+        return res
 
     # Use ASTFinder to find all matching nodes and replace 'old' with 'fancy_new'
     [rewriter.replace("fancy_new", node) for node in ASTFinder.find_all(atu, match)]

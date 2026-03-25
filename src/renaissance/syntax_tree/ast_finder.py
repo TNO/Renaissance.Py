@@ -5,6 +5,7 @@ from typing import Callable, Iterator, Optional, Sequence
 from .ast_node import ASTNode
 
 
+
 class ASTFinder:
     KIND_MATCH = re.compile(r"[\W_]+")
 
@@ -51,3 +52,7 @@ class ASTFinder:
         for child in ast_node.children:
             # assert isinstance(child, type(ast_node)), f'Expected {type(ast_node)} but got {type(child)}'
             yield from ASTFinder.__matches_kind(child, pattern)
+
+
+def find_kind(ast_node, kind: str) -> Sequence:
+    return ASTFinder.find_kind(ast_node, kind)

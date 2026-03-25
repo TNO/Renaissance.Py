@@ -1,8 +1,9 @@
-import tree_sitter_python as tspython
+import tree_sitter_python
 
 from renaissance.impl import MATCH_ONE
 from renaissance.impl.tree_sitter_adapter import TreeSitterAdapter, TsPatternFactory
-from renaissance.syntax_tree import ASTShower, ASTFinder, ASTRewriter
+from renaissance.syntax_tree import ASTShower, ASTRewriter
+from renaissance.syntax_tree.ast_finder import find_kind
 from renaissance.syntax_tree.match_finder import match_pattern
 
 
@@ -15,14 +16,14 @@ def python_lst_smoke_test():
     if True:
         greet("World")
     """
-    adapter = TreeSitterAdapter(tspython)
+    adapter = TreeSitterAdapter(tree_sitter_python)
     tree = adapter.parse_code(code)
     lst = adapter.to_lst(code, tree)
 
     # Show the root of the LST
     ASTShower.show_node(lst.root)
 
-    nodes = ASTFinder.find_kind(lst.root, "identifier")
+    nodes = find_kind(lst.root, "identifier")
 
     ASTShower.show_node(nodes[0])
 
@@ -33,11 +34,12 @@ def python_lst_smoke_test():
     matches = match_pattern(lst.root.children, pattern)
 
     ASTShower.show_node(matches[0].nodes[0])
+
     rewriter = ASTRewriter(lst.root)
 
-    def raw(nodes):
+    def raw(my_nodes):
         res = ""
-        for node in nodes:
+        for node in my_nodes:
             if isinstance(node, str):
                 res += node
             else:
@@ -45,13 +47,13 @@ def python_lst_smoke_test():
         return res + "\n"
 
     for match in matches:
-        replment_text = "my_awesome_$greet($arg,'is','awesome)"
+        replacement_text = "my_awesome_$greet($arg,'is','awesome)"
         for repl_snippet in match.expansions:
-            replment_text = replment_text.replace(
+            replacement_text = replacement_text.replace(
                 repl_snippet.replace(MATCH_ONE, "$"),
                 raw(match.expansions[repl_snippet]),
             )
-        rewriter.replace(replment_text, match.nodes)
+        rewriter.replace(replacement_text, match.nodes)
     result = rewriter.apply_to_string()
     print(result)
 
@@ -70,3 +72,6 @@ def python_lst_smoke_test():
     # else:
     #     atu = None
     return result
+
+if __name__ == "__main__":
+    python_lst_smoke_test()
