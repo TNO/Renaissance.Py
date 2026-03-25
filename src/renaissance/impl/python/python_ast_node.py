@@ -293,7 +293,7 @@ class PythonASTNode(ASTNode):
         return all(self.properties.get(n) == properties.get(n) for n in all_keys)
 
     def match_children(self, children):
-        return all(self[i] == child for i, child in enumerate(children))
+        return all(i< len(self.children) and self[i] == child for i, child in enumerate(children))
 
     def derive_position(self, node: ast.AST, translation_unit: PythonTranslationUnit, parent):
         if node._attributes:

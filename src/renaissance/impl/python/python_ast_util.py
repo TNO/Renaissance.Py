@@ -23,4 +23,4 @@ def convert_function(fun):
         signature = signature.replace(f"{fun.name}()", f"{fun.name}(self)", 1)
     else:
         signature = signature.replace(f"{fun.name}(", f"{fun.name}(self,", 1)
-    return textwrap.indent(signature, "    ")
+    return signature
