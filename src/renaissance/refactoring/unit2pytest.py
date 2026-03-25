@@ -213,9 +213,11 @@ class Unit2Pytest(PythonRefactoring):
 
         if len(funs) > 0:
             if len(test_classes) < 1:
+
                 cls = f"class {self.convert_file_to_test_class()}:\n"
                 for fun in funs:
-                    cls += convert_function(fun)
+
+                    cls += textwrap.indent(convert_function(fun), "    ")
                 self.replace(cls, funs)
             else:
                 for fun in funs:
@@ -223,6 +225,12 @@ class Unit2Pytest(PythonRefactoring):
                     meth = convert_function(fun)
                     self.insert_after(meth, test_classes[-1].body[-1])
                     self.remove(fun)
+            self.commit()
+            function_call = [self.pattern_factory.create_expression(f"{fun.name}($$args)")]
+            for call in match_pattern(self.root.children, function_call):
+                sig = call.nodes[0].signature
+                self.replace(f"self.{sig}", call.nodes, False, False)
+            self.commit()
 
     def convert_file_to_test_class(self):
         stem = os.path.splitext(os.path.basename(self.filename))[0]
