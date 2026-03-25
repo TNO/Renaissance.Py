@@ -19,7 +19,7 @@ class TsPatternFactory:
             tree = self.adapter.parse_code(text)
             return self.adapter.to_lst(text, tree).root
         else:
-            return self.adapter.to_lst(text, None).root
+            return self.adapter.to_lst(text).root
 
     def create_python_pattern(self, text: str) -> LSTNode:
         text = replace_dollar(text)

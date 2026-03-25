@@ -81,11 +81,7 @@ class ASTProcessor:
     def find_kind(self, kind: str) -> Sequence[ASTNode]:
         return ASTFinder.find_kind(self.__root_node, kind)
 
-    def find_match(
-        self,
-        *patterns_list,
-        recursive: bool = True
-    ) -> Sequence[PatternMatch]:
+    def find_match(self, *patterns_list, recursive: bool = True) -> Sequence[PatternMatch]:
         return renaissance.syntax_tree.match_finder.find_all(
             self.__root_node.children,
             *patterns_list,

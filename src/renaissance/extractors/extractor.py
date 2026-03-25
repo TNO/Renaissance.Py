@@ -12,5 +12,5 @@ class Extractor:
         results = []
         for rule in self.patterns:
             pattern = self.factory.create_statements(rule)
-            results.extend(MatchFinder.match_pattern(code, pattern, {})) # type: ignore[assignment]
+            results.extend(MatchFinder.match_pattern(code, pattern, {}))  # type: ignore[assignment]
         return results

@@ -16,5 +16,3 @@ class ASTUtils:
                 f.write(rewriter.apply())
             atu = factory.create(Path(rewriter.get_filename()))
             return atu, ASTRewriter(atu)
-
-

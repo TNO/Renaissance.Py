@@ -6,8 +6,8 @@ import test_data.test_code as tst_code
 import test_data.test_insert as tst_insert
 from renaissance.impl.python import PythonASTNode
 from renaissance.syntax_tree import ASTFactory, ASTProcessor
-from test_data.test_testdoubles import (test_doubles_fun, test_doubles_fun_new, test_doubles_class, \
-                                        test_doubles_class_new)
+from test_data.test_testdoubles import test_doubles_fun, test_doubles_fun_new, test_doubles_class, test_doubles_class_new
+
 
 class TestTaut2Unittest:
 
@@ -105,7 +105,7 @@ class TestTaut2Unittest:
                 "self.assertEqual(emrwxread.method_called(0))",
                 "self.assertEqual(self.emrwxread.method_called(0))",
             ),
-            #('EMRWxREAD.emrwxread.set_retval(0)', 'self.emrwxread.set_retval(0)')
+            # ('EMRWxREAD.emrwxread.set_retval(0)', 'self.emrwxread.set_retval(0)')
         ],
     )
     def test_add_self(self, input_code, expected_code):

@@ -239,6 +239,7 @@ Returns:
     Sequence[PatternMatch]: A list of pattern matches found in the source nodes.
 """
 
+
 def find_all(src_nodes, *patterns, recursive: bool = True) -> Sequence[PatternMatch]:
     return list(flatten(MatchFinder.match_pattern(src_nodes, pattern, recursive) for pattern in patterns))
 

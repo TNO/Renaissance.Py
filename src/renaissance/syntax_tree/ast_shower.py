@@ -13,9 +13,9 @@ class Displayable(Protocol):
     show_props: bool
 
 
-
 class ASTShower:
-    focus:str = "NO-FOCUS-DEFINED"
+    focus: str = "NO-FOCUS-DEFINED"
+
     @staticmethod
     def show_node(node, include_properties: bool = False) -> None:
         print("\n" + ASTShower.get_node(node, include_properties))
@@ -44,12 +44,10 @@ class ASTShower:
             node.indent = indent
             node.show_props = include_properties
             raw = str(node)
-            if ASTShower.focus in raw :
+            if ASTShower.focus in raw:
                 raw = colored(raw, "red", attrs=["bold"])
 
             output.write(raw)
         if node.children:
             for child in node.children:
                 ASTShower._process_node(output, indent + "  ", child, include_properties)
-
-

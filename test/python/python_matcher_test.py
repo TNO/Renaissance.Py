@@ -263,9 +263,24 @@ class TestPythonMatcher:
         ]
         """
         atu = PythonASTNode.load_from_text(example_code)
-        pattern = self.pattern_factory.create_statements("TestDoubles($a=ImprovedStub($b))")
-        assert_that(match_pattern(atu.children, pattern), has_length(2))
+        pattern = self.pattern_factory.create_expression("TestDoubles($a=ImprovedStub($b))")
+        assert_that(match_pattern(atu.children, [pattern]), has_length(2))
 
+    def test_find_pattern_one_expr(self):
+        example_code = textwrap.dedent("""
+        [TestDoubles(b=ImprovedStub(write))]
+        """)
+        atu = PythonASTNode.load_from_text(example_code)
+        pattern = self.pattern_factory.create_expression("TestDoubles($a=ImprovedStub($b))")
+        assert_that(match_pattern(atu.children, [pattern]), has_length(1))
+
+    def test_find_pattern_one_stmt(self):
+        example_code = textwrap.dedent("""
+        TestDoubles(b=ImprovedStub(write))
+        """)
+        atu = PythonASTNode.load_from_text(example_code)
+        pattern = self.pattern_factory.create_statement("TestDoubles($a=ImprovedStub($b))")
+        assert_that(match_pattern(atu.children, [pattern]), has_length(1))
 
 if __name__ == "__main__":
     pytest.main()

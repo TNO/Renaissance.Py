@@ -141,7 +141,7 @@ class ASTNode(ABC):
         return node.is_ancestor_of(self)
 
     def is_ancestor_of(self, descendant: Self) -> bool:
-        parent:Self = descendant.parent
+        parent: Self = descendant.parent
         if parent == self:
             return True
         if not parent:

@@ -15,7 +15,6 @@ class LSTMermaidVisualizer:
             self.node_ids[node] = f"n{self.counter}"
         return self.node_ids[node]
 
-
     def _render_node(self, node):
         node_id = self._get_node_id(node)
         label = f"""\
@@ -33,4 +32,3 @@ signature: {TextUtils.clean_signature(node.signature)}
     def render(self, lst: LST):
         self._render_node(lst.root)
         return "\n".join(self.lines)
-

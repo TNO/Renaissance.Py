@@ -9,11 +9,13 @@ def raw(nodes: PythonASTNode):
         res += "\n\n    " + node.text
     return res + "\n    "
 
-def to_str(node:PythonASTNode) -> str:
+
+def to_str(node: PythonASTNode) -> str:
     if hasattr(node, "signature"):
         return node.signature
     else:
         return str(node)
+
 
 def convert_function(fun):
     signature: str = fun.signature + "\n\n\n"

@@ -127,7 +127,7 @@ class Unit2Pytest(PythonRefactoring):
 
     def convert_test_setup(self):
         test_main: Sequence[AstProtocol] = self.pattern_factory.create_statements("def setUp(self): $$stmts")  # type: ignore[assignment]
-        children: Sequence[AstProtocol] = self.atu.children  # type: ignore[assignment]
+        children: Sequence[AstProtocol] = self.root.children  # type: ignore[assignment]
         for match in match_pattern(children, test_main):
             # stmts = self.raw(match.expansions['$$stmts'])
             repl = f"@pytest.fixture(autouse=True)\n{match.nodes[0].signature}"
@@ -223,7 +223,6 @@ class Unit2Pytest(PythonRefactoring):
                     # assuming the class comes first
                     meth = convert_function(fun)
                     self.replace(meth, fun)
-
 
     def convert_file_to_test_class(self):
         stem = os.path.splitext(os.path.basename(self.filename))[0]

@@ -5,7 +5,6 @@ class SimplifyRenaissance(PythonRefactoring):
     def __init__(self, file):
         super().__init__(file)
 
-
     def simplify(self):
         print(f"simplify {self.file}")
         self.replace("unittest.main()", "pytest.main()")

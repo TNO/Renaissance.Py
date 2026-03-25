@@ -19,8 +19,7 @@ class ASTRefactorActions:
             if (kind and ASTFinder.matches_kind(n, kind)) and n.name == name:
                 yield n
 
-        [self.processor.replace(found.text.replace(found.name, replacement, 1), found)
-         for found in self.processor.find_all(test)]
+        [self.processor.replace(found.text.replace(found.name, replacement, 1), found) for found in self.processor.find_all(test)]
 
     def replace_name(
         self,
@@ -50,7 +49,8 @@ class ASTRefactorActions:
         matches_text: Callable[[Optional["ASTNode"]], bool] = (
             lambda n: (not kind or ASTFinder.matches_kind(n, kind))
             and (not skip_kind or not ASTFinder.matches_kind(n, skip_kind))
-            and n is not None and n.text == text
+            and n is not None
+            and n.text == text
         )
 
         found_nodes = self.processor.find_all(matches_text)
