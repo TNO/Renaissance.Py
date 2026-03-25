@@ -968,6 +968,6 @@ def test_get_text_from_rewrite(mocker):
     node.extended_end_offset = 8
     node.text = "int x =0"
 
-    it = _RewriteActions([node], sys.getfilesystemencoding(), True)
+    it = _RewriteActions(node, sys.getfilesystemencoding(), True)
     text = getattr(it, "_RewriteActions__get_texts")([node])
     assert_that(text, is_("int x =0"))
