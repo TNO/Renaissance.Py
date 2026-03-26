@@ -3,31 +3,30 @@ import textwrap
 from typing import Sequence
 
 from renaissance.impl.python.python_ast_util import convert_function
-from renaissance.refactoring.PythonRefactoring import PythonRefactoring
+from renaissance.refactoring.python_refactoring import PythonRefactoring
 from renaissance.syntax_tree import ASTFinder
 from renaissance.syntax_tree.match_finder import match_pattern, AstProtocol
 
 
 class Unit2Pytest(PythonRefactoring):
     def __init__(self, file):
+        '''hide intenal administration in the parent class so that this class you only deals with specific refactors
+        '''
         super().__init__(file)
 
     def convert_pytest(self):
+        '''
+        entry point for converting unittest to pytest
+        '''
 
-        self.convert_test_class()
-        self.restructure_module()
 
         # 1: file level changes
+        self.convert_test_class()
+        self.restructure_module()
         self.replace_stmt("unittest.main()", "pytest.main()")
         self.replace_stmt("import unittest", "import pytest\nfrom hamcrest import *")
-        self.replace_stmt(
-            "from parameterized import parameterized",
-            "import pytest\nfrom hamcrest import *",
-        )
-        self.replace_stmt(
-            "from unittest import TestCase,$$symbols",
-            "import pytest\nfrom hamcrest import *",
-        )
+        self.replace_stmt("from parameterized import parameterized", "import pytest\nfrom hamcrest import *")
+        self.replace_stmt("from unittest import TestCase,$$symbols","import pytest\nfrom hamcrest import *")
         self.replace_stmt("from unittest import TestCase", "import pytest\nfrom hamcrest import *")
 
         # 2: class level changes
@@ -35,12 +34,13 @@ class Unit2Pytest(PythonRefactoring):
         self.convert_test_setup()
         self.commit()
         #
-        self.remove_print()
-        self.convert_plain_assert_same_length()
-        self.commit()
 
         # 3: function level changes
 
+        self.convert_skip_test()
+        self.remove_print()
+        self.convert_plain_assert_same_length()
+        self.commit()
         self.replace_stmt("assert $stmt, $$msg", "assert_that($stmt, is_(True), $$msg)")
         self.replace_stmt("self.assertTrue($exp,$$msg)", "assert_that($exp, is_(True), $$msg)")
         self.replace_stmt("self.assertFalse($exp, $$msg)", "assert_that($exp, is_(False), $$msg)")
@@ -65,7 +65,7 @@ class Unit2Pytest(PythonRefactoring):
             "assert_that(calling($call), raises($exception))",
         )
 
-        # 4: improve to mor concise asserts
+        # 4: improve to more concise asserts
         while self.has_changed():
             self.commit()
             self.replace_stmt("assert_that($exp)", "assert_that($exp, is_(True))")
@@ -103,23 +103,22 @@ class Unit2Pytest(PythonRefactoring):
                 "assert_that($exp, has_length($act))",
             )
             self.swap_expected_and_actual()
-            self.convert_skip_test()
 
-        self.replace_stmt("assert_that(not $stmt)", "assert_that($stmt, is_(False))")
-        self.replace_stmt("assert_that($exp.startswith($act))", "assert_that($exp, starts_with($act))")
-
+            self.replace_stmt("assert_that(not $stmt)", "assert_that($stmt, is_(False))")
+            self.replace_stmt("assert_that($exp.startswith($act))", "assert_that($exp, starts_with($act))")
+            self.remove_duplicate_import("import pytest\nfrom hamcrest import *")
         self.commit()
 
     def convert_test_class(self):
         test_main: Sequence[AstProtocol] = self.pattern_factory.create_statements("class $klass($test_class):\n    $$test_cases\n")  # type: ignore[assignment]
         for match in match_pattern(self.root.children, test_main):
             klass = match.expansions["$klass"][0]
-            test_class = match.expansions["$test_class"][0].signature
+            test_class = self.signature_of(match,"$test_class")
             if test_class.endswith("TestCase"):
                 if klass.endswith("Test"):
-                    repl = match.nodes[0].signature.replace(f"{klass}({test_class}):", f"Test{klass[:-4]}:")
+                    repl = self.signature_of(match).replace(f"{klass}({test_class}):", f"Test{klass[:-4]}:")
                 else:
-                    repl = match.nodes[0].signature.replace(f"({test_class}):", ":")
+                    repl = self.signature_of(match).replace(f"({test_class}):", ":")
 
                 # repl = f'class {match.expansions["$klass"][0]}:\n{raw(match.expansions["$$test_cases"])}'
                 self.replace(repl, match.nodes, False, False)
@@ -239,3 +238,11 @@ class Unit2Pytest(PythonRefactoring):
             parts = parts[:-1]
         name = "".join(word.capitalize() for word in parts)
         return name if name.startswith("Test") else f"Test{name}"
+
+    def remove_duplicate_import(self, import_str):
+        import_stmt: Sequence[AstProtocol] = self.pattern_factory.create_statements(import_str)  # type: ignore[assignment]
+          # type: ignore[assignment]
+        duplicate_imports = match_pattern(self.root.body, import_stmt)
+
+        for match in duplicate_imports[1:-1]:
+            self.remove(match.nodes, False, False)

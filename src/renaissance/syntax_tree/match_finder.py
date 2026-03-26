@@ -6,6 +6,11 @@ from renaissance.impl import MATCH_ALL, MATCH_ONE
 from ..utils.node_util import use_dollar
 
 
+
+IRRELEVANT_PROPS = {"macro_expansion", "start_point", "end_point", "source_code"}
+DEFAULT_EXCLUDE_KIND = {"FullComment", "MACRO_DEFINITION"}
+
+
 @runtime_checkable
 class AstProtocol(Protocol):
     kind: str
@@ -27,11 +32,13 @@ class PatternMatch:
         for node in self.nodes:
             res += node.signature
         return res
-
+        "\n".join(node.signature for node in self.node)
     @property
     def signature(self):
         return str(self)
 
+    def __getitem__(self, key):
+        "\n".join( node.signature for node in self.expansions[key])
     def match_referenced_by(self, patterns: Sequence[list], recursive: bool = True) -> Sequence[Self]:
         found_matches = []
         for node in self.nodes:
@@ -163,14 +170,9 @@ def is_match(src: AstProtocol, cmp: AstProtocol, expansions=None) -> bool:
         return src == cmp
 
 
-DEFAULT_EXCLUDE_KIND = {"FullComment", "MACRO_DEFINITION"}
-
-
 def exclude_nodes_by_kind(src: list[AstProtocol]) -> list[AstProtocol]:
     return [c for c in src if c.kind not in DEFAULT_EXCLUDE_KIND]
 
-
-IRRELEVANT_PROPS = {"macro_expansion", "start_point", "end_point", "source_code"}
 
 
 def is_match_dict(src: dict, cmp: dict, expansions: dict = None) -> bool:
@@ -193,17 +195,7 @@ def is_match_dict(src: dict, cmp: dict, expansions: dict = None) -> bool:
 
 
 def match_pattern(src_nodes, patterns, recursive=True) -> Sequence[PatternMatch]:
-    """
-    Matches a given source node or list of source nodes against a list of pattern nodes.
 
-    Args:
-        src_nodes (Sequence[ASTNode] | ASTNode): The source node or list of source nodes to be matched.
-        patterns (Sequence[ASTNode]): The list of pattern nodes to match against the source nodes.
-        recursive: match children sequence
-
-    Returns:
-        Sequence[PatternMatch]: A PatternMatch object if a match is found, otherwise None.
-    """
     found_statements = []
     to_do = src_nodes
     while len(to_do) > 0:
@@ -227,17 +219,6 @@ def match_pattern(src_nodes, patterns, recursive=True) -> Sequence[PatternMatch]
     return found_statements
 
 
-"""
-Finds all pattern matches in the given source nodes.
-
-Args:
-    src_nodes (Sequence[AstProtocol]): The source nodes to search within.
-    *patterns (Sequence[AstProtocol]): One or more lists of nodes representing the patterns to match.
-    recursive (bool, optional): Whether to search recursively within the source nodes. Defaults to True.
-
-Returns:
-    Sequence[PatternMatch]: A list of pattern matches found in the source nodes.
-"""
 
 
 def find_all(src_nodes, *patterns, recursive: bool = True) -> Sequence[PatternMatch]:
@@ -253,6 +234,17 @@ class MatchFinder:
         *patterns: Sequence[AstProtocol],
         recursive: bool = True,
     ) -> Sequence[PatternMatch]:
+        """
+        Finds all pattern matches in the given source nodes.
+
+        Args:
+            src_nodes (Sequence[AstProtocol]): The source nodes to search within.
+            *patterns (Sequence[AstProtocol]): One or more lists of nodes representing the patterns to match.
+            recursive (bool, optional): Whether to search recursively within the source nodes. Defaults to True.
+
+        Returns:
+            Sequence[PatternMatch]: A list of pattern matches found in the source nodes.
+        """
 
         return find_all(src_nodes, *patterns, recursive=recursive)
 
@@ -262,6 +254,17 @@ class MatchFinder:
         patterns: Sequence[AstProtocol],
         recursive=True,
     ) -> Sequence[PatternMatch]:
+        """
+        Matches a given source node or list of source nodes against a list of pattern nodes.
+
+        Args:
+            src_nodes (Sequence[ASTNode] | ASTNode): The source node or list of source nodes to be matched.
+            patterns (Sequence[ASTNode]): The list of pattern nodes to match against the source nodes.
+            recursive: match children sequence
+
+        Returns:
+            Sequence[PatternMatch]: A PatternMatch object if a match is found, otherwise None.
+        """
         return match_pattern(src_nodes, patterns, recursive)
 
 
