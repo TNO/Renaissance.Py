@@ -31,4 +31,5 @@ Feature: Convert unittest to pytest
     And it should contain 'assert_that(self.b, is_(55))'
     And it should contain '@pytest.mark.skip'
     And it should contain '@pytest.mark.parametrize("_, factory",Factories.factories)'
+
     And it should contain 'class TestFindMatch:'

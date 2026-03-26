@@ -139,7 +139,7 @@ class Unit2Pytest(PythonRefactoring):
         ))
         for match in match_pattern(self.root.children, unittest):
             fun = match.nodes[0]
-            args = match["$$args"].replace('\n', ', ')
+            args = ", ".join([arg.node.arg for arg in match.expansions["$$args"]])
             if varg := match.expansions["$$varg"]:
                 args = f"{args}, *{varg[0].signature}"
             args = args.replace("self, ", "")
