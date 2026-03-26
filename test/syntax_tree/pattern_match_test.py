@@ -1,7 +1,6 @@
-from hamcrest import assert_that, is_, contains_exactly, has_length
+from hamcrest import assert_that, is_
 
-from renaissance.syntax_tree import PatternMatch, MatchFinder, ASTShower
-from renaissance.syntax_tree.match_finder import is_match
+from renaissance.syntax_tree import PatternMatch
 
 
 class TestPatternMatch:
@@ -17,3 +16,9 @@ class TestPatternMatch:
         )
         pattern_match.match_referenced_by([[node]], False)
         assert_that(mock_matcher.call_count, is_(6))
+
+    def test_get_key_redirect_to_expansion_signature(self, mocker):
+        node = mocker.Mock()
+        node.signature = "name_1"
+        pattern_match = PatternMatch([],{'key': [node]}, 'patterns')
+        assert_that(pattern_match['key'], is_('name_1'))

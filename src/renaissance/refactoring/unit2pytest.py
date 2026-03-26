@@ -14,7 +14,7 @@ class Unit2Pytest(PythonRefactoring):
         '''
         super().__init__(file)
 
-    def convert_pytest(self):
+    def run(self):
         '''
         entry point for converting unittest to pytest
         '''
@@ -113,12 +113,12 @@ class Unit2Pytest(PythonRefactoring):
         test_main: Sequence[AstProtocol] = self.pattern_factory.create_statements("class $klass($test_class):\n    $$test_cases\n")  # type: ignore[assignment]
         for match in match_pattern(self.root.children, test_main):
             klass = match.expansions["$klass"][0]
-            test_class = self.signature_of(match,"$test_class")
+            test_class = match["$test_class"]
             if test_class.endswith("TestCase"):
                 if klass.endswith("Test"):
-                    repl = self.signature_of(match).replace(f"{klass}({test_class}):", f"Test{klass[:-4]}:")
+                    repl = match.signature.replace(f"{klass}({test_class}):", f"Test{klass[:-4]}:")
                 else:
-                    repl = self.signature_of(match).replace(f"({test_class}):", ":")
+                    repl = match.signature.replace(f"({test_class}):", ":")
 
                 # repl = f'class {match.expansions["$klass"][0]}:\n{raw(match.expansions["$$test_cases"])}'
                 self.replace(repl, match.nodes, False, False)
@@ -136,11 +136,11 @@ class Unit2Pytest(PythonRefactoring):
         for match in match_pattern(self.root.children, pat):
             repl = replacement
             if match.expansions["$exp"][0].kind in ["Constant"]:
-                exp = match.expansions["$act"][0].signature
-                act = match.expansions["$exp"][0].signature
+                exp= match["$act"]
+                act= match["$exp"]
             else:  # original is wrong
-                act = match.expansions["$act"][0].signature
-                exp = match.expansions["$exp"][0].signature
+                act= match["$act"]
+                exp= match["$exp"]
             repl = repl.replace("$exp", exp).replace("$act", act)
             self.replace(repl, match.nodes, False, False)
 
@@ -176,11 +176,11 @@ class Unit2Pytest(PythonRefactoring):
         pattern: Sequence[AstProtocol] = self.pattern_factory.create_statements('$act: int = len($real)\nassert $exp == $act, "$act = " + str($act)')  # type: ignore[assignment]
         for match in match_pattern(self.root.children, pattern):
             repl = 'assert_that($real, has_length($exp), f"length of $real = {len($real)}")'
-            real = match.expansions["$real"][0].signature
+            real= match["$real"]
             if match.expansions["$exp"][0].kind in ["Constant"]:
-                exp = match.expansions["$exp"][0].signature
+                exp= match["$exp"]
             else:  # original is wrong
-                exp = match.expansions["$act"][0].signature
+                exp= match["$act"]
             repl = repl.replace("$exp", exp).replace("$real", real)
             self.replace(repl, match.nodes, False, False)
 
@@ -196,8 +196,8 @@ class Unit2Pytest(PythonRefactoring):
         for match in match_pattern(self.root.children, pattern):
             if match.expansions["$exp"][0].kind in ["Constant"]:
                 repl = "assert_that($act, is_($exp))"
-                act = match.expansions["$act"][0].signature
-                exp = match.expansions["$exp"][0].signature
+                act= match["$act"]
+                exp= match["$exp"]
                 repl = repl.replace("$exp", exp).replace("$act", act)
                 self.replace(repl, match.nodes, False, False)
 
@@ -225,10 +225,11 @@ class Unit2Pytest(PythonRefactoring):
                     self.insert_after(meth, test_classes[-1].body[-1])
                     self.remove(fun)
             self.commit()
-            function_call = [self.pattern_factory.create_expression(f"{fun.name}($$args)")]
-            for call in match_pattern(self.root.children, function_call):
-                sig = call.nodes[0].signature
-                self.replace(f"self.{sig}", call.nodes, False, False)
+            for fun in funs:
+                function_call = [self.pattern_factory.create_expression(f"{fun.name}($$args)")]
+                for call in match_pattern(self.root.children, function_call):
+                    sig = call.nodes[0].signature
+                    self.replace(f"self.{sig}", call.nodes, False, False)
             self.commit()
 
     def convert_file_to_test_class(self):

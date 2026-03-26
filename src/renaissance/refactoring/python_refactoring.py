@@ -1,3 +1,6 @@
+import importlib
+import re
+
 from renaissance.impl.python import PythonASTNode, PythonPatternFactory
 from renaissance.impl.python.python_ast_util import to_str
 from renaissance.syntax_tree import ASTFactory, ASTProcessor
@@ -5,6 +8,7 @@ from renaissance.syntax_tree.match_finder import match_pattern
 
 
 class PythonRefactoring(ASTProcessor):
+
     def __init__(self, file):
         factory = ASTFactory(PythonASTNode, [])
         atu = factory.create(file)
@@ -21,3 +25,12 @@ class PythonRefactoring(ASTProcessor):
 
             replacement = replacement.replace(" ,)", ")").replace(", )", ")")
             self.replace(replacement, match.nodes, False, False)
+
+    @staticmethod
+    def process(class_name, file):
+        """Return a subclass by name using importlib, like Java's Class.forName()."""
+        snake = re.sub(r"(?<!^)(?=[A-Z])", "_", class_name).lower()
+        module = importlib.import_module(f"renaissance.refactoring.{snake}")
+        cls = getattr(module, class_name)
+        refactor = cls(file)
+        refactor.run()

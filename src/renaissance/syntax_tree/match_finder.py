@@ -28,17 +28,13 @@ class PatternMatch:
         self._remaining_nodes: list[AstProtocol] = []
 
     def __str__(self):
-        res = ""
-        for node in self.nodes:
-            res += node.signature
-        return res
-        "\n".join(node.signature for node in self.node)
+        "\n".join(node.signature for node in self.nodes)
     @property
     def signature(self):
         return str(self)
 
     def __getitem__(self, key):
-        "\n".join( node.signature for node in self.expansions[key])
+        return "\n".join( node.signature for node in self.expansions[key])
     def match_referenced_by(self, patterns: Sequence[list], recursive: bool = True) -> Sequence[Self]:
         found_matches = []
         for node in self.nodes:
