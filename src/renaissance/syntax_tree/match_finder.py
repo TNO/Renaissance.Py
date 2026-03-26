@@ -2,9 +2,13 @@ from typing import Sequence, Self, Iterable, Protocol, runtime_checkable
 
 from more_itertools import flatten
 
-from .ast_node import ASTNode
 from renaissance.impl import MATCH_ALL, MATCH_ONE
 from ..utils.node_util import use_dollar
+
+
+
+IRRELEVANT_PROPS = {"macro_expansion", "start_point", "end_point", "source_code"}
+DEFAULT_EXCLUDE_KIND = {"FullComment", "MACRO_DEFINITION"}
 
 
 @runtime_checkable
@@ -21,18 +25,16 @@ class PatternMatch:
         self.nodes = nodes
         self.expansions = expansions
         self.patterns = patterns
-        self._remaining_nodes: list[ASTNode] = []
+        self._remaining_nodes: list[AstProtocol] = []
 
     def __str__(self):
-        res = ""
-        for node in self.nodes:
-            res += node.signature
-        return res
-
+        return "\n".join(node.signature for node in self.nodes)
     @property
     def signature(self):
         return str(self)
 
+    def __getitem__(self, key):
+        return "\n".join( node.signature  if isinstance(node, AstProtocol) else node for node in self.expansions[key])
     def match_referenced_by(self, patterns: Sequence[list], recursive: bool = True) -> Sequence[Self]:
         found_matches = []
         for node in self.nodes:
@@ -61,7 +63,7 @@ def is_match_tree(src: Sequence | None, cmp: Sequence | None, expansions=None):
     # src and cmp are both lists
     if len(cmp) == 0 or len(src) == 0:
         return src == cmp
-    if len(cmp) == 1 and isinstance(cmp0 := cmp[0], ASTNode) and cmp0.kind == MATCH_ALL:
+    if len(cmp) == 1 and isinstance(cmp0 := cmp[0], AstProtocol) and cmp0.kind == MATCH_ALL:
         expansions[cmp0.name] = src
         return True
     return find_in_list(src, cmp, expansions) + 1 == len(src)
@@ -100,11 +102,11 @@ def find_in_list(src: Sequence, cmp: Sequence, exp=None):
             i += 1
         else:
             return -1
-    if found_position == len(cmp) - 1 and isinstance(cmp[found_position], ASTNode) and cmp[found_position].kind == MATCH_ALL:
+    if found_position == len(cmp) - 1 and isinstance(cmp[found_position], AstProtocol) and cmp[found_position].kind == MATCH_ALL:
         if cmp[found_position].name in exp:
             if exp[cmp[found_position].name]:
                 for p in cmp:
-                    if isinstance(p, ASTNode) and p.name in exp:
+                    if isinstance(p, AstProtocol) and p.name in exp:
                         exp.pop(p.name)
                 return -1
         else:
@@ -116,9 +118,9 @@ def find_in_list(src: Sequence, cmp: Sequence, exp=None):
             i = len(src)
         elif (
             len(cmp) >= 2
-            and isinstance(cmp[-2], ASTNode)
+            and isinstance(cmp[-2], AstProtocol)
             and cmp[-2].kind == MATCH_ALL
-            and isinstance(cmp[-1], ASTNode)
+            and isinstance(cmp[-1], AstProtocol)
             and cmp[-1].kind == MATCH_ONE
         ):
             exp[cmp[-2].name] = src[expansion_start:-1]
@@ -164,14 +166,9 @@ def is_match(src: AstProtocol, cmp: AstProtocol, expansions=None) -> bool:
         return src == cmp
 
 
-DEFAULT_EXCLUDE_KIND = {"FullComment", "MACRO_DEFINITION"}
-
-
 def exclude_nodes_by_kind(src: list[AstProtocol]) -> list[AstProtocol]:
     return [c for c in src if c.kind not in DEFAULT_EXCLUDE_KIND]
 
-
-IRRELEVANT_PROPS = {"macro_expansion", "start_point", "end_point", "source_code"}
 
 
 def is_match_dict(src: dict, cmp: dict, expansions: dict = None) -> bool:
@@ -193,18 +190,8 @@ def is_match_dict(src: dict, cmp: dict, expansions: dict = None) -> bool:
     return all(match_property(n) for n in all_keys)
 
 
-def match_pattern(src_nodes: Sequence[AstProtocol], patterns: Sequence[AstProtocol], recursive=True) -> Sequence[PatternMatch]:
-    """
-    Matches a given source node or list of source nodes against a list of pattern nodes.
+def match_pattern(src_nodes, patterns, recursive=True) -> Sequence[PatternMatch]:
 
-    Args:
-        src_nodes (Sequence[ASTNode] | ASTNode): The source node or list of source nodes to be matched.
-        patterns (Sequence[ASTNode]): The list of pattern nodes to match against the source nodes.
-        recursive: match children sequence
-
-    Returns:
-        Sequence[PatternMatch]: A PatternMatch object if a match is found, otherwise None.
-    """
     found_statements = []
     to_do = src_nodes
     while len(to_do) > 0:
@@ -227,8 +214,11 @@ def match_pattern(src_nodes: Sequence[AstProtocol], patterns: Sequence[AstProtoc
 
     return found_statements
 
-def find_all(src_nodes: Sequence[AstProtocol], *patterns: Sequence[AstProtocol], recursive: bool = True) -> Sequence[PatternMatch]:
-    return flatten(MatchFinder.match_pattern(src_nodes, pattern, recursive) for pattern in patterns)
+
+
+
+def find_all(src_nodes, *patterns, recursive: bool = True) -> Sequence[PatternMatch]:
+    return list(flatten(MatchFinder.match_pattern(src_nodes, pattern, recursive) for pattern in patterns))
 
 
 class MatchFinder:
@@ -260,6 +250,17 @@ class MatchFinder:
         patterns: Sequence[AstProtocol],
         recursive=True,
     ) -> Sequence[PatternMatch]:
+        """
+        Matches a given source node or list of source nodes against a list of pattern nodes.
+
+        Args:
+            src_nodes (Sequence[ASTNode] | ASTNode): The source node or list of source nodes to be matched.
+            patterns (Sequence[ASTNode]): The list of pattern nodes to match against the source nodes.
+            recursive: match children sequence
+
+        Returns:
+            Sequence[PatternMatch]: A PatternMatch object if a match is found, otherwise None.
+        """
         return match_pattern(src_nodes, patterns, recursive)
 
 

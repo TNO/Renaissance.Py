@@ -1,6 +1,6 @@
 # This script demonstrates the use of the syntax_tree library to parse and rewrite C code.
 # It specifically showcases nested replacements and multiple patterns.
-from renaissance.syntax_tree import ASTFactory, MatchFinder, ASTRewriter
+from renaissance.syntax_tree import ASTFactory, ASTRewriter
 from renaissance.impl.clang import ClangASTNode, CPatternFactory
 from renaissance.syntax_tree import ASTShower, TextUtils, ASTFinder
 from renaissance.syntax_tree.match_finder import find_all
@@ -95,7 +95,7 @@ def refactor_with_nested_compositions(args):
     ASTShower.show_node(pattern1[0], include_properties)
     ASTShower.show_node(pattern2[0], include_properties)
 
-    result = None
+    result1 = None
     while atu:
         # create an ASTRewriter
         rewriter = ASTRewriter(atu)
@@ -107,30 +107,28 @@ def refactor_with_nested_compositions(args):
             return res + "\n"
 
         # create a refactoring that use different replacement code for different patterns
-        def refactor(match):
-            print(f"peek: f{match.signature}")
-            if match.patterns == pattern1:
-                replment_text = pattern1replacement
+        def refactor(match1):
+            print(f"peek: f{match1.signature}")
+            if match1.patterns == pattern1:
+                replacement_text = pattern1replacement
             else:
-                replment_text = pattern2replacement
+                replacement_text = pattern2replacement
 
-            for repl_snippet in match.expansions:
-                replment_text = replment_text.replace(repl_snippet, raw(match.expansions[repl_snippet]))
-            return rewriter.replace(replment_text, match.nodes)
+            for repl_snippet in match1.expansions:
+                replacement_text = replacement_text.replace(repl_snippet, raw(match1.expansions[repl_snippet]))
+            return rewriter.replace(replacement_text, match1.nodes)
 
         # search matches for pattern1 and pattern2 and replace them using the refactor function
         for match in find_all(atu.children, pattern1, pattern2):
             refactor(match)
 
-
-
-             # print the rewritten code
-        result = rewriter.apply_to_string()
+            # print the rewritten code
+        result1 = rewriter.apply_to_string()
         if rewriter.has_changed():
-            atu = factory.create_from_text(result, "example.c")
+            atu = factory.create_from_text(result1, "example.c")
         else:
             atu = None
-    return result
+    return result1
 
 
 if __name__ == "__main__":

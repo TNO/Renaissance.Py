@@ -95,7 +95,7 @@ class ASTNode(ABC):
             file_path = self.root.filename
         try:
             return ASTNode.cache[file_path]
-        except Exception:
+        except KeyError:
             with open(file_path, "rb") as f:
                 content = f.read()
                 ASTNode.cache[file_path] = content
@@ -141,7 +141,7 @@ class ASTNode(ABC):
         return node.is_ancestor_of(self)
 
     def is_ancestor_of(self, descendant: Self) -> bool:
-        parent = descendant.parent
+        parent: Self = descendant.parent
         if parent == self:
             return True
         if not parent:
@@ -150,12 +150,12 @@ class ASTNode(ABC):
 
     @staticmethod
     @abstractmethod
-    def load(file_path: Path, extra_args: Sequence[str], working_dir: Path) -> Self:
+    def load(file_path: Path, extra_args: Sequence[str], working_dir: Path) -> ASTNode:
         pass
 
     @staticmethod
     @abstractmethod
-    def load_from_text(text: str, file_name: str, extra_args: list[str], working_dir: Path) -> Self:
+    def load_from_text(text: str, file_name: str, extra_args: Sequence[str], working_dir: Path) -> ASTNode:
         pass
 
     @property

@@ -46,7 +46,7 @@ class TestPythonFactory:
         node = pattern_factory.create_python_pattern(imp)
         assert_that(ast.ImportFrom.__name__, is_(node.kind))
         assert_that(node.signature, is_(imp))
-        assert_that(node.properties['module'], is_('module'))
+        assert_that(node.properties["module"], is_("module"))
 
     @pytest.mark.parametrize(
         "statement",

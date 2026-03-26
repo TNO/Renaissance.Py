@@ -133,5 +133,5 @@ def process_atu(
             return results
         ast_processor = ast_processor.commit()
         if self.in_memory:
-            self.in_memory_files[ast_processor.get_filename()] = ast_processor.apply_to_string()
+            self.in_memory_files[ast_processor.filename] = ast_processor.apply_to_string()
     return results

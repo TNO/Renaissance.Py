@@ -108,8 +108,7 @@ def batch_repeat_example():
 
     # remove a function to create more unused variables
     def remove_function(ast_processor: ASTProcessor):
-        [ast_processor.insert_before("// ", node, False, False)
-         for node in ast_processor.find_kind("(?i)Call_?Expr")]
+        [ast_processor.insert_before("// ", node, False, False) for node in ast_processor.find_kind("(?i)Call_?Expr")]
 
     # batch_processor.repeat(simple_codebase_provider, [remove_function])
     batch_processor.repeat(
@@ -160,8 +159,8 @@ class AnalysisRecipe:
 
 def batch_recipe_example():
     print("example batch analysis using recipe:\n")
-    recipeAstProcessor = RecipeASTProcessor(AnalysisRecipe(), simple_codebase_provider, r".*", in_memory=True)
-    recipeAstProcessor.run()
+    recipe_ast_processor = RecipeASTProcessor(AnalysisRecipe(), simple_codebase_provider, r".*", in_memory=True)
+    recipe_ast_processor.run()
 
 
 if __name__ == "__main__":

@@ -32,17 +32,24 @@ def derive_header_text(language: str, ref_node: ASTNode | None):
             for c in ref_node.children:
                 if c.is_part_of_translation_unit() and c.kind in matcher_set:
                     header += c.signature + "\n"
-        offset = min((n.offset for n in ref_node.children if n.is_part_of_translation_unit()
-                      and not ASTFinder.matches_kind(n, "(?i)Inclusion_?Directive")), default=0)
+        offset = min(
+            (
+                n.offset
+                for n in ref_node.children
+                if n.is_part_of_translation_unit() and not ASTFinder.matches_kind(n, "(?i)Inclusion_?Directive")
+            ),
+            default=0,
+        )
 
         header = CPatternFactory.remove_indent(ref_node.content(0, offset))
-        header += (
-            "\n".join( n.text+';' for n in ref_node.children
+        header += "\n".join(
+            n.text + ";"
+            for n in ref_node.children
             if n.is_part_of_translation_unit()
             and ASTFinder.matches_kind(n, "(?i)(Function|Var|Typedef)_?Decl|MACRO_?DEFINITION")
-            and len(ASTFinder.find_kind(n, "(?i)Compound_?Stmt")) == 0))
-        header +="\n"
-
+            and len(ASTFinder.find_kind(n, "(?i)Compound_?Stmt")) == 0
+        )
+        header += "\n"
 
     return header, language
 
@@ -80,8 +87,7 @@ class CPatternFactory:
         )
         root = self._create(full_text)
         # return the first expression found in the tree as a ASTNode
-        return last(n.children[0] for n in  ASTFinder.find_kind(root.children[-1], "(?i)PAREN_?EXPR") if n.is_part_of_translation_unit)
-
+        return last(n.children[0] for n in ASTFinder.find_kind(root.children[-1], "(?i)PAREN_?EXPR") if n.is_part_of_translation_unit)
 
     def create_declarations(
         self,
@@ -165,7 +171,7 @@ class CPatternFactory:
         # print(self.header + text)
         root = self.factory.create_from_text(self.header + text, "test." + self.language)
         if kind:
-            return ASTFinder.find_kind(root.children[-1], kind).find_first().get()
+            return first(ASTFinder.find_kind(root.children[-1], kind))
         return root
 
     def create_statement(
@@ -204,7 +210,6 @@ class CPatternFactory:
 
         body = first(ASTFinder.find_kind(root.children[-1], "(?i)COMPOUND_?STMT")).children
         return list(n for n in body if n.is_part_of_translation_unit and first(ASTFinder.find_kind(n, kind)))
-
 
     def _create(self, text: str) -> ASTNode:
         atu = self.factory.create_from_text(text, "test." + self.language)
@@ -276,8 +281,8 @@ class CPPPatternFactory(CPatternFactory):
         if SHOW_NODE:
             ASTShower.show_node(target_class)
         # search the call expr and the preceding type ref
-        call_expr = ASTFinder.find_kind(target_class, "CallExpr").peek(lambda n: ASTShower.show_node(n)).find_last().get()
-        # include the preceding typeref
+        call_expr = last(ASTFinder.find_kind(target_class, "CallExpr"))
+        # include the preceding type ref
         assert isinstance(call_expr, ASTNode), "No call expression found"
         type_ref = call_expr.preceding_sibling
         assert isinstance(type_ref, ASTNode), "No type ref found"

@@ -66,17 +66,17 @@ class derived : public ListView_LEGACY{
         derived(string cont) : ListView_LEGACY(cont, 5) {
                                 // something
                             };
-        void anotherfunc(int s);
+        void another_func(int s);
 };
 
-void derived::anotherfunc(int s){
+void derived::another_func(int s){
     int a = 0;
-    // anotherfunc 0
-    // anotherfunc 1
+    // another_func 0
+    // another_func 1
 }
                                    
 void main2(string container){
-    /*ahah*/
+    /* hahaha*/
     ListView_LEGACY listview(container, 3);
     int b;
     int a;
@@ -154,7 +154,7 @@ class derived: public ListView_LEGACY {
                                  std:make_unique<ListViewHeader>(*this)}{
             //something
         };
-        void anotherfunc(int s );
+        void another_func(int s );
 };
 void __REPLACEMENT__(){}
 
@@ -220,7 +220,7 @@ class MyRefactor:
         pattern = CPPPatternFactory(ast_processor.factory)
         actions = ASTRefactorActions(ast_processor, pattern)
         actions.replace_text("ListView_LEGACY", "ListViewCustom", skip_kind="Type_?Ref")
-        actions.replace_name("anotherfunc", "__REPLACEMENT__", "(?i)Cxx_?Method")
+        actions.replace_name("another_func", "__REPLACEMENT__", "(?i)Cxx_?Method")
         actions.replace_text("idToBeReplaced", "NEW_ID")
         # TODO debate the way to replace this the options are:
         # 1. make a match of the consecutive nodes.
@@ -234,13 +234,13 @@ class MyRefactor:
         # create a pattern to match a call to a constructor in both declarations and derived classes
         constructor_call_pattern = pattern.create_constructor_call("$var($container, $headerCount)")
         # search for the constructor pattern
-        for constructor_match in ast_processor.find_match(constructor_pattern).to_iterable():
+        for constructor_match in ast_processor.find_match(constructor_pattern):
             # and then search for the referenced by calls to the constructor
-            for constructor_call in constructor_match.match_referenced_by([constructor_call_pattern]).to_iterable():
-                var_node = constructor_call.get_nodes()["$var"][0]
+            for constructor_call in constructor_match.match_referenced_by([constructor_call_pattern]):
+                var_node = constructor_call.nodes["$var"][0]
                 parent = var_node.parent
                 assert isinstance(parent, ASTNode), f"{parent} is not an ASTNode"
-                header_count = constructor_call.get_as_int("$headerCount")
+                header_count = int(constructor_call.expansions["$headerCount"])
                 # remove the count argument from the constructor call
                 # TODO it would be a lot easier if ast rewrite would support removal of the second argument
                 # but currently (I guess) that would lead to a dangling comma
@@ -253,7 +253,7 @@ class MyRefactor:
                     ast_processor.insert_after(", m_headers {" + repl + "}", constructor_call, True, False)
                 else:
                     var = parent.name
-                    container = constructor_call.get_name("$container")
+                    container = constructor_call.expansions["$container"]
                     # replace the constructor call with a ListViewCustom object
                     ast_processor.replace(f"ListViewCustom {var}({container});", parent)
                     # find reference to the declaration
@@ -279,8 +279,8 @@ class MyRefactor:
 
 def batch_recipe_example():
     print("example batch analysis using recipe:\n")
-    recipeAstProcessor = RecipeASTProcessor(MyRefactor(), simple_codebase_provider, r".*", in_memory=True)
-    recipeAstProcessor.run()
+    recipe_ast_processor = RecipeASTProcessor(MyRefactor(), simple_codebase_provider, r".*", in_memory=True)
+    recipe_ast_processor.run()
 
 
 if __name__ == "__main__":

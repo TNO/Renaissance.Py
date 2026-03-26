@@ -66,6 +66,14 @@ An incomplete list of todo's:
 * Test cases for multiple match patterns need to be added. Currently, there is only one working case in the examples
 * Comments in Clang appear incorrectly in the `ASTShower`. This seems to be a Clang issue, which is surprising
 
+## Usage
 
-E       Expected: 'int a = 1;\n        int b = 2;\n        int c = 3;\n        int d = 4;\n        void f(){\n            c++; b=(a==1) ? 2:3; d++;\n        }'
-E        but: was 'int a = 1;\n        int b = 2;\n        int c = 3;\n        int d = 4;\n        void f(){\n            if (a==1) {\n                c++;\n                b = 2;\n                d++;\n            }\n            else {\n                c++;\n                b = 3;\n                d++;\n            }\n        }'
+cli <command> <src> <other-args>
+
+### Inspect
+
+Inspect the AST of a source file.
+```bash
+cli inspect features/targets/demo.py pass
+```
+it will show ast of demo.py and focus on 'pass' statements

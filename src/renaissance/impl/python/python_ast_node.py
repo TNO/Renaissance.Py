@@ -293,7 +293,7 @@ class PythonASTNode(ASTNode):
         return all(self.properties.get(n) == properties.get(n) for n in all_keys)
 
     def match_children(self, children):
-        return all(self[i] == child for i, child in enumerate(children))
+        return all(i< len(self.children) and self[i] == child for i, child in enumerate(children))
 
     def derive_position(self, node: ast.AST, translation_unit: PythonTranslationUnit, parent):
         if node._attributes:
@@ -314,7 +314,7 @@ class PythonASTNode(ASTNode):
 
     @override
     @staticmethod
-    def load(file_path: Path, extra_args: Sequence[str], working_dir: Path) -> "PythonASTNode":
+    def load(file_path: Path, extra_args: Sequence[str] = None, working_dir: Path = Path(".")) -> "PythonASTNode":
         with open(working_dir / file_path, "r") as file:
             content = file.read()
             return PythonASTNode.load_from_text(content, str(file_path), extra_args, working_dir)

@@ -42,6 +42,7 @@ class TestAllFinder(TestFinder):
         def is_bogus(node: ASTNode):
             if "Bogus" in node.kind:
                 yield node
+
         assert_that(ASTFinder.find_all(model, is_bogus), has_length(0))
 
     @pytest.mark.parametrize("_, factory", Factories.factories)
@@ -51,4 +52,5 @@ class TestAllFinder(TestFinder):
         def is_binary_operator(node: ASTNode):
             if re.fullmatch("(?i).*binary_?operator", node.kind):
                 yield node
+
         assert_that(ASTFinder.find_all(model, is_binary_operator), has_length(greater_than(0)))

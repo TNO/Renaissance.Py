@@ -48,8 +48,8 @@ expected_result_refactor = """
         }""".strip()
 
 
-def remove_unused_variable_using_refactor_method(node_type: type[ASTNode]):
-    factory = ASTFactory(node_type, [])
+def remove_unused_variable_using_refactor_method(node_type1: type[ASTNode]):
+    factory = ASTFactory(node_type1, [])
     # create translation unit
     atu = factory.create_from_text(example_code, "test.c")
     # create a Refactor
@@ -58,13 +58,13 @@ def remove_unused_variable_using_refactor_method(node_type: type[ASTNode]):
     CleanupRefactoring.remove_unused_variables(refactor)
     result = refactor.apply_to_string().strip()
     # print the rewritten code
-    print(f"Using cleanup refactoring results {node_type.__name__}:")
+    print(f"Using cleanup refactoring results {node_type1.__name__}:")
     print(result)
 
     return result, expected_result_refactor
 
 
-def remove_unused_variable_low_level(node_type: type[ASTNode]):
+def remove_unused_variable_low_level(node_type1: type[ASTNode]):
     factory = ASTFactory(ClangJsonASTNode, [])
     # Create a pattern factory (using the factory (hence also its args)
     # create translation unit
@@ -75,14 +75,11 @@ def remove_unused_variable_low_level(node_type: type[ASTNode]):
 
     ASTShower.show_node(atu)
     # search matches and replace them
-    funcs = flatten( ASTFinder.find_kind(func, "(?i)Var_?Decl")
-        for func in (ASTFinder.find_kind(atu, "(?i)Compound?Stmt")))
-    [rewriter.remove(node.parent, True, True)
-      for node in funcs if len(node.referenced_by) == 0]
-
+    funcs = flatten(ASTFinder.find_kind(func, "(?i)Var_?Decl") for func in (ASTFinder.find_kind(atu, "(?i)Compound?Stmt")))
+    [rewriter.remove(node.parent, True, True) for node in funcs if len(node.referenced_by) == 0]
 
     # print the rewritten code
-    print(f"Low level results using {node_type.__name__}:")
+    print(f"Low level results using {node_type1.__name__}:")
     result = rewriter.apply_to_string().strip()
     print(result)
     return result, expected_result_refactor

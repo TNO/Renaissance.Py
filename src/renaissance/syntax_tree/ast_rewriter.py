@@ -22,12 +22,12 @@ DEFAULT_INDENT = 4
 class ASTRewriter:
     def __init__(
         self,
-        nodes: ASTNode | Sequence[ASTNode],
+        node,
         encoding: str = sys.getfilesystemencoding(),
         correct_indent: bool = True,
     ) -> None:
-        self.__rewrites = _RewriteActions(nodes, encoding, correct_indent=correct_indent)
-        self.__filename = nodes[0].root.filename if isinstance(nodes, Sequence) else nodes.root.filename
+        self.__rewrites = _RewriteActions(node, encoding, correct_indent=correct_indent)
+        self.__filename = node.root.filename
 
     def get_filename(self) -> str:
         return self.__filename
@@ -98,7 +98,7 @@ class ASTRewriter:
 
     @staticmethod
     def _get_comment_location(start_offset: int, stop_offset: int, content: bytes) -> tuple[int, int]:
-        return _RewriteActions._get_comment_location(start_offset, stop_offset, content)
+        return _RewriteActions.get_comment_location(start_offset, stop_offset, content)
 
 
 class _RewriteAction:
@@ -133,8 +133,9 @@ class _RewriteAction:
         if len(target) > 0:
             if isinstance(target[0], ASTNode):
                 return [n for n in target if isinstance(n, ASTNode)]
-            if isinstance(target[-1], PatternMatch):
-                return target[-1].nodes
+            last = target[-1]
+            if isinstance(last, PatternMatch):
+                return last.nodes
         return []
 
 
@@ -145,15 +146,15 @@ class _RewriteActions:
 
     def __init__(
         self,
-        nodes: ASTNode | Sequence[ASTNode] | PatternMatch,
+        node,
         encoding: str,
         correct_indent: bool,
         rewrites: Optional[list[_RewriteAction]] = None,
     ) -> None:
         self.rewrites: list[_RewriteAction] = rewrites if rewrites else []
-        self.nodes = nodes if isinstance(nodes, Sequence) else nodes.src_nodes if isinstance(nodes, PatternMatch) else [nodes]
+        self.node = node
         self.encoding = encoding
-        self.content = self.nodes[0].root.binary_file_content()[self.nodes[0].offset : self.nodes[-1].extended_end_offset]
+        self.content = self.node.root.binary_file_content()[self.node.offset : self.node.extended_end_offset]
         self.correct_indent = correct_indent
 
     def add(
@@ -176,7 +177,7 @@ class _RewriteActions:
         for rewrite in self.rewrites:
             # skip nested rewrites as they are handled recursively by the parent rewrite
             # except for if the rewrite node is the root node
-            if any(self.__is_ancestor_in_nodes(n) for n in rewrite.nodes if n != self.nodes[0]):
+            if any(self.__is_ancestor_in_nodes(n) for n in rewrite.nodes if n != self.node):
                 continue
             new_content, nodelist = self.__prepare_replacement_content(rewrite.replacement, rewrite.target)
             if rewrite.action == _RewriteActionType.REPLACE:
@@ -249,7 +250,7 @@ class _RewriteActions:
         if not nodes:
             return
         start_offset, end_offset = _RewriteActions.__correct_for_comments_and_whitespace(
-            self.nodes[0].offset,
+            self.node.offset,
             self.content,
             include_whitespace,
             include_comments,
@@ -284,7 +285,7 @@ class _RewriteActions:
             return
 
         start_offset, end_offset = _RewriteActions.__correct_for_comments_and_whitespace(
-            self.nodes[0].offset,
+            self.node.offset,
             self.content,
             include_whitespace,
             include_comments,
@@ -321,7 +322,7 @@ class _RewriteActions:
         spaces = " " * indent
         # if flattened_nodes[-1] has a new line after white space then we need to add a new line:
         ext_start_offset, ext_end_offset = _RewriteActions.__correct_for_comments_and_whitespace(
-            self.nodes[0].offset,
+            self.node.offset,
             self.content,
             include_whitespace,
             include_comments,
@@ -390,21 +391,21 @@ class _RewriteActions:
         if len(nodes) == 1:
             return self.__get_text(nodes[0])
         # Use a ASTRewriter to only rewrite exactly that what needs to be rewritten
-        rewriter = ASTRewriter(nodes, self.encoding, correct_indent=False)
+        rewriter = ASTRewriter(nodes[0], self.encoding, correct_indent=False)
         for node in nodes:
             rs = self.__get_text(node)
             org_rs = node.text
             if rs != org_rs:
                 rewriter.replace(rs, node)
         result = rewriter.apply_to_string()
-        indent = self.derive_indent(nodes[0].start_offset)
+        indent = self.derive_indent(nodes[0].offset)
         return TextUtils.shift_left(result, indent, start_line=1)
 
     def __get_text(self, node: ASTNode) -> str:
         if self._should_skip(node):
             return ""
 
-        if node == self.nodes[0]:
+        if node == self.node:
             return node.text
         # the descendants may need to be rewritten as well
         #        rewrites = [rewrite for rewrite in self.rewrites if any(node.is_ancestor_of(rewrite_node) for rewrite_node in rewrite.nodes)]
@@ -462,7 +463,7 @@ class _RewriteActions:
             elif parent:
                 start_comment_location = parent.offset - offset
             # get the comment belonging to the preceding node
-            extended_location = _RewriteActions._get_comment_location(start_comment_location, start_offset, content)
+            extended_location = _RewriteActions.get_comment_location(start_comment_location, start_offset, content)
             if extended_location != (-1, -1):
                 start_offset = extended_location[0]
             next_sibling = nodes[-1].next_sibling
@@ -475,10 +476,10 @@ class _RewriteActions:
         return start_offset, end_offset
 
     def cor_offset(self, offset: int):
-        return offset - self.nodes[0].offset
+        return offset - self.node.offset
 
     @staticmethod
-    def _get_comment_location(start_offset: int, stop_offset: int, content: bytes) -> tuple[int, int]:
+    def get_comment_location(start_offset: int, stop_offset: int, content: bytes) -> tuple[int, int]:
         """get the location of the comment before the location, but after the stop_location
         a comment is a line that starts with // or a block that starts with /* and ends with */
         or a line that starts with #

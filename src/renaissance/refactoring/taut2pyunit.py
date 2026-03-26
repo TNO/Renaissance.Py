@@ -8,6 +8,7 @@ from renaissance.utils.refactor_utils import adjust_indent, get_indentation_leve
 
 _factory = None
 
+
 def convert_taut_to_unittest(file, output_file):
     atu, rewriter, factory = _setup_cli(file)
     py_pattern_factory = PythonPatternFactory(factory)
@@ -47,10 +48,10 @@ def convert_taut_to_unittest(file, output_file):
     result = rewriter.apply_to_string()
 
     # then migrate bigger scope like class
-    #test_atu2 = factory.create(output_file)
-    #rewriter2 = ASTRewriter(test_atu2)
-    #convert_test_import(pattern_factory, rewriter, test_atu2)
-    #print(rewriter2.apply_to_string())
+    # test_atu2 = factory.create(output_file)
+    # rewriter2 = ASTRewriter(test_atu2)
+    # convert_test_import(pattern_factory, rewriter, test_atu2)
+    # print(rewriter2.apply_to_string())
     return rewriter.apply_to_string()
 
 
@@ -63,18 +64,20 @@ def convert_tds(input):
     repl2 = "self.$a = ImprovedStub($b)"
     return refactor_replace(result, tds2, repl2)
     ### not working, replacement is wrong.
-    #tds_pattern = pattern_factory.create_statements('self.tds.append(TestDoubles($a, $b=$c))')
-    #for match in match_pattern(test_atu.children, tds_pattern):
-       # a = match.expansions["$a"][0].text
-       # b = match.expansions["$b"][0]
-       # c = match.expansions["$c"][0].text
-       # repl = f'self.add_patcher({match.expansions["$a"][0].text}, \'{match.expansions["$b"][0]}\', {match.expansions["$c"][0].text})'
-       # rewriter.replace(repl, match.nodes, True, True)
+    # tds_pattern = pattern_factory.create_statements('self.tds.append(TestDoubles($a, $b=$c))')
+    # for match in match_pattern(test_atu.children, tds_pattern):
+    # a = match.expansions["$a"][0].text
+    # b = match.expansions["$b"][0]
+    # c = match.expansions["$c"][0].text
+    # repl = f'self.add_patcher({match.expansions["$a"][0].text}, \'{match.expansions["$b"][0]}\', {match.expansions["$c"][0].text})'
+    # rewriter.replace(repl, match.nodes, True, True)
+
 
 def convert_test_import(pattern_factory, rewriter, test_atu):
     taut_import = pattern_factory.create_statements("import TAUT")
     for match in match_pattern(test_atu.children, taut_import):
         rewriter.remove(match.nodes, False, False)
+
 
 def convert_import_verify(pattern_factory, rewriter, test_atu):
     import_verify = pattern_factory.create_python_pattern("self.import_and_verify_module('$a')")
@@ -90,23 +93,24 @@ ImprovedStub.call_logs = {}
 ImprovedStub.store_args = {}
 
 """
-    tds_pattern = pattern_factory.create_python_pattern('self.tds = [$$aa]')
+    tds_pattern = pattern_factory.create_python_pattern("self.tds = [$$aa]")
     for match in match_pattern(test_atu.children, [tds_pattern]):
-        init_stubs = ''
-        repl = 'self.patchers = [\n'
-        doubles_pattern = pattern_factory.create_expression('TestDoubles($a=ImprovedStub($b))')
+        init_stubs = ""
+        repl = "self.patchers = [\n"
+        doubles_pattern = pattern_factory.create_expression("TestDoubles($a=ImprovedStub($b))")
         for matched_doubles in match_pattern(match.expansions["$$aa"], [doubles_pattern]):
             init_stubs += f'self.{matched_doubles.expansions["$a"][0]} = ImprovedStub({matched_doubles.expansions["$b"][0].signature})\n'
             interface_stub = find_import_interface(matched_doubles.expansions["$b"][0].signature, ast_refactor)
             repl += f'    patch.object({interface_stub}, \'{matched_doubles.expansions["$a"][0]}\', self.{matched_doubles.expansions["$a"][0]}),\n'
-        repl += ']\n\n'
+        repl += "]\n\n"
     p_start = """for p in self.patchers:
     p.start()
 """
     repl = insert_code + init_stubs + repl + p_start
-    result = refactor_replace(test_atu.signature, 'self.tds = [$$aa]', repl)
+    result = refactor_replace(test_atu.signature, "self.tds = [$$aa]", repl)
 
     return result
+
 
 def convert_teardown_common(pattern_factory, rewriter, test_atu):
     pattern = pattern_factory.create_python_pattern("def tearDownCommon(self):\n    $$aa")
@@ -120,6 +124,7 @@ def convert_teardown_common(pattern_factory, rewriter, test_atu):
     for match in match_pattern(test_atu.children, [pattern]):
         rewriter.replace(repl, match.nodes, False, False)
     return rewriter.apply_to_string()
+
 
 def convert_add_patcher(pattern_factory, input):
     pattern = pattern_factory.create_python_pattern("def tearDownCommon(self):\n    $$aa")
@@ -150,20 +155,19 @@ def insert_doc(content: str, date):
     modified_content = content[:line_start] + get_change_comment(date) + "\n" + content[line_start:]
     return modified_content
 
+
 def remove_import_taut(ast_refactor: ASTProcessor) -> None:
     """
     Removes import TAUT
     """
-    [ast_refactor.remove(node, True, True)
-    for node in ast_refactor.find_kind("Import") if node.name == "TAUT"]
+    [ast_refactor.remove(node, True, True) for node in ast_refactor.find_kind("Import") if node.name == "TAUT"]
 
 
 def replace_taut_skip(ast_refactor):
     """
     replace @TAUT.skip_test by @unittest.skip
     """
-    [ast_refactor.replace("@unittest.skip", node)
-     for node in ast_refactor.find_kind("Attribute") if node.name == "TAUT.skip_test"]
+    [ast_refactor.replace("@unittest.skip", node) for node in ast_refactor.find_kind("Attribute") if node.name == "TAUT.skip_test"]
 
 
 def add_self(ast_refactor):
@@ -190,30 +194,34 @@ def add_self(ast_refactor):
         "emrwxviprxwh",
     ]
     # list = ast_refactor.find_kind("Name").filter(lambda node: node.name in matching).to_list()
-    [ast_refactor.replace("self." + node.name, node, False, False)
-     for node in ast_refactor.find_kind("Name") if node.name in matching]
+    [ast_refactor.replace("self." + node.name, node, False, False) for node in ast_refactor.find_kind("Name") if node.name in matching]
+
+    # matching2= ['EMRWxREAD.emrwxread']
+    # ast_refactor.find_kind('Attribute'). \
+    # filter(lambda node: node.name in matching2). \
+    # for_each(lambda node: ast_refactor.replace('self.' + node.name.split('.')[1], node, False, False))
 
 
-    #matching2= ['EMRWxREAD.emrwxread']
-    #ast_refactor.find_kind('Attribute'). \
-        #filter(lambda node: node.name in matching2). \
-        #for_each(lambda node: ast_refactor.replace('self.' + node.name.split('.')[1], node, False, False))
 def in_setupcommon(node):
-    if node.get_ancestor('FunctionDef') and node.get_ancestor('FunctionDef').name == 'setUpCommon':
+    if node.get_ancestor("FunctionDef") and node.get_ancestor("FunctionDef").name == "setUpCommon":
         return True
     return False
 
+
 def remove_decorator(ast_refactor):
-    [ast_refactor.remove(node, False, False)
-    for node in ast_refactor.find_kind("Attribute") if node.name == "TAUT.log_stub"]
+    [ast_refactor.remove(node, False, False) for node in ast_refactor.find_kind("Attribute") if node.name == "TAUT.log_stub"]
+
 
 def remove_stubserver(ast_refactor):
-    [ast_refactor.remove(node, False, False)
-     for node in ast_refactor.find_kind("Attribute") if node.name == "TAUT.StubServer"]
+    [ast_refactor.remove(node, False, False) for node in ast_refactor.find_kind("Attribute") if node.name == "TAUT.StubServer"]
+
 
 def convert_assert(ast_refactor):
-    [ast_refactor.replace("self.assertEqual", node, False, False)
-     for node in ast_refactor.find_kind("Attribute") if node.name == "self.assert_equal"]
+    [
+        ast_refactor.replace("self.assertEqual", node, False, False)
+        for node in ast_refactor.find_kind("Attribute")
+        if node.name == "self.assert_equal"
+    ]
 
 
 def insert_doc_func(input_code, date):
@@ -233,10 +241,12 @@ def replace_taut(ast_refactor):
     """
     replace TAUT.TestCase by unittest.TestCase
     """
-    [ast_refactor.replace("unittest.TestCase", node, False, False)
-     for node in ast_refactor.find_kind("Attribute") if node.name == "TAUT.TestCase"]
-    [ast_refactor.replace("unittest.TestCase", node, False, False)
-     for node in ast_refactor.find_kind("Name") if node.name == "TestCase"]
+    [
+        ast_refactor.replace("unittest.TestCase", node, False, False)
+        for node in ast_refactor.find_kind("Attribute")
+        if node.name == "TAUT.TestCase"
+    ]
+    [ast_refactor.replace("unittest.TestCase", node, False, False) for node in ast_refactor.find_kind("Name") if node.name == "TestCase"]
 
 
 def replace_mock_import(input_code):
@@ -251,13 +261,14 @@ def replace_mock_import(input_code):
 
 
 def replace_taut_import(input_code):
-    pattern1 = 'import TAUT\n'
+    pattern1 = "import TAUT\n"
     result = refactor_remove(input_code, pattern1)
-    pattern2 = 'from TAUT import TestCase'
+    pattern2 = "from TAUT import TestCase"
     result2 = refactor_remove(result, pattern2)
-    pattern3 = 'from TAUT import TestDoubles'
-    replacement = 'try:\n    from unittest.mock import patch\nexcept ImportError:\n    from mock import patch\n'
+    pattern3 = "from TAUT import TestDoubles"
+    replacement = "try:\n    from unittest.mock import patch\nexcept ImportError:\n    from mock import patch\n"
     return refactor_replace(result2, pattern3, replacement)
+
 
 def replace_log_emrwxtl(input_code):
     pattern1 = "with TAUT.TestDoubles(emrwxtl=FakeEMRWxTL(None)):\n    log = TAUT.Logger()\n    $$aa"
@@ -275,6 +286,7 @@ def insert_class(input_code, insert_code):
     insert_pattern = "def b():\n    $$bb"
     return refactor_insert_after(input_code, insert_code, insert_pattern)
 
+
 def refactor_teardown(input_code):
     pattern1 = "for double in self.doubles:\n    double.exit()"
     replace_pattern = "patch.stopall()"
@@ -291,31 +303,34 @@ EMRWxCONTEXT.emrmxcontext.reset_method_attributes("finish_lot")
 
 def convert_setup(input_code):
     # remove doubles init
-    pattern1 = 'doubles = []'
-    replacement = 'self.patches = []\n'
+    pattern1 = "doubles = []"
+    replacement = "self.patches = []\n"
     result = refactor_replace(input_code, pattern1, replacement)
 
-    pattern2 = 'self.doubles = []'
+    pattern2 = "self.doubles = []"
     result = refactor_replace(result, pattern2, replacement)
 
     # init atu rewriter for match pattern
-    test_atu = _get_factory().create_from_text(result, 'file.py')
+    test_atu = _get_factory().create_from_text(result, "file.py")
     rewriter = ASTRewriter(test_atu)
     pattern_factory = PythonPatternFactory(_get_factory())
 
     # convert doubles to patch
-    pattern3 = pattern_factory.create_statements('doubles.append(TAUT.TestDoubles($a=$b))')
+    pattern3 = pattern_factory.create_statements("doubles.append(TAUT.TestDoubles($a=$b))")
     for match in match_pattern(test_atu.children, pattern3):
-        keyword = match.expansions['$a'][0]
-        repl_pattern = f'patch(\'{keyword}.{match.expansions['$a'][0]}\', {match.expansions['$b'][0].name})\n'
+        keyword = match.expansions["$a"][0]
+        repl_pattern = f"patch('{keyword}.{match.expansions['$a'][0]}', {match.expansions['$b'][0].name})\n"
         rewriter.replace(repl_pattern, match.nodes, False, False)
 
     # convert doubles to patch.object
-    pattern4 = pattern_factory.create_statements('doubles.append(TAUT.TestDoubles(module=$mod, $b=$c))')
+    pattern4 = pattern_factory.create_statements("doubles.append(TAUT.TestDoubles(module=$mod, $b=$c))")
     for match in match_pattern(test_atu.children, pattern4):
-        repl_pattern = f'patch.object({match.expansions['$mod'][0].name}, \'{match.expansions['$b'][0]}\', {match.expansions['$c'][0].signature})\n'
+        repl_pattern = (
+            f"patch.object({match.expansions['$mod'][0].name}, '{match.expansions['$b'][0]}', {match.expansions['$c'][0].signature})\n"
+        )
         rewriter.replace(repl_pattern, match.nodes, False, False)
     return rewriter.apply_to_string()
+
 
 def refactor_setup(input_code):
     # add self. at front of interface EMRMxCONTEXT
@@ -358,6 +373,7 @@ def refactor_setup(input_code):
     pattern6 = "EMRMxAPxData.data.adv_wp = EMRMxADVxWP.input()"
     return refactor_insert_before(result6, insert_code, pattern6)
 
+
 def refactor_testdoubles_fun(input_code):
     """refactor cannot use standard replace method, because it needs to fix the indentation"""
     pattern1 = """def $a($$b):
@@ -373,6 +389,7 @@ def refactor_testdoubles_fun(input_code):
         $$c
 """
     return refactor_replace(input_code, pattern1, replace_pattern)
+
 
 def refactor_testdoubles_class(input_code):
     match_pattern = """class $a(TAUT.TestCase):
@@ -419,16 +436,18 @@ def refactor_testdoubles_class(input_code):
             p.stop()"""
     return refactor_replace(input_code, match_pattern, replace_pattern)
 
+
 def find_import_interface(name: str, ast_refactor):
     interface = name
     if name.islower():
-        node_list = [ node for node in ast_refactor.find_kind("Import(?:From)") if node.name == name ]
+        node_list = [node for node in ast_refactor.find_kind("Import(?:From)") if node.name == name]
         if node_list:
-            if node_list[0].kind == 'ImportFrom':
-                interface = node_list[0].properties['module']
+            if node_list[0].kind == "ImportFrom":
+                interface = node_list[0].properties["module"]
             else:
                 interface = node_list[0].name if node_list else name
-    return interface.split('.')[0]
+    return interface.split(".")[0]
+
 
 def refactor_replace(input_code: str, before: str, after: str):
     atu, rewriter, before_pattern = _setup(input_code, before)
@@ -447,12 +466,14 @@ def refactor_replace(input_code: str, before: str, after: str):
         rewriter.replace(replacement, match.nodes)
     return _apply(rewriter)
 
+
 def refactor_remove(input_code: str, match_str: str):
     atu, rewriter, matched_pattern = _setup(input_code, match_str)
 
     for ma in match_pattern(atu.children, [matched_pattern]):
         rewriter.remove(ma.nodes)
     return _apply(rewriter)
+
 
 def refactor_insert_after(input_code: str, insert_code: str, match_str: str):
     atu, rewriter, matched_pattern = _setup(input_code, match_str)
@@ -463,6 +484,7 @@ def refactor_insert_after(input_code: str, insert_code: str, match_str: str):
     rewriter.insert_after(insert_code, matched.nodes)
     return _apply(rewriter)
 
+
 def refactor_insert_before(input_code: str, insert_code: str, match_str: str):
     atu, rewriter, matched_pattern = _setup(input_code, match_str)
     matches = match_pattern(atu.children, [matched_pattern])
@@ -471,6 +493,7 @@ def refactor_insert_before(input_code: str, insert_code: str, match_str: str):
     matched = matches[0]
     rewriter.insert_before(insert_code, matched.nodes)
     return _apply(rewriter)
+
 
 def get_change_comment(date=None):
     """
@@ -491,6 +514,7 @@ def get_change_comment(date=None):
     else:
         formatted_date = datetime.strptime(date, "%m-%d-%Y")
     return f"# {formatted_date.strftime('%m-%d-%Y')} : {change_id} SBYN {description}"
+
 
 def raw_text(nodes, snippets) -> str:
     res = ""
@@ -514,11 +538,13 @@ def raw_text(nodes, snippets) -> str:
         return res  # + '\n'
     return res
 
+
 def _get_factory() -> ASTFactory:
     global _factory
     if _factory is None:
         _factory = ASTFactory(PythonASTNode, [])
     return _factory
+
 
 def _setup_cli(file):
     factory = _get_factory()
@@ -526,19 +552,22 @@ def _setup_cli(file):
     rewriter = ASTRewriter(atu)
     return atu, rewriter, factory
 
+
 def _setup(input_code: str, match_str: str):
     factory = _get_factory()
-    atu = factory.create_from_text(input_code, 'temp.py')
+    atu = factory.create_from_text(input_code, "temp.py")
     rewriter = ASTRewriter(atu)
     pattern = PythonPatternFactory(factory).create_python_pattern(match_str)
     return atu, rewriter, pattern
+
 
 def _apply(rewriter: ASTRewriter) -> str:
     rewriter.apply()
     return rewriter.apply_to_string()
 
+
 def raw(nodes):
-    res = ''
+    res = ""
     for node in nodes:
-        res += '\n\n    ' + node.text
-    return res + '\n    '
+        res += "\n\n    " + node.text
+    return res + "\n    "

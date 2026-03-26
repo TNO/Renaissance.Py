@@ -1,9 +1,10 @@
 # use clang to load and walk a compilation database
 
 from pathlib import Path
+
 from renaissance.impl.clang import CompilationDatabase, ClangASTNode
 from renaissance.impl.clang_json import ClangJsonASTNode
-from renaissance.syntax_tree import ASTProcessor, ASTNode, ASTShower
+from renaissance.syntax_tree import ASTProcessor, ASTShower
 
 
 def main(args):

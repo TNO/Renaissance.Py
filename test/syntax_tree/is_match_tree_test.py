@@ -20,7 +20,8 @@ from renaissance.syntax_tree import ASTFactory, ASTShower
 from renaissance.syntax_tree.match_finder import (
     is_match_tree,
     MatchFinder,
-    find_in_list, match_pattern,
+    find_in_list,
+    match_pattern,
 )
 
 

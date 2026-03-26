@@ -39,7 +39,8 @@ class PythonPatternFactory:
     def create_decorators(self, param):
         return self.create_statement(param + "\ndef test(): pass")[2]
 
-    def create_kwargs(self, kw_str) -> Sequence[PythonASTNode]:
+    @staticmethod
+    def create_kwargs(kw_str) -> Sequence[PythonASTNode]:
         call = ast.parse(f"fun({replace_dollar(kw_str)})", "snippet.py", type_comments=True).body[0]
         if isinstance(call, Expr) and isinstance(call.value, Call):
             return [PythonASTNode(kwarg) for kwarg in call.value.keywords]

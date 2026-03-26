@@ -1,8 +1,6 @@
 import ast
 import renaissance.impl.python.python_rst_node
-from renaissance.impl import MATCH_ONE
 from renaissance.syntax_tree import ASTShower, ASTFinder, ASTRewriter
-from renaissance.syntax_tree.match_finder import match_pattern
 from renaissance.utils.node_util import replace_dollar
 
 # def add_children(parent):
