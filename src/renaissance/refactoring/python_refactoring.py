@@ -1,10 +1,12 @@
 import importlib
 import re
+from typing import Sequence, cast
 
 from renaissance.impl.python import PythonASTNode, PythonPatternFactory
 from renaissance.impl.python.python_ast_util import to_str
 from renaissance.syntax_tree import ASTFactory, ASTProcessor
 from renaissance.syntax_tree.match_finder import match_pattern
+from renaissance.utils.text_utils import snake_case
 
 
 class PythonRefactoring(ASTProcessor):
@@ -29,8 +31,11 @@ class PythonRefactoring(ASTProcessor):
     @staticmethod
     def process(class_name, file):
         """Return a subclass by name using importlib, like Java's Class.forName()."""
-        snake = re.sub(r"(?<!^)(?=[A-Z])", "_", class_name).lower()
+        snake = snake_case(class_name)
         module = importlib.import_module(f"renaissance.refactoring.{snake}")
         cls = getattr(module, class_name)
         refactor = cls(file)
         refactor.run()
+    @property
+    def body(self)->Sequence[PythonASTNode]:
+        return cast(PythonASTNode, self.root).body

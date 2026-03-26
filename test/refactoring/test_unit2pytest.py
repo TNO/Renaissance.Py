@@ -119,7 +119,7 @@ class TestUnit2Pytest:
         spy = mocker.spy(sut, 'convert_test_class')
         spy2 = mocker.spy(sut, 'convert_test_setup')
         spy3 = mocker.spy(sut, 'replace_stmt')
-        sut.convert_pytest()
+        sut.run()
 
         assert_that(spy.call_count, is_(1))
         assert_that(spy2.call_count, is_(1))

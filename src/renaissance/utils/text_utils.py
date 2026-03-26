@@ -113,3 +113,11 @@ class TextUtils:
     def clean_signature(signature):
         text = signature.replace("\n", " ")
         return re.sub(r"[^\w\s]", "", text)[:30]  # Remove punctuation, limit length
+
+    @staticmethod
+    def clean_signature(signature):
+        text = signature.replace("\n", " ")
+        return re.sub(r"[^\w\s]", "", text)[:30]  # Remove punctuation, limit length
+
+def snake_case(snippet):
+    return re.sub(r"(?<!^)(?=[A-Z])", "_", snippet).lower()
