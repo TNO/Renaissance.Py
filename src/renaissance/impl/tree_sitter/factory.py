@@ -1,7 +1,7 @@
 from typing import Sequence
 
-from renaissance.impl.tree_sitter_adapter.tree_sitter_adapter import TreeSitterAdapter
-from renaissance.lst.lst import LSTNode
+from renaissance.impl.tree_sitter.adapter import TreeSitterAdapter
+from renaissance.impl.tree_sitter.lst import LSTNode
 from renaissance.utils.node_util import replace_dollar
 
 SHOW_NODE = False

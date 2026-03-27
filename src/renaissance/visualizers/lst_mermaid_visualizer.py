@@ -1,4 +1,4 @@
-from renaissance.lst.lst import LST
+from renaissance.impl.tree_sitter_adapter.lst import LST
 
 from renaissance.utils.text_utils import TextUtils
 

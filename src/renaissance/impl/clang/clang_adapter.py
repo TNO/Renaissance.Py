@@ -1,5 +1,5 @@
 from clang import cindex
-from renaissance.lst.lst import LSTNode, LST
+from renaissance.impl.tree_sitter_adapter.lst import LSTNode, LST
 from typing import Optional
 from renaissance.utils.node_util import detect_placeholder
 

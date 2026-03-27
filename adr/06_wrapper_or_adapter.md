@@ -8,19 +8,24 @@ Authors: Project contributors
 
 ## Context
 
-The project may receive nodes from different parsers or libraries that do not match the project's canonical node shape. We need a strategy to interoperate with foreign node-like objects while preserving the project's APIs and expectations.
+The project may receive nodes from different parsers or libraries that do not match the project's canonical node
+shape. We need a strategy to interoperate with foreign node-like objects while preserving the project's APIs
+and expectations.
 
 ## Decision
 
 Prefer writing only the protocol function on top of the current native implementation if not already available.
-this requires minimum amount of implementation and oppertunity for reuse of the maatcher and rewrite , etc functionalities
+This requires a minimum amount of implementation and opportunity for reuse of the matcher and rewrite
+functionalities.
 
-'thin wrappers (adapter objects) that present the project's canonical node API while delegating to the original node. Wrappers make behavior explicit, allow normalization, and preserve access to the original node when necessary.'
+Thin wrappers (adapter objects) that present the project's canonical node API while delegating to the original
+node make behavior explicit, allow normalization, and preserve access to the original node when necessary.
 
 ## Implementation notes
 
 - Implement simple wrapper/adaptor classes that implement the project's node Protocol (see ADR 03).
-- Keep wrappers thin: delegate attribute and child access where possible and only normalize differences that matter.
+- Keep wrappers thin: delegate attribute and child access where possible and only normalize differences
+  that matter.
 - Provide utility constructors (e.g., `from_external`) and tests for common external formats.
 - Consider caching or memoization in adapters if adaptation is expensive.
 
@@ -28,8 +33,6 @@ this requires minimum amount of implementation and oppertunity for reuse of the 
 
 - Wrappers preserve original semantics and make interop explicit.
 - Adapters make it easy to support multiple external sources without changing core logic.
-
-
 
 ## Consequences
 

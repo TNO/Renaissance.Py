@@ -11,13 +11,19 @@ Authors:
  - luna.li@capgemini.com
  - paul.nelissen@esi.nl
  - pierre.vandelaar@tno.nl
+
 ## Context
 
-Direct access refers to exposing node fields and attributes using a Pythonic style (e.g., `_fields`, `_attributes`) rather than using explicit accessor methods such as `get_children()` or `get_children`. This allows for natural attribute access, simpler metaprogramming, and compatibility with Python tooling and idioms.
+Direct access refers to exposing node fields and attributes using a Pythonic style (e.g., `_fields`, `_attributes`)
+rather than using explicit accessor methods such as `get_children()` or `get_children`.
+This allows for natural attribute access, simpler metaprogramming, and compatibility with Python tooling and idioms.
 
 ## Decision
 
-Adopt a Pythonic direct-access convention for node definitions. Nodes may declare a `_fields` or `_attributes` tuple (as in CPython's `ast` module) that names structural fields. Consumers and tools should read these fields rather than relying on bespoke accessor methods. Implementations should still provide stable, documented APIs for traversal and transformation.
+Adopt a Pythonic direct-access convention for node definitions. Nodes may declare a `_fields` or `_attributes` tuple
+(as in CPython's `ast` module) that names structural fields. Consumers and tools should read these fields rather than
+relying on bespoke accessor methods. Implementations should still provide stable, documented APIs for traversal
+and transformation.
 
 ## Implementation notes
 
@@ -47,9 +53,10 @@ class GoAstNode:
     children:list[Self] = [expr, body, other]
 
 ```
+
 ## Rationale
 
-Using Python conventions reduces boilerplate, makes code easier to inspect and manipulate, and aligns with developer 
+Using Python conventions reduces boilerplate, makes code easier to inspect and manipulate, and aligns with developer
 expectations in a Python project.
 
 ## Consequences
