@@ -150,65 +150,83 @@ class TestExamplesDifferentStyles:
         result, expected = example_replace_old_by_fancy_new(factory, pattern_factory)
 
         assert_that(result, contains_string("fancy_new b = 2;\n"))
+    def test_make_sure_that_batch_proc_still_run(self):
+        assert_that(calling(batch_remove_unused_variable_once_example), not_(raises(Exception)))
+        assert_that(calling(batch_repeat_example), not_(raises(Exception)))
+        assert_that(calling(batch_recipe_example), not_(raises(Exception)))
+    
+    
+    
+    @pytest.mark.skip("can't find vector under windows")
+    def test_make_sure_that_recipe_still_run(self):
+        assert_that(calling(receipe_example), not_(raises(Exception)))
+    
+    
+    
+    def test_make_sure_different_style_still_run(self):
+        factory = ASTFactory(ClangASTNode)
+        pattern_factory = CPatternFactory(factory)
+    
+        assert_that(
+            calling(lambda: example_add_comment_and_commit(factory, pattern_factory)),
+            not_(raises(Exception)),
+        )
+        assert_that(
+            calling(lambda: example_replace_old_by_fancy_new(factory, pattern_factory)),
+            not_(raises(Exception)),
+        )
+        assert_that(
+            calling(lambda: example_use_ast_kind_finder(factory, pattern_factory)),
+            not_(raises(Exception)),
+        )
+        assert_that(
+            calling(lambda: example_use_ast_function_finder(factory, pattern_factory)),
+            not_(raises(Exception)),
+        )
+        assert_that(calling(lambda: main([])), not_(raises(Exception)))
+    
+    
+    
+    def test_make_sure_that_nested_compositions_still_run(self):
+        assert_that(calling(lambda: refactor_with_nested_compositions([])), not_(raises(Exception)))
+    
+    
+    
+    @pytest.mark.parametrize("node_type", [ClangASTNode, ClangJsonASTNode])
+    def test_make_sure_unused_var_still_run(self,node_type):
+        assert_that(
+            calling(lambda: remove_unused_variable_low_level(node_type)),
+            not_(raises(Exception)),
+        )
+        assert_that(
+            calling(lambda: remove_unused_variable_using_refactor_method(node_type)),
+            not_(raises(Exception)),
+        )
+    
+    
+    
+    def test_make_sure_replace_if_with_ternary_still_run(self):
+        result = replace_if_with_ternary()
+    
+        assert_that(
+            result,
+            is_(
+                "int a = 1;\n        int b = 2;\n        int c = 3;\n"
+                "        int d = 4;\n        void f(){\n            c++; b=(a==1) ? 2:3; d++;\n        }"
+            ),
+        )
+    
+    
+    
 
 
-def test_make_sure_that_batch_proc_still_run():
-    assert_that(calling(batch_remove_unused_variable_once_example), not_(raises(Exception)))
-    assert_that(calling(batch_repeat_example), not_(raises(Exception)))
-    assert_that(calling(batch_recipe_example), not_(raises(Exception)))
 
 
-@pytest.mark.skip("can't find vector under windows")
-def test_make_sure_that_recipe_still_run():
-    assert_that(calling(receipe_example), not_(raises(Exception)))
 
 
-def test_make_sure_different_style_still_run():
-    factory = ASTFactory(ClangASTNode)
-    pattern_factory = CPatternFactory(factory)
-
-    assert_that(
-        calling(lambda: example_add_comment_and_commit(factory, pattern_factory)),
-        not_(raises(Exception)),
-    )
-    assert_that(
-        calling(lambda: example_replace_old_by_fancy_new(factory, pattern_factory)),
-        not_(raises(Exception)),
-    )
-    assert_that(
-        calling(lambda: example_use_ast_kind_finder(factory, pattern_factory)),
-        not_(raises(Exception)),
-    )
-    assert_that(
-        calling(lambda: example_use_ast_function_finder(factory, pattern_factory)),
-        not_(raises(Exception)),
-    )
-    assert_that(calling(lambda: main([])), not_(raises(Exception)))
 
 
-def test_make_sure_that_nested_compositions_still_run():
-    assert_that(calling(lambda: refactor_with_nested_compositions([])), not_(raises(Exception)))
 
 
-@pytest.mark.parametrize("node_type", [ClangASTNode, ClangJsonASTNode])
-def test_make_sure_unused_var_still_run(node_type):
-    assert_that(
-        calling(lambda: remove_unused_variable_low_level(node_type)),
-        not_(raises(Exception)),
-    )
-    assert_that(
-        calling(lambda: remove_unused_variable_using_refactor_method(node_type)),
-        not_(raises(Exception)),
-    )
 
 
-def test_make_sure_replace_if_with_ternary_still_run():
-    result = replace_if_with_ternary()
-
-    assert_that(
-        result,
-        is_(
-            "int a = 1;\n        int b = 2;\n        int c = 3;\n"
-            "        int d = 4;\n        void f(){\n            c++; b=(a==1) ? 2:3; d++;\n        }"
-        ),
-    )

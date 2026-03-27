@@ -167,11 +167,14 @@ class TestPythonNode:
         referenced_by = ref_node.referenced_by
         assert_that(referenced_by, has_length(1))
         assert_that(call_node in [r.node for r in referenced_by])
+    def test_ref_node_to_str(self):
+        it = PythonASTReference("it is ", "kind", {})
+        assert_that(it, has_string("it is :kind"))
+    
+    
+    
 
 
-def test_ref_node_to_str():
-    it = PythonASTReference("it is ", "kind", {})
-    assert_that(it, has_string("it is :kind"))
 
 
 if __name__ == "__main__":

@@ -10,23 +10,21 @@ from renaissance.extractors.code_graph_extractors import (
 )
 
 
+
+
+
+
+# ---------------------------------------------------------------------------
+# BaseCodeGraphExtractor
+# ---------------------------------------------------------------------------
+
+
 def make_lst_node(kind, signature, name=None):
     node = MagicMock()
     node.kind = kind
     node.signature = signature
     node.properties = {"name": name} if name else {}
     return node
-
-
-def make_lst(nodes):
-    lst = MagicMock()
-    lst.traverse.return_value = nodes
-    return lst
-
-
-# ---------------------------------------------------------------------------
-# BaseCodeGraphExtractor
-# ---------------------------------------------------------------------------
 
 
 class TestBaseCodeGraphExtractor:
@@ -46,7 +44,7 @@ class TestBaseCodeGraphExtractor:
         with patch("renaissance.extractors.code_graph_extractors.TreeSitterAdapter") as mock_adapter_cls:
             mock_adapter = mock_adapter_cls.return_value
             mock_adapter.parse_code.return_value = MagicMock()
-            mock_adapter.to_lst.return_value = make_lst([])
+            mock_adapter.to_lst.return_value = self.make_lst([])
 
             extractor = PythonCodeGraphExtractor("python", "fake_lib")
             spy = mocker.patch.object(extractor, "_process_file")
@@ -81,20 +79,26 @@ class TestBaseCodeGraphExtractor:
             extractor = PythonCodeGraphExtractor("python", "fake_lib")
             assert_that(extractor.graph, instance_of(nx.DiGraph))
 
+    @staticmethod
+    def make_lst(nodes):
+        lst = MagicMock()
+        lst.traverse.return_value = nodes
+        return lst
 
 # ---------------------------------------------------------------------------
 # PythonCodeGraphExtractor
 # ---------------------------------------------------------------------------
 
 
-class TestPythonCodeGraphExtractor:
-    def _make_extractor(self):
+class TestPythonCodeGraphExtractor(TestBaseCodeGraphExtractor):
+    @staticmethod
+    def _make_extractor():
         with patch("renaissance.extractors.code_graph_extractors.TreeSitterAdapter"):
             return PythonCodeGraphExtractor("python", "fake_lib")
 
     def test_adds_file_and_folder_nodes(self):
         extractor = self._make_extractor()
-        lst = make_lst([])
+        lst = self.make_lst([])
 
         extractor._process_file("/project/src/foo.py", lst)
 
@@ -103,7 +107,7 @@ class TestPythonCodeGraphExtractor:
 
     def test_adds_contains_edge_from_folder_to_file(self):
         extractor = self._make_extractor()
-        lst = make_lst([])
+        lst = self.make_lst([])
 
         extractor._process_file("/project/src/foo.py", lst)
 
@@ -113,7 +117,7 @@ class TestPythonCodeGraphExtractor:
     def test_adds_function_node_for_function_definition(self):
         extractor = self._make_extractor()
         func_node = make_lst_node("function_definition", "def my_func(x):")
-        lst = make_lst([func_node])
+        lst = self.make_lst([func_node])
 
         extractor._process_file("/src/foo.py", lst)
 
@@ -123,7 +127,7 @@ class TestPythonCodeGraphExtractor:
     def test_adds_defines_edge_for_function(self):
         extractor = self._make_extractor()
         func_node = make_lst_node("function_definition", "def my_func(x):")
-        lst = make_lst([func_node])
+        lst = self.make_lst([func_node])
 
         extractor._process_file("/src/foo.py", lst)
 
@@ -133,7 +137,7 @@ class TestPythonCodeGraphExtractor:
     def test_adds_call_node_for_call(self):
         extractor = self._make_extractor()
         call_node = make_lst_node("call", "some_func(arg1)")
-        lst = make_lst([call_node])
+        lst = self.make_lst([call_node])
 
         extractor._process_file("/src/foo.py", lst)
 
@@ -143,7 +147,7 @@ class TestPythonCodeGraphExtractor:
     def test_adds_calls_edge_for_call(self):
         extractor = self._make_extractor()
         call_node = make_lst_node("call", "some_func(arg1)")
-        lst = make_lst([call_node])
+        lst = self.make_lst([call_node])
 
         extractor._process_file("/src/foo.py", lst)
 
@@ -153,11 +157,11 @@ class TestPythonCodeGraphExtractor:
     def test_ignores_unrelated_node_kinds(self):
         extractor = self._make_extractor()
         other_node = make_lst_node("import_statement", "import os")
-        lst = make_lst([other_node])
+        lst = self.make_lst([other_node])
 
         extractor._process_file("/src/foo.py", lst)
 
-        assert_that(list(extractor.graph.nodes), not_(has_item("import os")))
+        assert_that(extractor.graph.nodes, not_(has_item("import os")))
 
     def test_multiple_functions_all_added(self):
         extractor = self._make_extractor()
@@ -165,7 +169,7 @@ class TestPythonCodeGraphExtractor:
             make_lst_node("function_definition", "def foo(x):"),
             make_lst_node("function_definition", "def bar(y):"),
         ]
-        lst = make_lst(nodes)
+        lst = self.make_lst(nodes)
 
         extractor._process_file("/src/foo.py", lst)
 
@@ -178,14 +182,15 @@ class TestPythonCodeGraphExtractor:
 # ---------------------------------------------------------------------------
 
 
-class TestJavaCodeGraphExtractor:
-    def _make_extractor(self):
+class TestJavaCodeGraphExtractor(TestBaseCodeGraphExtractor):
+    @staticmethod
+    def _make_extractor():
         with patch("renaissance.extractors.code_graph_extractors.TreeSitterAdapter"):
             return JavaCodeGraphExtractor("java", "fake_lib")
 
     def test_adds_file_and_folder_nodes(self):
         extractor = self._make_extractor()
-        lst = make_lst([])
+        lst = self.make_lst([])
 
         extractor._process_file("/project/src/Main.java", lst)
 
@@ -195,7 +200,7 @@ class TestJavaCodeGraphExtractor:
     def test_adds_method_node_for_method_declaration(self):
         extractor = self._make_extractor()
         method_node = make_lst_node("method_declaration", "void doSomething()", name="doSomething")
-        lst = make_lst([method_node])
+        lst = self.make_lst([method_node])
 
         extractor._process_file("/src/Main.java", lst)
 
@@ -206,7 +211,7 @@ class TestJavaCodeGraphExtractor:
         extractor = self._make_extractor()
         method_node = make_lst_node("method_declaration", "void doSomething()")
         method_node.properties = {}
-        lst = make_lst([method_node])
+        lst = self.make_lst([method_node])
 
         extractor._process_file("/src/Main.java", lst)
 
@@ -215,7 +220,7 @@ class TestJavaCodeGraphExtractor:
     def test_adds_defines_edge_for_method(self):
         extractor = self._make_extractor()
         method_node = make_lst_node("method_declaration", "void doSomething()", name="doSomething")
-        lst = make_lst([method_node])
+        lst = self.make_lst([method_node])
 
         extractor._process_file("/src/Main.java", lst)
 
@@ -225,7 +230,7 @@ class TestJavaCodeGraphExtractor:
     def test_adds_method_invocation_node(self):
         extractor = self._make_extractor()
         invocation_node = make_lst_node("method_invocation", "obj.doSomething(arg)")
-        lst = make_lst([invocation_node])
+        lst = self.make_lst([invocation_node])
 
         extractor._process_file("/src/Main.java", lst)
 
@@ -235,7 +240,7 @@ class TestJavaCodeGraphExtractor:
     def test_adds_calls_edge_for_invocation(self):
         extractor = self._make_extractor()
         invocation_node = make_lst_node("method_invocation", "obj.doSomething(arg)")
-        lst = make_lst([invocation_node])
+        lst = self.make_lst([invocation_node])
 
         extractor._process_file("/src/Main.java", lst)
 
@@ -248,14 +253,15 @@ class TestJavaCodeGraphExtractor:
 # ---------------------------------------------------------------------------
 
 
-class TestCppCodeGraphExtractor:
-    def _make_extractor(self):
+class TestCppCodeGraphExtractor(TestBaseCodeGraphExtractor):
+    @staticmethod
+    def _make_extractor():
         with patch("renaissance.extractors.code_graph_extractors.TreeSitterAdapter"):
             return CppCodeGraphExtractor("cpp", "fake_lib")
 
     def test_adds_file_and_folder_nodes(self):
         extractor = self._make_extractor()
-        lst = make_lst([])
+        lst = self.make_lst([])
 
         extractor._process_file("/project/src/main.cpp", lst)
 
@@ -265,7 +271,7 @@ class TestCppCodeGraphExtractor:
     def test_adds_function_node_for_function_definition(self):
         extractor = self._make_extractor()
         func_node = make_lst_node("function_definition", "int main()", name="main")
-        lst = make_lst([func_node])
+        lst = self.make_lst([func_node])
 
         extractor._process_file("/src/main.cpp", lst)
 
@@ -276,7 +282,7 @@ class TestCppCodeGraphExtractor:
         extractor = self._make_extractor()
         func_node = make_lst_node("function_definition", "int main()")
         func_node.properties = {}
-        lst = make_lst([func_node])
+        lst = self.make_lst([func_node])
 
         extractor._process_file("/src/main.cpp", lst)
 
@@ -285,7 +291,7 @@ class TestCppCodeGraphExtractor:
     def test_adds_defines_edge_for_function(self):
         extractor = self._make_extractor()
         func_node = make_lst_node("function_definition", "int main()", name="main")
-        lst = make_lst([func_node])
+        lst = self.make_lst([func_node])
 
         extractor._process_file("/src/main.cpp", lst)
 
@@ -295,7 +301,7 @@ class TestCppCodeGraphExtractor:
     def test_adds_call_expression_node(self):
         extractor = self._make_extractor()
         call_node = make_lst_node("call_expression", "printf(fmt)")
-        lst = make_lst([call_node])
+        lst = self.make_lst([call_node])
 
         extractor._process_file("/src/main.cpp", lst)
 
@@ -305,7 +311,7 @@ class TestCppCodeGraphExtractor:
     def test_adds_calls_edge_for_call_expression(self):
         extractor = self._make_extractor()
         call_node = make_lst_node("call_expression", "printf(fmt)")
-        lst = make_lst([call_node])
+        lst = self.make_lst([call_node])
 
         extractor._process_file("/src/main.cpp", lst)
 
@@ -315,8 +321,11 @@ class TestCppCodeGraphExtractor:
     def test_ignores_unrelated_node_kinds(self):
         extractor = self._make_extractor()
         other_node = make_lst_node("comment", "// a comment")
-        lst = make_lst([other_node])
+        lst = self.make_lst([other_node])
 
         extractor._process_file("/src/main.cpp", lst)
 
-        assert_that(list(extractor.graph.nodes), not_(has_item("// a comment")))
+        assert_that(extractor.graph.nodes, not_(has_item("// a comment")))
+
+    
+    

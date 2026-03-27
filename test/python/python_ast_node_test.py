@@ -1,6 +1,6 @@
 import ast
+import textwrap
 from pathlib import Path
-from typing import Sized
 
 import pytest
 from hamcrest import (
@@ -9,14 +9,12 @@ from hamcrest import (
     is_in,
     is_,
     contains_string,
-    contains_exactly,
     empty,
 )
 
 import targets
 from renaissance.impl.python import PythonASTNode, PythonPatternFactory
 from renaissance.syntax_tree import ASTFactory, ASTShower
-from renaissance.syntax_tree.match_finder import is_match
 from renaissance.utils.node_util import traverse
 from utils_for_tests import show_node
 
@@ -266,7 +264,7 @@ def outer():
         assert_that(attr.signature, is_("@TUAT"))
 
     def test_node_family(self):
-        src = PythonASTNode.load_from_text(
+        src = PythonASTNode.load_from_text(textwrap.dedent(
             """
 import you 
 from other import dog
@@ -280,7 +278,7 @@ class Parent:
         l(a88)
     def next_me():
         pass
-    """,
+    """),
             "nav.py",
             [],
             Path("."),
@@ -292,48 +290,63 @@ class Parent:
         assert_that(me.next_sibling.name, is_("next_me"))
         assert_that(me.parent.parent.name, is_("Parent"))
         assert_that(me.children[1].children, has_length(4))
+    def test_load_file_with_ignored_types(self):
+        atu = PythonASTNode.load_from_text("x = 1 # type: ignore", "bogus.py", {}, Path(targets.__file__))
+        assert_that(atu.translation_unit.atu.type_ignores, has_length(1))
+    
+    
+    
+    def test_load_file(self):
+        atu = PythonASTNode.load(Path("demo.py"), {}, Path(targets.__file__).parent)
+        assert_that(atu.translation_unit.atu.type_ignores, is_(empty()))
+    
+    
+    
+    def test_load_invalid_file(self):
+        with pytest.raises(IndentationError, match="unexpected indent"):
+            PythonASTNode.load(Path("invalid.py"), {}, Path(targets.__file__).parent)
+    
+    
+    
+    def test_ann_fun_to_str2(self):
+        ann_fun = textwrap.dedent("""
+    @parameterized.expand(Factories.extend(['$x;$y;']))
+    def test(_):
+        atu = factory.create_from_text(TestStatements.SIMPLE_CPP, "test.c")
+    
+        matches = match_pattern( func_body.children,patterns)
+    
+        self.assert_matches( expected_dicts_per_match,matches)
+        """)
+        it = PythonASTNode.load_from_text(ann_fun, "fun.py", [], None).body[-1]
+        assert_that(it.offset, is_(1))
+        assert_that(it.signature, contains_string("@parameterized.expand"))
+    
+    
+    
+    @pytest.mark.skip("it was working before")
+    def test_ann_fun_to_str(self):
+        ann_fun = """
+    @parameterized.expand(Factories.extend(['$x;$y;']))
+    def test(_):
+        atu = factory.create_from_text(TestStatements.SIMPLE_CPP, "test.c")
+    
+        matches = match_pattern( func_body.children,patterns)
+    
+        self.assert_matches( expected_dicts_per_match,matches)
+        """
+        it = PythonASTNode.load_from_text(ann_fun, "fun.py", [], None).body[-1]
+        assert_that(str(it), is_(ast.unparse(it.node)))
+    
+    
+    
 
 
-def test_load_file_with_ignored_types():
-    atu = PythonASTNode.load_from_text("x = 1 # type: ignore", "bogus.py", {}, Path(targets.__file__))
-    assert_that(atu.translation_unit.atu.type_ignores, has_length(1))
 
 
-def test_load_file():
-    atu = PythonASTNode.load(Path("demo.py"), {}, Path(targets.__file__).parent)
-    assert_that(atu.translation_unit.atu.type_ignores, is_(empty()))
 
 
-def test_load_invalid_file():
-    with pytest.raises(IndentationError, match="unexpected indent"):
-        PythonASTNode.load(Path("invalid.py"), {}, Path(targets.__file__).parent)
 
 
-def test_ann_fun_to_str2():
-    ann_fun = """
-@parameterized.expand(Factories.extend(['$x;$y;']))
-def test(_):
-    atu = factory.create_from_text(TestStatements.SIMPLE_CPP, "test.c")
-
-    matches = match_pattern( func_body.children,patterns)
-
-    self.assert_matches( expected_dicts_per_match,matches)
-    """
-    it = PythonASTNode.load_from_text(ann_fun, "fun.py", [], None).body[-1]
-    assert_that(it.offset, is_(1))
-    assert_that(it.signature, contains_string("@parameterized.expand"))
 
 
-@pytest.mark.skip("it was working before")
-def test_ann_fun_to_str():
-    ann_fun = """
-@parameterized.expand(Factories.extend(['$x;$y;']))
-def test(_):
-    atu = factory.create_from_text(TestStatements.SIMPLE_CPP, "test.c")
-
-    matches = match_pattern( func_body.children,patterns)
-
-    self.assert_matches( expected_dicts_per_match,matches)
-    """
-    it = PythonASTNode.load_from_text(ann_fun, "fun.py", [], None).body[-1]
-    assert_that(str(it), is_(ast.unparse(it.node)))

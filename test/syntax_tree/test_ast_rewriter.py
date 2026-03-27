@@ -941,33 +941,42 @@ class TestComposeReplacement:
             rewriter.replace(org, match)
             actual = rewriter.apply_to_string()
             assert_that(compress(expected), is_(compress(actual)))
+    def test_get_node_in_match_pattern(self,mocker):
+        node = mocker.Mock()
+        reference = mocker.Mock()
+        node.referenced_by = [reference, reference]
+        reference.node = node
+        pattern_match = PatternMatch([node, node, node], {}, [])
+        n = _RewriteAction._get_nodes([pattern_match])[0]
+        assert_that(n, is_(node))
+    
+    
+    
+    @pytest.mark.skip("fail on empty nodes")
+    def test_get_node_in_match_pattern(self):
+        it = _RewriteActions([], sys.getfilesystemencoding(), True)
+        text = getattr(it, "_RewriteActions__get_texts")([])
+        assert_that(text, is_("node"))
+    
+    
+    
+    def test_get_text_from_rewrite(self,mocker):
+        node = mocker.Mock()
+        node.root = node
+        node.binary_file_content = lambda: b"int x =0;"
+        node.offset = 0
+        node.extended_end_offset = 8
+        node.text = "int x =0"
+    
+        it = _RewriteActions(node, sys.getfilesystemencoding(), True)
+        text = getattr(it, "_RewriteActions__get_texts")([node])
+        assert_that(text, is_("int x =0"))
+    
+    
+    
 
 
-def test_get_node_in_match_pattern(mocker):
-    node = mocker.Mock()
-    reference = mocker.Mock()
-    node.referenced_by = [reference, reference]
-    reference.node = node
-    pattern_match = PatternMatch([node, node, node], {}, [])
-    n = _RewriteAction._get_nodes([pattern_match])[0]
-    assert_that(n, is_(node))
 
 
-@pytest.mark.skip("fail on empty nodes")
-def test_get_node_in_match_pattern():
-    it = _RewriteActions([], sys.getfilesystemencoding(), True)
-    text = getattr(it, "_RewriteActions__get_texts")([])
-    assert_that(text, is_("node"))
 
 
-def test_get_text_from_rewrite(mocker):
-    node = mocker.Mock()
-    node.root = node
-    node.binary_file_content = lambda: b"int x =0;"
-    node.offset = 0
-    node.extended_end_offset = 8
-    node.text = "int x =0"
-
-    it = _RewriteActions(node, sys.getfilesystemencoding(), True)
-    text = getattr(it, "_RewriteActions__get_texts")([node])
-    assert_that(text, is_("int x =0"))
