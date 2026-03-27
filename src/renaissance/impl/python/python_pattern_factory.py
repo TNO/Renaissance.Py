@@ -1,12 +1,14 @@
 from typing import Sequence
 
 from ast_comments import *
-
-from renaissance.impl.python import PythonASTNode
 from renaissance.syntax_tree import ASTFactory, ASTNode
 from renaissance.utils.node_util import replace_dollar
 
 SHOW_NODE = False
+
+class PythonPattern:
+    def __init__(self, node):
+        self.node = node
 
 
 class PythonPatternFactory:
@@ -15,22 +17,22 @@ class PythonPatternFactory:
         self.factory = factory
 
     @staticmethod
-    def _create(text: str) -> PythonASTNode:
-        return PythonASTNode.load_from_text(text)
+    def _create(text: str) -> PythonPattern:
+        return PythonPattern.load_from_text(text)
 
-    def create(self, text: str) -> PythonASTNode:
+    def create(self, text: str) -> PythonPattern:
         text = replace_dollar(text)
         return self._create(text)
 
     @staticmethod
-    def create_python_pattern(text: str) -> PythonASTNode:
+    def create_python_pattern(text: str) -> PythonPattern:
         text = replace_dollar(text)
-        return PythonASTNode(parse(text).body[0])
+        return PythonPattern(parse(text).body[0])
 
-    def create_statements(self, text: str) -> Sequence[PythonASTNode]:
+    def create_statements(self, text: str) -> Sequence[PythonPattern]:
         return self.create(text).children
 
-    def create_statement(self, text: str) -> PythonASTNode:
+    def create_statement(self, text: str) -> PythonPattern:
         return self.create_statements(text)[-1]
 
     def create_expression(self, text: str) -> ASTNode:
@@ -40,8 +42,8 @@ class PythonPatternFactory:
         return self.create_statement(param + "\ndef test(): pass")[2]
 
     @staticmethod
-    def create_kwargs(kw_str) -> Sequence[PythonASTNode]:
+    def create_kwargs(kw_str) -> Sequence[PythonPattern]:
         call = ast.parse(f"fun({replace_dollar(kw_str)})", "snippet.py", type_comments=True).body[0]
         if isinstance(call, Expr) and isinstance(call.value, Call):
-            return [PythonASTNode(kwarg) for kwarg in call.value.keywords]
+            return [PythonPattern(kwarg) for kwarg in call.value.keywords]
         return []
