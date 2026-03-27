@@ -1,6 +1,6 @@
 # 01 - Children and properties
 
-Status: Proposal
+Status: Accepted
 
 Date: 2026-02-25
 

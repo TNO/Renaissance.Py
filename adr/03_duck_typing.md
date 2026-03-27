@@ -1,6 +1,6 @@
 # 03 - Duck typing for nodes
 
-Status: Proposal
+Status: Accepted
 
 Date: 2026-02-25
 

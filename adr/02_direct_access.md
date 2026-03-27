@@ -1,19 +1,6 @@
-# 01 - Children and properties
-
-next to children and properties is direct access. Direct access allows us to access the properties of a node directly without having to go through the children. This is useful in cases where we want to quickly access a specific property without having to traverse the entire tree. For example, if we have a node that represents a function call, we can directly access the name of the function without having to go through the children that represent the arguments. This design decision allows us to optimize our code and improve performance by reducing the number of nodes we need to traverse to access specific information.
-
-
-ADR:
-use python sytle of meta programming to navigate through the children _'fields' and '_attributes' instead of get_children() _getchildren() _children
-e.g.
-
-
-
-instead of using a verbose explicit child wrapper structure (for example, a bespoke list of ImplicitNode wrapper entries describing each child slot). The `_fields` tuple approach is more concise and aligns with common Python AST conventions.
-
 # 02 - Direct access to fields
 
-Status: Proposal
+Status: Accepted
 
 Date: 2026-02-25
 
@@ -52,13 +39,18 @@ class GoAstNode:
     name:str
 
     #matcher
-    properties:dict[str, int | str]
-    children:list[Self]
+    properties:dict[str, int | str] ={
+        "length": length,
+        "offset": offset,
+        "name": name
+    }
+    children:list[Self] = [expr, body, other]
 
 ```
 ## Rationale
 
-Using Python conventions reduces boilerplate, makes code easier to inspect and manipulate, and aligns with developer expectations in a Python project.
+Using Python conventions reduces boilerplate, makes code easier to inspect and manipulate, and aligns with developer 
+expectations in a Python project.
 
 ## Consequences
 
