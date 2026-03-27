@@ -1,4 +1,5 @@
 import pytest
+from hamcrest import assert_that, is_
 
 import renaissance.refactoring.taut2pyunit as taut_refactor
 import test_data.test_class as tst_class
@@ -30,7 +31,7 @@ class TestTaut2Unittest:
         ast_refactor = ASTProcessor(atu, self.factory, in_memory=True)
         taut_refactor.remove_import_taut(ast_refactor)
         result = ast_refactor.commit().apply_to_string()
-        assert result == expected_code
+        assert_that(result, is_(expected_code))
 
     @pytest.mark.parametrize(
         "input_code, expected_code",
@@ -43,7 +44,7 @@ class TestTaut2Unittest:
     )
     def test_remove_import(self, input_code, expected_code):
         result = taut_refactor.replace_taut_import(input_code)
-        assert result == expected_code
+        assert_that(result, is_(expected_code))
 
     @pytest.mark.parametrize(
         "input_code, expected_code",
@@ -63,7 +64,7 @@ class TestTaut2Unittest:
         ast_refactor = ASTProcessor(atu, self.factory, in_memory=True)
         taut_refactor.replace_taut(ast_refactor)
         result = ast_refactor.commit().apply_to_string()
-        assert result == expected_code
+        assert_that(result, is_(expected_code))
 
     @pytest.mark.parametrize(
         "input_code, expected_code",
@@ -79,7 +80,7 @@ class TestTaut2Unittest:
         ast_refactor = ASTProcessor(atu, self.factory, in_memory=True)
         taut_refactor.replace_taut_skip(ast_refactor)
         result = ast_refactor.commit().apply_to_string()
-        assert result == expected_code
+        assert_that(result, is_(expected_code))
 
     @pytest.mark.parametrize(
         "input_code, expected_code",
@@ -92,7 +93,7 @@ class TestTaut2Unittest:
     )
     def test_replace_import(self, input_code, expected_code):
         result = taut_refactor.replace_mock_import(input_code)
-        assert result == expected_code
+        assert_that(result, is_(expected_code))
 
     @pytest.mark.parametrize(
         "input_code, expected_code",
@@ -113,7 +114,7 @@ class TestTaut2Unittest:
         ast_refactor = ASTProcessor(atu, self.factory, in_memory=True)
         taut_refactor.add_self(ast_refactor)
         result = ast_refactor.commit().apply_to_string()
-        assert result == expected_code
+        assert_that(result, is_(expected_code))
 
     @pytest.mark.parametrize(
         "input_code, expected_code",
@@ -129,7 +130,7 @@ class TestTaut2Unittest:
         ast_refactor = ASTProcessor(atu, self.factory, in_memory=True)
         taut_refactor.remove_decorator(ast_refactor)
         result = ast_refactor.commit().apply_to_string()
-        assert result == expected_code
+        assert_that(result, is_(expected_code))
 
     @pytest.mark.parametrize(
         "input_code, expected_code",
@@ -142,37 +143,37 @@ class TestTaut2Unittest:
         ast_refactor = ASTProcessor(atu, self.factory, in_memory=True)
         taut_refactor.convert_assert(ast_refactor)
         result = ast_refactor.commit().apply_to_string()
-        assert result == expected_code
+        assert_that(result, is_(expected_code))
 
     @pytest.mark.parametrize("input_code, expected_code", [(tst_code.taut_code, tst_code.result_code)])
     def test_log_emrwxtl(self, input_code, expected_code):
         result = taut_refactor.replace_log_emrwxtl(input_code)
-        assert result == expected_code
+        assert_that(result, is_(expected_code))
 
     @pytest.mark.parametrize("input_code, insert_code", [(tst_insert.input_code, tst_insert.insert_code)])
     def test_insert_class(self, input_code, insert_code):
         result = taut_refactor.insert_class(input_code, insert_code)
-        assert result == input_code + insert_code + "\n"
+        assert_that(result, is_(input_code + insert_code + "\n"))
 
     @pytest.mark.parametrize("input_code, expected_code", [(tst_class.set_up, tst_class.new_set_up)])
     def test_setup(self, input_code, expected_code):
         result = taut_refactor.refactor_setup(input_code)
-        assert result == expected_code
+        assert_that(result, is_(expected_code))
 
     @pytest.mark.parametrize("input_code, expected_code", [(tst_class.tear_down, tst_class.new_tear_down)])
     def test_teardown(self, input_code, expected_code):
         result = taut_refactor.refactor_teardown(input_code)
-        assert result == expected_code
+        assert_that(result, is_(expected_code))
 
     @pytest.mark.parametrize("input_code, expected_code", [(test_doubles_fun, test_doubles_fun_new)])
     def test_testdoubles_fun(self, input_code, expected_code):
         result = taut_refactor.refactor_testdoubles_fun(input_code)
-        assert result == expected_code
+        assert_that(result, is_(expected_code))
 
     @pytest.mark.parametrize("input_code, expected_code", [(test_doubles_class, test_doubles_class_new)])
     def test_testdoubles_class(self, input_code, expected_code):
         result = taut_refactor.refactor_testdoubles_class(input_code)
-        assert result == expected_code
+        assert_that(result, is_(expected_code))
 
     @pytest.mark.parametrize(
         "input_code, expected_code",

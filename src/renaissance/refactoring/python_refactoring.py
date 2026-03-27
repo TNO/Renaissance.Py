@@ -1,6 +1,9 @@
 import importlib
 import re
+from pathlib import Path
 from typing import Sequence, cast
+
+from termcolor import colored
 
 from renaissance.impl.python import PythonASTNode, PythonPatternFactory
 from renaissance.impl.python.python_ast_util import to_str
@@ -16,7 +19,8 @@ class PythonRefactoring(ASTProcessor):
         atu = factory.create(file)
         super().__init__(atu, factory, False)
         self.pattern_factory = PythonPatternFactory(self.factory)
-
+        self.black_list_pattern = ".git"
+        self.white_list_pattern = ""
     def replace_stmt(self, find, repl):
         pattern = self.pattern_factory.create_statements(find)
         for match in match_pattern(self.root.children, pattern):
@@ -35,6 +39,12 @@ class PythonRefactoring(ASTProcessor):
         module = importlib.import_module(f"renaissance.refactoring.{snake}")
         cls = getattr(module, class_name)
         refactor = cls(file)
+        if (refactor.black_list_pattern in refactor.filename
+                or refactor.white_list_pattern not in refactor.filename):
+            print(f"skipping:         {Path(refactor.filename).resolve()}")
+            return
+
+        print(colored(f"refactor          {Path(refactor.filename).resolve()}","green", attrs=["bold"]))
         refactor.run()
     @property
     def body(self)->Sequence[PythonASTNode]:

@@ -1,5 +1,6 @@
 import os
 import textwrap
+from pathlib import Path
 from typing import Sequence
 
 from renaissance.impl.python.python_ast_util import convert_function
@@ -13,6 +14,8 @@ class Unit2Pytest(PythonRefactoring):
         """hide internal administration in the parent class so that this class you only deals with specific refactors
         """
         super().__init__(file)
+        self.black_list_pattern = "utils_for_test"
+        self.white_list_pattern = "test"
 
     def run(self):
         """
@@ -136,7 +139,7 @@ class Unit2Pytest(PythonRefactoring):
         ))
         for match in match_pattern(self.root.children, unittest):
             fun = match.nodes[0]
-            args = match["$$args"].replace('\n', ', ')
+            args = ", ".join([arg.node.arg for arg in match.expansions["$$args"]])
             if varg := match.expansions["$$varg"]:
                 args = f"{args}, *{varg[0].signature}"
             args = args.replace("self, ", "")

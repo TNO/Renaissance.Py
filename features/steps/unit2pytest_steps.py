@@ -51,7 +51,7 @@ def step_given_ast_no_errors(context):
 @when("I convert it to pytest")
 def step_when_convert(context):
     converter = Unit2Pytest(context.file)
-    converter.convert_pytest()
+    converter.run()
     context.atu = context.factory.create(context.file)
 
 

@@ -119,5 +119,10 @@ class TextUtils:
         text = signature.replace("\n", " ")
         return re.sub(r"[^\w\s]", "", text)[:30]  # Remove punctuation, limit length
 
+def camel_case(snippet: str) -> str:
+    parts = snippet.split("_")
+    return parts[0] + "".join(word.capitalize() for word in parts[1:])
+
+
 def snake_case(snippet):
-    return re.sub(r"(?<!^)(?=[A-Z])", "_", snippet).lower()
+    return re.sub(r"([A-Z][A-z]+)([A-Z][a-z])", r"\1_\2", snippet).lower()
