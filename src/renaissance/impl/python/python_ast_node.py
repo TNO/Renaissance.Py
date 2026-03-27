@@ -4,9 +4,33 @@ from typing import Any, Optional, Sequence
 from ast_comments import *
 from typing_extensions import override
 
-from renaissance.impl import MATCH_ONE, MATCH_ALL
 from renaissance.syntax_tree import ASTNode, ASTReference
 from renaissance.syntax_tree.match_finder import find_in_list
+
+OPERATOR_MAP = {
+    "AnnAssign": "=",
+    "Assert": "assert",
+    "Assign": "=",
+    "AsyncFor": "for",
+    "AsyncFunctionDef": "function",
+    "AsyncWith": "with",
+    "AugAssignAdd": "+=",
+    "Break": "break",
+    "Call": "def",
+    "ClassDef": "class",
+    "Continue": "continue",
+    "For": "for",
+    "FunctionDef": "function",
+    "If": "if",
+    "Import": "import",
+    "ImportFrom": "import",
+    "Match": "match",
+    "Pass": "pass",
+    "Try": "try",
+    "TryStar": "try",
+    "While": "while",
+    "With": "with",
+}
 
 OPERATOR_MAP = {
     "AnnAssign": "=",
@@ -210,7 +234,7 @@ class PythonASTNode(ASTNode):
         super().__init__(self if parent is None else parent.root)
         self.node = node
         self._parent = parent
-        self._kind = self.derive_kind()
+        self._kind = type(node).__name__
         self.indent = ""
         self._name = self._derive_name()
         self.show_props = False
@@ -272,21 +296,7 @@ class PythonASTNode(ASTNode):
         """
         return self.children[key]
 
-    def derive_kind(self) -> str:
-        signature = ""
-        if isinstance(self.node, ast.arg):
-            signature = self.node.arg
-        elif isinstance(self.node, ast.Name):
-            signature = self.node.id
-        elif isinstance(self.node, ast.Expr) and isinstance(self.node.value, ast.Name):
-            signature = self.node.value.id
-        if (
-            (signature.startswith(MATCH_ALL) or signature.startswith("$$")) and " " not in signature and "(" not in signature
-        ):  # legacy compatibility
-            return MATCH_ALL
-        elif (signature.startswith(MATCH_ONE) or signature.startswith("$")) and " " not in signature and "(" not in signature:
-            return MATCH_ONE
-        return type(self.node).__name__
+
 
     def match_props(self, properties) -> bool:
         all_keys = (self.properties.keys() | properties.keys()) - IRRELEVANT_PROPS
