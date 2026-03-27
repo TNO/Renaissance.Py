@@ -532,7 +532,7 @@ def raw_text(nodes, snippets) -> str:
         else:
             for node in nodes:
                 if isinstance(node, PythonASTNode):
-                    res += node.text
+                    res += node.signature
                 else:
                     res += str(node)
         return res  # + '\n'
@@ -569,5 +569,5 @@ def _apply(rewriter: ASTRewriter) -> str:
 def raw(nodes):
     res = ""
     for node in nodes:
-        res += "\n\n    " + node.text
+        res += "\n\n    " + node.signature
     return res + "\n    "

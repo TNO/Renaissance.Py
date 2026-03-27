@@ -1,12 +1,17 @@
 from enum import Enum
 import re
 import sys
-from typing import Optional, Sequence
+from typing import Optional, Sequence, Protocol
 from .match_finder import PatternMatch
 from .ast_finder import ASTFinder
 from .ast_node import ASTNode
 from renaissance.utils.text_utils import TextUtils
 from renaissance.common import Rewriter
+
+class Rewritable(Protocol):
+    offset:int
+    end_offset: int
+    extended_end_offset: int
 
 
 class _RewriteActionType(Enum):
@@ -125,7 +130,7 @@ class _RewriteAction:
     def _get_nodes(
         target: ASTNode | Sequence[ASTNode] | PatternMatch | Sequence[PatternMatch],
     ) -> Sequence[ASTNode]:
-        if isinstance(target, ASTNode):
+        if isinstance(target, ASTNode) or type(target).__name__ == 'PythonASTNode':
             return [target]
         if isinstance(target, PatternMatch):
             return target.nodes

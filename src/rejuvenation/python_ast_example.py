@@ -48,7 +48,7 @@ def python_ast_smoke_test():
 def raw(nodes):
     res = ""
     for node in nodes:
-        res += node.text
+        res += node.signature
     return res + "\n"
 
 

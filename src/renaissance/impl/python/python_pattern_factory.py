@@ -23,9 +23,12 @@ class PythonPattern(AstProtocol):
         self.properties: dict =node.properties
         self.children: list[Self] =[PythonPattern(node) for node in node.children]
         self.signature: str = node.signature
-        self.name: str = node.name
+        self.name: str = node.name.replace(MATCH_ALL, "$$").replace(MATCH_ONE, "$")
     def __eq__(self, other:AstProtocol)-> bool:
         return is_match(other, self)
+    def __repr__(self):
+        return str(self.node).replace(MATCH_ALL, "$$").replace(MATCH_ONE, "$")
+
     def derive_kind(self, node) -> str:
         signature = ""
         if isinstance(node, ast.arg):
