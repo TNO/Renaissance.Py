@@ -7,6 +7,7 @@ from typing_extensions import override
 from renaissance.syntax_tree import ASTNode, ASTReference
 from renaissance.syntax_tree.match_finder import find_in_list
 from renaissance.utils.node_util import preceding_sibling, next_sibling
+from renaissance.utils.text_utils import TextUtils
 
 OPERATOR_MAP = {
     "AnnAssign": "=",
@@ -483,13 +484,11 @@ class PythonASTNode:
 
 
 
-    @override
     @property
     def referenced_by(self) -> Sequence[ASTReference]:
         self.translation_unit.lazy_create_refers(self)
         return self.translation_unit.get_referenced_by(self.name)
 
-    @override
     @property
     def references(self) -> list[ASTReference]:
         self.translation_unit.lazy_create_refers(self)
@@ -509,3 +508,6 @@ class PythonASTNode:
         else:
             return self.parent.get_container_parent()
 
+    @property
+    def text(self) -> str:
+        return TextUtils.shift_left(self.signature, len(self.indent), start_line=1)

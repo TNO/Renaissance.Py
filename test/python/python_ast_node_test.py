@@ -339,8 +339,20 @@ class Parent:
         assert_that(str(it), is_(ast.unparse(it.node)))
     
     
-    
-
+class TestGuardRewritable:
+    pass
+    # @ignore
+    # def test_text_equals_to_binary_content(self):
+    #     code = textwrap.dedent("""
+    #     @parameterized.expand(Factories.extend(['$x;$y;']))
+    #     def test(_):
+    #         atu = factory.create_from_text(TestStatements.SIMPLE_CPP, "test.c")
+    #         matches = match_pattern( func_body.children,patterns)
+    #         self.assert_matches( expected_dicts_per_match,matches)
+    #         """)
+    #     it = PythonASTNode.load_from_text(code, "fun.py", [], None).body[-1]
+    #     expected = it.binary_file_content()[it.offset: it.extended_end_offset]
+    #     assert_that(it.text, is_(expected))
 
 
 
