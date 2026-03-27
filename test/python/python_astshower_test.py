@@ -14,7 +14,7 @@ class TestPythonShower:
         self.pattern_factory = PythonPatternFactory(self.factory)
 
     def test_show_call_using_repr(self):
-        simple = self.pattern_factory.create_statement("$pa($55)")
+        simple = self.pattern_factory.create_statement("$pa($55)").node
         assert_that(
             str(simple),
             is_("(Expr, $pa($55), test.py[0:28]): |_MatchOne__pa(_MatchOne__55)|\n"),

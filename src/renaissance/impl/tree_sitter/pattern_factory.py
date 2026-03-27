@@ -21,7 +21,7 @@ class TsPatternFactory:
         else:
             return self.adapter.to_lst(text).root
 
-    def create_python_pattern(self, text: str) -> LSTNode:
+    def create_statement(self, text: str) -> LSTNode:
         text = replace_dollar(text)
         return self.create(text).root
 

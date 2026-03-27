@@ -261,7 +261,7 @@ class PythonASTNode(ASTNode):
         )
 
     def __contains__(self, item):
-        if isinstance(item, self.__class__):
+        if not isinstance(item, list):
             item = [item]
         return find_in_list(self.children, item)
 

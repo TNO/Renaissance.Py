@@ -4,7 +4,7 @@ import tree_sitter_java as tsjava
 import pytest
 from hamcrest import *
 
-from renaissance.impl.tree_sitter_adapter.tree_sitter_adapter import TreeSitterAdapter
+from renaissance.impl.tree_sitter.adapter import TreeSitterAdapter
 from renaissance.visualizers.lst_mermaid_visualizer import LSTMermaidVisualizer
 
 MERMAID_PYTHON = """graph TD

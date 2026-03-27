@@ -1,7 +1,9 @@
 import tree_sitter_python
 
 from renaissance.impl import MATCH_ONE
-from renaissance.impl.tree_sitter_adapter import TreeSitterAdapter, TsPatternFactory
+from renaissance.impl.tree_sitter.adapter import TreeSitterAdapter
+from renaissance.impl.tree_sitter.pattern_factory import TsPatternFactory
+
 from renaissance.syntax_tree import ASTShower, ASTRewriter
 from renaissance.syntax_tree.ast_finder import find_kind
 from renaissance.syntax_tree.match_finder import match_pattern

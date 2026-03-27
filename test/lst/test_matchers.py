@@ -2,8 +2,8 @@ import pytest
 import tree_sitter_cpp as tscpp
 from hamcrest import assert_that, has_length
 
-from renaissance.impl.tree_sitter_adapter.tree_sitter_adapter import TreeSitterAdapter
-from renaissance.impl.tree_sitter_adapter.lst import LSTNode
+from renaissance.impl.tree_sitter.adapter import TreeSitterAdapter
+from renaissance.impl.tree_sitter.lst import LSTNode
 
 from renaissance.syntax_tree import ASTFinder
 from renaissance.syntax_tree.match_finder import is_match

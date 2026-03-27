@@ -29,12 +29,12 @@ def convert_taut_to_unittest(file, output_file):
 
     test_atu2 = factory.create_from_text(result, file)
     rewriter = ASTRewriter(test_atu2)
-    pattern = py_pattern_factory.create_python_pattern("def tearDownCommon(self):\n    $$aa")
+    pattern = py_pattern_factory.create_statement("def tearDownCommon(self):\n    $$aa")
     if match_pattern(test_atu2.children, [pattern]):
         result = convert_setup_common(py_pattern_factory, rewriter, test_atu2, ast_refactor)
     test_atu3 = factory.create_from_text(result, file)
     rewriter = ASTRewriter(test_atu3)
-    pattern = py_pattern_factory.create_python_pattern("def tearDownCommon(self):\n    $$aa")
+    pattern = py_pattern_factory.create_statement("def tearDownCommon(self):\n    $$aa")
     if match_pattern(test_atu3.children, [pattern]):
         result = convert_teardown_common(py_pattern_factory, rewriter, test_atu3)
         result = convert_add_patcher(py_pattern_factory, result)
@@ -80,7 +80,7 @@ def convert_test_import(pattern_factory, rewriter, test_atu):
 
 
 def convert_import_verify(pattern_factory, rewriter, test_atu):
-    import_verify = pattern_factory.create_python_pattern("self.import_and_verify_module('$a')")
+    import_verify = pattern_factory.create_statement("self.import_and_verify_module('$a')")
     for match in match_pattern(test_atu.children, [import_verify]):
         repl = f'import {match.expansions["$a"][0]}\nself.assertIsNotNone({match.expansions["$a"][0]})'
         rewriter.replace(repl, match.nodes, False, False)
@@ -93,7 +93,7 @@ ImprovedStub.call_logs = {}
 ImprovedStub.store_args = {}
 
 """
-    tds_pattern = pattern_factory.create_python_pattern("self.tds = [$$aa]")
+    tds_pattern = pattern_factory.create_statement("self.tds = [$$aa]")
     for match in match_pattern(test_atu.children, [tds_pattern]):
         init_stubs = ""
         repl = "self.patchers = [\n"
@@ -113,7 +113,7 @@ ImprovedStub.store_args = {}
 
 
 def convert_teardown_common(pattern_factory, rewriter, test_atu):
-    pattern = pattern_factory.create_python_pattern("def tearDownCommon(self):\n    $$aa")
+    pattern = pattern_factory.create_statement("def tearDownCommon(self):\n    $$aa")
     repl = """def tearDownCommon(self):
     for p in self.patchers:
         try:
@@ -127,7 +127,7 @@ def convert_teardown_common(pattern_factory, rewriter, test_atu):
 
 
 def convert_add_patcher(pattern_factory, input):
-    pattern = pattern_factory.create_python_pattern("def tearDownCommon(self):\n    $$aa")
+    pattern = pattern_factory.create_statement("def tearDownCommon(self):\n    $$aa")
     insert_add_patcher = """
 def add_patcher(self, target, name, replacement):
     p = patch.object(target, name, replacement)
@@ -557,7 +557,7 @@ def _setup(input_code: str, match_str: str):
     factory = _get_factory()
     atu = factory.create_from_text(input_code, "temp.py")
     rewriter = ASTRewriter(atu)
-    pattern = PythonPatternFactory(factory).create_python_pattern(match_str)
+    pattern = PythonPatternFactory(factory).create_statement(match_str)
     return atu, rewriter, pattern
 
 
