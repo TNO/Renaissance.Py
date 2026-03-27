@@ -428,7 +428,7 @@ class _RewriteActions:
             node_list = target.nodes
         else:
             node_list = (
-                [target] if isinstance(target, ASTNode) else target
+                [target] if (isinstance(target, ASTNode)  or type(target).__name__ =='PythonASTNode') else target
             )  # TODO How to make a Sequence[ASTNode] as type hints also show list[ASTNode]?
         return new_content, node_list
 
