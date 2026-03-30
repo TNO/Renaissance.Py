@@ -1,6 +1,6 @@
 import textwrap
 
-from renaissance.impl.python import PythonASTNode
+from renaissance.impl.python.python_ast_node import PythonASTNode
 
 
 def raw(nodes: PythonASTNode):

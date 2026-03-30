@@ -4,7 +4,7 @@ from typing import Sequence, Self
 from ast_comments import *
 
 from renaissance.impl import MATCH_ALL, MATCH_ONE
-from renaissance.impl.python import PythonASTNode
+from renaissance.impl.python.python_ast_node import PythonASTNode
 from renaissance.syntax_tree import ASTFactory, ASTNode
 from renaissance.syntax_tree.match_finder import AstProtocol, is_match
 from renaissance.utils.node_util import replace_dollar

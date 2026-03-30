@@ -14,22 +14,20 @@ Authors:
 
 ## Context
 
-Direct access refers to exposing node fields and attributes using a Pythonic style (e.g., `_fields`, `_attributes`)
-rather than using explicit accessor methods such as `get_children()` or `get_children`.
+Direct access refers to exposing node fields and attributes using a Pythonic style (e.g., `body`, `name`)
+rather than using children and properties such as `children[3]` or `properties['name']`.
 This allows for natural attribute access, simpler metaprogramming, and compatibility with Python tooling and idioms.
 
 ## Decision
 
-Adopt a Pythonic direct-access convention for node definitions. Nodes may declare a `_fields` or `_attributes` tuple
-(as in CPython's `ast` module) that names structural fields. Consumers and tools should read these fields rather than
-relying on bespoke accessor methods. Implementations should still provide stable, documented APIs for traversal
-and transformation.
+Adopt a Pythonic direct-access convention for node definitions. Nodes may declare a `_fields`(as in CPython's `ast` 
+module) that names structural fields. Consumers and tools should read these fields rather than
+relying on children and properties methods. Implementations should still provide stable, 
+documented APIs for direct ast node manipulation.
+
 
 ## Implementation notes
 
-- Follow patterns used by CPython's `ast` module (using `_fields` for structural fields).
-- Keep a clear mapping between `_fields` and how children/properties are stored internally.
-- Provide compatibility helper functions to convert between direct-access style and other APIs when needed.
 
 
 ```python

@@ -8,7 +8,7 @@ from ..utils.node_util import use_dollar
 
 
 IRRELEVANT_PROPS = {"macro_expansion", "start_point", "end_point", "source_code"}
-DEFAULT_EXCLUDE_KIND = {"FullComment", "MACRO_DEFINITION"}
+DEFAULT_EXCLUDE_KIND = {"FullComment", "MACRO_DEFINITION", "Comment"}
 
 
 @runtime_checkable

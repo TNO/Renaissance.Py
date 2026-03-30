@@ -330,7 +330,9 @@ class PythonASTNode:
     @staticmethod
     def load_from_text(
         text: str,
-        file_name: str = "test.py"
+        file_name: str = "test.py",
+        extra_args:list[str] = None,
+        working_dir:str = None
     ) -> "PythonASTNode":
         translation_unit = PythonTranslationUnit(text, file_name=str(file_name))
         translation_unit.check_diagnostics()
