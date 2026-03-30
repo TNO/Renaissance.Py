@@ -1,5 +1,7 @@
 # This script demonstrates the use of the syntax_tree library to parse and rewrite Python code.
 # It specifically showcases nested replacements and multiple patterns.
+import textwrap
+
 from renaissance.impl.python import PythonASTNode, PythonPatternFactory
 from renaissance.syntax_tree import ASTFactory, ASTRewriter
 from renaissance.syntax_tree import ASTShower, TextUtils
@@ -29,7 +31,7 @@ def python_ast_smoke_test():
 
     ASTShower.show_node(pattern1, include_properties=True)
 
-    pattern1replacement = TextUtils.strip_indent("""
+    pattern1replacement = textwrap.dedent("""
             # changed if expr to const
             isAOne=True
             if(isAOne):

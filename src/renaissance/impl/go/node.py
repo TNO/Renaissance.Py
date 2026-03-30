@@ -19,9 +19,7 @@ class GoAstNode:
                 "offset": self.offset,
                 "name": self.name
             }
-    children: list[Self] =
-
-        ...
+    children: list[Self] =[]
 
     @property
     def children(self) -> list[Self]:

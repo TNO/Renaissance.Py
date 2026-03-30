@@ -302,14 +302,14 @@ class Parent:
     
     
     def test_load_file(self):
-        atu = PythonASTNode.load(Path("demo.py"), {}, Path(targets.__file__).parent)
+        atu = PythonASTNode.load(Path(targets.__file__).parent / "demo.py", {}, None)
         assert_that(atu.translation_unit.atu.type_ignores, is_(empty()))
     
     
     
     def test_load_invalid_file(self):
         with pytest.raises(IndentationError, match="unexpected indent"):
-            PythonASTNode.load(Path("invalid.py"), {}, Path(targets.__file__).parent)
+            PythonASTNode.load(Path(targets.__file__).parent / "invalid.py")
     
     
     

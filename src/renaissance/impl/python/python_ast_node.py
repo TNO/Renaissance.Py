@@ -328,10 +328,13 @@ class PythonASTNode:
             self.length = 0
 
     @staticmethod
-    def load(file_path: Path) -> "PythonASTNode":
+    def load(file_path: Path,
+             extra_args:list[str] = None,
+            working_dir:str = None
+    ) -> "PythonASTNode":
         with open(file_path, "r") as file:
             content = file.read()
-            return PythonASTNode.load_from_text(content, str(file_path))
+            return PythonASTNode.load_from_text(content, str(file_path), extra_args, working_dir)
 
     @staticmethod
     def load_from_text(
