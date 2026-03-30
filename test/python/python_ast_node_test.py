@@ -13,7 +13,8 @@ from hamcrest import (
 )
 
 import targets
-from renaissance.impl.python import PythonASTNode, PythonPatternFactory
+from renaissance.impl.python.python_ast_node import PythonASTNode
+from renaissance.impl.python.python_pattern_factory import PythonPatternFactory
 from renaissance.syntax_tree import ASTFactory, ASTShower
 from renaissance.utils.node_util import traverse
 from utils_for_tests import show_node
@@ -68,7 +69,6 @@ class TestPythonASTNode:
             ("0x01 | 0x10", "BitOr"),
             ("0x01 ^ 0x10", "BitXor"),
             ("True and False", "BoolOp"),
-            ("global x", "Global"),
             ("del x", "Delete"),
             (
                 """
@@ -88,6 +88,11 @@ def outer():
         it = self.factory.create_from_text(raw, "context.py")
         kinds = [node.kind for node in traverse(it)]
         assert_that(kind, is_in(kinds))
+
+    def test_global_stmt(self):
+        it = self.factory.create_from_text("global x", "context.py").body[-1]
+        assert_that(it.kind , is_("Global"))
+        assert_that(it.kind, is_("Global"))
 
     @pytest.mark.parametrize(
         "raw, kind",

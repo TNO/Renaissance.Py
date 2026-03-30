@@ -68,6 +68,7 @@ class TestRefactorWithNestedCompositions:
             "    );\n"
             "}"
         )
+        assert result == expected_result_nested
         assert_that(result, is_(expected_result_nested))
 
 

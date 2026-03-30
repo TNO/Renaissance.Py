@@ -226,12 +226,17 @@ class PythonASTNode:
             self.translation_unit = translation_unit
             self.derive_position(node, translation_unit, parent)
             self.add_node()
-
         for name in node._fields:
             try:
                 child = getattr(node, name)
                 match child:
                     case list():  # Matches any list
+                        if(isinstance(node, Global) and name =="names"):
+                            if(len(child)==1):
+                                self.name = child[0]
+                            if name == "body":
+                                self.body = self.children
+
                         if isinstance(node, ImplicitNode) or isinstance(node, ast.Module) or len(node._fields) == 1:
                             self.children.extend(PythonASTNode(n, translation_unit, self) for n in child)
                             if name == "body":
@@ -240,6 +245,7 @@ class PythonASTNode:
                             self.children.append(PythonASTNode(ImplicitNode(name, child), translation_unit, self))
                             if name in ["body", "cases"]:
                                 self.body = self.children[-1].children
+
                     case ast.AST():
                         if name not in ["ctx"]:
                             self.children.append(PythonASTNode(child, translation_unit, self))
