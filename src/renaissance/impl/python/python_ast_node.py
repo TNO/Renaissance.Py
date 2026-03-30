@@ -1,10 +1,7 @@
 from pathlib import Path
-from typing import Any, Optional, Sequence, Self, Callable
+from typing import Any, Sequence, Self, Callable
 
 from ast_comments import *
-from typing_extensions import override
-
-from renaissance.syntax_tree import ASTNode, ASTReference
 from renaissance.syntax_tree.match_finder import find_in_list
 from renaissance.utils.node_util import preceding_sibling, next_sibling
 from renaissance.utils.text_utils import TextUtils
@@ -34,30 +31,6 @@ OPERATOR_MAP = {
     "With": "with",
 }
 
-OPERATOR_MAP = {
-    "AnnAssign": "=",
-    "Assert": "assert",
-    "Assign": "=",
-    "AsyncFor": "for",
-    "AsyncFunctionDef": "function",
-    "AsyncWith": "with",
-    "AugAssignAdd": "+=",
-    "Break": "break",
-    "Call": "def",
-    "ClassDef": "class",
-    "Continue": "continue",
-    "For": "for",
-    "FunctionDef": "function",
-    "If": "if",
-    "Import": "import",
-    "ImportFrom": "import",
-    "Match": "match",
-    "Pass": "pass",
-    "Try": "try",
-    "TryStar": "try",
-    "While": "while",
-    "With": "with",
-}
 types = ["int", "float", "str", "list", "set", "tuple", "Mapping", "dict", "Optional"]
 IRRELEVANT_PROPS = {"comment"}
 IMPLICIT = ["ImplicitNode"]
@@ -99,7 +72,7 @@ class PythonTranslationUnit:
         if msg and not continue_with_warning:
             raise Exception(f"Error parsing: {self.file_name} \n+ errors: {errors}")
 
-    def lazy_create_refers(self, node: "ASTNode") -> None:
+    def lazy_create_refers(self, node: "PythonASTNode") -> None:
         if self.references_initialized:
             return
         node.root.process(lambda n: self.create_references(n))
@@ -206,11 +179,11 @@ class PythonTranslationUnit:
 
     def get_referenced_by(self, node_id):
         refs = self._referenced_by.get(node_id, [])
-        return [ASTReference(self._nodes[ref.node_id], ref.ref_kind, ref.properties) for ref in refs]
+        return [PythonASTReference(self._nodes[ref.node_id], ref.ref_kind, ref.properties) for ref in refs]
 
     def get_references(self, node_id):
         refs = self._references.get(node_id, [])
-        return [ASTReference(self._nodes[ref.node_id], ref.ref_kind, ref.properties) for ref in refs]
+        return [PythonASTReference(self._nodes[ref.node_id], ref.ref_kind, ref.properties) for ref in refs]
 
 
 class ImplicitNode(ast.Name):
@@ -349,17 +322,15 @@ class PythonASTNode:
             self.length = 0
 
     @staticmethod
-    def load(file_path: Path, extra_args: Sequence[str] = None, working_dir: Path = Path(".")) -> "PythonASTNode":
-        with open(working_dir / file_path, "r") as file:
+    def load(file_path: Path) -> "PythonASTNode":
+        with open(file_path, "r") as file:
             content = file.read()
-            return PythonASTNode.load_from_text(content, str(file_path), extra_args, working_dir)
+            return PythonASTNode.load_from_text(content, str(file_path))
 
     @staticmethod
     def load_from_text(
         text: str,
-        file_name: str = "test.py",
-        extra_args: Sequence[str] = None,
-        working_dir: Path = None,
+        file_name: str = "test.py"
     ) -> "PythonASTNode":
         translation_unit = PythonTranslationUnit(text, file_name=str(file_name))
         translation_unit.check_diagnostics()
@@ -462,7 +433,6 @@ class PythonASTNode:
         op = type(self.node.op).__name__ if isinstance(self.node, (ast.BinOp, ast.UnaryOp, ast.BoolOp, ast.AugAssign)) else ""
         return OPERATOR_MAP.get(node_type + op, "")
 
-    @override
     @property
     def signature(self) -> str:
         sig = self.binary_file_content().decode(sys.getfilesystemencoding())
@@ -470,7 +440,6 @@ class PythonASTNode:
             sig = "@" + sig
         return sig
 
-    @override
     def binary_file_content(self) -> bytes:
         return (
             self.translation_unit.content[self.offset : self.offset+self.length]
@@ -478,19 +447,13 @@ class PythonASTNode:
             else unparse(self.node).encode(sys.getfilesystemencoding())
         )
 
-    @override
-    def matches_kind(self, target: ASTNode) -> bool:
-        return isinstance(self.node, type(target.node))
-
-
-
     @property
-    def referenced_by(self) -> Sequence[ASTReference]:
+    def referenced_by(self) -> Sequence[PythonASTReference]:
         self.translation_unit.lazy_create_refers(self)
         return self.translation_unit.get_referenced_by(self.name)
 
     @property
-    def references(self) -> list[ASTReference]:
+    def references(self) -> list[PythonASTReference]:
         self.translation_unit.lazy_create_refers(self)
         return self.translation_unit.get_references(self.name)
 
