@@ -9,19 +9,19 @@ Authors: Project contributors
 ## Context
 
 The project uses Python and benefits from reproducible dependency management and straightforward virtual
-environment handling. Poetry provides a single-file project manifest (`pyproject.toml`) and an integrated
+environment handling. UV provides a single-file project manifest (`pyproject.toml`) and an integrated
 workflow for dependency resolution, packaging, and environment management.
 
 ## Decision
 
-Adopt Poetry as the recommended tool for dependency management and packaging. Encourage contributors to use
+Adopt UV as the recommended tool for dependency management and packaging. Encourage contributors to use
 Poetry for creating virtual environments, adding/removing dependencies, and building distributions.
 
 ## Implementation notes
 
 - Keep `pyproject.toml` and `uv.lock` up-to-date.
 - Document common contributor workflows in the repository README (install, run tests, add dependency).
-- Provide instructions for creating and activating a Poetry-managed virtualenv and installing dev dependencies.
+- Provide instructions for creating and activating a UV-managed virtualenv and installing dev dependencies.
 
 ## Rationale
 

@@ -30,6 +30,19 @@ Not every node must implement every method — choose the methods that make sens
 - ``__contains__``: Implement if membership semantics are meaningful.
 - Avoid surprising side effects in any dunder method. Keep them simple and consistent.
 
+```python
+
+class GoAstNode:
+
+# easier to see in debugger and it is used in astshower
+def __repr__(self) -> str:
+    return f"{type}....."
+
+#shorthand for nth children
+__getitem__(self, index) -> Self:
+    return self.children[index]
+```
+
 ## Rationale
 
 - Idiomatic usage: makes nodes easier to use with Python language features and libraries.

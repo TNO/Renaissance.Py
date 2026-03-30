@@ -41,39 +41,25 @@ def is_statement(node: AstNode) -> bool:
 
 def is_expression(node: AstNode) -> bool:
     return isinstance(node.kind, Expression)
+
+# Usage
+node.kind =Assignment(...)
+assert is_statement(node)        # True — no string comparison needed
+assert not is_expression(node)   # False
 ```
 
-- Register abstract base classes with `abc.ABCMeta` or `typing.Protocol` where structural subtyping is preferred over 
-  nominal subtyping.
 
 ## Example
 
-```python
-
-class Node(ABC):
-    ...
-
-class Statement(Node):
-    ...
-
-class Expression(Node):
-    ...
-
-class AssignmentStatement(Statement):
-    ...
-
-class BinaryExpression(Expression):
-    ...
-
-# Usage
-node.kind =AssignmentStatement(...)
-assert is_statement(node)        # True — no string comparison needed
-assert not is_expression(node)   # True
-```
 
 ## Rationale
 
-Using the class hierarchy to determine node types is more robust than string comparisons: it is refactor-safe, IDE-navigable, and benefits from Python's `isinstance` semantics. Following Doxygen's well-known taxonomy for common node categories ensures consistency with established conventions and makes the codebase accessible to developers familiar with that terminology. Helper functions become trivially simple and generically applicable across all language frontends.
+Using the class hierarchy to determine node types is more robust than string comparisons: it is refactor-safe, 
+IDE-navigable, and benefits from Python's `isinstance` semantics. Following Doxygen's well-known taxonomy for common 
+node categories ensures consistency with established conventions and makes the codebase accessible to developers 
+familiar with that terminology. Helper functions become trivially simple and generically applicable across all language 
+frontends.
+
 
 ## Consequences
 

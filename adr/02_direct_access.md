@@ -14,8 +14,9 @@ Authors:
 
 ## Context
 
-Direct access refers to exposing node fields and attributes using a Pythonic style (e.g., `body`, `name`)
-rather than using children and properties such as `children[3]` or `properties['name']`.
+Direct access refers to exposing node fields and attributes using a Pythonic style (e.g., `dunction_definition.body`, `dunction_definition.name`)
+
+rather than using children and properties such as `dunction_definition.children[3].children` or `dunction_definition.properties['name']`.
 This allows for natural attribute access, simpler metaprogramming, and compatibility with Python tooling and idioms.
 
 ## Decision
@@ -49,6 +50,7 @@ class GoAstNode:
         "name": name
     }
     children:list[Self] = [expr, body, other]
+
 
 ```
 
