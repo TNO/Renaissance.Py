@@ -35,39 +35,29 @@ class TestRefactorWithNestedCompositions:
     def test_refactor_with_nested_compositions(self):
         result = refactor_with_nested_compositions(["", ""])
         assert_that(result, is_not(None))
-        expected_result_nested = (
-            "void f1(int a, int b, int c);\n"
-            "void f2(int a, int c);\n"
-            "void f(){\n"
-            "    const int a = 1;\n"
-            "    const int b = 2;\n"
-            "    int isAOne = a==1;\n"
-            "    int c = 0, d=0;\n"
-            "    //changed if expr to const\n"
-            "    if(isAOne){\n"
-            "       d++;//changed if expr to const\n"
-            "if(isAOne){\n"
-            "   d++;c=d;//changed function f1 to f2\n"
-            "f2(a\n"
-            ",c\n"
-            ");\n"
-            ";\n"
-            "}\n"
-            "    ;\n"
-            "    }\n"
-            "    if (a==2) {\n"
-            "        c++;\n"
-            "        //changed function f1 to f2\n"
-            "        f2(a\n"
-            "        ,c\n"
-            "        );\n"
-            "    }\n"
-            "    //changed function f1 to f2\n"
-            "    f2(a\n"
-            "    ,c\n"
-            "    );\n"
-            "}"
-        )
+        expected_result_nested = ('void f1(int a, int b, int c);\n'
+ 'void f2(int a, int c);\n'
+ 'void f(){\n'
+ '    const int a = 1;\n'
+ '    const int b = 2;\n'
+ '    int isAOne = a==1;\n'
+ '    int c = 0, d=0;\n'
+ '    //changed if expr to const\n'
+ '    if(isAOne){\n'
+ '       d++;//changed if expr to const\n'
+ 'if(isAOne){\n'
+ '   d++;c=d;//changed function f1 to f2\n'
+ 'f2(a\n' ',c\n' ');\n' ';\n'
+ '}//changed function f1 to f2\n'
+ '      f2(a\n' '      ,c\n' '      );\n' '    ;\n'
+ '    }//changed function f1 to f2\n'
+ '            f2(a\n' '            ,c\n' '            );\n' '    if (a==2) {\n'
+ '        c++;\n'
+ '        //changed function f1 to f2\n'
+ '        f2(a\n' '        ,c\n' '        );\n' '    }\n'
+ '    //changed function f1 to f2\n'
+ '    f2(a\n' '    ,c\n' '    );\n'
+ '}')
         assert result == expected_result_nested
         assert_that(result, is_(expected_result_nested))
 
