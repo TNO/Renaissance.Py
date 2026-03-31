@@ -15,13 +15,10 @@ class TestPythonShower:
 
     def test_show_call_using_repr(self):
         pattern = self.pattern_factory.create_statement("$pa($55)")
-        assert_that(
-            str(pattern),
-            is_("(Expr, $pa($55), test.py[0:28]): |$pa($55)|\n"),
-        )
+        assert_that(str(pattern), is_("(Expr, $pa($55), pattern.py[0:28]): |$pa($55)|\n"))
 
     def test_show_module(self):
-        expected = "(Module, Module, test.py[0:29]):\n" "    |ba(55)|\n" "    |ca(555)|\n" "    |lo(4444)|\n" "    |na=55|\n"
+        expected = "(Module, Module, test.py[0:29]):\n    |ba(55)|\n    |ca(555)|\n    |lo(4444)|\n    |na=55|\n"
         assert_that(str(self.atu), is_(expected))
 
     def test_show_body(self):

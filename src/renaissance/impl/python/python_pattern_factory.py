@@ -51,7 +51,7 @@ class PythonPatternFactory:
 
 
     def _create(self,text: str) -> PythonPattern:
-        return PythonPattern(self.factory.create_from_text(text, "snippet.py"))
+        return PythonPattern(self.factory.create_from_text(text, "pattern.py"))
 
     def create(self, text: str) -> PythonPattern:
         text = replace_dollar(text)
@@ -72,7 +72,7 @@ class PythonPatternFactory:
 
     @staticmethod
     def create_kwargs(kw_str) -> Sequence[PythonPattern]:
-        call = ast.parse(f"fun({replace_dollar(kw_str)})", "snippet.py", type_comments=True).body[0]
+        call = ast.parse(f"fun({replace_dollar(kw_str)})", "kwarg_pattern.py", type_comments=True).body[0]
         if isinstance(call, Expr) and isinstance(call.value, Call):
             return [PythonPattern(PythonASTNode(kwarg)) for kwarg in call.value.keywords]
         return []
