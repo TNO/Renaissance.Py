@@ -1,39 +1,44 @@
 from pathlib import Path
-from typing import Any, Self, Sequence
 
-from libcst.codegen.gen_type_mapping import module
+import networkx
 
 from renaissance.impl.python import PythonASTNode
-from renaissance.syntax_tree import ASTShower, ASTFinder
 
 
 class PythonExtractor:
+    graph = networkx.DiGraph()
     codebase:dict = {}
-    nodes:dict= {}
-    edges:list=[]
-    def process_file(self, file:Path):
+    def process(self, file:Path):
         root  = PythonASTNode.load(file)
-        module = root.filename.replace('/', '.').replace('.py', '')
+        module_name = root.filename.replace('/', '.').replace('.py', '')
+        folder = str(Path(file).parent)
+        self.graph.add_node(folder, type="folder")
+        self.graph.add_edge(folder, module_name, type="contains")
+
         for stmt in root:
             match stmt.kind:
                 case "Import":
-                    self.edges.append((root, "imports", stmt.name))
+                    self.graph.add_edge(module_name, stmt.name, type ="include")
                 case "ImportFrom":
                     for alias in stmt.node.names:
-                        self.edges.append((module, "imports", f"{stmt.node.module}.{alias.name}"))
+                        self.graph.add_edge(module_name, f"{stmt.node.module}.{alias.name}", type ="include")
                 case 'FunctionDef':
-                    self.edges.append((module, "definition", f"{module}.{stmt.name}"))
-                    self.nodes[f"{module}.{stmt.name}"]= stmt
+                    self.graph.add_edge(module_name,  f"{module_name}.{stmt.name}", type="definition")
+                    self.graph.add_node(f"{module_name}.{stmt.name}", properties="function")
+                    # todo:  convert #, stmt.properties) to graphml
                 case 'ClassDef':
-                    self.edges.append((module, "definition", f"{module}.{stmt.name}"))
-                    self.nodes[f"{module}.{stmt.name}"] = stmt
+                    self.graph.add_edge(module_name, f"{module_name}.{stmt.name}", type = "definition")
+                    self.graph.add_node(f"{module_name}.{stmt.name}") # convert to args, stmt.properties)
                 case _: pass
 
-
         tu = root.translation_unit
-        # ASTShower.show_node(root)
         self.codebase[file] = root
+        # reconstruct dependencies inside module
         # tu.lazy_create_refers(root)
         # self.nodes |= tu._nodes
         # self.edges |=tu._references
         # self.edges |= tu._referenced_by
+
+    def save_graph(self, filename: str):
+        networkx.write_graphml(self.graph, filename)
+        print(f"Graph saved to: {filename}")

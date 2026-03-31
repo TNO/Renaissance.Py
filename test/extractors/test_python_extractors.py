@@ -1,8 +1,7 @@
 from pathlib import Path
 
-import pytest
-from unittest.mock import MagicMock, patch
-from hamcrest import assert_that, is_, has_item, not_, instance_of, is_not, has_length, empty
+from unittest.mock import MagicMock
+from hamcrest import assert_that, is_not, empty
 
 import targets
 from renaissance.impl.python.extractor import PythonExtractor
@@ -33,6 +32,15 @@ class TestPythonCodeGraphExtractor:
         assert_that(extractor.nodes, is_not(empty()))
         assert_that(extractor.edges,  is_not(empty()))
 
+    def test_extract_a_file(self):
+
+        extractor = PythonExtractor()
+        extractor.process(Path(targets.__file__).parent / "demo.py")
+        graphml = Path(targets.__file__).parent / "demo.graphml"
+        extractor.save_graph(Path(targets.__file__).parent / "demo.graphml")
+        with open(graphml, "r") as f:
+            content = f.readlines()
+            assert_that(content, "demo.graphml")
 #     def test_adds_contains_edge_from_folder_to_file(self):
 #         extractor = self._make_extractor()
 #         lst = self.make_lst([])
