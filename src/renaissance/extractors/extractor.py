@@ -1,5 +1,6 @@
 from renaissance.impl.tree_sitter.pattern_factory import TsPatternFactory
 from renaissance.syntax_tree import MatchFinder, PatternMatch
+from renaissance.syntax_tree.match_finder import match_pattern
 
 
 class Extractor:
@@ -12,5 +13,5 @@ class Extractor:
         results = []
         for rule in self.patterns:
             pattern = self.factory.create_statements(rule)
-            results.extend(MatchFinder.match_pattern(code, pattern, {}))  # type: ignore[assignment]
+            results.extend(match_pattern(code, pattern, {}))
         return results

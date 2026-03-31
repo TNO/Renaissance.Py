@@ -7,4 +7,4 @@ class NodeMatchProtocol(Protocol):
     children: list[Self]
 
 def is_match(src: NodeMatchProtocol, cmp: NodeMatchProtocol) -> bool:
-    ...
+    pass

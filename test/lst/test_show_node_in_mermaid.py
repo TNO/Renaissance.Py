@@ -5,7 +5,7 @@ import pytest
 from hamcrest import *
 
 from renaissance.impl.tree_sitter.adapter import TreeSitterAdapter
-from renaissance.visualizers.lst_mermaid_visualizer import LSTMermaidVisualizer
+from renaissance.impl.tree_sitter.visualizer import LSTMermaidVisualizer
 
 MERMAID_PYTHON = """graph TD
 n1["n1: module {<br>offset: 0<br>signature: def foo     return 42<br>}"]

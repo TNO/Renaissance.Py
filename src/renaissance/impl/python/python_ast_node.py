@@ -211,7 +211,7 @@ class PythonASTNode:
         self.root = parent.root if parent and parent.root else self
         self.node = node
         self.parent = parent
-        self.translation_unit = translation_unit
+        self.translation_unit:PythonTranslationUnit = translation_unit
         self.kind = type(node).__name__
         self.indent = ""
         self.name = self._derive_name()
