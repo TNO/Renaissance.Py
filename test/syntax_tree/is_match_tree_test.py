@@ -39,12 +39,12 @@ class TestMatchTree:
 
     def test_none_with_list(self):
         src = None
-        pattern = PythonPatternFactory(PythonASTNode).create_statements("1")
+        pattern = self.pattern_factory.create_statements("1")
 
         assert_that(is_match_tree(src, pattern), is_(False))
 
     def test_list_with_none(self):
-        src = PythonPatternFactory(PythonASTNode).create_statements("1")
+        src = self.pattern_factory.create_statements("1")
         pattern = None
 
         assert_that(is_match_tree(src, pattern), is_(False))
@@ -62,44 +62,44 @@ class TestMatchTree:
         assert_that(is_match_tree(src, pattern), is_(False))
 
     def test_is_match_tree_between_list_and_other(self):
-        src = PythonPatternFactory(PythonASTNode).create_statements("1")
+        src = self.pattern_factory.create_statements("1")
         pattern = ast.Name("name")
 
         assert_that(is_match_tree(src, pattern), is_(False))
 
     def test_empty_lists_with_pattern(self):
         src = []
-        pattern = PythonPatternFactory(PythonASTNode).create_statements("1")
+        pattern = self.pattern_factory.create_statements("1")
 
         assert_that(is_match_tree(src, pattern), is_(False))
 
     def test_lists_with_list(self):
-        src = PythonPatternFactory(PythonASTNode).create_statements("1\n2\n3\n4\n5\n6")
-        pattern = PythonPatternFactory(PythonASTNode).create_statements("1\n2\n3\n4\n5\n6")
+        src = self.pattern_factory.create_statements("1\n2\n3\n4\n5\n6")
+        pattern = self.pattern_factory.create_statements("1\n2\n3\n4\n5\n6")
 
         assert_that(is_match_tree(src, pattern), is_(True))
 
     def test_lists_with_matcher(self):
-        src = PythonPatternFactory(PythonASTNode).create_statements("1\n2\n3\n4\n5\n6")
-        pattern = PythonPatternFactory(PythonASTNode).create_statements("$$name")
+        src = self.pattern_factory.create_statements("1\n2\n3\n4\n5\n6")
+        pattern = self.pattern_factory.create_statements("$$name")
 
         assert_that(is_match_tree(src, pattern), is_(True))
 
     def test_lists_with_list_with_matcher_at_end(self):
-        src = PythonPatternFactory(PythonASTNode).create_statements("1\n2\n3\n4\n5\n6")
-        pattern = PythonPatternFactory(PythonASTNode).create_statements("1\n2\n$$name")
+        src = self.pattern_factory.create_statements("1\n2\n3\n4\n5\n6")
+        pattern = self.pattern_factory.create_statements("1\n2\n$$name")
 
         assert_that(is_match_tree(src, pattern, {}), is_(True))
 
     def test_lists_with_list_with_matcher_at_start(self):
-        src = PythonPatternFactory(PythonASTNode).create_statements("1\n2\n3\n4\n5\n6")
-        pattern = PythonPatternFactory(PythonASTNode).create_statements("$$name\n5\n6")
+        src = self.pattern_factory.create_statements("1\n2\n3\n4\n5\n6")
+        pattern = self.pattern_factory.create_statements("$$name\n5\n6")
 
         assert_that(is_match_tree(src, pattern, {}), is_(True))
 
     def test_lists_with_list_with_multi_single(self):
-        src = PythonPatternFactory(PythonASTNode).create_statements("1\n2\n3\n4\n5\n6")
-        pattern = PythonPatternFactory(PythonASTNode).create_statements("$$name\n$name")
+        src = self.pattern_factory.create_statements("1\n2\n3\n4\n5\n6")
+        pattern = self.pattern_factory.create_statements("$$name\n$name")
         exp = {}
 
         assert_that(is_match_tree(src, pattern, exp))
@@ -108,8 +108,8 @@ class TestMatchTree:
         assert_that(exp["$name"], has_length(1))
 
     def test_lists_with_list_with_list_multi_single(self):
-        src = PythonPatternFactory(PythonASTNode).create_statements("1\n2\n3\n4\n5\n6")
-        pattern = PythonPatternFactory(PythonASTNode).create_statements("1\n2\n$$name\n$name")
+        src = self.pattern_factory.create_statements("1\n2\n3\n4\n5\n6")
+        pattern = self.pattern_factory.create_statements("1\n2\n$$name\n$name")
         exp = {}
 
         assert_that(is_match_tree(src, pattern, exp), is_(True))
@@ -118,8 +118,8 @@ class TestMatchTree:
         assert_that(exp["$name"], has_length(1))
 
     def test_lists_with_list_with_matcher_in_the_middle(self):
-        src = PythonPatternFactory(PythonASTNode).create_statements("1\n2\n3\n4\n5\n6")
-        pattern = PythonPatternFactory(PythonASTNode).create_statements("1\n$$name\n6")
+        src = self.pattern_factory.create_statements("1\n2\n3\n4\n5\n6")
+        pattern = self.pattern_factory.create_statements("1\n$$name\n6")
 
         assert_that(is_match_tree(src, pattern, {}), is_(True))
 
@@ -136,13 +136,13 @@ class TestMatchTree:
         assert_that(is_match_tree(src, pattern, {}), is_(True))
 
     def test_lists_with_list_with_matcher_in_both_end_empty_list_at_the_end(self):
-        src = PythonPatternFactory(PythonASTNode).create_statements("1\n2\n3\n4\n5\n6")
+        src = self.pattern_factory.create_statements("1\n2\n3\n4\n5\n6")
         pattern = self.pattern_factory.create_statements("$$start\n6\n$$end")
 
         assert_that(is_match_tree(src, pattern, {}), is_(True))
 
     def test_lists_with_list_with_matcher_in_both_end__mismatch(self):
-        src = PythonPatternFactory(PythonASTNode).create_statements("1\n2\n3\n4\n5\n61\n2\n3\n4\n5\n6")
+        src = self.pattern_factory.create_statements("1\n2\n3\n4\n5\n61\n2\n3\n4\n5\n6")
         pattern = self.pattern_factory.create_statements("$$seq\n61\n$$seq")
 
         assert_that(is_match_tree(src, pattern, {}), is_(False))
