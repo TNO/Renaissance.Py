@@ -4,7 +4,7 @@ __all__ = [
     "clang",
     "clang_json",
     "python",
-    "tree_sitter_adapter",
+    "tree_sitter",
     "MATCH_ONE",
     "MATCH_ALL",
 ]

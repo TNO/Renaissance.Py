@@ -13,17 +13,18 @@ from hamcrest import (
 )
 
 import targets
-from renaissance.impl.python.python_ast_node import PythonASTNode
+
 from renaissance.impl.python.python_pattern_factory import PythonPatternFactory
+from renaissance.impl.python.python_cst_node import PythonCstNode
 from renaissance.syntax_tree import ASTFactory, ASTShower
 from renaissance.utils.node_util import traverse
 from utils_for_tests import show_node
 
 
-class TestPythonASTNode:
+class TestPythonCstNode:
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.factory = ASTFactory(PythonASTNode, [])
+        self.factory = ASTFactory(PythonCstNode, [])
         self.atu = self.factory.create_from_text("a = 0", "all.py")
         # create a pattern factory atu is passed to the pattern factory for use of all # includes, #defines and declarations
         self.pattern_factory = PythonPatternFactory(self.factory)
@@ -33,45 +34,54 @@ class TestPythonASTNode:
         [
             ("i:int=0", "AnnAssign"),
             ("assert 0", "Assert"),
-            ("async for f in fs:  pass", "AsyncFor"),
-            ("async def fun(): pass", "AsyncFunctionDef"),
-            ('async with open("x"): pass', "AsyncWith"),
             ("x += 5", "AugAssign"),
             ("break", "Break"),
-            ("class x:pass", "ClassDef"),
             ("continue", "Continue"),
             ("fun()", "Expr"),
-            ("def fun(): pass", "FunctionDef"),
-            ("for i in items: pass", "For"),
             ("import x", "Import"),
-            ("if True: pass", "If"),
             ("from x import y", "ImportFrom"),
-            ("match x:\n  case _:    pass", "Match"),
             ("pass", "Pass"),
             ("raise", "Raise"),
             ("return", "Return"),
-            ("try:\n  pass\nfinally:\n  pass", "Try"),
-            ("try:\n  x()\nexcept* e:\n  pass", "TryStar"),
-            ("while True: pass", "While"),
         ],
     )
     def test_stmt_kind(self, raw, kind):
-        it = self.pattern_factory.create_statement(raw)
-        assert_that(kind, is_(it.kind))
-
+        it = self.pattern_factory.create_statement(raw).children[0]
+        assert_that(it.kind, is_(kind))
+        assert_that(it.node.is_statement, is_(True))
     @pytest.mark.parametrize(
         "raw, kind",
         [
-            ("with open() as c: pass", "With"),
-            ("await (fun(2))", "Await"),
-            ("a = 5 + 3", "BinOp"),
-            ("0x01 & 0x10", "BitAnd" ""),
-            ("0x01 | 0x10", "BitOr"),
-            ("0x01 ^ 0x10", "BitXor"),
-            ("True and False", "BoolOp"),
-            ("del x", "Delete"),
-            (
-                """
+    ("async for f in fs:  pass", "For"),
+    ("async def fun(): pass", "FunctionDef"),
+    ('async with open("x"): pass', "With"),
+    ("class x:pass", "ClassDef"),
+    ("def fun(): pass", "FunctionDef"),
+    ("for i in items: pass", "For"),
+    ("if True: pass", "If"),
+    ("match x:\n  case _:    pass", "Match"),
+    ("try:\n  pass\nfinally:\n  pass", "Try"),
+    ("try:\n  x()\nexcept* e:\n  pass", "TryStar"),
+    ("while True: pass", "While")
+        ])
+    def test_stmt_kind2(self, raw, kind):
+        it = self.pattern_factory.create_statement(raw)
+        assert_that(it.kind, is_(kind))
+        assert_that(it.node.is_statement, is_(True))
+
+    @pytest.mark.parametrize(
+    "raw, kind",
+    [
+        ("with open() as c: pass", "With"),
+        ("await (fun(2))", "Await"),
+        ("a = 5 + 3", "BinOp"),
+        ("0x01 & 0x10", "BitAnd" ""),
+        ("0x01 | 0x10", "BitOr"),
+        ("0x01 ^ 0x10", "BitXor"),
+        ("True and False", "BoolOp"),
+        ("del x", "Delete"),
+        (
+            """
 def outer():
     x = 10
     y = 20
@@ -254,7 +264,7 @@ def outer():
         assert_that(it.children[0].kind, is_(kind))
 
     def test_show_call(self):
-        factory = ASTFactory(PythonASTNode, [])
+        factory = ASTFactory(PythonCstNode, [])
         atu = factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "apple.py")
         second_stmt = atu.children[1]
         assert_that(second_stmt.offset, is_(7))
@@ -269,25 +279,21 @@ def outer():
         assert_that(attr.signature, is_("@TUAT"))
 
     def test_node_family(self):
-        src = PythonASTNode.load_from_text(textwrap.dedent(
-            """
-import you 
-from other import dog
-class Parent:
-    def previous_me():
-        pass
-    def mememe(a55,a66,a77,a88,a99):
-        l(a55)
-        l(a66)
-        l(a77)
-        l(a88)
-    def next_me():
-        pass
-    """),
-            "nav.py",
-            [],
-            Path("."),
-        )
+        src = PythonCstNode.load_from_text(textwrap.dedent(
+        """
+        import you 
+        from other import dog
+        class Parent:
+            def previous_me():
+                pass
+            def mememe(a55,a66,a77,a88,a99): 
+                l(a55)
+                l(a66)
+                l(a77)
+                l(a88)
+            def next_me():
+                pass
+        """),"nav.py",[],Path("."),)
         #          module  class     body        fun memem
         me = src.children[-1].children[2].children[1]
         assert_that(me.name, is_("mememe"))
@@ -296,20 +302,20 @@ class Parent:
         assert_that(me.parent.parent.name, is_("Parent"))
         assert_that(me.children[1].children, has_length(4))
     def test_load_file_with_ignored_types(self):
-        atu = PythonASTNode.load_from_text("x = 1 # type: ignore", "bogus.py", {}, Path(targets.__file__))
+        atu = PythonCstNode.load_from_text("x = 1 # type: ignore", "bogus.py", {}, Path(targets.__file__))
         assert_that(atu.translation_unit.atu.type_ignores, has_length(1))
     
     
     
     def test_load_file(self):
-        atu = PythonASTNode.load(Path(targets.__file__).parent / "demo.py", {}, None)
+        atu = PythonCstNode.load(Path(targets.__file__).parent / "demo.py", {}, None)
         assert_that(atu.translation_unit.atu.type_ignores, is_(empty()))
     
     
     
     def test_load_invalid_file(self):
         with pytest.raises(IndentationError, match="unexpected indent"):
-            PythonASTNode.load(Path(targets.__file__).parent / "invalid.py")
+            PythonCstNode.load(Path(targets.__file__).parent / "invalid.py")
     
     
     
@@ -323,7 +329,7 @@ class Parent:
     
         self.assert_matches( expected_dicts_per_match,matches)
         """)
-        it = PythonASTNode.load_from_text(ann_fun, "fun.py", [], None).body[-1]
+        it = PythonCstNode.load_from_text(ann_fun, "fun.py", [], None).body[-1]
         assert_that(it.offset, is_(1))
         assert_that(it.signature, contains_string("@parameterized.expand"))
     
@@ -340,7 +346,7 @@ class Parent:
     
         self.assert_matches( expected_dicts_per_match,matches)
         """
-        it = PythonASTNode.load_from_text(ann_fun, "fun.py", [], None).body[-1]
+        it = PythonCstNode.load_from_text(ann_fun, "fun.py", [], None).body[-1]
         assert_that(str(it), is_(ast.unparse(it.node)))
     
     
@@ -355,7 +361,7 @@ class TestGuardRewritable:
     #         matches = match_pattern( func_body.children,patterns)
     #         self.assert_matches( expected_dicts_per_match,matches)
     #         """)
-    #     it = PythonASTNode.load_from_text(code, "fun.py", [], None).body[-1]
+    #     it = PythonCstNode.load_from_text(code, "fun.py", [], None).body[-1]
     #     expected = it.binary_file_content()[it.offset: it.extended_end_offset]
     #     assert_that(it.text, is_(expected))
 

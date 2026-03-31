@@ -1,32 +1,50 @@
 # 01 - Children and properties
 
-Status: Proposal
+Status: Accepted
 
 Date: 2026-02-25
 
-Authors: 
+Authors:
  - jinmin.hu@capgemini.com
  - huub.joosten@capgemini.com
  - luna.li@capgemini.com
  - paul.nelissen@esi.nl
  - pierre.vandelaar@tno.nl
 
+## Table of contents
+
+- [Context](#context)
+- [Decision](#decision)
+- [Implementation notes](#implementation-notes)
+- [Example](#example)
+- [Rationale](#rationale)
+- [Consequences](#consequences)
+- [Alternatives considered](#alternatives-considered)
+- [Related decisions](#related-decisions)
+
 ## Context
 
-This document explains the design decision to have all AST nodes contain both children and properties. Children represent nodes directly connected to a parent node; properties are attributes that describe the node itself. Having both allows consistent representation of complex structures, simplifies traversal, and separates structure (children) from node metadata (properties).
+This document explains the design decision to have all AST nodes contain both children and properties.
+Children represent nodes directly connected to a parent node; properties are attributes that describe the
+node itself. Having both allows consistent representation of complex structures, simplifies traversal, and
+separates structure (children) from node metadata (properties).
 
 ## Decision
 
-All AST nodes will expose both children and properties. Children will be represented as an immutable sequence (tuple) of child nodes. Properties will be stored in an immutable mapping-like structure or as read-only attributes. Implementations should provide clear accessors for both concepts and prefer non-mutating operations.
+All AST nodes will expose both children and properties. Children will be represented as a sequence
+of child nodes. Properties will be stored in a map. Implementations should provide clear accessors 
+for both concepts.
 
 ## Implementation notes
 
-- Represent children as tuples to convey immutability intent.
-- Expose properties through read-only attributes, dataclass frozen fields, or a mapping-like API.
-- Provide helper methods for creating modified copies (e.g., `replace`, `copy_with`, or `with_children`).
-- Keep the distinction between structural relationships (children) and descriptive data (properties) explicit in APIs and documentation.
+- Expose properties through map(dict in Python).
+- Provide helper methods for navigating and match.
+- Keep the distinction between structural relationships (children) and descriptive data (properties)
+  explicit in APIs and documentation.
+- The order of the children list matters and should, where possible, follow the order of parameters in the
+  node's constructor or grammar production rule.
 
-## example
+## Example
 
 ```python
 class GoAstNode:
@@ -37,12 +55,12 @@ class GoAstNode:
     @property
     def children(self) -> list[Self]:
         ...
-
 ```
 
 ## Rationale
 
-This separation makes the AST easier to reason about, enables targeted transformations (structure vs. metadata), and supports immutability and sharing strategies.
+This separation makes the AST easier to reason about, enables targeted transformations (structure vs.
+metadata), and supports sharing strategies.
 
 ## Consequences
 
@@ -55,11 +73,8 @@ Negative:
 
 ## Alternatives considered
 
-- Merge children and properties into a single list of mixed entries — rejected because it complicates traversal and semantic clarity.
-
-## considered
-
-order of the list matters here and if possible follows the definition in signature text
+- Merge children and properties into a single list of mixed entries — rejected because it complicates
+  traversal and semantic clarity.
 
 ## Related decisions
 
@@ -69,3 +84,5 @@ order of the list matters here and if possible follows the definition in signatu
 
 Revision history:
 - 2026-02-25: Converted to ADR template and clarified decision.
+- 2026-03-27: Added table of contents; moved ordering note into Implementation notes;
+  renamed Example section to match template.

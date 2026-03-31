@@ -3,8 +3,8 @@ import tree_sitter_python
 from hamcrest import *
 
 from renaissance.extractors.extractor import Extractor
-from renaissance.impl.tree_sitter_adapter.tree_sitter_adapter import TreeSitterAdapter
-from renaissance.impl.tree_sitter_adapter.ts_pattern_factory import TsPatternFactory
+from renaissance.impl.tree_sitter.adapter import TreeSitterAdapter
+from renaissance.impl.tree_sitter.pattern_factory import TsPatternFactory
 from renaissance.syntax_tree.match_finder import is_match, is_match_tree, match_pattern
 
 

@@ -8,28 +8,69 @@ Authors: Project contributors
 
 ## Context
 
-The project may receive nodes from different parsers or libraries that do not match the project's canonical node shape. We need a strategy to interoperate with foreign node-like objects while preserving the project's APIs and expectations.
+The project may receive nodes from different parsers or libraries that do not match the project's canonical node
+shape. We need a strategy to interoperate with foreign node-like objects while preserving the project's APIs
+and expectations unig minimum amount of code.
 
 ## Decision
 
 Prefer writing only the protocol function on top of the current native implementation if not already available.
-this requires minimum amount of implementation and oppertunity for reuse of the maatcher and rewrite , etc functionalities
+This requires a minimum amount of implementation and opportunity for reuse of the matcher and rewrite
+functionalities.
 
-'thin wrappers (adapter objects) that present the project's canonical node API while delegating to the original node. Wrappers make behavior explicit, allow normalization, and preserve access to the original node when necessary.'
+Thin wrappers (adapter objects) that present the project's canonical node API while delegating to the original
+node make behavior explicit, allow normalization, and preserve access to the original node when necessary.
 
 ## Implementation notes
 
 - Implement simple wrapper/adaptor classes that implement the project's node Protocol (see ADR 03).
 - Keep wrappers thin: delegate attribute and child access where possible and only normalize differences that matter.
-- Provide utility constructors (e.g., `from_external`) and tests for common external formats.
-- Consider caching or memoization in adapters if adaptation is expensive.
+
+```Python
+
+# monkey patching the ast node to have properties and children, so that it can be used directly in the matcher and rewriter without needing to write an adapter for it.
+@property
+def properties(self: AST) -> dict[str, Any]:
+    props = {}
+    for name in self._fields:
+        props[name] = getattr(self, name)
+    return props
+
+
+AST.properties = properties
+
+
+@property
+def children(self: AST) -> list[AST]:
+    return getattr(self, "body", [])
+
+
+AST.children = children
+
+# wrapper example for a foreign node type (e.g., from a third-party parser)
+
+class PythonASTNode:
+    def __init__(self, node: ast):
+        self._node = node
+    @property
+    def propertie(self):
+      return {'name':self._node.name, 'value':self._node.value}
+    @property
+    def children(self):
+        return [PythonASTNode(n) for n in self._node.body]
+ 
+# adapter example    
+class PythonASTNode:
+  def __init__(self, node):
+    self.properties["name"] = self.derive_name_from(node)
+
+```
+
 
 ## Rationale
 
 - Wrappers preserve original semantics and make interop explicit.
 - Adapters make it easy to support multiple external sources without changing core logic.
-
-
 
 ## Consequences
 

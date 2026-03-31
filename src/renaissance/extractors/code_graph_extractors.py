@@ -3,7 +3,7 @@ import networkx as nx
 from pathlib import Path
 from typing import List
 
-from renaissance.impl.tree_sitter_adapter import TreeSitterAdapter
+from renaissance.impl.tree_sitter.adapter import TreeSitterAdapter
 
 GRAPHML_DIR = "out_graphml"
 os.makedirs(GRAPHML_DIR, exist_ok=True)

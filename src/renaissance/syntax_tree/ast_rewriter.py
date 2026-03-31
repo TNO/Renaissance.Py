@@ -1,14 +1,23 @@
 from enum import Enum
 import re
 import sys
-from typing import Optional, Sequence
+from typing import Optional, Sequence, Protocol, runtime_checkable, Self
+
+from more_itertools import flatten
+
 from .match_finder import PatternMatch
 from .ast_finder import ASTFinder
-from .ast_node import ASTNode
 from renaissance.utils.text_utils import TextUtils
 from renaissance.common import Rewriter
 
-
+@runtime_checkable
+class Rewritable(Protocol):
+    offset:int
+    end_offset: int
+    extended_end_offset: int
+    filename:str
+    parent:Self
+    text:str
 class _RewriteActionType(Enum):
     REPLACE = 1
     INSERT_BEFORE = 2
@@ -27,7 +36,7 @@ class ASTRewriter:
         correct_indent: bool = True,
     ) -> None:
         self.__rewrites = _RewriteActions(node, encoding, correct_indent=correct_indent)
-        self.__filename = node.root.filename
+        self.__filename = node.filename
 
     def get_filename(self) -> str:
         return self.__filename
@@ -35,7 +44,7 @@ class ASTRewriter:
     def replace(
         self,
         new_content: str,
-        target: ASTNode | Sequence[ASTNode] | PatternMatch | Sequence[PatternMatch],
+        target: Rewritable | Sequence[Rewritable] | PatternMatch | Sequence[PatternMatch],
         include_whitespace: bool = True,
         include_comments: bool = True,
     ):
@@ -49,7 +58,7 @@ class ASTRewriter:
 
     def remove(
         self,
-        target: ASTNode | Sequence[ASTNode] | PatternMatch | Sequence[PatternMatch],
+        target: Rewritable | Sequence[Rewritable] | PatternMatch | Sequence[PatternMatch],
         include_whitespace: bool = True,
         include_comments: bool = True,
     ):
@@ -58,7 +67,7 @@ class ASTRewriter:
     def insert_before(
         self,
         new_content: str,
-        target: ASTNode | Sequence[ASTNode] | PatternMatch | Sequence[PatternMatch],
+        target: Rewritable | Sequence[Rewritable] | PatternMatch | Sequence[PatternMatch],
         include_whitespace: bool = True,
         include_comments: bool = True,
     ):
@@ -73,7 +82,7 @@ class ASTRewriter:
     def insert_after(
         self,
         new_content: str,
-        target: ASTNode | Sequence[ASTNode] | PatternMatch | Sequence[PatternMatch],
+        target: Rewritable | Sequence[Rewritable] | PatternMatch | Sequence[PatternMatch],
         include_whitespace: bool = True,
         include_comments: bool = True,
     ):
@@ -109,7 +118,7 @@ class _RewriteAction:
     def __init__(
         self,
         action: _RewriteActionType,
-        target: ASTNode | Sequence[ASTNode] | PatternMatch | Sequence[PatternMatch],
+        target: Rewritable | Sequence[Rewritable] | PatternMatch | Sequence[PatternMatch],
         replacement: str,
         include_whitespace: bool,
         include_comments: bool,
@@ -123,16 +132,16 @@ class _RewriteAction:
 
     @staticmethod
     def _get_nodes(
-        target: ASTNode | Sequence[ASTNode] | PatternMatch | Sequence[PatternMatch],
-    ) -> Sequence[ASTNode]:
-        if isinstance(target, ASTNode):
+        target: Rewritable | Sequence[Rewritable] | PatternMatch | Sequence[PatternMatch],
+    ) -> Sequence[Rewritable]:
+        if isinstance(target, Rewritable) or type(target).__name__ == 'PythonASTNode':
             return [target]
         if isinstance(target, PatternMatch):
             return target.nodes
         assert isinstance(target, Sequence), "type of target violates its type requirements " + type(target).__name__
         if len(target) > 0:
-            if isinstance(target[0], ASTNode):
-                return [n for n in target if isinstance(n, ASTNode)]
+            if isinstance(target[0], Rewritable):
+                return [n for n in target if isinstance(n, Rewritable)]
             last = target[-1]
             if isinstance(last, PatternMatch):
                 return last.nodes
@@ -146,7 +155,7 @@ class _RewriteActions:
 
     def __init__(
         self,
-        node,
+        node:Rewritable,
         encoding: str,
         correct_indent: bool,
         rewrites: Optional[list[_RewriteAction]] = None,
@@ -154,13 +163,14 @@ class _RewriteActions:
         self.rewrites: list[_RewriteAction] = rewrites if rewrites else []
         self.node = node
         self.encoding = encoding
-        self.content = self.node.root.binary_file_content()[self.node.offset : self.node.extended_end_offset]
+        # self.content = self.node.root.binary_file_content()[self.node.offset : self.node.extended_end_offset]
+        self.content = node.text.encode(sys.getfilesystemencoding())
         self.correct_indent = correct_indent
 
     def add(
         self,
         action: _RewriteActionType,
-        target: ASTNode | Sequence[ASTNode] | PatternMatch | Sequence[PatternMatch],
+        target: Rewritable | Sequence[Rewritable] | PatternMatch | Sequence[PatternMatch],
         replacement: str,
         include_whitespace: bool,
         include_comments: bool,
@@ -218,25 +228,35 @@ class _RewriteActions:
     def apply_to_string(self) -> str:
         return self.apply().decode(self.encoding)
 
-    def __is_ancestor_in_nodes(self, node: ASTNode) -> bool:
+    def __is_ancestor_in_nodes(self, node: Rewritable) -> bool:
         """
         Check if the given node is a descendant of any nodes in the rewrite list.
 
         Args:
-            node (ASTNode): The node to check.
+            node (Rewritable): The node to check.
 
         Returns:
             bool: True if the node is a descendant of any nodes in the rewrite list, False otherwise.
         """
-        return any(
-            node != rewrite_node and node.is_descendant_of(rewrite_node) for rewrite in self.rewrites for rewrite_node in rewrite.nodes
-        )
+        rewrite_nodes = list(flatten(rewrite.nodes for rewrite in self.rewrites))
+        # need to test
+        # 1
+        # | node |
+        #               |rew|
+        # 2
+        # | rew |
+        #               |node|
+        no_conflict = lambda node1, rew : not ( node1.end_offset< rew.offset or   node1.offset > rew.end_offset)
+        result = any( no_conflict(node,rew) for rew in rewrite_nodes)
+
+        return result and False
+
 
     def __replace(
         self,
         rewriter: Rewriter,
         new_content: str,
-        nodes: Sequence[ASTNode],
+        nodes: Sequence[Rewritable],
         include_whitespace: bool,
         include_comments: bool,
     ):
@@ -244,7 +264,7 @@ class _RewriteActions:
         Replaces the content of the given node(s) with new content.
 
         Args:
-            nodes (Sequence[ASTNode]): The nodes whose content is to be replaced.
+            nodes (Sequence[Rewritable]): The nodes whose content is to be replaced.
             new_content (str): The new content to insert in the specified range.
         """
         if not nodes:
@@ -266,7 +286,7 @@ class _RewriteActions:
     def __remove(
         self,
         rewriter: Rewriter,
-        nodes: Sequence[ASTNode],
+        nodes: Sequence[Rewritable],
         include_whitespace: bool = False,
         include_comments: bool = False,
     ):
@@ -274,7 +294,7 @@ class _RewriteActions:
         Removes a list of AST nodes from the content, optionally including surrounding whitespace and comments.
 
         Args:
-            nodes (Sequence[ASTNode]): The list of AST nodes to remove.
+            nodes (Sequence[Rewritable]): The list of AST nodes to remove.
             include_whitespace (bool, optional): Whether to include surrounding whitespace in the removal. Defaults to False.
             include_comments (bool, optional): Whether to include surrounding comments in the removal. Defaults to False.
 
@@ -311,7 +331,7 @@ class _RewriteActions:
         rewriter: Rewriter,
         new_content: str,
         before: bool,
-        nodes: Sequence[ASTNode],
+        nodes: Sequence[Rewritable],
         include_whitespace: bool,
         include_comments: bool,
     ):
@@ -387,7 +407,7 @@ class _RewriteActions:
                     print("Match doesn't match unexpectedly")
         return replacement
 
-    def __get_texts(self, nodes: Sequence[ASTNode]) -> str:
+    def __get_texts(self, nodes: Sequence[Rewritable]) -> str:
         if len(nodes) == 1:
             return self.__get_text(nodes[0])
         # Use a ASTRewriter to only rewrite exactly that what needs to be rewritten
@@ -401,7 +421,7 @@ class _RewriteActions:
         indent = self.derive_indent(nodes[0].offset)
         return TextUtils.shift_left(result, indent, start_line=1)
 
-    def __get_text(self, node: ASTNode) -> str:
+    def __get_text(self, node: Rewritable) -> str:
         if self._should_skip(node):
             return ""
 
@@ -416,25 +436,25 @@ class _RewriteActions:
         return node.text
 
     def __prepare_replacement_content(
-        self, new_content: str, target: PatternMatch | ASTNode | Sequence[ASTNode]
-    ) -> tuple[str, Sequence[ASTNode]]:
+        self, new_content: str, target: PatternMatch | Rewritable | Sequence[Rewritable]
+    ) -> tuple[str, Sequence[Rewritable]]:
         if isinstance(target, PatternMatch):
             new_content = self.__compose_replacement(new_content, [target])
             node_list = target.nodes
         else:
             node_list = (
-                [target] if isinstance(target, ASTNode) else target
-            )  # TODO How to make a Sequence[ASTNode] as type hints also show list[ASTNode]?
+                [target] if (isinstance(target, Rewritable)  or type(target).__name__ =='PythonASTNode') else target
+            )  # TODO How to make a Sequence[Rewritable] as type hints also show list[Rewritable]?
         return new_content, node_list
 
-    def _should_skip(self, node: ASTNode):
+    def _should_skip(self, node: Rewritable):
         """
         if the node is not the first node of a pattern match it should be skipped
         """
         return any(node in rewrite.nodes[1:] for rewrite in self.rewrites if isinstance(rewrite.target, PatternMatch))
 
     @staticmethod
-    def _get_parent_statement(node: ASTNode):
+    def _get_parent_statement(node: Rewritable):
         parent = node
         while parent and not parent.is_statement:
             parent = parent.parent
@@ -446,7 +466,7 @@ class _RewriteActions:
         content: bytes,
         include_whitespace: bool,
         include_comments: bool,
-        nodes: Sequence[ASTNode],
+        nodes: Sequence[Rewritable],
     ):
         start_offset = nodes[0].offset - offset
         end_offset = nodes[-1].extended_end_offset - offset
@@ -541,7 +561,7 @@ class _RewriteActions:
         return location
 
     @staticmethod
-    def __get_depth(node: ASTNode) -> int:
+    def __get_depth(node: Rewritable) -> int:
         depth = 0
         parent = node.parent
         while parent:

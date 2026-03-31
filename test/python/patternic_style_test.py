@@ -23,8 +23,7 @@ class TestPythonicStyle:
         ],
     )
     def test_consistent_name_stmt(self, raw, kind, op, name, expr, body_length):
-        pattern_factory = PythonPatternFactory(ASTFactory(PythonASTNode))
-        it = pattern_factory.create_statement(raw)
+        it = PythonASTNode.load_from_text(raw).body[-1]
         assert_that(it.kind, is_(kind))
         assert_that(it.operator, is_(op))
         assert_that(it.name, is_(name))
@@ -42,8 +41,7 @@ class TestPythonicStyle:
         ],
     )
     def test_async_stmt(self, raw, kind, op, name, body_length):
-        pattern_factory = PythonPatternFactory(ASTFactory(PythonASTNode))
-        it = pattern_factory.create_statement(raw)
+        it = PythonASTNode.load_from_text(raw).body[-1]
         assert_that(it.kind, is_(kind))
         assert_that(it.operator, is_(op))
         assert_that(it.name, is_(name))
@@ -60,7 +58,7 @@ class TestPythonicStyle:
         ],
     )
     def test_stmt_with_body(self, raw, kind, name, body_length):
-        it = self.pattern_factory.create_statement(raw)
+        it = PythonASTNode.load_from_text(raw).body[-1]
         assert_that(kind, is_(it.kind))
         assert_that(it.name, is_(name))
         assert_that(it.body, has_length(body_length))
@@ -86,9 +84,9 @@ class TestPythonicStyle:
         ],
     )
     def test_stmt(self, raw, kind, typ, name, op, value):
-        pattern_factory = PythonPatternFactory(ASTFactory(PythonASTNode))
 
-        it = pattern_factory.create_statement(raw)
+
+        it = PythonASTNode.load_from_text(raw).body[-1]
         assert_that(kind, is_(it.kind))
         assert_that(it.name, is_(name))
         assert_that(it.operator, op)
@@ -105,15 +103,12 @@ class TestPythonicStyle:
     )
     # ('from x import y', 'ImportFrom', None, 'x', 'import', 'y'),
     def test_expr(self, raw, kind, expr):
-        pattern_factory = PythonPatternFactory(ASTFactory(PythonASTNode))
-
-        it = pattern_factory.create_statement(raw)
+        it = PythonASTNode.load_from_text(raw).body[-1]
         assert_that(kind, is_(it.kind))
         assert_that(it.expr.name, is_(expr))
 
     def test_ann_assign_node(self):
-        pattern_factory = PythonPatternFactory(ASTFactory(PythonASTNode))
-        it = pattern_factory.create_statement('name:str = "value"')
+        it = PythonASTNode.load_from_text('name:str = "value"').body[-1]
 
         assert_that(it.name, is_("name"))
         assert_that(it.type, is_("str"))
@@ -123,7 +118,7 @@ class TestPythonicStyle:
     def test_assign_node(self):
         pattern_factory = PythonPatternFactory(ASTFactory(PythonASTNode))
 
-        it = pattern_factory.create_statement('name = "value"')
+        it = PythonASTNode.load_from_text('name = "value"').body[-1]
 
         assert_that(it.name, is_("name"))
         assert_that(it.type, is_(None))
@@ -131,12 +126,27 @@ class TestPythonicStyle:
         assert_that(it.value, is_("value"))
 
     def test_assign_node_2(self):
-        pattern_factory = PythonPatternFactory(ASTFactory(PythonASTNode))
-        it = pattern_factory.create_statement("name += 5")
+
+        it = PythonASTNode.load_from_text("name += 5").body[-1]
         assert_that(it.name, is_("name"))
         assert_that(it.type, is_(None))
         assert_that(it.operator, is_("+="))
         assert_that(it.value, is_(5))
+
+    def python_does_not_parse_dollar(self):
+        it = PythonASTNode.load_from_text("$pa")
+
+        assert_that(MATCH_ONE, is_(it.kind))
+
+    def python_does_not_parse_dollar(self):
+        it = PythonASTNode.load_from_text("$$pa")
+        assert_that(MATCH_ONE, is_(it.kind))
+
+    def test_kind_is_match_all(self):
+        pattern_factory = PythonPatternFactory(ASTFactory(PythonASTNode))
+        simple = pattern_factory.create_statement("$$pa")
+        assert_that(MATCH_ALL, is_(simple.kind))
+
 
     def test_kind_is_match_one(self):
         pattern_factory = PythonPatternFactory(ASTFactory(PythonASTNode))
@@ -156,19 +166,20 @@ class TestPythonicStyle:
         match_one = pattern_factory.create("$pa")
         assert_that(atu.children[0], is_(match_one))
 
+    #  TODO contain is not dependent on pattern
     def test_is_match_all_stmt(self):
         factory = ASTFactory(PythonASTNode)
         atu = factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "test.py")
         pattern_factory = PythonPatternFactory(ASTFactory(PythonASTNode))
         match_all = pattern_factory.create("$$pa")
-        assert_that(match_all, is_in(atu))
+        assert_that(match_all.node, is_in(atu))
 
     def test_is_exact_match(self):
         factory = ASTFactory(PythonASTNode)
         atu = factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "test.py")
         pattern_factory = PythonPatternFactory(ASTFactory(PythonASTNode))
 
-        stmt = pattern_factory.create_statement("ba(55)")
+        stmt = PythonASTNode.load_from_text("ba(55)")[0]
 
         assert_that(atu.children[0], is_(stmt))
 
@@ -176,7 +187,7 @@ class TestPythonicStyle:
         factory = ASTFactory(PythonASTNode)
         atu = factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "test.py")
         pattern_factory = PythonPatternFactory(ASTFactory(PythonASTNode))
-        stmt = pattern_factory.create_statement("ba(55)")
+        stmt = pattern_factory.create_statement("ba(55)").node
 
         result = [node for node in atu if node == stmt]
 
@@ -209,7 +220,7 @@ class TestPythonicStyle:
         atu = factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "test.py")
         pattern_factory = PythonPatternFactory(ASTFactory(PythonASTNode))
 
-        simple = pattern_factory.create_statement("ca(555)")
+        simple = pattern_factory.create_statement("ca(555)").node
 
         assert_that(atu[0], is_not(simple))
         assert_that(atu[1], is_(simple))

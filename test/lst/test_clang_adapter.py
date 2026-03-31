@@ -4,7 +4,7 @@ from pathlib import Path
 
 import targets
 from renaissance.impl.clang.clang_adapter import ClangAdapter
-from renaissance.lst.lst import LST
+from renaissance.impl.tree_sitter.lst import LST
 from renaissance.utils.node_util import traverse
 
 

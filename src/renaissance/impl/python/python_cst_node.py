@@ -1,7 +1,12 @@
+from fileinput import filename
+
+import libcst
 from pathlib import Path
 from typing import Any, Sequence, Self, Callable
 
 from ast_comments import *
+from libcst import BaseSmallStatement, BaseCompoundStatement, IndentedBlock
+
 from renaissance.syntax_tree.match_finder import find_in_list
 from renaissance.utils.node_util import preceding_sibling, next_sibling
 from renaissance.utils.text_utils import TextUtils
@@ -35,7 +40,7 @@ types = ["int", "float", "str", "list", "set", "tuple", "Mapping", "dict", "Opti
 IRRELEVANT_PROPS = {"comment"}
 IMPLICIT = ["ImplicitNode"]
 
-class PythonASTReference:
+class PythonCstReference:
     def __repr__(self):
         return f"{self.node_id}:{self.ref_kind}"
 
@@ -45,34 +50,34 @@ class PythonASTReference:
         self.properties = properties
 
 
-class PythonTranslationUnit:
+class PythonCstTranslationUnit:
     cache = {}
 
     def __init__(self, content, file_name: str):
         self.content = content.encode(sys.getfilesystemencoding())
-        self.atu = parse(content, file_name, type_comments=True)
+        self.atu = libcst.parse_module(content)
         self.file_name = file_name
         self.references_initialized = False
-        PythonTranslationUnit.cache[file_name] = content
+        PythonCstTranslationUnit.cache[file_name] = content
         self.lines = self.content.splitlines()
 
-        self._references: dict[str, list[PythonASTReference]] = {}
-        self._referenced_by: dict[str, list[PythonASTReference]] = {}
-        self._nodes: dict[str, "PythonASTNode"] = {}
+        self._references: dict[str, list[PythonCstReference]] = {}
+        self._referenced_by: dict[str, list[PythonCstReference]] = {}
+        self._nodes: dict[str, "PythonCstNode"] = {}
 
 
 
     def check_diagnostics(self, continue_with_warning=True) -> None:
         msg = None
-        errors = ""
-        for d in self.atu.type_ignores:
-            msg = f"type ignored: {d.tag} at {d.lineno}\n"
-            errors += msg
-            print(msg)
-        if msg and not continue_with_warning:
-            raise Exception(f"Error parsing: {self.file_name} \n+ errors: {errors}")
+        # errors = ""
+        # for d in self.atu.type_ignores:
+        #     msg = f"type ignored: {d.tag} at {d.lineno}\n"
+        #     errors += msg
+        #     print(msg)
+        # if msg and not continue_with_warning:
+        #     raise Exception(f"Error parsing: {self.file_name} \n+ errors: {errors}")
 
-    def lazy_create_refers(self, node: "PythonASTNode") -> None:
+    def lazy_create_refers(self, node: "PythonCstNode") -> None:
         if self.references_initialized:
             return
         node.root.process(lambda n: self.create_references(n))
@@ -104,7 +109,7 @@ class PythonTranslationUnit:
                         self._nodes[node.name] = node
 
     def create_references(self, ast_node) -> None:
-        assert isinstance(ast_node, PythonASTNode), f"Expected PythonASTNode but got {type(ast_node)}"
+        assert isinstance(ast_node, PythonCstNode), f"Expected PythonCstNode but got {type(ast_node)}"
         match ast_node.kind:
             case "arg":
                 if ast_node.name != "self":
@@ -166,8 +171,8 @@ class PythonTranslationUnit:
         properties = {}
         if node_id == ref_id:
             return
-        reference = PythonASTReference(ref_id, ref_kind, properties)
-        referenced_by = PythonASTReference(node_id, ref_kind, properties)
+        reference = PythonCstReference(ref_id, ref_kind, properties)
+        referenced_by = PythonCstReference(node_id, ref_kind, properties)
         if node_id in self._references:
             self._references[node_id].append(reference)
         else:
@@ -179,11 +184,11 @@ class PythonTranslationUnit:
 
     def get_referenced_by(self, node_id):
         refs = self._referenced_by.get(node_id, [])
-        return [PythonASTReference(self._nodes[ref.node_id], ref.ref_kind, ref.properties) for ref in refs]
+        return [PythonCstReference(self._nodes[ref.node_id], ref.ref_kind, ref.properties) for ref in refs]
 
     def get_references(self, node_id):
         refs = self._references.get(node_id, [])
-        return [PythonASTReference(self._nodes[ref.node_id], ref.ref_kind, ref.properties) for ref in refs]
+        return [PythonCstReference(self._nodes[ref.node_id], ref.ref_kind, ref.properties) for ref in refs]
 
 
 class ImplicitNode(ast.Name):
@@ -206,15 +211,15 @@ class ImplicitNode(ast.Name):
         self.end_col_offset = 0
 
 
-class PythonASTNode:
-    def __init__(self, node: ast.AST, translation_unit: PythonTranslationUnit = None, parent=None):
+class PythonCstNode:
+    def __init__(self, node: ast.AST, translation_unit: PythonCstTranslationUnit = None, parent=None):
         self.root = parent.root if parent and parent.root else self
         self.node = node
         self.parent = parent
         self.translation_unit = translation_unit
         self.kind = type(node).__name__
         self.indent = ""
-        self.name = self._derive_name()
+        self.name = "" #self._derive_name()
         self.show_props = False
         self.children = []
         self.properties = {}
@@ -224,43 +229,46 @@ class PythonASTNode:
         if translation_unit:
             self.filename = translation_unit.file_name
             self.translation_unit = translation_unit
-            self.derive_position(node, translation_unit, parent)
+            # self.derive_position(node, translation_unit, parent)
             self.add_node()
-        for name in node._fields:
-            try:
-                child = getattr(node, name)
-                match child:
-                    case list():  # Matches any list
-                        if(isinstance(node, Global) and name =="names"):
-                            if(len(child)==1):
-                                self.name = child[0]
-                            if name == "body":
-                                self.body = self.children
-
-                        if isinstance(node, ImplicitNode) or isinstance(node, ast.Module) or len(node._fields) == 1:
-                            self.children.extend(PythonASTNode(n, translation_unit, self) for n in child)
-                            if name == "body":
-                                self.body = self.children
-                        else:
-                            self.children.append(PythonASTNode(ImplicitNode(name, child), translation_unit, self))
-                            if name in ["body", "cases"]:
-                                self.body = self.children[-1].children
-
-                    case ast.AST():
-                        if name not in ["ctx"]:
-                            self.children.append(PythonASTNode(child, translation_unit, self))
-                            if isinstance(child, ast.expr):
-                                self.expression = self.children[-1]
-                    case _:
-                        if name not in ["None"]:
-                            self.properties[name] = child
-            except AttributeError as e:
-                print(e)
-                continue
+        if hasattr(node, 'body'):
+            if isinstance(self.node.body,Sequence):
+                self.children = [PythonCstNode(n, translation_unit, self) for n in self.node.body]
+        # for name in node._fields:
+        #     try:
+        #         child = getattr(node, name)
+        #         match child:
+        #             case list():  # Matches any list
+        #                 if(isinstance(node, Global) and name =="names"):
+        #                     if(len(child)==1):
+        #                         self.name = child[0]
+        #                     if name == "body":
+        #                         self.body = self.children
+        #
+        #                 if isinstance(node, ImplicitNode) or isinstance(node, ast.Module) or len(node._fields) == 1:
+        #                     self.children.extend(PythonCstNode(n, translation_unit, self) for n in child)
+        #                     if name == "body":
+        #                         self.body = self.children
+        #                 else:
+        #                     self.children.append(PythonCstNode(ImplicitNode(name, child), translation_unit, self))
+        #                     if name in ["body", "cases"]:
+        #                         self.body = self.children[-1].children
+        #
+        #             case ast.AST():
+        #                 if name not in ["ctx"]:
+        #                     self.children.append(PythonCstNode(child, translation_unit, self))
+        #                     if isinstance(child, ast.expr):
+        #                         self.expression = self.children[-1]
+        #             case _:
+        #                 if name not in ["None"]:
+        #                     self.properties[name] = child
+        #     except AttributeError as e:
+        #         print(e)
+        #         continue
 
         self.end_offset = self.offset + self.length
         self.extended_end_offset = self.end_offset
-        self.is_statement = isinstance(self.node, ast.stmt)
+        self.is_statement = isinstance(self.node, (BaseSmallStatement,BaseCompoundStatement))
 
 
     def __eq__(self, other):
@@ -310,7 +318,7 @@ class PythonASTNode:
     def match_children(self, children):
         return all(i< len(self.children) and self[i] == child for i, child in enumerate(children))
 
-    def derive_position(self, node: ast.AST, translation_unit: PythonTranslationUnit, parent):
+    def derive_position(self, node: ast.AST, translation_unit: PythonCstTranslationUnit, parent):
         if node._attributes:
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)) and node.decorator_list:
                 self.offset = self.translation_unit.convert(node.decorator_list[0].lineno, node.decorator_list[0].col_offset) - 1
@@ -331,10 +339,10 @@ class PythonASTNode:
     def load(file_path: Path,
              extra_args:list[str] = None,
             working_dir:str = None
-    ) -> "PythonASTNode":
+    ) -> "PythonCstNode":
         with open(file_path, "r") as file:
             content = file.read()
-            return PythonASTNode.load_from_text(content, str(file_path), extra_args, working_dir)
+            return PythonCstNode.load_from_text(content, str(file_path), extra_args, working_dir)
 
     @staticmethod
     def load_from_text(
@@ -342,13 +350,17 @@ class PythonASTNode:
         file_name: str = "test.py",
         extra_args:list[str] = None,
         working_dir:str = None
-    ) -> "PythonASTNode":
-        translation_unit = PythonTranslationUnit(text, file_name=str(file_name))
+    ) -> "PythonCstNode":
+        translation_unit = PythonCstTranslationUnit(text, file_name=str(file_name))
         translation_unit.check_diagnostics()
-        root_node = PythonASTNode(translation_unit.atu, translation_unit, None)
+        root_node = PythonCstNode(translation_unit.atu, translation_unit, None)
         return root_node
 
     def _derive_name(self):
+
+        match type(self.node):
+            case libcst.Module:
+                return self.filename[self.filename.index('/'):]
 
         if (
             isinstance(
@@ -426,15 +438,15 @@ class PythonASTNode:
             and hasattr(self.node, "value")
             and self.node.value is not None
         ):
-            return PythonASTNode(self.node.value, self.translation_unit, self)
+            return PythonCstNode(self.node.value, self.translation_unit, self)
         elif isinstance(self.node, ast.Expr) and hasattr(self.node, "value"):
-            return PythonASTNode(self.node.value, self.translation_unit, self)
+            return PythonCstNode(self.node.value, self.translation_unit, self)
         elif isinstance(self.node, (ast.For, ast.AsyncFor, ast.comprehension)):
-            return PythonASTNode(self.node.iter, self.translation_unit, self)
+            return PythonCstNode(self.node.iter, self.translation_unit, self)
         elif isinstance(self.node, (ast.If, ast.While, ast.Assert)):
-            return PythonASTNode(self.node.test, self.translation_unit, self)
+            return PythonCstNode(self.node.test, self.translation_unit, self)
         elif isinstance(self.node, (ast.Raise, ast.ExceptHandler)) and hasattr(self.node, "exc") and self.node.exc is not None:
-            return PythonASTNode(self.node.exc, self.translation_unit, self)
+            return PythonCstNode(self.node.exc, self.translation_unit, self)
         else:
             return None
 
@@ -459,12 +471,12 @@ class PythonASTNode:
         )
 
     @property
-    def referenced_by(self) -> Sequence[PythonASTReference]:
+    def referenced_by(self) -> Sequence[PythonCstReference]:
         self.translation_unit.lazy_create_refers(self)
         return self.translation_unit.get_referenced_by(self.name)
 
     @property
-    def references(self) -> list[PythonASTReference]:
+    def references(self) -> list[PythonCstReference]:
         self.translation_unit.lazy_create_refers(self)
         return self.translation_unit.get_references(self.name)
 

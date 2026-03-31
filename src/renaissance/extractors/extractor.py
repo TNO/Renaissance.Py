@@ -1,4 +1,4 @@
-from renaissance.impl.tree_sitter_adapter.ts_pattern_factory import TsPatternFactory
+from renaissance.impl.tree_sitter.pattern_factory import TsPatternFactory
 from renaissance.syntax_tree import MatchFinder, PatternMatch
 
 

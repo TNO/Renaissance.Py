@@ -30,6 +30,7 @@ class LSTNode:
         self.references = []
 
         self.signature = signature
+        self.text = signature
         self.filename = "unknown"
         self.length = len(signature)
         self.offset = offset

@@ -4,7 +4,7 @@ from hamcrest import *
 import pytest
 from renaissance.extractors.extractor import Extractor
 from renaissance.impl.clang.clang_adapter import ClangAdapter
-from renaissance.impl.tree_sitter_adapter.ts_pattern_factory import TsPatternFactory
+from renaissance.impl.tree_sitter.pattern_factory import TsPatternFactory
 from renaissance.syntax_tree import ASTShower
 
 class TestClangConcretePatternMatcher:

@@ -4,8 +4,8 @@ import tree_sitter_java as tsjava
 import tree_sitter_python as tspython
 from hamcrest import *
 
-from renaissance.impl.tree_sitter_adapter import TreeSitterAdapter
-from renaissance.lst.lst import LST
+from renaissance.impl.tree_sitter.adapter import TreeSitterAdapter
+from renaissance.impl.tree_sitter.lst import LST
 from renaissance.utils.node_util import traverse
 
 
