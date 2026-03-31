@@ -1,12 +1,31 @@
+from itertools import product
+
 import pytest
 import ast
 
 from hamcrest import assert_that, has_length, is_
 from renaissance.impl.python import PythonASTNode
+from renaissance.impl.python.python_cst_node import PythonCstNode
+from renaissance.impl.tree_sitter.lst import LSTNode
 from renaissance.syntax_tree import ASTFactory
 from renaissance.impl.python.python_pattern_factory import PythonPatternFactory
 from renaissance.syntax_tree.match_finder import match_pattern
 
+
+class Factories:
+    # add factories here to test different ASTNode implementations
+    node_types = [("ast", PythonASTNode),
+                  ("cst", PythonCstNode),
+                  ("lst", LSTNode),
+                  ("rst", ast.AST), ]
+    factories = [(name_type[0], ASTFactory(name_type[1])) for name_type in node_types]
+
+    @staticmethod
+    def extend(test_parameters: list[tuple]) -> list[tuple]:
+        result = [
+            (str(factory[0]) + " " + str(pars[0]), factory[1], *pars) for factory, pars in product(Factories.factories, test_parameters)
+        ]
+        return result
 
 class TestPythonFactory:
 
@@ -267,3 +286,14 @@ class TestPythonFactory:
         kwargs = [PythonASTNode(kwarg) for kwarg in pattern.node.node.value.keywords]
         it = self.pattern_factory.create_kwargs("$c=0, $d=2312")
         assert_that(it[0], is_(kwargs[0]))
+
+    @pytest.mark.parametrize(
+        "_, factory, expression, expected",
+        Factories.extend(
+            [( "a = 1","(BINARY_OPERATOR"),]
+        ),
+    )
+    def test(self, _, factory, expression, expected):
+        patternFactory = PythonPatternFactory(factory)
+        node = patternFactory.create_expression(expression)
+        assert_that(node, is_(expected))

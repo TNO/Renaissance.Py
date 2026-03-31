@@ -5,6 +5,7 @@ from ast_comments import *
 
 from renaissance.impl import MATCH_ALL, MATCH_ONE
 from renaissance.impl.python.python_ast_node import PythonASTNode
+from renaissance.impl.python.python_cst_node import PythonCstNode
 from renaissance.syntax_tree import ASTFactory, ASTNode
 from renaissance.syntax_tree.match_finder import AstProtocol, is_match
 from renaissance.utils.node_util import replace_dollar
@@ -48,16 +49,17 @@ class PythonPatternFactory:
     def __init__(self, factory: ASTFactory):
         self.factory = factory
 
-    @staticmethod
-    def _create(text: str) -> PythonPattern:
-        return PythonPattern(PythonASTNode.load_from_text(text))
+
+    def _create(self,text: str) -> PythonPattern:
+        return PythonPattern(self.factory.create_from_text(text, "snippet.py"))
 
     def create(self, text: str) -> PythonPattern:
         text = replace_dollar(text)
         return self._create(text)
 
     def create_statements(self, text: str) -> Sequence[PythonPattern]:
-        return self.create(text).children
+        atu = self.create(text)
+        return atu.children
 
     def create_statement(self, text: str) -> PythonPattern:
         return self.create_statements(text)[-1]
