@@ -1,16 +1,12 @@
-# -----------------------------
-# Protocol for "text segment"
-# -----------------------------
-
 from typing import Protocol, runtime_checkable
 
 
 @runtime_checkable
 class TextSegment(Protocol):
     """
-    Protocol for anything that represents test segment.
+    Protocol for anything that represents a text segment.
     A text segment is a consecutive piece, a.k.a. a slice, within a text.
-    Instances include comments, whitespace (incl. empty lines), and AST nodes.
+    Instances include comments, whitespace (incl. empty lines), and syntax nodes.
 
     Read-only access is enforced "as much as possible" by
     exposing only @property getters in the protocol
@@ -66,5 +62,9 @@ class TextSegment(Protocol):
 
     @property
     def text_segment(self) -> str:
-        """The text segment is a slice of the full text."""
+        """
+        The text segment is a slice of the full text.
+        The text segment is represented by the half-open interval [start_offset, end_offset).
+        The segment text is full_text[start_offset:end_offset].
+        """
         ...
