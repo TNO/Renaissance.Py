@@ -2,7 +2,7 @@ import textwrap
 from pathlib import Path
 
 import pytest
-from hamcrest import ends_with, assert_that
+from hamcrest import ends_with, assert_that, is_
 
 import renaissance.refactoring.taut2_pyunit as taut_refactor
 
@@ -13,7 +13,7 @@ import test_data.test_code as tst_code
 import test_data.test_insert as tst_insert
 from renaissance.impl.python import PythonASTNode
 from renaissance.syntax_tree import ASTFactory, ASTProcessor
-from test_data.test_testdoubles import test_doubles_fun, test_doubles_fun_new, test_doubles_class, test_doubles_class_new
+import test_data.test_testdoubles as tst_testdoubles
 
 
 class TestTaut2Unittest:
@@ -21,10 +21,6 @@ class TestTaut2Unittest:
     def test_init(self):
         subject = Taut2Pyunit(Path(targets.__file__).parent / "taut/taut_test.py")
         assert_that(subject.filename, ends_with("taut_test.py"))
-
-    @pytest.fixture(autouse=True)
-    def setup(self):
-        self.factory = ASTFactory(PythonASTNode, [])
 
     def _create(self, mocker, text) -> Taut2Pyunit:
         code = textwrap.dedent(text)
@@ -44,26 +40,11 @@ class TestTaut2Unittest:
             ),
         ],
     )
-    def test_remove_import_taut(self, input_code, expected_code):
-        atu = self.factory.create_from_text(input_code, "import.py")
-        # ASTShower.show_node(atu)
-        ast_refactor = ASTProcessor(atu, self.factory, in_memory=True)
-        taut_refactor.remove_import_taut(ast_refactor)
-        result = ast_refactor.commit().apply_to_string()
-        assert result == expected_code
-
-    @pytest.mark.parametrize(
-        "input_code, expected_code",
-        [
-            (
-                "import unittest\nimport TAUT\nimport DDXA",
-                "import unittest\nimport DDXA",
-            ),
-        ],
-    )
-    def test_remove_import(self, input_code, expected_code):
-        result = taut_refactor.replace_taut_import(input_code)
-        assert result == expected_code
+    def test_remove_import(self, input_code, expected_code, mocker):
+        subject = self._create(mocker, input_code)
+        subject.remove_taut_import()
+        result = subject.apply_to_string()
+        assert_that(result, is_(expected_code))
 
     @pytest.mark.parametrize(
         "input_code, expected_code",
@@ -82,7 +63,7 @@ class TestTaut2Unittest:
         subject = self._create(mocker, input_code)
         subject.replace_taut()
         result = subject.apply_to_string()
-        assert result == expected_code
+        assert_that(result, is_(expected_code))
 
     @pytest.mark.parametrize(
         "input_code, expected_code",
@@ -93,12 +74,22 @@ class TestTaut2Unittest:
             )
         ],
     )
-    def test_replace_skip(self, input_code, expected_code):
-        atu = self.factory.create_from_text(input_code, "tautskip.py")
-        ast_refactor = ASTProcessor(atu, self.factory, in_memory=True)
-        taut_refactor.replace_taut_skip(ast_refactor)
-        result = ast_refactor.commit().apply_to_string()
-        assert result == expected_code
+    def test_replace_skip(self, input_code, expected_code, mocker):
+        subject = self._create(mocker, input_code)
+        subject.replace_taut_skip()
+        result = subject.apply_to_string()
+        assert_that(result, is_(expected_code))
+
+    @pytest.mark.parametrize("input_code, expected_code",
+    [
+        (tst_testdoubles.test_indent, tst_testdoubles.test_indent_new),
+        (tst_testdoubles.test_indent_fun, tst_testdoubles.test_indent_fun_new)
+    ])
+    def test_indentation(self, input_code, expected_code, mocker):
+        subject = self._create(mocker, input_code)
+        subject.move_indent()
+        result = subject.apply_to_string()
+        assert_that(result, is_(expected_code))
 
     @pytest.mark.parametrize(
         "input_code, expected_code",
@@ -109,9 +100,11 @@ class TestTaut2Unittest:
             )
         ],
     )
-    def test_replace_import(self, input_code, expected_code):
-        result = taut_refactor.replace_mock_import(input_code)
-        assert result == expected_code
+    def test_replace_import(self, input_code, expected_code, mocker):
+        subject = self._create(mocker, input_code)
+        subject.replace_taut_import()
+        result = subject.apply_to_string()
+        assert_that(result, is_(expected_code))
 
     @pytest.mark.parametrize(
         "input_code, expected_code",
@@ -131,7 +124,7 @@ class TestTaut2Unittest:
         subject = self._create(mocker, input_code)
         subject.add_self()
         result = subject.apply_to_string()
-        assert result == expected_code
+        assert_that(result, is_(expected_code))
 
     @pytest.mark.parametrize(
         "input_code, expected_code",
@@ -146,7 +139,7 @@ class TestTaut2Unittest:
         subject = self._create(mocker, input_code)
         subject.remove_decorator()
         result = subject.apply_to_string()
-        assert result == expected_code
+        assert_that(result, is_(expected_code))
 
     @pytest.mark.parametrize(
         "input_code, expected_code",
@@ -160,47 +153,50 @@ class TestTaut2Unittest:
         subject = self._create(mocker, input_code)
         subject.convert_assert()
         result = subject.apply_to_string()
-        assert result == expected_code
+        assert_that(result, is_(expected_code))
 
     @pytest.mark.parametrize("input_code, expected_code", [(tst_code.taut_code, tst_code.result_code)])
-    def test_log_emrwxtl(self, input_code, expected_code, mocker):
+    def test_log_abcdxtl(self, input_code, expected_code, mocker):
         subject = self._create(mocker, input_code)
-        subject.replace_log_emrwxtl()
+        subject.in_memory = True
+        subject.replace_log_compxtl('abcd')
+        result = subject.apply_to_string()
+        assert_that(result, is_(expected_code))
+
+    @pytest.mark.parametrize("input_code, insert_code", [(tst_insert.input_code, tst_insert.insert_code)])
+    def test_insert_class(self, input_code, insert_code, mocker):
+        subject = self._create(mocker, input_code)
+        subject.insert_class()
+        result = subject.apply_to_string()
+        assert_that(result, is_(input_code + insert_code))
+
+    @pytest.mark.parametrize("input_code, expected_code", [(tst_class.set_up, tst_class.new_set_up)])
+    def test_setup(self, input_code, expected_code, mocker):
+        subject = self._create(mocker, input_code)
+        subject.convert_setup()
         result = subject.apply_to_string()
         assert result == expected_code
 
-    @pytest.mark.parametrize("input_code, insert_code", [(tst_insert.input_code, tst_insert.insert_code)])
-    def test_insert_class(self, input_code, insert_code):
-        result = taut_refactor.insert_class(input_code, insert_code)
-        assert result == input_code + insert_code + "\n"
-
-    @pytest.mark.parametrize("input_code, expected_code", [(tst_class.set_up, tst_class.new_set_up)])
-    def test_setup(self, input_code, expected_code):
-        result = taut_refactor.refactor_setup(input_code)
-        assert result == expected_code
-
     @pytest.mark.parametrize("input_code, expected_code", [(tst_class.tear_down, tst_class.new_tear_down)])
-    def test_teardown(self, input_code, expected_code):
-        result = taut_refactor.refactor_teardown(input_code)
-        assert result == expected_code
+    def test_teardown(self, input_code, expected_code, mocker):
+        subject = self._create(mocker, input_code)
+        subject.refactor_teardown()
+        result = subject.apply_to_string()
+        assert_that(result, is_(expected_code))
 
-    @pytest.mark.parametrize("input_code, expected_code", [(test_doubles_fun, test_doubles_fun_new)])
-    def test_testdoubles_fun(self, input_code, expected_code):
-        result = taut_refactor.refactor_testdoubles_fun(input_code)
-        assert result == expected_code
+    @pytest.mark.parametrize("input_code, expected_code", [(tst_testdoubles.test_doubles_fun, tst_testdoubles.test_doubles_fun_new)])
+    def test_testdoubles_fun(self, input_code, expected_code, mocker):
+        subject = self._create(mocker, input_code)
+        subject.refactor_testdoubles_fun()
+        result = subject.apply_to_string()
+        assert_that(result, is_(expected_code))
 
-    @pytest.mark.parametrize("input_code, expected_code", [(test_doubles_class, test_doubles_class_new)])
-    def test_testdoubles_class(self, input_code, expected_code):
-        result = taut_refactor.refactor_testdoubles_class(input_code)
-        assert result == expected_code
-
-    @pytest.mark.parametrize(
-        "input_code, expected_code",
-        [(tst_class.change_comment, tst_class.new_change_comment)],
-    )
-    def test_change_comment(self, input_code, expected_code):
-        result = taut_refactor.insert_doc(input_code, "01-22-2026")
-        # assert result == expected_code
+    @pytest.mark.parametrize("input_code, expected_code", [(tst_testdoubles.test_doubles_class, tst_testdoubles.test_doubles_class_new)])
+    def test_testdoubles_class(self, input_code, expected_code, mocker):
+        subject = self._create(mocker, input_code)
+        subject.refactor_testdoubles_class()
+        result = subject.apply_to_string()
+        assert_that(result, is_(expected_code))
 
     @pytest.mark.parametrize(
         "input_code, expected_code",
@@ -213,12 +209,25 @@ class TestTaut2Unittest:
         subject = self._create(mocker, input_code)
         subject.replace_mock()
         result = subject.apply_to_string()
-        assert result == expected_code
+        assert_that(result, is_(expected_code))
 
     def test_remove_stubserver(self, mocker):
         subject = self._create(mocker, "@TAUT.StubServer\ndef test():\n    pass\n")
         expected_code = "\ndef test():\n    pass\n"
         subject.remove_stubserver()
         result = subject.apply_to_string()
-        assert result == expected_code
+        assert_that(result, is_(expected_code))
+
+    @pytest.mark.parametrize(
+        "input_code, expected_code",
+        [
+            ("self.tds.append(TestDoubles(mode, emr=self.emr))", "self.add_patcher(mode, 'emr', self.emr)"),
+            ("self.tds.append(TestDoubles(a=ImprovedStub(b)))", "self.a = ImprovedStub(b)")
+        ],
+    )
+    def test_convert_tds(self, input_code, expected_code, mocker):
+        subject = self._create(mocker, input_code)
+        subject.convert_tds()
+        result = subject.apply_to_string()
+        assert_that(result, is_(expected_code))
 

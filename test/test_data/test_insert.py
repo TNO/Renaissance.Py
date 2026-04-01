@@ -2,10 +2,9 @@ input_code = """
 import OOXA
 def a():
     x = 10
-    
+
 def b():
-    y = 12
-"""
+    y = 12"""
 insert_code = """
 
 class Asserter(unittest.TestCase):

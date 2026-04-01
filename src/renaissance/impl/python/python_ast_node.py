@@ -304,6 +304,10 @@ class PythonASTNode(ASTNode):
                 self._offset = self.translation_unit.convert(node.lineno, node.col_offset) - 1  # type: ignore[attr-defined]
             else:
                 self._offset = self.translation_unit.convert(node.lineno, node.col_offset)  # type: ignore[attr-defined]
+            all_space = all(
+                c == ' ' for c in self.translation_unit.content[self._offset - node.col_offset: self._offset])
+            if all_space :
+                self._offset = self._offset - node.col_offset if self._offset - node.col_offset >= 0 else 0
             self._length = self.translation_unit.convert(node.end_lineno, node.end_col_offset) - self.offset  # type: ignore[attr-defined]
         elif isinstance(node, ast.Module) and translation_unit:
             self._offset = 0
