@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import MagicMock, patch
 from hamcrest import assert_that, is_, has_item, not_, instance_of
 
-from renaissance.extractors.code_graph_extractors import (
+from renaissance.impl.tree_sitter.code_graph_extractors import (
     BaseCodeGraphExtractor,
     PythonCodeGraphExtractor,
     JavaCodeGraphExtractor,

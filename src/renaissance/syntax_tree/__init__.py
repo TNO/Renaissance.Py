@@ -21,7 +21,7 @@ from .recipe_ast_processor import (
 )
 from ..utils.ast_utils import ASTUtils
 from ..utils.text_utils import TextUtils
-from ..utils.cpp_utils import CPPUtils
+from renaissance.impl.clang.cpp_utils import CPPUtils
 
 __all__ = [
     "ASTNode",

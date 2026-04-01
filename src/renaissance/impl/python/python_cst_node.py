@@ -496,4 +496,4 @@ class PythonCstNode:
 
     @property
     def text(self) -> str:
-        return TextUtils.shift_left(self.signature, len(self.indent), start_line=1)
+        return self.signature

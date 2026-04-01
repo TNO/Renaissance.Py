@@ -1,3 +1,4 @@
+import textwrap
 from pathlib import Path
 from typing import Any, Sequence, Self, Callable
 
@@ -484,4 +485,4 @@ class PythonASTNode:
 
     @property
     def text(self) -> str:
-        return TextUtils.shift_left(self.signature, len(self.indent), start_line=1)
+        return textwrap.dedent(self.signature, len(self.indent), start_line=1)
