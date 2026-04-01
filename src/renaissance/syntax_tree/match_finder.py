@@ -66,16 +66,16 @@ def is_match_tree(src: Sequence | None, cmp: Sequence | None, expansions=None):
     if len(cmp) == 1 and isinstance(cmp0 := cmp[0], AstProtocol) and cmp0.kind == MATCH_ALL:
         expansions[cmp0.name] = src
         return True
-    return find_in_list(src, cmp, expansions) + 1 == len(src)
+    return find_in_list(src, cmp, expansions, 0) + 1 == len(src)
 
 
-def find_in_list(src: Sequence, cmp: Sequence, exp=None):
+def find_in_list(src: Sequence, cmp: Sequence ,exp=None, start:int =0):
     if exp is None:
         exp = {}
     found_position = 0
     greedy = None
     expansion_start = -1
-    i = 0
+    i = start
     while i < len(src):
         if found_position >= len(cmp):
             break
@@ -193,24 +193,24 @@ def is_match_dict(src: dict, cmp: dict, expansions: dict = None) -> bool:
 def match_pattern(src_nodes, patterns, recursive=True) -> Sequence[PatternMatch]:
 
     found_statements = []
-    to_do = src_nodes
-    while len(to_do) > 0:
+    to_do = 0
+    while to_do < len(src_nodes):
         found_expansions = {}
-        found_position = find_in_list(to_do, patterns, found_expansions)
+        found_position = find_in_list(src_nodes, patterns, found_expansions, to_do)
         if found_position >= 0:
-            match = PatternMatch(to_do[: found_position + 1], found_expansions, patterns)
+            match = PatternMatch(src_nodes[to_do:found_position + 1], found_expansions, patterns)
             found_statements.append(match)
-            to_do = to_do[found_position + 1 :]
+            to_do = found_position + 1
         else:
             if recursive:
                 found_statements.extend(
                     MatchFinder.match_pattern(
-                        exclude_nodes_by_kind(getattr(to_do[0], "children", [])),
+                        exclude_nodes_by_kind(getattr(src_nodes[to_do], "children", [])),
                         patterns,
                         recursive,
                     )
                 )
-            to_do = to_do[1:]
+            to_do += 1
 
     return found_statements
 
