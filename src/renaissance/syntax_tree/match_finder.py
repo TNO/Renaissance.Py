@@ -6,7 +6,6 @@ from renaissance.impl import MATCH_ALL, MATCH_ONE
 from ..utils.node_util import use_dollar
 
 
-
 IRRELEVANT_PROPS = {"macro_expansion", "start_point", "end_point", "source_code"}
 DEFAULT_EXCLUDE_KIND = {"FullComment", "MACRO_DEFINITION", "Comment"}
 
@@ -29,12 +28,14 @@ class PatternMatch:
 
     def __str__(self):
         return "\n".join(node.signature for node in self.nodes)
+
     @property
     def signature(self):
         return str(self)
 
     def __getitem__(self, key):
-        return "\n".join( node.signature  if isinstance(node, AstProtocol) else node for node in self.expansions[key])
+        return "\n".join(node.signature if isinstance(node, AstProtocol) else node for node in self.expansions[key])
+
     def match_referenced_by(self, patterns: Sequence[list], recursive: bool = True) -> Sequence[Self]:
         found_matches = []
         for node in self.nodes:
@@ -170,7 +171,6 @@ def exclude_nodes_by_kind(src: list[AstProtocol]) -> list[AstProtocol]:
     return [c for c in src if c.kind not in DEFAULT_EXCLUDE_KIND]
 
 
-
 def is_match_dict(src: dict, cmp: dict, expansions: dict = None) -> bool:
     if expansions is None:
         expansions = {}
@@ -213,8 +213,6 @@ def match_pattern(src_nodes, patterns, recursive=True) -> Sequence[PatternMatch]
             to_do = to_do[1:]
 
     return found_statements
-
-
 
 
 def find_all(src_nodes, *patterns, recursive: bool = True) -> Sequence[PatternMatch]:
