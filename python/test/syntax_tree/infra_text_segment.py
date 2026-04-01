@@ -104,7 +104,7 @@ def assert_valid_text_segment(text_segment: TextSegment) -> None:
 
     line_starts = _compute_line_starts(text_segment.full_text)
 
-    ## line (0-based)
+    ## line range
     lines = len(line_starts)
     assert (
         0 <= text_segment.start_line < lines
@@ -113,7 +113,7 @@ def assert_valid_text_segment(text_segment: TextSegment) -> None:
         0 <= text_segment.end_line < lines
     ), f"Property end_line out of range: {text_segment.end_line} not in [0, {lines})"
 
-    ## column (0-based)
+    ## column range
     _check_column_range(
         len(text_segment.full_text),
         text_segment.start_line,

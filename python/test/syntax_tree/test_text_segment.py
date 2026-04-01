@@ -184,12 +184,12 @@ def test_runtime_checkable_protocol_rejects_missing_members() -> None:
         ("a", 0, 1, "a"),  # segment equal full text
         ("\n", 0, 1, "\n"),  # empty line
         ("\n", 1, 1, ""),  # empty last line
+        ("ab", 0, 0, ""),  # empty slice before text
+        ("ab", 1, 1, ""),  # empty slice inside text
+        ("ab", 2, 2, ""),  # empty slice after text
         ("abc", 0, 1, "a"),
         ("abc", 1, 2, "b"),
         ("abc", 2, 3, "c"),
-        ("abc", 0, 0, ""),  # empty slice before text
-        ("abc", 1, 1, ""),  # empty slice inside text
-        ("abc", 3, 3, ""),  # empty slice after text
         ("abc", 0, 3, "abc"),  # segment is full text
         ("ab\ncd\nef", 3, 6, "cd\n"),  # segment is second line
         ("ab\ncd\nef", 1, 5, "b\ncd"),  # spans newline and into next line
