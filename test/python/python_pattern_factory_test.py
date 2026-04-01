@@ -5,10 +5,10 @@ import ast
 
 from hamcrest import assert_that, has_length, is_
 from renaissance.impl.python import PythonASTNode
-from renaissance.impl.python.python_cst_node import PythonCstNode
+from renaissance.impl.python.cst_node import PythonCstNode
 from renaissance.impl.tree_sitter.lst import LSTNode
 from renaissance.syntax_tree import ASTFactory
-from renaissance.impl.python.python_pattern_factory import PythonPatternFactory
+from renaissance.impl.python.factory import PythonPatternFactory
 from renaissance.syntax_tree.match_finder import match_pattern
 
 

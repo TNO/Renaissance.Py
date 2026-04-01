@@ -6,7 +6,7 @@ from more_itertools.more import first
 
 from renaissance import syntax_tree
 from renaissance.impl.python import PythonASTNode
-from renaissance.impl.python.python_ast_node import PythonASTReference
+from renaissance.impl.python.rst_node import PythonASTReference
 from renaissance.syntax_tree import ASTNode, ASTFinder
 
 content = """

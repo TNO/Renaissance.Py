@@ -4,8 +4,7 @@ from typing import Sequence, Self
 from ast_comments import *
 
 from renaissance.impl import MATCH_ALL, MATCH_ONE
-from renaissance.impl.python.python_ast_node import PythonASTNode
-from renaissance.impl.python.python_cst_node import PythonCstNode
+from renaissance.impl.python.rst_node import PythonASTNode
 from renaissance.syntax_tree import ASTFactory, ASTNode
 from renaissance.syntax_tree.match_finder import AstProtocol, is_match
 from renaissance.utils.node_util import replace_dollar
@@ -65,8 +64,11 @@ class PythonPatternFactory:
         return self.create_statements(text)[-1]
 
     def create_expression(self, text: str) -> ASTNode:
-        return PythonPattern(self.create_statement(text).node.expression)
-
+        pattern = self.create_statement(text)
+        if isinstance(pattern.node, PythonASTNode):
+            return PythonPattern(pattern.node.expression)
+        else:
+            return PythonPattern(pattern.node.children[0])
     def create_decorators(self, param):
         return self.create_statement(param + "\ndef test(): pass").children[2]
 

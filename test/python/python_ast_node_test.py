@@ -13,8 +13,8 @@ from hamcrest import (
 )
 
 import targets
-from renaissance.impl.python.python_ast_node import PythonASTNode
-from renaissance.impl.python.python_pattern_factory import PythonPatternFactory
+from renaissance.impl.python.rst_node import PythonASTNode
+from renaissance.impl.python.factory import PythonPatternFactory
 from renaissance.syntax_tree import ASTFactory, ASTShower
 from renaissance.utils.node_util import traverse
 from utils_for_tests import show_node

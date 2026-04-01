@@ -15,7 +15,7 @@ def make_lst_node(kind, signature, name=None):
     return node
 
 
-class TestPythonCodeGraphExtractor:
+class TestPythonExtractor:
 
     def test_extractor(self):
 

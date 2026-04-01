@@ -485,4 +485,4 @@ class PythonASTNode:
 
     @property
     def text(self) -> str:
-        return textwrap.dedent(self.signature, len(self.indent), start_line=1)
+        return textwrap.dedent(self.signature)

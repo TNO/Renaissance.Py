@@ -1,8 +1,10 @@
 import pytest
 from unittest.mock import MagicMock, patch
+
+import tree_sitter_python
 from hamcrest import assert_that, is_, has_item, not_, instance_of
 
-from renaissance.impl.tree_sitter.code_graph_extractors import (
+from renaissance.impl.tree_sitter.extractor import (
     BaseCodeGraphExtractor,
     PythonCodeGraphExtractor,
     JavaCodeGraphExtractor,
@@ -29,7 +31,7 @@ def make_lst_node(kind, signature, name=None):
 
 class TestBaseCodeGraphExtractor:
     def test_is_abstract(self):
-        with patch("renaissance.extractors.code_graph_extractors.TreeSitterAdapter"):
+        with patch("renaissance.impl.tree_sitter.adapter.TreeSitterAdapter"):
             extractor = BaseCodeGraphExtractor.__new__(BaseCodeGraphExtractor)
             extractor.graph = MagicMock()
             with pytest.raises(NotImplementedError):
@@ -41,12 +43,12 @@ class TestBaseCodeGraphExtractor:
         f2 = tmp_path / "b.py"
         f2.write_text("y = 2")
 
-        with patch("renaissance.extractors.code_graph_extractors.TreeSitterAdapter") as mock_adapter_cls:
+        with patch("renaissance.impl.tree_sitter.adapter.TreeSitterAdapter") as mock_adapter_cls:
             mock_adapter = mock_adapter_cls.return_value
             mock_adapter.parse_code.return_value = MagicMock()
             mock_adapter.to_lst.return_value = self.make_lst([])
 
-            extractor = PythonCodeGraphExtractor("python", "fake_lib")
+            extractor = PythonCodeGraphExtractor("python", tree_sitter_python)
             spy = mocker.patch.object(extractor, "_process_file")
 
             extractor.extract([str(f1), str(f2)])
@@ -54,19 +56,19 @@ class TestBaseCodeGraphExtractor:
             assert_that(spy.call_count, is_(2))
 
     def test_extract_skips_file_on_error(self, tmp_path):
-        with patch("renaissance.extractors.code_graph_extractors.TreeSitterAdapter") as mock_adapter_cls:
+        with patch("renaissance.impl.tree_sitter.adapter.TreeSitterAdapter") as mock_adapter_cls:
             mock_adapter = mock_adapter_cls.return_value
             mock_adapter.parse_code.side_effect = RuntimeError("parse error")
 
-            extractor = PythonCodeGraphExtractor("python", "fake_lib")
+            extractor = PythonCodeGraphExtractor("python", tree_sitter_python)
             # Should not raise
             extractor.extract([str(tmp_path / "nonexistent.py")])
 
     def test_save_graph_writes_file(self, tmp_path, mocker):
-        with patch("renaissance.extractors.code_graph_extractors.TreeSitterAdapter"):
-            extractor = PythonCodeGraphExtractor("python", "fake_lib")
-            mock_write = mocker.patch("renaissance.extractors.code_graph_extractors.nx.write_graphml")
-            mocker.patch("renaissance.extractors.code_graph_extractors.GRAPHML_DIR", str(tmp_path))
+        with patch("renaissance.impl.tree_sitter.adapter.TreeSitterAdapter"):
+            extractor = PythonCodeGraphExtractor("python", tree_sitter_python)
+            mock_write = mocker.patch("renaissance.impl.tree_sitter.extractor.networkx.write_graphml")
+            mocker.patch("renaissance.impl.tree_sitter.extractor.GRAPHML_DIR", str(tmp_path))
 
             extractor.save_graph("test.graphml")
 
@@ -75,8 +77,8 @@ class TestBaseCodeGraphExtractor:
     def test_constructor_creates_directed_graph(self):
         import networkx as nx
 
-        with patch("renaissance.extractors.code_graph_extractors.TreeSitterAdapter"):
-            extractor = PythonCodeGraphExtractor("python", "fake_lib")
+        with patch("renaissance.impl.tree_sitter.adapter.TreeSitterAdapter"):
+            extractor = PythonCodeGraphExtractor("python", tree_sitter_python)
             assert_that(extractor.graph, instance_of(nx.DiGraph))
 
     @staticmethod
@@ -93,8 +95,8 @@ class TestBaseCodeGraphExtractor:
 class TestPythonCodeGraphExtractor(TestBaseCodeGraphExtractor):
     @staticmethod
     def _make_extractor():
-        with patch("renaissance.extractors.code_graph_extractors.TreeSitterAdapter"):
-            return PythonCodeGraphExtractor("python", "fake_lib")
+        with patch("renaissance.impl.tree_sitter.adapter.TreeSitterAdapter"):
+            return PythonCodeGraphExtractor("python", tree_sitter_python)
 
     def test_adds_file_and_folder_nodes(self):
         extractor = self._make_extractor()
@@ -185,8 +187,8 @@ class TestPythonCodeGraphExtractor(TestBaseCodeGraphExtractor):
 class TestJavaCodeGraphExtractor(TestBaseCodeGraphExtractor):
     @staticmethod
     def _make_extractor():
-        with patch("renaissance.extractors.code_graph_extractors.TreeSitterAdapter"):
-            return JavaCodeGraphExtractor("java", "fake_lib")
+        with patch("renaissance.impl.tree_sitter.adapter.TreeSitterAdapter"):
+            return JavaCodeGraphExtractor("java", tree_sitter_python)
 
     def test_adds_file_and_folder_nodes(self):
         extractor = self._make_extractor()
@@ -256,8 +258,8 @@ class TestJavaCodeGraphExtractor(TestBaseCodeGraphExtractor):
 class TestCppCodeGraphExtractor(TestBaseCodeGraphExtractor):
     @staticmethod
     def _make_extractor():
-        with patch("renaissance.extractors.code_graph_extractors.TreeSitterAdapter"):
-            return CppCodeGraphExtractor("cpp", "fake_lib")
+        with patch("renaissance.impl.tree_sitter.adapter.TreeSitterAdapter"):
+            return CppCodeGraphExtractor("cpp", tree_sitter_python)
 
     def test_adds_file_and_folder_nodes(self):
         extractor = self._make_extractor()

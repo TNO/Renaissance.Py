@@ -5,9 +5,9 @@ from typing import Sequence, cast
 
 from termcolor import colored
 
-from renaissance.impl.python.python_ast_node import PythonASTNode
-from renaissance.impl.python.python_pattern_factory import PythonPatternFactory
-from renaissance.impl.python.python_ast_util import to_str
+from renaissance.impl.python.rst_node import PythonASTNode
+from renaissance.impl.python.factory import PythonPatternFactory
+from renaissance.impl.python.util import to_str
 from renaissance.syntax_tree import ASTFactory, ASTProcessor
 from renaissance.syntax_tree.match_finder import match_pattern
 from renaissance.utils.text_utils import snake_case
