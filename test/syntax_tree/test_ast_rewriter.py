@@ -1,6 +1,9 @@
 import sys
 from typing import Any
 
+from renaissance.impl.python.python_ast_node import PythonASTNode
+from renaissance.impl.python.python_pattern_factory import PythonPatternFactory
+
 import pytest
 from hamcrest import assert_that, is_, is_not
 
@@ -8,7 +11,7 @@ from c_cpp.factories import Factories
 from renaissance.impl.clang import ClangASTNode, CPatternFactory
 from renaissance.syntax_tree import ASTRewriter, ASTFactory, MatchFinder, PatternMatch
 from renaissance.syntax_tree.ast_rewriter import _RewriteAction, _RewriteActions
-from renaissance.syntax_tree.match_finder import match_pattern
+from renaissance.syntax_tree.match_finder import find_all, match_pattern
 from utils_for_tests import compress, debug_print
 
 
@@ -973,9 +976,43 @@ class TestComposeReplacement:
         assert_that(text, is_("int x =0"))
     
     
-    
+class TestSyntaxAwareComposition:
+    def setup(self) -> tuple[ASTRewriter, PatternMatch] :
+        factory = ASTFactory(PythonASTNode, [])
+        atu = factory.create_from_text("x = a * b", "temp.py")
+        rewriter = ASTRewriter(atu)
+        pattern = PythonPatternFactory(factory).create_expression("$a * $b")
+        matches = list(find_all([atu], [pattern]))      # Use list, since we want to access its content multiple times
+        assert matches, "A match expected"
+        nrof_matches = len(matches)
+        assert 1 == nrof_matches, f"One match expected, yet got {nrof_matches}"
+        match = matches[0]
+        return rewriter, match
 
-
+    def test_prepend_child_parent(self):
+        rewriter, match = self.setup()
+        rewriter.insert_before("4 *", match.expansions['$a'])
+        rewriter.insert_before("6 +", match.nodes)
+        assert "x = 6 + 4 * a * b" == rewriter.apply_to_string(), "Unexpected replacement"
+  
+    def test_prepend_parent_child(self):
+        rewriter, match = self.setup()
+        rewriter.insert_before("4 *", match.nodes)
+        rewriter.insert_before("6 +", match.expansions['$a'])
+        assert "x = 6 + 4 * a * b" == rewriter.apply_to_string(), "Unexpected replacement"
+  
+    def test_append_child_parent(self):
+        rewriter, match = self.setup()
+        rewriter.insert_after("* 4", match.expansions['$b'])
+        rewriter.insert_after("+ 6", match.nodes)
+        assert "x = a * b * 4 + 6" == rewriter.apply_to_string(), "Unexpected replacement"
+  
+    def test_append_parent_child(self):
+        rewriter, match = self.setup()
+        rewriter.insert_after("* 4", match.nodes)
+        rewriter.insert_after("+ 6", match.expansions['$b'])
+        assert "x = a * b * 4 + 6" == rewriter.apply_to_string(), "Unexpected replacement"
+  
 
 
 

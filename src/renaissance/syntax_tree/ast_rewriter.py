@@ -10,14 +10,17 @@ from .ast_finder import ASTFinder
 from renaissance.utils.text_utils import TextUtils
 from renaissance.common import Rewriter
 
+
 @runtime_checkable
 class Rewritable(Protocol):
-    offset:int
+    offset: int
     end_offset: int
     extended_end_offset: int
-    filename:str
-    parent:Self
-    text:str
+    filename: str
+    parent: Self
+    text: str
+
+
 class _RewriteActionType(Enum):
     REPLACE = 1
     INSERT_BEFORE = 2
@@ -134,7 +137,7 @@ class _RewriteAction:
     def _get_nodes(
         target: Rewritable | Sequence[Rewritable] | PatternMatch | Sequence[PatternMatch],
     ) -> Sequence[Rewritable]:
-        if isinstance(target, Rewritable) or type(target).__name__ == 'PythonASTNode':
+        if isinstance(target, Rewritable) or type(target).__name__ == "PythonASTNode":
             return [target]
         if isinstance(target, PatternMatch):
             return target.nodes
@@ -143,8 +146,9 @@ class _RewriteAction:
             if isinstance(target[0], Rewritable):
                 return [n for n in target if isinstance(n, Rewritable)]
             last = target[-1]
-            if isinstance(last, PatternMatch):
-                return last.nodes
+            assert isinstance(last, PatternMatch), "type within Sequence violates its requirements " + type(last).__name__
+            return last.nodes
+            # TODO: is this correct? Can the other matches indeed be ignored?
         return []
 
 
@@ -155,7 +159,7 @@ class _RewriteActions:
 
     def __init__(
         self,
-        node:Rewritable,
+        node: Rewritable,
         encoding: str,
         correct_indent: bool,
         rewrites: Optional[list[_RewriteAction]] = None,
@@ -246,11 +250,10 @@ class _RewriteActions:
         # 2
         # | rew |
         #               |node|
-        no_conflict = lambda node1, rew : not ( node1.end_offset< rew.offset or   node1.offset > rew.end_offset)
-        result = any( no_conflict(node,rew) for rew in rewrite_nodes)
+        no_conflict = lambda node1, rew: not (node1.end_offset < rew.offset or node1.offset > rew.end_offset)
+        result = any(no_conflict(node, rew) for rew in rewrite_nodes)
 
         return result and False
-
 
     def __replace(
         self,
@@ -348,7 +351,11 @@ class _RewriteActions:
             include_comments,
             nodes,
         )
-        white_space = "" if not include_whitespace else "\n" + spaces if content[ext_end_offset] in b"\n" else spaces
+        white_space = (
+            ""
+            if not include_whitespace
+            else "\n" + spaces if ext_end_offset < len(content) and content[ext_end_offset] in b"\n" else spaces
+        )
         # indent the new content except the first line
         new_content = TextUtils.shift_right(new_content, indent, start_line=1)
 
@@ -443,7 +450,7 @@ class _RewriteActions:
             node_list = target.nodes
         else:
             node_list = (
-                [target] if (isinstance(target, Rewritable)  or type(target).__name__ =='PythonASTNode') else target
+                [target] if (isinstance(target, Rewritable) or type(target).__name__ == "PythonASTNode") else target
             )  # TODO How to make a Sequence[Rewritable] as type hints also show list[Rewritable]?
         return new_content, node_list
 
