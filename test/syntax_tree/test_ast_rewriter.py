@@ -944,7 +944,8 @@ class TestComposeReplacement:
             rewriter.replace(org, match)
             actual = rewriter.apply_to_string()
             assert_that(compress(expected), is_(compress(actual)))
-    def test_get_node_in_match_pattern(self,mocker):
+
+    def test_get_node_in_match_pattern(self, mocker):
         node = mocker.Mock()
         reference = mocker.Mock()
         node.referenced_by = [reference, reference]
@@ -952,37 +953,62 @@ class TestComposeReplacement:
         pattern_match = PatternMatch([node, node, node], {}, [])
         n = _RewriteAction._get_nodes([pattern_match])[0]
         assert_that(n, is_(node))
-    
-    
-    
+
     @pytest.mark.skip("fail on empty nodes")
     def test_get_node_in_match_pattern(self):
         it = _RewriteActions([], sys.getfilesystemencoding(), True)
         text = getattr(it, "_RewriteActions__get_texts")([])
         assert_that(text, is_("node"))
-    
-    
-    
-    def test_get_text_from_rewrite(self,mocker):
+
+    def test_get_text_from_rewrite(self, mocker):
         node = mocker.Mock()
         node.root = node
         node.binary_file_content = lambda: b"int x =0;"
         node.offset = 0
         node.extended_end_offset = 8
         node.text = "int x =0"
-    
+
         it = _RewriteActions(node, sys.getfilesystemencoding(), True)
         text = getattr(it, "_RewriteActions__get_texts")([node])
         assert_that(text, is_("int x =0"))
-    
-    
+
+
+class TestAroundComposition:
+    def test_around(self):
+        # set up
+        factory = ASTFactory(PythonASTNode, [])
+        atu = factory.create_from_text("x = a", "temp.py")
+        rewriter = ASTRewriter(atu)
+        pattern = PythonPatternFactory(factory).create_expression("x = $a")
+        matches = list(find_all([atu], [pattern]))  # Use list, since we want to access its content multiple times
+        assert matches, "A match expected"
+        nrof_matches = len(matches)
+        assert 1 == nrof_matches, f"One match expected, yet got {nrof_matches}"
+        placeholder = matches[0].expansions["$a"]
+
+        # execute
+        ## first pair
+        rewriter.insert_before("(", placeholder)
+        rewriter.insert_after(")", placeholder)
+
+        ## second pair
+        rewriter.insert_before("[", placeholder)
+        rewriter.insert_after("]", placeholder)
+
+        # verify
+        assert "x = [ ( a ) ]" == rewriter.apply_to_string(), "Unexpected replacement"
+        # TODO: Test fails due to two issues 
+        # 1. order of inserts ([  )]
+        # 2. insert around whole pattern, not placeholder.
+
+
 class TestSyntaxAwareComposition:
-    def setup(self) -> tuple[ASTRewriter, PatternMatch] :
+    def setup(self) -> tuple[ASTRewriter, PatternMatch]:
         factory = ASTFactory(PythonASTNode, [])
         atu = factory.create_from_text("x = a * b", "temp.py")
         rewriter = ASTRewriter(atu)
         pattern = PythonPatternFactory(factory).create_expression("$a * $b")
-        matches = list(find_all([atu], [pattern]))      # Use list, since we want to access its content multiple times
+        matches = list(find_all([atu], [pattern]))  # Use list, since we want to access its content multiple times
         assert matches, "A match expected"
         nrof_matches = len(matches)
         assert 1 == nrof_matches, f"One match expected, yet got {nrof_matches}"
@@ -991,29 +1017,26 @@ class TestSyntaxAwareComposition:
 
     def test_prepend_child_parent(self):
         rewriter, match = self.setup()
-        rewriter.insert_before("4 *", match.expansions['$a'])
+        rewriter.insert_before("4 *", match.expansions["$a"])
         rewriter.insert_before("6 +", match.nodes)
         assert "x = 6 + 4 * a * b" == rewriter.apply_to_string(), "Unexpected replacement"
-  
+        # TODO: Test fails as prepend of child appears before prepend of parent
+
     def test_prepend_parent_child(self):
         rewriter, match = self.setup()
-        rewriter.insert_before("4 *", match.nodes)
-        rewriter.insert_before("6 +", match.expansions['$a'])
+        rewriter.insert_before("6 +", match.nodes)
+        rewriter.insert_before("4 *", match.expansions["$a"])
         assert "x = 6 + 4 * a * b" == rewriter.apply_to_string(), "Unexpected replacement"
-  
+
     def test_append_child_parent(self):
         rewriter, match = self.setup()
-        rewriter.insert_after("* 4", match.expansions['$b'])
+        rewriter.insert_after("* 4", match.expansions["$b"])
         rewriter.insert_after("+ 6", match.nodes)
         assert "x = a * b * 4 + 6" == rewriter.apply_to_string(), "Unexpected replacement"
-  
+
     def test_append_parent_child(self):
         rewriter, match = self.setup()
-        rewriter.insert_after("* 4", match.nodes)
-        rewriter.insert_after("+ 6", match.expansions['$b'])
+        rewriter.insert_after("+ 6", match.nodes)
+        rewriter.insert_after("* 4", match.expansions["$b"])
         assert "x = a * b * 4 + 6" == rewriter.apply_to_string(), "Unexpected replacement"
-  
-
-
-
-
+        # TODO: Test fails as append of child appears after append of parent
