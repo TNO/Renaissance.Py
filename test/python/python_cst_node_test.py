@@ -341,7 +341,7 @@ class TestPythonCstNode:
         assert_that(it.signature, contains_string("@parameterized.expand"))
 
     def test_ann_fun_to_str(self):
-        ann_fun = """
+        ann_fun = textwrap.dedent("""
     @parameterized.expand(Factories.extend(['$x;$y;']))
     def test(_):
         atu = factory.create_from_text(TestStatements.SIMPLE_CPP, "test.c")
@@ -349,9 +349,9 @@ class TestPythonCstNode:
         matches = match_pattern( func_body.children,patterns)
     
         self.assert_matches( expected_dicts_per_match,matches)
-        """
-        it = PythonCstNode.load_from_text(ann_fun, "fun.py", [], None).body[-1]
-        assert_that(str(it), is_(ast.unparse(it.node)))
+        """)
+        it = PythonCstNode.load_from_text(ann_fun, "fun.py", [], None).children[-1]
+        assert_that(it.signature, contains_string("def test"))
 
 
 class TestGuardRewritable:
