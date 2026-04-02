@@ -3,6 +3,7 @@
 import textwrap
 
 from renaissance.impl.python import PythonASTNode, PythonPatternFactory
+from renaissance.impl.python.factory import PythonFactory
 from renaissance.syntax_tree import ASTFactory, ASTRewriter
 from renaissance.syntax_tree import ASTShower, TextUtils
 from renaissance.syntax_tree.match_finder import match_pattern
@@ -20,7 +21,7 @@ pa(54)
 
 
 def python_ast_smoke_test():
-    factory = ASTFactory(PythonASTNode)
+    factory = PythonFactory(PythonASTNode)
     atu:PythonASTNode = PythonASTNode.load_from_text(example_code, "test.py")
     pattern_factory = PythonPatternFactory(
         factory,

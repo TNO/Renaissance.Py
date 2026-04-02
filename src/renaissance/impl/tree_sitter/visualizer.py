@@ -3,7 +3,7 @@ from renaissance.impl.tree_sitter.lst import LST
 from renaissance.utils.text_utils import TextUtils
 
 
-class LSTMermaidVisualizer:
+class LstVisualizer:
     def __init__(self):
         self.lines = ["graph TD"]
         self.counter = 0
@@ -15,13 +15,14 @@ class LSTMermaidVisualizer:
             self.node_ids[node] = f"n{self.counter}"
         return self.node_ids[node]
 
+
     def _render_node(self, node):
         node_id = self._get_node_id(node)
         label = f"""\
-{node_id}: {node.kind} {{
-offset: {node.offset}
-signature: {TextUtils.clean_signature(node.signature)}
-}}"""
+            {node_id}: {node.kind} {{
+            offset: {node.offset}
+            signature: {TextUtils.clean_signature(node.signature)}
+            }}"""
         label = label.replace("\n", "<br>")
         self.lines.append(f'{node_id}["{label}"]')
         for child in node.children:

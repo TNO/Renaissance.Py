@@ -1,16 +1,19 @@
-import textwrap
 
-from renaissance.impl.python.python_ast_node import PythonASTNode
+def convert(lines, line_nr, col):
+    if line_nr > len(lines):
+        return 0
+    return sum(len(lines[i]) + 1 for i in range(line_nr - 1)) + col
+    # add node to the node list for references
 
 
-def raw(nodes: PythonASTNode):
+def raw(nodes):
     res = ""
     for node in nodes:
-        res += "\n\n    " + node.text
+        res += "\n\n    " + node.signature
     return res + "\n    "
 
 
-def to_str(node: PythonASTNode) -> str:
+def to_str(node) -> str:
     if hasattr(node, "signature"):
         return node.signature
     else:

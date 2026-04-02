@@ -1,20 +1,37 @@
+
 import os
-import networkx as nx
+import networkx
 from pathlib import Path
 from typing import List
 
 from renaissance.impl.tree_sitter.adapter import TreeSitterAdapter
 
+from renaissance.impl.tree_sitter.pattern_factory import TsPatternFactory
+from renaissance.syntax_tree import PatternMatch
+from renaissance.syntax_tree.match_finder import match_pattern
+
 GRAPHML_DIR = "out_graphml"
 os.makedirs(GRAPHML_DIR, exist_ok=True)
 
+class Extractor:
+    def __init__(self, factory: TsPatternFactory, patterns: list[str]):
+        self.factory = factory
+        self.patterns = patterns
+
+    def run(self, raw: str) -> list[PatternMatch]:
+        code = self.factory.create_statements(raw)
+        results = []
+        for rule in self.patterns:
+            pattern = self.factory.create_statements(rule)
+            results.extend(match_pattern(code, pattern, {}))
+        return results
 
 class BaseCodeGraphExtractor:
     def __init__(self, language: str, lib_path: str):
         self.language = language
         self.lib_path = lib_path
         self.adapter = TreeSitterAdapter(lib_path)
-        self.graph = nx.DiGraph()
+        self.graph = networkx.DiGraph()
 
     def extract(self, files: List[str]):
         for f in files:
@@ -31,7 +48,7 @@ class BaseCodeGraphExtractor:
 
     def save_graph(self, filename: str):
         path = os.path.join(GRAPHML_DIR, filename)
-        nx.write_graphml(self.graph, path)
+        networkx.write_graphml(self.graph, path)
         print(f"Graph saved to: {path}")
 
 

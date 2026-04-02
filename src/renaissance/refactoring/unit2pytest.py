@@ -3,7 +3,7 @@ import textwrap
 from pathlib import Path
 from typing import Sequence
 
-from renaissance.impl.python.python_ast_util import convert_function
+from renaissance.impl.python.util import convert_function
 from renaissance.refactoring.python_refactoring import PythonRefactoring
 from renaissance.syntax_tree import ASTFinder, PatternMatch
 from renaissance.syntax_tree.match_finder import match_pattern, AstProtocol

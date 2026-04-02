@@ -1,5 +1,5 @@
 import ast
-import renaissance.impl.python.python_rst_node
+import renaissance.impl.python.ast_node
 from renaissance.syntax_tree import ASTShower, ASTFinder, ASTRewriter
 from renaissance.utils.node_util import replace_dollar
 

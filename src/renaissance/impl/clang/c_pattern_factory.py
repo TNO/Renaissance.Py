@@ -8,7 +8,7 @@ from renaissance.syntax_tree.ast_factory import ASTFactory
 from renaissance.syntax_tree.ast_finder import ASTFinder
 from renaissance.syntax_tree.ast_node import ASTNode
 from renaissance.syntax_tree.ast_shower import ASTShower
-from renaissance.utils.cpp_utils import CPPUtils
+from renaissance.impl.clang.cpp_utils import CPPUtils
 
 SHOW_NODE = False
 

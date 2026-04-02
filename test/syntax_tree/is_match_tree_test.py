@@ -16,6 +16,7 @@ from marshmallow.utils import is_generator
 
 from renaissance.impl.clang import ClangASTNode, CPatternFactory
 from renaissance.impl.python import PythonPatternFactory, PythonASTNode
+from renaissance.impl.python.factory import PythonFactory
 from renaissance.syntax_tree import ASTFactory, ASTShower
 from renaissance.syntax_tree.match_finder import (
     is_match_tree,
@@ -28,7 +29,7 @@ from renaissance.syntax_tree.match_finder import (
 class TestMatchTree:
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.factory = ASTFactory(PythonASTNode, [])
+        self.factory = PythonFactory(PythonASTNode)
         self.pattern_factory = PythonPatternFactory(self.factory)
 
     def test_none_with_none(self):
@@ -290,3 +291,20 @@ class TestMatchTree:
         kwargs = self.pattern_factory.create_kwargs("$c=context_stub")
         matches = MatchFinder.match_pattern(atu.children, kwargs)
         assert_that(matches, has_length(1))
+
+
+    def test_match_pattern_for_parameterized_finds_one_match(self):
+        code = textwrap.dedent("""
+        from parameterized import parameterized
+
+        class TestASTReference:
+
+            @parameterized.expand(Factories.extend())
+            def test_definition_declaration_references(self, _, factory, code, *args):
+                pass
+        """)
+        atu = self.factory.create_from_text(code)
+        unittest = self.pattern_factory.create_statements(
+            "@parameterized.expand($$parameters)\ndef $fun($$args, *$$vargs):\n    $$stmts")
+        found = list(match_pattern(atu.children, unittest))
+        assert_that(found, has_length(1))
