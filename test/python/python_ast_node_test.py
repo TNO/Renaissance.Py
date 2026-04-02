@@ -119,7 +119,7 @@ def outer():
         it = self.pattern_factory.create_expression(raw)
         assert_that(kind, is_(it.kind))
 
-    @pytest.mark.skip("it was working before")
+    # @pytest.mark.skip("it was working before")
     def test_type_alias(self):
         it = self.factory.create_from_text("type UserId = int", "context.py")
         show_node(it)
@@ -329,21 +329,21 @@ class Parent:
     
     
     
-    @pytest.mark.skip("it was working before")
+    # @pytest.mark.skip("it was working before")
     def test_ann_fun_to_str(self):
-        ann_fun = """
-    @parameterized.expand(Factories.extend(['$x;$y;']))
-    def test(_):
-        atu = factory.create_from_text(TestStatements.SIMPLE_CPP, "test.c")
-    
-        matches = match_pattern( func_body.children,patterns)
-    
-        self.assert_matches( expected_dicts_per_match,matches)
-        """
+        ann_fun = textwrap.dedent("""
+        @parameterized.expand(Factories.extend(['$x;$y;']))
+        def test(_):
+            atu = factory.create_from_text(TestStatements.SIMPLE_CPP, "test.c")
+        
+            matches = match_pattern( func_body.children,patterns)
+        
+            self.assert_matches( expected_dicts_per_match,matches)
+            """)
         it = PythonASTNode.load_from_text(ann_fun, "fun.py", [], None).body[-1]
-        assert_that(str(it), is_(ast.unparse(it.node)))
-    
-    
+
+        assert_that('\n'+it.signature+'\n', is_(ann_fun))
+
 class TestGuardRewritable:
     pass
     # @ignore

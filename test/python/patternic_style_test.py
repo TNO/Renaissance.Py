@@ -1,11 +1,12 @@
 from operator import is_not
 
 import pytest
-from hamcrest import assert_that, is_, has_length, is_in, is_not
+from hamcrest import assert_that, is_, has_length, is_in, is_not, empty
 
 from renaissance.impl import MATCH_ONE, MATCH_ALL
 from renaissance.impl.python import PythonASTNode, PythonPatternFactory
 from renaissance.syntax_tree import ASTFactory
+from renaissance.syntax_tree.match_finder import is_match
 
 
 class TestPythonicStyle:
@@ -158,13 +159,13 @@ class TestPythonicStyle:
         simple = pattern_factory.create_statement("$$pa")
         assert_that(MATCH_ALL, is_(simple.kind))
 
-    @pytest.mark.skip("rewrite to distict between matcha and equality")
-    def test_match_one(self):
+
+    def test_match_one_is_not_equal(self):
         factory = ASTFactory(PythonASTNode)
         atu = factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "test.py")
         pattern_factory = PythonPatternFactory(factory)
         match_one = pattern_factory.create("$pa")
-        assert_that(atu.children[0], is_(match_one))
+        assert_that(atu.children[0], is_not(match_one))
 
     #  TODO contain is not dependent on pattern
     def test_is_match_all_stmt(self):
@@ -193,15 +194,16 @@ class TestPythonicStyle:
 
         assert_that(result, has_length(1))
 
-    @pytest.mark.skip("rewrite to distict between matcha and equality")
     def test_match_single_pattern(self):
         factory = ASTFactory(PythonASTNode)
         atu = factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "test.py")
         pattern_factory = PythonPatternFactory(ASTFactory(PythonASTNode))
-        match_any = pattern_factory.create("$stmt")
+        match_any = pattern_factory.create_statement("$stmt")
 
         result = [node for node in atu if node == match_any]
+        assert_that(result, is_(empty()))
 
+        result = [node for node in atu if is_match(node,match_any)]
         assert_that(result, has_length(4))
 
     def test_match_single_call_pattern(self):
@@ -230,7 +232,6 @@ class TestPythonicStyle:
         result = [node for node in atu if node == simple]
         assert_that(result, has_length(1))
 
-    @pytest.mark.skip("failed ,but should pass")
     def test_slice_call(self):
         factory = ASTFactory(PythonASTNode)
         atu = factory.create_from_text(

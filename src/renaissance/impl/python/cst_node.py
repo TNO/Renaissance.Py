@@ -29,12 +29,13 @@ class PythonCstNode:
         self.indent = ""
         self.name = "" #self._derive_name()
         self.show_props = False
-        self.children: list[Self] =[PythonCstNode(node) for node in node.children]
+        self.children: list[Self] =[PythonCstNode(node, translation_unit, self) for node in node.children]
         self.properties = {}
-        self.offset = 0
-        self.length = 0
+        self.offset = node.code_span.start
+        self.length = node.code_span.length
         self.end_offset = self.offset + self.length
         self.is_statement = isinstance(self.node, (BaseSmallStatement,BaseCompoundStatement))
+        self.signature =self.root.node.code_for_node(node)
 
 
     def __eq__(self, other):
@@ -103,9 +104,7 @@ class PythonCstNode:
         translation_unit = PythonCstTranslationUnit(text, file_name=str(file_name))
         root_node = PythonCstNode(translation_unit.atu, translation_unit, None)
         return root_node
-    @property
-    def signature(self) -> str:
-        return dump(self.node)
+
     @property
     def referenced_by(self) :
         return []

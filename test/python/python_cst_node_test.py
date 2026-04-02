@@ -227,21 +227,21 @@ class TestPythonCstNode:
     @pytest.mark.parametrize(
         "raw, kind",
         [
-            ("a % b", "Mod"),
-            ("a / b", "Div"),
-            ("a // b", "FloorDiv"),
-            ("a << b", "LShift"),
-            ("a >> b", "RShift"),
-            ("a * b", "Mult"),
-            ("a ** b", "Pow"),
-            ("a - b", "Sub"),
+            ("a % b", "Modulo"),
+            ("a / b", "Divide"),
+            ("a // b", "FloorDivide"),
+            ("a << b", "LeftShift"),
+            ("a >> b", "RightShift"),
+            ("a * b", "Multiply"),
+            ("a ** b", "Power"),
+            ("a - b", "Substract"),
             ("a + b", "Add"),
         ],
     )
-    @pytest.mark.skip("wrong definition")
+    # @pytest.mark.skip("wrong definition")
     def test_binary_operator(self, raw, kind):
         it = self.pattern_factory.create_expression(raw)
-        assert_that(it.children[1].kind, is_(kind))
+        assert_that(it.children[0].children[1].kind, is_(kind))
 
     # @parameterized.expand([
     #     ('x = some_undefined_var', 'type_ignore'),
@@ -303,7 +303,7 @@ class TestPythonCstNode:
                     pass
             """), "nav.py", [], Path("."), )
         #          module  class     body        fun memem
-        me = src.children[-1].children[2].children[1]
+        me = src.children[-1].children[5].children[2]
         assert_that(me.name, is_("mememe"))
         assert_that(me.preceding_sibling.name, is_("previous_me"))
         assert_that(me.next_sibling.name, is_("next_me"))

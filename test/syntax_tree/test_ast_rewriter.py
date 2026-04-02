@@ -941,6 +941,7 @@ class TestComposeReplacement:
             rewriter.replace(org, match)
             actual = rewriter.apply_to_string()
             assert_that(compress(expected), is_(compress(actual)))
+
     def test_get_node_in_match_pattern(self,mocker):
         node = mocker.Mock()
         reference = mocker.Mock()

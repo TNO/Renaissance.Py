@@ -290,11 +290,11 @@ class TestPythonFactory:
     @pytest.mark.parametrize(
         "_, factory, expression, expected",
         Factories.extend(
-            [( "a = 1","(BINARY_OPERATOR"),]
+            [( "a = 1","Constant"),]
         ),
     )
-    @pytest.mark.skip("not working yet")
+    # @pytest.mark.skip("not working yet")
     def test(self, _, factory, expression, expected):
         patternFactory = PythonPatternFactory(factory)
         node = patternFactory.create_expression(expression)
-        assert_that(node, is_(expected))
+        assert_that(node.kind, is_(expected))

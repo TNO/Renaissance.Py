@@ -72,7 +72,7 @@ class TestUnit2Pytest:
         subject.convert_plain_assert_same_length()
         assert_that(subject.apply_to_string(), is_(expected))
 
-    @pytest.mark.skip("failing before demo fix")
+
     def test_restructure_module_injects_methods_when_class_exists(self,mocker):
         code = textwrap.dedent("""
         class TestFoo:
@@ -137,7 +137,7 @@ class TestUnit2Pytest:
         assert_that(sut.apply_to_string(), contains_string("assert_that(call()"))
         assert_that(sut.apply_to_string(), not_(contains_string("assert_that(1")))
 
-    @pytest.mark.skip("failing before demo fix")
+
     def test_to_class(self, mocker):
         sut = self._create(mocker, '''
             def test_fun():
