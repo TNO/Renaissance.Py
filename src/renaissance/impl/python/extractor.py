@@ -33,7 +33,7 @@ class PythonExtractor:
 
         tu = root.translation_unit
         self.codebase[file] = root
-        # reconstruct dependencies inside module
+        # # reconstruct dependencies inside module
         # tu.lazy_create_refers(root)
         # self.nodes |= tu._nodes
         # self.edges |=tu._references

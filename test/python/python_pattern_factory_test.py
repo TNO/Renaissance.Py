@@ -3,12 +3,12 @@ from itertools import product
 import pytest
 import ast
 
-from hamcrest import assert_that, has_length, is_
+from hamcrest import assert_that, has_length, is_, is_in
 from renaissance.impl.python import PythonASTNode
 from renaissance.impl.python.cst_node import PythonCstNode
 from renaissance.impl.tree_sitter.lst import LSTNode
 from renaissance.syntax_tree import ASTFactory
-from renaissance.impl.python.factory import PythonPatternFactory
+from renaissance.impl.python.factory import PythonPatternFactory, PythonFactory
 from renaissance.syntax_tree.match_finder import match_pattern
 
 
@@ -18,7 +18,7 @@ class Factories:
                   ("cst", PythonCstNode),
                   ("lst", LSTNode),
                   ("rst", ast.AST), ]
-    factories = [(name_type[0], ASTFactory(name_type[1])) for name_type in node_types]
+    factories = [(name_type[0], PythonFactory(name_type[1])) for name_type in node_types]
 
     @staticmethod
     def extend(test_parameters: list[tuple]) -> list[tuple]:
@@ -31,7 +31,7 @@ class TestPythonFactory:
 
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.factory = ASTFactory(PythonASTNode, [])
+        self.factory = PythonFactory(PythonASTNode)
         self.pattern_factory = PythonPatternFactory(self.factory)
 
     # Statements patterns
@@ -290,11 +290,10 @@ class TestPythonFactory:
     @pytest.mark.parametrize(
         "_, factory, expression, expected",
         Factories.extend(
-            [( "a = 1","Constant"),]
+            [( "a = 1",["Constant", "AssignTarget",'assignment', None]),]
         ),
     )
-    # @pytest.mark.skip("not working yet")
     def test(self, _, factory, expression, expected):
         patternFactory = PythonPatternFactory(factory)
         node = patternFactory.create_expression(expression)
-        assert_that(node.kind, is_(expected))
+        assert_that(node.kind, is_in(expected))

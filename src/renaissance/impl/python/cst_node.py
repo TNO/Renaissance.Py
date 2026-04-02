@@ -1,43 +1,83 @@
-from fileinput import filename
-
 from pathlib import Path
-from typing import Any, Sequence, Self, Callable
+from typing import Self, Callable
 
 import libcst
-from libcst import BaseSmallStatement, BaseCompoundStatement, IndentedBlock, CSTNode, FunctionDef, ClassDef
-from libcst.display import dump
+from libcst import BaseSmallStatement, BaseCompoundStatement, CSTNode, MetadataWrapper, ClassDef
+from libcst import FunctionDef
+from libcst.metadata import WhitespaceInclusivePositionProvider
 
+from renaissance.impl.python.util import convert
 from renaissance.syntax_tree.match_finder import find_in_list, IRRELEVANT_PROPS
 from renaissance.utils.node_util import preceding_sibling, next_sibling
+
 
 class PythonCstTranslationUnit:
     def __init__(self, content, file_name: str):
         self.content = content
-        self.atu = libcst.parse_module(content)
+        self.lines = content.splitlines()
         self.file_name = file_name
         self.references_initialized = False
+        self.wrapper = MetadataWrapper(libcst.parse_module(content))
+        self.atu = self.wrapper.module
+        self.spans = self.wrapper.resolve(WhitespaceInclusivePositionProvider)
 
 
+    def start_of(self, node:CSTNode) -> int:
+        span = self.spans.get(node)
+        return convert(self.lines,span.start.line,span.start.column) if span else 0
+
+
+
+    def end_of(self, node: CSTNode) -> int:
+        span = self.spans.get(node)
+        return convert(self.lines,span.end.line,span.end.column) if span else 0
+
+    def signature_of(self, node: CSTNode) -> str:
+        try:
+            return self.atu.code_for_node(node)
+        except:
+            return ""
 
 class PythonCstNode:
-    def __init__(self, node: CSTNode, translation_unit: PythonCstTranslationUnit = None, parent=None):
-        self.root = parent.root if parent and parent.root else self
-        self.node = node
+    def __init__(self, node: CSTNode, translation_unit: PythonCstTranslationUnit, parent=None):
         self.parent = parent
+        if parent and parent.root:
+            self.root = parent.root
+        else:
+            self.root = self
+        self.node = node
         self.translation_unit = translation_unit
         self.kind = type(node).__name__
-        self.indent = ""
-        self.name = "" #self._derive_name()
-        self.show_props = False
         self.children: list[Self] =[PythonCstNode(node, translation_unit, self) for node in node.children]
         self.properties = {}
-        self.offset = node.code_span.start
-        self.length = node.code_span.length
-        self.end_offset = self.offset + self.length
         self.is_statement = isinstance(self.node, (BaseSmallStatement,BaseCompoundStatement))
-        self.signature =self.root.node.code_for_node(node)
+    @property
+    def signature(self):
+        return self.translation_unit.signature_of(self.node)
 
+    @property
+    def offset(self):
+        return self.translation_unit.start_of(self.node)
 
+    @property
+    def length(self):
+        return self.end_offset - self.offset
+
+    @property
+    def end_offset(self):
+        return self.translation_unit.end_of(self.node)
+
+    @property
+    def filename(self):
+        return self.translation_unit.file_name
+
+    @property
+    def name(self):
+        if isinstance(self.node, (ClassDef,FunctionDef)):
+            return self.node.name.value
+        else:
+            return ""
+        self.name = "" #self._derive_name()
     def __eq__(self, other):
         return (
             isinstance(other, type(self))
@@ -58,12 +98,7 @@ class PythonCstNode:
         """
         return self.children[key]
     def __repr__(self):
-        raw_lines = self.signature.splitlines()
-        properties_text = "" if not self.show_props else self.properties
-        prefix = " " if len(raw_lines) < 2 else f"\n    {self.indent}"
-        formatted_lines = [f"{prefix}|{line}|" for line in raw_lines]
-        return f"{self.indent}({self.kind}, {self.name}, {self.filename}[{self.offset}:{self.offset + self.length}]){properties_text}:{''.join(formatted_lines)}\n"
-
+        return self.node.__repr__
     @property
     def next_sibling(self) -> Self | None:
         return next_sibling(self)
@@ -86,23 +121,18 @@ class PythonCstNode:
         return all(i< len(self.children) and self[i] == child for i, child in enumerate(children))
 
     @staticmethod
-    def load(file_path: Path,
-             extra_args:list[str] = None,
-            working_dir:str = None
-    ) -> "PythonCstNode":
+    def load(file_path: Path) -> "PythonCstNode":
         with open(file_path, "r") as file:
             content = file.read()
-            return PythonCstNode.load_from_text(content, str(file_path), extra_args, working_dir)
+            return PythonCstNode.load_from_text(content, str(file_path))
 
     @staticmethod
     def load_from_text(
         text: str,
-        file_name: str = "test.py",
-        extra_args:list[str] = None,
-        working_dir:str = None
+        file_name: str = "cst_snippet.py",
     ) -> "PythonCstNode":
         translation_unit = PythonCstTranslationUnit(text, file_name=str(file_name))
-        root_node = PythonCstNode(translation_unit.atu, translation_unit, None)
+        root_node = PythonCstNode(translation_unit.atu, translation_unit)
         return root_node
 
     @property

@@ -6,6 +6,7 @@ from more_itertools.more import first
 
 from renaissance import syntax_tree
 from renaissance.impl.python import PythonASTNode
+from renaissance.impl.python.factory import PythonFactory
 from renaissance.impl.python.rst_node import PythonASTReference
 from renaissance.syntax_tree import ASTNode, ASTFinder
 
@@ -69,11 +70,11 @@ class TestPythonNode:
     @pytest.fixture(autouse=True)
     def setup(self):
         """Setup that runs before each test method"""
-        self.factory = syntax_tree.ASTFactory(PythonASTNode, [])
+        self.factory = PythonFactory(PythonASTNode)
 
     def test_def_call_references(self):
         # Function f() refers to Function a()
-        ast = PythonASTNode.load_from_text(content2, "content2.py")
+        ast = PythonASTNode.load_from_text(content2)
         with tempfile.TemporaryDirectory(delete=True) as temp_dir:
             syntax_tree.ASTShower.store_node(temp_dir + "/py0.txt", ast)
 
@@ -83,19 +84,19 @@ class TestPythonNode:
         refs = func_def.references
         assert_that(refs, has_length(2))
         ref = refs[0]
-        ref_node = ref.node_id
+        ref_node = ast.translation_unit._nodes[ref.node_id]
         assert_that(syntax_tree.ASTFinder.matches_kind(ref_node, "FunctionDef"), is_(True))
         assert_that(ref_node.name.lower(), is_("a"))
         referenced_by = ref_node.referenced_by
         assert_that(referenced_by, has_length(1))  # Function a referenced by function f and var x.
-        assert_that(func_def in [r.node_id for r in referenced_by])
+        assert_that(func_def in [ast.translation_unit._nodes[r.node_id] for r in referenced_by])
         ref1 = refs[1]
-        ref_node1 = ref1.node_id
+        ref_node1 = ast.translation_unit._nodes[ref1.node_id]
         assert_that(syntax_tree.ASTFinder.matches_kind(ref_node, "FunctionDef"), is_(True))
         assert_that(ref_node1.name.lower(), is_("b"))
         referenced_by1 = ref_node1.referenced_by
         assert_that(referenced_by1, has_length(1))  # Function b referenced by function f.
-        assert_that(func_def in [r.node_id for r in referenced_by])
+        assert_that(func_def in [ast.translation_unit._nodes[r.node_id] for r in referenced_by])
 
     def test_type_reference(self):
         # Name z refers to Name a
@@ -108,12 +109,12 @@ class TestPythonNode:
         refs = type_node.references
         assert_that(refs, has_length(1))
         ref = refs[0]
-        ref_node = ref.node_id
+        ref_node = ast.translation_unit._nodes[ref.node_id]
         assert_that(syntax_tree.ASTFinder.matches_kind(ref_node, "Name"), is_(True))
         assert_that(ref_node.name.lower(), is_("a"))
         referenced_by = ref_node.referenced_by
         assert_that(referenced_by, has_length(greater_than(0)))
-        assert_that(type_node in [r.node_id for r in referenced_by])
+        assert_that(type_node in [ast.translation_unit._nodes[r.node_id] for r in referenced_by])
 
     def test_class_reference(self):
         # Class A refers to Class B
@@ -128,11 +129,11 @@ class TestPythonNode:
         refs = class_node.references
         assert_that(refs, has_length(1))
         ref = refs[0]
-        ref_node = ref.node_id
+        ref_node = ast.translation_unit._nodes[ref.node_id]
         assert_that(syntax_tree.ASTFinder.matches_kind(ref_node, "ClassDef"), is_(True))
         referenced_by = ref_node.referenced_by
         assert_that(referenced_by, has_length(2))
-        assert_that(class_node in [r.node_id for r in referenced_by])
+        assert_that(class_node in [ast.translation_unit._nodes[r.node_id] for r in referenced_by])
 
     def test_param_reference(self):
         # param obj refers to its type, if type definition in the same file, refers to def, otherwise refers to Name
@@ -147,11 +148,11 @@ class TestPythonNode:
         refs = param_node.references
         assert_that(refs, has_length(1))
         ref = refs[0]
-        ref_node = ref.node_id
+        ref_node = ast.translation_unit._nodes[ref.node_id]
         assert_that(syntax_tree.ASTFinder.matches_kind(ref_node, "ClassDef"), is_(True))
         referenced_by = ref_node.referenced_by
         assert_that(referenced_by, has_length(2))
-        assert_that(param_node in [r.node_id for r in referenced_by])
+        assert_that(param_node in [ast.translation_unit._nodes[r.node_id] for r in referenced_by])
 
     def test_function_reference(self):
         ast = self.factory.create_from_text(content, "content.py")
@@ -162,19 +163,16 @@ class TestPythonNode:
         ast.translation_unit.lazy_create_refers(ast)
         refs = call_node.references
         ref = refs[0]
-        ref_node = ref.node_id
+        ref_node = ast.translation_unit._nodes[ref.node_id]
+
         assert_that(syntax_tree.ASTFinder.matches_kind(ref_node, "FunctionDef"), is_(True))
         referenced_by = ref_node.referenced_by
         assert_that(referenced_by, has_length(1))
-        assert_that(call_node in [r.node_id for r in referenced_by])
+        assert_that(call_node in [ast.translation_unit._nodes[r.node_id] for r in referenced_by])
+
     def test_ref_node_to_str(self):
         it = PythonASTReference("it is ", "kind", {})
         assert_that(it, has_string("it is :kind"))
-    
-    
-    
-
-
 
 
 if __name__ == "__main__":

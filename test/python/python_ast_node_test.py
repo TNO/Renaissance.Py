@@ -14,8 +14,8 @@ from hamcrest import (
 
 import targets
 from renaissance.impl.python.rst_node import PythonASTNode
-from renaissance.impl.python.factory import PythonPatternFactory
-from renaissance.syntax_tree import ASTFactory, ASTShower
+from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
+from renaissance.syntax_tree import ASTShower
 from renaissance.utils.node_util import traverse
 from utils_for_tests import show_node
 
@@ -23,7 +23,7 @@ from utils_for_tests import show_node
 class TestPythonASTNode:
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.factory = ASTFactory(PythonASTNode, [])
+        self.factory = PythonFactory(PythonASTNode)
         self.atu = self.factory.create_from_text("a = 0", "all.py")
         # create a pattern factory atu is passed to the pattern factory for use of all # includes, #defines and declarations
         self.pattern_factory = PythonPatternFactory(self.factory)
@@ -254,7 +254,6 @@ def outer():
         assert_that(it.children[0].kind, is_(kind))
 
     def test_show_call(self):
-        factory = ASTFactory(PythonASTNode, [])
         atu = factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "apple.py")
         second_stmt = atu.children[1]
         assert_that(second_stmt.offset, is_(7))
@@ -283,11 +282,7 @@ class Parent:
         l(a88)
     def next_me():
         pass
-    """),
-            "nav.py",
-            [],
-            Path("."),
-        )
+    """)    )
         #          module  class     body        fun memem
         me = src.children[-1].children[2].children[1]
         assert_that(me.name, is_("mememe"))
@@ -296,13 +291,13 @@ class Parent:
         assert_that(me.parent.parent.name, is_("Parent"))
         assert_that(me.children[1].children, has_length(4))
     def test_load_file_with_ignored_types(self):
-        atu = PythonASTNode.load_from_text("x = 1 # type: ignore", "bogus.py", {}, Path(targets.__file__))
+        atu = PythonASTNode.load_from_text("x = 1 # type: ignore", "bogus.py")
         assert_that(atu.translation_unit.atu.type_ignores, has_length(1))
     
     
     
     def test_load_file(self):
-        atu = PythonASTNode.load(Path(targets.__file__).parent / "demo.py", {}, None)
+        atu = PythonASTNode.load(Path(targets.__file__).parent / "demo.py")
         assert_that(atu.translation_unit.atu.type_ignores, is_(empty()))
     
     
@@ -323,7 +318,7 @@ class Parent:
     
         self.assert_matches( expected_dicts_per_match,matches)
         """)
-        it = PythonASTNode.load_from_text(ann_fun, "fun.py", [], None).body[-1]
+        it = PythonASTNode.load_from_text(ann_fun).body[-1]
         assert_that(it.offset, is_(1))
         assert_that(it.signature, contains_string("@parameterized.expand"))
     
@@ -340,7 +335,7 @@ class Parent:
         
             self.assert_matches( expected_dicts_per_match,matches)
             """)
-        it = PythonASTNode.load_from_text(ann_fun, "fun.py", [], None).body[-1]
+        it = PythonASTNode.load_from_text(ann_fun).body[-1]
 
         assert_that('\n'+it.signature+'\n', is_(ann_fun))
 

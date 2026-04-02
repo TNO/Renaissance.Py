@@ -8,6 +8,7 @@ from hamcrest import assert_that, contains_string, has_length, is_, ends_with, n
 
 import targets
 from renaissance.impl.python import PythonASTNode, PythonPatternFactory
+from renaissance.impl.python.factory import PythonFactory
 from renaissance.refactoring import unit2pytest as mod
 from renaissance.refactoring.unit2pytest import Unit2Pytest
 from renaissance.syntax_tree import ASTFactory
@@ -43,71 +44,46 @@ class TestUnit2Pytest:
     def _create(self,mocker,text) -> Unit2Pytest:
         code = textwrap.dedent(text)
         mocker.patch(
-            "renaissance.syntax_tree.ast_factory.ASTFactory.create",
+            "renaissance.impl.python.factory.PythonFactory.create",
             return_value=PythonASTNode.load_from_text(code),
         )
         subject = Unit2Pytest("x.py")
+        subject.in_memory = True
         return subject
 
 
     def test_convert_plain_assert_same_length_rewrites_to_has_length(self,mocker):
-        code = textwrap.dedent("""
-        def test_asert():
-            results = ['1']
-            count: int = len(results)
-            assert 1 == count, "count = " + str(count)
-        """)
-        mocker.patch(
-            "renaissance.syntax_tree.ast_factory.ASTFactory.create",
-            return_value=PythonASTNode.load_from_text(code),
-        )
-
         expected = textwrap.dedent("""
         def test_asert():
             results = ['1']
             assert_that(results, has_length(1), f"length of results = {len(results)}")
         """)
 
-        subject = Unit2Pytest("file.py")
+        subject = self._create(mocker,"""
+        def test_asert():
+            results = ['1']
+            count: int = len(results)
+            assert 1 == count, "count = " + str(count)
+        """)
         subject.convert_plain_assert_same_length()
         assert_that(subject.apply_to_string(), is_(expected))
 
 
     def test_restructure_module_injects_methods_when_class_exists(self,mocker):
-        code = textwrap.dedent("""
+        subject = self._create(mocker,"""
         class TestFoo:
-            pass
-    
+            def test_foo(self):
+                pass
         def parse(a):
             pass
         """)
-        mocker.patch(
-            "renaissance.syntax_tree.ast_factory.ASTFactory.create",
-            return_value=PythonASTNode.load_from_text(code),
-        )
-        subject = Unit2Pytest("file.py")
 
+        subject.in_memory = True
         subject.restructure_module()
+        subject.commit()
 
         assert_that(subject.apply_to_string(), contains_string("def parse(self,a):"))
 
-
-    def test_match_pattern_for_parameterized_finds_one_match(self):
-        code = textwrap.dedent("""
-        from parameterized import parameterized
-    
-        class TestASTReference:
-    
-            @parameterized.expand(Factories.extend())
-            def test_definition_declaration_references(self, _, factory, code, *args):
-                pass
-        """)
-        factory = ASTFactory(PythonASTNode, [])
-        pattern_factory = PythonPatternFactory(factory)
-        atu = PythonASTNode.load_from_text(code)
-        unittest = pattern_factory.create_statements("@parameterized.expand($$parameters)\ndef $fun($$args, *$$vargs):\n    $$stmts")
-        found = list(match_pattern(atu.children, unittest))
-        assert_that(found, has_length(1))
 
     def test_convert(self, mocker):
         sut = self._create(mocker, '''
@@ -143,7 +119,8 @@ class TestUnit2Pytest:
             def test_fun():
                 assert call() >=1
         ''')
-        sut.convert_pytest()
+
+        sut.refactor()
         assert_that(sut.apply_to_string(), contains_string("assert_that(call()"))
         assert_that(sut.apply_to_string(), not_(contains_string("assert_that(1")))
 

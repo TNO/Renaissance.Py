@@ -7,7 +7,7 @@ from typing import List
 from renaissance.impl.tree_sitter.adapter import TreeSitterAdapter
 
 from renaissance.impl.tree_sitter.pattern_factory import TsPatternFactory
-from renaissance.syntax_tree import MatchFinder, PatternMatch
+from renaissance.syntax_tree import PatternMatch
 from renaissance.syntax_tree.match_finder import match_pattern
 
 GRAPHML_DIR = "out_graphml"

@@ -2,6 +2,7 @@ import re
 from datetime import datetime
 
 from renaissance.impl.python import PythonASTNode, PythonPatternFactory
+from renaissance.impl.python.factory import PythonFactory
 from renaissance.syntax_tree import ASTProcessor, MatchFinder, ASTRewriter, ASTFactory
 from renaissance.syntax_tree.match_finder import match_pattern
 from renaissance.utils.refactor_utils import adjust_indent, get_indentation_level
@@ -542,7 +543,7 @@ def raw_text(nodes, snippets) -> str:
 def _get_factory() -> ASTFactory:
     global _factory
     if _factory is None:
-        _factory = ASTFactory(PythonASTNode, [])
+        _factory = PythonFactory(PythonASTNode)
     return _factory
 
 

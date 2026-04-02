@@ -21,10 +21,6 @@ class TsPatternFactory:
         else:
             return self.adapter.to_lst(text).root
 
-    def create_statement(self, text: str) -> LSTNode:
-        text = replace_dollar(text)
-        return self.create(text).root
-
     def create_statements(self, text: str) -> Sequence[LSTNode]:
         return self.create(text).children
 

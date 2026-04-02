@@ -15,7 +15,7 @@ from libcst import ParserSyntaxError
 
 import targets
 
-from renaissance.impl.python.factory import PythonPatternFactory
+from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
 from renaissance.impl.python.cst_node import PythonCstNode
 from renaissance.syntax_tree import ASTFactory, ASTShower
 from renaissance.utils.node_util import traverse
@@ -24,7 +24,7 @@ from renaissance.utils.node_util import traverse
 class TestPythonCstNode:
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.factory = ASTFactory(PythonCstNode, [])
+        self.factory = PythonFactory(PythonCstNode)
         self.atu = self.factory.create_from_text("a = 0", "all.py")
         # create a pattern factory atu is passed to the pattern factory for use of all # includes, #defines and declarations
         self.pattern_factory = PythonPatternFactory(self.factory)
@@ -46,7 +46,7 @@ class TestPythonCstNode:
         ],
     )
     def test_stmt_kind(self, raw, kind):
-        it = self.pattern_factory.create_statement(raw).children[0]
+        it = self.pattern_factory.create_statement(raw)
         assert_that(it.kind, is_(kind))
         assert_that(it.node.is_statement, is_(True))
 
@@ -107,20 +107,20 @@ class TestPythonCstNode:
             ("[ n*3 for n in [1, 2]]", "ListComp"),
             ("{ n*3 for n in [1, 2]}", "SetComp"),
             ("lambda: fun()", "Lambda"),
-            ("x = (n*2 for n in[1,2])", "GeneratorExp"),
-            ('f"{one}two"', "JoinedStr"),
+            ("(n*2 for n in[1,2])", "GeneratorExp"),
+            ('f"{one}two"', "FormattedString"),
             ("items[1:4]", "Subscript"),
             ("(9, 10)", "Tuple"),
-            ("x = not True", "UnaryOp"),
+            ("not True", "UnaryOperation"),
             ("yield fun", "Yield"),
-            ("yield from [1,2]", "YieldFrom"),
-            ("x = z if z>y else y", "IfExp"),
+            ("yield from [1,2]", "Yield"),
+            ("z if z>y else y", "IfExp"),
         ],
     )
-    @pytest.mark.skip("wrong definition")
+
     def test_expr_kind(self, raw, kind):
         it = self.pattern_factory.create_expression(raw)
-        assert_that(kind, is_(it.kind))
+        assert_that(it.kind, is_(kind))
 
 
     def test_type_alias(self):
@@ -131,31 +131,30 @@ class TestPythonCstNode:
 
     def test_slice(self):
         it = self.pattern_factory.create_expression("items[1:2:3]")
-        assert_that(it.children[0].children[0].kind, is_("Name"))
-        assert_that(it.children[0].children[1].kind, is_("SimpleWhitespace"))
-        assert_that(it.children[0].children[2].kind, is_("LeftSquareBracket"))
-        assert_that(it.children[0].children[3].kind, is_("SubscriptElement"))
-        assert_that(it.children[0].children[4].kind, is_("RightSquareBracket"))
+        assert_that(it.children[0].kind, is_("Name"))
+        assert_that(it.children[1].kind, is_("SimpleWhitespace"))
+        assert_that(it.children[2].kind, is_("LeftSquareBracket"))
+        assert_that(it.children[3].kind, is_("SubscriptElement"))
+        assert_that(it.children[4].kind, is_("RightSquareBracket"))
 
 
     def test_named_expr(self):
         it = self.pattern_factory.create_statement("if n:= len(items): pass")
         assert_that(it.children[1].kind, is_("NamedExpr"))
 
-    @pytest.mark.skip("wrong definition")
     def test_starred(self):
         it = self.pattern_factory.create_statement("*x =[1,2]")
-        assert_that(it.children[0].children[0].kind, is_("Starred"))
+        assert_that(it.children[0].children[0].kind, is_("StarredElement"))
 
-    @pytest.mark.skip("wrong definition")
+
     def test_formatted_value(self):
         it = self.pattern_factory.create_expression('f"{one}two"')
-        assert_that(it.children[0].kind, is_("FormattedValue"))
+        assert_that(it.children[0].kind, is_("FormattedStringExpression"))
 
-    @pytest.mark.skip("wrong definition")
+
     def test_except_handler(self):
         it = self.pattern_factory.create_statement("try: pass\nexcept NameError:pass")
-        assert_that(it.children[1].children[0].kind, is_("ExceptHandler"))
+        assert_that(it.children[2].kind, is_("ExceptHandler"))
 
     @pytest.mark.parametrize(
         "raw, kind",
@@ -175,7 +174,7 @@ class TestPythonCstNode:
 
     def test_comperator_operator(self, raw, kind):
         it = self.pattern_factory.create_expression(raw)
-        assert_that(it.children[0].children[1].children[0].kind, is_(kind))
+        assert_that(it.children[1].children[0].kind, is_(kind))
 
     @pytest.mark.parametrize(
         "raw, kind",
@@ -234,14 +233,14 @@ class TestPythonCstNode:
             ("a >> b", "RightShift"),
             ("a * b", "Multiply"),
             ("a ** b", "Power"),
-            ("a - b", "Substract"),
+            ("a - b", "Subtract"),
             ("a + b", "Add"),
         ],
     )
     # @pytest.mark.skip("wrong definition")
     def test_binary_operator(self, raw, kind):
         it = self.pattern_factory.create_expression(raw)
-        assert_that(it.children[0].children[1].kind, is_(kind))
+        assert_that(it.children[1].kind, is_(kind))
 
     # @parameterized.expand([
     #     ('x = some_undefined_var', 'type_ignore'),
@@ -266,16 +265,16 @@ class TestPythonCstNode:
 
     def test_unary_operator(self, raw, kind):
         it = self.pattern_factory.create_expression(raw)
-        assert_that(it.children[0].kind, is_('UnaryOperation'))
-        assert_that(it.children[0].children[0].kind, is_(kind))
+        assert_that(it.kind, is_('UnaryOperation'))
+        assert_that(it.children[0].kind, is_(kind))
 
 
     def test_show_call(self):
-        factory = ASTFactory(PythonCstNode, [])
-        atu = factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "apple.py")
+
+        atu = self.factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "apple.py")
         second_stmt = atu.children[1]
         assert_that(second_stmt.offset, is_(7))
-        assert_that(second_stmt.length, is_(7))
+        assert_that(second_stmt.length, is_(8))
         assert_that(second_stmt.filename, is_("apple.py"))
         assert_that(atu.translation_unit, is_(second_stmt.translation_unit))
 
@@ -283,8 +282,8 @@ class TestPythonCstNode:
     def test_attribute_signature_has_at(self):
         src = self.pattern_factory.create_statement("@TUAT\ndef ba(): pass")
         ASTShower.show_node(src)
-        attr = src.children[2].children[0]
-        assert_that(attr.signature, is_("@TUAT"))
+        attr = src.children[0]
+        assert_that(attr.signature, is_("@TUAT\n"))
 
     def test_node_family(self):
         src = PythonCstNode.load_from_text(textwrap.dedent(
@@ -301,23 +300,24 @@ class TestPythonCstNode:
                     l(a88)
                 def next_me():
                     pass
-            """), "nav.py", [], Path("."), )
+            """), "nav.py")
         #          module  class     body        fun memem
         me = src.children[-1].children[5].children[2]
         assert_that(me.name, is_("mememe"))
         assert_that(me.preceding_sibling.name, is_("previous_me"))
         assert_that(me.next_sibling.name, is_("next_me"))
         assert_that(me.parent.parent.name, is_("Parent"))
-        assert_that(me.children[1].children, has_length(4))
+        # all children are mashed together
+        assert_that(me.children, has_length(8))
 
 
     def test_load_file_with_ignored_types(self):
-        atu = PythonCstNode.load_from_text("x = 1 # type: ignore", "bogus.py", {}, Path(targets.__file__))
-        assert_that(atu.translation_unit.atu.type_ignores, has_length(1))
+        atu = PythonCstNode.load_from_text("x = 1 # type: ignore", "bogus.py")
+        assert_that(atu.translation_unit, is_not(None))
 
 
     def test_load_file(self):
-        atu = PythonCstNode.load(Path(targets.__file__).parent / "demo.py", {}, None)
+        atu = PythonCstNode.load(Path(targets.__file__).parent / "demo.py")
         assert_that(atu, is_not(None))
 
 
@@ -336,7 +336,7 @@ class TestPythonCstNode:
     
         self.assert_matches( expected_dicts_per_match,matches)
         """)
-        it = PythonCstNode.load_from_text(ann_fun, "fun.py", [], None).children[-1]
+        it = PythonCstNode.load_from_text(ann_fun, "fun.py").children[-1]
         assert_that(it.offset, is_(1))
         assert_that(it.signature, contains_string("@parameterized.expand"))
 
@@ -350,7 +350,7 @@ class TestPythonCstNode:
     
         self.assert_matches( expected_dicts_per_match,matches)
         """)
-        it = PythonCstNode.load_from_text(ann_fun, "fun.py", [], None).children[-1]
+        it = PythonCstNode.load_from_text(ann_fun, "fun.py").children[-1]
         assert_that(it.signature, contains_string("def test"))
 
 

@@ -3,9 +3,10 @@ from pathlib import Path
 from typing import Any, Sequence, Self, Callable
 
 from ast_comments import *
+
+from renaissance.impl.python.util import convert
 from renaissance.syntax_tree.match_finder import find_in_list
 from renaissance.utils.node_util import preceding_sibling, next_sibling
-from renaissance.utils.text_utils import TextUtils
 
 OPERATOR_MAP = {
     "AnnAssign": "=",
@@ -79,11 +80,6 @@ class PythonTranslationUnit:
         node.root.process(lambda n: self.create_references(n))
         self.references_initialized = True
 
-    def convert(self, line_nr, col):
-        if line_nr > len(self.lines):
-            return 0
-        return sum(len(self.lines[i]) + 1 for i in range(line_nr - 1)) + col
-        # add node to the node list for references
 
     def add(self, node):
         match node.kind:
@@ -180,11 +176,11 @@ class PythonTranslationUnit:
 
     def get_referenced_by(self, node_id):
         refs = self._referenced_by.get(node_id, [])
-        return [PythonASTReference(self._nodes[ref.node_id], ref.ref_kind, ref.properties) for ref in refs]
+        return [PythonASTReference(self._nodes[ref.node_id].name, ref.ref_kind, ref.properties) for ref in refs]
 
     def get_references(self, node_id):
         refs = self._references.get(node_id, [])
-        return [PythonASTReference(self._nodes[ref.node_id], ref.ref_kind, ref.properties) for ref in refs]
+        return [PythonASTReference(self._nodes[ref.node_id].name, ref.ref_kind, ref.properties) for ref in refs]
 
 
 class ImplicitNode(ast.Name):
@@ -232,8 +228,8 @@ class PythonASTNode:
                 child = getattr(node, name)
                 match child:
                     case list():  # Matches any list
-                        if(isinstance(node, Global) and name =="names"):
-                            if(len(child)==1):
+                        if isinstance(node, Global) and name == "names":
+                            if len(child)==1:
                                 self.name = child[0]
                             if name == "body":
                                 self.body = self.children
@@ -314,13 +310,13 @@ class PythonASTNode:
     def derive_position(self, node: ast.AST, translation_unit: PythonTranslationUnit, parent):
         if node._attributes:
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)) and node.decorator_list:
-                self.offset = self.translation_unit.convert(node.decorator_list[0].lineno, node.decorator_list[0].col_offset) - 1
+                self.offset = convert(self.translation_unit.lines, node.decorator_list[0].lineno, node.decorator_list[0].col_offset) - 1
             elif parent.name == "decorator_list":
                 # also include the @ in the decorator
-                self.offset = self.translation_unit.convert(node.lineno, node.col_offset) - 1  # type: ignore[attr-defined]
+                self.offset = convert(self.translation_unit.lines,node.lineno, node.col_offset) - 1  # type: ignore[attr-defined]
             else:
-                self.offset = self.translation_unit.convert(node.lineno, node.col_offset)  # type: ignore[attr-defined]
-            self.length = self.translation_unit.convert(node.end_lineno, node.end_col_offset) - self.offset  # type: ignore[attr-defined]
+                self.offset = convert(self.translation_unit.lines,node.lineno, node.col_offset)  # type: ignore[attr-defined]
+            self.length = convert(self.translation_unit.lines,node.end_lineno, node.end_col_offset) - self.offset  # type: ignore[attr-defined]
         elif isinstance(node, ast.Module) and translation_unit:
             self.offset = 0
             self.length = len(translation_unit.content)
@@ -329,24 +325,18 @@ class PythonASTNode:
             self.length = 0
 
     @staticmethod
-    def load(file_path: Path,
-             extra_args:list[str] = None,
-            working_dir:str = None
-    ) -> "PythonASTNode":
+    def load(file_path: Path) -> "PythonASTNode":
         with open(file_path, "r") as file:
             content = file.read()
-            return PythonASTNode.load_from_text(content, str(file_path), extra_args, working_dir)
+            return PythonASTNode.load_from_text(content, str(file_path))
 
     @staticmethod
     def load_from_text(
         text: str,
-        file_name: str = "test.py",
-        extra_args:list[str] = None,
-        working_dir:str = None
-    ) -> "PythonASTNode":
+        file_name: str = "test.py") -> "PythonASTNode":
         translation_unit = PythonTranslationUnit(text, file_name=str(file_name))
         translation_unit.check_diagnostics()
-        root_node = PythonASTNode(translation_unit.atu, translation_unit, None)
+        root_node = PythonASTNode(translation_unit.atu, translation_unit)
         return root_node
 
     def _derive_name(self):
@@ -425,7 +415,7 @@ class PythonASTNode:
                 ),
             )
             and hasattr(self.node, "value")
-            and self.node.value is not None
+            and getattr(self.node, "value") is not None
         ):
             return PythonASTNode(self.node.value, self.translation_unit, self)
         elif isinstance(self.node, ast.Expr) and hasattr(self.node, "value"):

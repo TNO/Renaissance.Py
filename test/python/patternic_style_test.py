@@ -5,11 +5,16 @@ from hamcrest import assert_that, is_, has_length, is_in, is_not, empty
 
 from renaissance.impl import MATCH_ONE, MATCH_ALL
 from renaissance.impl.python import PythonASTNode, PythonPatternFactory
+from renaissance.impl.python.factory import PythonFactory
 from renaissance.syntax_tree import ASTFactory
 from renaissance.syntax_tree.match_finder import is_match
 
 
 class TestPythonicStyle:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.factory = PythonFactory(PythonASTNode)
+        self.pattern_factory = PythonPatternFactory(self.factory)
     @pytest.mark.parametrize(
         "raw, kind, op, name, expr, body_length",
         [
@@ -31,7 +36,7 @@ class TestPythonicStyle:
         # assert_that(it.expr.name, is_(expr))
         assert_that(it.body, has_length(body_length))
 
-    pattern_factory = PythonPatternFactory(ASTFactory(PythonASTNode))
+    
 
     @pytest.mark.parametrize(
         "raw, kind, op, name, body_length",
@@ -117,7 +122,7 @@ class TestPythonicStyle:
         assert_that(it.value, is_("value"))
 
     def test_assign_node(self):
-        pattern_factory = PythonPatternFactory(ASTFactory(PythonASTNode))
+        
 
         it = PythonASTNode.load_from_text('name = "value"').body[-1]
 
@@ -144,61 +149,61 @@ class TestPythonicStyle:
         assert_that(MATCH_ONE, is_(it.kind))
 
     def test_kind_is_match_all(self):
-        pattern_factory = PythonPatternFactory(ASTFactory(PythonASTNode))
-        simple = pattern_factory.create_statement("$$pa")
+        pattern_factory = PythonPatternFactory(PythonFactory(PythonASTNode))
+        simple = self.pattern_factory.create_statement("$$pa")
         assert_that(MATCH_ALL, is_(simple.kind))
 
 
     def test_kind_is_match_one(self):
-        pattern_factory = PythonPatternFactory(ASTFactory(PythonASTNode))
-        simple = pattern_factory.create_statement("$pa")
+        
+        simple = self.pattern_factory.create_statement("$pa")
         assert_that(MATCH_ONE, is_(simple.kind))
 
     def test_kind_is_match_all(self):
-        pattern_factory = PythonPatternFactory(ASTFactory(PythonASTNode))
-        simple = pattern_factory.create_statement("$$pa")
+        
+        simple = self.pattern_factory.create_statement("$$pa")
         assert_that(MATCH_ALL, is_(simple.kind))
 
 
     def test_match_one_is_not_equal(self):
-        factory = ASTFactory(PythonASTNode)
-        atu = factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "test.py")
-        pattern_factory = PythonPatternFactory(factory)
-        match_one = pattern_factory.create("$pa")
+        
+        atu = self.factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "test.py")
+        pattern_factory = PythonPatternFactory(self.factory)
+        match_one = self.pattern_factory.create("$pa")
         assert_that(atu.children[0], is_not(match_one))
 
     #  TODO contain is not dependent on pattern
     def test_is_match_all_stmt(self):
-        factory = ASTFactory(PythonASTNode)
-        atu = factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "test.py")
-        pattern_factory = PythonPatternFactory(ASTFactory(PythonASTNode))
-        match_all = pattern_factory.create("$$pa")
+        
+        atu = self.factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "test.py")
+        
+        match_all = self.pattern_factory.create("$$pa")
         assert_that(match_all.node, is_in(atu))
 
     def test_is_exact_match(self):
-        factory = ASTFactory(PythonASTNode)
-        atu = factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "test.py")
-        pattern_factory = PythonPatternFactory(ASTFactory(PythonASTNode))
+        
+        atu = self.factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "test.py")
+        
 
         stmt = PythonASTNode.load_from_text("ba(55)")[0]
 
         assert_that(atu.children[0], is_(stmt))
 
     def test_match_exact_pattern(self):
-        factory = ASTFactory(PythonASTNode)
-        atu = factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "test.py")
-        pattern_factory = PythonPatternFactory(ASTFactory(PythonASTNode))
-        stmt = pattern_factory.create_statement("ba(55)").node
+        
+        atu = self.factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "test.py")
+        
+        stmt = self.pattern_factory.create_statement("ba(55)").node
 
         result = [node for node in atu if node == stmt]
 
         assert_that(result, has_length(1))
 
     def test_match_single_pattern(self):
-        factory = ASTFactory(PythonASTNode)
-        atu = factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "test.py")
-        pattern_factory = PythonPatternFactory(ASTFactory(PythonASTNode))
-        match_any = pattern_factory.create_statement("$stmt")
+        
+        atu = self.factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "test.py")
+        
+        match_any = self.pattern_factory.create_statement("$stmt")
 
         result = [node for node in atu if node == match_any]
         assert_that(result, is_(empty()))
@@ -207,22 +212,22 @@ class TestPythonicStyle:
         assert_that(result, has_length(4))
 
     def test_match_single_call_pattern(self):
-        factory = ASTFactory(PythonASTNode)
-        atu = factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "test.py")
-        pattern_factory = PythonPatternFactory(ASTFactory(PythonASTNode))
+        
+        atu = self.factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "test.py")
+        
 
-        match_call = pattern_factory.create("$call($arg)")
+        match_call = self.pattern_factory.create("$call($arg)")
 
         result = [node for node in atu if node == match_call]
 
         assert_that(result, has_length(0))
 
     def test_find_all_using_generic_matcher(self):
-        factory = ASTFactory(PythonASTNode)
-        atu = factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "test.py")
-        pattern_factory = PythonPatternFactory(ASTFactory(PythonASTNode))
+        
+        atu = self.factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "test.py")
+        
 
-        simple = pattern_factory.create_statement("ca(555)").node
+        simple = self.pattern_factory.create_statement("ca(555)").node
 
         assert_that(atu[0], is_not(simple))
         assert_that(atu[1], is_(simple))
@@ -233,8 +238,8 @@ class TestPythonicStyle:
         assert_that(result, has_length(1))
 
     def test_slice_call(self):
-        factory = ASTFactory(PythonASTNode)
-        atu = factory.create_from_text(
+        
+        atu = self.factory.create_from_text(
             "ba(55)\nna(55)\nna(55)\npa(55)\npa(55)\nba(55)\nna(55)\nna(55)\nna=55",
             "test.py",
         )
@@ -242,8 +247,8 @@ class TestPythonicStyle:
         assert_that(node_slice, has_length(3))
 
     def test_property_kind_call(self):
-        factory = ASTFactory(PythonASTNode)
-        atu = factory.create_from_text(
+        
+        atu = self.factory.create_from_text(
             "ba(55)\nna(55)\nna(55)\npa(55)\npa(55)\nba(55)\nna(55)\nna(55)\nna=55",
             "test.py",
         )
@@ -251,8 +256,8 @@ class TestPythonicStyle:
         assert_that(kind, is_("Module"))
 
     def test_property_name_call(self):
-        factory = ASTFactory(PythonASTNode)
-        atu = factory.create_from_text(
+        
+        atu = self.factory.create_from_text(
             "ba(55)\nna(55)\nna(55)\npa(55)\npa(55)\nba(55)\nna(55)\nna(55)\nna=55",
             "test.py",
         )
