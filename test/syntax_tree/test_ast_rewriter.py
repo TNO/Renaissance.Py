@@ -1009,8 +1009,10 @@ class TestAroundComposition:
 
 class TestContainedOperations:
     """
-    Test case to capture the requirements for (completely) contained operation:
+    Test case to capture the requirements for a (completely) contained operation:
     it is ignore.
+
+    See https://github.com/TNO/Renaissance-Experiments/wiki/Transform-%E2%80%90-AST%E2%80%90aware-changes#scenario-contained-changes
     """
 
     def setup(self) -> tuple[ASTRewriter, PatternMatch]:
@@ -1075,12 +1077,58 @@ class TestContainedOperations:
         assert "x = product" == rewriter.apply_to_string(), "Unexpected replacement"
 
 
+class TestOverlappingOperations:
+    """
+    Test case to capture the requirements for partly overlapping operations:
+    an exception is raised.
+
+    See https://github.com/TNO/Renaissance-Experiments/wiki/Transform-%E2%80%90-AST%E2%80%90aware-changes#scenario-overlapping-changes
+    """
+
+    def setup(self) -> tuple[ASTRewriter, PatternMatch]:
+        CODE: str = """
+def f(a,b,c):
+    pass
+"""
+
+        PATTERN: str = """
+def f($a,$b,$c):
+    pass
+"""
+
+        factory = ASTFactory(PythonASTNode, [])
+        atu = factory.create_from_text(CODE, "temp.py")
+        pattern = PythonPatternFactory(factory).create(PATTERN)
+        matches = list(find_all([atu], [pattern]))  # Use list, since we want to access its content multiple times
+        assert matches, "A match expected"
+        nrof_matches = len(matches)
+        assert 1 == nrof_matches, f"One match expected, yet got {nrof_matches}"
+        match = matches[0]
+
+        rewriter = ASTRewriter(atu)
+        return rewriter, match
+
+    def test_overlapping_replaces(self):
+        rewriter, match = self.setup()
+        placeholder_a = match.expansions["$a"]
+        placeholder_b = match.expansions["$b"]
+        placeholder_c = match.expansions["$c"]
+
+        rewriter.replace("any", [placeholder_a, placeholder_b])
+        rewriter.replace("ANY", [placeholder_b, placeholder_c])
+
+        with pytest.raises(Exception):
+            rewriter.apply_to_string()
+
+
 class TestSyntaxAwareNestedComposition:
     """
     Test Class for Syntax Aware Nested / Hierarchical Compositions
     In Python
     * Prepend before parent and (first) child
+      See https://github.com/TNO/Renaissance-Experiments/wiki/Transform-%E2%80%90-AST%E2%80%90aware-changes#scenario-combination-of-multiple-prepends
     * Append after parent and (last) child
+      See https://github.com/TNO/Renaissance-Experiments/wiki/Transform-%E2%80%90-AST%E2%80%90aware-changes#scenario-combination-of-multiple-appends
     """
 
     def setup(self) -> tuple[ASTRewriter, PatternMatch]:
@@ -1128,6 +1176,7 @@ class TestSyntaxAwareAdjacentComposition:
     Test Class for Syntax Aware Adjacent Compositions
     In C/C++
     * Consecutive / contiguous nodes - append after first and prepend before second
+      See https://github.com/TNO/Renaissance-Experiments/wiki/Transform-%E2%80%90-AST%E2%80%90aware-changes#scenario-combination-of-append-and-prepend-on-consecutive-nodes
 
     Note in C/C++ `;` is a terminator that is a part of a statement
          in Python `;` is a separator that can be used to put multiple statements on the same line

@@ -25,7 +25,7 @@ class _RewriteActionType(Enum):
     REPLACE = 1
     INSERT_BEFORE = 2
     INSERT_AFTER = 3
-    REMOVE = 4
+    REMOVE = 4              # TODO: Why needed? Why isn't a REMOVE Action Type just a REPLACE Action Type (with an empty string)?
 
 
 DEFAULT_INDENT = 4
