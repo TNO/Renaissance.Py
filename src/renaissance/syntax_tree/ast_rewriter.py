@@ -143,7 +143,8 @@ class _RewriteAction:
             return target.nodes
         assert isinstance(target, Sequence), "type of target violates its type requirements " + type(target).__name__
         if len(target) > 0:
-            if isinstance(target[0], Rewritable):
+            if isinstance(target[0], Rewritable):   # TODO Why is part missing That is present on line 140, i.e., 
+                                                    # or type(target).__name__ == "PythonASTNode"
                 return [n for n in target if isinstance(n, Rewritable)]
             last = target[-1]
             assert isinstance(last, PatternMatch), "type within Sequence violates its requirements " + type(last).__name__
