@@ -78,27 +78,7 @@ class PythonCstNode:
         else:
             return ""
         self.name = "" #self._derive_name()
-    def __eq__(self, other):
-        return (
-            isinstance(other, type(self))
-            and self.kind == other.kind
-            and self.match_props(other.properties)
-            and self.match_children(other.children)
-        )
 
-    def __contains__(self, item):
-        if not isinstance(item, list):
-            item = [item]
-        return find_in_list(self.children, item)
-
-    def __getitem__(self, key):
-        """Allow indexing/slicing into node to access children.
-
-        Usage: node[0] == node.children[0]
-        """
-        return self.children[key]
-    def __repr__(self):
-        return self.node.__repr__
     @property
     def next_sibling(self) -> Self | None:
         return next_sibling(self)
@@ -106,19 +86,6 @@ class PythonCstNode:
     @property
     def preceding_sibling(self) -> Self | None:
         return preceding_sibling(self)
-
-    def process(self, function: Callable[[Self], None]) -> None:
-        function(self)
-        for child in self.children:
-            child.process(function)
-
-
-    def match_props(self, properties) -> bool:
-        all_keys = (self.properties.keys() | properties.keys()) - IRRELEVANT_PROPS
-        return all(self.properties.get(n) == properties.get(n) for n in all_keys)
-
-    def match_children(self, children):
-        return all(i< len(self.children) and self[i] == child for i, child in enumerate(children))
 
     @staticmethod
     def load(file_path: Path) -> "PythonCstNode":
@@ -134,14 +101,3 @@ class PythonCstNode:
         translation_unit = PythonCstTranslationUnit(text, file_name=str(file_name))
         root_node = PythonCstNode(translation_unit.atu, translation_unit)
         return root_node
-
-    @property
-    def referenced_by(self) :
-        return []
-
-    @property
-    def references(self):
-        return []
-    @property
-    def text(self) -> str:
-        return self.signature
