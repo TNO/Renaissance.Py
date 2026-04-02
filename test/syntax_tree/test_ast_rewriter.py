@@ -974,17 +974,22 @@ class TestComposeReplacement:
 
 
 class TestAroundComposition:
+    """
+    Test case to capture the requirements for `around` functionality that is composable.
+    """
+
     def test_around(self):
         # set up
         factory = ASTFactory(PythonASTNode, [])
         atu = factory.create_from_text("x = a", "temp.py")
-        rewriter = ASTRewriter(atu)
         pattern = PythonPatternFactory(factory).create_expression("x = $a")
         matches = list(find_all([atu], [pattern]))  # Use list, since we want to access its content multiple times
         assert matches, "A match expected"
         nrof_matches = len(matches)
         assert 1 == nrof_matches, f"One match expected, yet got {nrof_matches}"
         placeholder = matches[0].expansions["$a"]
+
+        rewriter = ASTRewriter(atu)
 
         # execute
         ## first pair
@@ -997,22 +1002,30 @@ class TestAroundComposition:
 
         # verify
         assert "x = [ ( a ) ]" == rewriter.apply_to_string(), "Unexpected replacement"
-        # TODO: Test fails due to two issues 
+        # TODO: Test fails due to two issues
         # 1. order of inserts ([  )]
         # 2. insert around whole pattern, not placeholder.
 
 
-class TestSyntaxAwareComposition:
+class TestSyntaxAwareNestedComposition:
+    """
+    Test Class for Syntax Aware Nested / Hierarchical Compositions
+    In Python
+    * Prepend before parent and (first) child
+    * Append after parent and (last) child
+    """
+
     def setup(self) -> tuple[ASTRewriter, PatternMatch]:
         factory = ASTFactory(PythonASTNode, [])
         atu = factory.create_from_text("x = a * b", "temp.py")
-        rewriter = ASTRewriter(atu)
         pattern = PythonPatternFactory(factory).create_expression("$a * $b")
         matches = list(find_all([atu], [pattern]))  # Use list, since we want to access its content multiple times
         assert matches, "A match expected"
         nrof_matches = len(matches)
         assert 1 == nrof_matches, f"One match expected, yet got {nrof_matches}"
         match = matches[0]
+
+        rewriter = ASTRewriter(atu)
         return rewriter, match
 
     def test_prepend_child_parent(self):
@@ -1040,3 +1053,55 @@ class TestSyntaxAwareComposition:
         rewriter.insert_after("* 4", match.expansions["$b"])
         assert "x = a * b * 4 + 6" == rewriter.apply_to_string(), "Unexpected replacement"
         # TODO: Test fails as append of child appears after append of parent
+
+
+class TestSyntaxAwareAdjacentComposition:
+    """
+    Test Class for Syntax Aware Adjacent Compositions
+    In C/C++
+    * Consecutive / contiguous nodes - append after first and prepend before second
+
+    Note in C/C++ `;` is a terminator that is a part of a statement
+         in Python `;` is a separator that can be used to put multiple statements on the same line
+    """
+
+    def setup(self, factory: ASTFactory):
+        CODE : str = "void f(int i, int j) { i++;j++; }"
+        PATTERN : str = " $stmt1; $stmt2; "
+
+        atu = factory.create_from_text(CODE, "test.c")
+        pattern = CPatternFactory(factory).create_statements(PATTERN)
+        matches = list(find_all([atu], [pattern]))
+
+        assert matches, "A match expected"
+        nrof_matches = len(matches)
+
+        assert 1 == nrof_matches, f"One match expected, yet got {nrof_matches}"
+        match = matches[0]
+
+        rewriter = ASTRewriter(atu)
+        return rewriter, match
+
+    @pytest.mark.parametrize("name, factory", Factories.factories)
+    def test_first_append_prepend_second(self, name: str, factory: ASTFactory):
+        # setup
+        rewriter, match = self.setup(factory)
+
+        # execute
+        rewriter.insert_after("++i;", match.expansions["$stmt1"])
+        rewriter.insert_before("++j;", match.expansions["$stmt2"])
+
+        # verify
+        assert "void f(int i, int j) { i++;++i;++j;j++; }" == rewriter.apply_to_string(), f"{name}: Unexpected replacement"
+
+    @pytest.mark.parametrize("name, factory", Factories.factories)
+    def test_prepend_second_first_append(self, name: str, factory: ASTFactory):
+        # setup
+        rewriter, match = self.setup(factory)
+
+        # execute
+        rewriter.insert_before("++j;", match.expansions["$stmt2"])
+        rewriter.insert_after("++i;", match.expansions["$stmt1"])
+
+        # verify
+        assert "void f(int i, int j) { i++;++i;++j;j++; }" == rewriter.apply_to_string(), f"{name}: Unexpected replacement"
