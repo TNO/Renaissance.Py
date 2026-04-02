@@ -1007,6 +1007,74 @@ class TestAroundComposition:
         # 2. insert around whole pattern, not placeholder.
 
 
+class TestContainedOperations:
+    """
+    Test case to capture the requirements for (completely) contained operation:
+    it is ignore.
+    """
+
+    def setup(self) -> tuple[ASTRewriter, PatternMatch]:
+        factory = ASTFactory(PythonASTNode, [])
+        atu = factory.create_from_text("x = a * b", "temp.py")
+        pattern = PythonPatternFactory(factory).create_expression("$a * $b")
+        matches = list(find_all([atu], [pattern]))  # Use list, since we want to access its content multiple times
+        assert matches, "A match expected"
+        nrof_matches = len(matches)
+        assert 1 == nrof_matches, f"One match expected, yet got {nrof_matches}"
+        match = matches[0]
+
+        rewriter = ASTRewriter(atu)
+        return rewriter, match
+
+    def test_replace_contained_replace(self):
+        rewriter, match = self.setup()
+        rewriter.replace("product", match.nodes)
+        rewriter.replace("term", match.expansions["$a"])
+        assert "x = product" == rewriter.apply_to_string(), "Unexpected replacement"
+
+    def test_contained_replace_replace(self):
+        rewriter, match = self.setup()
+        rewriter.replace("term", match.expansions["$a"])
+        rewriter.replace("product", match.nodes)
+        assert "x = product" == rewriter.apply_to_string(), "Unexpected replacement"
+
+    def test_replace_contained_remove(self):
+        rewriter, match = self.setup()
+        rewriter.replace("product", match.nodes)
+        rewriter.remove(match.expansions["$a"])
+        assert "x = product" == rewriter.apply_to_string(), "Unexpected replacement"
+
+    def test_contained_remove_replace(self):
+        rewriter, match = self.setup()
+        rewriter.remove(match.expansions["$a"])
+        rewriter.replace("product", match.nodes)
+        assert "x = product" == rewriter.apply_to_string(), "Unexpected replacement"
+
+    def test_replace_contained_prepend(self):
+        rewriter, match = self.setup()
+        rewriter.replace("product", match.nodes)
+        rewriter.insert_before("term", match.expansions["$a"])
+        assert "x = product" == rewriter.apply_to_string(), "Unexpected replacement"
+
+    def test_contained_prepend_replace(self):
+        rewriter, match = self.setup()
+        rewriter.insert_before("term", match.expansions["$a"])
+        rewriter.replace("product", match.nodes)
+        assert "x = product" == rewriter.apply_to_string(), "Unexpected replacement"
+
+    def test_replace_contained_append(self):
+        rewriter, match = self.setup()
+        rewriter.replace("product", match.nodes)
+        rewriter.insert_after("term", match.expansions["$a"])
+        assert "x = product" == rewriter.apply_to_string(), "Unexpected replacement"
+
+    def test_contained_append_replace(self):
+        rewriter, match = self.setup()
+        rewriter.insert_after("term", match.expansions["$a"])
+        rewriter.replace("product", match.nodes)
+        assert "x = product" == rewriter.apply_to_string(), "Unexpected replacement"
+
+
 class TestSyntaxAwareNestedComposition:
     """
     Test Class for Syntax Aware Nested / Hierarchical Compositions
@@ -1066,8 +1134,8 @@ class TestSyntaxAwareAdjacentComposition:
     """
 
     def setup(self, factory: ASTFactory):
-        CODE : str = "void f(int i, int j) { i++;j++; }"
-        PATTERN : str = " $stmt1; $stmt2; "
+        CODE: str = "void f(int i, int j) { i++;j++; }"
+        PATTERN: str = " $stmt1; $stmt2; "
 
         atu = factory.create_from_text(CODE, "test.c")
         pattern = CPatternFactory(factory).create_statements(PATTERN)
