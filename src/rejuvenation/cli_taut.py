@@ -5,9 +5,10 @@ import os
 import sys
 from pathlib import Path
 
+from renaissance.impl.python import PythonRstNode
 from renaissance.project.project_scanner import PythonScanner
 from renaissance.refactoring.python_refactoring import PythonRefactoring
-from renaissance.refactoring.taut2_pyunit import *
+from renaissance.refactoring.taut2pyunit import *
 from renaissance.syntax_tree import ASTFactory
 
 factory = ASTFactory(PythonRstNode, [])

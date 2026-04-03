@@ -4,16 +4,13 @@ from pathlib import Path
 import pytest
 from hamcrest import ends_with, assert_that, is_
 
-import renaissance.refactoring.taut2_pyunit as taut_refactor
-
 import targets
-from renaissance.refactoring.taut2_pyunit import Taut2Pyunit
+from renaissance.refactoring.taut2pyunit import Taut2Pyunit
 import test_data.test_class as tst_class
 import test_data.test_code as tst_code
 import test_data.test_insert as tst_insert
 from renaissance.impl.python import PythonRstNode
 import test_data.test_testdoubles as tst_testdoubles
-
 
 class TestTaut2Unittest:
 
@@ -28,6 +25,7 @@ class TestTaut2Unittest:
             return_value=PythonRstNode.load_from_text(code),
         )
         subject = Taut2Pyunit("x.py")
+        subject.in_memory = True
         return subject
 
     @pytest.mark.parametrize(
