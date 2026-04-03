@@ -6,13 +6,6 @@ def convert(lines, line_nr, col):
     # add node to the node list for references
 
 
-def raw(nodes):
-    res = ""
-    for node in nodes:
-        res += "\n\n    " + node.signature
-    return res + "\n    "
-
-
 def to_str(node) -> str:
     if hasattr(node, "signature"):
         return node.signature

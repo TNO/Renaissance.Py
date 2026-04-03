@@ -5,9 +5,9 @@ from hamcrest import *
 from more_itertools.more import first
 
 from renaissance import syntax_tree
-from renaissance.impl.python import PythonASTNode
+from renaissance.impl.python import PythonRstNode
 from renaissance.impl.python.factory import PythonFactory
-from renaissance.impl.python.rst_node import PythonASTReference
+from renaissance.impl.python.rst_node import PythonRSTReference
 from renaissance.syntax_tree import ASTNode, ASTFinder
 
 content = """
@@ -70,16 +70,16 @@ class TestPythonNode:
     @pytest.fixture(autouse=True)
     def setup(self):
         """Setup that runs before each test method"""
-        self.factory = PythonFactory(PythonASTNode)
+        self.factory = PythonFactory(PythonRstNode)
 
     def test_def_call_references(self):
         # Function f() refers to Function a()
-        ast = PythonASTNode.load_from_text(content2)
+        ast = PythonRstNode.load_from_text(content2)
         with tempfile.TemporaryDirectory(delete=True) as temp_dir:
             syntax_tree.ASTShower.store_node(temp_dir + "/py0.txt", ast)
 
         func_def = first(n for n in syntax_tree.ASTFinder.find_kind(ast, "FunctionDef") if n.name == "f")
-        assert_that(func_def, is_(PythonASTNode))
+        assert_that(func_def, is_(PythonRstNode))
         ast.translation_unit.lazy_create_refers(ast)
         refs = func_def.references
         assert_that(refs, has_length(2))
@@ -104,7 +104,7 @@ class TestPythonNode:
         with tempfile.TemporaryDirectory(delete=True) as temp_dir:
             syntax_tree.ASTShower.store_node(temp_dir + "/py1.txt", ast)
         type_node = first(n for n in syntax_tree.ASTFinder.find_kind(ast, "Name") if n.name == "z")
-        assert_that(type_node, is_(PythonASTNode))
+        assert_that(type_node, is_(PythonRstNode))
         ast.translation_unit.lazy_create_refers(ast)
         refs = type_node.references
         assert_that(refs, has_length(1))
@@ -124,7 +124,7 @@ class TestPythonNode:
 
         class_node = first(n for n in ASTFinder.find_kind(ast, "ClassDef") if n.name == "A")
 
-        assert_that(class_node, is_(PythonASTNode))
+        assert_that(class_node, is_(PythonRstNode))
         ast.translation_unit.lazy_create_refers(ast)
         refs = class_node.references
         assert_that(refs, has_length(1))
@@ -143,7 +143,7 @@ class TestPythonNode:
 
         param_node = first(n for n in ASTFinder.find_kind(ast, "arg") if n.name == "bruno")
 
-        assert_that(param_node, is_(PythonASTNode))
+        assert_that(param_node, is_(PythonRstNode))
         ast.translation_unit.lazy_create_refers(ast)
         refs = param_node.references
         assert_that(refs, has_length(1))
@@ -159,7 +159,7 @@ class TestPythonNode:
         with tempfile.TemporaryDirectory(delete=True) as temp_dir:
             syntax_tree.ASTShower.store_node(temp_dir + "/py4.txt", ast)
         call_node = first(n for n in ASTFinder.find_kind(ast, "Call") if n.name == "bruno.is_near()")
-        assert_that(call_node, is_(PythonASTNode))
+        assert_that(call_node, is_(PythonRstNode))
         ast.translation_unit.lazy_create_refers(ast)
         refs = call_node.references
         ref = refs[0]
@@ -171,7 +171,7 @@ class TestPythonNode:
         assert_that(call_node in [ast.translation_unit._nodes[r.node_id] for r in referenced_by])
 
     def test_ref_node_to_str(self):
-        it = PythonASTReference("it is ", "kind", {})
+        it = PythonRSTReference("it is ", "kind", {})
         assert_that(it, has_string("it is :kind"))
 
 

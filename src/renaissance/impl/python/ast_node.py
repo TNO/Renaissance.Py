@@ -1,49 +1,52 @@
-from ast import AST
-from typing import Any
-
 """
 implementation that patches the native ast using 'traits' mechanism,
 require minimum amound of code to make the matcher work
  
 """
+import ast
 
 
-@property
-def properties(self: AST) -> dict[str, Any]:
-    props = {}
-    for name in self._fields:
-        props[name] = getattr(self, name)
-    return props
+class ASTExtension:
+
+    @staticmethod
+    def load_from_ast(text, file):
+        root = ast.parse(text, file)
+        return root
 
 
-AST.properties = properties
+    @staticmethod
+    @property
+    def ast_node(self):
+        return self
 
 
-@property
-def children(self: AST) -> list[AST]:
-    return getattr(self, "body", [])
+    @staticmethod
+    @property
+    def ast_kind(self):
+        return type(self).__name__
 
 
-AST.children = children
+    @staticmethod
+    @property
+    def ast_properties(self):
+        return {field: getattr(self, field) for field in self._fields if not isinstance(getattr(self, field), ast.AST)}
 
 
-def is_part_of_translation_unit(_: AST):
-    return True
+    @staticmethod
+    @property
+    def ast_children(self):
+        children = [getattr(self, field) for field in self._fields if isinstance(getattr(self, field), (ast.AST))]
+        [children.extend(getattr(self, field)) for field in self._fields if isinstance(getattr(self, field), (list))]
+        return children
 
 
-AST.is_part_of_translation_unit = is_part_of_translation_unit
+    @staticmethod
+    @property
+    def ast_signature(self):
+        return ast.unparse(self)
 
 
-@property
-def kind(self: AST):
-    return str(type(self).__name__)
-
-
-AST.kind = kind
-
-
-def raw(self):
-    return f"({self.kind})\n"
-
-
-AST.__str__ = raw
+    @staticmethod
+    @property
+    def ast_name(self):
+        return str(self)

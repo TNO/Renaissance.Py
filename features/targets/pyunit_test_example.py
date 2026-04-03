@@ -6,7 +6,7 @@ from parameterized import parameterized
 
 from c_cpp.factories import Factories
 from renaissance.impl.clang import CPatternFactory
-from renaissance.impl.python import PythonASTNode
+from renaissance.impl.python import PythonRstNode
 from renaissance.syntax_tree import ASTFactory
 from renaissance.syntax_tree.match_finder import (
     is_match,
@@ -102,10 +102,10 @@ class TestBasicNoNamespace(TestCase):
 
 
 def test_it_can_be_created():
-    it = PythonASTNode(ast.Pass())
+    it = PythonRstNode(ast.Pass())
     assert it
 
 
 def test_it_has_elements():
-    it = PythonASTNode(ast.parse("def fun():  pass"))
+    it = PythonRstNode(ast.parse("def fun():  pass"))
     assert it[0] == it.children[0]

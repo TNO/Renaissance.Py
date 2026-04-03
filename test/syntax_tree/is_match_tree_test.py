@@ -15,7 +15,7 @@ from hamcrest import (
 from marshmallow.utils import is_generator
 
 from renaissance.impl.clang import ClangASTNode, CPatternFactory
-from renaissance.impl.python import PythonPatternFactory, PythonASTNode
+from renaissance.impl.python import PythonPatternFactory, PythonRstNode
 from renaissance.impl.python.factory import PythonFactory
 from renaissance.syntax_tree import ASTFactory, ASTShower
 from renaissance.syntax_tree.match_finder import (
@@ -29,7 +29,7 @@ from renaissance.syntax_tree.match_finder import (
 class TestMatchTree:
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.factory = PythonFactory(PythonASTNode)
+        self.factory = PythonFactory(PythonRstNode)
         self.pattern_factory = PythonPatternFactory(self.factory)
 
     def test_none_with_none(self):

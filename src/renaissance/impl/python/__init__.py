@@ -1,4 +1,4 @@
-from .rst_node import PythonASTNode
+from .rst_node import PythonRstNode
 from .factory import PythonPatternFactory
 
-__all__ = ["PythonASTNode", "PythonPatternFactory"]
+__all__ = ["PythonRstNode", "PythonPatternFactory"]

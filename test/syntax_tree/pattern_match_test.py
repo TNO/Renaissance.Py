@@ -2,7 +2,7 @@ import ast
 
 from hamcrest import assert_that, is_
 
-from renaissance.impl.python import PythonASTNode
+from renaissance.impl.python import PythonRstNode
 from renaissance.syntax_tree import PatternMatch
 
 
@@ -24,7 +24,7 @@ class TestPatternMatch:
         node = mocker.Mock()
         node.signature = "name_1"
         pattern_match = PatternMatch([],
-        {'key': ["name_1"], '$node': [PythonASTNode(ast.Name('node_name'))], 'empty': []},
+                                     {'key': ["name_1"], '$node': [PythonRstNode(ast.Name('node_name'))], 'empty': []},
         'patterns')
         assert_that(pattern_match['key'], is_('name_1'))
         assert_that(pattern_match['$node'], is_('node_name'))

@@ -2,14 +2,14 @@ from pathlib import Path
 
 import networkx
 
-from renaissance.impl.python import PythonASTNode
+from renaissance.impl.python import PythonRstNode
 
 
 class PythonExtractor:
     graph = networkx.DiGraph()
     codebase:dict = {}
     def process(self, file:Path):
-        root  = PythonASTNode.load(file)
+        root  = PythonRstNode.load(file)
         module_name = root.filename.replace('/', '.').replace('.py', '')
         folder = str(Path(file).parent)
         self.graph.add_node(folder, type="folder")

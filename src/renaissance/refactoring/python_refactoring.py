@@ -4,7 +4,7 @@ from typing import Sequence, cast
 
 from termcolor import colored
 
-from renaissance.impl.python.rst_node import PythonASTNode
+from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.impl.python.factory import PythonPatternFactory, PythonFactory
 from renaissance.impl.python.util import to_str
 from renaissance.syntax_tree import ASTFactory, ASTProcessor
@@ -15,7 +15,7 @@ from renaissance.utils.text_utils import snake_case
 class PythonRefactoring(ASTProcessor):
 
     def __init__(self, file):
-        factory = PythonFactory(PythonASTNode)
+        factory = PythonFactory(PythonRstNode)
         atu = factory.create(file)
         super().__init__(atu, factory, False)
         self.pattern_factory = PythonPatternFactory(self.factory)
@@ -47,5 +47,5 @@ class PythonRefactoring(ASTProcessor):
         print(colored(f"refactor          {Path(refactor.filename).resolve()}","green", attrs=["bold"]))
         refactor.run()
     @property
-    def body(self)->Sequence[PythonASTNode]:
-        return cast(PythonASTNode, cast(object, self.root)).body
+    def body(self)->Sequence[PythonRstNode]:
+        return cast(PythonRstNode, cast(object, self.root)).body

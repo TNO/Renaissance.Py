@@ -5,7 +5,7 @@ import renaissance.refactoring.taut2pyunit as taut_refactor
 import test_data.test_class as tst_class
 import test_data.test_code as tst_code
 import test_data.test_insert as tst_insert
-from renaissance.impl.python import PythonASTNode
+from renaissance.impl.python import PythonRstNode
 from renaissance.impl.python.factory import PythonFactory
 from renaissance.syntax_tree import ASTFactory, ASTProcessor
 from test_data.test_testdoubles import test_doubles_fun, test_doubles_fun_new, test_doubles_class, test_doubles_class_new
@@ -15,7 +15,7 @@ class TestTaut2Unittest:
 
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.factory = PythonFactory(PythonASTNode)
+        self.factory = PythonFactory(PythonRstNode)
 
     @pytest.mark.parametrize(
         "input_code, expected_code",

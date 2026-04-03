@@ -1,7 +1,7 @@
 import re
 from datetime import datetime
 
-from renaissance.impl.python import PythonASTNode, PythonPatternFactory
+from renaissance.impl.python import PythonRstNode, PythonPatternFactory
 from renaissance.impl.python.factory import PythonFactory
 from renaissance.syntax_tree import ASTProcessor, MatchFinder, ASTRewriter, ASTFactory
 from renaissance.syntax_tree.match_finder import match_pattern
@@ -524,7 +524,7 @@ def raw_text(nodes, snippets) -> str:
     if nodes:
         if "$$" in snippets:
             for node in nodes:
-                if isinstance(node, PythonASTNode):
+                if isinstance(node, PythonRstNode):
                     if start_offset == 0 or node.offset < start_offset:
                         start_offset = node.offset
                     if end_offset == 0 or node.end_offset > end_offset:
@@ -532,7 +532,7 @@ def raw_text(nodes, snippets) -> str:
             return nodes[0].root.signature[start_offset:end_offset]
         else:
             for node in nodes:
-                if isinstance(node, PythonASTNode):
+                if isinstance(node, PythonRstNode):
                     res += node.signature
                 else:
                     res += str(node)
@@ -543,7 +543,7 @@ def raw_text(nodes, snippets) -> str:
 def _get_factory() -> ASTFactory:
     global _factory
     if _factory is None:
-        _factory = PythonFactory(PythonASTNode)
+        _factory = PythonFactory(PythonRstNode)
     return _factory
 
 

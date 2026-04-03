@@ -1,6 +1,6 @@
 from ast import AST
 from itertools import product
-from renaissance.impl.python.rst_node import PythonASTNode
+from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.impl.python.cst_node import PythonCstNode
 from renaissance.impl.tree_sitter.lst import LSTNode
 from renaissance.syntax_tree.ast_factory import ASTFactory
@@ -8,7 +8,7 @@ from renaissance.syntax_tree.ast_factory import ASTFactory
 
 class Factories:
     # add factories here to test different ASTNode implementations
-    node_types = [("ast", PythonASTNode),
+    node_types = [("ast", PythonRstNode),
                   ("cst", PythonCstNode),
                   ("lst", LSTNode),
                   ("rst", AST),]

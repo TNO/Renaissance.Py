@@ -1,7 +1,7 @@
 import pytest
 from hamcrest import *
 
-from renaissance.impl.python import PythonASTNode, PythonPatternFactory
+from renaissance.impl.python import PythonRstNode, PythonPatternFactory
 from renaissance.impl.python.factory import PythonFactory
 
 from renaissance.syntax_tree import ASTFactory, ASTShower
@@ -10,7 +10,7 @@ from renaissance.syntax_tree import ASTFactory, ASTShower
 class TestPythonShower:
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.factory = PythonFactory(PythonASTNode)
+        self.factory = PythonFactory(PythonRstNode)
         self.atu = self.factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "test.py")
         self.pattern_factory = PythonPatternFactory(self.factory)
 
@@ -61,7 +61,7 @@ class TestPythonShower:
         assert_that(text, is_(expected))
 
     def test_show_if_else(self):
-        factory = PythonFactory(PythonASTNode)
+        factory = PythonFactory(PythonRstNode)
         atu = factory.create_from_text(
             """
 if x >y :

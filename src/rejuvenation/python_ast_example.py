@@ -2,7 +2,7 @@
 # It specifically showcases nested replacements and multiple patterns.
 import textwrap
 
-from renaissance.impl.python import PythonASTNode, PythonPatternFactory
+from renaissance.impl.python import PythonRstNode, PythonPatternFactory
 from renaissance.impl.python.factory import PythonFactory
 from renaissance.syntax_tree import ASTFactory, ASTRewriter
 from renaissance.syntax_tree import ASTShower, TextUtils
@@ -21,8 +21,8 @@ pa(54)
 
 
 def python_ast_smoke_test():
-    factory = PythonFactory(PythonASTNode)
-    atu:PythonASTNode = PythonASTNode.load_from_text(example_code, "test.py")
+    factory = PythonFactory(PythonRstNode)
+    atu:PythonRstNode = PythonRstNode.load_from_text(example_code, "test.py")
     pattern_factory = PythonPatternFactory(
         factory,
     )
