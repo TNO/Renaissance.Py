@@ -7,7 +7,7 @@ import pytest
 from hamcrest import assert_that, contains_string, has_length, is_, ends_with, not_
 
 import targets
-from renaissance.impl.python import PythonASTNode, PythonPatternFactory
+from renaissance.impl.python import PythonRstNode, PythonPatternFactory
 from renaissance.impl.python.factory import PythonFactory
 from renaissance.refactoring import unit2pytest as mod
 from renaissance.refactoring.unit2pytest import Unit2Pytest
@@ -45,7 +45,7 @@ class TestUnit2Pytest:
         code = textwrap.dedent(text)
         mocker.patch(
             "renaissance.impl.python.factory.PythonFactory.create",
-            return_value=PythonASTNode.load_from_text(code),
+            return_value=PythonRstNode.load_from_text(code),
         )
         subject = Unit2Pytest("x.py")
         subject.in_memory = True

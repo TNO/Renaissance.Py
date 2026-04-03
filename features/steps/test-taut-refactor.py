@@ -1,6 +1,6 @@
 import pytest
 from pytest_bdd import given, when, then, scenario, parsers
-from renaissance.impl.python import PythonASTNode, PythonPatternFactory
+from renaissance.impl.python import PythonRstNode, PythonPatternFactory
 from renaissance.syntax_tree import ASTFactory, ASTRewriter, MatchFinder
 from renaissance.syntax_tree.match_finder import match_pattern
 from renaissance.utils.refactor_utils import fix_indent
@@ -38,7 +38,7 @@ def test_taut_test5():
 
 @given("'python' programming language")
 def init_language_factory(context):
-    context["factory"] = ASTFactory(PythonASTNode, "")
+    context["factory"] = ASTFactory(PythonRstNode, "")
 
 
 @given(parsers.parse("'{file}' file written in that programming language"))

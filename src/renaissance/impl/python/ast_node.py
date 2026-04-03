@@ -1,18 +1,52 @@
-from ast import AST
-from typing import Any
-
 """
 implementation that patches the native ast using 'traits' mechanism,
 require minimum amound of code to make the matcher work
  
 """
+import ast
 
 
+class ASTExtension:
 
-def is_part_of_translation_unit(_: AST):
-    return True
+    @staticmethod
+    def load_from_ast(text, file):
+        root = ast.parse(text, file)
+        return root
 
 
-AST.is_part_of_translation_unit = is_part_of_translation_unit
+    @staticmethod
+    @property
+    def ast_node(self):
+        return self
 
 
+    @staticmethod
+    @property
+    def ast_kind(self):
+        return type(self).__name__
+
+
+    @staticmethod
+    @property
+    def ast_properties(self):
+        return {field: getattr(self, field) for field in self._fields if not isinstance(getattr(self, field), ast.AST)}
+
+
+    @staticmethod
+    @property
+    def ast_children(self):
+        children = [getattr(self, field) for field in self._fields if isinstance(getattr(self, field), (ast.AST))]
+        [children.extend(getattr(self, field)) for field in self._fields if isinstance(getattr(self, field), (list))]
+        return children
+
+
+    @staticmethod
+    @property
+    def ast_signature(self):
+        return ast.unparse(self)
+
+
+    @staticmethod
+    @property
+    def ast_name(self):
+        return str(self)

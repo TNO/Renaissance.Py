@@ -5,7 +5,7 @@ from hamcrest import *
 
 from hamcrest import assert_that, is_not
 
-from renaissance.impl.python import PythonASTNode, PythonPatternFactory
+from renaissance.impl.python import PythonRstNode, PythonPatternFactory
 from renaissance.impl.python.factory import PythonFactory
 from renaissance.syntax_tree import ASTFactory, MatchFinder
 from renaissance.syntax_tree.match_finder import is_match, match_pattern
@@ -15,7 +15,7 @@ class TestPythonMatcher:
 
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.factory = PythonFactory(PythonASTNode)
+        self.factory = PythonFactory(PythonRstNode)
         self.pattern_factory = PythonPatternFactory(self.factory)
 
     def test_generic_is_match_any_stmt(self):
@@ -252,7 +252,7 @@ class TestPythonMatcher:
           na(53)
         
         """)
-        atu = PythonASTNode.load_from_text(example_code)
+        atu = PythonRstNode.load_from_text(example_code)
         assert_that(atu, is_not(None))
 
     def test_find_pattern_four_depth(self):
@@ -263,7 +263,7 @@ class TestPythonMatcher:
             TestDoubles(b=ImprovedStub(write)),
         ]
         """
-        atu = PythonASTNode.load_from_text(example_code)
+        atu = PythonRstNode.load_from_text(example_code)
         pattern = self.pattern_factory.create_expression("TestDoubles($a=ImprovedStub($b))")
         assert_that(match_pattern(atu.children, [pattern]), has_length(2))
 
@@ -271,7 +271,7 @@ class TestPythonMatcher:
         example_code = textwrap.dedent("""
         [TestDoubles(b=ImprovedStub(write))]
         """)
-        atu = PythonASTNode.load_from_text(example_code)
+        atu = PythonRstNode.load_from_text(example_code)
         pattern = self.pattern_factory.create_expression("TestDoubles($a=ImprovedStub($b))")
         assert_that(match_pattern(atu.children, [pattern]), has_length(1))
 
@@ -279,7 +279,7 @@ class TestPythonMatcher:
         example_code = textwrap.dedent("""
         TestDoubles(b=ImprovedStub(write))
         """)
-        atu = PythonASTNode.load_from_text(example_code)
+        atu = PythonRstNode.load_from_text(example_code)
         pattern = self.pattern_factory.create_statement("TestDoubles($a=ImprovedStub($b))")
         assert_that(match_pattern(atu.children, [pattern]), has_length(1))
 

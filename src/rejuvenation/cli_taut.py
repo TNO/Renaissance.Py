@@ -7,7 +7,7 @@ from pathlib import Path
 from renaissance.refactoring.taut2pyunit import *
 from renaissance.syntax_tree import ASTFactory
 
-factory = ASTFactory(PythonASTNode, [])
+factory = ASTFactory(PythonRstNode, [])
 
 
 def get_migrated_path(file_path):

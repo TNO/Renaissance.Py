@@ -1,7 +1,7 @@
 import sys
 from pathlib import Path
 
-from renaissance.impl.python import PythonASTNode
+from renaissance.impl.python import PythonRstNode
 from renaissance.impl.python.extractor import PythonExtractor
 from renaissance.project.project_scanner import PythonScanner
 from renaissance.refactoring.python_refactoring import PythonRefactoring
@@ -25,5 +25,5 @@ if __name__ == "__main__":
         print(f"inspect {Path(".").resolve()}")
         file = sys.argv[2]
         ASTShower.focus = f"|{sys.argv[3]}"
-        atu = PythonASTNode.load(Path(file))
+        atu = PythonRstNode.load(Path(file))
         ASTShower.show_node(atu)

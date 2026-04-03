@@ -4,7 +4,7 @@ import pytest
 from hamcrest import assert_that, is_, has_length, is_in, is_not, empty
 
 from renaissance.impl import MATCH_ONE, MATCH_ALL
-from renaissance.impl.python import PythonASTNode, PythonPatternFactory
+from renaissance.impl.python import PythonRstNode, PythonPatternFactory
 from renaissance.impl.python.factory import PythonFactory
 from renaissance.syntax_tree import ASTFactory
 from renaissance.syntax_tree.match_finder import is_match
@@ -13,7 +13,7 @@ from renaissance.syntax_tree.match_finder import is_match
 class TestPythonicStyle:
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.factory = PythonFactory(PythonASTNode)
+        self.factory = PythonFactory(PythonRstNode)
         self.pattern_factory = PythonPatternFactory(self.factory)
     @pytest.mark.parametrize(
         "raw, kind, op, name, expr, body_length",
@@ -29,7 +29,7 @@ class TestPythonicStyle:
         ],
     )
     def test_consistent_name_stmt(self, raw, kind, op, name, expr, body_length):
-        it = PythonASTNode.load_from_text(raw).body[-1]
+        it = PythonRstNode.load_from_text(raw).body[-1]
         assert_that(it.kind, is_(kind))
         assert_that(it.operator, is_(op))
         assert_that(it.name, is_(name))
@@ -47,7 +47,7 @@ class TestPythonicStyle:
         ],
     )
     def test_async_stmt(self, raw, kind, op, name, body_length):
-        it = PythonASTNode.load_from_text(raw).body[-1]
+        it = PythonRstNode.load_from_text(raw).body[-1]
         assert_that(it.kind, is_(kind))
         assert_that(it.operator, is_(op))
         assert_that(it.name, is_(name))
@@ -64,7 +64,7 @@ class TestPythonicStyle:
         ],
     )
     def test_stmt_with_body(self, raw, kind, name, body_length):
-        it = PythonASTNode.load_from_text(raw).body[-1]
+        it = PythonRstNode.load_from_text(raw).body[-1]
         assert_that(kind, is_(it.kind))
         assert_that(it.name, is_(name))
         assert_that(it.body, has_length(body_length))
@@ -92,7 +92,7 @@ class TestPythonicStyle:
     def test_stmt(self, raw, kind, typ, name, op, value):
 
 
-        it = PythonASTNode.load_from_text(raw).body[-1]
+        it = PythonRstNode.load_from_text(raw).body[-1]
         assert_that(kind, is_(it.kind))
         assert_that(it.name, is_(name))
         assert_that(it.operator, op)
@@ -109,12 +109,12 @@ class TestPythonicStyle:
     )
     # ('from x import y', 'ImportFrom', None, 'x', 'import', 'y'),
     def test_expr(self, raw, kind, expr):
-        it = PythonASTNode.load_from_text(raw).body[-1]
+        it = PythonRstNode.load_from_text(raw).body[-1]
         assert_that(kind, is_(it.kind))
         assert_that(it.expr.name, is_(expr))
 
     def test_ann_assign_node(self):
-        it = PythonASTNode.load_from_text('name:str = "value"').body[-1]
+        it = PythonRstNode.load_from_text('name:str = "value"').body[-1]
 
         assert_that(it.name, is_("name"))
         assert_that(it.type, is_("str"))
@@ -124,7 +124,7 @@ class TestPythonicStyle:
     def test_assign_node(self):
         
 
-        it = PythonASTNode.load_from_text('name = "value"').body[-1]
+        it = PythonRstNode.load_from_text('name = "value"').body[-1]
 
         assert_that(it.name, is_("name"))
         assert_that(it.type, is_(None))
@@ -133,23 +133,23 @@ class TestPythonicStyle:
 
     def test_assign_node_2(self):
 
-        it = PythonASTNode.load_from_text("name += 5").body[-1]
+        it = PythonRstNode.load_from_text("name += 5").body[-1]
         assert_that(it.name, is_("name"))
         assert_that(it.type, is_(None))
         assert_that(it.operator, is_("+="))
         assert_that(it.value, is_(5))
 
     def python_does_not_parse_dollar(self):
-        it = PythonASTNode.load_from_text("$pa")
+        it = PythonRstNode.load_from_text("$pa")
 
         assert_that(MATCH_ONE, is_(it.kind))
 
     def python_does_not_parse_dollar(self):
-        it = PythonASTNode.load_from_text("$$pa")
+        it = PythonRstNode.load_from_text("$$pa")
         assert_that(MATCH_ONE, is_(it.kind))
 
     def test_kind_is_match_all(self):
-        pattern_factory = PythonPatternFactory(PythonFactory(PythonASTNode))
+        pattern_factory = PythonPatternFactory(PythonFactory(PythonRstNode))
         simple = self.pattern_factory.create_statement("$$pa")
         assert_that(MATCH_ALL, is_(simple.kind))
 
@@ -185,7 +185,7 @@ class TestPythonicStyle:
         atu = self.factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "test.py")
         
 
-        stmt = PythonASTNode.load_from_text("ba(55)")[0]
+        stmt = PythonRstNode.load_from_text("ba(55)")[0]
 
         assert_that(atu.children[0], is_(stmt))
 

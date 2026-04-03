@@ -1,8 +1,6 @@
 from pathlib import Path
-from typing import Any, Self, Sequence
 
-from renaissance.impl.go.node import GoAstNode
-from renaissance.impl.python import PythonASTNode
+from targets.go.node import GoAstNode
 
 
 class GoExtractor:

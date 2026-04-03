@@ -3,7 +3,7 @@ import pytest
 from hamcrest import assert_that, contains_string, not_, raises, is_not, calling
 from pytest_bdd import given, when, then, scenario, parsers
 
-from renaissance.impl.python import PythonASTNode
+from renaissance.impl.python import PythonRstNode
 from renaissance.refactoring.unit2pytest import Unit2Pytest
 from renaissance.syntax_tree import ASTFactory
 
@@ -28,7 +28,7 @@ def test_convert_unit_to_pytest():
 @given(parsers.parse("'{file}' file"))
 def step_given_file(context, file):
     context.file = file
-    context.factory = ASTFactory(PythonASTNode, [])
+    context.factory = ASTFactory(PythonRstNode, [])
     context.atu = context.factory.create(file)
 
 

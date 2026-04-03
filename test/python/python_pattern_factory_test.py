@@ -4,7 +4,7 @@ import pytest
 import ast
 
 from hamcrest import assert_that, has_length, is_, is_in
-from renaissance.impl.python import PythonASTNode
+from renaissance.impl.python import PythonRstNode
 from renaissance.impl.python.cst_node import PythonCstNode
 from renaissance.impl.tree_sitter.lst import LSTNode
 from renaissance.syntax_tree import ASTFactory
@@ -14,7 +14,7 @@ from renaissance.syntax_tree.match_finder import match_pattern
 
 class Factories:
     # add factories here to test different ASTNode implementations
-    node_types = [("ast", PythonASTNode),
+    node_types = [("ast", PythonRstNode),
                   ("cst", PythonCstNode),
                   ("lst", LSTNode),
                   ("rst", ast.AST), ]
@@ -31,7 +31,7 @@ class TestPythonFactory:
 
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.factory = PythonFactory(PythonASTNode)
+        self.factory = PythonFactory(PythonRstNode)
         self.pattern_factory = PythonPatternFactory(self.factory)
 
     # Statements patterns
@@ -40,7 +40,7 @@ class TestPythonFactory:
         """
         Test the creation of a statement in Python
         """
-        node = PythonASTNode.load_from_text(statement).body[-1]
+        node = PythonRstNode.load_from_text(statement).body[-1]
         assert_that(node.is_statement, is_(True))
         assert_that(node.signature, is_(statement))
 
@@ -55,14 +55,14 @@ class TestPythonFactory:
     )
     def test_if_else(self, statement):
 
-        node = PythonASTNode.load_from_text(statement).body[-1]
+        node = PythonRstNode.load_from_text(statement).body[-1]
         assert_that(ast.If.__name__, is_(node.kind))
         assert_that(node.signature, is_(statement))
 
     def test_import(self):
         statement = "from module import foo, bar"
 
-        node = PythonASTNode.load_from_text(statement).body[-1]
+        node = PythonRstNode.load_from_text(statement).body[-1]
         assert_that(ast.ImportFrom.__name__, is_(node.kind))
         assert_that(node.signature, is_(statement))
         assert_that(node.properties["module"], is_("module"))
@@ -283,7 +283,7 @@ class TestPythonFactory:
 
     def test_create_kwargs(self):
         pattern = self.pattern_factory.create_statement("fun($c=0, $d=2312)")
-        kwargs = [PythonASTNode(kwarg) for kwarg in pattern.node.node.value.keywords]
+        kwargs = [PythonRstNode(kwarg) for kwarg in pattern.node.node.value.keywords]
         it = self.pattern_factory.create_kwargs("$c=0, $d=2312")
         assert_that(it[0], is_(kwargs[0]))
 
