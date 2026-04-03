@@ -316,6 +316,10 @@ class PythonRstNode:
                 self.offset = convert(self.translation_unit.lines,node.lineno, node.col_offset) - 1  # type: ignore[attr-defined]
             else:
                 self.offset = convert(self.translation_unit.lines,node.lineno, node.col_offset)  # type: ignore[attr-defined]
+            all_space = all(
+                c == ' ' for c in self.translation_unit.content[self.offset - node.col_offset: self.offset])
+            if all_space:
+                self.offset = self.offset - node.col_offset if self.offset - node.col_offset >= 0 else 0
             self.length = convert(self.translation_unit.lines,node.end_lineno, node.end_col_offset) - self.offset  # type: ignore[attr-defined]
         elif isinstance(node, ast.Module) and translation_unit:
             self.offset = 0
