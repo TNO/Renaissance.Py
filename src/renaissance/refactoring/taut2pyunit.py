@@ -303,6 +303,7 @@ def add_patcher(self, target, name, replacement):
         pattern5 = self.pattern_factory.create_statements("self.doubles = doubles")
         for match in match_pattern(self.root.children, pattern5):
             self.remove(match.nodes, False, False)
+        self.commit()
         [self.replace("self.context_stub", node, False, False)
          for node in self.find_kind("Name") if node.name == "context_stub"]
 

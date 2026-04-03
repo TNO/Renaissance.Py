@@ -21,7 +21,7 @@ class TestTaut2Unittest:
     def _create(self, mocker, text) -> Taut2Pyunit:
         code = textwrap.dedent(text)
         mocker.patch(
-            "renaissance.syntax_tree.ast_factory.ASTFactory.create",
+            "renaissance.impl.python.factory.PythonFactory.create",
             return_value=PythonRstNode.load_from_text(code),
         )
         subject = Taut2Pyunit("x.py")

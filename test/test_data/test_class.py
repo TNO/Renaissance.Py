@@ -152,7 +152,7 @@ def tearDown(self):
     ABCDxCONTEXT.abcdxcontext.reset_method_attributes("finish_wafer")
     ABCDxCONTEXT.abcdxcontext.reset_method_attributes("start_lot")
     ABCDxCONTEXT.abcdxcontext.reset_method_attributes("finish_lot")
-
+    
     self._patch_readout_data_filler.stop()
     self._patch_readout_data_publisher.stop()
     self._patch_dt_context_rep.stop()
