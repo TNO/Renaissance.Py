@@ -5,6 +5,7 @@ import os
 import sys
 from pathlib import Path
 
+from renaissance.impl.python import PythonASTNode
 from renaissance.project.project_scanner import PythonScanner
 from renaissance.refactoring.taut2_pyunit import *
 from renaissance.syntax_tree import ASTFactory
