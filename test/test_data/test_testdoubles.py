@@ -17,7 +17,6 @@ test_indent_new = """class test(b, c):
                 id
             )
             self.assertEqual(c, 0)
-    
 """
 test_indent_fun = """def test_bw(self):
     self.doubles.append(TAUT.TestDoubles(a, b, c))
@@ -36,15 +35,27 @@ test_indent_fun_new = """def test_bw(self):
             id
         )
         self.assertEqual(c, 0)
-
 """
-test_doubles_fun = """class testfunctionality(unittest.TestCase):\n
-    def test_align_wafer_bw(self):
-        self.doubles.append(
-            TAUT.TestDoubles(
-                module=ACBDxEngine.ACBDxEngine, do_global_align=stub_do_global_align_bw
-            )
+test_doubles_fun = """def test_align_wafer_bw(self):
+    self.doubles.append(
+        TAUT.TestDoubles(
+            module=ACBDxEngine.ACBDxEngine, do_global_align=stub_do_global_align_bw
         )
+    )
+    chuck_id = ACBDxBASIC.chuck_operation_enum.CHUCK_2
+    load_offset = BBAA.Struct("xyavect")
+    self.assert_raises(
+        ERXA.Error(ACBDxERR.ACBD_SYS_ERR, "Wafer alignment failed"),
+        ACBDxAPxMEASxWLGLib.align_wafer,
+        chuck_id,
+        load_offset
+    )
+    self.assertEqual(ACBDxCONTEXT.acbdxcontext.method_called("start_lot"), 0)
+    self.assertEqual(
+        ACBDxCONTEXT.acbdxcontext.method_called("finish_lot"), 1
+    )"""
+test_doubles_fun_new = """def test_align_wafer_bw(self):
+    with patch.object(ACBDxEngine.ACBDxEngine, 'do_global_align', stub_do_global_align_bw):
         chuck_id = ACBDxBASIC.chuck_operation_enum.CHUCK_2
         load_offset = BBAA.Struct("xyavect")
         self.assert_raises(
@@ -57,22 +68,6 @@ test_doubles_fun = """class testfunctionality(unittest.TestCase):\n
         self.assertEqual(
             ACBDxCONTEXT.acbdxcontext.method_called("finish_lot"), 1
         )"""
-test_doubles_fun_new = """class testfunctionality(unittest.TestCase):\n
-    def test_align_wafer_bw(self):
-        with patch.object(ACBDxEngine.ACBDxEngine, 'do_global_align', stub_do_global_align_bw):
-            chuck_id = ACBDxBASIC.chuck_operation_enum.CHUCK_2
-            load_offset = BBAA.Struct("xyavect")
-            self.assert_raises(
-                ERXA.Error(ACBDxERR.ACBD_SYS_ERR, "Wafer alignment failed"),
-                ACBDxAPxMEASxWLGLib.align_wafer,
-                chuck_id,
-                load_offset
-            )
-            self.assertEqual(ACBDxCONTEXT.acbdxcontext.method_called("start_lot"), 0)
-            self.assertEqual(
-                ACBDxCONTEXT.acbdxcontext.method_called("finish_lot"), 1
-            )
-    """
 
 test_doubles_class_new = """class TestCloseTest(unittest.TestCase):
     

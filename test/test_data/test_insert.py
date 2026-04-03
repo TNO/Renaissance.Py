@@ -16,9 +16,9 @@ class Asserter(unittest.TestCase):
             exc_type = type(exception)
             try:
                 callable_obj(*args, **kwargs)
-                self.fail("Expected {} to be raised".format(exc_type.__name__))))
+                self.fail("Expected {} to be raised".format(exc_type.__name__))
             except exc_type as e:
-                self.assertEqual(str(e), str(exception), "Expected error_id but got {}".format(exception.id))")
+                self.assertEqual(str(e), str(exception), "Expected error_id but got {}".format(exception.id))
         else:
             self.assertRaises(exception, callable_obj, *args, **kwargs)
 """

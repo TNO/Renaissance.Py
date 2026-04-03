@@ -5,17 +5,16 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict
 
-from renaissance.impl.python import PythonASTNode, PythonPatternFactory
-from renaissance.refactoring.python_refactoring import PythonRefactoring
-from renaissance.syntax_tree import ASTProcessor, MatchFinder, ASTRewriter, ASTFactory
-from renaissance.syntax_tree.match_finder import match_pattern
 import test_data.test_insert as tst_insert
+from renaissance.refactoring.python_refactoring import PythonRefactoring
+from renaissance.syntax_tree.match_finder import match_pattern
+
 
 class Taut2Pyunit(PythonRefactoring):
 
     def __init__(self, file):
         super().__init__(file)
-        self.white_list_pattern = r'some_unittest|integration_tests'
+        self.white_list_pattern = r'_unittest|functionality_test|_utils|_stubs'
         self.black_list_pattern = r'_migrated|_after'
         self.comp = "EMRW"
 
@@ -28,6 +27,14 @@ class Taut2Pyunit(PythonRefactoring):
             return
         print(f"Taut to pyunit migration: {Path(self.filename).resolve()}")
 
+        # conditional refactor
+        if "AP_core_functionality_test" in self.filename:
+            self.insert_asserter()
+            self.remove_assert_func()
+            self.replace_unittest_with_asserter()
+            self.assert_func()
+            self.commit()
+
         self.replace_taut()
         self.remove_decorator()
         self.add_self()
@@ -35,7 +42,7 @@ class Taut2Pyunit(PythonRefactoring):
         self.remove_stubserver()
         self.replace_mock()
 
-        self.replace_log_compxtl('EMRM')
+        self.replace_log_compxtl('emrw')
         self.remove_taut_import()
         self.replace_taut_import()
         self.convert_setup_common()
@@ -46,17 +53,15 @@ class Taut2Pyunit(PythonRefactoring):
         self.convert_import_verify()
         self.convert_assert()
         self.add_self()
-        self.refactor_testdoubles_fun()
+        self.convert_testdoubles_fun()
         self.shared_setup()
-        self.commit()
         self.with_testdoubles()
         self.commit()
 
         if self.root.signature.find("self.patches = []") > 0 or self.root.signature.find("patch.object") > 0:
             self.insert_patch_import()
+        self.commit()
 
-        # conditionally refactor
-        # self.insert_class()
         try:
             # result = insert_doc(result, "01-22-2026")
             with open(self.get_migrated_path(self.filename), "w") as f:
@@ -115,7 +120,6 @@ class Taut2Pyunit(PythonRefactoring):
             "setUpCommon",
             "setUp"
         ]
-        # list = ast_refactor.find_kind("Name").filter(lambda node: node.name in matching).to_list()
         [self.replace("self." + node.name, node, False, False)
          for node in self.find_kind("Name") if node.name in matching]
 
@@ -343,9 +347,11 @@ for p in self.patches:
 
     def insert_patch_import(self):
         insert = "\ntry:\n    from unittest.mock import patch\nexcept ImportError:\n    from mock import patch"
-        pattern = self.pattern_factory.create_statements("import unittest\n")
-        for match in match_pattern(self.root.children, pattern):
-            self.insert_after(insert, match.nodes, False, False)
+        insert_pattern = self.pattern_factory.create_statements(insert)
+        if len(match_pattern(self.root.children, insert_pattern)) == 0:
+            pattern = self.pattern_factory.create_statements("import unittest\n")
+            for match in match_pattern(self.root.children, pattern):
+                self.insert_after(insert, match.nodes, False, False)
 
     def replace_taut_skip(self):
         """
@@ -369,33 +375,128 @@ for p in self.patches:
     def shared_setup(self):
         setup_function = self.pattern_factory.create_statements("def sharedSetUp(self):\n    $$stmts")
         for match in match_pattern(self.body, setup_function):
-            repl = "def setUp(self):\n"
-            repl += f"{textwrap.indent(match["$$stmts"], "    ")}"
-            self.replace(repl, match.nodes, False, False)
+            repl = match.signature.replace("def sharedSetUp", "    def setUp")
+            self.replace(textwrap.dedent(repl), match.nodes, False, False)
+            self.commit()
 
     def insert_class(self):
-        insert_pattern = self.pattern_factory.create_statements("def b():\n    $$bb")
+        class_pattern = self.pattern_factory.create_statements("class Asserter(unittest.TestCase):\n    $$aa")
+        if len(match_pattern(self.root.children, class_pattern)) == 0:
+            insert_pattern = self.pattern_factory.create_statements("def b():\n    $$bb")
+            insert_code = tst_insert.insert_code
+            for match in match_pattern(self.root.children, insert_pattern):
+                self.insert_after(insert_code, match.nodes, False, False)
+
+    def insert_asserter(self):
+        insert_pattern = self.pattern_factory.create_statements("def assert_double_equal($$arg, $$other=$$value):\n    $$bb")
         insert_code = tst_insert.insert_code
         for match in match_pattern(self.root.children, insert_pattern):
             self.insert_after(insert_code, match.nodes, False, False)
-    def move_indent(self):
+            self.commit()
+
+    def remove_assert_func(self):
+        pattern = self.pattern_factory.create_statements("def assert_double_equal($$arg, $$other=$$value):\n    $$bb")
+        for match in match_pattern(self.root.children, pattern):
+            self.remove(match.nodes, False, False)
+            self.commit()
+
+    def replace_unittest_with_asserter(self):
+        pattern = self.pattern_factory.create_statements("class $a(TAUT.TestCase):\n    $$bb")
+        for match in match_pattern(self.root.children, pattern):
+            if not match["$a"] == "Asserter":
+                if "assert_raises" in match["$$bb"] or "assert_double_equal" in match["$$bb"]:
+                    repl = f"{match.signature.replace("TAUT.TestCase", "Asserter")}"
+                    self.replace(repl, match.nodes, False, False)
+        self.commit()
+
+    def assert_func(self):
+        matching = [
+            "assert_raises",
+            "assert_double_equal",
+        ]
+        [self.replace("self." + node.name, node, False, False)
+         for node in self.find_kind("Name") if node.name in matching]
+
+    def move_indent(self, indent):
         pattern1 = self.pattern_factory.create_statements("""def $a($$b):
     self.doubles.append(TAUT.TestDoubles($mod, $e, $f))
     $$c""")
         for match in match_pattern(self.root.children, pattern1):
-            replace_pattern = f"""def {match["$a"]}({match["$$b"]}):
-    with patch.object({match["$mod"]}, '{match["$e"]}', {match["$f"]}):
-"""
-            for node in match.expansions["$$c"]:
-                signature = node.root.signature[node.offset - node.node.col_offset: node.end_offset]
-                if node.node.col_offset == 4:
-                    replace_pattern += textwrap.indent(signature + "\n", "    ")
-                if node.node.col_offset == 8:
-                    replace_pattern += signature + "\n"
+            double_pattern = f"        self.doubles.append(TAUT.TestDoubles({match["$mod"]}, {match["$e"]}, {match["$f"]}))\n"
+            func_header_index = match.signature.index("):\n")
+            repl = f"""    with patch.object({match["$mod"]}, '{match["$e"]}', {match["$f"]}):\n"""
+            replace_pattern = match.signature[:func_header_index + 3] + repl + textwrap.indent(match.signature[func_header_index + 3:], indent)
+            replace_pattern = replace_pattern.replace(double_pattern, "")
             self.replace(replace_pattern, match.nodes, False, False)
 
+    def convert_testdoubles_fun(self):
+            """this is used for taut migration, where the function pattern is found in a class"""
+            # case1 two TestDoubles are defined
+            pattern1 = self.pattern_factory.create_statements("""def $a($$b):
+        self.doubles.append(
+            TAUT.TestDoubles(
+                module=$mod1, $e1=$f1
+            )
+        )
+        self.doubles.append(
+            TAUT.TestDoubles(
+                module=$mod2, $e2=$f2
+            )
+        )
+        $$c
+    """)
+            for match in match_pattern(self.root.children, pattern1):
+                double_pattern = f"""    self.doubles.append(
+        TAUT.TestDoubles(
+            module={match["$mod1"]},
+            {match["$e1"]}={match["$f1"]},
+        )
+    )
+    self.doubles.append(
+        TAUT.TestDoubles(
+            module={match["$mod2"]},
+            {match["$e2"]}={match["$f2"]},
+        )
+    )
+"""
+                func_header_index = match.signature.index("):\n")
+                repl = f"""with patch.object({match["$mod1"]}, '{match["$e1"]}', {match["$f1"]}), \\
+        patch.object({match["$mod2"]}, '{match["$e2"]}', {match["$f2"]}):\n"""
+                replace_pattern = match.signature[:func_header_index + 3] + textwrap.indent(repl, "    ") + match.signature[func_header_index + 3:]
+                replace_pattern = replace_pattern.replace(textwrap.indent(double_pattern, "    "), "")
+                self.replace(replace_pattern, match.nodes, False, False)
+                self.commit()
+            pattern2 = self.pattern_factory.create_statements("""def $a($$b):
+        self.doubles.append(
+            TAUT.TestDoubles(
+                module=$mod, $e=$f
+            )
+        )
+        $$c
+    """)
+            for match in match_pattern(self.root.children, pattern2):
+                double_pattern = f"""    self.doubles.append(
+        TAUT.TestDoubles(
+            module={match["$mod"]}, {match["$e"]}={match["$f"]}
+        )
+    )
+"""
+                double_pattern1 = f"""    self.doubles.append(
+        TAUT.TestDoubles(
+            module={match["$mod"]},
+            {match["$e"]}={match["$f"]},
+        )
+    )
+"""
+                func_header_index = match.signature.index("):\n")
+                repl = f"""with patch.object({match["$mod"]}, '{match["$e"]}', {match["$f"]}):\n"""
+                replace_pattern = match.signature[:func_header_index + 3] + textwrap.indent(repl, "    ") + match.signature[func_header_index + 3:]
+                replace_pattern = replace_pattern.replace(textwrap.indent(double_pattern, "    "), "")
+                replace_pattern = replace_pattern.replace(textwrap.indent(double_pattern1, "    "), "")
+                self.replace(replace_pattern, match.nodes, False, False)
+
     def refactor_testdoubles_fun(self):
-        """refactor cannot use standard replace method, because it needs to fix the indentation"""
+        """this is used for unittest, where the function pattern is not found in a class"""
         # case1 two TestDoubles are defined
         pattern1 = self.pattern_factory.create_statements("""def $a($$b):
     self.doubles.append(
@@ -410,16 +511,25 @@ for p in self.patches:
     )
     $$c""")
         for match in match_pattern(self.root.children, pattern1):
-            replace_pattern = f"""def {match["$a"]}({match["$$b"]}):
-    with patch.object({match["$mod1"]}, '{match["$e1"]}', {match["$f1"]}), \\
-            patch.object({match["$mod2"]}, '{match["$e2"]}', {match["$f2"]}):
+            double_pattern = f"""    self.doubles.append(
+        TAUT.TestDoubles(
+            module={match["$mod1"]}, {match["$e1"]}={match["$f1"]}
+        )
+    )
+    self.doubles.append(
+        TAUT.TestDoubles(
+            module={match["$mod2"]}, {match["$e2"]}={match["$f2"]}
+        )
+    )
 """
-            for node in match.expansions["$$c"]:
-                signature = node.root.signature[node.offset - node.node.col_offset: node.end_offset]
-                if node.node.col_offset == 4:
-                    replace_pattern += textwrap.indent(signature + "\n", "    ")
-                if node.node.col_offset == 8:
-                    replace_pattern += signature + "\n"
+            func_header_index = match.signature.index("):\n")
+            repl = f"""with patch.object({match["$mod1"]}, '{match["$e1"]}', {match["$f1"]}), \\
+                        patch.object({match["$mod2"]}, '{match["$e2"]}', {match["$f2"]}):
+            """
+            replace_pattern = match.signature[:func_header_index + 3] + textwrap.indent(repl +
+                match.signature[func_header_index + 3:], "    ")
+            replace_pattern = replace_pattern.replace(double_pattern, "")
+            replace_pattern = replace_pattern.replace(textwrap.indent(double_pattern, "    "), "")
             self.replace(replace_pattern, match.nodes, False, False)
             self.commit()
         pattern2 = self.pattern_factory.create_statements("""def $a($$b):
@@ -431,16 +541,20 @@ for p in self.patches:
     $$c
 """)
         for match in match_pattern(self.root.children, pattern2):
-            replace_pattern = f"""def {match["$a"]}({match["$$b"]}):
-    with patch.object({match["$mod"]}, '{match["$e"]}', {match["$f"]}):
+            double_pattern = f"""    self.doubles.append(
+        TAUT.TestDoubles(
+            module={match["$mod"]}, {match["$e"]}={match["$f"]}
+        )
+    )
 """
-            for node in match.expansions["$$c"]:
-                signature = node.root.signature[node.offset - node.node.col_offset: node.end_offset]
-                if node.node.col_offset == 4:
-                    replace_pattern += textwrap.indent(signature + "\n", "    ")
-                if node.node.col_offset == 8:
-                    replace_pattern += signature + "\n"
+            func_header_index = match.signature.index("):\n")
+            repl = f"""with patch.object({match["$mod"]}, '{match["$e"]}', {match["$f"]}):\n"""
+            replace_pattern = match.signature[:func_header_index + 3] + textwrap.indent(repl +
+                match.signature[func_header_index + 3:], "    ")
+            replace_pattern = replace_pattern.replace(double_pattern, "")
+            replace_pattern = replace_pattern.replace(textwrap.indent(double_pattern, "    "), "")
             self.replace(replace_pattern, match.nodes, False, False)
+
 
     def refactor_testdoubles_class(self):
         pattern = self.pattern_factory.create_statements("""class $a(TAUT.TestCase):
