@@ -241,3 +241,10 @@ class TestTaut2Unittest:
          for node in subject.find_kind("Name") if node.name == "assert_double_equal"]
         result = subject.apply_to_string()
         assert_that(result, is_(expected_code))
+
+    def test_import_verify(self, mocker):
+        subject = self._create(mocker, "def test_import(self):\n    self.import_and_verify_module('ABCDxTL')")
+        expected_code = "def test_import(self):\n    import ABCDxTL\n    self.assertIsNotNone(ABCDxTL)"
+        subject.convert_import_verify()
+        result = subject.apply_to_string()
+        assert_that(result, is_(expected_code))
