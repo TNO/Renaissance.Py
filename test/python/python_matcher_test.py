@@ -17,6 +17,37 @@ class TestPythonMatcher:
         self.factory = ASTFactory(PythonASTNode, [])
         self.pattern_factory = PythonPatternFactory(self.factory)
 
+    def test_if_statement(self):
+        code_if_then_statement = "if c1:\n    pass"
+        code_if_then_else_statement = "if c1:\n    pass\nelse:\n    pass"
+        code_if_then_elif_statement = "if c1:\n    pass\nelif c2:\n    pass"
+        code_if_then_else_if_statement = "if c1:\n    pass\nelse:\n    if c2:\n        pass"
+        
+        if_then_statement = self.pattern_factory.create_statement(code_if_then_statement)
+        if_then_else_statement = self.pattern_factory.create_statement(code_if_then_else_statement)
+        if_then_elif_statement = self.pattern_factory.create_statement(code_if_then_elif_statement)
+        if_then_else_if_statement = self.pattern_factory.create_statement(code_if_then_else_if_statement)
+        
+        assert_that(is_match(if_then_statement, if_then_statement), is_(True))
+        assert_that(is_match(if_then_statement, if_then_else_statement), is_(False))
+        assert_that(is_match(if_then_statement, if_then_elif_statement), is_(False))
+        assert_that(is_match(if_then_statement, if_then_else_if_statement), is_(False))
+
+        assert_that(is_match(if_then_else_statement, if_then_statement), is_(False))
+        assert_that(is_match(if_then_else_statement, if_then_else_statement), is_(True))
+        assert_that(is_match(if_then_else_statement, if_then_elif_statement), is_(False))
+        assert_that(is_match(if_then_else_statement, if_then_else_if_statement), is_(False))
+
+        assert_that(is_match(if_then_elif_statement, if_then_statement), is_(False))
+        assert_that(is_match(if_then_elif_statement, if_then_else_statement), is_(False))
+        assert_that(is_match(if_then_elif_statement, if_then_elif_statement), is_(True))
+        assert_that(is_match(if_then_elif_statement, if_then_else_if_statement), is_(True))
+
+        assert_that(is_match(if_then_else_if_statement, if_then_statement), is_(False))
+        assert_that(is_match(if_then_else_if_statement, if_then_else_statement), is_(False))
+        assert_that(is_match(if_then_else_if_statement, if_then_elif_statement), is_(True))
+        assert_that(is_match(if_then_else_if_statement, if_then_else_if_statement), is_(True))
+
     def test_generic_is_match_any_stmt(self):
         atu = self.factory.create_from_text("ba(55)", "test.py")
 
@@ -194,13 +225,13 @@ class TestPythonMatcher:
         assert_that(results[2].nodes, has_length(2))
 
     # can only return one match
-    def test_match_all_epression(self):
+    def test_match_all_epression(self): #TODO: typo? 
         atu = self.factory.create_from_text(
             "pa(55)\npa(55)\nif pa(55):\n  pa(55)\n  if pa(55):\n    pa(55)\n  pa=55",
             "test.py",
         )
 
-        simple = self.pattern_factory.create_statement("pa(55)")
+        simple = self.pattern_factory.create_statement("pa(55)")    # TODO: why not expression (as in name test case?)
         results = MatchFinder.match_pattern(atu.children, [simple])
         assert_that(results, has_length(4))
 

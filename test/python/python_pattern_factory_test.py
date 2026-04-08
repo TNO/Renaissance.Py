@@ -30,13 +30,13 @@ class Factories:
 class TestPythonFactory:
 
     @pytest.fixture(autouse=True)
-    def setup(self):
+    def setup(self) -> None:
         self.factory = ASTFactory(PythonASTNode, [])
         self.pattern_factory = PythonPatternFactory(self.factory)
 
     # Statements patterns
     @pytest.mark.parametrize("statement", ["x = 10", "x += y", "name = 'John'", "a, b, c = (1, 2, 3)"])
-    def test_statement(self, statement):
+    def test_statement(self, statement) -> None:
         """
         Test the creation of a statement in Python
         """
@@ -53,13 +53,13 @@ class TestPythonFactory:
             "if a:\n    pass",
         ],
     )
-    def test_if_else(self, statement):
+    def test_if_else(self, statement) -> None:
 
         node = PythonASTNode.load_from_text(statement).body[-1]
         assert_that(ast.If.__name__, is_(node.kind))
         assert_that(node.signature, is_(statement))
 
-    def test_import(self):
+    def test_import(self) -> None:
         statement = "from module import foo, bar"
 
         node = PythonASTNode.load_from_text(statement).body[-1]
@@ -74,7 +74,7 @@ class TestPythonFactory:
             "try:\n    pass\nexcept ExceptionType1:\n    print('An error occurred.')\nexcept ExceptionType2 as e:\n    print(f'Error: {e}')",
         ],
     )
-    def test_try_statement(self, statement):
+    def test_try_statement(self, statement) -> None:
         pattern_factory = PythonPatternFactory(self.factory)
         node = pattern_factory.create_statement(statement)
         assert_that(ast.Try.__name__, is_(node.kind))
@@ -88,7 +88,7 @@ class TestPythonFactory:
             "for i in range(5):\n    print(i)",
         ],
     )
-    def test_for_loop(self, statement):
+    def test_for_loop(self, statement) -> None:
         pattern_factory = PythonPatternFactory(self.factory)
         node = pattern_factory.create_statement(statement)
         assert_that(ast.For.__name__, is_(node.kind))
@@ -101,7 +101,7 @@ class TestPythonFactory:
             "while count < 3:\n    print(count)\nelse:\n    print(count)",
         ],
     )
-    def test_while_loop(self, statement):
+    def test_while_loop(self, statement) -> None:
         pattern_factory = PythonPatternFactory(self.factory)
         node = pattern_factory.create_statement(statement)
         assert_that(ast.While.__name__, is_(node.kind))
@@ -114,7 +114,7 @@ class TestPythonFactory:
             "with open('example.txt', 'r') as file:\n    content = file.read()",
         ],
     )
-    def test_with_statement(self, statement):
+    def test_with_statement(self, statement) -> None:
         pattern_factory = PythonPatternFactory(self.factory)
         node = pattern_factory.create_statement(statement)
         assert_that(ast.With.__name__, is_(node.kind))
@@ -128,7 +128,7 @@ class TestPythonFactory:
             "def outer_function(x):\n\n    def inner_function(y):\n        return y * 2\n    return inner_function(x) + 5",
         ],
     )
-    def test_func_def(self, code):
+    def test_func_def(self, code) -> None:
         pattern_factory = PythonPatternFactory(self.factory)
         node = pattern_factory.create_statement(code)
         assert_that(ast.FunctionDef.__name__, is_(node.kind))
@@ -142,7 +142,7 @@ class TestPythonFactory:
             "class Dog(Animal):\n\n    def speak(self):\n        return f'{self.name} says Woof!'",
         ],
     )
-    def test_class_def(self, code):
+    def test_class_def(self, code) -> None:
         pattern_factory = PythonPatternFactory(self.factory)
         node = pattern_factory.create_statement(code)
         assert_that(ast.ClassDef.__name__, is_(node.kind))
@@ -156,7 +156,7 @@ class TestPythonFactory:
             "return 'Eligible to vote'",
         ],
     )
-    def test_return_statement(self, code):
+    def test_return_statement(self, code) -> None:
         pattern_factory = PythonPatternFactory(self.factory)
         node = pattern_factory.create_statement(code)
         assert_that(ast.Return.__name__, is_(node.kind))
@@ -167,9 +167,14 @@ class TestPythonFactory:
         [
             "assert length > 0, 'Length must be positive'",
             "assert 10 <= value <= 20, 'Value must be between 10 and 20'",
+            "assert size < 12",
         ],
     )
-    def test_assert_statement(self, code):
+    def test_assert_statement(self, code) -> None:
+        """
+        test for an assert statement.
+        An assert statement has optionally a message.
+        """
         pattern_factory = PythonPatternFactory(self.factory)
         node = pattern_factory.create_statement(code)
         assert_that(ast.Assert.__name__, is_(node.kind))
@@ -182,27 +187,27 @@ class TestPythonFactory:
             "del my_set[0]",
         ],
     )
-    def test_delete_statement(self, code):
+    def test_delete_statement(self, code) -> None:
         pattern_factory = PythonPatternFactory(self.factory)
         node = pattern_factory.create_statement(code)
         assert_that(ast.Delete.__name__, is_(node.kind))
         assert_that(node.signature, is_(code))
 
-    def test_pass(self):
+    def test_pass(self) -> None:
         code = "pass"
         pattern_factory = PythonPatternFactory(self.factory)
         node = pattern_factory.create_statement(code)
         assert_that(ast.Pass.__name__, is_(node.kind))
         assert_that(node.signature, is_(code))
 
-    def test_break_statement(self):
+    def test_break_statement(self) -> None:
         code = "break"
         pattern_factory = PythonPatternFactory(self.factory)
         node = pattern_factory.create_statement(code)
         assert_that(ast.Break.__name__, is_(node.kind))
         assert_that(node.signature, is_(code))
 
-    def test_cont_statement(self):
+    def test_cont_statement(self) -> None:
         code = "continue"
         pattern_factory = PythonPatternFactory(self.factory)
         node = pattern_factory.create_statement(code)
@@ -216,7 +221,7 @@ class TestPythonFactory:
             "del my_set[0]",
         ],
     )
-    def test_variable_ref(self, code):
+    def test_variable_ref(self, code) -> None:
         pattern_factory = PythonPatternFactory(self.factory)
         node = pattern_factory.create_statement(code)
         assert_that(ast.Delete.__name__, is_(node.kind))
@@ -230,7 +235,7 @@ class TestPythonFactory:
             "x",
         ],
     )
-    def test_variable(self, code):
+    def test_variable(self, code) -> None:
         pattern_factory = PythonPatternFactory(self.factory)
         node = pattern_factory.create_statement(code)
         assert_that(ast.Expr.__name__, is_(node.kind))
@@ -253,26 +258,26 @@ class TestPythonFactory:
             "a if b else c",
         ],
     )
-    def test_expr(self, code):
+    def test_expr(self, code) -> None:
         pattern_factory = PythonPatternFactory(self.factory)
         node = pattern_factory.create_statement(code)
         assert_that(ast.Expr.__name__, is_(node.kind))
         assert_that(node.signature, is_(code))
 
     @pytest.mark.parametrize("code", ["\"hello = 'hello' # comment to hello\""])
-    def test_comments(self, code):
+    def test_comments(self, code) -> None:
         pattern_factory = PythonPatternFactory(self.factory)
         node = pattern_factory.create_statement(code)
         assert_that(ast.Expr.__name__, is_(node.kind))
         assert_that(node.signature, is_(code))
 
-    def test_decorators(self):
+    def test_decorators(self) -> None:
         pattern_factory = PythonPatternFactory(self.factory)
         node = pattern_factory.create_decorators("@parameterized.expand($exp)").node
         assert_that(node.kind, is_("ImplicitNode"))
         assert_that(node.name, is_("decorator_list"))
 
-    def test_match_decorators(self):
+    def test_match_decorators(self) -> None:
         node = self.factory.create_from_text(
             '@parameterized.expand("sasas")\ndef fun():\n    parameterized.expand("sasas")\n',
             "decorator_pattern.py",
@@ -281,7 +286,7 @@ class TestPythonFactory:
         result = match_pattern(node.children, [pattern])
         assert_that(result, has_length(1))
 
-    def test_create_kwargs(self):
+    def test_create_kwargs(self) -> None:
         pattern = self.pattern_factory.create_statement("fun($c=0, $d=2312)")
         kwargs = [PythonASTNode(kwarg) for kwarg in pattern.node.node.value.keywords]
         it = self.pattern_factory.create_kwargs("$c=0, $d=2312")
@@ -294,7 +299,7 @@ class TestPythonFactory:
         ),
     )
     @pytest.mark.skip("not working yet")
-    def test(self, _, factory, expression, expected):
+    def test(self, _, factory, expression, expected) -> None:
         patternFactory = PythonPatternFactory(factory)
         node = patternFactory.create_expression(expression)
         assert_that(node, is_(expected))
