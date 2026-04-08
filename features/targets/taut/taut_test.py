@@ -19,7 +19,7 @@ class FakeABCDxTL(ABCDxTL):
         test_log = NNXA.Object('ABCDxTL:test_log_struct')
         return test_log
 
-class Test_ABCDxTL(VIPCxUNIT.TestCase):
+class Test_ABCDxTL(TAUT.TestCase):
     def setUpCommon(self):
         self.tds = [
             TestDoubles(abcdxread=ImprovedStub(ABCDxREAD.abcdxread)),
@@ -56,6 +56,8 @@ class Test_ABCDxTL(VIPCxUNIT.TestCase):
     def tearDown(self):
         for double in self.doubles:
             double.exit()
+
+class test_log(VIPCxUNIT.TestCase):
 
     def test_ABCDxTL(self):
         with TAUT.TestDoubles(abcdxtl=FakeABCDxTL(None)):
