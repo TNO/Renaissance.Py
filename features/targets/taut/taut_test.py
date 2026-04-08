@@ -20,6 +20,43 @@ class FakeABCDxTL(ABCDxTL):
         return test_log
 
 class Test_ABCDxTL(VIPCxUNIT.TestCase):
+    def setUpCommon(self):
+        self.tds = [
+            TestDoubles(abcdxread=ImprovedStub(ABCDxREAD.abcdxread)),
+            TestDoubles(dwmwxws=ImprovedStub(DWMWxWS.dwmwxws)),
+            TestDoubles(abxstream2=ImprovedStub(ABxSTREAM2.abxstream2)),
+            TestDoubles(bcxclear=ImprovedStub(BCxCLEAR.bcxclear)),
+            TestDoubles(bcxload=ImprovedStub(BCxLOAD.bcxload))
+        ]
+        self.sut = ABCDxVIPCxAB.ABCDxVIPCxAB()
+
+    def tearDownCommon(self):
+        for td in self.tds:
+            td.exit()
+
+    def setUp(self):
+        self.bc_stub = BCxCTL_stub()
+        self.vipc_stub = VIPC_stub()
+        self.doubles = []
+        self.doubles.append(
+            TAUT.TestDoubles(
+                module=BCxCTL.BCxCTL, reload_wafer=self.bc_stub.reload_wafer
+            )
+        )
+        self.doubles.append(
+            TAUT.TestDoubles(
+                module=ABCDxEngine.ABCDxEngine,
+                measure_wafer=self.engine_stub.measure_wafer_gw,
+            )
+        )
+        self.doubles.append(
+            TAUT.TestDoubles(module=VIPC, check_stopped=self.vipc_stub.check_stopped)
+        )
+
+    def tearDown(self):
+        for double in self.doubles:
+            double.exit()
+
     def test_ABCDxTL(self):
         with TAUT.TestDoubles(abcdxtl=FakeABCDxTL(None)):
             log = TAUT.Logger()
