@@ -14,15 +14,15 @@ class Taut2Pyunit(PythonRefactoring):
 
     def __init__(self, file):
         super().__init__(file)
-        self.white_list_pattern = r'_unittest|functionality_test|_utils|_stubs'
-        self.black_list_pattern = r'_migrated|_after'
-        self.comp = "EMRW"
+        self.white_list_reg = r'_test|_unittest|_tests'
+        self.black_list_reg = r'_migrated|_after|_original'
+        self.comp = "ABCD"
 
     def run(self):
-        if re.search(self.black_list_pattern, self.filename):
+        if re.search(self.black_list_reg, self.filename):
             print(f"skipping:         {Path(self.filename).resolve()}")
             return
-        if not re.search(self.white_list_pattern, self.filename):
+        if not re.search(self.white_list_reg, self.filename):
             print(f"skipping:         {Path(self.filename).resolve()}")
             return
         print(f"Taut to pyunit migration: {Path(self.filename).resolve()}")
@@ -43,16 +43,16 @@ class Taut2Pyunit(PythonRefactoring):
         self.replace_mock()
 
         self.replace_log_compxtl('emrw')
+        self.replace_log_compxtl('abcd')
         self.remove_taut_import()
         self.replace_taut_import()
         self.convert_setup_common()
         self.convert_teardown_common()
         self.convert_add_patcher()
-        self.convert_setup()
         self.convert_teardown()
+        self.convert_setup()
+        self.commit()
         self.convert_import_verify()
-        self.convert_assert()
-        self.add_self()
         self.convert_testdoubles_fun()
         self.shared_setup()
         self.with_testdoubles()
@@ -240,9 +240,10 @@ def add_patcher(self, target, name, replacement):
     p = patch.object(target, name, replacement)
     p.start()
     self.patchers.append(p)"""
-        index = 0
         for match in match_pattern(self.root.children, pattern):
-            self.insert_after(insert_add_patcher, match.nodes)
+            patcher_pattern = [node for node in self.find_kind("FunctionDef") if node.name == "add_patcher" ]
+            if len(patcher_pattern) == 0:
+                self.insert_after(insert_add_patcher, match.nodes)
 
     def find_import_interface(self, name: str):
         interface = name
@@ -308,12 +309,11 @@ def add_patcher(self, target, name, replacement):
          for node in self.find_kind("Name") if node.name == "context_stub"]
 
     def convert_teardown(self):
-        matched_pattern = self.pattern_factory.create_statements("for double in self.doubles:\n    double.exit()")
-        repl_pattern = """
-for p in self.patches:
-    p.stop()"""
+        matched_pattern = self.pattern_factory.create_statements("def tearDown(self):\n    $$aa")
+        repl_pattern = """def tearDown(self):
+    for p in self.patches:
+        p.stop()"""
         for match in match_pattern(self.root.children, matched_pattern):
-            self.remove(match.nodes, False, False)
             self.replace(repl_pattern, match.nodes, False, False)
 
     def refactor_teardown(self):

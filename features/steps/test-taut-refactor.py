@@ -1,14 +1,22 @@
 import pytest
+from hamcrest import assert_that, calling, is_not, raises, contains_string, not_
 from pytest_bdd import given, when, then, scenario, parsers
 from renaissance.impl.python import PythonRstNode, PythonPatternFactory
+from renaissance.impl.python.factory import PythonFactory
+from renaissance.refactoring.taut2pyunit import Taut2Pyunit
 from renaissance.syntax_tree import ASTFactory, ASTRewriter, MatchFinder
 from renaissance.syntax_tree.match_finder import match_pattern
 from renaissance.utils.refactor_utils import fix_indent
 
+class Ast:
+    def __init__(self):
+        self.file = ""
+        self.atu = None
+        self.signature = None
 
 @pytest.fixture
 def context():
-    return {}
+    return Ast
 
 
 @scenario("../refactor-taut-test.feature", "remove import")
@@ -35,58 +43,50 @@ def test_taut_test4():
 def test_taut_test5():
     pass
 
+@scenario("../refactor-taut-test.feature", "convert setUp")
+def test_taut_test6():
+    pass
 
-@given("'python' programming language")
-def init_language_factory(context):
-    context["factory"] = ASTFactory(PythonRstNode, "")
+@scenario("../refactor-taut-test.feature", "convert tearDown")
+def test_taut_test7():
+    pass
 
+@scenario("../refactor-taut-test.feature", "convert setUpCommon")
+def test_taut_test8():
+    pass
 
-@given(parsers.parse("'{file}' file written in that programming language"))
-def step_impl(context, file):
-    context["atu"] = context["factory"].create(file)
+@scenario("../refactor-taut-test.feature", "convert tearDownCommon")
+def test_taut_test9():
+    pass
 
+@given(parsers.parse("'{file}' file"))
+def step_given_file(context, file):
+    context.file = file
+    context.factory = PythonFactory(PythonRstNode)
+    context.atu = context.factory.create(file)
+
+@given(parsers.parse("it contains '{statement}'"))
+@then(parsers.parse("it should contain '{statement}'"))
+def step_given_contains(context, statement):
+    source = context.atu.signature
+    assert_that(source, contains_string(statement), f"Expected '{statement}' in source")
 
 @given("an AST extracted from that source file without errors")
-def step_impl(context):
-    assert not context["atu"].translation_unit.check_diagnostics()
+@then("AST extracted from that conversion should without errors")
+def step_given_ast_no_errors(context):
+    assert_that(
+        calling(context.atu.translation_unit.check_diagnostics),
+        is_not(raises(Exception)),
+    )
+
+@when("I convert taut to unittest")
+def step_when_convert(context):
+    converter = Taut2Pyunit(context.file)
+    converter.run()
+    context.atu = context.factory.create(context.file)
 
 
-@given(parsers.parse("node '{old}' exits within that AST"))
-def step_impl(context, old):
-    pattern_factory = PythonPatternFactory(context["factory"], context["atu"])
-    find = pattern_factory.create_statements(old)
-    context["result"] = match_pattern(context["atu"].children, find)[0]
-    assert context["result"]
-
-
-@when("that node is removed")
-def step_impl(context):
-    context["rewriter"] = ASTRewriter(context["atu"])
-    context["rewriter"].remove(context["result"].nodes)
-
-
-@when("rewrites replace is performed on that sequence of descendant nodes")
-def step_impl(context):
-    context["rewriter"].apply()
-
-
-@then("in the modified source file that node is removed")
-def step_impl(context):
-    assert "import TAUT" not in context["rewriter"].apply_to_string()
-
-
-@when(parsers.parse("that node is replaced by '{replacement}'"))
-def step_impl(context, replacement):
-    context["replacement"] = replacement
-    context["rewriter"] = ASTRewriter(context["atu"])
-    context["rewriter"].replace(replacement, context["result"].nodes)
-
-
-@then("in the modified source file that node is replaced by the given text")
-def step_impl(context):
-    assert context["replacement"] in context["rewriter"].apply_to_string()
-
-
-@when("run flake8 and autopep8 to auto fix the code")
-def step_impl(context):
-    context["fixed_code"] = fix_indent(context["rewriter"].apply_to_string())
+@then(parsers.parse("it should not contain '{statement}'"))
+def step_then_not_contain(context, statement):
+    source = context.atu.signature
+    assert_that(source, not_(contains_string(statement)))

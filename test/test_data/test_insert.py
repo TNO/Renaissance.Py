@@ -1,5 +1,5 @@
 input_code = """
-import OOXA
+import LLXA
 def a():
     x = 10
 
