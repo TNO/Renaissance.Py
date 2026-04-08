@@ -313,5 +313,36 @@ class TestPythonMatcher:
         pattern = self.pattern_factory.create_statement("TestDoubles($a=ImprovedStub($b))")
         assert_that(match_pattern(atu.children, [pattern]), has_length(1))
 
+    @pytest.mark.parametrize(
+        "txt_code",
+        [
+            "def f():\n    pass",  # no parameters
+
+            "def f(a):\n    pass",  # single parameter
+            "def f(a : int):\n    pass",  # single parameter annotated with type hints
+            "def f(a = 0):\n    pass",  # single parameter with default value
+            "def f(a : int = 0):\n    pass",  # single parameter with default value and annotated with type hints
+            
+            "def f(a, b, c):\n    pass",  # multiple parameters
+            "def f(a : int, b : int, c : int):\n    pass",  # multiple parameters annotated with type hints
+            "def f(a = 0, b = 0, c = 0):\n    pass",  # multiple parameters with default values
+            "def f(a : int = 0, b : int = 0, c : int = 0):\n    pass",  # multiple parameters with default values and annotated with type hints
+
+            "def f(a, b, c, /):\n    pass",  # with positional divider
+            "def f(*, a, b, c):\n    pass",  # with keyword divider
+            "def f(*a, /, b, *, c):\n    pass",  # with positional and keyword divider
+
+            "def f(*a):\n    pass",  # with var-positional argument
+            "def f(**b):\n    pass",  # with var-keyword argument
+            "def f(*a, **b):\n    pass",  # with var-positional and var-keyword argument
+          
+        ],
+    )
+    def test_match_function_definition(self, txt_code: str):
+        txt_pattern = "def f($$params):\n   pass"
+        pattern = self.pattern_factory.create(txt_pattern)
+        code = PythonASTNode.load_from_text(txt_code)
+        assert_that(is_match(code, pattern), is_(True))
+
 if __name__ == "__main__":
     pytest.main()

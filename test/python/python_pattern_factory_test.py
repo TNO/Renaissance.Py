@@ -54,7 +54,6 @@ class TestPythonFactory:
         ],
     )
     def test_if_else(self, statement) -> None:
-
         node = PythonASTNode.load_from_text(statement).body[-1]
         assert_that(ast.If.__name__, is_(node.kind))
         assert_that(node.signature, is_(statement))
@@ -266,6 +265,9 @@ class TestPythonFactory:
 
     @pytest.mark.parametrize("code", ["\"hello = 'hello' # comment to hello\""])
     def test_comments(self, code) -> None:
+        """
+        TODO: what is tested?
+        """
         pattern_factory = PythonPatternFactory(self.factory)
         node = pattern_factory.create_statement(code)
         assert_that(ast.Expr.__name__, is_(node.kind))
