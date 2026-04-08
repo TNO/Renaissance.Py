@@ -13,14 +13,14 @@ DEFAULT_EXCLUDE_KIND = {"FullComment", "MACRO_DEFINITION", "Comment"}
 @runtime_checkable
 class AstProtocol(Protocol):
     kind: str
-    properties: dict
+    properties: dict  # TODO add missing types of key and value.
     children: list[Self]
     signature: str
     name: str
 
 
 class PatternMatch:
-    def __init__(self, nodes, expansions, patterns):
+    def __init__(self, nodes, expansions, patterns):  # TODO add types
         self.nodes = nodes
         self.expansions = expansions
         self.patterns = patterns
@@ -53,11 +53,13 @@ class PatternMatch:
         return found_matches
 
 
-def is_match_tree(src: Sequence | None, cmp: Sequence | None, expansions=None):
+def is_match_tree(src: Sequence | None, cmp: Sequence | None, expansions=None): #TODO: add type of Sequence elements
     if expansions is None:
         expansions = {}
     if cmp is None or src is None:
-        return src == cmp
+        # TODO: As at leat one is None, shouldn't one use 'is'?
+        # See e.g. https://stackoverflow.com/questions/14247373/python-none-comparison-should-i-use-is-or
+        return src == cmp  
     # src and cmp  are both not None
     if not (isinstance(src, list) and isinstance(cmp, list)):
         return src == cmp
@@ -263,3 +265,11 @@ class MatchFinder:
 
 
 # TODO check with pierre whether we should take the highest or the deepest match re implementation backtracking to find the best match
+
+# We should find the highest possible match
+# For example in C++, 
+#   the pattern "int $x; $x;" should match the code "int x; x;"
+#   the pattern "int $x = 1; int y = $x;" should match the code "int x = 1; int y = x;", and even
+#   the pattern "typedef enum { $x } E; void f() { g($x); }" matches the code "typedef enum {  x } E; void f() { g( x); }"  
+# The type of x is different at both locations.
+# The highest shared type should be chosen as type of $x.

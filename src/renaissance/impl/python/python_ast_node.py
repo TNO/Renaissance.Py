@@ -473,6 +473,9 @@ class PythonASTNode:
 
     def get_container_parent(self):
         # Get the containing definition parent
+        
+        # TODO check self.parent once
+        # TODO use kind in CONTAINERS with CONTAINERS = ["FunctionDef", "ClassDef", "Module"]
         if self.parent and self.parent.kind == "FunctionDef":
             return self.parent
         elif self.parent and self.parent.kind == "ClassDef":
@@ -480,6 +483,7 @@ class PythonASTNode:
         elif self.parent and self.parent.kind == "Module":
             return self.parent
         else:
+            # TODO handle case when self.parent is None
             return self.parent.get_container_parent()
 
     @property
