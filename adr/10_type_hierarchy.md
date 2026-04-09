@@ -11,7 +11,21 @@ Authors:
  - paul.nelissen@esi.nl
  - pierre.vandelaar@tno.nl
 
-## Context
+## Table of contents
+
+- [Context](#context)
+- [Decision](#decision)
+- [Implementation notes](#implementation-notes)
+- [Example](#example)
+- [Rationale](#rationale)
+- [Consequences](#consequences)
+- [Alternatives considered](#alternatives-considered)
+- [Related decisions](#related-decisions)
+ 
+ ## Context
+
+the goal of this ADR is to establish a robust and maintainable type hierarchy for AST nodes use in the algorithems
+within the Renaissance project and across the languages.
 
 AST node types are currently identified by string-based type names (e.g., re.compile(kind, 
 `(?i)Function_?Decl".IGNORECASE)`). This approach is fragile, hard to refactor, and requires every consumer to know the 

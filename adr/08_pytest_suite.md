@@ -24,11 +24,14 @@ Authors:
 
 ## Context
 
+The goal of this ADR is to establish a coherent test architecture for the Renaissance project that supports 
+maintainability, extensibility, and comprehensive coverage. 
 To ensure maintainability and extensibility a test architecture is crucial. The project needs a coherent set of
 testing frameworks covering behaviour-driven tests, unit tests, performance benchmarks, and inline documentation
 examples. The choice of frameworks has implications for test discovery, fixture sharing, CI integration, and the
 ability to express the domain-specific requirements listed below.
 
+## Requirements
 ### Functionalities that must be tested
 
 **Code matching**

@@ -1,14 +1,33 @@
 # 04 - nodes can be immutable
 
-Status: Proposal
+Status: Accepted
 
 Date: 2026-02-25
 
+Authors:
+ - jinmin.hu@capgemini.com
+ - huub.joosten@capgemini.com
+ - luna.li@capgemini.com
+ - paul.nelissen@esi.nl
+ - pierre.vandelaar@tno.nl
+
+## Table of contents
+
+- [Context](#context)
+- [Decision](#decision)
+- [Implementation notes](#implementation-notes)
+- [Example](#example)
+- [Rationale](#rationale)
+- [Consequences](#consequences)
+- [Alternatives considered](#alternatives-considered)
+- [Related decisions](#related-decisions)
 
 
 ## Context
 
-The project models trees made of nodes. Currently, node data (properties and children) most operations read the 
+The goal of this ADR is to define a controlled way to update AST nodes, so thet the resulting AST is still correct. 
+
+The project models trees made of nodes. Currently, node data (properties and children) operations read the 
 tree and transformations create new trees instead of mutating in-place. Ensuring immutability helps reasoning 
 about transformations, enables safer concurrency, and opens opportunities for caching and memoization.
 
@@ -21,8 +40,8 @@ produce a new node valid rather than mutating the existing node in-place.
 Implementation notes and recommendations for contributors:
 
 - Provide rewriter to create modified copies of nodes  (for example, a `replace`, `remove` `insert`
-  pattern that returns a new node with the requestedchanges).
-- When storing modifications, make sure the result is still correct and raise exception in case of unsulvable conflict.
+  pattern that returns a new node with the requested changes).
+- When storing modifications, make sure the result is still correct and raise exception in case of unsolvable conflict.
 
 ## Rationale
 

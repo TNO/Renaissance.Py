@@ -6,7 +6,21 @@ Date: 2026-02-25
 
 Authors: Project contributors
 
+## Table of contents
+
+- [Context](#context)
+- [Decision](#decision)
+- [Implementation notes](#implementation-notes)
+- [Example](#example)
+- [Rationale](#rationale)
+- [Consequences](#consequences)
+- [Alternatives considered](#alternatives-considered)
+- [Related decisions](#related-decisions)
+
 ## Context
+
+The go of this ADR is to define a modern way to identify and manage dependencies, thos that we can 
+recreate the arfitact at any time. 
 
 The project uses Python and benefits from reproducible dependency management and straightforward virtual
 environment handling. UV provides a single-file project manifest (`pyproject.toml`) and an integrated
