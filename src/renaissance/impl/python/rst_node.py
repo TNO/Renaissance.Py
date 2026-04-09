@@ -6,7 +6,7 @@ from ast_comments import *
 
 from renaissance.impl.python.util import convert
 from renaissance.syntax_tree.match_finder import find_in_list
-from renaissance.utils.node_util import preceding_sibling, next_sibling
+from renaissance.utils.ast_utils import preceding_sibling, next_sibling, match_props, match_children
 
 OPERATOR_MAP = {
     "AnnAssign": "=",
@@ -35,6 +35,7 @@ OPERATOR_MAP = {
 
 types = ["int", "float", "str", "list", "set", "tuple", "Mapping", "dict", "Optional"]
 IRRELEVANT_PROPS = {"comment"}
+IRRELEVANT_NODES = {"comment"}
 IMPLICIT = ["ImplicitNode"]
 
 class ImplicitNode(ast.Name):
@@ -264,8 +265,8 @@ class PythonRstNode:
         return (
             isinstance(other, type(self))
             and self.kind == other.kind
-            and self.match_props(other.properties)
-            and self.match_children(other.children)
+            and match_props(self.properties, other.properties, IRRELEVANT_PROPS)
+            and match_children(self.children, other.children,  IRRELEVANT_NODES)
         )
 
     def __contains__(self, item):
@@ -299,13 +300,6 @@ class PythonRstNode:
         for child in self.children:
             child.process(function)
 
-
-    def match_props(self, properties) -> bool:
-        all_keys = (self.properties.keys() | properties.keys()) - IRRELEVANT_PROPS
-        return all(self.properties.get(n) == properties.get(n) for n in all_keys)
-
-    def match_children(self, children):
-        return all(i< len(self.children) and self[i] == child for i, child in enumerate(children))
 
     def derive_position(self, node: ast.AST, translation_unit: PythonRstTranslationUnit, parent):
         if node._attributes:

@@ -19,7 +19,6 @@ from .recipe_ast_processor import (
     recipe_step,
     final_action,
 )
-from ..utils.ast_utils import ASTUtils
 from ..utils.text_utils import TextUtils
 from renaissance.impl.clang.cpp_utils import CPPUtils
 
@@ -34,7 +33,6 @@ __all__ = [
     "PatternMatch",
     "ASTRewriter",
     "CPPUtils",
-    "ASTUtils",
     "TextUtils",
     "ASTProcessor",
     "BatchASTProcessor",

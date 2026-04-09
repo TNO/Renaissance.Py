@@ -9,13 +9,15 @@ from clang.cindex import TranslationUnit, Config, Index, TypeKind, CursorKind
 
 from renaissance.impl import MATCH_ALL, MATCH_ONE
 from renaissance.syntax_tree import ASTNode, ASTReference
+from renaissance.utils.ast_utils import match_children, match_props
 
 EMPTY_DICT = {}
 EMPTY_STR = ""
 EMPTY_LIST = []
 
 STMT_PARENTS = ["COMPOUND_STMT", "TRANSLATION_UNIT"]
-
+IRRELEVANT_PROPS = {'comment'}
+IRRELEVANT_NODES = {'comment'}
 PRINT_ALL_NODES = False
 
 
@@ -144,6 +146,19 @@ class ClangASTNode(ASTNode):
         self._properties = self._derive_properties()
         if self.kind == "DECL_REF_EXPR":
             self._properties["name"] = self._name
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, type(self))
+            and self.kind == other.kind
+            and match_props(self.properties,other.properties, IRRELEVANT_PROPS)
+            and match_children(self.children, other.children, IRRELEVANT_NODES)
+        )
+
+
+    def __hash__(self):
+        return hash((self.kind, frozenset(self.properties.items())))
+
 
     @override
     @staticmethod

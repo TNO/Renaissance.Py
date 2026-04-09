@@ -1,7 +1,7 @@
 from clang import cindex
 from renaissance.impl.tree_sitter.lst import LSTNode, LST
 from typing import Optional
-from renaissance.utils.node_util import detect_placeholder
+from renaissance.utils.ast_utils import detect_placeholder
 
 
 class ClangAdapter:

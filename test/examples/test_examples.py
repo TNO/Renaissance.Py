@@ -35,29 +35,41 @@ class TestRefactorWithNestedCompositions:
     def test_refactor_with_nested_compositions(self):
         result = refactor_with_nested_compositions(["", ""])
         assert_that(result, is_not(None))
-        expected_result_nested = ('void f1(int a, int b, int c);\n'
- 'void f2(int a, int c);\n'
- 'void f(){\n'
- '    const int a = 1;\n'
- '    const int b = 2;\n'
- '    int isAOne = a==1;\n'
- '    int c = 0, d=0;\n'
- '    //changed if expr to const\n'
- '    if(isAOne){\n'
- '       d++;//changed if expr to const\n'
- 'if(isAOne){\n'
- '   d++;c=d;//changed function f1 to f2\n'
- 'f2(a\n' ',c\n' ');\n' ';\n'
- '}//changed function f1 to f2\n'
- '      f2(a\n' '      ,c\n' '      );\n' '    ;\n'
- '    }//changed function f1 to f2\n'
- '            f2(a\n' '            ,c\n' '            );\n' '    if (a==2) {\n'
- '        c++;\n'
- '        //changed function f1 to f2\n'
- '        f2(a\n' '        ,c\n' '        );\n' '    }\n'
- '    //changed function f1 to f2\n'
- '    f2(a\n' '    ,c\n' '    );\n'
- '}')
+        expected_result_nested = """\
+void f1(int a, int b, int c);
+void f2(int a, int c);
+void f(){
+    const int a = 1;
+    const int b = 2;
+    int isAOne = a==1;
+    int c = 0, d=0;
+    
+    //changed if expr to const
+    if(isAOne){
+        d++;
+//changed if expr to const
+if(isAOne){
+    d++;c=d;
+//changed function f1 to f2
+f2(a,c);
+;
+}
+      //changed function f1 to f2
+      f2(a,c);
+    ;
+    }
+            //changed function f1 to f2
+            f2(a,c);
+    if (a==2) {
+        c++;
+        
+        //changed function f1 to f2
+        f2(a,c);
+    }
+    
+    //changed function f1 to f2
+    f2(a,c);
+}"""
         assert result == expected_result_nested
         assert_that(result, is_(expected_result_nested))
 
@@ -141,23 +153,21 @@ class TestExamplesDifferentStyles:
         result, expected = example_replace_old_by_fancy_new(factory, pattern_factory)
 
         assert_that(result, contains_string("fancy_new b = 2;\n"))
+
+    @pytest.mark.skip("can't find vector under windows")
     def test_make_sure_that_batch_proc_still_run(self):
         assert_that(calling(batch_remove_unused_variable_once_example), not_(raises(Exception)))
         assert_that(calling(batch_repeat_example), not_(raises(Exception)))
         assert_that(calling(batch_recipe_example), not_(raises(Exception)))
-    
-    
-    
+
     @pytest.mark.skip("can't find vector under windows")
     def test_make_sure_that_recipe_still_run(self):
         assert_that(calling(receipe_example), not_(raises(Exception)))
-    
-    
-    
+
     def test_make_sure_different_style_still_run(self):
         factory = ASTFactory(ClangASTNode)
         pattern_factory = CPatternFactory(factory)
-    
+
         assert_that(
             calling(lambda: example_add_comment_and_commit(factory, pattern_factory)),
             not_(raises(Exception)),
@@ -175,16 +185,12 @@ class TestExamplesDifferentStyles:
             not_(raises(Exception)),
         )
         assert_that(calling(lambda: main([])), not_(raises(Exception)))
-    
-    
-    
+
     def test_make_sure_that_nested_compositions_still_run(self):
         assert_that(calling(lambda: refactor_with_nested_compositions([])), not_(raises(Exception)))
-    
-    
-    
+
     @pytest.mark.parametrize("node_type", [ClangASTNode, ClangJsonASTNode])
-    def test_make_sure_unused_var_still_run(self,node_type):
+    def test_make_sure_unused_var_still_run(self, node_type):
         assert_that(
             calling(lambda: remove_unused_variable_low_level(node_type)),
             not_(raises(Exception)),
@@ -193,12 +199,10 @@ class TestExamplesDifferentStyles:
             calling(lambda: remove_unused_variable_using_refactor_method(node_type)),
             not_(raises(Exception)),
         )
-    
-    
-    
+
     def test_make_sure_replace_if_with_ternary_still_run(self):
         result = replace_if_with_ternary()
-    
+
         assert_that(
             result,
             is_(
@@ -206,18 +210,3 @@ class TestExamplesDifferentStyles:
                 "        int d = 4;\n        void f(){\n            c++; b=(a==1) ? 2:3; d++;\n        }"
             ),
         )
-    
-    
-    
-
-
-
-
-
-
-
-
-
-
-
-

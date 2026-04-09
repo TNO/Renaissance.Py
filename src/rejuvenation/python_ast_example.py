@@ -22,7 +22,7 @@ pa(54)
 
 def python_ast_smoke_test():
     factory = PythonFactory(PythonRstNode)
-    atu:PythonRstNode = PythonRstNode.load_from_text(example_code, "test.py")
+    atu: PythonRstNode = PythonRstNode.load_from_text(example_code, "test.py")
     pattern_factory = PythonPatternFactory(
         factory,
     )

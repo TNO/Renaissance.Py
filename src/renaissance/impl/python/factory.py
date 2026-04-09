@@ -15,7 +15,7 @@ from renaissance.impl.tree_sitter.adapter import TreeSitterAdapter
 from renaissance.impl.tree_sitter.lst import LSTNode
 from renaissance.syntax_tree import ASTFactory
 from renaissance.syntax_tree.match_finder import AstProtocol, is_match
-from renaissance.utils.node_util import replace_dollar
+from renaissance.utils.ast_utils import replace_dollar
 
 _MATCH_ALL_RE = re.compile(r"^" + re.escape(MATCH_ALL) + r"\w+$")
 _MATCH_ONE_RE = re.compile(r"^" + re.escape(MATCH_ONE) + r"\w+$")
@@ -32,7 +32,7 @@ class PythonPattern(AstProtocol):
         self.properties: dict = node.properties
         self.children: list[PythonPattern] = [PythonPattern(node) for node in node.children]
         self.signature: str = node.signature
-        self.name: str = node.name.replace(MATCH_ALL, "$$").replace(MATCH_ONE, "$") if hasattr(node,'name') else ''
+        self.name: str = node.name.replace(MATCH_ALL, "$$").replace(MATCH_ONE, "$") if hasattr(node, "name") else ""
 
     def __eq__(self, other: AstProtocol) -> bool:
         return is_match(other, self)
@@ -40,7 +40,7 @@ class PythonPattern(AstProtocol):
     def __repr__(self):
         return str(self.node).replace(MATCH_ALL, "$$").replace(MATCH_ONE, "$")
 
-    def derive_kind(self, ast_node:AST) -> str:
+    def derive_kind(self, ast_node: AST) -> str:
         signature = ""
         if isinstance(ast_node, ast.arg):
             signature = ast_node.arg
@@ -57,10 +57,7 @@ class PythonPattern(AstProtocol):
 
 class PythonFactory:
 
-    def __init__(
-        self,
-        clazz: type[PythonRstNode | PythonCstNode | LSTNode]
-    ) -> None:
+    def __init__(self, clazz: type[PythonRstNode | PythonCstNode | LSTNode]) -> None:
         self.clazz = clazz
         if clazz == LSTNode:
             clazz.load_from_text = self.load_from_lst

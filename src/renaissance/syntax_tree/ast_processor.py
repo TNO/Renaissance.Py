@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Callable, Iterator, Sequence
 
 import renaissance.syntax_tree.match_finder
@@ -8,7 +9,6 @@ from renaissance.syntax_tree.ast_factory import ASTFactory
 from renaissance.syntax_tree.ast_finder import ASTFinder
 from renaissance.syntax_tree.ast_rewriter import ASTRewriter
 from renaissance.syntax_tree.match_finder import PatternMatch
-from renaissance.utils.ast_utils import ASTUtils
 
 
 class ASTProcessor:
@@ -110,8 +110,21 @@ class ASTProcessor:
         """
         if not self.__rewriter.has_changed():
             return self
-        self.__root_node, self.__rewriter = ASTUtils.commit(self.__rewriter, self.__ast_factory, self.in_memory)
+        self.__root_node, self.__rewriter = self._commit(self.__rewriter, self.__ast_factory, self.in_memory)
         return ASTProcessor(self.__root_node, self.__ast_factory, self.in_memory)
+
+    @staticmethod
+    def _commit(rewriter: ASTRewriter, factory: ASTFactory, in_memory: bool = False):
+        rewriter.apply_to_string()
+        if in_memory:
+            atu = factory.create_from_text(rewriter.apply_to_string(), rewriter.get_filename())
+            return atu, ASTRewriter(atu)
+        else:
+            # save file first then reload it
+            with open(rewriter.get_filename(), "wb") as f:
+                f.write(rewriter.apply())
+            atu = factory.create(Path(rewriter.get_filename()))
+            return atu, ASTRewriter(atu)
 
 
 # main

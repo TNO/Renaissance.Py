@@ -14,12 +14,9 @@ class GoAstNode:
 
     @property
     def properties(self) -> dict[str, Any]:
-        return {
-                "length": self.length,
-                "offset": self.offset,
-                "name": self.name
-            }
-    children: list[Self] =[]
+        return {"length": self.length, "offset": self.offset, "name": self.name}
+
+    children: list[Self] = []
 
     @property
     def children(self) -> list[Self]:

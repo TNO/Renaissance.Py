@@ -93,6 +93,7 @@ class TextUtils:
         Returns:
             int: The number of leading whitespace characters (tabs or spaces) from the start of the line to the given offset.
         """
+
         indent = offset - 1
         while indent > 0:
             if not content[indent] in b" \t":
@@ -109,15 +110,11 @@ class TextUtils:
         with open(filename, "w") as f:
             f.write(text)
 
-    @staticmethod
-    def clean_signature(signature):
-        text = signature.replace("\n", " ")
-        return re.sub(r"[^\w\s]", "", text)[:30]  # Remove punctuation, limit length
 
-    @staticmethod
-    def clean_signature(signature):
-        text = signature.replace("\n", " ")
-        return re.sub(r"[^\w\s]", "", text)[:30]  # Remove punctuation, limit length
+def signature2id(signature):
+    text = signature.replace("\n", " ")
+    return re.sub(r"[^\w\s]", "", text)[:30]  # Remove punctuation, limit length
+
 
 def camel_case(snippet: str) -> str:
     parts = snippet.split("_")

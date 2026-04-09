@@ -2,12 +2,10 @@ from typing import Sequence
 
 from renaissance.impl.tree_sitter.adapter import TreeSitterAdapter
 from renaissance.impl.tree_sitter.lst import LSTNode
-from renaissance.utils.node_util import replace_dollar
-
-SHOW_NODE = False
+from renaissance.utils.ast_utils import replace_dollar
 
 
-class TsPatternFactory:
+class TreeStiterPatternFactory:
 
     def __init__(self, adapter: TreeSitterAdapter, language: str = "python"):
         self.adapter = adapter

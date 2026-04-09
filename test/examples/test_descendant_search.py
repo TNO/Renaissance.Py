@@ -5,13 +5,14 @@ from hamcrest import *
 
 from c_cpp.factories import Factories
 from rejuvenation.descendant_search import find_descendant_match
-from renaissance.impl.clang import CPatternFactory
+from renaissance.impl.clang import CPatternFactory, ClangASTNode
+from renaissance.impl.clang_json import ClangJsonASTNode
 from renaissance.syntax_tree import ASTFactory, MatchFinder
 from renaissance.syntax_tree.match_finder import is_match, AstProtocol, match_pattern
+from targets.go import factory
 
 
 class TestFindDescendantMatch:
-
     code_text: str = """
             int my_function();
                                        
@@ -35,8 +36,18 @@ class TestFindDescendantMatch:
     inner_text: str = "my_function()"
     extra_declarations_inner_text: list[str] = ["int my_function();"]
 
-    @pytest.mark.parametrize("_, factory", Factories.factories)
-    def test_descendant_search(self, _: str, factory: ASTFactory):
+    def test_descendant_search_with_clang(self):
+        factory = ASTFactory(ClangASTNode)
+        pattern_factory = CPatternFactory(factory)
+        code_pattern = factory.create_from_text(self.code_text, "text.c")
+        outer_pattern = pattern_factory.create_statement(self.outer_text)
+        inner_pattern = pattern_factory.create_expression(self.inner_text, self.extra_declarations_inner_text)
+        results = find_descendant_match(code_pattern, outer_pattern, inner_pattern)
+
+        assert_that(results, has_length(3), f"length of results = {len(results)}")
+
+    def test_descendant_search_with_json(self):
+        factory = ASTFactory(ClangJsonASTNode)
         pattern_factory = CPatternFactory(factory)
         code_pattern = factory.create_from_text(self.code_text, "text.c")
         outer_pattern = pattern_factory.create_statement(self.outer_text)

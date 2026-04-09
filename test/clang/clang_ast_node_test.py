@@ -6,6 +6,12 @@ from renaissance.syntax_tree import ASTFactory
 
 
 class TestClangAstNode:
+    def test_is_same_node(self):
+        factory = ASTFactory(ClangASTNode, [])
+        src = CPatternFactory(factory).create_statements("a == 3;a == 3;")
+        src2 = CPatternFactory(factory).create_statement("a == 3;")
+        assert_that(src[0], is_(src[1]))
+
     def test_find_all_in_clang_list_with_expansion(self):
         factory = ASTFactory(ClangASTNode, [])
         src = CPatternFactory(factory).create_statement("a == 3;")

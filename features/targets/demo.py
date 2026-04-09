@@ -1,7 +1,7 @@
 from python import (
-    python_matcher_test,
-    python_astshower_test,
-    python_ast_node_ref_test,
+    test_python_matcher,
+    test_python_astshower,
+    test_python_ast_node_ref,
     test_ast_factory,
 )
 

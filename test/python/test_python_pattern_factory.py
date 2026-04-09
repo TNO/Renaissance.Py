@@ -4,6 +4,8 @@ import pytest
 import ast
 
 from hamcrest import assert_that, has_length, is_, is_in
+
+from renaissance.impl import MATCH_ONE, MATCH_ALL
 from renaissance.impl.python import PythonRstNode
 from renaissance.impl.python.cst_node import PythonCstNode
 from renaissance.impl.tree_sitter.lst import LSTNode
@@ -14,10 +16,12 @@ from renaissance.syntax_tree.match_finder import match_pattern
 
 class Factories:
     # add factories here to test different ASTNode implementations
-    node_types = [("ast", PythonRstNode),
-                  ("cst", PythonCstNode),
-                  ("lst", LSTNode),
-                  ("rst", ast.AST), ]
+    node_types = [
+        ("ast", PythonRstNode),
+        ("cst", PythonCstNode),
+        ("lst", LSTNode),
+        ("rst", ast.AST),
+    ]
     factories = [(name_type[0], PythonFactory(name_type[1])) for name_type in node_types]
 
     @staticmethod
@@ -26,6 +30,7 @@ class Factories:
             (str(factory[0]) + " " + str(pars[0]), factory[1], *pars) for factory, pars in product(Factories.factories, test_parameters)
         ]
         return result
+
 
 class TestPythonFactory:
 
@@ -290,10 +295,20 @@ class TestPythonFactory:
     @pytest.mark.parametrize(
         "_, factory, expression, expected",
         Factories.extend(
-            [( "a = 1",["Constant", "AssignTarget",'assignment', None]),]
+            [
+                ("a = 1", ["Constant", "AssignTarget", "assignment", None]),
+            ]
         ),
     )
     def test(self, _, factory, expression, expected):
         patternFactory = PythonPatternFactory(factory)
         node = patternFactory.create_expression(expression)
         assert_that(node.kind, is_in(expected))
+
+    def test_function_with_multi_patterns(self):
+        pattern = self.pattern_factory.create_expression("$f($$before, $a, $$after)")
+        assert_that(pattern.kind, "Call")
+        assert_that(pattern.children[0].kind, is_(MATCH_ONE))
+        assert_that(pattern.children[1].children[0].kind, is_(MATCH_ALL))
+        assert_that(pattern.children[1].children[1].kind, is_(MATCH_ONE))
+        assert_that(pattern.children[1].children[2].kind, is_(MATCH_ALL))

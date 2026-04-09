@@ -3,9 +3,9 @@
 from renaissance.syntax_tree import (
     ASTFactory,
     ASTRewriter,
-    ASTUtils,
     ASTShower,
     ASTFinder,
+    ASTProcessor,
 )
 from renaissance.impl.clang import ClangASTNode, CPatternFactory
 from renaissance.syntax_tree.match_finder import match_pattern, find_all
@@ -77,8 +77,13 @@ def example_add_comment_and_commit(factory, pattern_factory):
     for match in find_all(atu.children, *patterns_list):
         rewriter.insert_before("// old has become obsolete", match)
 
+    def commit():
+        rewriter.apply_to_string()
+        atu = factory.create_from_text(rewriter.apply_to_string(), rewriter.get_filename())
+        return atu, ASTRewriter(atu)
+
     # commit
-    atu, rewriter = ASTUtils.commit(rewriter, factory, in_memory=True)
+    atu, rewriter = commit()
 
     # look at the print that marks all old declarations with the provided comment
     print("results after adding comments to the obsolete types:")

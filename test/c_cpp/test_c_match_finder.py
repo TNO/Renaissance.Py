@@ -14,7 +14,7 @@ from renaissance.syntax_tree import (
     ASTNode,
     MatchFinder,
 )
-from renaissance.syntax_tree.match_finder import exclude_nodes_by_kind, match_pattern
+from renaissance.syntax_tree.match_finder import exclude_nodes_by_kind, match_pattern, find_variants, find_in_list
 from utils_for_tests import compress, show_node, debug_mismatch
 
 logger = logging.getLogger(__name__)
@@ -258,6 +258,7 @@ class TestFunctionCallStatements(TestCMatchFinder):
         self.assert_matches(expected_dicts_per_match, matches)
 
 
+
 class TestMultiAssignments(TestCMatchFinder):
 
     @pytest.mark.parametrize(
@@ -442,3 +443,36 @@ class TestUseAtuToCreatePattern(TestCMatchFinder):
         # unreliable to check the exact number of matches due to the pattern also matching the pattern itself
         # text= result.filter(lambda match: match.patterns == names).map(lambda match: match.nodes[0]).filter(ASTNode.is_part_of_translation_unit).map(ASTNode.text).to_list()
         # assert_that(text, is_(expected))
+
+class TestIndividualCases:
+    def test_multi_single(self):
+        factory = ASTFactory(ClangASTNode)
+        atu = factory.create_from_text( """
+            int one(int a);
+            int two(int a, int b);
+            int three(int a, int b, int c);
+            int a,b,c;
+            void f(){
+                one(a);
+                two(a,b);
+                three(a,b,c);
+            }
+            """, "test.c")
+        pattern_factory= CPatternFactory(factory)
+        stmt_nodes =pattern_factory.create_statements("$f($$all, $a);",None, ["int $f(int,int);"])
+        variants = find_variants(atu.children[-1].children[-1].children, stmt_nodes)
+
+        assert_that(variants, has_length(1))
+        assert_that(variants[0].end_index, is_(0))
+        assert_that(variants[0].exp['$$all'], is_([]))
+        assert_that(variants[0].exp['$a'][0].name, is_('a'))
+        variants = find_in_list(atu.children[-1].children[-1].children, stmt_nodes,{}, 1)
+        assert_that(variants,1)
+
+        variants = find_in_list(atu.children[-1].children[-1].children, stmt_nodes,{}, 1)
+
+        # assert_that(variants[0].exp['$$all'], has_length(1))
+        {"$f": ["two"], "$$all": ["a"], "$a": ["b"]},
+        {"$f": ["three"], "$$all": ["a", "b"], "$a": ["c"]},
+        found = match_pattern(atu.children[-1].children[-1].children, stmt_nodes)
+        assert_that(found, has_length(3))

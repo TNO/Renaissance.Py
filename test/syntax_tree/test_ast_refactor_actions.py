@@ -59,7 +59,7 @@ class TestASTRefactorActions:
         node = mocker.Mock()
         proc = mocker.Mock()
         factory = mocker.Mock()
-        is_match_mock = mocker.patch("renaissance.syntax_tree.match_finder.is_match", return_value=True)
+        is_match_mock = mocker.patch("renaissance.syntax_tree.match_finder.find_in_list", return_value=True)
         refactor_actions = ASTRefactorActions(proc, factory)
 
         refactor_actions._replace_patterns(node, "my_awsome_text", [[node]], "Call")
