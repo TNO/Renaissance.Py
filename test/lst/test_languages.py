@@ -6,7 +6,7 @@ from hamcrest import *
 
 from renaissance.impl.tree_sitter.adapter import TreeSitterAdapter
 from renaissance.impl.tree_sitter.lst import LST
-from renaissance.utils.node_util import traverse
+from renaissance.utils.ast_utils import traverse
 
 
 class TestLanguages:

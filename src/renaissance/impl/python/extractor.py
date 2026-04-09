@@ -7,10 +7,11 @@ from renaissance.impl.python import PythonRstNode
 
 class PythonExtractor:
     graph = networkx.DiGraph()
-    codebase:dict = {}
-    def process(self, file:Path):
-        root  = PythonRstNode.load(file)
-        module_name = root.filename.replace('/', '.').replace('.py', '')
+    codebase: dict = {}
+
+    def process(self, file: Path):
+        root = PythonRstNode.load(file)
+        module_name = root.filename.replace("/", ".").replace(".py", "")
         folder = str(Path(file).parent)
         self.graph.add_node(folder, type="folder")
         self.graph.add_edge(folder, module_name, type="contains")
@@ -18,18 +19,19 @@ class PythonExtractor:
         for stmt in root:
             match stmt.kind:
                 case "Import":
-                    self.graph.add_edge(module_name, stmt.name, type ="include")
+                    self.graph.add_edge(module_name, stmt.name, type="include")
                 case "ImportFrom":
                     for alias in stmt.node.names:
-                        self.graph.add_edge(module_name, f"{stmt.node.module}.{alias.name}", type ="include")
-                case 'FunctionDef':
-                    self.graph.add_edge(module_name,  f"{module_name}.{stmt.name}", type="definition")
+                        self.graph.add_edge(module_name, f"{stmt.node.module}.{alias.name}", type="include")
+                case "FunctionDef":
+                    self.graph.add_edge(module_name, f"{module_name}.{stmt.name}", type="definition")
                     self.graph.add_node(f"{module_name}.{stmt.name}", properties="function")
                     # todo:  convert #, stmt.properties) to graphml
-                case 'ClassDef':
-                    self.graph.add_edge(module_name, f"{module_name}.{stmt.name}", type = "definition")
-                    self.graph.add_node(f"{module_name}.{stmt.name}") # convert to args, stmt.properties)
-                case _: pass
+                case "ClassDef":
+                    self.graph.add_edge(module_name, f"{module_name}.{stmt.name}", type="definition")
+                    self.graph.add_node(f"{module_name}.{stmt.name}")  # convert to args, stmt.properties)
+                case _:
+                    pass
 
         tu = root.translation_unit
         self.codebase[file] = root

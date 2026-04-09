@@ -1,5 +1,7 @@
 # This script demonstrates the use of the syntax_tree library to parse and rewrite C code.
 # It specifically showcases nested replacements and multiple patterns.
+import textwrap
+
 from renaissance.syntax_tree import ASTFactory, ASTRewriter
 from renaissance.impl.clang import ClangASTNode, CPatternFactory
 from renaissance.syntax_tree import ASTShower, TextUtils, ASTFinder
@@ -82,12 +84,13 @@ def refactor_with_nested_compositions(args):
     pattern2 = ASTFinder.find_kind(pattern2, "(?i)Call_?Expr")
 
     # the replacement code strip indent is used to be agnostic to the indentation of the replacement
-    pattern1replacement = TextUtils.strip_indent("""
-        //changed if expr to const
-        if(isAOne){
-            $$stmts;
-        }""")
-    pattern2replacement = "//changed function f1 to f2\nf2($a,$c);"
+    pattern1replacement = textwrap.dedent("""
+            //changed if expr to const
+            if(isAOne){
+                $$stmts;
+            }""")
+
+    pattern2replacement = "\n//changed function f1 to f2\nf2($a,$c);"
 
     # show node and patterns enable include properties to show the properties of the nodes
     include_properties = True
@@ -111,11 +114,12 @@ def refactor_with_nested_compositions(args):
             print(f"peek: f{match1.signature}")
             if match1.patterns == pattern1:
                 replacement_text = pattern1replacement
+                for repl_snippet in match1.expansions:
+                    replacement_text = replacement_text.replace(repl_snippet, raw(match1.expansions[repl_snippet]))
             else:
                 replacement_text = pattern2replacement
-
-            for repl_snippet in match1.expansions:
-                replacement_text = replacement_text.replace(repl_snippet, raw(match1.expansions[repl_snippet]))
+                for repl_snippet in match1.expansions:
+                    replacement_text = replacement_text.replace(repl_snippet, match1.expansions[repl_snippet][0].signature)
             return rewriter.replace(replacement_text, match1.nodes)
 
         # search matches for pattern1 and pattern2 and replace them using the refactor function

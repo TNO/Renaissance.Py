@@ -2,7 +2,7 @@ import tree_sitter_python
 
 from renaissance.impl import MATCH_ONE
 from renaissance.impl.tree_sitter.adapter import TreeSitterAdapter
-from renaissance.impl.tree_sitter.pattern_factory import TsPatternFactory
+from renaissance.impl.tree_sitter.factory import TreeStiterPatternFactory
 
 from renaissance.syntax_tree import ASTShower, ASTRewriter
 from renaissance.syntax_tree.ast_finder import find_kind
@@ -29,7 +29,7 @@ def python_lst_smoke_test():
 
     ASTShower.show_node(nodes[0])
 
-    pattern_factory = TsPatternFactory(adapter)
+    pattern_factory = TreeStiterPatternFactory(adapter)
 
     pattern = pattern_factory.create_statements("$greet($arg)")
 
@@ -74,6 +74,7 @@ def python_lst_smoke_test():
     # else:
     #     atu = None
     return result
+
 
 if __name__ == "__main__":
     python_lst_smoke_test()

@@ -1,4 +1,6 @@
 # use clang to load and walk a compilation database
+import textwrap
+
 from more_itertools import last
 from typing_extensions import Iterable
 
@@ -12,7 +14,7 @@ from renaissance.syntax_tree import (
 )
 from renaissance.syntax_tree import ASTProcessor, ASTNode, TextUtils, ASTFactory
 
-example_1 = TextUtils.strip_indent("""
+example_1 = textwrap.dedent("""
 #include <vector>
 struct Size
 {
@@ -113,7 +115,7 @@ void main4(std::vector<int> m_items)
      */
 }
 """)
-expected_output = TextUtils.strip_indent("""
+expected_output = textwrap.dedent("""
                                          void main(){
     std::vector<int> NEW_ID;
     NEW_ID.push_back((int)m_items.size());

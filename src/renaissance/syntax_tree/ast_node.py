@@ -7,7 +7,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Callable, Sequence, Self
 
-from renaissance.utils.node_util import preceding_sibling, next_sibling
+from renaissance.utils.ast_utils import preceding_sibling, next_sibling, process_node
 from renaissance.utils.text_utils import TextUtils
 
 
@@ -200,9 +200,7 @@ class ASTNode(ABC):
         return self._children
 
     def process(self, function: Callable[[Self], None]) -> None:
-        function(self)
-        for child in self.children:
-            child.process(function)
+        process_node(self, function)
 
     def accept(self, function: Callable[[Self], VisitorResult]) -> None:
         """

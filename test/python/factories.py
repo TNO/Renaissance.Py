@@ -8,10 +8,12 @@ from renaissance.syntax_tree.ast_factory import ASTFactory
 
 class Factories:
     # add factories here to test different ASTNode implementations
-    node_types = [("ast", PythonRstNode),
-                  ("cst", PythonCstNode),
-                  ("lst", LSTNode),
-                  ("rst", AST),]
+    node_types = [
+        ("ast", PythonRstNode),
+        ("cst", PythonCstNode),
+        ("lst", LSTNode),
+        ("rst", AST),
+    ]
     factories = [(name_type[0], ASTFactory(name_type[1])) for name_type in node_types]
 
     @staticmethod

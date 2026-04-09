@@ -1,6 +1,15 @@
 # Architecture Decision Records
+
 This directory contains all Architecture Decision Records (ADRs) for the Renaissance project.
 Each ADR documents a significant design or technology choice, its context, rationale, and consequences.
+
+The goal of ADR is to give the developer of new language AST for Renaissance a guideline on: 
+* how to make correct design choice coherent to the ADR during the implementation and gives 
+  rationale on why each decision are made. 
+* minimize the effort for the developer of the new language for renaissance.
+* provide  insight to the design and evolution of the project for developer of new language and 
+  future maintainers and contributors.
+
 ## Index
 | # | Title | Status |
 |---|-------|--------|

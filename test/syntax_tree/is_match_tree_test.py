@@ -292,6 +292,20 @@ class TestMatchTree:
         matches = MatchFinder.match_pattern(atu.children, kwargs)
         assert_that(matches, has_length(1))
 
+    def test_match_pattern_for_parameterized_finds_one_match(self):
+        code = textwrap.dedent("""
+        from parameterized import parameterized
+
+        class TestASTReference:
+
+            @parameterized.expand(Factories.extend())
+            def test_definition_declaration_references(self, _, factory, code, *args):
+                pass
+        """)
+        atu = self.factory.create_from_text(code)
+        unittest = self.pattern_factory.create_statements("@parameterized.expand($$parameters)\ndef $fun($$args, *$$vargs):\n    $$stmts")
+        found = list(match_pattern(atu.children, unittest))
+        assert_that(found, has_length(1))
 
     def test_match_pattern_for_parameterized_finds_one_match(self):
         code = textwrap.dedent("""
@@ -304,7 +318,6 @@ class TestMatchTree:
                 pass
         """)
         atu = self.factory.create_from_text(code)
-        unittest = self.pattern_factory.create_statements(
-            "@parameterized.expand($$parameters)\ndef $fun($$args, *$$vargs):\n    $$stmts")
+        unittest = self.pattern_factory.create_statements("@parameterized.expand($$parameters)\ndef $fun($$args, *$$vargs):\n    $$stmts")
         found = list(match_pattern(atu.children, unittest))
         assert_that(found, has_length(1))

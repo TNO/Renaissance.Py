@@ -1,4 +1,3 @@
-
 import os
 import networkx
 from pathlib import Path
@@ -6,25 +5,27 @@ from typing import List
 
 from renaissance.impl.tree_sitter.adapter import TreeSitterAdapter
 
-from renaissance.impl.tree_sitter.pattern_factory import TsPatternFactory
+from renaissance.impl.tree_sitter.factory import TreeStiterPatternFactory
 from renaissance.syntax_tree import PatternMatch
 from renaissance.syntax_tree.match_finder import match_pattern
 
 GRAPHML_DIR = "out_graphml"
 os.makedirs(GRAPHML_DIR, exist_ok=True)
 
+
 class Extractor:
-    def __init__(self, factory: TsPatternFactory, patterns: list[str]):
-        self.factory = factory
+    def __init__(self, factory: TreeStiterPatternFactory, patterns: list[str]):
+        self.pattern_factory = factory
         self.patterns = patterns
 
     def run(self, raw: str) -> list[PatternMatch]:
-        code = self.factory.create_statements(raw)
+        code = self.pattern_factory.create_statements(raw)
         results = []
         for rule in self.patterns:
-            pattern = self.factory.create_statements(rule)
+            pattern = self.pattern_factory.create_statements(rule)
             results.extend(match_pattern(code, pattern, {}))
         return results
+
 
 class BaseCodeGraphExtractor:
     def __init__(self, language: str, lib_path: str):

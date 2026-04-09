@@ -1,7 +1,7 @@
 import ast
 import renaissance.impl.python.ast_node
 from renaissance.syntax_tree import ASTShower, ASTFinder, ASTRewriter
-from renaissance.utils.node_util import replace_dollar
+from renaissance.utils.ast_utils import replace_dollar
 
 # def add_children(parent):
 #     uml =""

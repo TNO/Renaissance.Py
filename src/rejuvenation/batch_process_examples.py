@@ -1,5 +1,5 @@
 # use clang to load and walk a compilation database
-
+import textwrap
 from dataclasses import dataclass
 from typing import Callable
 from renaissance.syntax_tree.recipe_ast_processor import (
@@ -20,7 +20,7 @@ from renaissance.syntax_tree import (
     BatchASTProcessor,
 )
 
-example_1 = TextUtils.strip_indent("""
+example_1 = textwrap.dedent("""
         void x(int a) {}
         void x1(int a) {}
         void x2(int a) {}
@@ -37,7 +37,7 @@ example_1 = TextUtils.strip_indent("""
         }
         """)
 
-example_2 = TextUtils.strip_indent("""
+example_2 = textwrap.dedent("""
         void x(int a) {}
         void x1(int a) {}
         void x2(int a) {}

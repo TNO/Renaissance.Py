@@ -23,9 +23,7 @@ class TestPatternMatch:
     def test_get_key_redirect_to_expansion_signature(self, mocker):
         node = mocker.Mock()
         node.signature = "name_1"
-        pattern_match = PatternMatch([],
-                                     {'key': ["name_1"], '$node': [PythonRstNode(ast.Name('node_name'))], 'empty': []},
-        'patterns')
-        assert_that(pattern_match['key'], is_('name_1'))
-        assert_that(pattern_match['$node'], is_('node_name'))
-        assert_that(pattern_match['empty'], is_(''))
+        pattern_match = PatternMatch([], {"key": ["name_1"], "$node": [PythonRstNode(ast.Name("node_name"))], "empty": []}, "patterns")
+        assert_that(pattern_match["key"], is_("name_1"))
+        assert_that(pattern_match["$node"], is_("node_name"))
+        assert_that(pattern_match["empty"], is_(""))

@@ -14,6 +14,7 @@ import subprocess
 
 from renaissance.impl import MATCH_ALL, MATCH_ONE
 from renaissance.syntax_tree import ASTNode, CPPUtils, ASTReference
+from renaissance.utils.ast_utils import match_children, match_props
 
 EMPTY_DICT = {}
 EMPTY_STR = ""
@@ -29,7 +30,8 @@ ID_TAGS = [
 ]
 
 STMT_PARENTS = ["CompoundStmt", "TranslationUnitDecl"]
-
+IRRELEVANT_PROPS = {"macro_expansion", "start_point", "end_point", "source_code", "location", "type"}
+IRRELEVANT_NODES = {"COMMENT"}
 VERBOSE = False
 
 
@@ -152,6 +154,15 @@ class ClangJsonASTNode(ASTNode):
             for n in self.node.get("inner", [])
             if not n.get("isImplicit", False)
         ]
+
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, type(self))
+            and self.kind == other.kind
+            and match_props(self.properties,other.properties, IRRELEVANT_PROPS)
+            and match_children(self.children, other.children, IRRELEVANT_NODES)
+        )
 
     @override
     @staticmethod

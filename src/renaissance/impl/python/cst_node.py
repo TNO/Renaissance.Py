@@ -8,7 +8,7 @@ from libcst.metadata import WhitespaceInclusivePositionProvider
 
 from renaissance.impl.python.util import convert
 from renaissance.syntax_tree.match_finder import find_in_list, IRRELEVANT_PROPS
-from renaissance.utils.node_util import preceding_sibling, next_sibling
+from renaissance.utils.ast_utils import preceding_sibling, next_sibling
 
 
 class PythonCstTranslationUnit:
@@ -21,22 +21,20 @@ class PythonCstTranslationUnit:
         self.atu = self.wrapper.module
         self.spans = self.wrapper.resolve(WhitespaceInclusivePositionProvider)
 
-
-    def start_of(self, node:CSTNode) -> int:
+    def start_of(self, node: CSTNode) -> int:
         span = self.spans.get(node)
-        return convert(self.lines,span.start.line,span.start.column) if span else 0
-
-
+        return convert(self.lines, span.start.line, span.start.column) if span else 0
 
     def end_of(self, node: CSTNode) -> int:
         span = self.spans.get(node)
-        return convert(self.lines,span.end.line,span.end.column) if span else 0
+        return convert(self.lines, span.end.line, span.end.column) if span else 0
 
     def signature_of(self, node: CSTNode) -> str:
         try:
             return self.atu.code_for_node(node)
         except:
             return ""
+
 
 class PythonCstNode:
     def __init__(self, node: CSTNode, translation_unit: PythonCstTranslationUnit, parent=None):
@@ -48,9 +46,10 @@ class PythonCstNode:
         self.node = node
         self.translation_unit = translation_unit
         self.kind = type(node).__name__
-        self.children: list[Self] =[PythonCstNode(node, translation_unit, self) for node in node.children]
+        self.children: list[Self] = [PythonCstNode(node, translation_unit, self) for node in node.children]
         self.properties = {}
-        self.is_statement = isinstance(self.node, (BaseSmallStatement,BaseCompoundStatement))
+        self.is_statement = isinstance(self.node, (BaseSmallStatement, BaseCompoundStatement))
+
     @property
     def signature(self):
         return self.translation_unit.signature_of(self.node)
@@ -73,11 +72,11 @@ class PythonCstNode:
 
     @property
     def name(self):
-        if isinstance(self.node, (ClassDef,FunctionDef)):
+        if isinstance(self.node, (ClassDef, FunctionDef)):
             return self.node.name.value
         else:
             return ""
-        self.name = "" #self._derive_name()
+        self.name = ""  # self._derive_name()
 
     @property
     def next_sibling(self) -> Self | None:
