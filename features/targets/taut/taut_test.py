@@ -8,6 +8,8 @@ import LLXA
 import TAUT
 import VIPCxUNIT
 import ABCDxTL
+import ABCDxABxCommonFunctions
+import ABCDxABxREADLib
 
 class TestImport(TAUT.TestCase):
     def test_import(self):
@@ -23,7 +25,7 @@ class Test_ABCDxTL(TAUT.TestCase):
     def setUpCommon(self):
         self.tds = [
             TestDoubles(abcdxread=ImprovedStub(ABCDxREAD.abcdxread)),
-            TestDoubles(dwmwxws=ImprovedStub(DWMWxWS.dwmwxws)),
+            TestDoubles(abcdxws=ImprovedStub(ABCDxWS.abcdxws)),
             TestDoubles(abxstream2=ImprovedStub(ABxSTREAM2.abxstream2)),
             TestDoubles(bcxclear=ImprovedStub(BCxCLEAR.bcxclear)),
             TestDoubles(bcxload=ImprovedStub(BCxLOAD.bcxload))
@@ -75,6 +77,54 @@ class test_log(VIPCxUNIT.TestCase):
 
             abcdxtl.store_test_log(file_id, test_log)
 
+class test_abcdxwid(TAUT.TestCase):
+    def test_readout_is_ok(self):
+        self.doubles.append(
+            TAUT.TestDoubles(
+                module=ABCDxWID.abcdwid, get_wid_readouts=stub_get_wid_readouts
+            )
+        )
+        id = ABCDxBASIC.id
+        read = True
+        ABCDxABxCommonFunctions.CLEAR_CALLED = False
+        self.assert_raises(
+            ABCD.Error(ABCDxERR.ABCD_SYS_ERR, "error message"),
+            ABCDxABxREADLib.read,
+            id,
+            read,
+        )
+        self.assertEqual(ABCDxCONTEXT.abcdxcontext.method_called("start"), 0)
+
+    def test_read_two_doubles(self):
+        self.doubles.append(
+            TAUT.TestDoubles(
+                module=ABCDxABxLib,
+                _create_marks=marks,
+            )
+        )
+        self.doubles.append(
+            TAUT.TestDoubles(
+                module=ABCDxEngine.ABCDxEngine,
+                measure=self.engine.measure,
+            )
+        )
+        id = ABCDxBASIC.id
+        ABCDxABxCommonFunctions.CLEAR_CALLED = False
+        self.assert_raises(
+            ABCD.Error(ABCDxERR.ABCD_SYS_ERR, "error message"),
+            ABCDxABxREADLib.read,
+            id,
+        )
+
+        self.assertEqual(ABCDxCONTEXT.abcdxcontext.method_called("start"), 1)
+        self.assertEqual(ABCDxCONTEXT.abcdxcontext.method_called("finish"), 1)
+
+class test_interface(TAUT.TestCase):
+    def run(self):
+        expected = self.read()
+        self.assert_false(expected)
+        self.assert_true(expected)
+        self.assert_equal(expected, result)
 
 if __name__ == '__main__':
     unittest.main()
