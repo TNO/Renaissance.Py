@@ -80,7 +80,7 @@ def is_match_tree(src: Sequence | None, cmp: Sequence | None, expansions=None): 
     if len(cmp) == 1 and isinstance(cmp0 := cmp[0], AstProtocol) and cmp0.kind == MATCH_ALL:
         expansions[cmp0.name] = src
         return True
-    return find_in_list(src, cmp, expansions, 0) + 1 == len(src)
+    return find_in_list(src, cmp, expansions, 0)  == len(src)-1
 
 
 def variant_in_match_stmt(src: AstProtocol, cmp: AstProtocol, expansions) -> list:
@@ -180,9 +180,8 @@ def find_variants(src: Sequence, cmp: Sequence, expansion=None, start: int = 0):
 
                 elif exp_index < len(variant.exp[cmp[variant.index].name]):
                     # elif exp_index < len(variant.exp[variant.greedy]):
-                    if (
-                        src[i] != variant.exp[cmp[variant.index].name][exp_index]
-                    ):  # src[i] != variant.exp[cmp[variant.index].name][exp_index]:
+                    if src[i] != variant.exp[cmp[variant.index].name][exp_index]:
+                        # src[i] != variant.exp[cmp[variant.index].name][exp_index]:
                         variant.end_index = MIS_MATCH
                         invalid_variants.append(variant)
                     else:
@@ -200,13 +199,24 @@ def find_variants(src: Sequence, cmp: Sequence, expansion=None, start: int = 0):
                     variant.end_index = MIS_MATCH
                     invalid_variants.append(variant)
 
+
         variants.extend(new_variants)
         new_variants = []
-        # for v in invalid_variants:
-        #     variants.remove(v)
-        # invalid_variants = []
+        [variants.remove(v) for v in variants if v.end_index == MIS_MATCH]
 
         i += 1
+    # for variant in variants:
+    #     if variant.end_index == INCOMPLETE_MATCH and variant.index == len(cmp):
+    #         variant.end_index = i
+    #     if variant.end_index == INCOMPLETE_MATCH and variant.index == len(cmp) - 1:
+    #         if cmp[variant.index].kind !=MATCH_ALL:
+    #             variant.end_index = MIS_MATCH
+    #         else:
+    #             variant.exp[cmp[variant.index].name]=[]
+    #             variant.end_index = len(src)-1
+    #     if variant.end_index == INCOMPLETE_MATCH and variant.index < len(cmp) - 1:
+    #         variant.end_index = MIS_MATCH
+    # [variants.remove(v) for v in variants if v.end_index == MIS_MATCH]
     return variants
 
 
@@ -275,22 +285,9 @@ def is_match(src: AstProtocol, cmp: AstProtocol, expansions=None) -> bool:
             return True
     elif cmp.kind != src.kind:
         return False
-    # elif isinstance(src, list) and isinstance(cmp, list):
-    #     return is_match_tree(src, cmp, expansions)
-    # elif isinstance(src, dict) and isinstance(cmp, dict):
-    #     return is_match_dict(src, cmp, expansions)
-    # elif isinstance(cmp, str):
-    #     if cmp.startswith('$') or cmp.startswith(MATCH_ONE):
-    #         if cmp in expansions:
-    #             return is_match(src, expansions[cmp.replace(MATCH_ONE, '$')][0])
-    #         else:
-    #             expansions[cmp.replace(MATCH_ONE, '$')] = [src]
-    #             return True
-    #     return src == cmp
     elif isinstance(src, AstProtocol) and isinstance(cmp, AstProtocol):
-        return is_match_dict(src.properties, cmp.properties, expansions) and is_match_tree(
-            exclude_nodes_by_kind(src.children), cmp.children, expansions
-        )
+        return (is_match_dict(src.properties, cmp.properties, expansions)
+           and is_match_tree(exclude_nodes_by_kind(src.children), cmp.children, expansions))
     else:
         return src == cmp
 
