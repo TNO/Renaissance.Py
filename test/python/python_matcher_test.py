@@ -17,17 +17,17 @@ class TestPythonMatcher:
         self.factory = ASTFactory(PythonASTNode, [])
         self.pattern_factory = PythonPatternFactory(self.factory)
 
-    def test_if_statement(self):
+    def test_if_statements(self):
         code_if_then_statement = "if c1:\n    pass"
         code_if_then_else_statement = "if c1:\n    pass\nelse:\n    pass"
         code_if_then_elif_statement = "if c1:\n    pass\nelif c2:\n    pass"
         code_if_then_else_if_statement = "if c1:\n    pass\nelse:\n    if c2:\n        pass"
-        
+
         if_then_statement = self.pattern_factory.create_statement(code_if_then_statement)
         if_then_else_statement = self.pattern_factory.create_statement(code_if_then_else_statement)
         if_then_elif_statement = self.pattern_factory.create_statement(code_if_then_elif_statement)
         if_then_else_if_statement = self.pattern_factory.create_statement(code_if_then_else_if_statement)
-        
+
         assert_that(is_match(if_then_statement, if_then_statement), is_(True))
         assert_that(is_match(if_then_statement, if_then_else_statement), is_(False))
         assert_that(is_match(if_then_statement, if_then_elif_statement), is_(False))
@@ -47,6 +47,36 @@ class TestPythonMatcher:
         assert_that(is_match(if_then_else_if_statement, if_then_else_statement), is_(False))
         assert_that(is_match(if_then_else_if_statement, if_then_elif_statement), is_(True))
         assert_that(is_match(if_then_else_if_statement, if_then_else_if_statement), is_(True))
+
+    @pytest.mark.parametrize(
+        "stmt_txt, pattern_txt, expected",
+        [
+            # return empty expression list (type None)
+            ("return", "return", True),
+            ("return", "return $expression_list", False),
+            ("return", "return $$expressions", False),  # TODO discuss whether this is the desired behaviour - empty list
+            # return single value
+            ("return 1", "return", False),
+            ("return 1", "return $expression_list", True),
+            ("return 1", "return $$expressions", True),
+            # single with trailing separator
+            ("return 1,", "return", False),
+            ("return 1,", "return $expression_list", True),
+            ("return 1,", "return $$expressions", True),
+            # multiple
+            ("return 1, 2, 3", "return", False),
+            ("return 1, 2, 3", "return $expression_list", True),
+            ("return 1, 2, 3", "return $$expressions", True),
+            # multiple with trailing separator
+            ("return 1, 2, 3,", "return", False),
+            ("return 1, 2, 3,", "return $expression_list", True),
+            ("return 1, 2, 3,", "return $$expressions", True),
+        ],
+    )
+    def test_placeholder_return_stmt(self, stmt_txt: str, pattern_txt: str, expected: bool):
+        stmt = self.pattern_factory.create_statement(stmt_txt)
+        pattern = self.pattern_factory.create_statement(pattern_txt)
+        assert_that(is_match(stmt, pattern), is_(expected))
 
     def test_generic_is_match_any_stmt(self):
         atu = self.factory.create_from_text("ba(55)", "test.py")
@@ -164,7 +194,8 @@ class TestPythonMatcher:
 
     def test_match_any_placeholder_but_different_content(self):
         atu = self.factory.create_from_text(
-            textwrap.dedent("""
+            textwrap.dedent(
+                """
             ba(51)
             na(52)  
             na(52)  
@@ -183,7 +214,8 @@ class TestPythonMatcher:
                 na(52)  
                 ba(53)
             
-            """),
+            """
+            ),
             "test.py",
         )
 
@@ -194,7 +226,8 @@ class TestPythonMatcher:
 
     def test_match_any_placeholder_but_in_child(self):
         atu = self.factory.create_from_text(
-            textwrap.dedent("""
+            textwrap.dedent(
+                """
             ba()
             ca()  
             lo()  
@@ -213,7 +246,8 @@ class TestPythonMatcher:
                 na()  
                 ba()
             
-            """),
+            """
+            ),
             "test.py",
         )
 
@@ -225,13 +259,13 @@ class TestPythonMatcher:
         assert_that(results[2].nodes, has_length(2))
 
     # can only return one match
-    def test_match_all_epression(self): #TODO: typo? 
+    def test_match_all_epression(self):  # TODO: typo?
         atu = self.factory.create_from_text(
             "pa(55)\npa(55)\nif pa(55):\n  pa(55)\n  if pa(55):\n    pa(55)\n  pa=55",
             "test.py",
         )
 
-        simple = self.pattern_factory.create_statement("pa(55)")    # TODO: why not expression (as in name test case?)
+        simple = self.pattern_factory.create_statement("pa(55)")  # TODO: why not expression (as in name test case?)
         results = MatchFinder.match_pattern(atu.children, [simple])
         assert_that(results, has_length(4))
 
@@ -262,7 +296,8 @@ class TestPythonMatcher:
         assert_that(simple, is_not(atu.children[0]))
 
     def test_replace_multiple_different_nodes(self):
-        example_code = textwrap.dedent("""
+        example_code = textwrap.dedent(
+            """
         from module import foo, bar, baz, quux
         ba(51)
         na(52)
@@ -281,7 +316,8 @@ class TestPythonMatcher:
           na(52)
           na(53)
         
-        """)
+        """
+        )
         atu = PythonASTNode.load_from_text(example_code)
         assert_that(atu, is_not(None))
 
@@ -298,17 +334,21 @@ class TestPythonMatcher:
         assert_that(match_pattern(atu.children, [pattern]), has_length(2))
 
     def test_find_pattern_one_expr(self):
-        example_code = textwrap.dedent("""
+        example_code = textwrap.dedent(
+            """
         [TestDoubles(b=ImprovedStub(write))]
-        """)
+        """
+        )
         atu = PythonASTNode.load_from_text(example_code)
         pattern = self.pattern_factory.create_expression("TestDoubles($a=ImprovedStub($b))")
         assert_that(match_pattern(atu.children, [pattern]), has_length(1))
 
     def test_find_pattern_one_stmt(self):
-        example_code = textwrap.dedent("""
+        example_code = textwrap.dedent(
+            """
         TestDoubles(b=ImprovedStub(write))
-        """)
+        """
+        )
         atu = PythonASTNode.load_from_text(example_code)
         pattern = self.pattern_factory.create_statement("TestDoubles($a=ImprovedStub($b))")
         assert_that(match_pattern(atu.children, [pattern]), has_length(1))
@@ -317,25 +357,20 @@ class TestPythonMatcher:
         "txt_code",
         [
             "def f():\n    pass",  # no parameters
-
             "def f(a):\n    pass",  # single parameter
             "def f(a : int):\n    pass",  # single parameter annotated with type hints
             "def f(a = 0):\n    pass",  # single parameter with default value
             "def f(a : int = 0):\n    pass",  # single parameter with default value and annotated with type hints
-            
             "def f(a, b, c):\n    pass",  # multiple parameters
             "def f(a : int, b : int, c : int):\n    pass",  # multiple parameters annotated with type hints
             "def f(a = 0, b = 0, c = 0):\n    pass",  # multiple parameters with default values
             "def f(a : int = 0, b : int = 0, c : int = 0):\n    pass",  # multiple parameters with default values and annotated with type hints
-
             "def f(a, b, c, /):\n    pass",  # with positional divider
             "def f(*, a, b, c):\n    pass",  # with keyword divider
             "def f(*a, /, b, *, c):\n    pass",  # with positional and keyword divider
-
             "def f(*a):\n    pass",  # with var-positional argument
             "def f(**b):\n    pass",  # with var-keyword argument
             "def f(*a, **b):\n    pass",  # with var-positional and var-keyword argument
-          
         ],
     )
     def test_match_function_definition(self, txt_code: str):
@@ -343,6 +378,7 @@ class TestPythonMatcher:
         pattern = self.pattern_factory.create(txt_pattern)
         code = PythonASTNode.load_from_text(txt_code)
         assert_that(is_match(code, pattern), is_(True))
+
 
 if __name__ == "__main__":
     pytest.main()
