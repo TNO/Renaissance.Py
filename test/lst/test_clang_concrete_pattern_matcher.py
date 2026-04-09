@@ -66,6 +66,8 @@ class TestClangConcretePatternMatcher:
         pattern = interface.create_statement("enum E2 { A };")
         code = adapter.load_from_text("enum E2 { A };", "snippets.c").root.children[0]
         assert_that(code.properties['type'], is_(pattern.properties['type']))
+
+
     @pytest.mark.parametrize(
         "code, pattern",
         [
