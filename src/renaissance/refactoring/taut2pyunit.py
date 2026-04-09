@@ -41,6 +41,7 @@ class Taut2Pyunit(PythonRefactoring):
         self.convert_assert()
         self.remove_stubserver()
         self.replace_mock()
+        self.convert_testdoubles_fun()
 
         self.replace_log_compxtl('emrw')
         self.replace_log_compxtl('abcd')
@@ -51,9 +52,7 @@ class Taut2Pyunit(PythonRefactoring):
         self.convert_add_patcher()
         self.convert_teardown()
         self.convert_setup()
-        self.commit()
         self.convert_import_verify()
-        self.convert_testdoubles_fun()
         self.shared_setup()
         self.with_testdoubles()
         self.commit()
@@ -161,6 +160,7 @@ class Taut2Pyunit(PythonRefactoring):
         for match in match_pattern(self.root.children, taut_test_doubles):
             repl = f"fake_{comp}xtl = Fake{comp.upper()}xTL(None)\n{match["$$aa"]}"
             self.replace(repl, match.nodes, False, False)
+        self.commit()
 
     def remove_taut_import(self):
         taut_import = self.pattern_factory.create_statements("import TAUT\n")
@@ -472,6 +472,7 @@ def add_patcher(self, target, name, replacement):
             replace_pattern = replace_pattern.replace(textwrap.indent(double_pattern, "    "), "")
             self.replace(replace_pattern, match.nodes, False, False)
             self.commit()
+
         pattern2 = self.pattern_factory.create_statements("""def $a($$b):
         self.doubles.append(
             TAUT.TestDoubles(
