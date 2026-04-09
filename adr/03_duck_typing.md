@@ -13,6 +13,9 @@ Authors:
 
 ## Context
 
+The goal of this ADR is to minimize the implementation of ASTNode for a new language while still taking advantage 
+of the generic algorithms
+
 The project is implemented in Python and must remain flexible in how AST-like nodes are represented.
 Rather than enforcing a strict class hierarchy, we want code that accepts any object that looks and behaves like a
 node (has required properties and children). This is the essence of duck typing.

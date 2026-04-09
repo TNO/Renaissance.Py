@@ -24,6 +24,8 @@ Authors:
 
 ## Context
 
+The goal of this ADR is to define the design of match patterns in the Renaissance project.
+
 A match pattern is a source-code snippet that may contain **placeholders** — special names prefixed with `$`
 (single node) or `$$` (sequence of nodes). Patterns are used to find and transform code in a language-agnostic
 way. Two design questions drive this ADR:

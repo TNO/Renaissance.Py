@@ -11,7 +11,22 @@ Authors:
  - paul.nelissen@esi.nl
  - pierre.vandelaar@tno.nl
 
+## Table of contents
+
+- [Context](#context)
+- [Decision](#decision)
+- [Implementation notes](#implementation-notes)
+- [Example](#example)
+- [Rationale](#rationale)
+- [Consequences](#consequences)
+- [Alternatives considered](#alternatives-considered)
+- [Related decisions](#related-decisions)
+
 ## Context
+
+The goal of this ADR is to adopt property-based testing as a complementary approach to the existing parametrised 
+tests in the Renaissance, so that the test effort of the developer of a new language for renaissance can be reduced 
+and the test coverage can be improved.
 
 The project currently uses a set of parametrised tests to verify behaviour across a range of inputs. Maintaining
 these input tables by hand is tedious and error-prone; edge cases are easy to miss. Property-based testing offers

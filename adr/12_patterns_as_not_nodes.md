@@ -24,6 +24,9 @@ Authors:
 
 ## Context
 
+The goal of this ADR is to clarify the distinction between code factories and pattern factories in the 
+Renaissance project.
+
 In the current implementation a pattern is just an AST node. This is not desirable: while a pattern may be
 realised using an AST node under the hood, it may also carry additional information that has no place in a
 plain AST node.

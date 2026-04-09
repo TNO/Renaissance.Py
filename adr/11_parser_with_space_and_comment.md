@@ -11,7 +11,20 @@ Authors:
  - paul.nelissen@esi.nl
  - pierre.vandelaar@tno.nl
 
+## Table of contents
+
+- [Context](#context)
+- [Decision](#decision)
+- [Implementation notes](#implementation-notes)
+- [Example](#example)
+- [Rationale](#rationale)
+- [Consequences](#consequences)
+- [Alternatives considered](#alternatives-considered)
+- [Related decisions](#related-decisions)
+
 ## Context
+
+The goal of this ADR is provide a guideline on what to focus on when selecting a parser for a new language in renaissance.
 
 Refactoring tools must preserve the exact formatting of source code, including whitespace and comments, which are
 not semantically significant to the language but are critical for producing output that is indistinguishable from

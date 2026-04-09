@@ -5,18 +5,33 @@ Status: Accepted
 Date: 2026-02-25
 
 
-Authors: 
+Authors:
  - jinmin.hu@capgemini.com
  - huub.joosten@capgemini.com
  - luna.li@capgemini.com
  - paul.nelissen@esi.nl
  - pierre.vandelaar@tno.nl
 
+## Table of contents
+
+- [Context](#context)
+- [Decision](#decision)
+- [Implementation notes](#implementation-notes)
+- [Example](#example)
+- [Rationale](#rationale)
+- [Consequences](#consequences)
+- [Alternatives considered](#alternatives-considered)
+- [Related decisions](#related-decisions)
+
+
 ## Context
 
-Direct access refers to exposing node fields and attributes using a Pythonic style (e.g., `dunction_definition.body`, `dunction_definition.name`)
+The goal of this ADR is to allow the developer of a new language for renaissace 
+to create refactorings that is expressive and concise
 
-rather than using children and properties such as `dunction_definition.children[3].children` or `dunction_definition.properties['name']`.
+Direct access refers to exposing node fields and attributes using a Pythonic style (e.g., `function_definition.body`, `function_definition.name`)
+
+rather than using children and properties such as `function_definition.children[3].children` or `function_definition.properties['name']`.
 This allows for natural attribute access, simpler metaprogramming, and compatibility with Python tooling and idioms.
 
 ## Decision

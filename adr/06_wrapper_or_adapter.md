@@ -4,9 +4,30 @@ Status: Proposal
 
 Date: 2026-02-25
 
-Authors: Project contributors
+Authors:
+ - jinmin.hu@capgemini.com
+ - huub.joosten@capgemini.com
+ - luna.li@capgemini.com
+ - paul.nelissen@esi.nl
+ - pierre.vandelaar@tno.nl
+
+## Table of contents
+
+- [Context](#context)
+- [Decision](#decision)
+- [Implementation notes](#implementation-notes)
+- [Example](#example)
+- [Rationale](#rationale)
+- [Consequences](#consequences)
+- [Alternatives considered](#alternatives-considered)
+- [Related decisions](#related-decisions)
+
 
 ## Context
+
+The goal of this ADR is to define a strategy for interoperating with external node-like objects that do not 
+match the project's canonical node shape while minilize the effort for the developer of the new language for renaissance.
+
 
 The project may receive nodes from different parsers or libraries that do not match the project's canonical node
 shape. We need a strategy to interoperate with foreign node-like objects while preserving the project's APIs

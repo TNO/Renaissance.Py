@@ -24,6 +24,9 @@ Authors:
 
 ## Context
 
+The goal of this ADR is to define a design that minimize the implementation time of the matching 
+algorithm when creating renaissance for a new language 
+
 This document explains the design decision to have all AST nodes contain both children and properties.
 Children represent nodes directly connected to a parent node; properties are attributes that describe the
 node itself. Having both allows consistent representation of complex structures, simplifies traversal, and

@@ -24,6 +24,9 @@ Authors:
 
 ## Context
 
+The goal of this ADR is to define the repository structure for the Renaissance project, 
+balancing modularity, licensing, and contributor accessibility.
+
 The project consists of two conceptually distinct layers:
 
 1. **Generic functionality** — the unified AST model, match-pattern engine, rewriter, and other
