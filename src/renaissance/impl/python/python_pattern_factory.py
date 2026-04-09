@@ -15,18 +15,20 @@ _MATCH_ONE_RE = re.compile(r"^" + re.escape(MATCH_ONE) + r"\w+$")
 
 SHOW_NODE = False
 
+
 class PythonPattern(AstProtocol):
 
     def __init__(self, node):
-
         self.node = node
-        self.kind: str =self.derive_kind(node.node)
-        self.properties: dict =node.properties
-        self.children: list[Self] =[PythonPattern(node) for node in node.children]
+        self.kind: str = self.derive_kind(node.node)
+        self.properties: dict = node.properties
+        self.children: list[Self] = [PythonPattern(node) for node in node.children]
         self.signature: str = node.signature
         self.name: str = node.name.replace(MATCH_ALL, "$$").replace(MATCH_ONE, "$")
-    def __eq__(self, other:AstProtocol)-> bool:
+
+    def __eq__(self, other: AstProtocol) -> bool:
         return is_match(other, self)
+
     def __repr__(self):
         return str(self.node).replace(MATCH_ALL, "$$").replace(MATCH_ONE, "$")
 
@@ -44,13 +46,13 @@ class PythonPattern(AstProtocol):
             return MATCH_ONE
         return self.node.kind
 
+
 class PythonPatternFactory:
 
     def __init__(self, factory: ASTFactory):
         self.factory = factory
 
-
-    def _create(self,text: str) -> PythonPattern:
+    def _create(self, text: str) -> PythonPattern:
         return PythonPattern(self.factory.create_from_text(text, "pattern.py"))
 
     def create(self, text: str) -> PythonPattern:
