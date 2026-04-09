@@ -4,11 +4,8 @@ from typing import Sequence, Self
 from ast_comments import *
 
 from renaissance.impl import MATCH_ALL, MATCH_ONE
-from renaissance.impl.python.python_ast_node import PythonASTNode
-from renaissance.impl.python.python_cst_node import PythonCstNode
 from renaissance.syntax_tree import ASTFactory, ASTNode
 from renaissance.syntax_tree.match_finder import AstProtocol, is_match
-from renaissance.utils.node_util import replace_dollar
 
 _MATCH_ALL_RE = re.compile(r"^" + re.escape(MATCH_ALL) + r"\w+$")
 _MATCH_ONE_RE = re.compile(r"^" + re.escape(MATCH_ONE) + r"\w+$")

@@ -3,7 +3,7 @@ import ast
 
 from hamcrest import assert_that, is_
 
-from renaissance.impl.python import PythonASTNode, PythonPatternFactory
+from renaissance.impl.python import PythonRstNode, PythonPatternFactory
 from renaissance.syntax_tree import ASTFactory, MatchFinder
 from renaissance.syntax_tree.match_finder import is_match, match_pattern
 
@@ -12,7 +12,7 @@ class TestPythonMatcherRepresentation:
 
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.factory = ASTFactory(PythonASTNode, [])
+        self.factory = ASTFactory(PythonRstNode, [])
         self.pattern_factory = PythonPatternFactory(self.factory)
 
     def test_integer_representation(self):

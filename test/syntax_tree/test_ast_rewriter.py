@@ -1,7 +1,8 @@
 import sys
 from typing import Any
 
-from renaissance.impl.python.python_ast_node import PythonASTNode
+from renaissance.impl.python import PythonRstNode
+from renaissance.impl.python.factory import PythonFactory
 from renaissance.impl.python.python_pattern_factory import PythonPatternFactory
 
 import pytest
@@ -980,7 +981,7 @@ class TestAroundComposition:
 
     def test_around(self):
         # set up
-        factory = ASTFactory(PythonASTNode, [])
+        factory = PythonFactory(PythonRstNode, [])
         atu = factory.create_from_text("x = a", "temp.py")
         pattern = PythonPatternFactory(factory).create_expression("x = $a")
         matches = list(find_all([atu], [pattern]))  # Use list, since we want to access its content multiple times
@@ -1016,7 +1017,7 @@ class TestContainedOperations:
     """
 
     def setup(self) -> tuple[ASTRewriter, PatternMatch]:
-        factory = ASTFactory(PythonASTNode, [])
+        factory = ASTFactory(PythonRstNode, [])
         atu = factory.create_from_text("x = a * b", "temp.py")
         pattern = PythonPatternFactory(factory).create_expression("$a * $b")
         matches = list(find_all([atu], [pattern]))  # Use list, since we want to access its content multiple times
@@ -1096,7 +1097,7 @@ def f($a,$b,$c):
     pass
 """
 
-        factory = ASTFactory(PythonASTNode, [])
+        factory = ASTFactory(PythonRstNode, [])
         atu = factory.create_from_text(CODE, "temp.py")
         pattern = PythonPatternFactory(factory).create(PATTERN)
         matches = list(find_all([atu], [pattern]))  # Use list, since we want to access its content multiple times
@@ -1132,7 +1133,7 @@ class TestSyntaxAwareNestedComposition:
     """
 
     def setup(self) -> tuple[ASTRewriter, PatternMatch]:
-        factory = ASTFactory(PythonASTNode, [])
+        factory = ASTFactory(PythonRstNode, [])
         atu = factory.create_from_text("x = a * b", "temp.py")
         pattern = PythonPatternFactory(factory).create_expression("$a * $b")
         matches = list(find_all([atu], [pattern]))  # Use list, since we want to access its content multiple times

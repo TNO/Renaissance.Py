@@ -26,9 +26,73 @@ class TestPythonMatcher:
         self.factory = PythonFactory(PythonRstNode)
         self.pattern_factory = PythonPatternFactory(self.factory)
 
+    def test_if_statements(self):
+        code_if_then_statement = "if c1:\n    pass"
+        code_if_then_else_statement = "if c1:\n    pass\nelse:\n    pass"
+        code_if_then_elif_statement = "if c1:\n    pass\nelif c2:\n    pass"
+        code_if_then_else_if_statement = "if c1:\n    pass\nelse:\n    if c2:\n        pass"
+
+        if_then_statement = self.pattern_factory.create_statement(code_if_then_statement)
+        if_then_else_statement = self.pattern_factory.create_statement(code_if_then_else_statement)
+        if_then_elif_statement = self.pattern_factory.create_statement(code_if_then_elif_statement)
+        if_then_else_if_statement = self.pattern_factory.create_statement(code_if_then_else_if_statement)
+
+        assert_that(is_match(if_then_statement, if_then_statement), is_(True))
+        assert_that(is_match(if_then_statement, if_then_else_statement), is_(False))
+        assert_that(is_match(if_then_statement, if_then_elif_statement), is_(False))
+        assert_that(is_match(if_then_statement, if_then_else_if_statement), is_(False))
+
+        assert_that(is_match(if_then_else_statement, if_then_statement), is_(False))
+        assert_that(is_match(if_then_else_statement, if_then_else_statement), is_(True))
+        assert_that(is_match(if_then_else_statement, if_then_elif_statement), is_(False))
+        assert_that(is_match(if_then_else_statement, if_then_else_if_statement), is_(False))
+
+        assert_that(is_match(if_then_elif_statement, if_then_statement), is_(False))
+        assert_that(is_match(if_then_elif_statement, if_then_else_statement), is_(False))
+        assert_that(is_match(if_then_elif_statement, if_then_elif_statement), is_(True))
+        assert_that(is_match(if_then_elif_statement, if_then_else_if_statement), is_(True))
+
+        assert_that(is_match(if_then_else_if_statement, if_then_statement), is_(False))
+        assert_that(is_match(if_then_else_if_statement, if_then_else_statement), is_(False))
+        assert_that(is_match(if_then_else_if_statement, if_then_elif_statement), is_(True))
+        assert_that(is_match(if_then_else_if_statement, if_then_else_if_statement), is_(True))
+
+    @pytest.mark.parametrize(
+        "stmt_txt, pattern_txt, expected",
+        [
+            # return empty expression list (type None)
+            ("return", "return", True),
+            ("return", "return $expression_list", False),
+            ("return", "return $$expressions", False),
+            # TODO discuss whether this is the desired behaviour - empty list
+            # return single value
+            ("return 1", "return", False),
+            ("return 1", "return $expression_list", True),
+            ("return 1", "return $$expressions", True),
+            # single with trailing separator
+            ("return 1,", "return", False),
+            ("return 1,", "return $expression_list", True),
+            ("return 1,", "return $$expressions", True),
+            # multiple
+            ("return 1, 2, 3", "return", False),
+            ("return 1, 2, 3", "return $expression_list", True),
+            ("return 1, 2, 3", "return $$expressions", True),
+            # multiple with trailing separator
+            ("return 1, 2, 3,", "return", False),
+            ("return 1, 2, 3,", "return $expression_list", True),
+            ("return 1, 2, 3,", "return $$expressions", True),
+        ],
+    )
+    def test_placeholder_return_stmt(self, stmt_txt: str, pattern_txt: str, expected: bool):
+        stmt = self.pattern_factory.create_statement(stmt_txt)
+        pattern = self.pattern_factory.create_statement(pattern_txt)
+        assert_that(is_match(stmt, pattern), is_(expected))
+
     def test_generic_is_match_any_stmt(self):
         atu = self.factory.create_from_text("ba(55)", "test.py")
+
         simple = self.pattern_factory.create_statement("$pa(55)")
+
         assert_that(simple.kind, is_("Expr"))
         assert_that(is_match(atu.children[0], simple, {}), is_(True))
 
@@ -53,6 +117,7 @@ class TestPythonMatcher:
 
     def test_is_match_any_stmt_with_fix_param_in_detail(self):
         atu = self.factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "test.py")
+
         simple = self.pattern_factory.create_statement("$pa(55)")
         assert_that(is_match(atu.children[0], simple), is_(True))
         assert_that(is_match(atu.children[1], simple), is_(False))

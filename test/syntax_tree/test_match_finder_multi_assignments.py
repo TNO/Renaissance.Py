@@ -1,4 +1,4 @@
-from renaissance.impl.python.python_ast_node import PythonASTNode
+from renaissance.impl.python import PythonRstNode
 from renaissance.impl.python.python_pattern_factory import PythonPatternFactory
 from renaissance.syntax_tree.ast_factory import ASTFactory
 from renaissance.syntax_tree.match_finder import find_all
@@ -20,7 +20,7 @@ class TestMatchFinderMultiAssignments:
 
     def test_find_multi_assignments(self):
         # set up
-        factory = ASTFactory(PythonASTNode, [])
+        factory = ASTFactory(PythonRstNode, [])
         atu = factory.create_from_text(code, "temp.py")
         pattern = PythonPatternFactory(factory).create_expression(PATTERN_CALL)
 
