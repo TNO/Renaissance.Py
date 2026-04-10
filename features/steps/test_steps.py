@@ -1,9 +1,13 @@
+from pathlib import Path
+
 import pytest
 from hamcrest import assert_that, calling, is_not, raises, contains_string, not_
 from pytest_bdd import given, then, parsers
 
 from renaissance.impl.python import PythonRstNode
 from renaissance.impl.python.factory import PythonFactory
+
+FEATURES_DIR = Path(__file__).parent.parent
 
 class Ast:
     def __init__(self):
@@ -17,9 +21,9 @@ def context():
 
 @given(parsers.parse("'{file}' file"))
 def step_given_file(context, file):
-    context.file = file
+    context.file = str(FEATURES_DIR / file)
     context.factory = PythonFactory(PythonRstNode)
-    context.atu = context.factory.create(file)
+    context.atu = context.factory.create(context.file)
     context.signature = context.atu.signature
 
 @given(parsers.parse("it contains '{statement}'"))

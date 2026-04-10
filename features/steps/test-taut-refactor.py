@@ -1,5 +1,5 @@
 from renaissance.refactoring.taut2pyunit import Taut2Pyunit
-from .test_steps import *
+from steps.test_steps import *
 from pytest_bdd import when, scenario
 
 
