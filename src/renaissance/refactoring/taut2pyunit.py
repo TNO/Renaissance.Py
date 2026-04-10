@@ -35,12 +35,12 @@ class Taut2Pyunit(PythonRefactoring):
             self.assert_func()
             self.commit()
 
+        self.replace_mock()
+        self.remove_stubserver()
         self.replace_taut()
         self.remove_decorator()
         self.add_self()
         self.convert_assert()
-        self.remove_stubserver()
-        self.replace_mock()
         self.convert_testdoubles_fun()
 
         self.replace_log_compxtl('emrw')
@@ -396,7 +396,6 @@ def add_patcher(self, target, name, replacement):
         insert_code = tst_insert.insert_code
         for match in match_pattern(self.root.children, insert_pattern):
             self.insert_after(insert_code, match.nodes, False, False)
-            self.commit()
 
     def remove_assert_func(self):
         pattern = self.pattern_factory.create_statements("def assert_double_equal($$arg, $$other=$$value):\n    $$bb")

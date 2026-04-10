@@ -3,6 +3,7 @@
 # 22-Jun-2010 : description                            #
 #------------------------------------------------------#
 import unittest
+import mock
 import NNXA
 import LLXA
 import TAUT
@@ -20,6 +21,22 @@ class FakeABCDxTL(ABCDxTL):
     def create_test_log(self, test_log_id):
         test_log = NNXA.Object('ABCDxTL:test_log_struct')
         return test_log
+
+class test_interface(TAUT.TestCase):
+    def run(self):
+        expected = self.read()
+        self.assert_false(expected)
+        self.assert_true(expected)
+        self.assert_equal(expected, result)
+
+class ABCD_Stub(TAUT.StubServer):
+    def sharedSetUp(self):
+        with TAUT.TestDoubles(module=ABCD, startup=startup_stub):
+            ABCDxCONFIG.start_instance()
+
+    @mock.patch("ABCD.result")
+    def test_interaction_with_ABCD(self):
+        pass
 
 class Test_ABCDxTL(TAUT.TestCase):
     def setUpCommon(self):
@@ -118,13 +135,6 @@ class test_abcdxwid(TAUT.TestCase):
 
         self.assertEqual(ABCDxCONTEXT.abcdxcontext.method_called("start"), 1)
         self.assertEqual(ABCDxCONTEXT.abcdxcontext.method_called("finish"), 1)
-
-class test_interface(TAUT.TestCase):
-    def run(self):
-        expected = self.read()
-        self.assert_false(expected)
-        self.assert_true(expected)
-        self.assert_equal(expected, result)
 
 if __name__ == '__main__':
     unittest.main()

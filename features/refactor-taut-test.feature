@@ -18,6 +18,11 @@ Feature: taut migration
     And it contains 'self.assert_false'
     And it contains 'self.assert_true'
     And it contains 'self.assert_equal'
+    And it contains 'import mock'
+    And it contains 'TAUT.StubServer'
+    And it contains 'sharedSetUp(self):'
+    And it contains 'with TAUT.TestDoubles(module=ABCD, startup=startup_stub):'
+    And it contains '@mock.patch'
     And an AST extracted from that source file without errors
     When I convert taut to unittest
     Then AST extracted from that conversion should without errors
@@ -47,3 +52,9 @@ Feature: taut migration
     And it should contain 'self.assertFalse'
     And it should contain 'self.assertTrue'
     And it should contain 'self.assertEqual'
+    And it should contain 'try:\n    from unittest.mock import patch\nexcept ImportError:\n    from mock import patch'
+    And it should not contain 'TAUT.StubServer'
+    And it should contain 'def setUp(self):'
+    And it should not contain 'sharedSetUp(self):'
+    And it should contain 'with patch.object(ABCD, 'startup', new=startup_stub):'
+    And it should contain '@patch('
