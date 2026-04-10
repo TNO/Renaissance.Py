@@ -957,7 +957,7 @@ class TestComposeReplacement:
         assert_that(n, is_(node))
 
     @pytest.mark.skip("fail on empty nodes")
-    def test_get_node_in_match_pattern(self):
+    def test_get_node_in_match_pattern_on_empty_pattern(self):
         it = _RewriteActions([], sys.getfilesystemencoding(), True)
         text = getattr(it, "_RewriteActions__get_texts")([])
         assert_that(text, is_("node"))

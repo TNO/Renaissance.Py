@@ -19,7 +19,6 @@ PATTERN_CALL: str = "f(" + PLACEHOLDER_BEFORE + ", 0, " + PLACEHOLDER_AFTER + ")
 
 
 class TestMatchFinderMultiAssignments:
-    @pytest.mark.skip("TODO: implement accordingly")
     def test_find_multi_assignments(self):
         # set up
         factory = ASTFactory(PythonRstNode, [])
