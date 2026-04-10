@@ -79,15 +79,15 @@ def _resolve_match_one(name: str, src: "AstProtocol", expansions: dict):
 
 
 def is_match_tree(src: Sequence | None, cmp: Sequence | None, expansions=None):
-    if expansions is None:
-        expansions = {}
-    both_lists = isinstance(src, list) and isinstance(cmp, list)
-    if not both_lists or not cmp or not src:
-        return src == cmp
-    single_match_all = len(cmp) == 1 and isinstance(cmp0 := cmp[0], AstProtocol) and cmp0.kind == MATCH_ALL
-    if single_match_all:
-        expansions[cmp0.name] = src
-        return True
+    # if expansions is None:
+    #     expansions = {}
+    # both_lists = isinstance(src, list) and isinstance(cmp, list)
+    # if not both_lists or not cmp or not src:
+    #     return src == cmp
+    # single_match_all = len(cmp) == 1 and isinstance(cmp0 := cmp[0], AstProtocol) and cmp0.kind == MATCH_ALL
+    # if single_match_all:
+    #     expansions[cmp0.name] = src
+    #     return True
     return find_in_list(src, cmp, expansions, 0) == len(src) - 1
 
 
