@@ -5,7 +5,6 @@ from ..utils.ast_utils import use_dollar
 
 
 IRRELEVANT_PROPS = {"macro_expansion", "start_point", "end_point", "source_code", "location", "type"}
-DEFAULT_EXCLUDE_KIND = {"FullComment", "MACRO_DEFINITION", "Comment"}
 MIS_MATCH = -2
 INCOMPLETE_MATCH = -1
 _TOP_LEVEL_KINDS = {"Module", "TRANSLATION_UNIT"}
@@ -97,13 +96,12 @@ def variant_in_match_stmt(src: AstProtocol, cmp: AstProtocol, expansions) -> lis
         matched = _resolve_match_one(cmp.name, src, expansions)
         return [Variant(0, expansions, None, 0, 0)] if matched else []
     if is_match_dict(src.properties, cmp.properties, expansions) and src.kind == cmp.kind:
-        exprs = exclude_nodes_by_kind(src.children)
-        cmp_exprs = exclude_nodes_by_kind(cmp.children)
-        pattern_is_empty = not cmp_exprs and exprs
+
+        pattern_is_empty = not cmp.children and src.children
         if pattern_is_empty:
             return []
-        variants = trim_invalid_variants(exprs, cmp_exprs, find_variants(exprs, cmp_exprs, expansions))
-        return [v for v in variants if v.end_index == len(exprs) - 1]
+        variants = find_variants(src.children, cmp.children, expansions) #trim_invalid_variants(src.children,cmp.children, )
+        return [v for v in variants if v.end_index == len(src.children) - 1]
     return []
 
 
@@ -233,7 +231,7 @@ def trim_invalid_variants(src, cmp, variants):
 def find_in_list(src: Sequence, cmp: Sequence, exp=None, start: int = 0):
     if exp is None:
         exp = {}
-    variants = trim_invalid_variants(src, cmp, find_variants(src, cmp, exp, start))
+    variants =  find_variants(src, cmp, exp, start)# trim_invalid_variants(src, cmp,)
     if not variants:
         return -1
     exp.update(variants[-1].exp)
@@ -253,12 +251,8 @@ def is_match(src: AstProtocol, cmp: AstProtocol, expansions=None) -> bool:
         return False
     return (
         is_match_dict(src.properties, cmp.properties, expansions)
-        and is_match_tree(exclude_nodes_by_kind(src.children), cmp.children, expansions)
+        and is_match_tree(src.children, cmp.children, expansions)
     )
-
-
-def exclude_nodes_by_kind(src: list[AstProtocol]) -> list[AstProtocol]:
-    return [c for c in src if c.kind not in DEFAULT_EXCLUDE_KIND]
 
 
 def is_match_dict(src: dict, cmp: dict, expansions: dict = None) -> bool:
@@ -287,7 +281,7 @@ def match_pattern(src_nodes, patterns, recursive=True) -> Sequence[PatternMatch]
         else:
             if recursive:
                 found_statements.extend(
-                    match_pattern(exclude_nodes_by_kind(getattr(src_nodes[to_do], "children", [])), patterns, recursive)
+                    match_pattern(getattr(src_nodes[to_do], "children", []), patterns, recursive)
                 )
             to_do += 1
     return found_statements

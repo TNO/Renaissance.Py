@@ -31,7 +31,7 @@ ID_TAGS = [
 
 STMT_PARENTS = ["CompoundStmt", "TranslationUnitDecl"]
 IRRELEVANT_PROPS = {"macro_expansion", "start_point", "end_point", "source_code", "location", "type"}
-IRRELEVANT_NODES = {"COMMENT"}
+IRRELEVANT_NODES = {"COMMENT","FullComment", "MACRO_DEFINITION", "Comment"}
 VERBOSE = False
 
 
@@ -152,8 +152,8 @@ class ClangJsonASTNode(ASTNode):
                 parent=self,
             )
             for n in self.node.get("inner", [])
-            if not n.get("isImplicit", False)
-        ]
+            if not n.get("isImplicit", False)]
+        self._children = [n for n in self._children if n.kind not in IRRELEVANT_NODES]
 
 
     def __eq__(self, other):
