@@ -1,9 +1,10 @@
 import pytest
 import ast
 
-from hamcrest import assert_that, is_
+from hamcrest import assert_that, is_, is_not
 
 from renaissance.impl.python import PythonRstNode, PythonPatternFactory
+from renaissance.impl.python.factory import PythonFactory
 from renaissance.syntax_tree import ASTFactory, MatchFinder
 from renaissance.syntax_tree.match_finder import is_match, match_pattern
 
@@ -12,7 +13,7 @@ class TestPythonMatcherRepresentation:
 
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.factory = ASTFactory(PythonRstNode, [])
+        self.factory = PythonFactory(PythonRstNode)
         self.pattern_factory = PythonPatternFactory(self.factory)
 
     def test_integer_representation(self):
@@ -49,12 +50,12 @@ class TestPythonMatcherRepresentation:
 
         for expression1 in expressions:
             for expression2 in expressions:
-                assert_that(is_match(expression1, expression2), is_(True))
+                assert_that(expression1,is_(expression2))
 
         signed = "+1000"
         expression_signed = self.pattern_factory.create_expression(signed)
         for expression in expressions:
-            assert_that(is_match(expression_signed, expression), is_(False))
+            assert_that(expression_signed,is_not(expression))
 
     def test_character_representation(self):
         """
@@ -85,3 +86,30 @@ class TestPythonMatcherRepresentation:
         for expression1 in expressions:
             for expression2 in expressions:
                 assert_that(is_match(expression1, expression2), is_(True))
+
+
+    def test_statements_with_comment_and_whitespace(self):
+        """
+        How are statements with comments and whitespace handled by the parser?
+        """
+        statement = "x = 1"
+        statement_with_comment = "x = 1  # This is a comment"
+        statement_with_new_line = "x        =       1   "
+        statement_with_whitespace = "x   =   1   "
+        statement_with_comment_and_whitespace = "# This is a comment\nx    =    1   \n# This is a comment   "
+
+
+        representations = [
+            statement,
+            statement_with_comment,
+            statement_with_new_line,
+            statement_with_whitespace,
+            statement_with_comment_and_whitespace,
+        ]
+        expressions = map(self.pattern_factory.create_statement, representations)
+
+        for expression1 in expressions:
+            for expression2 in expressions:
+                assert_that(expression1,is_(expression2))
+
+

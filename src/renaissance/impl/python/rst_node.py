@@ -1,9 +1,11 @@
+import sys
 import textwrap
 from pathlib import Path
 from typing import Any, Sequence, Self, Callable
 
-from ast_comments import *
-
+# from ast_comments import *
+from ast import *
+import ast
 from renaissance.impl.python.util import convert
 from renaissance.syntax_tree.match_finder import find_in_list
 from renaissance.utils.ast_utils import preceding_sibling, next_sibling, match_props, match_children
@@ -73,7 +75,7 @@ class PythonRstTranslationUnit:
 
     def __init__(self, content, file_name: str):
         self.content = content.encode(sys.getfilesystemencoding())
-        self.atu = parse(content, file_name, type_comments=True)
+        self.atu = ast.parse(content, file_name)
         self.file_name = file_name
         self.references_initialized = False
         PythonRstTranslationUnit.cache[file_name] = content

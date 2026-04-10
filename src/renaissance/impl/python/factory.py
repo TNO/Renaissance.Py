@@ -89,7 +89,7 @@ class PythonFactory:
 
 class PythonPatternFactory:
 
-    def __init__(self, factory: ASTFactory):
+    def __init__(self, factory: PythonFactory):
         self.factory = factory
 
     def _create(self, text: str) -> PythonPattern:
