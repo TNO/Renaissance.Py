@@ -1,5 +1,4 @@
 import textwrap
-from ast import AST
 
 from libcst import CSTNode
 
@@ -19,13 +18,13 @@ if pa():
   ba()
 pa(54)  
 """
-def python_ast_smoke_test():
+def python_lst_smoke_test():
 
     # adapter = TreeSitterAdapter(tree_sitter_python)
     # tree = adapter.parse_code(code)
     # lst = adapter.to_lst(code, tree)
 
-    factory = PythonFactory(AST)
+    factory = PythonFactory(PythonCstNode)
     pattern_factory = PythonPatternFactory(factory)
 
     atu = factory.create_from_text(example_code, "example.py")

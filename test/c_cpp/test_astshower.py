@@ -10,7 +10,7 @@ from renaissance.syntax_tree import ASTFactory, ASTShower, ASTFinder
 
 class TestCcppShower:
     @pytest.fixture(autouse=True)
-    def setUp(self):
+    def setup(self):
         self.factory = ASTFactory(ClangASTNode, [])
         self.atu = self.factory.create_from_text(
             """

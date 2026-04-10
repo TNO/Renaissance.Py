@@ -292,6 +292,7 @@ class Parent:
         assert_that(me.parent.parent.name, is_("Parent"))
         assert_that(me.children[1].children, has_length(4))
 
+    @pytest.mark.skip("don't use ast comment parser")
     def test_load_file_with_ignored_types(self):
         atu = PythonRstNode.load_from_text("x = 1 # type: ignore", "bogus.py")
         assert_that(atu.translation_unit.atu.type_ignores, has_length(1))

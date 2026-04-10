@@ -24,6 +24,7 @@ class LSTNode:
         self.properties = properties
         self.kind = node_type
 
+        self.is_implicit = True
         self.show_props = False
         self.indent = ""
 
@@ -38,6 +39,7 @@ class LSTNode:
         self.offset = offset
         self.end_offset = self.offset + self.length
         self.extended_end_offset = self.end_offset
+
 
     def __eq__(self, other):
         return (

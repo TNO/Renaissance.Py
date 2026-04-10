@@ -1,3 +1,5 @@
+import pytest
+
 from renaissance.impl.python import PythonRstNode
 from renaissance.impl.python.python_pattern_factory import PythonPatternFactory
 from renaissance.syntax_tree.ast_factory import ASTFactory
@@ -17,7 +19,6 @@ PATTERN_CALL: str = "f(" + PLACEHOLDER_BEFORE + ", 0, " + PLACEHOLDER_AFTER + ")
 
 
 class TestMatchFinderMultiAssignments:
-
     def test_find_multi_assignments(self):
         # set up
         factory = ASTFactory(PythonRstNode, [])

@@ -1,62 +1,77 @@
-import ast
-import renaissance.impl.python.ast_node
-from renaissance.syntax_tree import ASTShower, ASTFinder, ASTRewriter
-from renaissance.utils.ast_utils import replace_dollar
+# This script demonstrates the use of the syntax_tree library to parse and rewrite Python code.
+# It specifically showcases nested replacements and multiple patterns.
+import textwrap
 
-# def add_children(parent):
-#     uml =""
-#     for child in parent.children:
-#         uml += f'"{parent.kind}"->"{child.kind}"\n'
-#         uml +=add_children(child)
-#     return uml
-#
-#
-# def raw(nodes):
-#     res = ''
-#     for node in nodes:
-#         if isinstance(node, str):
-#             res += node
-#         else:
-#             res += node.signature
-#     return res + '\n'
-#
+from renaissance.impl.python import PythonRstNode, PythonPatternFactory
+from renaissance.impl.python.factory import PythonFactory
+from renaissance.syntax_tree import ASTFactory, ASTRewriter
+from renaissance.syntax_tree import ASTShower, TextUtils
+from renaissance.syntax_tree.match_finder import match_pattern
+from renaissance.syntax_tree.ast_finder import find_kind
+
+example_code = """
+from module import foo, bar, baz, quux
+ba(51)
+na(52)
+na(53)
+pa(54)
+if pa():
+  ba()
+pa(54)  
+"""
 
 
 def python_rst_smoke_test():
-    code = """
+    atu: PythonRstNode = PythonRstNode.load_from_text(example_code)
 
-def greet(name):
-    print("Hello", name)
+    factory = PythonFactory(PythonRstNode)
+    pattern_factory = PythonPatternFactory(factory)
 
-if True:
-    greet("World")
-    """
-    root = ast.parse(code)
-    ASTShower.show_node(root)
+    atu = factory.create_from_text(example_code, "example.py")
 
-    nodes = ASTFinder.find_kind(root, "If")
+    pattern1 = pattern_factory.create_statement("if pa(): $$stmts")
+    pattern2 = pattern_factory.create_expression("na($a)")
+
+    print("_______________pattern 1____________________________________")
+    ASTShower.show_node(pattern1.node, include_properties=True)
+    print("_______________pattern 1____________________________________")
+    ASTShower.show_node(pattern2.node, include_properties=False)
+    print("_______________ast____________________________________")
+    ASTShower.focus = "ba"
+    ASTShower.show_node(atu)
+
+    print("_______________simple find____________________________________")
+    nodes = find_kind(atu, "Call")
 
     ASTShower.show_node(nodes[0])
 
-    pattern = ast.parse(replace_dollar("$greet($arg)")).body
+    pattern1replacement = textwrap.dedent("""
+            # changed if expr to const
+            isAOne=True
+            if(isAOne):
+                $$stmts
+            """)
+    pattern2replacement = "# changed function f1 to f2\nf2($a,123456)\n"
 
-    # matches=match_pattern(root.children, pattern)
+    rewriter = ASTRewriter(atu)
 
-    # ASTShower.show_node(matches[0].nodes[0])
-    # rewriter = ASTRewriter(root)
-    #
-    #
-    #
-    # for match in matches:
-    #     replment_text = "my_awesome_$greet($arg,'is','awesome)"
-    #     for repl_snippet in match.expansions:
-    #         replment_text = replment_text.replace(repl_snippet.replace(MATCH_ONE,'$'), raw(match.expansions[repl_snippet]))
-    #     rewriter.replace(replment_text, match.nodes)
-    # result = rewriter.apply_to_string()
-    # print(result)
-    #
-    #
-    # uml = add_children(root)
-    # print(uml)
+    for match in match_pattern(atu.body, [pattern1]):
+        refactor(match, pattern1replacement, rewriter)
 
-    return ""  # result
+    for match in match_pattern(atu.body, [pattern2]):
+        refactor(match, pattern2replacement, rewriter)
+
+    return rewriter.apply_to_string()
+
+
+
+def refactor(match, replacement_text, rewriter):
+    for placeholder in match.expansions:
+        replacement_text = replacement_text.replace(placeholder, match[placeholder])
+    return rewriter.replace(replacement_text, match.nodes)
+
+
+if __name__ == "__main__":
+    result = python_rst_smoke_test()
+    print("_______________end result_________________________________")
+    print(result)

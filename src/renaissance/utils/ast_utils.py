@@ -69,5 +69,7 @@ def match_props(mine, other, irrelevant_props) -> bool:
     return all(mine.get(n) == other.get(n) for n in all_keys)
 
 def match_children(mine, other,irrelevant_kinds):
+    if mine==None or other==None:
+        return mine==other
     return all((i< len(mine) and mine[i] == child) or child.kind in irrelevant_kinds for i, child in enumerate(other))
 

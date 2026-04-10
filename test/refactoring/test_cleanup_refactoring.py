@@ -1,11 +1,10 @@
 import pytest
 from hamcrest import *
-import pytest
-from hamcrest import *
+
+from c_cpp.factories import Factories
 from renaissance.refactoring import CleanupRefactoring
 from renaissance.syntax_tree import ASTShower, ASTFactory, ASTProcessor
 
-from c_cpp.factories import Factories
 
 
 class TestCleanupRefactoring:

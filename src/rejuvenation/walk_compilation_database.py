@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+import targets
 from renaissance.impl.clang import CompilationDatabase, ClangASTNode
 from renaissance.impl.clang_json import ClangJsonASTNode
 from renaissance.syntax_tree import ASTProcessor, ASTShower
@@ -24,4 +25,4 @@ def main(args):
 
 if __name__ == "__main__":
     # fill in your own path
-    main([r"Z:\testproject\c\src"])
+    main([targets.__file__.replace("__init__.py","compile_commands.json")])

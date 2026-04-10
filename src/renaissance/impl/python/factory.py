@@ -63,11 +63,21 @@ class PythonFactory:
             clazz.load_from_text = self.load_from_lst
         elif clazz == AST:
             clazz.load_from_text = ASTExtension.load_from_ast
+            # matcher
             clazz.node = ASTExtension.ast_node
             clazz.kind = ASTExtension.ast_kind
             clazz.properties = ASTExtension.ast_properties
             clazz.children = ASTExtension.ast_children
             clazz.signature = ASTExtension.ast_signature
+
+            # writer
+            clazz.text = ASTExtension.ast_signature
+            clazz.filename = "dummy.py"
+
+            #shower
+            clazz.is_implicit = True
+            clazz.show_props = False
+            clazz.indent = ""
 
     def create(self, file_path: Path) -> PythonRstNode | PythonCstNode:
         atu = self.clazz.load(file_path=file_path)
@@ -89,7 +99,7 @@ class PythonFactory:
 
 class PythonPatternFactory:
 
-    def __init__(self, factory: ASTFactory):
+    def __init__(self, factory: PythonFactory):
         self.factory = factory
 
     def _create(self, text: str) -> PythonPattern:
