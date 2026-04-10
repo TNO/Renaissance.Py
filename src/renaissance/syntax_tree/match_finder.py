@@ -5,7 +5,6 @@ from ..utils.ast_utils import use_dollar
 
 
 IRRELEVANT_PROPS = {"macro_expansion", "start_point", "end_point", "source_code", "location", "type"}
-DEFAULT_EXCLUDE_KIND = {"FullComment", "MACRO_DEFINITION", "Comment"}
 MIS_MATCH = -2
 INCOMPLETE_MATCH = -1
 _TOP_LEVEL_KINDS = {"Module", "TRANSLATION_UNIT"}
@@ -97,18 +96,13 @@ def variant_in_match_stmt(src: AstProtocol, cmp: AstProtocol, expansions) -> lis
         matched = _resolve_match_one(cmp.name, src, expansions)
         return [Variant(0, expansions, None, 0, 0)] if matched else []
     if is_match_dict(src.properties, cmp.properties, expansions) and src.kind == cmp.kind:
-        exprs = exclude_nodes_by_kind(src.children)
-        cmp_exprs = exclude_nodes_by_kind(cmp.children)
+        exprs = src.children
+        cmp_exprs = cmp.children
         if not cmp_exprs and exprs:
             return []
         variants = find_variants(exprs, cmp_exprs, expansions)
         return [v for v in variants if v.end_index == len(exprs) - 1]
     return []
-
-
-def exclude_nodes_by_kind(src: list) -> list:
-    return [c for c in src if c.kind not in DEFAULT_EXCLUDE_KIND]
-
 
 def _advance_match_all(variant: Variant, cmp: Sequence, src: Sequence, i: int, new_variants: list):
     """Advance variant.index past consecutive MATCH_ALL pattern nodes, forking new_variants as needed."""
@@ -236,26 +230,14 @@ def find_in_list(src: Sequence, cmp: Sequence, exp=None, start: int = 0):
     variants =  find_variants(src, cmp, exp, start)
     if not variants:
         return -1
-    exp.update(variants[-1].exp)
-    return variants[-1].end_index
+    exp.update(variants[0].exp)
+    # [0] most greedy
+    # [-1] least greedy
+    return variants[0].end_index
 
 
 def is_match(src: AstProtocol, cmp: AstProtocol, expansions=None) -> bool:
-    if expansions is None:
-        expansions = {}
-    assert isinstance(src, AstProtocol)
-    assert isinstance(cmp, AstProtocol)
-    if src.kind not in _TOP_LEVEL_KINDS and cmp.kind == MATCH_ONE and cmp.name:
-        if cmp.name in expansions:
-            return is_match(src, expansions[cmp.name][0])
-        return _resolve_match_one(cmp.name, src, expansions)
-    if cmp.kind != src.kind:
-        return False
-    return (
-        is_match_dict(src.properties, cmp.properties, expansions)
-        and is_match_tree(src.children, cmp.children, expansions)
-    )
-
+    return variant_in_match_stmt(src, cmp, expansions)!=[]
 
 def is_match_dict(src: dict, cmp: dict, expansions: dict = None) -> bool:
     if expansions is None:

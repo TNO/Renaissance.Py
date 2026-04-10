@@ -72,8 +72,8 @@ class TestPythonMatcher:
             # return empty expression list (type None)
             ("return", "return", True),
             ("return", "return $expression_list", False),
-            ("return", "return $$expressions", False),
-            # TODO discuss whether this is the desired behaviour - empty list
+            ("return", "return $$expressions", True),
+
             # return single value
             ("return 1", "return", False),
             ("return 1", "return $expression_list", True),
@@ -95,7 +95,7 @@ class TestPythonMatcher:
     def test_placeholder_return_stmt(self, stmt_txt: str, pattern_txt: str, expected: bool):
         stmt = self.pattern_factory.create_statement(stmt_txt)
         pattern = self.pattern_factory.create_statement(pattern_txt)
-        assert_that(is_match(stmt, pattern), is_(expected))
+        assert_that(is_match(stmt, pattern, {}), is_(expected))
 
     def test_generic_is_match_any_stmt(self):
         atu = self.factory.create_from_text("ba(55)", "test.py")
