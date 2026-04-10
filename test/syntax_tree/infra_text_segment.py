@@ -1,4 +1,4 @@
-from syntax_tree.text_segment import TextSegment
+from renaissance.syntax_tree.text_segment import TextSegment
 
 
 def offset_to_location(text: str, offset: int) -> tuple[int, int]:

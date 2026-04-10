@@ -16,7 +16,7 @@ def _offset_to_line_col(text: str, offset: int) -> tuple[int, int]:
 
 
 @dataclass(slots=True)
-class DummyNode():
+class DummyNode:
     # ---- backing text segment ----
     full_text: str
     location: str
@@ -25,8 +25,8 @@ class DummyNode():
 
     # ---- syntax node aspects ----
     kind: str = "Dummy"
-    _children: list[DummyNode] = field(default_factory=list) # type: ignore
-    _parent: DummyNode | None = None
+    _children: list[Self] = field(default_factory=list) # type: ignore
+    _parent: Self | None = None
  
     # ---- TextSegment derived properties ----
     @property
@@ -51,7 +51,7 @@ class DummyNode():
 
     # ---- SyntaxNode protocol properties ----
     @property
-    def children(self) -> list[DummyNode]:
+    def children(self) -> list[Self]:
         return self._children
 
     @property
@@ -59,7 +59,7 @@ class DummyNode():
         return {}
 
     @property
-    def parent(self) -> DummyNode | None:
+    def parent(self) -> Self | None:
         return self._parent
 
     @property
@@ -67,11 +67,14 @@ class DummyNode():
         return self
 
     # ---- safe mutator for tests (avoids "protected access" warnings) ----
-    def set_children(self, children: list[DummyNode]) -> None:
+    def set_children(self, children: list[Self]) -> None:
         self._children = children
         for c in children:
             c._parent = self
 
+
+    def __hash__(self):
+        return id(self)
 
 # ----------------------------
 # Monkeypatch: verify assert_valid_text_segment is called

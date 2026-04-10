@@ -1,6 +1,6 @@
 from typing import Any
 
-from syntax_tree.syntax_node import SyntaxNode
+from renaissance.syntax_tree.syntax_node import SyntaxNode
 from test.syntax_tree.infra_text_segment import assert_valid_text_segment
 
 

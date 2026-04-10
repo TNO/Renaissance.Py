@@ -3,7 +3,7 @@ import bisect
 
 from hypothesis import given, strategies as st
 
-from syntax_tree.text_segment import TextSegment
+from renaissance.syntax_tree.text_segment import TextSegment
 from test.syntax_tree.infra_text_segment import assert_valid_text_segment, line_starts_from_lines, location_to_offset, offset_to_location, split_lines_with_newlines
 
 
