@@ -14,7 +14,8 @@ from renaissance.syntax_tree import (
     ASTNode,
     MatchFinder,
 )
-from renaissance.syntax_tree.match_finder import exclude_nodes_by_kind, match_pattern, find_variants, find_in_list
+from renaissance.syntax_tree.match_finder import exclude_nodes_by_kind, match_pattern, find_variants, find_in_list, \
+    is_match
 from utils_for_tests import compress, show_node, debug_mismatch
 
 logger = logging.getLogger(__name__)
@@ -443,6 +444,27 @@ class TestUseAtuToCreatePattern(TestCMatchFinder):
         # unreliable to check the exact number of matches due to the pattern also matching the pattern itself
         # text= result.filter(lambda match: match.patterns == names).map(lambda match: match.nodes[0]).filter(ASTNode.is_part_of_translation_unit).map(ASTNode.text).to_list()
         # assert_that(text, is_(expected))
+
+
+    @pytest.mark.parametrize("_, factory", Factories.factories)
+    @pytest.mark.skip("stmt and expr are the same")
+    def test_is_match_expression_differs_from_stmt(self, _: str, factory: ASTFactory):
+        pattern_factory = CPatternFactory(factory)
+        expression_pattern = pattern_factory.create_expression("x=3", ["int x;"])
+        statement_pattern = pattern_factory.create_statement("x=3;", extra_declarations=["int x;"])
+        assert_that(
+            is_match(expression_pattern, statement_pattern, {}),
+            is_(False),
+            "An expression doesn't match a statement",
+        )
+
+        expression_pattern = pattern_factory.create_expression("f()", ["int f();"])
+        statement_pattern = pattern_factory.create_statement("f();", extra_declarations=["int f();"])
+        assert_that(
+            is_match(expression_pattern, statement_pattern, {}),
+            is_(False),
+            "An expression doesn't match a statement",
+        )
 
 class TestIndividualCases:
     def test_multi_single(self):

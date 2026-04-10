@@ -122,26 +122,6 @@ class TestBasic:
         )
 
     @pytest.mark.parametrize("_, factory", Factories.factories)
-    @pytest.mark.skip("stmt and expr are the same")
-    def test_is_match_expression_differs_from_stmt(self, _: str, factory: ASTFactory):
-        pattern_factory = CPatternFactory(factory)
-        expression_pattern = pattern_factory.create_expression("x=3", ["int x;"])
-        statement_pattern = pattern_factory.create_statement("x=3;", extra_declarations=["int x;"])
-        assert_that(
-            is_match(expression_pattern, statement_pattern, {}),
-            is_(False),
-            "An expression doesn't match a statement",
-        )
-
-        expression_pattern = pattern_factory.create_expression("f()", ["int f();"])
-        statement_pattern = pattern_factory.create_statement("f();", extra_declarations=["int f();"])
-        assert_that(
-            is_match(expression_pattern, statement_pattern, {}),
-            is_(False),
-            "An expression doesn't match a statement",
-        )
-
-    @pytest.mark.parametrize("_, factory", Factories.factories)
     def test_is_match_statement(self, _: str, factory: ASTFactory):
         pattern_factory = CPatternFactory(factory)
         statement1_pattern = pattern_factory.create_statement("f();", extra_declarations=["int f();"])
