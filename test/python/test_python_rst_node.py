@@ -131,7 +131,9 @@ def outer():
         assert_that(it.children[1].kind, is_("Slice"))
 
     def test_named_expr(self):
-        it = self.pattern_factory.create_statement("if n:= len(items): pass")
+        it = self.pattern_factory.create_statement("if n:= len(items): pass")   
+            # TODO: Is this the simplest context for the walrus operator?
+            # why not "(n:= 3)"?
         assert_that(it.children[0].kind, is_("NamedExpr"))
 
     def test_starred(self):
