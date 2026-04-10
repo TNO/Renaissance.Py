@@ -1,15 +1,12 @@
 import pytest
 from hamcrest import *
-import pytest
-from hamcrest import *
 
-from c_cpp.factories import Factories
+from clang.factories import Factories
 from rejuvenation.descendant_search import find_descendant_match
 from renaissance.impl.clang import CPatternFactory, ClangASTNode
 from renaissance.impl.clang_json import ClangJsonASTNode
-from renaissance.syntax_tree import ASTFactory, MatchFinder
+from renaissance.syntax_tree import ASTFactory
 from renaissance.syntax_tree.match_finder import is_match, AstProtocol, match_pattern
-from targets.go import factory
 
 
 class TestFindDescendantMatch:

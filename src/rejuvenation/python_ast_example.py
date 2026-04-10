@@ -1,11 +1,12 @@
-# This script demonstrates the use of the syntax_tree library to parse and rewrite Python code.
-# It specifically showcases nested replacements and multiple patterns.
 import textwrap
+from ast import AST
 
-from renaissance.impl.python import PythonRstNode, PythonPatternFactory
-from renaissance.impl.python.factory import PythonFactory
-from renaissance.syntax_tree import ASTFactory, ASTRewriter
-from renaissance.syntax_tree import ASTShower, TextUtils
+from libcst import CSTNode
+
+from impl.python.cst_node import PythonCstNode
+from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
+from renaissance.syntax_tree import ASTShower, ASTRewriter
+from renaissance.syntax_tree.ast_finder import find_kind
 from renaissance.syntax_tree.match_finder import match_pattern
 
 example_code = """
@@ -18,19 +19,33 @@ if pa():
   ba()
 pa(54)  
 """
+def python_lst_smoke_test():
 
+    # adapter = TreeSitterAdapter(tree_sitter_python)
+    # tree = adapter.parse_code(code)
+    # lst = adapter.to_lst(code, tree)
 
-def python_ast_smoke_test():
-    factory = PythonFactory(PythonRstNode)
-    atu: PythonRstNode = PythonRstNode.load_from_text(example_code, "test.py")
-    pattern_factory = PythonPatternFactory(
-        factory,
-    )
+    factory = PythonFactory(AST)
+    pattern_factory = PythonPatternFactory(factory)
 
-    pattern1 = pattern_factory.create_statements("if pa(): $$stmts")
+    atu = factory.create_from_text(example_code, "example.py")
+
+    pattern1 = pattern_factory.create_statement("if pa(): $$stmts")
     pattern2 = pattern_factory.create_expression("na($a)")
 
-    ASTShower.show_node(pattern1, include_properties=True)
+
+    print("_______________pattern 1____________________________________")
+    ASTShower.show_node(pattern1.node, include_properties=True)
+    print("_______________pattern 1____________________________________")
+    ASTShower.show_node(pattern2.node, include_properties=False)
+    print("_______________ast____________________________________")
+    ASTShower.focus = "ba"
+    ASTShower.show_node(atu)
+
+    print("_______________simple find____________________________________")
+    nodes = find_kind(atu, "Call")
+
+    ASTShower.show_node(nodes[0])
 
     pattern1replacement = textwrap.dedent("""
             # changed if expr to const
@@ -41,25 +56,24 @@ def python_ast_smoke_test():
     pattern2replacement = "# changed function f1 to f2\nf2($a,123456)\n"
 
     rewriter = ASTRewriter(atu)
-    for match in match_pattern(atu.body, pattern1):
+
+    for match in match_pattern(atu.children, [pattern1]):
         refactor(match, pattern1replacement, rewriter)
-    for match in match_pattern(atu.body, [pattern2]):
+
+    for match in match_pattern(atu.children, [pattern2]):
         refactor(match, pattern2replacement, rewriter)
+
     return rewriter.apply_to_string()
 
-
-def raw(nodes):
-    res = ""
-    for node in nodes:
-        res += node.signature
-    return res + "\n"
-
-
 def refactor(match, replacement_text, rewriter):
-    for repl_snippet in match.expansions:
-        replacement_text = replacement_text.replace(repl_snippet, raw(match.expansions[repl_snippet]))
+    for placeholder in match.expansions:
+        replacement_text = replacement_text.replace(placeholder, match[placeholder])
     return rewriter.replace(replacement_text, match.nodes)
 
 
+
+
 if __name__ == "__main__":
-    result = python_ast_smoke_test()
+    result = python_lst_smoke_test()
+    print("_______________end result_________________________________")
+    print(result)

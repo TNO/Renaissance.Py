@@ -2,7 +2,7 @@ from typing import Callable
 import pytest
 from hamcrest import *
 
-from c_cpp.factories import Factories
+from clang.factories import Factories
 from rejuvenation.batch_process_examples import (
     batch_remove_unused_variable_once_example,
     batch_repeat_example,
