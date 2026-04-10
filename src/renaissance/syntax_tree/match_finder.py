@@ -173,6 +173,8 @@ def _advance_greedy(variant: Variant, cmp: Sequence, src: Sequence, i: int):
 def find_variants(src: Sequence, cmp: Sequence, expansion=None, start: int = 0):
     if expansion is None:
         expansion = {}
+    if cmp==None:
+         return []
     i = start
     variants = [Variant(0, expansion, None, -1)]
     while i < len(src):
@@ -229,7 +231,7 @@ def find_in_list(src: Sequence, cmp: Sequence, exp=None, start: int = 0):
         exp = {}
     variants =  find_variants(src, cmp, exp, start)
     if not variants:
-        return -1
+        return -2
     exp.update(variants[0].exp)
     # [0] most greedy
     # [-1] least greedy

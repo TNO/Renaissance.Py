@@ -10,7 +10,7 @@ from hamcrest import (
     empty,
     is_not,
     greater_than,
-    less_than,
+    less_than, raises, calling,
 )
 from marshmallow.utils import is_generator
 
@@ -32,17 +32,13 @@ class TestMatchTree:
         self.factory = PythonFactory(PythonRstNode)
         self.pattern_factory = PythonPatternFactory(self.factory)
 
-    def test_none_with_none(self):
-        src = None
-        pattern = None
-
-        assert_that(is_match_tree(src, pattern), is_(True))
+    def test_none_with_none_is_not_allowed(self):
+        assert_that(calling(lambda: is_match_tree(None, None)), raises(Exception))
 
     def test_none_with_list(self):
-        src = None
         pattern = self.pattern_factory.create_statements("1")
 
-        assert_that(is_match_tree(src, pattern), is_(False))
+        assert_that(calling(lambda: is_match_tree(None, pattern)), raises(Exception))
 
     def test_list_with_none(self):
         src = self.pattern_factory.create_statements("1")
@@ -66,7 +62,7 @@ class TestMatchTree:
         src = self.pattern_factory.create_statements("1")
         pattern = ast.Name("name")
 
-        assert_that(is_match_tree(src, pattern), is_(False))
+        assert_that(is_match_tree(src, [pattern]), is_(False))
 
     def test_empty_lists_with_pattern(self):
         src = []

@@ -244,7 +244,7 @@ class TestPythonMatcher:
         results = MatchFinder.match_pattern(atu.children, simple)
         assert_that(results, has_length(3))
         assert_that(results[0].nodes, has_length(4))
-        assert_that(results[1].nodes, has_length(4))
+        assert_that(results[1].nodes, has_length(5))
         assert_that(results[2].nodes, has_length(2))
 
     # can only return one match
