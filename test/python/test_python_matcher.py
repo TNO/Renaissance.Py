@@ -244,7 +244,7 @@ class TestPythonMatcher:
         results = MatchFinder.match_pattern(atu.children, simple)
         assert_that(results, has_length(3))
         assert_that(results[0].nodes, has_length(4))
-        assert_that(results[1].nodes, has_length(5))
+        assert_that(results[1].nodes, has_length(4))
         assert_that(results[2].nodes, has_length(2))
 
     # can only return one match
@@ -343,10 +343,10 @@ class TestPythonMatcher:
         assert_that(variants[1].end_index, is_(6))
 
 
-        assert_that(variants[0].exp["$$before"], has_length(3))
-        assert_that(variants[0].exp["$$after"], has_length(3))
-        assert_that(variants[1].exp["$$before"], has_length(6))
-        assert_that(variants[1].exp["$$after"], has_length(0))
+        assert_that(variants[0].exp["$$before"], has_length(6))
+        assert_that(variants[0].exp["$$after"], has_length(0))
+        assert_that(variants[1].exp["$$before"], has_length(3))
+        assert_that(variants[1].exp["$$after"], has_length(3))
 
     def test_simple_match_with_variant(self):
         example_code = textwrap.dedent("0\n1\n2\n")
@@ -389,7 +389,7 @@ class TestPythonMatcher:
         atu = self.factory.create_from_text(example_code)
         pattern = self.pattern_factory.create_statements("$$before\n$mid\n$$after\n8\n$$before\n$dido\n$$after")
         variants = find_variants(atu.children, pattern)
-        assert_that(variants, has_length(greater_than(1)))
+        assert_that(variants, has_length(1))
         assert_that(variants[0].exp["$$before"], has_length(1))
         assert_that(variants[0].exp["$mid"], has_length(1))
         assert_that(variants[0].exp["$dido"], has_length(1))
@@ -419,7 +419,7 @@ class TestPythonMatcher:
         pattern = self.pattern_factory.create_statements("$$before\n$mid\n$$after\n$$before\n$dido\n$$after")
         variants = find_variants(atu.children, pattern)
         assert_that(variants, has_length(3))
-        assert_that(variants[0].end_index, is_(2)) # [] 0 [] [] 1 []
+        assert_that(variants[2].end_index, is_(2)) # [] 0 [] [] 1 []
         # assert_that(trimmed_variants[1], has_length(3)) # [] 0 [1] [] 2 missing 1
         # assert_that(trimmed_variants[2], has_length(5))
 

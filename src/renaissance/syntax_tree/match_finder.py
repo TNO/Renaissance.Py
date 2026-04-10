@@ -5,6 +5,7 @@ from ..utils.ast_utils import use_dollar
 
 
 IRRELEVANT_PROPS = {"macro_expansion", "start_point", "end_point", "source_code", "location", "type"}
+DEFAULT_EXCLUDE_KIND = {"FullComment", "MACRO_DEFINITION", "Comment"}
 MIS_MATCH = -2
 INCOMPLETE_MATCH = -1
 _TOP_LEVEL_KINDS = {"Module", "TRANSLATION_UNIT"}
@@ -96,13 +97,17 @@ def variant_in_match_stmt(src: AstProtocol, cmp: AstProtocol, expansions) -> lis
         matched = _resolve_match_one(cmp.name, src, expansions)
         return [Variant(0, expansions, None, 0, 0)] if matched else []
     if is_match_dict(src.properties, cmp.properties, expansions) and src.kind == cmp.kind:
-
-        pattern_is_empty = not cmp.children and src.children
-        if pattern_is_empty:
+        exprs = exclude_nodes_by_kind(src.children)
+        cmp_exprs = exclude_nodes_by_kind(cmp.children)
+        if not cmp_exprs and exprs:
             return []
-        variants = find_variants(src.children, cmp.children, expansions)
-        return [v for v in variants if v.end_index == len(src.children) - 1]
+        variants = find_variants(exprs, cmp_exprs, expansions)
+        return [v for v in variants if v.end_index == len(exprs) - 1]
     return []
+
+
+def exclude_nodes_by_kind(src: list) -> list:
+    return [c for c in src if c.kind not in DEFAULT_EXCLUDE_KIND]
 
 
 def _advance_match_all(variant: Variant, cmp: Sequence, src: Sequence, i: int, new_variants: list):
@@ -176,41 +181,44 @@ def find_variants(src: Sequence, cmp: Sequence, expansion=None, start: int = 0):
         expansion = {}
     i = start
     variants = [Variant(0, expansion, None, -1)]
-    new_variants = []
     while i < len(src):
+        next_variants = []
         for variant in variants:
             if variant.end_index is not INCOMPLETE_MATCH:
+                next_variants.append(variant)
                 continue
             if variant.index == len(cmp):
                 variant.end_index = i - 1
+                next_variants.append(variant)
                 continue
-            _advance_match_all(variant, cmp, src, i, new_variants)
+            _advance_match_all(variant, cmp, src, i, next_variants)
             if variant.index == len(cmp):
+                next_variants.append(variant)
                 continue
             if (
                 cmp[variant.index].kind != MATCH_ALL
                 and (child_variants := variant_in_match_stmt(src[i], cmp[variant.index], variant.exp))
             ):
-                _apply_child_match(variant, child_variants, cmp, src, i, new_variants)
+                _apply_child_match(variant, child_variants, cmp, src, i, next_variants)
             elif variant.greedy:
                 _advance_greedy(variant, cmp, src, i)
             else:
                 variant.end_index = MIS_MATCH
-
-        variants.extend(new_variants)
-        new_variants = []
-        variants = [v for v in variants if v.end_index != MIS_MATCH]
+            if variant.end_index != MIS_MATCH:
+                next_variants.append(variant)
+        variants = next_variants
         i += 1
-    full_match = len(src) - 1
 
+    full_match = len(src) - 1
+    valid_variants = []
     for variant in variants:
         if variant.end_index == MIS_MATCH or variant.index < len(cmp) - 1:
-            variants.remove(variant)
+            continue
         if variant.index == len(cmp) - 1:
             last_cmp = cmp[variant.index]
             trailing_wildcard = last_cmp.kind == MATCH_ALL and last_cmp.name not in variant.exp
             if not trailing_wildcard:
-                variants.remove(variant)
+                continue
             key = variant.greedy if variant.expansion_start != -1 else last_cmp.name
             variant.close_greedy(key, src[variant.expansion_start:] if variant.expansion_start != -1 else [])
         elif variant.index == len(cmp):
@@ -219,8 +227,8 @@ def find_variants(src: Sequence, cmp: Sequence, expansion=None, start: int = 0):
                 variant.close_greedy(variant.greedy, src[variant.expansion_start:])
         if variant.end_index == INCOMPLETE_MATCH:
             variant.end_index = full_match
-
-    return variants
+        valid_variants.append(variant)
+    return valid_variants
 
 def find_in_list(src: Sequence, cmp: Sequence, exp=None, start: int = 0):
     if exp is None:
