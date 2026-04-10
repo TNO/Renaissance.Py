@@ -100,7 +100,7 @@ def variant_in_match_stmt(src: AstProtocol, cmp: AstProtocol, expansions) -> lis
         pattern_is_empty = not cmp.children and src.children
         if pattern_is_empty:
             return []
-        variants = find_variants(src.children, cmp.children, expansions) #trim_invalid_variants(src.children,cmp.children, )
+        variants = find_variants(src.children, cmp.children, expansions)
         return [v for v in variants if v.end_index == len(src.children) - 1]
     return []
 
@@ -201,21 +201,16 @@ def find_variants(src: Sequence, cmp: Sequence, expansion=None, start: int = 0):
         new_variants = []
         variants = [v for v in variants if v.end_index != MIS_MATCH]
         i += 1
-
-    return variants
-
-
-def trim_invalid_variants(src, cmp, variants):
     full_match = len(src) - 1
-    valid_variants = []
+
     for variant in variants:
         if variant.end_index == MIS_MATCH or variant.index < len(cmp) - 1:
-            continue
+            variants.remove(variant)
         if variant.index == len(cmp) - 1:
             last_cmp = cmp[variant.index]
             trailing_wildcard = last_cmp.kind == MATCH_ALL and last_cmp.name not in variant.exp
             if not trailing_wildcard:
-                continue
+                variants.remove(variant)
             key = variant.greedy if variant.expansion_start != -1 else last_cmp.name
             variant.close_greedy(key, src[variant.expansion_start:] if variant.expansion_start != -1 else [])
         elif variant.index == len(cmp):
@@ -224,14 +219,13 @@ def trim_invalid_variants(src, cmp, variants):
                 variant.close_greedy(variant.greedy, src[variant.expansion_start:])
         if variant.end_index == INCOMPLETE_MATCH:
             variant.end_index = full_match
-        valid_variants.append(variant)
-    return valid_variants
 
+    return variants
 
 def find_in_list(src: Sequence, cmp: Sequence, exp=None, start: int = 0):
     if exp is None:
         exp = {}
-    variants =  find_variants(src, cmp, exp, start)# trim_invalid_variants(src, cmp,)
+    variants =  find_variants(src, cmp, exp, start)
     if not variants:
         return -1
     exp.update(variants[-1].exp)
