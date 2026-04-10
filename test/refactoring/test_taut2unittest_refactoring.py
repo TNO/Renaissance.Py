@@ -174,8 +174,14 @@ class TestTaut2Unittest:
         result = subject.apply_to_string()
         assert result == expected_code
 
+    def test_teardown(self, mocker):
+        subject = self._create(mocker, tst_class.tear_down_simple)
+        subject.convert_teardown()
+        result = subject.apply_to_string()
+        assert result == tst_class.tear_down_simple_new
+
     @pytest.mark.parametrize("input_code, expected_code", [(tst_class.tear_down, tst_class.new_tear_down)])
-    def test_teardown(self, input_code, expected_code, mocker):
+    def test_teardown_refactor(self, input_code, expected_code, mocker):
         subject = self._create(mocker, input_code)
         subject.refactor_teardown()
         result = subject.apply_to_string()
@@ -246,5 +252,78 @@ class TestTaut2Unittest:
         subject = self._create(mocker, "def test_import(self):\n    self.import_and_verify_module('ABCDxTL')")
         expected_code = "def test_import(self):\n    import ABCDxTL\n    self.assertIsNotNone(ABCDxTL)"
         subject.convert_import_verify()
+        result = subject.apply_to_string()
+        assert_that(result, is_(expected_code))
+
+    def test_insert_asserter(self, mocker):
+        subject = self._create(mocker, "def assert_double_equal(a, br=c):\n    pass")
+        expected_code = tst_insert.insert_code
+        subject.insert_asserter()
+        subject.remove_assert_func()
+        result = subject.apply_to_string()
+        assert_that(result, is_(expected_code))
+
+    def test_replace_unittest_asserter(self, mocker):
+        subject = self._create(mocker, "class A(TAUT.TestCase):\n    def b(self):\n        self.assert_raises(a, b=c)")
+        expected_code = "class A(Asserter):\n    def b(self):\n        self.assert_raises(a, b=c)"
+        subject.replace_unittest_with_asserter()
+        result = subject.apply_to_string()
+        assert_that(result, is_(expected_code))
+
+    @pytest.mark.parametrize(
+        "input_code, expected_code",
+        [
+            ("assert_raises", "self.assert_raises"),
+            ("assert_double_equal", "self.assert_double_equal"),
+        ]
+    )
+    def test_assert_func(self, mocker, input_code, expected_code):
+        subject = self._create(mocker, input_code)
+        subject.assert_func()
+        result = subject.apply_to_string()
+        assert_that(result, is_(expected_code))
+
+    def test_convert_testdoubles_func(self, mocker):
+        subject = self._create(mocker, tst_testdoubles.test_taut_doubles_class)
+        subject.convert_testdoubles_fun()
+        result = subject.apply_to_string()
+        assert_that(result, is_(tst_testdoubles.test_taut_doubles_class_new))
+
+    def test_setup_common(self, mocker):
+        subject = self._create(mocker, tst_class.set_up_common)
+        subject.convert_setup_common()
+        result = subject.apply_to_string()
+        assert_that(result, is_(tst_class.set_up_common_new))
+
+    def test_teardown_common(self, mocker):
+        subject = self._create(mocker, tst_class.tear_down_common)
+        subject.convert_teardown_common()
+        result = subject.apply_to_string()
+        assert_that(result, is_(tst_class.tear_down_common_new))
+
+    def test_add_patcher(self, mocker):
+        subject = self._create(mocker, tst_class.tear_down_common_new)
+        subject.convert_add_patcher()
+        result = subject.apply_to_string()
+        assert_that(result, is_(tst_class.tear_down_common_new + tst_class.insert_add_patcher + "\n"))
+
+    def test_shared_setup(self, mocker):
+        subject = self._create(mocker, "class A():\n    def sharedSetUp(self):\n        pass")
+        expected_code = "class A():\n    def setUp(self):\n        pass"
+        subject.shared_setup()
+        result = subject.apply_to_string()
+        assert_that(result, is_(expected_code))
+
+    def test_with_testdoubles(self, mocker):
+        subject = self._create(mocker, "with TAUT.TestDoubles(module=mod, b=c):\n    pass")
+        expected_code = "with patch.object(mod, 'b', new=c):\n    pass"
+        subject.with_testdoubles()
+        result = subject.apply_to_string()
+        assert_that(result, is_(expected_code))
+
+    def test_insert_patch_import(self, mocker):
+        subject = self._create(mocker, "import unittest\nself.patches = []")
+        expected_code = "import unittest\ntry:\n    from unittest.mock import patch\nexcept ImportError:\n    from mock import patch\nself.patches = []"
+        subject.insert_patch_import()
         result = subject.apply_to_string()
         assert_that(result, is_(expected_code))

@@ -1,6 +1,6 @@
-from pytest_bdd import given, when, then, scenario, parsers
-from .test_steps import *
 from renaissance.refactoring.taut2pyunit import Taut2Pyunit
+from .test_steps import *
+from pytest_bdd import when, scenario
 
 
 @scenario("../refactor-taut-test.feature", "migrate taut to unittest without syntax errors")

@@ -133,3 +133,74 @@ test_doubles_class = """class TestCloseTest(TAUT.TestCase):
         self._patch_readout_data_publisher.stop()
         for double in self.doubles:
             double.exit()"""
+
+test_taut_doubles_class = """class test_abcdxwid(unittest.TestCase):
+    def test_readout_is_ok(self):
+        self.doubles.append(
+            TAUT.TestDoubles(
+                module=ABCDxWID.abcdwid, get_wid_readouts=stub_get_wid_readouts
+            )
+        )
+        id = ABCDxBASIC.id
+        read = True
+        ABCDxABxCommonFunctions.CLEAR_CALLED = False
+        self.assert_raises(
+            ABCD.Error(ABCDxERR.ABCD_SYS_ERR, "error message"),
+            ABCDxABxREADLib.read,
+            id,
+            read,
+        )
+        self.assertEqual(ABCDxCONTEXT.abcdxcontext.method_called("start"), 0)
+
+    def test_read_two_doubles(self):
+        self.doubles.append(
+            TAUT.TestDoubles(
+                module=ABCDxABxLib,
+                _create_marks=marks,
+            )
+        )
+        self.doubles.append(
+            TAUT.TestDoubles(
+                module=ABCDxEngine.ABCDxEngine,
+                measure=self.engine.measure,
+            )
+        )
+        id = ABCDxBASIC.id
+        ABCDxABxCommonFunctions.CLEAR_CALLED = False
+        self.assert_raises(
+            ABCD.Error(ABCDxERR.ABCD_SYS_ERR, "error message"),
+            ABCDxABxREADLib.read,
+            id,
+        )
+
+        self.assertEqual(ABCDxCONTEXT.abcdxcontext.method_called("start"), 1)
+        self.assertEqual(ABCDxCONTEXT.abcdxcontext.method_called("finish"), 1)
+"""
+test_taut_doubles_class_new = """class test_abcdxwid(unittest.TestCase):
+    def test_readout_is_ok(self):
+        with patch.object(ABCDxWID.abcdwid, 'get_wid_readouts', stub_get_wid_readouts):
+            id = ABCDxBASIC.id
+            read = True
+            ABCDxABxCommonFunctions.CLEAR_CALLED = False
+            self.assert_raises(
+                ABCD.Error(ABCDxERR.ABCD_SYS_ERR, "error message"),
+                ABCDxABxREADLib.read,
+                id,
+                read,
+            )
+            self.assertEqual(ABCDxCONTEXT.abcdxcontext.method_called("start"), 0)
+
+    def test_read_two_doubles(self):
+        with patch.object(ABCDxABxLib, '_create_marks', marks), \\
+                patch.object(ABCDxEngine.ABCDxEngine, 'measure', self.engine.measure):
+            id = ABCDxBASIC.id
+            ABCDxABxCommonFunctions.CLEAR_CALLED = False
+            self.assert_raises(
+                ABCD.Error(ABCDxERR.ABCD_SYS_ERR, "error message"),
+                ABCDxABxREADLib.read,
+                id,
+            )
+
+            self.assertEqual(ABCDxCONTEXT.abcdxcontext.method_called("start"), 1)
+            self.assertEqual(ABCDxCONTEXT.abcdxcontext.method_called("finish"), 1)
+"""

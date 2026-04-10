@@ -1,9 +1,7 @@
+from pytest_bdd import when, scenario
 from .test_steps import *
-from pytest_bdd import given, when, then, scenario, parsers
-
-from renaissance.impl.python import PythonRstNode
 from renaissance.refactoring.unit2pytest import Unit2Pytest
-from renaissance.syntax_tree import ASTFactory
+
 
 @scenario("../convert-unit-to-pytest.feature", "convert unittest to pytest")
 def test_convert_unit_to_pytest():
