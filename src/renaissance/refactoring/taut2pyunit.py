@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Dict
 
 import test_data.test_insert as tst_insert
+import test_data.test_class as tst_class
 from renaissance.refactoring.python_refactoring import PythonRefactoring
 from renaissance.syntax_tree.match_finder import match_pattern
 
@@ -54,6 +55,7 @@ class Taut2Pyunit(PythonRefactoring):
         self.convert_setup()
         self.convert_import_verify()
         self.shared_setup()
+        self.commit()
         self.with_testdoubles()
         self.commit()
 
@@ -229,21 +231,16 @@ ImprovedStub.store_args = {}
             p.stop()
         except RuntimeError:
             pass
-    """
+"""
         for match in match_pattern(self.root.children, teardown_common):
             self.replace(repl, match.nodes, False, False)
 
     def convert_add_patcher(self):
         pattern = self.pattern_factory.create_statements("def tearDownCommon(self):\n    $$aa")
-        insert_add_patcher = """
-def add_patcher(self, target, name, replacement):
-    p = patch.object(target, name, replacement)
-    p.start()
-    self.patchers.append(p)"""
         for match in match_pattern(self.root.children, pattern):
             patcher_pattern = [node for node in self.find_kind("FunctionDef") if node.name == "add_patcher" ]
             if len(patcher_pattern) == 0:
-                self.insert_after(insert_add_patcher, match.nodes)
+                self.insert_after(tst_class.insert_add_patcher, match.nodes)
 
     def find_import_interface(self, name: str):
         interface = name
@@ -377,10 +374,9 @@ def add_patcher(self, target, name, replacement):
 
     def shared_setup(self):
         setup_function = self.pattern_factory.create_statements("def sharedSetUp(self):\n    $$stmts")
-        for match in match_pattern(self.body, setup_function):
+        for match in match_pattern(self.root.children, setup_function):
             repl = match.signature.replace("def sharedSetUp", "    def setUp")
             self.replace(textwrap.dedent(repl), match.nodes, False, False)
-            self.commit()
 
     def insert_class(self):
         class_pattern = self.pattern_factory.create_statements("class Asserter(unittest.TestCase):\n    $$aa")

@@ -134,6 +134,16 @@ def setUp(self):
     self.measurement_strategy = ACBD_MeasurementDefault.ACBD_MeasurementDefault()
 """
 
+tear_down_simple = """
+def tearDown(self):
+    for double in self.doubles:
+        double.exit()
+"""
+tear_down_simple_new = """
+def tearDown(self):
+    for p in self.patches:
+        p.stop()
+"""
 tear_down = """
 def tearDown(self):
     self._patch_readout_data_filler.stop()
@@ -161,3 +171,54 @@ def tearDown(self):
     self._patch_dtxa_context_filler.stop()
     patch.stopall()
 """
+
+set_up_common = """def setUpCommon(self):
+        self.tds = [
+            TestDoubles(abcdxread=ImprovedStub(ABCDxREAD.abcdxread)),
+            TestDoubles(abcdxws=ImprovedStub(ABCDxWS.abcdxws)),
+            TestDoubles(abxstream2=ImprovedStub(ABxSTREAM2.abxstream2)),
+            TestDoubles(bcxclear=ImprovedStub(BCxCLEAR.bcxclear)),
+            TestDoubles(bcxload=ImprovedStub(BCxLOAD.bcxload))
+        ]
+        self.sut = ABCDxVIPCxAB.ABCDxVIPCxAB()"""
+
+set_up_common_new = """def setUpCommon(self):
+        ImprovedStub.ret_vals = {}
+        ImprovedStub.ret_vals_ex = {}
+        ImprovedStub.call_logs = {}
+        ImprovedStub.store_args = {}
+        
+        self.abcdxread = ImprovedStub(ABCDxREAD.abcdxread)
+        self.abcdxws = ImprovedStub(ABCDxWS.abcdxws)
+        self.abxstream2 = ImprovedStub(ABxSTREAM2.abxstream2)
+        self.bcxclear = ImprovedStub(BCxCLEAR.bcxclear)
+        self.bcxload = ImprovedStub(BCxLOAD.bcxload)
+        self.patchers = [
+            patch.object(ABCDxREAD, 'abcdxread', self.abcdxread),
+            patch.object(ABCDxWS, 'abcdxws', self.abcdxws),
+            patch.object(ABxSTREAM2, 'abxstream2', self.abxstream2),
+            patch.object(BCxCLEAR, 'bcxclear', self.bcxclear),
+            patch.object(BCxLOAD, 'bcxload', self.bcxload),
+        ]
+        
+        for p in self.patchers:
+            p.start()
+        
+        self.sut = ABCDxVIPCxAB.ABCDxVIPCxAB()"""
+
+tear_down_common = """def tearDownCommon(self):
+    for td in self.tds:
+        td.exit()"""
+tear_down_common_new = """def tearDownCommon(self):
+    for p in self.patchers:
+        try:
+            p.stop()
+        except RuntimeError:
+            pass
+"""
+
+insert_add_patcher = """
+def add_patcher(self, target, name, replacement):
+    p = patch.object(target, name, replacement)
+    p.start()
+    self.patchers.append(p)"""

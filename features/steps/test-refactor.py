@@ -2,7 +2,7 @@ import pytest
 from pytest_bdd import given, when, then, scenario, parsers
 
 from renaissance.impl.python import PythonRstNode, PythonPatternFactory
-from renaissance.syntax_tree import ASTFactory, MatchFinder, ASTRewriter
+from renaissance.syntax_tree import ASTFactory, ASTRewriter
 from renaissance.syntax_tree.match_finder import match_pattern
 
 
