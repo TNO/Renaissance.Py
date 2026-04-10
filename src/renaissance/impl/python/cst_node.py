@@ -4,6 +4,7 @@ from typing import Self, Callable
 import libcst
 from libcst import BaseSmallStatement, BaseCompoundStatement, CSTNode, MetadataWrapper, ClassDef
 from libcst import FunctionDef
+from libcst.display import dump
 from libcst.metadata import WhitespaceInclusivePositionProvider
 
 from renaissance.impl.python.util import convert
@@ -43,12 +44,29 @@ class PythonCstNode:
             self.root = parent.root
         else:
             self.root = self
-        self.node = node
         self.translation_unit = translation_unit
+        self.node = node
+
+        self.is_statement = isinstance(self.node, (BaseSmallStatement, BaseCompoundStatement))
+
+        # for matcher
         self.kind = type(node).__name__
         self.children: list[Self] = [PythonCstNode(node, translation_unit, self) for node in node.children]
         self.properties = {}
-        self.is_statement = isinstance(self.node, (BaseSmallStatement, BaseCompoundStatement))
+
+        # for shower
+        self.is_implicit = True
+        self.show_props = False
+
+        # for rewriter
+        self.text = self.signature
+
+    def __str__(self):
+        return str(self.node)
+
+    def __repr__(self):
+        return repr(self.node)
+
 
     @property
     def signature(self):

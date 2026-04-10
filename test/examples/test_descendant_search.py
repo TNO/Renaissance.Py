@@ -1,7 +1,7 @@
 import pytest
 from hamcrest import *
 
-from clang.factories import Factories
+from c_cpp.factories import Factories
 from rejuvenation.descendant_search import find_descendant_match
 from renaissance.impl.clang import CPatternFactory, ClangASTNode
 from renaissance.impl.clang_json import ClangJsonASTNode

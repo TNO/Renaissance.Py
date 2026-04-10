@@ -1,6 +1,7 @@
 import sys
 from typing import Any
 
+from c_cpp.factories import Factories
 from renaissance.impl.python import PythonRstNode
 from renaissance.impl.python.factory import PythonFactory
 from renaissance.impl.python.python_pattern_factory import PythonPatternFactory
@@ -8,7 +9,7 @@ from renaissance.impl.python.python_pattern_factory import PythonPatternFactory
 import pytest
 from hamcrest import assert_that, is_
 
-from clang.factories import Factories
+
 from renaissance.impl.clang import ClangASTNode, CPatternFactory
 from renaissance.syntax_tree import ASTRewriter, ASTFactory, PatternMatch
 from renaissance.syntax_tree.ast_rewriter import _RewriteAction, _RewriteActions

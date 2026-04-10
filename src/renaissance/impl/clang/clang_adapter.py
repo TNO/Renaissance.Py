@@ -6,7 +6,7 @@ from renaissance.utils.ast_utils import detect_placeholder
 
 class ClangAdapter:
     def __init__(self, clang_path: Optional[str] = None, args: Optional[list] = None):
-        if clang_path:
+        if clang_path and cindex.Config.library_path is None:
             cindex.Config.set_library_path(clang_path)
         self.args = args or ["-std=c++17"]
 

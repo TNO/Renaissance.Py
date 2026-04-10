@@ -1,6 +1,6 @@
 from typing import Any, Protocol, Self, runtime_checkable
 
-from syntax_tree.text_segment import TextSegment
+from renaissance.syntax_tree.text_segment import TextSegment
 
 
 @runtime_checkable

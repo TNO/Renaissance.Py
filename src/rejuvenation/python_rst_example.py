@@ -7,7 +7,7 @@ from renaissance.impl.python.factory import PythonFactory
 from renaissance.syntax_tree import ASTFactory, ASTRewriter
 from renaissance.syntax_tree import ASTShower, TextUtils
 from renaissance.syntax_tree.match_finder import match_pattern
-from syntax_tree.ast_finder import find_kind
+from renaissance.syntax_tree.ast_finder import find_kind
 
 example_code = """
 from module import foo, bar, baz, quux
@@ -41,7 +41,7 @@ def python_rst_smoke_test():
     ASTShower.show_node(atu)
 
     print("_______________simple find____________________________________")
-    nodes = find_kind(atu, "identifier")
+    nodes = find_kind(atu, "Call")
 
     ASTShower.show_node(nodes[0])
 

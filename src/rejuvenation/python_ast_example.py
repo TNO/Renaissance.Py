@@ -19,7 +19,7 @@ if pa():
   ba()
 pa(54)  
 """
-def python_lst_smoke_test():
+def python_ast_smoke_test():
 
     # adapter = TreeSitterAdapter(tree_sitter_python)
     # tree = adapter.parse_code(code)
