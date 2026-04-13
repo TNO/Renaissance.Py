@@ -12,10 +12,8 @@ from renaissance.syntax_tree.match_finder import (
     is_match,
     match_pattern,
     find_variants,
-    INCOMPLETE_MATCH,
     variant_in_match_stmt,
 )
-
 
 class TestPythonMatcher:
 
@@ -394,10 +392,6 @@ class TestPythonMatcher:
         assert_that(variants[0].exp["$mid"], has_length(1))
         assert_that(variants[0].exp["$dido"], has_length(1))
         assert_that(variants[0].exp["$$after"], has_length(1))
-        # assert_that(variants[0].exp["$$before"], has_length(0))
-        # assert_that(variants[0].exp["$mid"], has_length(1))
-        # assert_that(variants[0].exp["$dido"], has_length(1))
-        # assert_that(variants[0].exp["$$after"], has_length(0))
 
     def test_trim_variants(self):
         example_code = textwrap.dedent("0\n1\n2\n8\n0\n7\n2")

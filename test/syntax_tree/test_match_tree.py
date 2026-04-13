@@ -53,7 +53,7 @@ class TestMatchTree:
         assert_that(is_match_tree(src, pattern), is_(True))
 
     def test_lists_with_empty_pattern(self):
-        src = [1]
+        src = self.pattern_factory.create_statements("1")
         pattern = []
 
         assert_that(is_match_tree(src, pattern), is_(False))

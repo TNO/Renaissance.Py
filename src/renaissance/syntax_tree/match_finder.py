@@ -5,8 +5,9 @@ from ..utils.ast_utils import use_dollar
 
 
 IRRELEVANT_PROPS = {"macro_expansion", "start_point", "end_point", "source_code", "location", "type"}
-MIS_MATCH = -2
-INCOMPLETE_MATCH = -1
+
+MIS_MATCH = -12
+INCOMPLETE_MATCH = -11
 _TOP_LEVEL_KINDS = {"Module", "TRANSLATION_UNIT"}
 
 
@@ -17,7 +18,6 @@ class AstProtocol(Protocol):
     children: list[Self]
     signature: str
     name: str
-
 
 class Variant:
     def __init__(self, index, exp, greedy, expansion_start, end_index=INCOMPLETE_MATCH):
@@ -31,8 +31,9 @@ class Variant:
         self.greedy = None
         self.expansion_start = -1
 
-    def close_greedy(self, key, value):
+    def close_greedy(self, key, nodes, start,end):
         """Store a completed greedy expansion and reset greedy state."""
+        value = nodes[start:end]
         self.exp[key] = value
         self.reset_greedy()
 
@@ -69,6 +70,11 @@ class PatternMatch:
             for pattern in patterns for m in MatchFinder.match_pattern([ref.node], pattern, recursive)
         ]
 
+    def offset_of(self, key):
+        return self.expansions[key][0].offset
+
+    def length_of(self,  key):
+        return self.expansions[key][-1].offset + self.expansions[key][-1].length - self.expansions[key][0].offset
 
 def _resolve_match_one(name: str, src: "AstProtocol", expansions: dict):
     """Handle a MATCH_ONE pattern node: bind or verify the named expansion. Returns True if matched."""
@@ -79,15 +85,6 @@ def _resolve_match_one(name: str, src: "AstProtocol", expansions: dict):
 
 
 def is_match_tree(src: Sequence | None, cmp: Sequence | None, expansions=None):
-    # if expansions is None:
-    #     expansions = {}
-    # both_lists = isinstance(src, list) and isinstance(cmp, list)
-    # if not both_lists or not cmp or not src:
-    #     return src == cmp
-    # single_match_all = len(cmp) == 1 and isinstance(cmp0 := cmp[0], AstProtocol) and cmp0.kind == MATCH_ALL
-    # if single_match_all:
-    #     expansions[cmp0.name] = src
-    #     return True
     return find_in_list(src, cmp, expansions, 0) == len(src) - 1
 
 
@@ -96,12 +93,10 @@ def variant_in_match_stmt(src: AstProtocol, cmp: AstProtocol, expansions) -> lis
         matched = _resolve_match_one(cmp.name, src, expansions)
         return [Variant(0, expansions, None, 0, 0)] if matched else []
     if is_match_dict(src.properties, cmp.properties, expansions) and src.kind == cmp.kind:
-        exprs = src.children
-        cmp_exprs = cmp.children
-        if not cmp_exprs and exprs:
+        if not cmp.children and src.children:
             return []
-        variants = find_variants(exprs, cmp_exprs, expansions)
-        return [v for v in variants if v.end_index == len(exprs) - 1]
+        variants = find_variants(src.children, cmp.children, expansions)
+        return [v for v in variants if v.end_index == len(src.children) - 1]
     return []
 
 def _advance_match_all(variant: Variant, cmp: Sequence, src: Sequence, i: int, new_variants: list):
@@ -113,7 +108,7 @@ def _advance_match_all(variant: Variant, cmp: Sequence, src: Sequence, i: int, n
             variant.greedy = current_name
         elif current_name != variant.greedy and variant.greedy not in variant.exp:
             new_variants.append(variant.fork())
-            variant.close_greedy(variant.greedy, src[variant.expansion_start:i])
+            variant.close_greedy(variant.greedy, src,variant.expansion_start,i)
             variant.greedy = current_name
             variant.expansion_start = i
         else:
@@ -133,10 +128,10 @@ def _apply_child_match(variant: Variant, child_variants: list, cmp: Sequence, sr
         forked = variant.fork()
         forked.exp.pop(cmp[variant.index].name, None)
         new_variants.append(forked)
-        variant.close_greedy(variant.greedy, src[variant.expansion_start:i])
+        variant.close_greedy(variant.greedy, src,variant.expansion_start,i)
     if len(child_variants) > 1:
         for v in child_variants:
-            new_variants.append(Variant(variant.index + 1, v.exp, variant.greedy, variant.expansion_start, INCOMPLETE_MATCH))
+            new_variants.append(Variant(variant.index + 1, v.exp, variant.greedy, variant.expansion_start))
         variant.end_index = MIS_MATCH
     else:
         variant.exp = child_variants[0].exp
@@ -154,7 +149,7 @@ def _advance_greedy(variant: Variant, cmp: Sequence, src: Sequence, i: int):
         at_last_src_node = i == len(src) - 1
         greedy_matches_pattern = variant.greedy == cmp[variant.index].name
         if at_last_src_node and greedy_matches_pattern:
-            variant.close_greedy(variant.greedy, src[variant.expansion_start:i + 1])
+            variant.close_greedy(variant.greedy, src,variant.expansion_start,i + 1)
             variant.end_index = i
             variant.index += 1
     elif exp_index < len(exp_for_key):
@@ -170,7 +165,7 @@ def _advance_greedy(variant: Variant, cmp: Sequence, src: Sequence, i: int):
         variant.index += 1
 
 
-def find_variants(src: Sequence, cmp: Sequence, expansion=None, start: int = 0):
+def find_variants(src: Sequence, cmp: Sequence, expansion=None, start: int = 0, parent=None):
     if expansion is None:
         expansion = {}
     if cmp==None:
@@ -216,11 +211,11 @@ def find_variants(src: Sequence, cmp: Sequence, expansion=None, start: int = 0):
             if not trailing_wildcard:
                 continue
             key = variant.greedy if variant.expansion_start != -1 else last_cmp.name
-            variant.close_greedy(key, src[variant.expansion_start:] if variant.expansion_start != -1 else [])
+            variant.close_greedy(key, src,variant.expansion_start, -1 if variant.expansion_start != -1 else variant.expansion_start)
         elif variant.index == len(cmp):
             greedy_unresolved = variant.greedy and variant.greedy not in variant.exp
             if greedy_unresolved:
-                variant.close_greedy(variant.greedy, src[variant.expansion_start:])
+                variant.close_greedy(variant.greedy, src, variant.expansion_start,-1)
         if variant.end_index == INCOMPLETE_MATCH:
             variant.end_index = full_match
         valid_variants.append(variant)
