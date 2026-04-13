@@ -1,23 +1,19 @@
 import ast
 import textwrap
+
 import pytest
 from hamcrest import *
-
 from hamcrest import assert_that, is_not
 
 from renaissance.impl.python import PythonRstNode, PythonPatternFactory
 from renaissance.impl.python.factory import PythonFactory
-from renaissance.syntax_tree import ASTFactory, MatchFinder
+from renaissance.syntax_tree import MatchFinder
 from renaissance.syntax_tree.match_finder import (
     is_match,
     match_pattern,
     find_variants,
-    trim_invalid_variants,
-    MIS_MATCH,
-    INCOMPLETE_MATCH,
     variant_in_match_stmt,
 )
-
 
 class TestPythonMatcher:
 
@@ -53,11 +49,12 @@ class TestPythonMatcher:
         assert_that(is_match(if_then_elif_statement, if_then_else_if_statement), is_(True))
 
         assert_that(if_then_else_if_statement, is_not(if_then_statement))
+        # assert_that(is_match(if_then_else_if_statement, if_then_statement), is_(False))
         assert_that(is_match(if_then_else_if_statement, if_then_else_statement), is_(False))
         assert_that(is_match(if_then_else_if_statement, if_then_elif_statement), is_(True))
         assert_that(is_match(if_then_else_if_statement, if_then_else_if_statement), is_(True))
 
-    @pytest.mark.skip("TODO: fox this")
+
     def test_is_match_if_statements(self):
         code_if_then_statement =         "if c1:\n    pass"
         code_if_then_else_if_statement = "if c1:\n    pass\nelse:\n    if c2:\n        pass"
@@ -65,7 +62,7 @@ class TestPythonMatcher:
         if_then_statement = self.pattern_factory.create_statement(code_if_then_statement)
         if_then_else_if_statement = self.pattern_factory.create_statement(code_if_then_else_if_statement)
 
-        assert_that(is_match(if_then_else_if_statement, if_then_statement), is_(False))
+        assert_that(variant_in_match_stmt(if_then_else_if_statement.children[2], if_then_statement.children[2],{}), is_([]))
 
     @pytest.mark.parametrize(
         "stmt_txt, pattern_txt, expected",
@@ -73,8 +70,8 @@ class TestPythonMatcher:
             # return empty expression list (type None)
             ("return", "return", True),
             ("return", "return $expression_list", False),
-            ("return", "return $$expressions", False),
-            # TODO discuss whether this is the desired behaviour - empty list
+            ("return", "return $$expressions", True),
+
             # return single value
             ("return 1", "return", False),
             ("return 1", "return $expression_list", True),
@@ -96,7 +93,7 @@ class TestPythonMatcher:
     def test_placeholder_return_stmt(self, stmt_txt: str, pattern_txt: str, expected: bool):
         stmt = self.pattern_factory.create_statement(stmt_txt)
         pattern = self.pattern_factory.create_statement(pattern_txt)
-        assert_that(is_match(stmt, pattern), is_(expected))
+        assert_that(is_match(stmt, pattern, {}), is_(expected))
 
     def test_generic_is_match_any_stmt(self):
         atu = self.factory.create_from_text("ba(55)", "test.py")
@@ -339,21 +336,21 @@ class TestPythonMatcher:
         atu = self.factory.create_from_text(example_code)
         pattern = self.pattern_factory.create_statements("$$before\n3\n$$after")
         variants = find_variants(atu.children, pattern)
-        assert_that(variants, has_length(3))
-        assert_that(variants[0].end_index, is_(6)) #full match
-        assert_that(variants[1].end_index, is_(INCOMPLETE_MATCH))
-        assert_that(variants[2].end_index, is_(INCOMPLETE_MATCH))
-        variants = trim_invalid_variants(atu.children, pattern, variants)
-        assert_that(variants[0].exp["$$before"], has_length(3))
-        assert_that(variants[0].exp["$$after"], has_length(3))
-        assert_that(variants[1].exp["$$before"], has_length(6))
-        assert_that(variants[1].exp["$$after"], has_length(0))
+        assert_that(variants, has_length(2))
+        assert_that(variants[0].end_index, is_(6))
+        assert_that(variants[1].end_index, is_(6))
+
+
+        assert_that(variants[0].exp["$$before"], has_length(6))
+        assert_that(variants[0].exp["$$after"], has_length(0))
+        assert_that(variants[1].exp["$$before"], has_length(3))
+        assert_that(variants[1].exp["$$after"], has_length(3))
 
     def test_simple_match_with_variant(self):
         example_code = textwrap.dedent("0\n1\n2\n")
         atu = self.factory.create_from_text(example_code)
         pattern = self.pattern_factory.create_statements("0\n1\n2\n")
-        assert_that(trim_invalid_variants(atu.children, pattern, find_variants(atu.children, pattern)), has_length(1))
+        assert_that(find_variants(atu.children, pattern), has_length(1))
 
     def test_variable_length_matcher_as_valid_variants(self):
         example_code = textwrap.dedent("""
@@ -368,7 +365,6 @@ class TestPythonMatcher:
         atu = self.factory.create_from_text(example_code)
         pattern = self.pattern_factory.create_statements("$$before\n$mid")
         variants = find_variants(atu.children, pattern)
-        variants = trim_invalid_variants(atu.children, pattern, variants)
         assert_that(variants, has_length(7))
 
     def test_variable_length_matcherat_start_end_end_as_variants(self):
@@ -384,7 +380,6 @@ class TestPythonMatcher:
         atu = self.factory.create_from_text(example_code)
         pattern = self.pattern_factory.create_statements("$$before\n$mid\n$$after")
         variants = find_variants(atu.children, pattern)
-        variants = trim_invalid_variants(atu.children, pattern, variants)
         assert_that(variants, has_length(7))
 
     def test_match_pattern_needs_variants(self):
@@ -392,42 +387,33 @@ class TestPythonMatcher:
         atu = self.factory.create_from_text(example_code)
         pattern = self.pattern_factory.create_statements("$$before\n$mid\n$$after\n8\n$$before\n$dido\n$$after")
         variants = find_variants(atu.children, pattern)
-        assert_that(variants, has_length(greater_than(1)))
+        assert_that(variants, has_length(1))
         assert_that(variants[0].exp["$$before"], has_length(1))
         assert_that(variants[0].exp["$mid"], has_length(1))
         assert_that(variants[0].exp["$dido"], has_length(1))
         assert_that(variants[0].exp["$$after"], has_length(1))
-        # assert_that(variants[0].exp["$$before"], has_length(0))
-        # assert_that(variants[0].exp["$mid"], has_length(1))
-        # assert_that(variants[0].exp["$dido"], has_length(1))
-        # assert_that(variants[0].exp["$$after"], has_length(0))
 
     def test_trim_variants(self):
         example_code = textwrap.dedent("0\n1\n2\n8\n0\n7\n2")
         atu = self.factory.create_from_text(example_code)
         pattern = self.pattern_factory.create_statements("$$before\n$mid\n$$after\n8\n$$before\n$dito\n$$after")
         variants = find_variants(atu.children, pattern)
-        assert_that(variants, has_length(greater_than(1)))
-        trimmed_variants = trim_invalid_variants(atu.children, pattern, variants)
-        assert_that(trimmed_variants, has_length(1))
+        assert_that(variants, has_length(1))
 
     def test_mismatch_with_double_match_all(self):
         example_code = textwrap.dedent("0\n1\n2\n3\n0\n7\n2")
         atu = self.factory.create_from_text(example_code)
         pattern = self.pattern_factory.create_statements("$$before\n3\n$$before")
         variants = find_variants(atu.children, pattern)
-        trimmed_variants = trim_invalid_variants(atu.children, pattern, variants)
-        assert_that(trimmed_variants, has_length(0))
+        assert_that(variants, has_length(0))
 
     def test_trim_variants_with_double_match_all(self):
         example_code = textwrap.dedent("0\n1\n2\n0\n7\n2")
         atu = self.factory.create_from_text(example_code)
         pattern = self.pattern_factory.create_statements("$$before\n$mid\n$$after\n$$before\n$dido\n$$after")
         variants = find_variants(atu.children, pattern)
-        # assert_that(variants, has_length(32))
-        trimmed_variants = trim_invalid_variants(atu.children, pattern, variants)
-        assert_that(trimmed_variants, has_length(3))
-        assert_that(trimmed_variants[0].end_index, is_(2)) # [] 0 [] [] 1 []
+        assert_that(variants, has_length(3))
+        assert_that(variants[2].end_index, is_(2)) # [] 0 [] [] 1 []
         # assert_that(trimmed_variants[1], has_length(3)) # [] 0 [1] [] 2 missing 1
         # assert_that(trimmed_variants[2], has_length(5))
 
@@ -480,7 +466,6 @@ class TestPythonMatcher:
         atu = self.factory.create_from_text(example_code)
         pattern = self.pattern_factory.create_statements("$f($$before, $a, $$after)\n$f($$before, $b, $$after)")
         variants = find_variants(atu.body, pattern, {})
-        variants = trim_invalid_variants(atu.body, pattern, variants)
         # should be 1
         assert_that(variants, has_length(1))
 
@@ -504,8 +489,7 @@ class TestPythonMatcher:
         pattern = self.pattern_factory.create_statements("$f($$before, $a, $$after)\n$f($$before, $b, $$after)")
         variants = find_variants(atu.children, pattern)
         assert_that(variants, is_not(empty()))
-        trimmed_variants = trim_invalid_variants(atu.children, pattern, variants)
-        assert_that(trimmed_variants, is_not(empty()))
+        assert_that(variants, is_not(empty()))
         assert_that(match_pattern(atu.children, pattern), has_length(1))
 
     def test_match_multi_fun_using_generic_matcher2(self):

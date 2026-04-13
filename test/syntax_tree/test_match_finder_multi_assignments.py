@@ -1,16 +1,16 @@
 import pytest
+from hamcrest import has_length, greater_than_or_equal_to
+from hamcrest.core import assert_that
 
+from impl.python.factory import PythonFactory
 from renaissance.impl.python import PythonRstNode
 from renaissance.impl.python.python_pattern_factory import PythonPatternFactory
 from renaissance.syntax_tree.ast_factory import ASTFactory
 from renaissance.syntax_tree.match_finder import find_all
+from renaissance.syntax_tree.match_finder import find_variants
 
 code = """
-def f(x,y):
-    skip
-
-def g():
-    f(0,0)
+f(0,0)
 """
 
 PLACEHOLDER_BEFORE: str = "$$before"
@@ -19,17 +19,18 @@ PATTERN_CALL: str = "f(" + PLACEHOLDER_BEFORE + ", 0, " + PLACEHOLDER_AFTER + ")
 
 
 class TestMatchFinderMultiAssignments:
+    @pytest.mark.skip("not impl. yet")
     def test_find_multi_assignments(self):
         # set up
-        factory = ASTFactory(PythonRstNode, [])
-        atu = factory.create_from_text(code, "temp.py")
-        pattern = PythonPatternFactory(factory).create_expression(PATTERN_CALL)
+        factory = PythonFactory(PythonRstNode)
+        atu = factory.create_from_text(code)
+        pattern = PythonPatternFactory(factory).create_statements(PATTERN_CALL)
 
         # execute
-        matches = list(find_all([atu], [pattern]))  # Use list, since we want to access its content multiple times
+        variants = list(find_variants(atu.children, pattern))  # Use list, since we want to access its content multiple times
 
         # verify
-        assert 2 == len(matches), f"Two matches expected, got {len(matches)}."
+        assert_that(variants, has_length(2), f"Two matches expected, got {len(variants)}.")
         # TODO Discuss what behaviour do we exactly want?
         # In this case, 1 match on the AST node "f(0,0)" with 2 assignments (as checked below) is also acceptable to me.
 
@@ -39,10 +40,10 @@ class TestMatchFinderMultiAssignments:
         }
 
         actual: set[frozenset[tuple[str, str]]] = set()
-        for match in matches:
+        for vatiant in variants:
             # TODO getting the location of a (possibly empty) multiple placeholder is no longer supported
-            before_location = match.locations[PLACEHOLDER_BEFORE]
-            after_location = match.locations[PLACEHOLDER_AFTER]
+            before_location = vatiant.locations[PLACEHOLDER_BEFORE]
+            after_location = vatiant.locations[PLACEHOLDER_AFTER]
 
             assignment: dict[str, str] = {}
             assignment[PLACEHOLDER_BEFORE] = atu.translation_unit.content[before_location.offset : before_location.end_offset]

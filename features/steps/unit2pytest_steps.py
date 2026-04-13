@@ -1,5 +1,5 @@
 from pytest_bdd import when, scenario
-from .test_steps import *
+from steps.test_steps import *
 from renaissance.refactoring.unit2pytest import Unit2Pytest
 
 

@@ -14,8 +14,7 @@ from renaissance.syntax_tree import (
     ASTNode,
     MatchFinder,
 )
-from renaissance.syntax_tree.match_finder import exclude_nodes_by_kind, match_pattern, find_variants, find_in_list, \
-    is_match
+from renaissance.syntax_tree.match_finder import match_pattern, find_variants, find_in_list, is_match
 from utils_for_tests import compress, show_node, debug_mismatch
 
 logger = logging.getLogger(__name__)
@@ -192,7 +191,7 @@ class TestStatements(TestCMatchFinder):
         patterns = CPatternFactory(factory).create_statements(statements)
 
         atu = factory.create_from_text(TestStatements.SIMPLE_CPP, "test.c")
-        func_body = exclude_nodes_by_kind(atu.children)[0].children[2]
+        func_body = atu.children[0].children[2]
         matches = match_pattern(func_body.children, patterns)
 
         self.assert_matches(expected_dicts_per_match, matches)
@@ -356,7 +355,7 @@ class TestMultiAssignments(TestCMatchFinder):
             """
         patterns = CPatternFactory(factory).create_statements(statements, extra_declarations=extra_declarations)
         atu = factory.create_from_text(code, "test.c")
-        func_body = exclude_nodes_by_kind(atu.children)[0].children[2]
+        func_body = atu.children[0].children[2]
         matches = match_pattern(func_body.children, patterns)
 
         self.assert_matches(expected_dicts_per_match, matches)
