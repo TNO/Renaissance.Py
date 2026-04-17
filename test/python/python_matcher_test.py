@@ -18,6 +18,12 @@ class TestPythonMatcher:
         self.pattern_factory = PythonPatternFactory(self.factory)
 
     def test_if_statements(self):
+        """
+        This test case documents the semantic power of [the Python parser ast](https://docs.python.org/3/library/ast.html) 
+        with respect to if statements.
+
+        In particular, syntax differences between `elif` and `else if` are not semantically relevant.
+        """
         code_if_then_statement = "if c1:\n    pass"
         code_if_then_else_statement = "if c1:\n    pass\nelse:\n    pass"
         code_if_then_elif_statement = "if c1:\n    pass\nelif c2:\n    pass"

@@ -17,7 +17,10 @@ class TestPythonMatcherRepresentation:
 
     def test_integer_representation(self):
         """
-        How are the different integer representations handled by the parser?
+        This test case documents the semantic power of [the Python parser ast](https://docs.python.org/3/library/ast.html) 
+        with respect to integer representations.
+
+        In particular, different integer representations are not semantically relevant.
         """
         normal = "1000"
         readable = "1_000"
@@ -58,7 +61,10 @@ class TestPythonMatcherRepresentation:
 
     def test_character_representation(self):
         """
-        How are the different character representations handled by the parser?
+        This test case documents the semantic power of [the Python parser ast](https://docs.python.org/3/library/ast.html) 
+        with respect to character representations.
+
+        In particular, different character representations are not semantically relevant.
         """
         normal_single = "'1'"
         normal_double = '"1"'
