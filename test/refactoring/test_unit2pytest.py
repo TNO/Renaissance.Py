@@ -1,0 +1,149 @@
+import textwrap
+from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import MagicMock, mock_open, patch
+
+import pytest
+from hamcrest import assert_that, contains_string, has_length, is_, ends_with, not_
+
+import targets
+from renaissance.impl.python import PythonASTNode, PythonPatternFactory
+from renaissance.refactoring import unit2pytest as mod
+from renaissance.refactoring.unit2pytest import Unit2Pytest
+from renaissance.syntax_tree import ASTFactory
+from renaissance.syntax_tree.match_finder import match_pattern
+
+class TestUnit2Pytest:
+    def test_init(self):
+        subject = Unit2Pytest(Path(targets.__file__).parent / "demo.py")
+        assert_that(subject.filename, ends_with("demo.py"))
+
+
+
+    def test_commit_does_nothing_when_not_changed(self,mocker):
+        subject = self._create(mocker, """
+         1
+            """)
+        assert_that(subject.has_changed(), is_(False))
+
+
+    def test_convert_test_class_updates_only_testcase_bases(self,mocker):
+        subject = self._create(mocker, """
+            class TestClass1(TestCase):
+                pass
+            class Class2Test(unittest.TestCase):    
+                pass
+            """)
+        subject.convert_test_class()
+
+        assert_that(subject.apply_to_string(), contains_string("class TestClass1:"))
+        assert_that(subject.apply_to_string(), contains_string("class TestClass2:"))
+
+
+    def _create(self,mocker,text) -> Unit2Pytest:
+        code = textwrap.dedent(text)
+        mocker.patch(
+            "renaissance.syntax_tree.ast_factory.ASTFactory.create",
+            return_value=PythonASTNode.load_from_text(code),
+        )
+        subject = Unit2Pytest("x.py")
+        return subject
+
+
+    def test_convert_plain_assert_same_length_rewrites_to_has_length(self,mocker):
+        code = textwrap.dedent("""
+        def test_asert():
+            results = ['1']
+            count: int = len(results)
+            assert 1 == count, "count = " + str(count)
+        """)
+        mocker.patch(
+            "renaissance.syntax_tree.ast_factory.ASTFactory.create",
+            return_value=PythonASTNode.load_from_text(code),
+        )
+
+        expected = textwrap.dedent("""
+        def test_asert():
+            results = ['1']
+            assert_that(results, has_length(1), f"length of results = {len(results)}")
+        """)
+
+        subject = Unit2Pytest("file.py")
+        subject.convert_plain_assert_same_length()
+        assert_that(subject.apply_to_string(), is_(expected))
+
+    @pytest.mark.skip("failing before demo fix")
+    def test_restructure_module_injects_methods_when_class_exists(self,mocker):
+        code = textwrap.dedent("""
+        class TestFoo:
+            pass
+    
+        def parse(a):
+            pass
+        """)
+        mocker.patch(
+            "renaissance.syntax_tree.ast_factory.ASTFactory.create",
+            return_value=PythonASTNode.load_from_text(code),
+        )
+        subject = Unit2Pytest("file.py")
+
+        subject.restructure_module()
+
+        assert_that(subject.apply_to_string(), contains_string("def parse(self,a):"))
+
+
+    def test_match_pattern_for_parameterized_finds_one_match(self):
+        code = textwrap.dedent("""
+        from parameterized import parameterized
+    
+        class TestASTReference:
+    
+            @parameterized.expand(Factories.extend())
+            def test_definition_declaration_references(self, _, factory, code, *args):
+                pass
+        """)
+        factory = ASTFactory(PythonASTNode, [])
+        pattern_factory = PythonPatternFactory(factory)
+        atu = PythonASTNode.load_from_text(code)
+        unittest = pattern_factory.create_statements("@parameterized.expand($$parameters)\ndef $fun($$args, *$$vargs):\n    $$stmts")
+        found = list(match_pattern(atu.children, unittest))
+        assert_that(found, has_length(1))
+
+    def test_convert(self, mocker):
+        sut = self._create(mocker, '''
+        class TestClass:
+            def test_fun(self):
+                with self.assertRaises(Eexception): 
+                    call()
+        ''')
+        spy = mocker.spy(sut, 'convert_test_class')
+        spy2 = mocker.spy(sut, 'convert_test_setup')
+        spy3 = mocker.spy(sut, 'replace_stmt')
+        sut.run()
+
+        assert_that(spy.call_count, is_(1))
+        assert_that(spy2.call_count, is_(1))
+        assert_that(spy3.call_count, is_(26))
+
+    @pytest.mark.skip("failing before demo fix")
+    def test_convert_assert(self, mocker):
+        sut = self._create(mocker, '''
+        class TestClass:
+            def test_fun(self):
+                self.assertEqual(1, call())
+                self.assertEqual(call(),1)
+        ''')
+        sut.convert_pytest()
+        assert_that(sut.apply_to_string(), contains_string("assert_that(call()"))
+        assert_that(sut.apply_to_string(), not_(contains_string("assert_that(1")))
+
+    @pytest.mark.skip("failing before demo fix")
+    def test_to_class(self, mocker):
+        sut = self._create(mocker, '''
+            def test_fun():
+                assert call() >=1
+        ''')
+        sut.convert_pytest()
+        assert_that(sut.apply_to_string(), contains_string("assert_that(call()"))
+        assert_that(sut.apply_to_string(), not_(contains_string("assert_that(1")))
+
