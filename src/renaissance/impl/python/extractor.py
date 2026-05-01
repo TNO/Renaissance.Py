@@ -2,7 +2,7 @@ from pathlib import Path
 
 import networkx
 
-from renaissance.impl.python import PythonRstNode
+from renaissance.impl.python.rst_node import PythonRstNode
 
 
 class PythonExtractor:

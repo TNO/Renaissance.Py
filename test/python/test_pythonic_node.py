@@ -2,7 +2,7 @@ import ast
 
 from hamcrest import assert_that, is_, not_none
 
-from renaissance.impl.python import PythonRstNode
+from renaissance.impl.python.rst_node import PythonRstNode
 
 
 class TestPythonicNode:

@@ -5,8 +5,8 @@ import pytest
 from hamcrest import *
 from hamcrest import assert_that, is_not
 
-from renaissance.impl.python import PythonRstNode, PythonPatternFactory
-from renaissance.impl.python.factory import PythonFactory
+from renaissance.impl.python.rst_node import PythonRstNode
+from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
 from renaissance.syntax_tree import MatchFinder
 from renaissance.syntax_tree.match_finder import (
     is_match,

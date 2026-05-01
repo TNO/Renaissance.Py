@@ -2,7 +2,7 @@ import sys
 from typing import Any
 
 from c_cpp.factories import Factories
-from renaissance.impl.python import PythonRstNode
+from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.impl.python.factory import PythonFactory
 from renaissance.impl.python.python_pattern_factory import PythonPatternFactory
 

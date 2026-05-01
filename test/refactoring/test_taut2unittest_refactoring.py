@@ -9,7 +9,7 @@ from renaissance.refactoring.taut2pyunit import Taut2Pyunit
 import test_data.test_class as tst_class
 import test_data.test_code as tst_code
 import test_data.test_insert as tst_insert
-from renaissance.impl.python import PythonRstNode
+from renaissance.impl.python.rst_node import PythonRstNode
 import test_data.test_testdoubles as tst_testdoubles
 
 class TestTaut2Unittest:

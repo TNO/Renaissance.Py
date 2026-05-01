@@ -5,7 +5,7 @@ from hamcrest import *
 from more_itertools.more import first
 
 from renaissance import syntax_tree
-from renaissance.impl.python import PythonRstNode
+from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.impl.python.factory import PythonFactory
 from renaissance.impl.python.rst_node import PythonRSTReference
 from renaissance.syntax_tree import ASTNode, ASTFinder
