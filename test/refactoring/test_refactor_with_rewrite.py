@@ -2,7 +2,7 @@ import textwrap
 
 import pytest
 from hamcrest import assert_that, is_
-from renaissance.impl.python import PythonRstNode
+from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.refactoring.python_refactoring import PythonRefactoring
 
 

@@ -6,7 +6,7 @@ import ast
 from hamcrest import assert_that, has_length, is_, is_in
 
 from renaissance.impl import MATCH_ONE, MATCH_ALL
-from renaissance.impl.python import PythonRstNode
+from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.impl.python.cst_node import PythonCstNode
 from renaissance.impl.tree_sitter.lst import LSTNode
 from renaissance.syntax_tree import ASTFactory

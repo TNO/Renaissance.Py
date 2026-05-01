@@ -2,8 +2,8 @@
 # It specifically showcases nested replacements and multiple patterns.
 import textwrap
 
-from renaissance.impl.python import PythonRstNode, PythonPatternFactory
-from renaissance.impl.python.factory import PythonFactory
+from renaissance.impl.python.rst_node import PythonRstNode
+from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
 from renaissance.syntax_tree import ASTFactory, ASTRewriter
 from renaissance.syntax_tree import ASTShower, TextUtils
 from renaissance.syntax_tree.match_finder import match_pattern

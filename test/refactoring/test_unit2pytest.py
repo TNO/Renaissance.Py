@@ -7,8 +7,8 @@ import pytest
 from hamcrest import assert_that, contains_string, has_length, is_, ends_with, not_
 
 import targets
-from renaissance.impl.python import PythonRstNode, PythonPatternFactory
-from renaissance.impl.python.factory import PythonFactory
+from renaissance.impl.python.rst_node import PythonRstNode
+from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
 from renaissance.refactoring import unit2pytest as mod
 from renaissance.refactoring.unit2pytest import Unit2Pytest
 from renaissance.syntax_tree import ASTFactory

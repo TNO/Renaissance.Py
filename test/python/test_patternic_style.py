@@ -4,8 +4,8 @@ import pytest
 from hamcrest import assert_that, is_, has_length, is_in, is_not, empty
 
 from renaissance.impl import MATCH_ONE, MATCH_ALL
-from renaissance.impl.python import PythonRstNode, PythonPatternFactory
-from renaissance.impl.python.factory import PythonFactory
+from renaissance.impl.python.rst_node import PythonRstNode
+from renaissance.impl.python.factory import  PythonPatternFactory,PythonFactory
 from renaissance.syntax_tree import ASTFactory
 from renaissance.syntax_tree.match_finder import is_match
 

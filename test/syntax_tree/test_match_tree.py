@@ -15,8 +15,8 @@ from hamcrest import (
 from marshmallow.utils import is_generator
 
 from renaissance.impl.clang import ClangASTNode, CPatternFactory
-from renaissance.impl.python import PythonPatternFactory, PythonRstNode
-from renaissance.impl.python.factory import PythonFactory
+from renaissance.impl.python.rst_node import PythonRstNode
+from renaissance.impl.python.factory import PythonPatternFactory, PythonFactory
 from renaissance.syntax_tree import ASTFactory, ASTShower
 from renaissance.syntax_tree.match_finder import (
     is_match_tree,
