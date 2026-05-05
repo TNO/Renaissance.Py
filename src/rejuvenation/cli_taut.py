@@ -35,6 +35,7 @@ def list_matching_files(root: str | Path, recursive: bool = True) -> list[Path]:
     candidates = root.rglob("*.py") if recursive else root.glob("*.py")
     return [p for p in candidates if any(fnmatch.fnmatch(p.name, pat) for pat in patterns)]
 
+
 if __name__ == "__main__":
     if sys.argv[1] == "refactor":
         print(f'Refactor {Path(".").resolve()}')

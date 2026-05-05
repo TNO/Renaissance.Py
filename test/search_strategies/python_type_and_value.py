@@ -41,9 +41,7 @@ def _build_tuple(elts: list[ast.expr]) -> ast.Tuple:
 
 def _build_tuple_type_slice(type_args: list[ast.expr]) -> ast.expr:
     # tuple[()] uses slice == ((),)
-    return (
-        _build_tuple([_build_tuple([])]) if not type_args else _build_tuple(type_args)
-    )
+    return _build_tuple([_build_tuple([])]) if not type_args else _build_tuple(type_args)
 
 
 def _build_bitor_chain(exprs: list[ast.expr]) -> ast.expr:
@@ -66,9 +64,7 @@ BASE_VALUES: dict[str, SearchStrategy[ast.expr]] = {
     "bool": st.builds(ast.Constant, st.booleans()),
     "int": st.builds(ast.Constant, st.integers(min_value=-1000, max_value=1000)),
     "str": st.builds(ast.Constant, st.text(min_size=0, max_size=5)),
-    "float": st.builds(
-        ast.Constant, st.floats(allow_nan=False, allow_infinity=False, width=32)
-    ),
+    "float": st.builds(ast.Constant, st.floats(allow_nan=False, allow_infinity=False, width=32)),
     "bytes": st.builds(ast.Constant, st.binary(min_size=0, max_size=5)),
 }
 BASE_TYPE: SearchStrategy[str] = st.sampled_from(list(BASE_VALUES))
@@ -87,9 +83,7 @@ def gen_base(draw: DrawFn) -> tuple[ast.expr, SearchStrategy[ast.expr]]:
 
 
 @composite
-def gen_list(
-    draw: DrawFn, depth: int = DEFAULT_DEPTH
-) -> tuple[ast.expr, SearchStrategy[ast.expr]]:
+def gen_list(draw: DrawFn, depth: int = DEFAULT_DEPTH) -> tuple[ast.expr, SearchStrategy[ast.expr]]:
     elem_t, elem_vg = draw(gen_type(depth - 1))
     return (
         _build_subscript(_build_name("list"), elem_t),
@@ -98,9 +92,7 @@ def gen_list(
 
 
 @composite
-def gen_dict(
-    draw: DrawFn, depth: int = DEFAULT_DEPTH
-) -> tuple[ast.expr, SearchStrategy[ast.expr]]:
+def gen_dict(draw: DrawFn, depth: int = DEFAULT_DEPTH) -> tuple[ast.expr, SearchStrategy[ast.expr]]:
     # keys restricted to base types for runtime hashability
     kname = draw(BASE_TYPE)
     kt, kvg = _build_name(kname), BASE_VALUES[kname]
@@ -118,9 +110,7 @@ def gen_dict(
 
 
 @composite
-def gen_union(
-    draw: DrawFn, depth: int = DEFAULT_DEPTH
-) -> tuple[ast.expr, SearchStrategy[ast.expr]]:
+def gen_union(draw: DrawFn, depth: int = DEFAULT_DEPTH) -> tuple[ast.expr, SearchStrategy[ast.expr]]:
     members = draw(
         st.lists(
             gen_type(depth - 1),
@@ -135,14 +125,10 @@ def gen_union(
 
 
 @composite
-def gen_tuple(
-    draw: DrawFn, depth: int = DEFAULT_DEPTH
-) -> tuple[ast.expr, SearchStrategy[ast.expr]]:
+def gen_tuple(draw: DrawFn, depth: int = DEFAULT_DEPTH) -> tuple[ast.expr, SearchStrategy[ast.expr]]:
     members = draw(st.lists(gen_type(depth - 1), min_size=0, max_size=max_len(depth)))
     if not members:
-        t = _build_subscript(
-            _build_name("tuple"), _build_tuple_type_slice([])
-        )  # tuple[()]
+        t = _build_subscript(_build_name("tuple"), _build_tuple_type_slice([]))  # tuple[()]
         return t, st.just(_build_tuple([]))  # ()
     ts = [t for (t, _vg) in members]
     vgs = [vg for (_t, vg) in members]
@@ -151,9 +137,7 @@ def gen_tuple(
 
 
 @composite
-def gen_type(
-    draw: DrawFn, depth: int = DEFAULT_DEPTH
-) -> tuple[ast.expr, SearchStrategy[ast.expr]]:
+def gen_type(draw: DrawFn, depth: int = DEFAULT_DEPTH) -> tuple[ast.expr, SearchStrategy[ast.expr]]:
     """
     Depth bounds recursion by forcing base at depth<=0.
     """
@@ -162,7 +146,7 @@ def gen_type(
         types.extend(["list", "dict", "tuple"])
     if depth >= 2:
         types.append("union")
-    
+
     choice = draw(st.sampled_from(types))
     match choice:
         case "base":

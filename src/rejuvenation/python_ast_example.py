@@ -19,6 +19,8 @@ if pa():
   ba()
 pa(54)  
 """
+
+
 def python_ast_smoke_test():
 
     # adapter = TreeSitterAdapter(tree_sitter_python)
@@ -32,7 +34,6 @@ def python_ast_smoke_test():
 
     pattern1 = pattern_factory.create_statement("if pa(): $$stmts")
     pattern2 = pattern_factory.create_expression("na($a)")
-
 
     print("_______________pattern 1____________________________________")
     ASTShower.show_node(pattern1.node, include_properties=True)
@@ -65,12 +66,11 @@ def python_ast_smoke_test():
 
     return rewriter.apply_to_string()
 
+
 def refactor(match, replacement_text, rewriter):
     for placeholder in match.expansions:
         replacement_text = replacement_text.replace(placeholder, match[placeholder])
     return rewriter.replace(replacement_text, match.nodes)
-
-
 
 
 if __name__ == "__main__":

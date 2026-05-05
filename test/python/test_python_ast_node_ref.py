@@ -142,7 +142,7 @@ class TestPythonNode:
         with tempfile.TemporaryDirectory(delete=True) as temp_dir:
             syntax_tree.ASTShower.store_node(temp_dir + "/py3.txt", ast)
 
-        param_node = [n for n in traverse(ast) if n.name == "bruno" and n.kind =="Argument"]
+        param_node = [n for n in traverse(ast) if n.name == "bruno" and n.kind == "Argument"]
 
         assert_that(param_node[0], is_(PythonRstNode))
         ast.translation_unit.lazy_create_refers(ast)

@@ -11,8 +11,7 @@ from renaissance.syntax_tree.match_finder import match_pattern, AstProtocol
 
 class Unit2Pytest(PythonRefactoring):
     def __init__(self, file):
-        """hide internal administration in the parent class so that this class you only deals with specific refactors
-        """
+        """hide internal administration in the parent class so that this class you only deals with specific refactors"""
         super().__init__(file)
         self.black_list_pattern = "utils_for_test"
         self.white_list_pattern = "test"
@@ -88,7 +87,8 @@ class Unit2Pytest(PythonRefactoring):
 
     def convert_test_class(self):
         test_main: Sequence[AstProtocol] = self.pattern_factory.create_statements(
-            "class $klass($test_class):\n    $$test_cases\n")  # type: ignore[assignment]
+            "class $klass($test_class):\n    $$test_cases\n"
+        )  # type: ignore[assignment]
         for match in match_pattern(self.root.children, test_main):
             klass = match["$klass"]
             test_class = match["$test_class"]
@@ -129,14 +129,12 @@ class Unit2Pytest(PythonRefactoring):
         return match.expansions["$exp"][0].kind in ["Literal", "FormatedString", "Number"]
 
     def convert_parameterized_test(self):
-        unittest = self.pattern_factory.create_statements(textwrap.dedent(
-            """
+        unittest = self.pattern_factory.create_statements(textwrap.dedent("""
             @parameterized.expand($$parameters)
             @$$decorator
             def $fun($$args, *$$varg):
                 $$stmts
-            """
-        ))
+            """))
         for match in match_pattern(self.root.children, unittest):
             fun = match.nodes[0]
             args = ", ".join([arg.node.arg for arg in match.expansions["$$args"]])
@@ -155,8 +153,7 @@ class Unit2Pytest(PythonRefactoring):
             self.replace(repl, fun, False, False)
 
     def remove_print(self):
-        print_msg = self.pattern_factory.create_statements(
-            "print($$msg)")  # type: ignore[assignment]
+        print_msg = self.pattern_factory.create_statements("print($$msg)")  # type: ignore[assignment]
         for match in match_pattern(self.root.children, print_msg):
             if len(match.nodes[0].parent.parent.body) == 1:
                 self.remove([match.nodes[0].parent.parent], False, False)
@@ -165,7 +162,8 @@ class Unit2Pytest(PythonRefactoring):
 
     def convert_plain_assert_same_length(self):
         pattern: Sequence[AstProtocol] = self.pattern_factory.create_statements(
-            '$act: int = len($real)\nassert $exp == $act, "$act = " + str($act)')
+            '$act: int = len($real)\nassert $exp == $act, "$act = " + str($act)'
+        )
         for match in match_pattern(self.body, pattern):
             repl = 'assert_that($real, has_length($exp), f"length of $real = {len($real)}")'
             real = match["$real"]
@@ -183,8 +181,7 @@ class Unit2Pytest(PythonRefactoring):
                 self.replace("pytest.mark.skip", node, False, False)
 
     def swap_expected_and_actual(self):
-        pattern: Sequence[AstProtocol] = self.pattern_factory.create_statements(
-            "assert_that($exp, is_($act))")  # type: ignore[assignment]
+        pattern: Sequence[AstProtocol] = self.pattern_factory.create_statements("assert_that($exp, is_($act))")  # type: ignore[assignment]
         for match in match_pattern(self.root.children, pattern):
             if self.is_swapped(match):
                 repl = "assert_that($act, is_($exp))"
@@ -195,7 +192,7 @@ class Unit2Pytest(PythonRefactoring):
 
     def restructure_module(self):
         funs = [stmt for stmt in self.body if stmt.kind == "FunctionDef"]
-        test_classes = [stmt for stmt in self.body if stmt.kind == "ClassDef" and stmt.name.startswith('Test')]
+        test_classes = [stmt for stmt in self.body if stmt.kind == "ClassDef" and stmt.name.startswith("Test")]
         if len(funs) == 0:
             return
         if len(test_classes) == 0:
@@ -230,8 +227,7 @@ class Unit2Pytest(PythonRefactoring):
         return name if name.startswith("Test") else f"Test{name}"
 
     def remove_duplicate_import(self, import_str):
-        import_stmt: Sequence[AstProtocol] = self.pattern_factory.create_statements(
-            import_str)  # type: ignore[assignment]
+        import_stmt: Sequence[AstProtocol] = self.pattern_factory.create_statements(import_str)  # type: ignore[assignment]
         # type: ignore[assignment]
         duplicate_imports = match_pattern(self.body, import_stmt)
 

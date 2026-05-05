@@ -50,7 +50,6 @@ class PythonCstNode:
 
         self.is_statement = isinstance(self.node, (BaseSmallStatement, BaseCompoundStatement))
 
-
         # for matcher
         self.ast_type = KIND_MAP.get(type(node).__name__, type(node))
         self.kind = self.ast_type.__name__
@@ -69,7 +68,6 @@ class PythonCstNode:
 
     def __repr__(self):
         return repr(self.node)
-
 
     @property
     def signature(self):

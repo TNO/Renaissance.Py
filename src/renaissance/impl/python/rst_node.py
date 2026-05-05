@@ -19,6 +19,7 @@ IRRELEVANT_PROPS = {"comment"}
 IRRELEVANT_NODES = {"comment"}
 IMPLICIT = ["ImplicitNode"]
 
+
 class ImplicitNode(ast.Name):
     _fields = (
         "id",
@@ -64,8 +65,6 @@ class PythonRstTranslationUnit:
         self._referenced_by: dict[str, list[PythonRSTReference]] = {}
         self._nodes: dict[str, "PythonRstNode"] = {}
 
-
-
     def check_diagnostics(self, continue_with_warning=True) -> None:
         msg = None
         errors = ""
@@ -82,7 +81,6 @@ class PythonRstTranslationUnit:
         for n in traverse(node.root):
             self.create_references(n)
         self.references_initialized = True
-
 
     def add(self, node):
         match node.kind:
@@ -191,7 +189,7 @@ class PythonRstNode:
         self.root = parent.root if parent and parent.root else self
         self.node = node
         self.parent = parent
-        self.translation_unit:PythonRstTranslationUnit = translation_unit
+        self.translation_unit: PythonRstTranslationUnit = translation_unit
         self.ast_type = KIND_MAP.get(type(node).__name__, UnknownKind)
         if self.ast_type == UnknownKind:
             print(f'"{type(node).__name__}": {type(node).__name__},')
@@ -202,8 +200,8 @@ class PythonRstNode:
         self.children = []
         self.properties = {}
         self.is_implicit = self.kind not in IMPLICIT
-        self.offset =0
-        self.length =0
+        self.offset = 0
+        self.length = 0
         if self.translation_unit:
             self.filename = translation_unit.file_name
             self.derive_position(node, translation_unit, parent)
@@ -214,7 +212,7 @@ class PythonRstNode:
                 match child:
                     case list():  # Matches any list
                         if isinstance(node, Global) and name == "names":
-                            if len(child)==1:
+                            if len(child) == 1:
                                 self.name = child[0]
                             if name == "body":
                                 self.body = self.children
@@ -244,13 +242,12 @@ class PythonRstNode:
         self.extended_end_offset = self.end_offset
         self.is_statement = isinstance(self.node, ast.stmt)
 
-
     def __eq__(self, other):
         return (
             isinstance(other, type(self))
             and self.kind == other.kind
             and match_props(self.properties, other.properties, IRRELEVANT_PROPS)
-            and match_children(self.children, other.children,  IRRELEVANT_NODES)
+            and match_children(self.children, other.children, IRRELEVANT_NODES)
         )
 
     def __contains__(self, item):
@@ -264,6 +261,7 @@ class PythonRstNode:
         Usage: node[0] == node.children[0]
         """
         return self.children[key]
+
     def __repr__(self):
         raw_lines = self.signature.splitlines()
         properties_text = "" if not self.show_props else self.properties
@@ -284,21 +282,19 @@ class PythonRstNode:
         for child in self.children:
             child.process(function)
 
-
     def derive_position(self, node: ast.AST, translation_unit: PythonRstTranslationUnit, parent):
         if node._attributes:
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)) and node.decorator_list:
                 self.offset = convert(self.translation_unit.lines, node.decorator_list[0].lineno, node.decorator_list[0].col_offset) - 1
             elif parent.name == "decorator_list":
                 # also include the @ in the decorator
-                self.offset = convert(self.translation_unit.lines,node.lineno, node.col_offset) - 1  # type: ignore[attr-defined]
+                self.offset = convert(self.translation_unit.lines, node.lineno, node.col_offset) - 1  # type: ignore[attr-defined]
             else:
-                self.offset = convert(self.translation_unit.lines,node.lineno, node.col_offset)  # type: ignore[attr-defined]
-            all_space = all(
-                c == ' ' for c in self.translation_unit.content[self.offset - node.col_offset: self.offset])
+                self.offset = convert(self.translation_unit.lines, node.lineno, node.col_offset)  # type: ignore[attr-defined]
+            all_space = all(c == " " for c in self.translation_unit.content[self.offset - node.col_offset : self.offset])
             if all_space:
                 self.offset = self.offset - node.col_offset if self.offset - node.col_offset >= 0 else 0
-            self.length = convert(self.translation_unit.lines,node.end_lineno, node.end_col_offset) - self.offset  # type: ignore[attr-defined]
+            self.length = convert(self.translation_unit.lines, node.end_lineno, node.end_col_offset) - self.offset  # type: ignore[attr-defined]
         elif isinstance(node, ast.Module) and translation_unit:
             self.offset = 0
             self.length = len(translation_unit.content)
@@ -313,9 +309,7 @@ class PythonRstNode:
             return PythonRstNode.load_from_text(content, str(file_path))
 
     @staticmethod
-    def load_from_text(
-        text: str,
-        file_name: str = "test.py") -> "PythonRstNode":
+    def load_from_text(text: str, file_name: str = "test.py") -> "PythonRstNode":
         translation_unit = PythonRstTranslationUnit(text, file_name=str(file_name))
         translation_unit.check_diagnostics()
         root_node = PythonRstNode(translation_unit.atu, translation_unit)
@@ -428,7 +422,7 @@ class PythonRstNode:
 
     def binary_file_content(self) -> bytes:
         return (
-            self.translation_unit.content[self.offset : self.offset+self.length]
+            self.translation_unit.content[self.offset : self.offset + self.length]
             if self.translation_unit
             else unparse(self.node).encode(sys.getfilesystemencoding())
         )
@@ -448,12 +442,13 @@ class PythonRstNode:
 
     def get_container_parent(self):
         if self.parent:
-            if self.parent.kind in ["FunctionDef","ClassDef","Module"]:
+            if self.parent.kind in ["FunctionDef", "ClassDef", "Module"]:
                 return self.parent
             else:
                 return self.parent.get_container_parent()
         else:
             return self
+
     @property
     def text(self) -> str:
         return textwrap.dedent(self.signature)

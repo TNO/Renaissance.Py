@@ -10,7 +10,9 @@ from hamcrest import (
     empty,
     is_not,
     greater_than,
-    less_than, raises, calling,
+    less_than,
+    raises,
+    calling,
 )
 from marshmallow.utils import is_generator
 

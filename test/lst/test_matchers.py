@@ -19,9 +19,9 @@ class TestMatchers:
         self.for_node = self.make_pattern("for (i in range(10)) print(i);", adapter)
         self.while_node = self.make_pattern("while (x < 10) x += 1;", adapter)
         self.try_node = self.make_pattern(
-             "try { risky_operation(); } catch (Exception e) { handle_error(e); }",
-             adapter,
-         )
+            "try { risky_operation(); } catch (Exception e) { handle_error(e); }",
+            adapter,
+        )
         self.class_node = self.make_pattern("class MyClass { method(self) { pass; } }", adapter)
 
     def test_if_pattern_match(self):
@@ -43,9 +43,9 @@ class TestMatchers:
     def test_try_pattern_match(self):
         adapter = TreeSitterAdapter(tscpp)
         pattern = self.make_pattern(
-             "try { risky_operation(); } catch (Exception $e) { handle_error($e); }",
-             adapter,
-         )
+            "try { risky_operation(); } catch (Exception $e) { handle_error($e); }",
+            adapter,
+        )
         assert_that(is_match(self.try_node, pattern))
 
     def test_class_pattern_match(self):
@@ -54,7 +54,7 @@ class TestMatchers:
         assert_that(is_match(self.class_node, pattern))
 
     def test_node_type_match(self):
-        matches =[node for node in traverse(self.if_node) if node.kind =="Call"]
+        matches = [node for node in traverse(self.if_node) if node.kind == "Call"]
         assert_that(matches, has_length(1))
 
     @pytest.mark.skip("I expect 'call_expression' to work, or a defined way to get kind")
@@ -62,14 +62,10 @@ class TestMatchers:
         matches = ASTFinder.find_kind(self.if_node, "call_expression")
         assert_that(matches, has_length(1))
 
-
-    def make_pattern(self,code: str, adapter: any) -> LSTNode:
+    def make_pattern(self, code: str, adapter: any) -> LSTNode:
         tree = adapter.parse_code(code)
         root = adapter.to_lst(code, tree)
         return root.root
-    
-    
-    
 
 
 if __name__ == "__main__":

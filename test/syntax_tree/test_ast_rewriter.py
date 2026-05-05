@@ -3,7 +3,7 @@ from typing import Any
 
 from c_cpp.factories import Factories
 from renaissance.impl.python.rst_node import PythonRstNode
-from renaissance.impl.python.factory import PythonFactory,PythonPatternFactory
+from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
 
 import pytest
 from hamcrest import assert_that, is_
@@ -979,7 +979,9 @@ class TestAroundComposition:
     Test case to capture the requirements for `around` functionality that is composable.
     """
 
-    @pytest.mark.skip("TODO: Test fails due to two issues\n  1. order of inserts ([  )]\n  2. insert around whole pattern, not placeholder.")
+    @pytest.mark.skip(
+        "TODO: Test fails due to two issues\n  1. order of inserts ([  )]\n  2. insert around whole pattern, not placeholder."
+    )
     def test_around(self):
         # set up
         factory = PythonFactory(PythonRstNode)
@@ -1003,7 +1005,7 @@ class TestAroundComposition:
         rewriter.insert_after("]", placeholder)
 
         # verify
-        assert_that(rewriter.apply_to_string(), is_("x = [ ( a ) ]") , "Unexpected replacement")
+        assert_that(rewriter.apply_to_string(), is_("x = [ ( a ) ]"), "Unexpected replacement")
 
 
 class TestContainedOperations:
@@ -1116,7 +1118,8 @@ def f($a,$b,$c):
         return rewriter, match
 
     @pytest.mark.skip(
-        "it is not correctly implementing: https://github.com/TNO/Renaissance-Experiments/wiki/Transform-%E2%80%90-AST%E2%80%90aware-changes#scenario-contained-changes")
+        "it is not correctly implementing: https://github.com/TNO/Renaissance-Experiments/wiki/Transform-%E2%80%90-AST%E2%80%90aware-changes#scenario-contained-changes"
+    )
     def test_overlapping_replaces(self):
         rewriter, match = self.setup()
         placeholder_a = match.expansions["$a"]

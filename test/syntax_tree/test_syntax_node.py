@@ -1,10 +1,10 @@
-
 from dataclasses import dataclass, field
-from typing import Any, Self 
+from typing import Any, Self
 import pytest
 
 import test.syntax_tree.infra_syntax_node
 import test.syntax_tree.infra_text_segment
+
 
 def _offset_to_line_col(text: str, offset: int) -> tuple[int, int]:
     """0-based (line, column) for a 0-based offset; offset may be len(text)."""
@@ -25,9 +25,9 @@ class DummyNode:
 
     # ---- syntax node aspects ----
     kind: str = "Dummy"
-    _children: list[Self] = field(default_factory=list) # type: ignore
+    _children: list[Self] = field(default_factory=list)  # type: ignore
     _parent: Self | None = None
- 
+
     # ---- TextSegment derived properties ----
     @property
     def start_line(self) -> int:
@@ -72,13 +72,14 @@ class DummyNode:
         for c in children:
             c._parent = self
 
-
     def __hash__(self):
         return id(self)
+
 
 # ----------------------------
 # Monkeypatch: verify assert_valid_text_segment is called
 # ----------------------------
+
 
 class _SegmentCallCounter:
     def __init__(self) -> None:
@@ -104,15 +105,16 @@ def test_assert_valid_syntax_node_ok(segment_validator_counter: _SegmentCallCoun
     loc = "mem://t"
 
     root: DummyNode = DummyNode(text, loc, 0, len(text), kind="Root")
-    c0 = DummyNode(text, loc, 0, 3, kind="L0")   # "ab\n"
-    c1 = DummyNode(text, loc, 3, 6, kind="L1")   # "cd\n"
-    c2 = DummyNode(text, loc, 6, 8, kind="L2")   # "ef"
+    c0 = DummyNode(text, loc, 0, 3, kind="L0")  # "ab\n"
+    c1 = DummyNode(text, loc, 3, 6, kind="L1")  # "cd\n"
+    c2 = DummyNode(text, loc, 6, 8, kind="L2")  # "ef"
 
     root.set_children([c0, c1, c2])
 
     test.syntax_tree.infra_syntax_node.assert_valid_syntax_node(root)
 
     assert segment_validator_counter.calls == [root, c0, c1, c2]
+
 
 @pytest.mark.skip("result is empty")
 def test_assert_valid_syntax_tree_ok(segment_validator_counter: _SegmentCallCounter) -> None:
@@ -135,6 +137,7 @@ def test_assert_valid_syntax_tree_ok(segment_validator_counter: _SegmentCallCoun
 # ----------------------------
 # Failure modes (node-level)
 # ----------------------------
+
 
 def test_children_must_be_ordered_by_start_offset(segment_validator_counter: _SegmentCallCounter) -> None:
     text = "abcdef"
@@ -185,7 +188,7 @@ def test_child_must_point_back_to_parent(segment_validator_counter: _SegmentCall
     child = DummyNode(text, loc, 0, 1, kind="Child")
 
     # Intentionally wrong: do not use set_children; parent stays None
-    root._children = [child] # type: ignore
+    root._children = [child]  # type: ignore
 
     with pytest.raises(AssertionError, match=r"parent must be the node itself"):
         test.syntax_tree.infra_syntax_node.assert_valid_syntax_node(root)
@@ -207,6 +210,7 @@ def test_child_must_share_text_and_location(segment_validator_counter: _SegmentC
 # ----------------------------
 # Failure modes (tree-level)
 # ----------------------------
+
 
 def test_assert_valid_syntax_tree_detects_cycle(segment_validator_counter: _SegmentCallCounter) -> None:
     text = "abc"

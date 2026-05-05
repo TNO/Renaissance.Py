@@ -16,8 +16,8 @@ EMPTY_STR = ""
 EMPTY_LIST = []
 
 STMT_PARENTS = ["COMPOUND_STMT", "TRANSLATION_UNIT"]
-IRRELEVANT_PROPS = {'comment'}
-IRRELEVANT_NODES = {'comment'}
+IRRELEVANT_PROPS = {"comment"}
+IRRELEVANT_NODES = {"comment"}
 PRINT_ALL_NODES = False
 
 
@@ -151,14 +151,12 @@ class ClangASTNode(ASTNode):
         return (
             isinstance(other, type(self))
             and self.kind == other.kind
-            and match_props(self.properties,other.properties, IRRELEVANT_PROPS)
+            and match_props(self.properties, other.properties, IRRELEVANT_PROPS)
             and match_children(self.children, other.children, IRRELEVANT_NODES)
         )
 
-
     def __hash__(self):
         return hash((self.kind, frozenset(self.properties.items())))
-
 
     @override
     @staticmethod

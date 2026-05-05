@@ -64,7 +64,6 @@ def python_rst_smoke_test():
     return rewriter.apply_to_string()
 
 
-
 def refactor(match, replacement_text, rewriter):
     for placeholder in match.expansions:
         replacement_text = replacement_text.replace(placeholder, match[placeholder])

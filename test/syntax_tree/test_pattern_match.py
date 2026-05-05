@@ -39,7 +39,6 @@ class TestPatternMatch:
         assert_that(match.offset_of("$$empty"), is_(5))
         assert_that(match.length_of("$$empty"), is_(0))
 
-
     def test_single_expansion_has_offset(self):
         example_code = textwrap.dedent("""
         1
@@ -75,11 +74,10 @@ class TestPatternMatch:
         found = match_pattern(atu.children, pattern)
         assert_that(found, has_length(1))
         match = found[0]
-        assert_that(match["$$other"], is_('2\n3\n4\n5'))
+        assert_that(match["$$other"], is_("2\n3\n4\n5"))
         assert_that(match.expansions["$$other"], has_length(4))
         assert_that(match.offset_of("$$other"), is_(3))
         assert_that(match.length_of("$$other"), is_(7))
-
 
     def test_match_referenced_by(self, mocker):
         node = mocker.Mock()

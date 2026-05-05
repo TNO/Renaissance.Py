@@ -1,4 +1,3 @@
-
 def convert(lines, line_nr, col):
     if line_nr > len(lines):
         return 0

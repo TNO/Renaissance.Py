@@ -5,7 +5,7 @@ from hamcrest import assert_that, is_, has_length, is_in, is_not, empty
 
 from renaissance.impl import MATCH_ONE, MATCH_ALL
 from renaissance.impl.python.rst_node import PythonRstNode
-from renaissance.impl.python.factory import  PythonPatternFactory,PythonFactory
+from renaissance.impl.python.factory import PythonPatternFactory, PythonFactory
 from renaissance.syntax_tree import ASTFactory
 from renaissance.syntax_tree.match_finder import is_match
 
@@ -180,7 +180,7 @@ class TestPythonicStyle:
         match_any = self.pattern_factory.create_statement("$stmt")
         result = [node for node in atu if node == match_any]
         assert_that(result, is_(empty()))
-        result = [node for node in atu if is_match(node, match_any,{})]
+        result = [node for node in atu if is_match(node, match_any, {})]
         assert_that(result, has_length(4))
 
     def test_match_single_call_pattern(self):

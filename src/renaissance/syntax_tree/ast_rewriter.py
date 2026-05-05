@@ -25,7 +25,7 @@ class _RewriteActionType(Enum):
     REPLACE = 1
     INSERT_BEFORE = 2
     INSERT_AFTER = 3
-    REMOVE = 4              # TODO: Why needed? Why isn't a REMOVE Action Type just a REPLACE Action Type (with an empty string)?
+    REMOVE = 4  # TODO: Why needed? Why isn't a REMOVE Action Type just a REPLACE Action Type (with an empty string)?
 
 
 DEFAULT_INDENT = 4
@@ -143,8 +143,8 @@ class _RewriteAction:
             return target.nodes
         assert isinstance(target, Sequence), "type of target violates its type requirements " + type(target).__name__
         if len(target) > 0:
-            if isinstance(target[0], Rewritable):   # TODO Why is part missing That is present on line 140, i.e., 
-                                                    # or type(target).__name__ == "PythonASTNode"
+            if isinstance(target[0], Rewritable):  # TODO Why is part missing That is present on line 140, i.e.,
+                # or type(target).__name__ == "PythonASTNode"
                 return [n for n in target if isinstance(n, Rewritable)]
             last = target[-1]
             assert isinstance(last, PatternMatch), "type within Sequence violates its requirements " + type(last).__name__

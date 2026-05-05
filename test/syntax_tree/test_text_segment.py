@@ -4,7 +4,13 @@ import bisect
 from hypothesis import given, strategies as st
 
 from renaissance.syntax_tree.text_segment import TextSegment
-from test.syntax_tree.infra_text_segment import assert_valid_text_segment, line_starts_from_lines, location_to_offset, offset_to_location, split_lines_with_newlines
+from test.syntax_tree.infra_text_segment import (
+    assert_valid_text_segment,
+    line_starts_from_lines,
+    location_to_offset,
+    offset_to_location,
+    split_lines_with_newlines,
+)
 
 
 class AutoTextSegment:
@@ -198,9 +204,7 @@ def test_runtime_checkable_protocol_rejects_missing_members() -> None:
         ("ab\ncd\nef", 6, 8, "ef"),  # last line
     ],
 )
-def test_assert_valid_text_segment_accepts_semantically_correct_segments(
-    text: str, start: int, end: int, expected_slice: str
-) -> None:
+def test_assert_valid_text_segment_accepts_semantically_correct_segments(text: str, start: int, end: int, expected_slice: str) -> None:
     seg = AutoTextSegment(text, start, end)
     assert seg.text_segment == expected_slice
     assert_valid_text_segment(seg)
@@ -224,9 +228,7 @@ def test_validator_rejects_wrong_types_even_if_protocol_like() -> None:
 
 def test_validator_rejects_start_offset_greater_than_end_offset() -> None:
     seg = AutoTextSegment("abc", 2, 1)
-    with pytest.raises(
-        AssertionError, match=r"^Property end_offset before start_offset: \d+ < \d+$"
-    ):
+    with pytest.raises(AssertionError, match=r"^Property end_offset before start_offset: \d+ < \d+$"):
         assert_valid_text_segment(seg)
 
 
@@ -250,9 +252,7 @@ def test_validator_rejects_inconsistent_text_segment_slice() -> None:
 
 def test_validator_rejects_inconsistent_offset_and_line_column() -> None:
     seg = InconsistentOffsets("ab\ncd", 0, 2)
-    with pytest.raises(
-        AssertionError, match="Start offset and \\(line, column\\) are inconsistent"
-    ):
+    with pytest.raises(AssertionError, match="Start offset and \\(line, column\\) are inconsistent"):
         assert_valid_text_segment(seg)
 
 
@@ -264,9 +264,7 @@ def test_validator_rejects_line_out_of_range() -> None:
             return 999
 
     seg = BogusLine("ab\ncd", 0, 1)
-    with pytest.raises(
-        AssertionError, match=r"^Property end_line before start_line: \d+ < \d+$"
-    ):
+    with pytest.raises(AssertionError, match=r"^Property end_line before start_line: \d+ < \d+$"):
         assert_valid_text_segment(seg)
 
 
@@ -295,7 +293,7 @@ text_line_strategy = st.text(
     max_size=25,
 )
 
-# strategy to generate text 
+# strategy to generate text
 # biased to contain multiple lines
 # biased to end with \n
 text_strategy = st.one_of(
@@ -303,7 +301,6 @@ text_strategy = st.one_of(
     st.lists(text_line_strategy, min_size=1, max_size=20).map("\n".join),
     st.lists(text_line_strategy, min_size=1, max_size=20).map("\n".join).map(lambda s: s + "\n"),
 )
-
 
 
 # -----------------------------
@@ -352,11 +349,7 @@ def test_offset_to_loc_corresponds_to_split_lines_extended_with_newlines(
         # Canonicalization check:
         # If we're at the end boundary of a newline-terminated line (col == len(line_span)),
         # then the canonical representation should be (next_line, 0) (unless there is no next line).
-        if (
-            line < len(lines) - 1
-            and lines[line].endswith("\n")
-            and col == len(lines[line])
-        ):
+        if line < len(lines) - 1 and lines[line].endswith("\n") and col == len(lines[line]):
             line += 1
             col = 0
 

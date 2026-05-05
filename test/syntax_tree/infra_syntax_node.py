@@ -9,7 +9,7 @@ def assert_valid_syntax_node(node: SyntaxNode[Any]) -> None:
     Validate local (non-recursive) invariants for a syntax node.
 
     Uses `assert_valid_text_segment` to check text-segment invariants.
-     
+
     Enforced syntax-node invariants:
       1) Each child segment is within the parent's segment.
       2) Children are ordered by increasing start_offset (lowest first).
@@ -52,27 +52,19 @@ def _assert_child_valid(node: SyntaxNode[Any], child: SyntaxNode[Any], *, index:
     assert_valid_text_segment(child)
 
     # (4) parent pointer (identity, not equality)
-    assert child.parent is node, (
-        f"child[{index}].parent must be the node itself (identity check with `is`)."
-    )
+    assert child.parent is node, f"child[{index}].parent must be the node itself (identity check with `is`)."
 
     # (5) same backing text and location
-    assert child.full_text == node.full_text, (
-        f"child[{index}].full_text must equal node.full_text (same backing text expected)."
-    )
-    assert child.location == node.location, (
-        f"child[{index}].location must equal node.location (same origin expected)."
-    )
+    assert child.full_text == node.full_text, f"child[{index}].full_text must equal node.full_text (same backing text expected)."
+    assert child.location == node.location, f"child[{index}].location must equal node.location (same origin expected)."
 
     # (1) containment within parent span
     assert node.start_offset <= child.start_offset <= node.end_offset, (
-        "child[{idx}].start_offset must lie within the node span. "
-        "Got child[{idx}].start_offset={cso}, expected in [{nso}, {neo}]."
+        "child[{idx}].start_offset must lie within the node span. " "Got child[{idx}].start_offset={cso}, expected in [{nso}, {neo}]."
     ).format(idx=index, cso=child.start_offset, nso=node.start_offset, neo=node.end_offset)
 
     assert node.start_offset <= child.end_offset <= node.end_offset, (
-        "child[{idx}].end_offset must lie within the node span. "
-        "Got child[{idx}].end_offset={ceo}, expected in [{nso}, {neo}]."
+        "child[{idx}].end_offset must lie within the node span. " "Got child[{idx}].end_offset={ceo}, expected in [{nso}, {neo}]."
     ).format(idx=index, ceo=child.end_offset, nso=node.start_offset, neo=node.end_offset)
 
 
@@ -92,8 +84,7 @@ def assert_valid_syntax_tree(root: SyntaxNode[Any]) -> None:
 
         node_id = id(node)
         assert node_id not in visited, (
-            "Tree traversal encountered the same node object twice. "
-            "This indicates a cycle or a DAG (shared subtree), not a tree."
+            "Tree traversal encountered the same node object twice. " "This indicates a cycle or a DAG (shared subtree), not a tree."
         )
         visited.add(node_id)
 

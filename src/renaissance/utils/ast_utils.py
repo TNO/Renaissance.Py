@@ -36,7 +36,7 @@ def traverse(node):
     todo = deque([node])
     while todo:
         node = todo.popleft()
-        if(hasattr(node, "children")):
+        if hasattr(node, "children"):
             todo.extend(node.children)
         yield node
 
@@ -65,12 +65,13 @@ def next_sibling(self):
     index = siblings.index(self)
     return siblings[index + 1] if index < len(siblings) - 1 else None
 
+
 def match_props(mine, other, irrelevant_props) -> bool:
     all_keys = (mine.keys() | other.keys()) - irrelevant_props
     return all(mine.get(n) == other.get(n) for n in all_keys)
 
-def match_children(mine, other,irrelevant_kinds):
-    if mine==None or other==None:
-        return mine==other
-    return all((i< len(mine) and mine[i] == child) or child.kind in irrelevant_kinds for i, child in enumerate(other))
 
+def match_children(mine, other, irrelevant_kinds):
+    if mine == None or other == None:
+        return mine == other
+    return all((i < len(mine) and mine[i] == child) or child.kind in irrelevant_kinds for i, child in enumerate(other))

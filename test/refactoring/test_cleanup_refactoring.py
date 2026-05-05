@@ -6,7 +6,6 @@ from renaissance.refactoring import CleanupRefactoring
 from renaissance.syntax_tree import ASTShower, ASTFactory, ASTProcessor
 
 
-
 class TestCleanupRefactoring:
 
     @pytest.mark.parametrize(

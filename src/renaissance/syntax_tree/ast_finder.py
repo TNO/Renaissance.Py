@@ -5,7 +5,6 @@ from typing import Callable, Iterator, Optional, Sequence
 from .ast_node import ASTNode
 
 
-
 class ASTFinder:
     KIND_MATCH = re.compile(r"[\W_]+")
 

@@ -47,20 +47,26 @@ class TestSimplifyRenaissance:
         assert_that(captured.out, contains_string("skipping"))
 
     def test_run_rewrites_expansion_signature_access(self, mocker):
-        subject = self._create(mocker, """
+        subject = self._create(
+            mocker,
+            """
             def foo():
                 val = match.expansions["$key"][0].signature
-            """)
+            """,
+        )
         subject.run()
         assert_that(subject.apply_to_string(), contains_string('val= match["$key"]'))
         assert_that(subject.apply_to_string(), not_(contains_string(".expansions")))
 
     def test_run_rewrites_factory_create_from_text(self, mocker):
-        subject = self._create(mocker, """
+        subject = self._create(
+            mocker,
+            """
             def foo():
                 factory = ASTFactory(PythonASTNode)
                 atu = factory.create_from_text(code, name)
-            """)
+            """,
+        )
         subject.run()
         assert_that(subject.apply_to_string(), contains_string("PythonASTNode.load_from_text(code, name)"))
         assert_that(subject.apply_to_string(), not_(contains_string("ASTFactory")))
@@ -70,4 +76,3 @@ class TestSimplifyRenaissance:
         subject.run()
         captured = capsys.readouterr()
         assert_that(captured.out, contains_string("simplify"))
-

@@ -23,16 +23,22 @@ class TestPythonRefactoring:
     def test_init_sets_default_list_patterns(self, mocker):
         self._patch_factory(mocker)
         from renaissance.refactoring.unit2pytest import Unit2Pytest
+
         subject = Unit2Pytest("test_foo.py")
         # base class defaults are overridden by subclass, but they are set in __init__
         assert_that(subject.black_list_pattern, is_("utils_for_test"))
         assert_that(subject.white_list_pattern, is_("test"))
 
     def test_replace_stmt_rewrites_matching_pattern(self, mocker):
-        self._patch_factory(mocker, """
+        self._patch_factory(
+            mocker,
+            """
             import unittest
-            """, "test_foo.py")
+            """,
+            "test_foo.py",
+        )
         from renaissance.refactoring.unit2pytest import Unit2Pytest
+
         subject = Unit2Pytest("test_foo.py")
         subject.in_memory = True
         subject.replace_stmt("import unittest", "import pytest\nfrom hamcrest import *")
@@ -40,10 +46,15 @@ class TestPythonRefactoring:
         assert_that(subject.apply_to_string(), contains_string("from hamcrest import *"))
 
     def test_replace_stmt_expands_variadic_captures(self, mocker):
-        self._patch_factory(mocker, """
+        self._patch_factory(
+            mocker,
+            """
             from unittest import TestCase, skip
-            """, "test_foo.py")
+            """,
+            "test_foo.py",
+        )
         from renaissance.refactoring.unit2pytest import Unit2Pytest
+
         subject = Unit2Pytest("test_foo.py")
         subject.in_memory = True
         subject.replace_stmt(
@@ -89,11 +100,15 @@ class TestPythonRefactoring:
     # ------------------------------------------------------------------
 
     def test_body_returns_module_level_statements(self, mocker):
-        self._patch_factory(mocker, """
+        self._patch_factory(
+            mocker,
+            """
             x = 1
             y = 2
-            """, "test_foo.py")
+            """,
+            "test_foo.py",
+        )
         from renaissance.refactoring.unit2pytest import Unit2Pytest
+
         subject = Unit2Pytest("test_foo.py")
         assert_that(len(subject.body), is_(2))
-

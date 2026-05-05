@@ -38,9 +38,6 @@ class TestPythonCstNode:
         assert_that(it.children[3].kind, is_("SubscriptElement"))
         assert_that(it.children[4].kind, is_("RightSquareBracket"))
 
-
-
-
     def test_attribute_signature_has_at(self):
         src = self.pattern_factory.create_statement("@TUAT\ndef ba(): pass")
         ASTShower.show_node(src)
@@ -112,4 +109,3 @@ class TestPythonCstNode:
         """)
         it = PythonCstNode.load_from_text(ann_fun, "fun.py").children[-1]
         assert_that(it.signature, contains_string("def test"))
-

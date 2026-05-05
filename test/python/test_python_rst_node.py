@@ -28,8 +28,6 @@ class TestPythonRstNode:
         # create a pattern factory atu is passed to the pattern factory for use of all # includes, #defines and declarations
         self.pattern_factory = PythonPatternFactory(self.factory)
 
-
-
     def test_type_alias(self):
         it = self.factory.create_from_text("type UserId = int", "context.py")
         show_node(it)
@@ -41,9 +39,9 @@ class TestPythonRstNode:
         assert_that(it.children[1].kind, is_("Slice"))
 
     def test_named_expr(self):
-        it = self.pattern_factory.create_statement("if n:= len(items): pass")   
-            # TODO: Is this the simplest context for the walrus operator?
-            # why not "(n:= 3)"?
+        it = self.pattern_factory.create_statement("if n:= len(items): pass")
+        # TODO: Is this the simplest context for the walrus operator?
+        # why not "(n:= 3)"?
         assert_that(it.children[0].kind, is_("NamedExpr"))
 
     def test_starred(self):
@@ -58,7 +56,6 @@ class TestPythonRstNode:
         it = self.pattern_factory.create_statement("try: pass\nexcept NameError:pass")
         assert_that(it.children[1].children[0].kind, is_("Catch"))
 
-
     def test_match_stmt(self):
         sample_code = (
             'match data:\n  case [first, *rest]: return f"List with first element {first} and {len(rest)} more items"\n  case _: pass'
@@ -68,8 +65,6 @@ class TestPythonRstNode:
         assert_that(stmt.children[1].children[0].kind, is_("Case"))
         assert_that(stmt.children[1].children[0].children[0].children[1].kind, is_("MatchStar"))
         assert_that(stmt.children[1].children[0].children[0].children[0].kind, is_("MatchAs"))
-
-
 
     def test_show_call(self):
         atu = self.factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "apple.py")

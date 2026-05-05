@@ -38,7 +38,7 @@ class PythonPattern(AstProtocol):
         if hasattr(node, "name") and node.name:
             self.name: str = use_dollar(node.name)
         else:
-            self.name =""
+            self.name = ""
 
     def __eq__(self, other: AstProtocol) -> bool:
         return is_match(other, self)
@@ -66,7 +66,7 @@ class PythonPattern(AstProtocol):
 
 class PythonFactory:
 
-    def __init__(self, clazz: type[PythonRstNode | PythonCstNode | LSTNode|AST]) -> None:
+    def __init__(self, clazz: type[PythonRstNode | PythonCstNode | LSTNode | AST]) -> None:
         self.clazz = clazz
         if clazz == LSTNode:
             clazz.load_from_text = self.load_from_lst
@@ -83,7 +83,7 @@ class PythonFactory:
             clazz.text = ASTExtension.ast_signature
             clazz.filename = "dummy.py"
 
-            #shower
+            # shower
             clazz.is_implicit = True
             clazz.show_props = False
             clazz.indent = ""
@@ -124,12 +124,14 @@ class PythonPatternFactory:
 
     def create_statement(self, text: str) -> PythonPattern:
         stmt = self.create_statements(text)[-1]
-        if  (isinstance(stmt.node.node, SimpleStatementLine)
-         or (isinstance(stmt.node, LSTNode) and stmt.node.kind == 'Expr' and stmt.children[0].node.kind != 'Call')):
+        if isinstance(stmt.node.node, SimpleStatementLine) or (
+            isinstance(stmt.node, LSTNode) and stmt.node.kind == "Expr" and stmt.children[0].node.kind != "Call"
+        ):
             return stmt.children[0]
         else:
             return stmt
         # return stmt
+
     def create_expression(self, text: str) -> PythonPattern:
         my_pattern = self.create_statement(text)
         if isinstance(my_pattern.node, PythonRstNode):

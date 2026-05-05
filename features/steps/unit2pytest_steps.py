@@ -7,6 +7,7 @@ from renaissance.refactoring.unit2pytest import Unit2Pytest
 def test_convert_unit_to_pytest():
     pass
 
+
 @when("I convert it to pytest")
 def step_when_convert(context):
     converter = Unit2Pytest(context.file)

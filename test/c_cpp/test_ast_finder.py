@@ -9,10 +9,8 @@ from renaissance.syntax_tree import ASTFinder, ASTNode, ASTFactory, ASTShower
 from .factories import Factories
 
 
-
-
 class TestFinder:
-    def load_model(self,factory: ASTFactory):
+    def load_model(self, factory: ASTFactory):
         # note: make sure to load a corresponding model for the language
         return factory.create(Path(targets.__file__).parent / "main.c")
 
@@ -53,6 +51,3 @@ class TestAllFinder(TestFinder):
                 yield node
 
         assert_that(ASTFinder.find_all(model, is_binary_operator), has_length(greater_than(0)))
-
-    
-    

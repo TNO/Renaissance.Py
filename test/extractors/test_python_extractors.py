@@ -30,7 +30,7 @@ class TestPythonExtractor:
 
         assert_that(extractor.codebase, is_not(empty()))
         assert_that(extractor.nodes, is_not(empty()))
-        assert_that(extractor.edges,  is_not(empty()))
+        assert_that(extractor.edges, is_not(empty()))
 
     def test_extract_a_file(self):
 
@@ -41,6 +41,8 @@ class TestPythonExtractor:
         with open(graphml, "r") as f:
             content = f.readlines()
             assert_that(content, "demo.graphml")
+
+
 #     def test_adds_contains_edge_from_folder_to_file(self):
 #         extractor = self._make_extractor()
 #         lst = self.make_lst([])

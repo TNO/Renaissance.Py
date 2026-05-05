@@ -25,4 +25,3 @@ class Factories:
             (str(factory[0]) + " " + str(pars[0]), factory[1], *pars) for factory, pars in product(Factories.factories, test_parameters)
         ]
         return result
-

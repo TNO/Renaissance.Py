@@ -7,6 +7,7 @@ from renaissance.utils.ast_utils import preceding_sibling, next_sibling, match_p
 IRRELEVANT_PROPS = {"source_code", "end_point", "start_point", "location", "type"}
 IRRELEVANT_NODE = {"comment"}
 
+
 class LSTNode:
     def __init__(
         self,
@@ -45,7 +46,6 @@ class LSTNode:
         self.offset = offset
         self.end_offset = self.offset + self.length
         self.extended_end_offset = self.end_offset
-
 
     def __eq__(self, other):
         return (

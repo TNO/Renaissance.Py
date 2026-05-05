@@ -7,6 +7,7 @@ from pytest_bdd import when, scenario
 def test_taut_test():
     pass
 
+
 @when("I convert taut to unittest")
 def step_when_convert(context):
     converter = Taut2Pyunit(context.file)
