@@ -106,7 +106,7 @@ class TestPythonMatcher:
     def test_generic_is_match_any_assignment(self):
         atu = self.factory.create_from_text("na=55", "test.py")
         simple = self.pattern_factory.create_statement("$pa")
-        assert_that(simple.kind, is_("_MatchOne__"))
+        assert_that(simple.kind, is_("MatchOne"))
         assert_that(is_match(atu.children[0], simple, {}), is_(True))
 
     def test_match_multiple_single_stmt(self):

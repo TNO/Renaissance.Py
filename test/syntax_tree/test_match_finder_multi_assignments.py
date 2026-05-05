@@ -2,11 +2,8 @@ import pytest
 from hamcrest import has_length, greater_than_or_equal_to
 from hamcrest.core import assert_that
 
-from renaissance.impl.python.factory import PythonFactory
+from renaissance.impl.python.factory import PythonFactory,PythonPatternFactory
 from renaissance.impl.python.rst_node import PythonRstNode
-from renaissance.impl.python.python_pattern_factory import PythonPatternFactory
-from renaissance.syntax_tree.ast_factory import ASTFactory
-from renaissance.syntax_tree.match_finder import find_all
 from renaissance.syntax_tree.match_finder import find_variants
 
 code = """

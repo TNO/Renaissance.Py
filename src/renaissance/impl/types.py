@@ -1,7 +1,11 @@
 from abc import ABC
+from tkinter.constants import LEFT, RIGHT
 from xmlrpc.client import Boolean
 
-from libcst import In
+from libcst import In, LeftShift
+from libcst.matchers import BinaryOperation, RightShift, MatchCase
+from pyecore.commands import Compound
+from pygments.token import Keyword
 
 
 class Type(ABC):
@@ -124,15 +128,7 @@ class Yield(Operator):
 class Subscript(Operator):
     pass
 
-class BitInvertOperator(UnaryOperation):
-    pass
 class NotOperator(UnaryOperation):
-    pass
-class PlusOperator(UnaryOperation):
-    pass
-class MinusOperator(UnaryOperation):
-    pass
-class BitOperator(UnaryOperation):
     pass
 
 class Name(Literal):
@@ -318,9 +314,9 @@ class Is(ComparasionOperation):
 class IsNot(ComparasionOperation):
     pass
 
-class GreaterEqual(ComparasionOperation):
+class GreaterThanEqual(ComparasionOperation):
     pass
-class Greater(ComparasionOperation):
+class GreaterThan(ComparasionOperation):
     pass
 class LessThanEqual(ComparasionOperation):
     pass
@@ -356,13 +352,13 @@ class Divide(BinaryOperation):
     pass
 class FloorDiv(BinaryOperation):
     pass
-class LShift(BinaryOperation):
+class LeftShift(BinaryOperation):
     pass
-class RShift(BinaryOperation):
+class RightShift(BinaryOperation):
     pass
-class Mult(BinaryOperation):
+class Multiply(BinaryOperation):
     pass
-class Pow(BinaryOperation):
+class Power(BinaryOperation):
     pass
 class Add(BinaryOperation):
     pass
@@ -437,251 +433,345 @@ OPERATOR_MAP = {
 }
 
 
-class ArgumentList:
+class ArgumentList(Node):
     pass
 
 
-class Compare:
+class Compare(Node):
     pass
 
 
-class Keyword:
+class Keyword(Node):
     pass
 
 
-class Arguments:
+class Arguments(Node):
+    pass
+
+
+class Error(Node):
+    pass
+
+
+class CatchClause(Node):
+    pass
+
+
+class ClassSpecifier(Node):
+    pass
+
+
+class Alias(Node):
+    pass
+
+
+class WithItem(Node):
     pass
 
 
 KIND_MAP ={
+    ":": UnknownKind,
+    "block": UnknownKind,
+    "case_clause": UnknownKind,
+    "case": UnknownKind,
+    "case_pattern": UnknownKind,
+    "none": UnknownKind,
+    "return": Return,
+    "string": Literal,
+    "string_start": Literal,
+    "string_content": Literal,
+    "string_end": Literal,
+    "case_clause": Case,
+    "case": Case,
+    "case_pattern": MatchSingleton,
+
+    "withitem": WithItem,
+    "Attribute": Attribute,
+    "_": UnknownKind,
+    "pass": Pass,
+    "&": BitAnd,
+    "(": Tuple,
+    ")": Tuple,
+    "+": Add,
+    "-": Subtract,
+    "~": Invert,
+    "*": Multiply,
+    "**": Power,
+    "%": Modulo,
+    "/": Divide,
+    "//": FloorDiv,
+    "+=": UnknownKind,
+    "<": LessThan,
+    "==": Equal,
+    ">": GreaterThan,
+    ">=": GreaterThanEqual,
+    "<=": LessThanEqual,
+    "<<": LeftShift,
+    ">>": RightShift,
+    "!=": NotEqual,
+    "Add": Add,
     "AnnAssign": Assign,
     "Assert": Assert,
     "Assign": Assign,
     "AssignTarget": AssignTarget,
     "AsyncFor":For,
-    "arg": Argument,
-    "arguments": Arguments,
-    "Attributr": Attribute,
     "AsyncFunctionDef": FunctionDef,
     "AsyncWith": With,
+    "Attributr": Attribute,
     "AugAssign": AugAssign,
     "Await": Await,
-    "Break": Break,
-    "BitInvert": BitInvertOperator,
-    "Call": Call,
-    "ClassDef": ClassDef,
-    "Continue": Continue,
-    "Constant": Literal,
-    "Dict": Dict,
-    "DictComp": DictComp,
-    "Delete": Delete,
-    "Del": Delete,
-    "Expr": Expr,
-    "Eq": Equal,
-    "ExceptHandler": Catch,
-    "For": For,
-    "FormattedString": FormattedString,
-    "FunctionDef": FunctionDef,
-    "Global": Global,
-    "GeneratorExp": GeneratorExp,
-    "If": If,
-    "IfExp": IfExp,
-    "In": In,
-    "NotIn": NotIn,
-    "NotEq": NotEqual,
-    "Is": Is,
-    "IsNot":IsNot,
-    "Lt": LessThan,
-    "LtE": LessThanEqual,
-    "Gt": Greater,
-    "GtE": GreaterEqual,
-
     "BinOp": BinaryOperation,
     "BinaryOperation": BinaryOperation,
     "BitAnd": BitAnd,
+    "BitInvert": Invert,
     "BitOr": BitOr,
     "BitXor": BitXor,
     "BoolOp": BooleanOperation,
-    "UAdd": UnaryAdd,
-    "USub": UnarySubtract,
-    "Invert": Invert,
-
-
-    "Mod": Modulo,
-    "Div": Divide,
-    "FloorDiv": FloorDiv,
-    "LShift": LShift,
-    "RShift": RShift,
-    "Mult": Mult,
-    "Pow": Pow,
-    "Sub": Subtract,
-    "Add": Add,
+    "Break": Break,
+    "Call": Call,
+    "ClassDef": ClassDef,
     "Compare" : Compare,
+    "Constant": Literal,
+    "Continue": Continue,
+    "Del": Delete,
+    "Delete": Delete,
+    "Dict": Dict,
+    "DictComp": DictComp,
+    "Div": Divide,
+    "ERROR": Error,
+    "Eq": Equal,
+    "ExceptHandler": Catch,
+    "Expr": Expr,
+    "FloorDiv": FloorDiv,
+    "FloorDivide": FloorDiv,
+    "For": For,
+    "FormattedString": FormattedString,
     "FormattedValue": FormattedString,
+    "FunctionDef": FunctionDef,
+    "GeneratorExp": GeneratorExp,
+    "Global": Global,
+    "Greater": GreaterThan,
+    "GreaterEqual": GreaterThanEqual,
+    "Gt": GreaterThan,
+    "GtE": GreaterThanEqual,
+    "If": If,
+    "IfExp": IfExp,
+    "ImplicitNode": ImplicitNode,
     "Import": Import,
     "ImportFrom": ImportFrom,
-    "ImplicitNode": ImplicitNode,
+    "In": In,
+    "Invert": Invert,
+    "Is": Is,
+    "IsNot":IsNot,
     "JoinedStr": FormattedString,
+    "LShift": LeftShift,
+    "LeftShift": LeftShift,
     "Lambda": Lambda,
-    "keyword": Keyword,
     "List": List,
     "ListComp": ListComp,
+    "Lt": LessThan,
+    "LtE": LessThanEqual,
     "Match": Match,
-    "MatchStar": MatchStar,
     "MatchAs": MatchAs,
-    "MatchSingleton": MatchSingleton,
-    "MatchOr": MatchOr,
     "MatchClass": MatchClass,
-    "MatchValue": MatchValue,
     "MatchMapping": MatchMapping,
+    "MatchOr": MatchOr,
+    "MatchList": MatchSequence,
     "MatchSequence": MatchSequence,
-
-    "Minus": MinusOperator,
+    "MatchSingleton": MatchSingleton,
+    "MatchStar": MatchStar,
+    "MatchValue": MatchValue,
+    "Minus": UnarySubtract,
+    "MinusOperator": UnarySubtract,
+    "Mod": Modulo,
     "Module": TranslationUnit,
-    "match_case": Case,
-    "Not": NotOperator,
-    "Nonlocal": Nonlocal,
+    "Mult": Multiply,
+    "Multiply": Multiply,
     "Name": Name,
     "NamedExpr": NamedExpr,
+    "Nonlocal": Nonlocal,
+    "Not": NotOperator,
+    "NotEq": NotEqual,
+    "NotIn": NotIn,
     "Pass": Pass,
-    "Plus": PlusOperator,
+    "Plus": UnaryAdd,
+    "PlusOperator": UnaryAdd,
+    "Pow": Power,
+    "RShift": RightShift,
+    "RightShift": RightShift,
     "Raise": Raise,
     "Return": Return,
     "Set": Set,
     "SetComp": SetComp,
+    "SimpleStatementLine": Statement,
     "Slice": Slice,
     "Starred": Starred,
+    "Sub": Subtract,
     "Subscript": Subscript,
     "Try": Try,
     "TryStar": Try,
     "Tuple": Tuple,
     "TypeAlias": Typedef,
+    "UAdd": UnaryAdd,
+    "USub": UnarySubtract,
     "UnaryOp": UnaryOperation,
     "UnaryOperation": UnaryOperation,
     "While": While,
     "With": With,
     "Yield": Yield,
     "YieldFrom": Yield,
-
-    "&": BitAnd,
-    "|": BitOr,
+    "[":List,
+    "]":List,
     "^": BitXor,
+    "arg": Argument,
+    "arg": Argument,
+    "argument_list": ArgumentList,
+    "arguments": Arguments,
     "assert_statement": Assert,
     "assignment":Assign,
-    "arg": Argument,
+    "assignment_expression": Assign,
     "augmented_assignment": AugAssign,
-    "argument_list": ArgumentList,
     "await": Await,
+    "alias": Alias,
+    "binary_expression": BinaryOperation,
     "binary_operator": BinaryOperation,
     "boolean_operator": BooleanOperation,
     "break_statement":Break,
     "call": Call,
+    "call_expression": Call,
+    "catch": Catch,
+    "catch_clause": CatchClause,
+    "class": ClassDef,
     "class_definition":ClassDef,
+    "class_specifier": ClassSpecifier,
+    "compound_statement": CompoundStatement,
+    "condition_clause": Compare,
     "conditional_expression": IfExp,
     "continue_statement": Continue,
+    "declaration": Declaration,
+    "del": Delete,
     "dictionary": Dict,
     "dictionary_comprehension": DictComp,
-    "del": Delete,
     "expression_statement": Expr,
+    "field_declaration_list": Arguments,
+    "for": For,
     "for_statement":For,
+    "function_declarator": FunctionDef,
     "function_definition": FunctionDef,
     "generator_expression": GeneratorExp,
+    "global": Global,
+    "global_statement": Global,
     "identifier": Name,
+    "if": If,
     "if_statement": If,
     "import_from_statement": ImportFrom,
     "import_statement": Import,
+    "in": In,
+    "init_declarator": Assign,
     "integer": Number,
+    "is not": IsNot,
+    "is": Is,
+    "keyword": Keyword,
     "lambda": Lambda,
     "list": List,
     "list_comprehension": ListComp,
+    "match_case": Case,
     "match_statement": Match,
     "module": TranslationUnit,
-    "not_operator": UnaryOperation,
     "nonlocal_statement": Nonlocal,
-    "pass_statement": Pass,
+    "not_operator": UnaryOperation,
+    "not": NotOperator,
+    "not in": NotIn,
+    "number_literal": Number,
+    "parameter_declaration": ParameterDeclaration,
+    "parameter_list": ArgumentList,
     "parenthesized_expression": ParenthesizedExpression,
+    "pass_statement": Pass,
     "raise_statement": Raise,
     "return_statement": Return,
     "set": Set,
     "set_comprehension": SetComp,
     "subscript": Subscript,
+    "translation_unit": TranslationUnit,
+    "try": Try,
     "try_statement": Try,
     "tuple": Tuple,
+    "type_identifier": TypeReference,
+    "unary_operator": UnaryOperation,
+    "while": While,
     "while_statement": While,
     "with_statement": With,
     "yield": Yield,
-
-    "SimpleStatementLine": Statement,
-
+    "{": Dict,
+    "|": BitOr,
+    "}": Dict,
+    # 'FunctionDecl': FunctionDeclaration,
     #clang
-    'TRANSLATION_UNIT': TranslationUnit,
-    'VAR_DECL': VariableDeclaration,
-    'FUNCTION_DECL': FunctionDef,
+    'AccessSpecDecl': AccessSpecifier,
+    'AccessSpecDecl': AccessSpecifier,
+    'BINARY_OPERATOR': BinaryOperation,
+    'BinaryOperator': BinaryOperation,
+    'BuiltinType': BuiltinType,
+    'CALL_EXPR': Call,
+    'CLASS_DECL': ClassDeclaration,
+    'COMPOUND_ASSIGNMENT_OPERATOR': Assign,
+    'COMPOUND_STMT': CompoundStatement,
+    'CONSTRUCTOR': Constructor,
     'CSTYLE_CAST_EXPR': Cast,
+    'CStyleCastExpr': Cast,
+    'CXXConstructExpr': ConstructorExpression,
+    'CXXConstructorDecl': Constructor,
+    'CXXRecordDecl': RecordDef,
+    'CXX_ACCESS_SPEC_DECL': AccessSpecifier,
+    'CXX_BASE_SPECIFIER': BaseSpecifier,
+    'CallExpr': Call,
+    'CompoundAssignOperator': Assign,
+    'CompoundStmt': CompoundStatement,
     'DECL_LOC': DeclarationLoc,
     'DECL_REF_EXPR': DeclarationExpression,
-    'TYPE_REF': TypeReference,
-    'COMPOUND_STMT': CompoundStatement,
     'DECL_STMT': Declaration,
-    'PAREN_EXPR': ParenthesizedExpression,
-    'BINARY_OPERATOR': BinaryOperation,
-    'UNEXPOSED_EXPR': Expression,
-    'INTEGER_LITERAL': Number,
-    'UNARY_OPERATOR': UnaryOperation,
-    'IF_STMT': If,
-    'WHILE_STMT': While,
-    'CALL_EXPR': Call,
-    'COMPOUND_ASSIGNMENT_OPERATOR': Assign,
-    'CONSTRUCTOR': Constructor,
     'DO_STMT': Do,
+    'DeclLoc': DeclarationLoc,
+    'DeclRefExpr': DeclarationExpression,
+    'DeclStmt': Declaration,
+    'DoStmt': Do,
     'FIELD_DECL': FieldDeclaration,
+    'FUNCTION_DECL': FunctionDef,
+    'FieldDecl': FieldDeclaration,
+    'FunctionDecl': FunctionDef,
+    'IF_STMT': If,
+    'INIT_LIST_EXPR': ListComp,
+    'INTEGER_LITERAL': Number,
+    'IfStmt': If,
+    'ImplicitValueInitExpr': Assign,
+    'InitListExpr': ListComp,
+    'IntegerLiteral': Number,
     'MACRO_DEFINITION': MacroDefinition,
     'NAMESPACE': Namespace,
+    'PAREN_EXPR': ParenthesizedExpression,
     'PARM_DECL': ParameterDeclaration,
-    'RETURN_STMT': Return,
-    'STRUCT_DECL': StructDeclaration,
-    'TYPEDEF_DECL': TypedefDeclaration,
-    'INIT_LIST_EXPR': ListComp,
-    'STRING_LITERAL': FormattedString,
-    'CLASS_DECL': ClassDeclaration,
-    'CXX_BASE_SPECIFIER': BaseSpecifier,
-    'CXX_ACCESS_SPEC_DECL': AccessSpecifier,
-    'UNEXPOSED_DECL': Declaration,
-
-    'AccessSpecDecl': AccessSpecifier,
-    'CXXConstructorDecl': Constructor,
-    'IntegerLiteral': Number,
-    'CXXConstructExpr': ConstructorExpression,
-    'DeclLoc': DeclarationLoc,
-    'VarDecl': VariableDeclaration,
-    'DeclStmt': Declaration,
-    'CompoundStmt': CompoundStatement,
-    'CallExpr': Call,
-    'CStyleCastExpr': Cast,
-    'TypedefDecl': TypedefDeclaration,
-    'CXXRecordDecl': RecordDef,
-    'RecordDecl': RecordDef,
-    # 'FunctionDecl': FunctionDeclaration,
-    'FunctionDecl': FunctionDef,
-    'TranslationUnitDecl': TranslationUnit,
-    'AccessSpecDecl': AccessSpecifier,
-    'TypeRef': TypeReference,
-    'ParmVarDecl': ParameterDeclaration,
-    'BinaryOperator': BinaryOperation,
-    'DeclRefExpr': DeclarationExpression,
-    'IfStmt': If,
     'ParenExpr': ParenthesizedExpression,
-    'UnaryOperator': UnaryOperation,
-    'WhileStmt': While,
-    'StringLiteral': String,
-    'InitListExpr': ListComp,
-    'FieldDecl': FieldDeclaration,
-    'ImplicitValueInitExpr': Assign,
-    'BuiltinType': BuiltinType,
-    'CompoundAssignOperator': Assign,
-    'DoStmt': Do,
+    'ParmVarDecl': ParameterDeclaration,
+    'RETURN_STMT': Return,
+    'RecordDecl': RecordDef,
     'ReturnStmt': Return,
-
+    'STRING_LITERAL': FormattedString,
+    'STRUCT_DECL': StructDeclaration,
+    'StringLiteral': String,
+    'TRANSLATION_UNIT': TranslationUnit,
+    'TYPEDEF_DECL': TypedefDeclaration,
+    'TYPE_REF': TypeReference,
+    'TranslationUnitDecl': TranslationUnit,
+    'TypeRef': TypeReference,
+    'TypedefDecl': TypedefDeclaration,
+    'UNARY_OPERATOR': UnaryOperation,
+    'UNEXPOSED_DECL': Declaration,
+    'UNEXPOSED_EXPR': Expression,
+    'UnaryOperator': UnaryOperation,
+    'VAR_DECL': VariableDeclaration,
+    'VarDecl': VariableDeclaration,
+    'WHILE_STMT': While,
+    'WhileStmt': While,
     '_MatchAll__': MatchAll,
     '_MatchOne__': MatchOne,
     None: UnknownKind

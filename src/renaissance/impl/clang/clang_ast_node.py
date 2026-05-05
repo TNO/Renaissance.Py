@@ -7,7 +7,7 @@ from typing import Any, Optional, Sequence, override
 import clang.native
 from clang.cindex import TranslationUnit, Config, Index, TypeKind, CursorKind
 
-from renaissance.impl import MATCH_ALL, MATCH_ONE
+from renaissance.impl.types import MatchAll, MatchOne
 from renaissance.syntax_tree import ASTNode, ASTReference
 from renaissance.utils.ast_utils import match_children, match_props
 
@@ -409,9 +409,9 @@ class ClangASTNode(ASTNode):
                 return str(self.node.kind.name)
             elif self.node.kind.name in ["UNEXPOSED_EXPR", "VAR_DECL", "DECL_REF_EXPR"]:
                 if self.node.displayname.startswith("$$") and " " not in self.node.displayname:
-                    return MATCH_ALL
+                    return MatchAll.__name__
                 elif self.node.displayname.startswith("$") and " " not in self.node.displayname:
-                    return MATCH_ONE
+                    return MatchOne.__name__
             return str(self.node.kind.name)
         except Exception:
             return EMPTY_STR

@@ -36,7 +36,8 @@ def traverse(node):
     todo = deque([node])
     while todo:
         node = todo.popleft()
-        todo.extend(node.children)
+        if(hasattr(node, "children")):
+            todo.extend(node.children)
         yield node
 
 

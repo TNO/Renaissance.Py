@@ -6,34 +6,13 @@ from typing import Any, Sequence, Self, Callable
 # from ast_comments import *
 from ast import *
 import ast
+
+from renaissance.impl.types import UnknownKind, OPERATOR_MAP
+from renaissance.impl.types import KIND_MAP
 from renaissance.impl.python.util import convert
 from renaissance.syntax_tree.match_finder import find_in_list
 from renaissance.utils.ast_utils import preceding_sibling, next_sibling, match_props, match_children
-
-OPERATOR_MAP = {
-    "AnnAssign": "=",
-    "Assert": "assert",
-    "Assign": "=",
-    "AsyncFor": "for",
-    "AsyncFunctionDef": "function",
-    "AsyncWith": "with",
-    "AugAssignAdd": "+=",
-    "Break": "break",
-    "Call": "def",
-    "ClassDef": "class",
-    "Continue": "continue",
-    "For": "for",
-    "FunctionDef": "function",
-    "If": "if",
-    "Import": "import",
-    "ImportFrom": "import",
-    "Match": "match",
-    "Pass": "pass",
-    "Try": "try",
-    "TryStar": "try",
-    "While": "while",
-    "With": "with",
-}
+from utils.ast_utils import traverse
 
 types = ["int", "float", "str", "list", "set", "tuple", "Mapping", "dict", "Optional"]
 IRRELEVANT_PROPS = {"comment"}
@@ -100,7 +79,8 @@ class PythonRstTranslationUnit:
     def lazy_create_refers(self, node: "PythonRstNode") -> None:
         if self.references_initialized:
             return
-        node.root.process(lambda n: self.create_references(n))
+        for n in traverse(node.root):
+            self.create_references(n)
         self.references_initialized = True
 
 
@@ -125,15 +105,15 @@ class PythonRstTranslationUnit:
 
     def create_references(self, ast_node) -> None:
         assert isinstance(ast_node, PythonRstNode), f"Expected PythonASTNode but got {type(ast_node)}"
-        match ast_node.kind:
-            case "arg":
+        match type(ast_node.node):
+            case ast.arg:
                 if ast_node.name != "self":
                     if isinstance(ast_node.node, ast.arg) and isinstance(ast_node.node.annotation, ast.Name):
                         node_id = ast_node.name
                         ref_id = ast_node.node.annotation.id
                         ref_kind = "TypeRef"
                         self.add_reference(node_id, ref_id, ref_kind)
-            case "Assign":
+            case ast.Assign:
                 if isinstance(ast_node.node, ast.Assign):
                     for n in ast_node.node.targets:
                         if isinstance(n, ast.Name) and isinstance(ast_node.node.value, ast.Call):
@@ -143,7 +123,7 @@ class PythonRstTranslationUnit:
                             if ref_id:
                                 ref_kind = "CallRef"
                                 self.add_reference(node_id, ref_id, ref_kind)
-            case "AnnAssign":
+            case ast.AnnAssign:
                 if isinstance(ast_node.node, ast.AnnAssign):
                     if (
                         ast_node.node.annotation
@@ -154,7 +134,7 @@ class PythonRstTranslationUnit:
                         ref_id = ast_node.node.annotation.id
                         ref_kind = "TypeRef"
                         self.add_reference(node_id, ref_id, ref_kind)
-            case "ClassDef":
+            case ast.ClassDef:
                 if isinstance(ast_node.node, ast.ClassDef):
                     node = ast_node.node
                     node_id = node.name
@@ -166,7 +146,7 @@ class PythonRstTranslationUnit:
                             self.add_reference(node_id, ref_id, ref_kind)
                 # add functions and attributes to class
 
-            case "Call":
+            case ast.Call:
                 if isinstance(ast_node.node, ast.Call):
                     # obj.function. then obj refers to function
                     if isinstance(ast_node.node.func, ast.Attribute):
@@ -212,7 +192,10 @@ class PythonRstNode:
         self.node = node
         self.parent = parent
         self.translation_unit:PythonRstTranslationUnit = translation_unit
-        self.kind = type(node).__name__
+        self.ast_type = KIND_MAP.get(type(node).__name__, UnknownKind)
+        if self.ast_type == UnknownKind:
+            print(f'"{type(node).__name__}": {type(node).__name__},')
+        self.kind = self.ast_type.__name__
         self.indent = ""
         self.name = self._derive_name()
         self.show_props = False
@@ -221,9 +204,8 @@ class PythonRstNode:
         self.is_implicit = self.kind not in IMPLICIT
         self.offset =0
         self.length =0
-        if translation_unit:
+        if self.translation_unit:
             self.filename = translation_unit.file_name
-            self.translation_unit = translation_unit
             self.derive_position(node, translation_unit, parent)
             self.add_node()
         for name in node._fields:
@@ -385,9 +367,11 @@ class PythonRstNode:
                 name = str(self.node.target)
         elif "body" not in self.node._fields:
             name = unparse(self.node)
+        elif isinstance(self.node, (ast.Module)) and self.translation_unit:
+            name = self.translation_unit.file_name
         else:
             name = self.kind
-        return name
+        return name if name else ""
 
     @property
     def type(self):
@@ -463,20 +447,13 @@ class PythonRstNode:
         self.translation_unit.add(self)
 
     def get_container_parent(self):
-        # Get the containing definition parent
-        
-        # TODO check self.parent once
-        # TODO use kind in CONTAINERS with CONTAINERS = ["FunctionDef", "ClassDef", "Module"]
-        if self.parent and self.parent.kind == "FunctionDef":
-            return self.parent
-        elif self.parent and self.parent.kind == "ClassDef":
-            return self.parent
-        elif self.parent and self.parent.kind == "Module":
-            return self.parent
+        if self.parent:
+            if self.parent.kind in ["FunctionDef","ClassDef","Module"]:
+                return self.parent
+            else:
+                return self.parent.get_container_parent()
         else:
-            # TODO handle case when self.parent is None
-            return self.parent.get_container_parent()
-
+            return self
     @property
     def text(self) -> str:
         return textwrap.dedent(self.signature)

@@ -300,7 +300,7 @@ class TestMatchTree:
         """)
         atu = self.factory.create_from_text(code)
         unittest = self.pattern_factory.create_statements("@parameterized.expand($$parameters)\ndef $fun($$args, *$$vargs):\n    $$stmts")
-        found = list(match_pattern(atu.children, unittest))
+        found = match_pattern(atu.children, unittest)
         assert_that(found, has_length(1))
 
     def test_match_pattern_for_parameterized_finds_one_match(self):

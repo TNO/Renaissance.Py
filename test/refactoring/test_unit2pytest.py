@@ -222,7 +222,7 @@ class TestUnit2Pytest:
             def test_foo():
                 pass
             """)
-        subject.remove_duplicate_import("import pytest\nfrom hamcrest import *")
+        subject.remove_duplicate_import("import pytest")
         result = subject.apply_to_string()
         assert_that(result.count("import pytest"), is_(2))
 

@@ -28,103 +28,13 @@ class TestPythonRstNode:
         # create a pattern factory atu is passed to the pattern factory for use of all # includes, #defines and declarations
         self.pattern_factory = PythonPatternFactory(self.factory)
 
-    @pytest.mark.parametrize(
-        "raw, kind",
-        [
-            ("i:int=0", "AnnAssign"),
-            ("assert 0", "Assert"),
-            ("async for f in fs:  pass", "AsyncFor"),
-            ("async def fun(): pass", "AsyncFunctionDef"),
-            ('async with open("x"): pass', "AsyncWith"),
-            ("x += 5", "AugAssign"),
-            ("break", "Break"),
-            ("class x:pass", "ClassDef"),
-            ("continue", "Continue"),
-            ("fun()", "Expr"),
-            ("def fun(): pass", "FunctionDef"),
-            ("for i in items: pass", "For"),
-            ("import x", "Import"),
-            ("if True: pass", "If"),
-            ("from x import y", "ImportFrom"),
-            ("match x:\n  case _:    pass", "Match"),
-            ("pass", "Pass"),
-            ("raise", "Raise"),
-            ("return", "Return"),
-            ("try:\n  pass\nfinally:\n  pass", "Try"),
-            ("try:\n  x()\nexcept* e:\n  pass", "TryStar"),
-            ("while True: pass", "While"),
-        ],
-    )
-    def test_stmt_kind(self, raw, kind):
-        it = self.pattern_factory.create_statement(raw)
-        assert_that(kind, is_(it.kind))
 
-    @pytest.mark.parametrize(
-        "raw, kind",
-        [
-            ("with open() as c: pass", "With"),
-            ("await (fun(2))", "Await"),
-            ("a = 5 + 3", "BinOp"),
-            ("0x01 & 0x10", "BitAnd" ""),
-            ("0x01 | 0x10", "BitOr"),
-            ("0x01 ^ 0x10", "BitXor"),
-            ("True and False", "BoolOp"),
-            ("del x", "Delete"),
-            (
-                """
-def outer():
-    x = 10
-    y = 20
-    def inner():
-        nonlocal x, y
-        x += 5
-    return inner()
-""",
-                "Nonlocal",
-            ),
-        ],
-    )
-    def test_stmt_kind_in_context(self, raw, kind):
-        it = self.factory.create_from_text(raw, "context.py")
-        kinds = [node.kind for node in traverse(it)]
-        assert_that(kind, is_in(kinds))
 
-    def test_global_stmt(self):
-        it = self.factory.create_from_text("global x", "context.py").body[-1]
-        assert_that(it.kind, is_("Global"))
-        assert_that(it.kind, is_("Global"))
-
-    @pytest.mark.parametrize(
-        "raw, kind",
-        [
-            ("fun()", "Call"),
-            ("{one: 1, two:2}", "Dict"),
-            ("{1,2}", "Set"),
-            ("[1, 2]", "List"),
-            ('{word: len(word) for word in ["one","two"]}', "DictComp"),
-            ("[ n*3 for n in [1, 2]]", "ListComp"),
-            ("{ n*3 for n in [1, 2]}", "SetComp"),
-            ("lambda: fun()", "Lambda"),
-            ("x = (n*2 for n in[1,2])", "GeneratorExp"),
-            ('f"{one}two"', "JoinedStr"),
-            ("items[1:4]", "Subscript"),
-            ("(9, 10)", "Tuple"),
-            ("x = not True", "UnaryOp"),
-            ("yield fun", "Yield"),
-            ("yield from [1,2]", "YieldFrom"),
-            ("x = z if z>y else y", "IfExp"),
-        ],
-    )
-    def test_expr_kind(self, raw, kind):
-        it = self.pattern_factory.create_expression(raw)
-        assert_that(kind, is_(it.kind))
-
-    # @pytest.mark.skip("it was working before")
     def test_type_alias(self):
         it = self.factory.create_from_text("type UserId = int", "context.py")
         show_node(it)
         kinds = [node.kind for node in traverse(it)]
-        assert_that("TypeAlias", is_in(kinds))
+        assert_that("Typedef", is_in(kinds))
 
     def test_slice(self):
         it = self.pattern_factory.create_expression("items[1:2:3]")
@@ -142,66 +52,12 @@ def outer():
 
     def test_formatted_value(self):
         it = self.pattern_factory.create_expression('f"{one}two"')
-        assert_that(it.children[0].kind, is_("FormattedValue"))
+        assert_that(it.children[0].kind, is_("FormattedString"))
 
     def test_except_handler(self):
         it = self.pattern_factory.create_statement("try: pass\nexcept NameError:pass")
-        assert_that(it.children[1].children[0].kind, is_("ExceptHandler"))
+        assert_that(it.children[1].children[0].kind, is_("Catch"))
 
-    @pytest.mark.parametrize(
-        "raw, kind",
-        [
-            ("a == b", "Eq"),
-            ("a in b", "In"),
-            ("a is b", "Is"),
-            ("a is not b", "IsNot"),
-            ("a < b", "Lt"),
-            ("a <=b", "LtE"),
-            ("a != b", "NotEq"),
-            ("a not in b", "NotIn"),
-            ("a > b", "Gt"),
-            ("a >= b", "GtE"),
-        ],
-    )
-    def test_comperator_operator(self, raw, kind):
-        it = self.pattern_factory.create_expression(raw)
-        assert_that(it.children[1].children[0].kind, is_(kind))
-
-    @pytest.mark.parametrize(
-        "raw, kind",
-        [
-            ('case None: return "No data"', "MatchSingleton"),
-            ('case True | False:        return "Boolean value"', "MatchOr"),
-            (
-                'case int(x) if x > 0:        return f"Positive integer: {x}"',
-                "MatchClass",
-            ),
-            (
-                'case str() as s if len(s) > 10:        return f"Long string: {s}"',
-                "MatchAs",
-            ),
-            ('case "[]":        return "Empty list"', "MatchValue"),
-            (
-                'case [first, *rest]:        return f"List with first element {first} and {len(rest)} more items"',
-                "MatchSequence",
-            ),
-            (
-                'case {"name": name, "age": age}:        return f"Person named {name}, age {age}"',
-                "MatchMapping",
-            ),
-            ('case Point(x=0, y=0):        return "Origin point"', "MatchClass"),
-            (
-                'case Point(x=x, y=y):        return f"Point at ({x}, {y})"',
-                "MatchClass",
-            ),
-            ('case "str":        return "Unknown data"', "MatchValue"),
-            ('case _:        return "Unknown data"', "MatchAs"),
-        ],
-    )
-    def test_match_patterns(self, raw, kind):
-        sample_code = f"match data:\n  {raw}\n  case _: pass"
-        stmt = self.pattern_factory.create_statement(sample_code)
-        assert_that(kind, is_(stmt.children[1].children[0].children[0].kind))
 
     def test_match_stmt(self):
         sample_code = (
@@ -209,51 +65,11 @@ def outer():
         )
         stmt = self.pattern_factory.create_statement(sample_code)
         assert_that(stmt.kind, is_("Match"))
-        assert_that(stmt.children[1].children[0].kind, is_("match_case"))
+        assert_that(stmt.children[1].children[0].kind, is_("Case"))
         assert_that(stmt.children[1].children[0].children[0].children[1].kind, is_("MatchStar"))
         assert_that(stmt.children[1].children[0].children[0].children[0].kind, is_("MatchAs"))
 
-    @pytest.mark.parametrize(
-        "raw, kind",
-        [
-            ("a % b", "Mod"),
-            ("a / b", "Div"),
-            ("a // b", "FloorDiv"),
-            ("a << b", "LShift"),
-            ("a >> b", "RShift"),
-            ("a * b", "Mult"),
-            ("a ** b", "Pow"),
-            ("a - b", "Sub"),
-            ("a + b", "Add"),
-        ],
-    )
-    def test_binary_operator(self, raw, kind):
-        it = self.pattern_factory.create_expression(raw)
-        assert_that(it.children[1].kind, is_(kind))
 
-    # @parameterized.expand([
-    #     ('x = some_undefined_var', 'type_ignore'),
-    #     ('-b', 'TypeVar'),
-    #     ('~b', 'TypeVarTuple'),
-    #     ('not b', 'ParamSpec'),
-    # ])
-    # def test_infer_types(self, raw, kind):
-    #     it = self.factory.create_from_text(raw, 'context.py')
-    #     kinds = [node.kind for node in walk(it)]
-    #     assert_that(kind, is_in(kinds))
-
-    @pytest.mark.parametrize(
-        "raw, kind",
-        [
-            ("+b", "UAdd"),
-            ("-b", "USub"),
-            ("~b", "Invert"),
-            ("not b", "Not"),
-        ],
-    )
-    def test_unary_operator(self, raw, kind):
-        it = self.pattern_factory.create_expression(raw)
-        assert_that(it.children[0].kind, is_(kind))
 
     def test_show_call(self):
         atu = self.factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "apple.py")

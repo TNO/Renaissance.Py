@@ -5,6 +5,8 @@ require minimum amound of code to make the matcher work
 """
 import ast
 
+from renaissance.impl.types import KIND_MAP, UnknownKind
+
 
 class ASTExtension:
 
@@ -23,7 +25,7 @@ class ASTExtension:
     @staticmethod
     @property
     def ast_kind(self):
-        return type(self).__name__
+        return KIND_MAP.get(type(self).__name__, UnknownKind).__name__
 
 
     @staticmethod

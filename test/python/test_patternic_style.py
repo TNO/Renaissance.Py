@@ -20,7 +20,7 @@ class TestPythonicStyle:
         "raw, kind, op, name, expr, body_length",
         [
             ("try:\n  pass\nfinally:\n  pass", "Try", "try", "Try", "expr", 1),
-            ("try:\n  x()\nexcept* e:\n  pass", "TryStar", "try", "TryStar", "expr", 1),
+            ("try:\n  x()\nexcept* e:\n  pass", "Try", "try", "Try", "expr", 1),
             ("class name: pass", "ClassDef", "class", "name", "expr", 1),
             ("def name(): pass", "FunctionDef", "function", "name", "expr", 1),
             ("for name in expr:\n  1\n  2\n  pass", "For", "for", "name", "expr", 3),
@@ -40,9 +40,9 @@ class TestPythonicStyle:
     @pytest.mark.parametrize(
         "raw, kind, op, name, body_length",
         [
-            ("async for f in fs:  pass", "AsyncFor", "for", "f", 1),
-            ('async with open("x"): pass', "AsyncWith", "with", "AsyncWith", 1),
-            ("async def fun(): pass", "AsyncFunctionDef", "function", "fun", 1),
+            ("async for f in fs:  pass", "For", "for", "f", 1),
+            ('async with open("x"): pass', "With", "with", "With", 1),
+            ("async def fun(): pass", "FunctionDef", "function", "fun", 1),
         ],
     )
     def test_async_stmt(self, raw, kind, op, name, body_length):
@@ -55,7 +55,7 @@ class TestPythonicStyle:
     @pytest.mark.parametrize(
         "raw, kind, name, body_length",
         [
-            ("try:\n  1\n  x()\nexcept* e:\n  1\n  1\n  pass", "TryStar", "TryStar", 2),
+            ("try:\n  1\n  x()\nexcept* e:\n  1\n  1\n  pass", "Try", "Try", 2),
             ("for name in expr:\n  1\n  2\n  pass", "For", "name", 3),
             ("while expr: pass", "While", "While", 1),
             ("if expr: pass\nelse: pass ", "If", "If", 1),
@@ -71,7 +71,7 @@ class TestPythonicStyle:
     @pytest.mark.parametrize(
         "raw, kind, typ, name, op, value",
         [
-            ("i:int=0", "AnnAssign", "int", "i", "=", 0),
+            ("i:int=0", "Assign", "int", "i", "=", 0),
             ("i=0", "Assign", None, "i", "=", 0),
             ("x += 5", "AugAssign", None, "x", "+=", 5),
             ("break", "Break", None, "", "break", None),
@@ -143,15 +143,15 @@ class TestPythonicStyle:
     def test_kind_is_match_all(self):
         pattern_factory = PythonPatternFactory(PythonFactory(PythonRstNode))
         simple = self.pattern_factory.create_statement("$$pa")
-        assert_that(MATCH_ALL, is_(simple.kind))
+        assert_that(simple.kind, is_("MatchAll"))
 
     def test_kind_is_match_one(self):
         simple = self.pattern_factory.create_statement("$pa")
-        assert_that(MATCH_ONE, is_(simple.kind))
+        assert_that(simple.kind, is_("MatchOne"))
 
     def test_kind_is_match_all(self):
         simple = self.pattern_factory.create_statement("$$pa")
-        assert_that(MATCH_ALL, is_(simple.kind))
+        assert_that(simple.kind, is_("MatchAll"))
 
     def test_match_one_is_not_equal(self):
         atu = self.factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "test.py")
@@ -213,7 +213,7 @@ class TestPythonicStyle:
             "test.py",
         )
         kind = atu.kind
-        assert_that(kind, is_("Module"))
+        assert_that(kind, is_("TranslationUnit"))
 
     def test_property_name_call(self):
         atu = self.factory.create_from_text(
@@ -221,4 +221,4 @@ class TestPythonicStyle:
             "test.py",
         )
         name = atu.name
-        assert_that(name, is_("Module"))
+        assert_that(name, is_("test.py"))

@@ -46,7 +46,7 @@ def python_lst_smoke_test():
     ASTShower.show_node(atu)
 
     print("_______________simple find____________________________________")
-    nodes = find_kind(atu, "identifier")
+    nodes = find_kind(atu, "Call")
 
     ASTShower.show_node(nodes[0])
 

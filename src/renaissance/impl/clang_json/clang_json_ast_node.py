@@ -12,7 +12,7 @@ from typing import Any, Optional, Sequence
 from typing_extensions import override
 import subprocess
 
-from renaissance.impl import MATCH_ALL, MATCH_ONE
+from renaissance.impl.types import MatchAll, MatchOne
 from renaissance.syntax_tree import ASTNode, CPPUtils, ASTReference
 from renaissance.utils.ast_utils import match_children, match_props
 
@@ -141,9 +141,9 @@ class ClangJsonASTNode(ASTNode):
             # deep clone the type node and remove the parentheses
         elif self._kind in ["DeclRefExpr"]:
             if self.name.startswith("$$"):
-                self._kind = MATCH_ALL
+                self._kind = MatchAll.__name__
             elif self.name.startswith("$"):
-                self._kind = MATCH_ONE
+                self._kind = MatchOne.__name__
 
         self._children = self.__inserted_children + [
             ClangJsonASTNode(
