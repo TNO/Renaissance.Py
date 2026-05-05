@@ -287,7 +287,7 @@ class TestPythonFactory:
         "_, factory, expression, expected",
         Factories.extend(
             [
-                ("a = 1", ["Literal","Name","AssignTarget", "Integer"]),
+                ("a = 1", ["Literal","Name","AssignTarget", "Integer", "Assign"]),
             ]
         ),
     )
