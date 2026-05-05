@@ -15,8 +15,6 @@ Authors:
 
 - [Context](#context)
 - [Decision](#decision)
-- [Implementation notes](#implementation-notes)
-- [Example](#example)
 - [Rationale](#rationale)
 - [Consequences](#consequences)
 - [Alternatives considered](#alternatives-considered)
@@ -25,7 +23,7 @@ Authors:
 
 ## Context
 
-The goal of this ADR is to define a controlled way to update AST nodes, so thet the resulting AST is still correct. 
+The goal of this ADR is to define a controlled way to update AST nodes, so that the resulting AST is still correct. 
 
 The project models trees made of nodes. Currently, node data (properties and children) operations read the 
 tree and transformations create new trees instead of mutating in-place. Ensuring immutability helps reasoning 

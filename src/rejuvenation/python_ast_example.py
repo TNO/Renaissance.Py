@@ -1,9 +1,6 @@
 import textwrap
 from ast import AST
 
-from libcst import CSTNode
-
-from renaissance.impl.python.cst_node import PythonCstNode
 from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
 from renaissance.syntax_tree import ASTShower, ASTRewriter
 from renaissance.syntax_tree.ast_finder import find_kind

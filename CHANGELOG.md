@@ -1,7 +1,7 @@
 Plan for next sprints:
 
 * [ ] use type hierarchy to find type concisely instead of regexp
-* [ ] use hypothesis instead of parameterised test to get beter coverage
+* [ ] use hypothesis instead of parameterized test to get better coverage
 
 20-03-2026
 

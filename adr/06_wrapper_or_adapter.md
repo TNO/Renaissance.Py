@@ -16,7 +16,7 @@ Authors:
 - [Context](#context)
 - [Decision](#decision)
 - [Implementation notes](#implementation-notes)
-- [Example](#example)
+
 - [Rationale](#rationale)
 - [Consequences](#consequences)
 - [Alternatives considered](#alternatives-considered)
@@ -26,7 +26,7 @@ Authors:
 ## Context
 
 The goal of this ADR is to define a strategy for interoperating with external node-like objects that do not 
-match the project's canonical node shape while minilize the effort for the developer of the new language for renaissance.
+match the project's canonical node shape while minimize the effort for the developer of the new language for renaissance.
 
 
 The project may receive nodes from different parsers or libraries that do not match the project's canonical node

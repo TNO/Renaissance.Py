@@ -11,7 +11,6 @@ Authors: Project contributors
 - [Context](#context)
 - [Decision](#decision)
 - [Implementation notes](#implementation-notes)
-- [Example](#example)
 - [Rationale](#rationale)
 - [Consequences](#consequences)
 - [Alternatives considered](#alternatives-considered)
@@ -19,8 +18,8 @@ Authors: Project contributors
 
 ## Context
 
-The go of this ADR is to define a modern way to identify and manage dependencies, thos that we can 
-recreate the arfitact at any time. 
+The go of this ADR is to define a modern way to identify and manage dependencies, so that we can 
+recreate the artifact at any time. 
 
 The project uses Python and benefits from reproducible dependency management and straightforward virtual
 environment handling. UV provides a single-file project manifest (`pyproject.toml`) and an integrated

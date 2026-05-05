@@ -287,7 +287,7 @@ class MacroDefinition:
     pass
 
 
-class Namespace:
+class Namespace(Node):
     pass
 
 
@@ -596,9 +596,6 @@ class WithItem(Node):
 KIND_MAP = {
     ":": UnknownKind,
     "block": UnknownKind,
-    "case_clause": UnknownKind,
-    "case": UnknownKind,
-    "case_pattern": UnknownKind,
     "none": UnknownKind,
     "return": Return,
     "string": Literal,
@@ -747,7 +744,6 @@ KIND_MAP = {
     "]": List,
     "^": BitXor,
     "arg": Argument,
-    "arg": Argument,
     "argument_list": ArgumentList,
     "arguments": Arguments,
     "assert_statement": Assert,
@@ -828,9 +824,6 @@ KIND_MAP = {
     "{": Dict,
     "|": BitOr,
     "}": Dict,
-    # 'FunctionDecl': FunctionDeclaration,
-    # clang
-    "AccessSpecDecl": AccessSpecifier,
     "AccessSpecDecl": AccessSpecifier,
     "BINARY_OPERATOR": BinaryOperation,
     "BinaryOperator": BinaryOperation,

@@ -31,7 +31,7 @@ def detect_placeholder(signature: str, original_node_type: str) -> Tuple[bool, s
     return False, original_node_type, "-"
 
 
-# duplicate of astnode process
+# duplicate of ast node process
 def traverse(node):
     todo = deque([node])
     while todo:
@@ -75,3 +75,11 @@ def match_children(mine, other, irrelevant_kinds):
     if mine == None or other == None:
         return mine == other
     return all((i < len(mine) and mine[i] == child) or child.kind in irrelevant_kinds for i, child in enumerate(other))
+
+
+def format_node(node):
+    raw_lines = node.signature.splitlines()
+    properties_text = "" if not node.show_props else node.properties
+    prefix = " " if len(raw_lines) < 2 else f"\n    {node.indent}"
+    formatted_lines = [f"{prefix}|{line}|" for line in raw_lines]
+    return f"{node.indent}({node.kind}, {node.name}, {node.filename}[{node.offset}:{node.offset + node.length}]){properties_text}:{''.join(formatted_lines)}\n"

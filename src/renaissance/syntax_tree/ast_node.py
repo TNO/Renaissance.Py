@@ -7,7 +7,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Callable, Sequence, Self
 
-from renaissance.utils.ast_utils import preceding_sibling, next_sibling, process_node
+from renaissance.utils.ast_utils import preceding_sibling, next_sibling, process_node, format_node
 from renaissance.utils.text_utils import TextUtils
 
 
@@ -62,11 +62,7 @@ class ASTNode(ABC):
         self.indent = ""
 
     def __repr__(self):
-        raw_lines = self.signature.splitlines()
-        properties_text = "" if not self.show_props else self.properties
-        prefix = " " if len(raw_lines) < 2 else f"\n    {self.indent}"
-        formatted_lines = [f"{prefix}|{line}|" for line in raw_lines]
-        return f"{self.indent}({self.kind}, {self.name}, {self.filename}[{self.offset}:{self.offset + self.length}]){properties_text}:{''.join(formatted_lines)}\n"
+        return format_node(self)
 
     def is_part_of_translation_unit(self) -> bool:
         return self.filename == self.root.filename

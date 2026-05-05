@@ -42,9 +42,10 @@ class TestMatchFinderMultiAssignments:
             before_location = vatiant.locations[PLACEHOLDER_BEFORE]
             after_location = vatiant.locations[PLACEHOLDER_AFTER]
 
-            assignment: dict[str, str] = {}
-            assignment[PLACEHOLDER_BEFORE] = atu.translation_unit.content[before_location.offset : before_location.end_offset]
-            assignment[PLACEHOLDER_AFTER] = atu.translation_unit.content[after_location.offset : after_location.end_offset]
+            assignment: dict[str, str] = {
+                PLACEHOLDER_BEFORE: atu.translation_unit.content[before_location.offset: before_location.end_offset],
+                PLACEHOLDER_AFTER: atu.translation_unit.content[after_location.offset: after_location.end_offset]
+            }
 
             actual.add(frozenset(assignment.items()))
         assert expected == actual, "Unexpected assignments of placeholders"

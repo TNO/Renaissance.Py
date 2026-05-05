@@ -13,6 +13,6 @@ class GoExtractor:
         tu = root.translation_unit
         tu.lazy_create_refers(root)
         self.codebase[file] = root
-        self.nodes |= tu._nodes
-        self.edges |= tu._references
-        self.edges |= tu._referenced_by
+        self.nodes |= tu.nodes
+        self.edges |= tu.references
+        self.edges |= tu.referenced_by

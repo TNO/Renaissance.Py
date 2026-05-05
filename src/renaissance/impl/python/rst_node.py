@@ -11,7 +11,7 @@ from renaissance.impl.types import UnknownKind, OPERATOR_MAP
 from renaissance.impl.types import KIND_MAP
 from renaissance.impl.python.util import convert
 from renaissance.syntax_tree.match_finder import find_in_list
-from renaissance.utils.ast_utils import preceding_sibling, next_sibling, match_props, match_children
+from renaissance.utils.ast_utils import preceding_sibling, next_sibling, match_props, match_children, format_node
 from utils.ast_utils import traverse
 
 types = ["int", "float", "str", "list", "set", "tuple", "Mapping", "dict", "Optional"]
@@ -263,12 +263,7 @@ class PythonRstNode:
         return self.children[key]
 
     def __repr__(self):
-        raw_lines = self.signature.splitlines()
-        properties_text = "" if not self.show_props else self.properties
-        prefix = " " if len(raw_lines) < 2 else f"\n    {self.indent}"
-        formatted_lines = [f"{prefix}|{line}|" for line in raw_lines]
-        return f"{self.indent}({self.kind}, {self.name}, {self.filename}[{self.offset}:{self.offset + self.length}]){properties_text}:{''.join(formatted_lines)}\n"
-
+        return format_node(self)
     @property
     def next_sibling(self) -> Self | None:
         return next_sibling(self)

@@ -26,11 +26,6 @@ def step_impl(context, file):
     context["atu"] = context["factory"].create(file)
 
 
-@given("an AST extracted from that source file without errors")
-def step_impl(context):
-    assert not context["atu"].translation_unit.check_diagnostics()
-
-
 @given(parsers.parse("node '{old}' exits within that AST"))
 def step_impl(context, old):
     pattern_factory = PythonPatternFactory(context["factory"], context["atu"])

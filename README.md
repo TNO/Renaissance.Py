@@ -10,12 +10,12 @@ sudo apt-get install -y build-essential clang
 ```
 
 
-The code for the experiments is located in the [python](./python) folder.
+The code for the experiments is located in the [src](./src) folder.
 
 # Description
 This project is a generic approach to refactor code bases with a generic AST structure.
 It uses `TNO Renaissance` pattern matching.
-Currently clang native and clang python bindings are supported.
+Currently, clang native and clang python bindings are supported.
 
 # How to add a different binding
 You'll need to implement a concrete class for syntax_tree.ASTNode.
