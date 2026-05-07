@@ -1,4 +1,5 @@
 import ast
+import re
 from pathlib import Path
 from typing import Sequence
 
@@ -41,7 +42,7 @@ class PythonPattern(AstProtocol):
             self.name = ""
 
     def __eq__(self, other: AstProtocol) -> bool:
-        return is_match(other, self)
+        return is_match(self, other)
 
     def __repr__(self):
         return use_dollar(str(self.node))

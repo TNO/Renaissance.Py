@@ -50,3 +50,6 @@ class PythonRefactoring(ASTProcessor):
     @property
     def body(self) -> Sequence[PythonRstNode]:
         return cast(PythonRstNode, cast(object, self.root)).body
+
+    def run(self):
+        pass
