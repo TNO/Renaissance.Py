@@ -1,5 +1,4 @@
 import pytest
-import ast
 
 from hamcrest import assert_that, is_, is_not
 
@@ -85,7 +84,7 @@ class TestPythonMatcherRepresentation:
 
         for expression1 in expressions:
             for expression2 in expressions:
-                assert_that(is_match(expression1, expression2), is_(True))
+                assert_that(expression1, is_(expression2))
 
     def test_string_representation(self):
         """
@@ -96,19 +95,40 @@ class TestPythonMatcherRepresentation:
 
         implicit_concatenated_single = "'abc' 'def'"
         implicit_concatenated_double = '"abc" "def"'
+        implicit_concatenated_mixed = "\"abc\" 'def'"
 
         representations = [
             normal_single,
             normal_double,
             implicit_concatenated_single,
             implicit_concatenated_double,
+            implicit_concatenated_mixed,
         ]
 
         expressions = map(self.pattern_factory.create_expression, representations)
 
         for expression1 in expressions:
             for expression2 in expressions:
-                assert_that(is_match(expression1, expression2), is_(True))
+                assert_that(expression1, is_(expression2))
+
+        explicit_concatenated_single = "'abc' + 'def'"
+        explicit_concatenated_double = '"abc" + "def"'
+        explicit_concatenated_mixed = "\"abc\" + 'def'"
+
+        explicit_concatenated_representations = [
+            explicit_concatenated_single,
+            explicit_concatenated_double,
+            explicit_concatenated_mixed,
+        ]
+
+        expressions_explicit_concatenated = map(self.pattern_factory.create_expression, explicit_concatenated_representations)
+        for expression1 in expressions_explicit_concatenated:
+            for expression2 in expressions_explicit_concatenated:
+                assert_that(expression1, is_(expression2))
+
+        for expression_explicit_concatenated in expressions_explicit_concatenated:
+            for expression in expressions:
+                assert_that(expression_explicit_concatenated, is_not(expression))
 
     def test_statements_with_comment_and_whitespace(self):
         """
