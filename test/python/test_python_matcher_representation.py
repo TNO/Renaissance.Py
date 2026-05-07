@@ -50,12 +50,12 @@ class TestPythonMatcherRepresentation:
 
         for expression1 in expressions:
             for expression2 in expressions:
-                assert_that(expression1,is_(expression2))
+                assert_that(expression1, is_(expression2))
 
         signed = "+1000"
         expression_signed = self.pattern_factory.create_expression(signed)
         for expression in expressions:
-            assert_that(expression_signed,is_not(expression))
+            assert_that(expression_signed, is_not(expression))
 
     def test_character_representation(self):
         """
@@ -87,6 +87,28 @@ class TestPythonMatcherRepresentation:
             for expression2 in expressions:
                 assert_that(is_match(expression1, expression2), is_(True))
 
+    def test_string_representation(self):
+        """
+        How are the different string representations handled by the parser?
+        """
+        normal_single = "'abcdef'"
+        normal_double = '"abcdef"'
+
+        implicit_concatenated_single = "'abc' 'def'"
+        implicit_concatenated_double = '"abc" "def"'
+
+        representations = [
+            normal_single,
+            normal_double,
+            implicit_concatenated_single,
+            implicit_concatenated_double,
+        ]
+
+        expressions = map(self.pattern_factory.create_expression, representations)
+
+        for expression1 in expressions:
+            for expression2 in expressions:
+                assert_that(is_match(expression1, expression2), is_(True))
 
     def test_statements_with_comment_and_whitespace(self):
         """
@@ -97,7 +119,6 @@ class TestPythonMatcherRepresentation:
         statement_with_new_line = "x        =       1   "
         statement_with_whitespace = "x   =   1   "
         statement_with_comment_and_whitespace = "# This is a comment\nx    =    1   \n# This is a comment   "
-
 
         representations = [
             statement,
@@ -110,6 +131,4 @@ class TestPythonMatcherRepresentation:
 
         for expression1 in expressions:
             for expression2 in expressions:
-                assert_that(expression1,is_(expression2))
-
-
+                assert_that(expression1, is_(expression2))
