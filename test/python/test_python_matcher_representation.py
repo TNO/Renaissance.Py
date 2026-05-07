@@ -86,7 +86,6 @@ class TestPythonMatcherRepresentation:
             for expression2 in expressions:
                 assert_that(expression1, is_(expression2))
 
-<<<<<<< HEAD
     def test_string_representation(self):
         """
         How are the different string representations handled by the parser?
@@ -131,8 +130,6 @@ class TestPythonMatcherRepresentation:
             for expression in expressions:
                 assert_that(expression_explicit_concatenated, is_not(expression))
 
-=======
->>>>>>> e83f6115db884da3aa3bb36d2e085078cd102042
     def test_statements_with_comment_and_whitespace(self):
         """
         How are statements with comments and whitespace handled by the parser?
