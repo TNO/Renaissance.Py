@@ -27,7 +27,7 @@ Authors:
 The goal of this ADR is to establish a coherent test architecture for the Renaissance project that supports 
 maintainability, extensibility, and comprehensive coverage. 
 To ensure maintainability and extensibility a test architecture is crucial. The project needs a coherent set of
-testing frameworks covering behaviour-driven tests, unit tests, performance benchmarks, and inline documentation
+testing frameworks covering behavior-driven tests, unit tests, performance benchmarks, and inline documentation
 examples. The choice of frameworks has implications for test discovery, fixture sharing, CI integration, and the
 ability to express the domain-specific requirements listed below.
 
@@ -58,7 +58,7 @@ ability to express the domain-specific requirements listed below.
 - String delimiters: `"ape"` ≡ `'ape'`.
 - String concatenation: `"con" "cat"` ≡ `"concat"`.
 - Symmetric operators: `0 == x` matches `x == 0`.
-- Equivalent initialisation forms (C++): `int x = 1;` matches `int x { 1 };`.
+- Equivalent initialization forms (C++): `int x = 1;` matches `int x { 1 };`.
 
 **Find functionality**
 - Find by kind (nested): e.g., find all `if` statements; a found match may contain another found match.
@@ -84,7 +84,7 @@ ability to express the domain-specific requirements listed below.
 - *AST-based* batch modifications:
   - Prepend, append, replace, around (e.g., for matching brackets).
   - Containment rules:
-    - A replace on a node hides all operations on its descendants (prepend/append/around are unaffected).
+    - A replacement on a node hides all operations on its descendants (prepend/append/around are unaffected).
     - A prepend to a node is always before a prepend to any descendant.
     - An append to a node is always after an append to any descendant.
   - Sequence rule: an append to sibling N is always before a prepend to sibling N+1.
@@ -98,13 +98,13 @@ ability to express the domain-specific requirements listed below.
 
 Adopt the following test framework stack:
 
-| Purpose | Framework |
-|---------|-----------|
-| BDD / acceptance tests | **pytest-bdd** |
-| Unit tests | **pytest** |
-| Performance benchmarks | **pytest-benchmark** |
-| Inline documentation examples | **doctest** |
-| Assertion style | **PyHamcrest** (`assert_that`) |
+| Purpose                       | Framework                      |
+|-------------------------------|--------------------------------|
+| BDD / acceptance tests        | **pytest-bdd**                 |
+| Unit tests                    | **pytest**                     |
+| Performance benchmarks        | **pytest-benchmark**           |
+| Inline documentation examples | **doctest**                    |
+| Assertion style               | **PyHamcrest** (`assert_that`) |
 
 pytest-bdd is chosen over Behave and Robot Framework (see [Alternatives considered](#alternatives-considered)).
 
@@ -178,18 +178,18 @@ Negative:
 
 **BDD framework**
 
-| Framework | Assessment |
-|-----------|------------|
-| **pytest-bdd** ✓ | Integrates with pytest (shared fixtures, CLI, plugins). Active since 2013. |
-| Behave | Standalone; no shared fixtures with pytest. Very mature (2011). Rejected due to split runner. |
-| Robot Framework | Full automation framework; steep learning curve; overkill for BDD only. |
-| Lettuce | Declining community; minimal updates. Rejected. |
+| Framework        | Assessment                                                                                    |
+|------------------|-----------------------------------------------------------------------------------------------|
+| **pytest-bdd** ✓ | Integrates with pytest (shared fixtures, CLI, plugins). Active since 2013.                    |
+| Behave           | Standalone; no shared fixtures with pytest. Very mature (2011). Rejected due to split runner. |
+| Robot Framework  | Full automation framework; steep learning curve; overkill for BDD only.                       |
+| Lettuce          | Declining community; minimal updates. Rejected.                                               |
 
 **Unit testing**
 - `unittest` (stdlib) — rejected: more boilerplate, no plugin ecosystem, less expressive assertions.
 
 **Assertion style**
-- Plain `assert` — rejected in favour of PyHamcrest for richer failure messages and composable matchers.
+- Plain `assert` — rejected in favor of PyHamcrest for richer failure messages and composable matchers.
 
 ## Related decisions
 

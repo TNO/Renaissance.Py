@@ -1,10 +1,12 @@
 import sys
 from typing import Any, Self, cast
 
+from renaissance.impl.types import KIND_MAP, UnknownKind
 from renaissance.utils.ast_utils import preceding_sibling, next_sibling, match_props, match_children
 
 IRRELEVANT_PROPS = {"source_code", "end_point", "start_point", "location", "type"}
 IRRELEVANT_NODE = {"comment"}
+
 
 class LSTNode:
     def __init__(
@@ -22,7 +24,12 @@ class LSTNode:
         self.parent = parent
         self.children = [] if children is None else children
         self.properties = properties
-        self.kind = node_type
+        self.ast_type = KIND_MAP.get(node_type, UnknownKind)
+        if self.ast_type != UnknownKind:
+            self.kind = self.ast_type.__name__
+        else:
+            print(f'"{node_type}": ,')
+            self.kind = node_type
 
         self.is_implicit = True
         self.show_props = False
@@ -39,7 +46,6 @@ class LSTNode:
         self.offset = offset
         self.end_offset = self.offset + self.length
         self.extended_end_offset = self.end_offset
-
 
     def __eq__(self, other):
         return (

@@ -12,7 +12,7 @@ from typing import Any, Optional, Sequence
 from typing_extensions import override
 import subprocess
 
-from renaissance.impl import MATCH_ALL, MATCH_ONE
+from renaissance.impl.types import MatchAll, MatchOne
 from renaissance.syntax_tree import ASTNode, CPPUtils, ASTReference
 from renaissance.utils.ast_utils import match_children, match_props
 
@@ -31,7 +31,7 @@ ID_TAGS = [
 
 STMT_PARENTS = ["CompoundStmt", "TranslationUnitDecl"]
 IRRELEVANT_PROPS = {"macro_expansion", "start_point", "end_point", "source_code", "location", "type"}
-IRRELEVANT_NODES = {"COMMENT","FullComment", "MACRO_DEFINITION", "Comment"}
+IRRELEVANT_NODES = {"COMMENT", "FullComment", "MACRO_DEFINITION", "Comment"}
 VERBOSE = False
 
 
@@ -48,7 +48,7 @@ class ClangJsonTranslationUnit:
         self.filename = file_name
         self.references_initialized = False
         # references are used as a cache to store the references of a node
-        # the are stored as id for lazy creation
+        # they are stored as id for lazy creation
         self._references: dict[str, list[ClangJsonASTReference]] = {}
         self._referenced_by: dict[str, list[ClangJsonASTReference]] = {}
         self._nodes: dict[str, ClangJsonASTNode] = {}
@@ -99,7 +99,7 @@ class ClangJsonASTNode(ASTNode):
         self._length = self._end_offset - self._offset
         self._kind = insert_kind if insert_kind is not None else self.__derive_kind()
         self._name = insert_name if insert_name is not None else self._derive_name()
-        # an fake child is introduced to handle the case where the type of a declaration is not found
+        # a fake child is introduced to handle the case where the type of declaration is not found
         # for example in the case of a base type.
         # without the fake child pattern matching on types will be difficult
         self.__inserted_children: list[ClangJsonASTNode] = []
@@ -109,14 +109,14 @@ class ClangJsonASTNode(ASTNode):
             if self.node.get("loc"):
                 loc = self.node["loc"]
                 offset = loc["offset"] if loc.get("offset") else self._get(["loc", "expansionLoc", "offset"], 0)
-                tokLen = loc["tokLen"] if loc.get("tokLen") else self._get(["loc", "expansionLoc", "tokLen"], 0)
-                if tokLen != 0:
+                tok_len = loc["tokLen"] if loc.get("tokLen") else self._get(["loc", "expansionLoc", "tokLen"], 0)
+                if tok_len != 0:
                     insert_child = ClangJsonASTNode(
                         self.node,
                         self.translation_unit,
                         self,
                         offset,
-                        tokLen,
+                        tok_len,
                         "DeclLoc",
                     )
                     insert_child._children = []
@@ -141,9 +141,9 @@ class ClangJsonASTNode(ASTNode):
             # deep clone the type node and remove the parentheses
         elif self._kind in ["DeclRefExpr"]:
             if self.name.startswith("$$"):
-                self._kind = MATCH_ALL
+                self._kind = MatchAll.__name__
             elif self.name.startswith("$"):
-                self._kind = MATCH_ONE
+                self._kind = MatchOne.__name__
 
         self._children = self.__inserted_children + [
             ClangJsonASTNode(
@@ -152,15 +152,15 @@ class ClangJsonASTNode(ASTNode):
                 parent=self,
             )
             for n in self.node.get("inner", [])
-            if not n.get("isImplicit", False)]
+            if not n.get("isImplicit", False)
+        ]
         self._children = [n for n in self._children if n.kind not in IRRELEVANT_NODES]
-
 
     def __eq__(self, other):
         return (
             isinstance(other, type(self))
             and self.kind == other.kind
-            and match_props(self.properties,other.properties, IRRELEVANT_PROPS)
+            and match_props(self.properties, other.properties, IRRELEVANT_PROPS)
             and match_children(self.children, other.children, IRRELEVANT_NODES)
         )
 
@@ -272,15 +272,15 @@ class ClangJsonASTNode(ASTNode):
     @property
     def extended_end_offset(self) -> int:
         try:
-            endOffset = self._end_offset
             # TODO: Do I correctly assume this is for Expression Statements like
+            end_offset = self._end_offset
             # "f(x,y);" and "a = f(3);" that are according to clang NOT statements,
             # but expressions (without the semicolon)
             if (not self._is_statement_or_declaration()) and (self.parent and self.parent.kind in STMT_PARENTS):
                 content = self.root.binary_file_content()
-                while endOffset < len(content) and not content[endOffset - 1] in b";":  # Why use 'in' when list has one element, i.e. ';'?
-                    endOffset += 1
-            return endOffset
+                while end_offset < len(content) and not content[end_offset - 1] in b";":  # Why use 'in' when list has one element, i.e. ';'?
+                    end_offset += 1
+            return end_offset
         except:
             return 0
 
@@ -396,13 +396,13 @@ class ClangJsonASTNode(ASTNode):
         if self.__derive_kind() == "TranslationUnitDecl":
             return len(self.binary_file_content(self.filename))
         offset = self._get(["range", "end", "offset"], default=-1)
-        tokLen = self._get(["range", "end", "tokLen"], default=-1)
+        tok_len = self._get(["range", "end", "tokLen"], default=-1)
         if offset == -1:
             # we might be dealing with a macro in that case use the expansion location
             offset = self._get(["range", "end", "expansionLoc", "offset"], default=0)
-            tokLen = self._get(["range", "end", "expansionLoc", "tokLen"], default=0)
+            tok_len = self._get(["range", "end", "expansionLoc", "tokLen"], default=0)
 
-        return offset + tokLen
+        return offset + tok_len
 
     def __derive_kind(self) -> str:
         return self.node.get("kind", EMPTY_STR)
@@ -495,10 +495,10 @@ class ReferenceHelper:
         if ast_node._kind == "CallExpr":
             for n in ast_node.children:
                 if n.kind == "DeclRefExpr":
-                    refChild = {
+                    ref_child = {
                         k: v for k, v in n.node.items() if not ReferenceHelper._is_child_node(k) and ClangJsonASTNode._is_reference(v)
                     }
-                    refs.update(refChild)
+                    refs.update(ref_child)
 
         for kind, ref in refs.items():
             for ref_id in ReferenceHelper._get_reference_ids(ref):
@@ -516,7 +516,7 @@ class ReferenceHelper:
     @staticmethod
     def add_record_references(ast_node: ClangJsonASTNode) -> None:
         """
-        Json does not contain direct references between classes and their base classes.
+        JSON does not contain direct references between classes and their base classes.
 
         Hence these references are created in this method.
 
@@ -567,9 +567,9 @@ class ReferenceHelper:
                 namespaces = []
             qual_type = tp["qualType"]
             ids = []
-            ctorType = EMPTY_STR
+            ctor_type = EMPTY_STR
             if ast_node.kind == "CXXConstructExpr":
-                ctorType = ast_node._get(["ctorType", "qualType"], EMPTY_STR)
+                ctor_type = ast_node._get(["ctorType", "qualType"], EMPTY_STR)
 
             for id, node in ast_node.translation_unit._nodes.items():
                 if node.kind == "CXXRecordDecl" and node.name == qual_type:
@@ -581,9 +581,9 @@ class ReferenceHelper:
                         parent = parent.parent
                     if matches:
                         ids.append((node.kind, id))
-                if ctorType != EMPTY_STR and node.kind == "CXXConstructorDecl":
+                if ctor_type != EMPTY_STR and node.kind == "CXXConstructorDecl":
                     # link all matching
-                    matches = node._get(["type", "qualType"], EMPTY_STR) == ctorType
+                    matches = node._get(["type", "qualType"], EMPTY_STR) == ctor_type
                     if matches:
                         ids.append((node.kind, id))
             return ids

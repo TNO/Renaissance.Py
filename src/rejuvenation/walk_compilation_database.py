@@ -25,4 +25,4 @@ def main(args):
 
 if __name__ == "__main__":
     # fill in your own path
-    main([targets.__file__.replace("__init__.py","compile_commands.json")])
+    main([targets.__file__.replace("__init__.py", "compile_commands.json")])

@@ -33,7 +33,7 @@ pip install tree-sitter
 ```
 with a dash and not an underscore
 
-3. Run the setup script to clone grammars and build the shared library:
+1. Run the setup script to clone grammars and build the shared library:
 
 ```bash
 python setup_grammars.py

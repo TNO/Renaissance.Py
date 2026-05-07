@@ -17,7 +17,6 @@ Authors:
 - [Context](#context)
 - [Decision](#decision)
 - [Implementation notes](#implementation-notes)
-- [Example](#example)
 - [Rationale](#rationale)
 - [Consequences](#consequences)
 - [Alternatives considered](#alternatives-considered)
@@ -26,7 +25,7 @@ Authors:
 
 ## Context
 
-The goal of this ADR is to allow the developer of a new language for renaissace 
+The goal of this ADR is to allow the developer of a new language for Renaissance 
 to create refactorings that is expressive and concise
 
 Direct access refers to exposing node fields and attributes using a Pythonic style (e.g., `function_definition.body`, `function_definition.name`)

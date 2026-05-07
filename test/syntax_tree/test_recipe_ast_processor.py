@@ -44,48 +44,36 @@ class TestRecipeASTProcessor:
         processor.run()
 
         assert_that(recipe.ran, is_(["done"]))
+
     def test_annotate_decorator(self):
         foreign = lambda f: f
         decorator = annotate_decorator(foreign, "test_decorator")
         # the returned decorator keeps the foreign decorator's __name__
         assert_that(decorator.__name__, is_(foreign.__name__))
-    
+
         # when applied to a function, the decorator attaches the recipe_action name
         @decorator
         def sample():
             return 1
-    
+
         assert_that(sample.recipe_action, is_("test_decorator"))
-    
-    
-    
+
     def test_get_methods_with_decorator(self):
         class Sample:
             @recipe_step()
             def step1(self):
                 pass
-    
+
         methods = list(get_methods_with_decorator(Sample, recipe_step))
         assert_that(methods, has_length(1))
         assert_that(methods[0].__name__, is_("step1"))
-    
-    
-    
+
     def test_final_action(self):
         class Sample:
             @final_action()
             def final(self):
                 pass
-    
+
         methods = list(get_methods_with_decorator(Sample, final_action))
         assert_that(methods, has_length(1))
         assert_that(methods[0].__name__, is_("final"))
-    
-    
-    
-
-
-
-
-
-

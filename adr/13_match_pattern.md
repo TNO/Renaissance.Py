@@ -55,7 +55,7 @@ way. Two design questions drive this ADR:
   - String delimiters: `"ape"` ≡ `'ape'`
   - String concatenation: `"con" "cat"` ≡ `"concat"`
   - Symmetric operators: `0 == x` matches `x == 0`
-  - Equivalent initialisers (C++): `int x = 1;` matches `int x { 1 };`
+  - Equivalent initializers (C++): `int x = 1;` matches `int x { 1 };`
 
 ## Implementation notes
 
@@ -67,19 +67,19 @@ way. Two design questions drive this ADR:
   see ADR 12 (Patterns are not nodes) for the `Pattern` + `SyntacticKind` design.
 - Sequence placeholders (`$$`) must be matched greedily against sibling lists, subject to the constraints
   of surrounding fixed nodes in the pattern.
-- Equivalent-code normalisation is applied before structural comparison; maintain a normalisation table per
+- Equivalent-code normalization is applied before structural comparison; maintain a normalization table per
   language frontend.
 
 ## Example
 
-| Pattern | Matches |
-|---------|---------|
-| `int $$x;` | `int a=4, b=5, c;` |
-| `$type v;` | `const myclass v;` |
-| `x = $value;` | `x = 1 + 2;` |
-| `$x;` | `a = f(1, 2+3);` |
+| Pattern                    | Matches                        |
+|----------------------------|--------------------------------|
+| `int $$x;`                 | `int a=4, b=5, c;`             |
+| `$type v;`                 | `const myclass v;`             |
+| `x = $value;`              | `x = 1 + 2;`                   |
+| `$x;`                      | `a = f(1, 2+3);`               |
 | `$type* ptr = new $type()` | `MyClass* ptr = new MyClass()` |
-| `$f; var = $f;` | `foo(); var = foo();` |
+| `$f; var = $f;`            | `foo(); var = foo();`          |
 
 ```python
 # Placeholder resolution
@@ -99,7 +99,7 @@ def placeholders_equal(a: AstNode, b: AstNode) -> bool:
 
 ## Rationale
 
-Matching at the highest AST node whose syntax reduces to a single name maximises the expressiveness of a
+Matching at the highest AST node whose syntax reduces to a single name maximizes the expressiveness of a
 pattern: `$x;` can capture an entire statement, not just a leaf identifier. This was validated by an earlier
 CDT-based prototype. Structural (unparse-based) equality for repeated placeholders avoids fragile class
 comparisons and handles the known C++ cases where the same placeholder binds to nodes of different classes.
@@ -107,14 +107,14 @@ comparisons and handles the known C++ cases where the same placeholder binds to 
 ## Consequences
 
 Positive:
-- Patterns are expressive: a single placeholder can match complex sub-trees.
+- Patterns are expressive: a single placeholder can match complex subtrees.
 - Repeated-placeholder equality is robust across AST class differences.
 - Equivalent-code matching reduces the number of patterns needed to cover syntactic variants.
 
 Negative:
 - `getPlaceholderName` must be implemented and maintained for each language frontend.
 - Structural equality via unparsing may be slower than direct node comparison; caching may be required.
-- Equivalent-code normalisation tables must be kept in sync with language specifications.
+- Equivalent-code normalization tables must be kept in sync with language specifications.
 
 ## Alternatives considered
 

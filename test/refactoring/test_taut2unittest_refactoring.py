@@ -12,6 +12,7 @@ import test_data.test_insert as tst_insert
 from renaissance.impl.python.rst_node import PythonRstNode
 import test_data.test_testdoubles as tst_testdoubles
 
+
 class TestTaut2Unittest:
 
     def test_init(self):
@@ -77,11 +78,13 @@ class TestTaut2Unittest:
         result = subject.apply_to_string()
         assert_that(result, is_(expected_code))
 
-    @pytest.mark.parametrize("input_code, expected_code, indent",
-    [
-        (tst_testdoubles.test_indent, tst_testdoubles.test_indent_new, ""),
-        (tst_testdoubles.test_indent_fun, tst_testdoubles.test_indent_fun_new, "    ")
-    ])
+    @pytest.mark.parametrize(
+        "input_code, expected_code, indent",
+        [
+            (tst_testdoubles.test_indent, tst_testdoubles.test_indent_new, ""),
+            (tst_testdoubles.test_indent_fun, tst_testdoubles.test_indent_fun_new, "    "),
+        ],
+    )
     def test_indentation(self, input_code, expected_code, indent, mocker):
         subject = self._create(mocker, input_code)
         subject.move_indent(indent)
@@ -156,7 +159,7 @@ class TestTaut2Unittest:
     def test_log_abcdxtl(self, input_code, expected_code, mocker):
         subject = self._create(mocker, input_code)
         subject.in_memory = True
-        subject.replace_log_compxtl('abcd')
+        subject.replace_log_compxtl("abcd")
         result = subject.apply_to_string()
         assert_that(result, is_(expected_code))
 
@@ -205,7 +208,7 @@ class TestTaut2Unittest:
         "input_code, expected_code",
         [
             ("@mock.patch('arg')\ndef test():\n    pass\n", "@patch('arg')\ndef test():\n    pass\n"),
-            ("a = mock.patch(arg)", "a = mock.patch(arg)")
+            ("a = mock.patch(arg)", "a = mock.patch(arg)"),
         ],
     )
     def test_remove_mock(self, input_code, expected_code, mocker):
@@ -225,7 +228,7 @@ class TestTaut2Unittest:
         "input_code, expected_code",
         [
             ("self.tds.append(TestDoubles(mode, emr=self.emr))", "self.add_patcher(mode, 'emr', self.emr)"),
-            ("self.tds.append(TestDoubles(a=ImprovedStub(b)))", "self.a = ImprovedStub(b)")
+            ("self.tds.append(TestDoubles(a=ImprovedStub(b)))", "self.a = ImprovedStub(b)"),
         ],
     )
     def test_convert_tds(self, input_code, expected_code, mocker):
@@ -238,13 +241,16 @@ class TestTaut2Unittest:
         "input_code, expected_code",
         [
             ("assert_double_equal(l.x, 0.0)", "self.assert_double_equal(l.x, 0.0)"),
-            ("def a():\n    assert_double_equal(l.x, 0.0)", "def a():\n    self.assert_double_equal(l.x, 0.0)")
+            ("def a():\n    assert_double_equal(l.x, 0.0)", "def a():\n    self.assert_double_equal(l.x, 0.0)"),
         ],
     )
     def test_assert_doubles(self, input_code, expected_code, mocker):
         subject = self._create(mocker, input_code)
-        [subject.replace("self." + node.name, node, False, False)
-         for node in subject.find_kind("Name") if node.name == "assert_double_equal"]
+        [
+            subject.replace("self." + node.name, node, False, False)
+            for node in subject.find_kind("Name")
+            if node.name == "assert_double_equal"
+        ]
         result = subject.apply_to_string()
         assert_that(result, is_(expected_code))
 
@@ -275,7 +281,7 @@ class TestTaut2Unittest:
         [
             ("assert_raises", "self.assert_raises"),
             ("assert_double_equal", "self.assert_double_equal"),
-        ]
+        ],
     )
     def test_assert_func(self, mocker, input_code, expected_code):
         subject = self._create(mocker, input_code)
@@ -323,7 +329,9 @@ class TestTaut2Unittest:
 
     def test_insert_patch_import(self, mocker):
         subject = self._create(mocker, "import unittest\nself.patches = []")
-        expected_code = "import unittest\ntry:\n    from unittest.mock import patch\nexcept ImportError:\n    from mock import patch\nself.patches = []"
+        expected_code = (
+            "import unittest\ntry:\n    from unittest.mock import patch\nexcept ImportError:\n    from mock import patch\nself.patches = []"
+        )
         subject.insert_patch_import()
         result = subject.apply_to_string()
         assert_that(result, is_(expected_code))

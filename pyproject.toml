@@ -31,11 +31,14 @@ dependencies = [
     "tree-sitter-java==0.23.5",
     "ast-comments>=1.0",
     "libcst>=1.8.6",
+    "antlr4-python3-runtime>=4.13.2",
+    "hypothesmith>=0.3.3",
 ]
 
 [dependency-groups]
 test = [
-    "hypothesis>=6.0",
+    "hypothesis>=6.152.4",
+    "hypothesmith>=0.3.3",
     "parameterized>=0.9",
     "pytest>=8.0",
     "pytest-bdd==8.1.0",

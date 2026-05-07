@@ -12,7 +12,7 @@ def fix_indent(code_string):
     try:
         if not os.path.isfile(file_path):
             print(f"Error: {file_path} does not exist.")
-            return
+            return ""
 
         # Step 1: Run flake8 to show issues
         print("Running flake8...")

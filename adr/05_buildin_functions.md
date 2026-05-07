@@ -16,7 +16,6 @@ Authors:
 - [Context](#context)
 - [Decision](#decision)
 - [Implementation notes](#implementation-notes)
-- [Example](#example)
 - [Rationale](#rationale)
 - [Consequences](#consequences)
 - [Alternatives considered](#alternatives-considered)
@@ -25,7 +24,7 @@ Authors:
 
 ## Context
 
-The goal of this ADR is to create a implementation of renaissance that feels native to the python world and reduce 
+The goal of this ADR is to create an implementation of renaissance that feels native to the python world and reduce 
 the verbosity without misusing the original meanings.
 
 Nodes should integrate naturally with Python idioms and be easy to inspect, compare, iterate, and hash when

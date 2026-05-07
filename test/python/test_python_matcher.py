@@ -15,6 +15,7 @@ from renaissance.syntax_tree.match_finder import (
     variant_in_match_stmt,
 )
 
+
 class TestPythonMatcher:
 
     @pytest.fixture(autouse=True)
@@ -23,9 +24,9 @@ class TestPythonMatcher:
         self.pattern_factory = PythonPatternFactory(self.factory)
 
     def test_if_statements(self):
-        code_if_then_statement =         "if c1:\n    pass"
-        code_if_then_else_statement =    "if c1:\n    pass\nelse:   \n    pass"
-        code_if_then_elif_statement =    "if c1:\n    pass\nelif c2:\n    pass"
+        code_if_then_statement = "if c1:\n    pass"
+        code_if_then_else_statement = "if c1:\n    pass\nelse:   \n    pass"
+        code_if_then_elif_statement = "if c1:\n    pass\nelif c2:\n    pass"
         code_if_then_else_if_statement = "if c1:\n    pass\nelse:\n    if c2:\n        pass"
 
         if_then_statement = self.pattern_factory.create_statement(code_if_then_statement)
@@ -54,15 +55,14 @@ class TestPythonMatcher:
         assert_that(is_match(if_then_else_if_statement, if_then_elif_statement), is_(True))
         assert_that(is_match(if_then_else_if_statement, if_then_else_if_statement), is_(True))
 
-
     def test_is_match_if_statements(self):
-        code_if_then_statement =         "if c1:\n    pass"
+        code_if_then_statement = "if c1:\n    pass"
         code_if_then_else_if_statement = "if c1:\n    pass\nelse:\n    if c2:\n        pass"
 
         if_then_statement = self.pattern_factory.create_statement(code_if_then_statement)
         if_then_else_if_statement = self.pattern_factory.create_statement(code_if_then_else_if_statement)
 
-        assert_that(variant_in_match_stmt(if_then_else_if_statement.children[2], if_then_statement.children[2],{}), is_([]))
+        assert_that(variant_in_match_stmt(if_then_else_if_statement.children[2], if_then_statement.children[2], {}), is_([]))
 
     @pytest.mark.parametrize(
         "stmt_txt, pattern_txt, expected",
@@ -71,7 +71,6 @@ class TestPythonMatcher:
             ("return", "return", True),
             ("return", "return $expression_list", False),
             ("return", "return $$expressions", True),
-
             # return single value
             ("return 1", "return", False),
             ("return 1", "return $expression_list", True),
@@ -106,7 +105,7 @@ class TestPythonMatcher:
     def test_generic_is_match_any_assignment(self):
         atu = self.factory.create_from_text("na=55", "test.py")
         simple = self.pattern_factory.create_statement("$pa")
-        assert_that(simple.kind, is_("_MatchOne__"))
+        assert_that(simple.kind, is_("MatchOne"))
         assert_that(is_match(atu.children[0], simple, {}), is_(True))
 
     def test_match_multiple_single_stmt(self):
@@ -340,7 +339,6 @@ class TestPythonMatcher:
         assert_that(variants[0].end_index, is_(6))
         assert_that(variants[1].end_index, is_(6))
 
-
         assert_that(variants[0].exp["$$before"], has_length(6))
         assert_that(variants[0].exp["$$after"], has_length(0))
         assert_that(variants[1].exp["$$before"], has_length(3))
@@ -413,7 +411,7 @@ class TestPythonMatcher:
         pattern = self.pattern_factory.create_statements("$$before\n$mid\n$$after\n$$before\n$dido\n$$after")
         variants = find_variants(atu.children, pattern)
         assert_that(variants, has_length(3))
-        assert_that(variants[2].end_index, is_(2)) # [] 0 [] [] 1 []
+        assert_that(variants[2].end_index, is_(2))  # [] 0 [] [] 1 []
         # assert_that(trimmed_variants[1], has_length(3)) # [] 0 [1] [] 2 missing 1
         # assert_that(trimmed_variants[2], has_length(5))
 

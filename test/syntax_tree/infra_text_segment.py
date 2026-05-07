@@ -64,9 +64,7 @@ def location_to_offset(text: str, line: int, column: int) -> int:
 
 
 def assert_valid_text_segment(text_segment: TextSegment) -> None:
-    assert isinstance(
-        text_segment, TextSegment
-    ), f"Unexpected instance for text_segment '{type(text_segment)}'. Expected 'TextSegment'."
+    assert isinstance(text_segment, TextSegment), f"Unexpected instance for text_segment '{type(text_segment)}'. Expected 'TextSegment'."
     assert isinstance(
         text_segment.full_text, str
     ), f"Unexpected instance for property full_text '{type(text_segment.full_text)}'. Expected 'str'."
@@ -94,10 +92,7 @@ def assert_valid_text_segment(text_segment: TextSegment) -> None:
     assert (
         text_segment.start_line <= text_segment.end_line
     ), f"Property end_line before start_line: {text_segment.end_line} < {text_segment.start_line}"
-    assert (
-        not (text_segment.start_line == text_segment.end_line)
-        or text_segment.start_column <= text_segment.end_column
-    ), (
+    assert not (text_segment.start_line == text_segment.end_line) or text_segment.start_column <= text_segment.end_column, (
         "Property end_column before start_column, while start and end line are the same: "
         + f"{text_segment.end_column} < {text_segment.start_column}"
     )
@@ -106,12 +101,8 @@ def assert_valid_text_segment(text_segment: TextSegment) -> None:
 
     ## line range
     lines = len(line_starts)
-    assert (
-        0 <= text_segment.start_line < lines
-    ), f"Property start_line out of range: {text_segment.start_line} not in [0, {lines})"
-    assert (
-        0 <= text_segment.end_line < lines
-    ), f"Property end_line out of range: {text_segment.end_line} not in [0, {lines})"
+    assert 0 <= text_segment.start_line < lines, f"Property start_line out of range: {text_segment.start_line} not in [0, {lines})"
+    assert 0 <= text_segment.end_line < lines, f"Property end_line out of range: {text_segment.end_line} not in [0, {lines})"
 
     ## column range
     _check_column_range(
@@ -131,18 +122,15 @@ def assert_valid_text_segment(text_segment: TextSegment) -> None:
 
     # consistency offset and line column pair
     assert (
-        text_segment.start_offset
-        == line_starts[text_segment.start_line] + text_segment.start_column
+        text_segment.start_offset == line_starts[text_segment.start_line] + text_segment.start_column
     ), "Start offset and (line, column) are inconsistent"
     assert (
-        text_segment.end_offset
-        == line_starts[text_segment.end_line] + text_segment.end_column
+        text_segment.end_offset == line_starts[text_segment.end_line] + text_segment.end_column
     ), "End offset and (line, column) are inconsistent"
 
     # consistency full_text and text_segment
     assert (
-        text_segment.text_segment
-        == text_segment.full_text[text_segment.start_offset : text_segment.end_offset]
+        text_segment.text_segment == text_segment.full_text[text_segment.start_offset : text_segment.end_offset]
     ), "text_segment and full_text[start_offset:end_offset] are inconsistent"
 
 
@@ -155,15 +143,12 @@ def _check_column_range(
 ):
     start_line = line_starts[line]
     end_line = (
-        length_full_text
-        + 1  ## column must be able to point beyond last character of full text to include that character as well.
+        length_full_text + 1  ## column must be able to point beyond last character of full text to include that character as well.
         if line + 1 == len(line_starts)
         else line_starts[line + 1]
     )
     length_line = end_line - start_line
-    assert (
-        0 <= column < length_line
-    ), f"Property {description} out of range: {column} not in [0, {length_line})"
+    assert 0 <= column < length_line, f"Property {description} out of range: {column} not in [0, {length_line})"
 
 
 def split_lines_with_newlines(text: str) -> list[str]:

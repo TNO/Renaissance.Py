@@ -139,7 +139,7 @@ class AnalysisRecipe:
         # for refactoring operations this is not needed as a refactoring operation is single threaded
         if calls:
             return lambda: self._calls.extend(calls)
-
+        return None
     @after_step("store_function_call")
     def just_show_the_method(self):
         print("called after store_function_call")

@@ -15,17 +15,18 @@ from renaissance.syntax_tree.match_finder import MIS_MATCH
 class TestClangConcretePatternMatcher:
     @pytest.mark.parametrize(
         "code, pattern",
-        [("int body=0;int main() { return body; }", "int body=0;int main() { return body; }"),
-         ("int init, cond, inc=0;int body=0;for (;;) {}", "int $i, $c, $inc=0;int $b=0;for ($i; $c; $inc) $b"),
-         ("a = b;", "$lhs = $rhs;"),
-         ("int x,y;x + y;", "int $a,$b;$a + $b;"),
-         ("int x;-x;", "int $x;-$x;"),
-         ("foo();", "$f();"),
-         ("class A {};", "class $C {};"),
-         ("struct B { int x; };", "struct $S { $body };"),
-         ("namespace ns {}", "namespace $ns {}"),
-         ("int C=0; template <typename T> class C {};", "int $C=0; template <typename T> class $C {};"),
-         ("int body=0; auto f = []() { return 1; };", "int $body=0; auto $f = []() { $body; };"),
+        [
+            ("int body=0;int main() { return body; }", "int body=0;int main() { return body; }"),
+            ("int init, cond, inc=0;int body=0;for (;;) {}", "int $i, $c, $inc=0;int $b=0;for ($i; $c; $inc) $b"),
+            ("a = b;", "$lhs = $rhs;"),
+            ("int x,y;x + y;", "int $a,$b;$a + $b;"),
+            ("int x;-x;", "int $x;-$x;"),
+            ("foo();", "$f();"),
+            ("class A {};", "class $C {};"),
+            ("struct B { int x; };", "struct $S { $body };"),
+            ("namespace ns {}", "namespace $ns {}"),
+            ("int C=0; template <typename T> class C {};", "int $C=0; template <typename T> class $C {};"),
+            ("int body=0; auto f = []() { return 1; };", "int $body=0; auto $f = []() { $body; };"),
         ],
     )
     def test_clang_patterns(self, code, pattern):
@@ -59,14 +60,13 @@ class TestClangConcretePatternMatcher:
         assert_that(matches, has_length(1))
         assert_that(matches[0].end_index, is_not(MIS_MATCH))
 
-    @pytest.mark.skip('it should be tha same really')
+    @pytest.mark.skip("it should be tha same really")
     def test_type_property_between_code_and_pattern_are_same(self):
         adapter = ClangAdapter()
         interface = TreeStiterPatternFactory(adapter)
         pattern = interface.create_statement("enum E2 { A };")
         code = adapter.load_from_text("enum E2 { A };", "snippets.c").root.children[0]
-        assert_that(code.properties['type'], is_(pattern.properties['type']))
-
+        assert_that(code.properties["type"], is_(pattern.properties["type"]))
 
     @pytest.mark.parametrize(
         "code, pattern",

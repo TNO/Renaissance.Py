@@ -24,7 +24,7 @@ Authors:
  
  ## Context
 
-the goal of this ADR is to establish a robust and maintainable type hierarchy for AST nodes use in the algorithems
+the goal of this ADR is to establish a robust and maintainable type hierarchy for AST nodes use in the algorithms
 within the Renaissance project and across the languages.
 
 AST node types are currently identified by string-based type names (e.g., re.compile(kind, 

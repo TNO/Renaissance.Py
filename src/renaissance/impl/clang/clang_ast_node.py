@@ -7,7 +7,7 @@ from typing import Any, Optional, Sequence, override
 import clang.native
 from clang.cindex import TranslationUnit, Config, Index, TypeKind, CursorKind
 
-from renaissance.impl import MATCH_ALL, MATCH_ONE
+from renaissance.impl.types import MatchAll, MatchOne
 from renaissance.syntax_tree import ASTNode, ASTReference
 from renaissance.utils.ast_utils import match_children, match_props
 
@@ -16,8 +16,8 @@ EMPTY_STR = ""
 EMPTY_LIST = []
 
 STMT_PARENTS = ["COMPOUND_STMT", "TRANSLATION_UNIT"]
-IRRELEVANT_PROPS = {'comment'}
-IRRELEVANT_NODES = {'comment'}
+IRRELEVANT_PROPS = {"comment"}
+IRRELEVANT_NODES = {"comment"}
 PRINT_ALL_NODES = False
 
 
@@ -151,14 +151,12 @@ class ClangASTNode(ASTNode):
         return (
             isinstance(other, type(self))
             and self.kind == other.kind
-            and match_props(self.properties,other.properties, IRRELEVANT_PROPS)
+            and match_props(self.properties, other.properties, IRRELEVANT_PROPS)
             and match_children(self.children, other.children, IRRELEVANT_NODES)
         )
 
-
     def __hash__(self):
         return hash((self.kind, frozenset(self.properties.items())))
-
 
     @override
     @staticmethod
@@ -409,9 +407,9 @@ class ClangASTNode(ASTNode):
                 return str(self.node.kind.name)
             elif self.node.kind.name in ["UNEXPOSED_EXPR", "VAR_DECL", "DECL_REF_EXPR"]:
                 if self.node.displayname.startswith("$$") and " " not in self.node.displayname:
-                    return MATCH_ALL
+                    return MatchAll.__name__
                 elif self.node.displayname.startswith("$") and " " not in self.node.displayname:
-                    return MATCH_ONE
+                    return MatchOne.__name__
             return str(self.node.kind.name)
         except Exception:
             return EMPTY_STR

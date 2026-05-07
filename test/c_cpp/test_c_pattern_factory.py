@@ -60,7 +60,7 @@ class TestExpression(TestCPatternFactory):
             [
                 (
                     "a == $hallo",
-                    "(BINARY_OPERATOR, , test.c[123:134]): |a == $hallo|\n  (UNEXPOSED_EXPR, a, test.c[123:124]): |a|\n    (DECL_REF_EXPR, a, test.c[123:124]): |a|\n  (_MatchOne__, $hallo, test.c[128:134]): |$hallo|\n    (_MatchOne__, $hallo, test.c[128:134]): |$hallo|\n",
+                    "(BINARY_OPERATOR, , test.c[123:134]): |a == $hallo|\n  (UNEXPOSED_EXPR, a, test.c[123:124]): |a|\n    (DECL_REF_EXPR, a, test.c[123:124]): |a|\n  (MatchOne, $hallo, test.c[128:134]): |$hallo|\n    (MatchOne, $hallo, test.c[128:134]): |$hallo|\n",
                 ),
                 (
                     "2 != 3",
@@ -72,23 +72,23 @@ class TestExpression(TestCPatternFactory):
                 ),
                 (
                     "b != $world",
-                    "(BINARY_OPERATOR, , test.c[123:134]): |b != $world|\n  (UNEXPOSED_EXPR, b, test.c[123:124]): |b|\n    (DECL_REF_EXPR, b, test.c[123:124]): |b|\n  (_MatchOne__, $world, test.c[128:134]): |$world|\n    (_MatchOne__, $world, test.c[128:134]): |$world|\n",
+                    "(BINARY_OPERATOR, , test.c[123:134]): |b != $world|\n  (UNEXPOSED_EXPR, b, test.c[123:124]): |b|\n    (DECL_REF_EXPR, b, test.c[123:124]): |b|\n  (MatchOne, $world, test.c[128:134]): |$world|\n    (MatchOne, $world, test.c[128:134]): |$world|\n",
                 ),
                 (
                     "c > $foo",
-                    "(BINARY_OPERATOR, , test.c[121:129]): |c > $foo|\n  (UNEXPOSED_EXPR, c, test.c[121:122]): |c|\n    (DECL_REF_EXPR, c, test.c[121:122]): |c|\n  (_MatchOne__, $foo, test.c[125:129]): |$foo|\n    (_MatchOne__, $foo, test.c[125:129]): |$foo|\n",
+                    "(BINARY_OPERATOR, , test.c[121:129]): |c > $foo|\n  (UNEXPOSED_EXPR, c, test.c[121:122]): |c|\n    (DECL_REF_EXPR, c, test.c[121:122]): |c|\n  (MatchOne, $foo, test.c[125:129]): |$foo|\n    (MatchOne, $foo, test.c[125:129]): |$foo|\n",
                 ),
                 (
                     "d < $bar",
-                    "(BINARY_OPERATOR, , test.c[121:129]): |d < $bar|\n  (UNEXPOSED_EXPR, d, test.c[121:122]): |d|\n    (DECL_REF_EXPR, d, test.c[121:122]): |d|\n  (_MatchOne__, $bar, test.c[125:129]): |$bar|\n    (_MatchOne__, $bar, test.c[125:129]): |$bar|\n",
+                    "(BINARY_OPERATOR, , test.c[121:129]): |d < $bar|\n  (UNEXPOSED_EXPR, d, test.c[121:122]): |d|\n    (DECL_REF_EXPR, d, test.c[121:122]): |d|\n  (MatchOne, $bar, test.c[125:129]): |$bar|\n    (MatchOne, $bar, test.c[125:129]): |$bar|\n",
                 ),
                 (
                     "e >= $baz",
-                    "(BINARY_OPERATOR, , test.c[121:130]): |e >= $baz|\n  (UNEXPOSED_EXPR, e, test.c[121:122]): |e|\n    (DECL_REF_EXPR, e, test.c[121:122]): |e|\n  (_MatchOne__, $baz, test.c[126:130]): |$baz|\n    (_MatchOne__, $baz, test.c[126:130]): |$baz|\n",
+                    "(BINARY_OPERATOR, , test.c[121:130]): |e >= $baz|\n  (UNEXPOSED_EXPR, e, test.c[121:122]): |e|\n    (DECL_REF_EXPR, e, test.c[121:122]): |e|\n  (MatchOne, $baz, test.c[126:130]): |$baz|\n    (MatchOne, $baz, test.c[126:130]): |$baz|\n",
                 ),
                 (
                     "f <= $qux",
-                    "(BINARY_OPERATOR, , test.c[121:130]): |f <= $qux|\n  (UNEXPOSED_EXPR, f, test.c[121:122]): |f|\n    (DECL_REF_EXPR, f, test.c[121:122]): |f|\n  (_MatchOne__, $qux, test.c[126:130]): |$qux|\n    (_MatchOne__, $qux, test.c[126:130]): |$qux|\n",
+                    "(BINARY_OPERATOR, , test.c[121:130]): |f <= $qux|\n  (UNEXPOSED_EXPR, f, test.c[121:122]): |f|\n    (DECL_REF_EXPR, f, test.c[121:122]): |f|\n  (MatchOne, $qux, test.c[126:130]): |$qux|\n    (MatchOne, $qux, test.c[126:130]): |$qux|\n",
                 ),
                 (
                     "g--",

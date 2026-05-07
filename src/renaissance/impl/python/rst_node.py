@@ -6,39 +6,19 @@ from typing import Any, Sequence, Self, Callable
 # from ast_comments import *
 from ast import *
 import ast
+
+from renaissance.impl.types import UnknownKind, OPERATOR_MAP
+from renaissance.impl.types import KIND_MAP
 from renaissance.impl.python.util import convert
 from renaissance.syntax_tree.match_finder import find_in_list
-from renaissance.utils.ast_utils import preceding_sibling, next_sibling, match_props, match_children
-
-OPERATOR_MAP = {
-    "AnnAssign": "=",
-    "Assert": "assert",
-    "Assign": "=",
-    "AsyncFor": "for",
-    "AsyncFunctionDef": "function",
-    "AsyncWith": "with",
-    "AugAssignAdd": "+=",
-    "Break": "break",
-    "Call": "def",
-    "ClassDef": "class",
-    "Continue": "continue",
-    "For": "for",
-    "FunctionDef": "function",
-    "If": "if",
-    "Import": "import",
-    "ImportFrom": "import",
-    "Match": "match",
-    "Pass": "pass",
-    "Try": "try",
-    "TryStar": "try",
-    "While": "while",
-    "With": "with",
-}
+from renaissance.utils.ast_utils import preceding_sibling, next_sibling, match_props, match_children, format_node
+from renaissance.utils.ast_utils import traverse
 
 types = ["int", "float", "str", "list", "set", "tuple", "Mapping", "dict", "Optional"]
 IRRELEVANT_PROPS = {"comment"}
 IRRELEVANT_NODES = {"comment"}
 IMPLICIT = ["ImplicitNode"]
+
 
 class ImplicitNode(ast.Name):
     _fields = (
@@ -85,8 +65,6 @@ class PythonRstTranslationUnit:
         self._referenced_by: dict[str, list[PythonRSTReference]] = {}
         self._nodes: dict[str, "PythonRstNode"] = {}
 
-
-
     def check_diagnostics(self, continue_with_warning=True) -> None:
         msg = None
         errors = ""
@@ -100,9 +78,9 @@ class PythonRstTranslationUnit:
     def lazy_create_refers(self, node: "PythonRstNode") -> None:
         if self.references_initialized:
             return
-        node.root.process(lambda n: self.create_references(n))
+        for n in traverse(node.root):
+            self.create_references(n)
         self.references_initialized = True
-
 
     def add(self, node):
         match node.kind:
@@ -125,15 +103,15 @@ class PythonRstTranslationUnit:
 
     def create_references(self, ast_node) -> None:
         assert isinstance(ast_node, PythonRstNode), f"Expected PythonASTNode but got {type(ast_node)}"
-        match ast_node.kind:
-            case "arg":
+        match type(ast_node.node):
+            case ast.arg:
                 if ast_node.name != "self":
                     if isinstance(ast_node.node, ast.arg) and isinstance(ast_node.node.annotation, ast.Name):
                         node_id = ast_node.name
                         ref_id = ast_node.node.annotation.id
                         ref_kind = "TypeRef"
                         self.add_reference(node_id, ref_id, ref_kind)
-            case "Assign":
+            case ast.Assign:
                 if isinstance(ast_node.node, ast.Assign):
                     for n in ast_node.node.targets:
                         if isinstance(n, ast.Name) and isinstance(ast_node.node.value, ast.Call):
@@ -143,7 +121,7 @@ class PythonRstTranslationUnit:
                             if ref_id:
                                 ref_kind = "CallRef"
                                 self.add_reference(node_id, ref_id, ref_kind)
-            case "AnnAssign":
+            case ast.AnnAssign:
                 if isinstance(ast_node.node, ast.AnnAssign):
                     if (
                         ast_node.node.annotation
@@ -154,7 +132,7 @@ class PythonRstTranslationUnit:
                         ref_id = ast_node.node.annotation.id
                         ref_kind = "TypeRef"
                         self.add_reference(node_id, ref_id, ref_kind)
-            case "ClassDef":
+            case ast.ClassDef:
                 if isinstance(ast_node.node, ast.ClassDef):
                     node = ast_node.node
                     node_id = node.name
@@ -166,7 +144,7 @@ class PythonRstTranslationUnit:
                             self.add_reference(node_id, ref_id, ref_kind)
                 # add functions and attributes to class
 
-            case "Call":
+            case ast.Call:
                 if isinstance(ast_node.node, ast.Call):
                     # obj.function. then obj refers to function
                     if isinstance(ast_node.node.func, ast.Attribute):
@@ -211,19 +189,21 @@ class PythonRstNode:
         self.root = parent.root if parent and parent.root else self
         self.node = node
         self.parent = parent
-        self.translation_unit:PythonRstTranslationUnit = translation_unit
-        self.kind = type(node).__name__
+        self.translation_unit: PythonRstTranslationUnit = translation_unit
+        self.ast_type = KIND_MAP.get(type(node).__name__, UnknownKind)
+        if self.ast_type == UnknownKind:
+            print(f'"{type(node).__name__}": {type(node).__name__},')
+        self.kind = self.ast_type.__name__
         self.indent = ""
         self.name = self._derive_name()
         self.show_props = False
         self.children = []
         self.properties = {}
         self.is_implicit = self.kind not in IMPLICIT
-        self.offset =0
-        self.length =0
-        if translation_unit:
+        self.offset = 0
+        self.length = 0
+        if self.translation_unit:
             self.filename = translation_unit.file_name
-            self.translation_unit = translation_unit
             self.derive_position(node, translation_unit, parent)
             self.add_node()
         for name in node._fields:
@@ -232,7 +212,7 @@ class PythonRstNode:
                 match child:
                     case list():  # Matches any list
                         if isinstance(node, Global) and name == "names":
-                            if len(child)==1:
+                            if len(child) == 1:
                                 self.name = child[0]
                             if name == "body":
                                 self.body = self.children
@@ -262,13 +242,12 @@ class PythonRstNode:
         self.extended_end_offset = self.end_offset
         self.is_statement = isinstance(self.node, ast.stmt)
 
-
     def __eq__(self, other):
         return (
             isinstance(other, type(self))
             and self.kind == other.kind
             and match_props(self.properties, other.properties, IRRELEVANT_PROPS)
-            and match_children(self.children, other.children,  IRRELEVANT_NODES)
+            and match_children(self.children, other.children, IRRELEVANT_NODES)
         )
 
     def __contains__(self, item):
@@ -282,13 +261,9 @@ class PythonRstNode:
         Usage: node[0] == node.children[0]
         """
         return self.children[key]
-    def __repr__(self):
-        raw_lines = self.signature.splitlines()
-        properties_text = "" if not self.show_props else self.properties
-        prefix = " " if len(raw_lines) < 2 else f"\n    {self.indent}"
-        formatted_lines = [f"{prefix}|{line}|" for line in raw_lines]
-        return f"{self.indent}({self.kind}, {self.name}, {self.filename}[{self.offset}:{self.offset + self.length}]){properties_text}:{''.join(formatted_lines)}\n"
 
+    def __repr__(self):
+        return format_node(self)
     @property
     def next_sibling(self) -> Self | None:
         return next_sibling(self)
@@ -302,21 +277,19 @@ class PythonRstNode:
         for child in self.children:
             child.process(function)
 
-
     def derive_position(self, node: ast.AST, translation_unit: PythonRstTranslationUnit, parent):
         if node._attributes:
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)) and node.decorator_list:
                 self.offset = convert(self.translation_unit.lines, node.decorator_list[0].lineno, node.decorator_list[0].col_offset) - 1
             elif parent.name == "decorator_list":
                 # also include the @ in the decorator
-                self.offset = convert(self.translation_unit.lines,node.lineno, node.col_offset) - 1  # type: ignore[attr-defined]
+                self.offset = convert(self.translation_unit.lines, node.lineno, node.col_offset) - 1  # type: ignore[attr-defined]
             else:
-                self.offset = convert(self.translation_unit.lines,node.lineno, node.col_offset)  # type: ignore[attr-defined]
-            all_space = all(
-                c == ' ' for c in self.translation_unit.content[self.offset - node.col_offset: self.offset])
+                self.offset = convert(self.translation_unit.lines, node.lineno, node.col_offset)  # type: ignore[attr-defined]
+            all_space = all(c == " " for c in self.translation_unit.content[self.offset - node.col_offset : self.offset])
             if all_space:
                 self.offset = self.offset - node.col_offset if self.offset - node.col_offset >= 0 else 0
-            self.length = convert(self.translation_unit.lines,node.end_lineno, node.end_col_offset) - self.offset  # type: ignore[attr-defined]
+            self.length = convert(self.translation_unit.lines, node.end_lineno, node.end_col_offset) - self.offset  # type: ignore[attr-defined]
         elif isinstance(node, ast.Module) and translation_unit:
             self.offset = 0
             self.length = len(translation_unit.content)
@@ -331,9 +304,7 @@ class PythonRstNode:
             return PythonRstNode.load_from_text(content, str(file_path))
 
     @staticmethod
-    def load_from_text(
-        text: str,
-        file_name: str = "test.py") -> "PythonRstNode":
+    def load_from_text(text: str, file_name: str = "test.py") -> "PythonRstNode":
         translation_unit = PythonRstTranslationUnit(text, file_name=str(file_name))
         translation_unit.check_diagnostics()
         root_node = PythonRstNode(translation_unit.atu, translation_unit)
@@ -385,9 +356,11 @@ class PythonRstNode:
                 name = str(self.node.target)
         elif "body" not in self.node._fields:
             name = unparse(self.node)
+        elif isinstance(self.node, (ast.Module)) and self.translation_unit:
+            name = self.translation_unit.file_name
         else:
             name = self.kind
-        return name
+        return name if name else ""
 
     @property
     def type(self):
@@ -444,7 +417,7 @@ class PythonRstNode:
 
     def binary_file_content(self) -> bytes:
         return (
-            self.translation_unit.content[self.offset : self.offset+self.length]
+            self.translation_unit.content[self.offset : self.offset + self.length]
             if self.translation_unit
             else unparse(self.node).encode(sys.getfilesystemencoding())
         )
@@ -463,19 +436,13 @@ class PythonRstNode:
         self.translation_unit.add(self)
 
     def get_container_parent(self):
-        # Get the containing definition parent
-        
-        # TODO check self.parent once
-        # TODO use kind in CONTAINERS with CONTAINERS = ["FunctionDef", "ClassDef", "Module"]
-        if self.parent and self.parent.kind == "FunctionDef":
-            return self.parent
-        elif self.parent and self.parent.kind == "ClassDef":
-            return self.parent
-        elif self.parent and self.parent.kind == "Module":
-            return self.parent
+        if self.parent:
+            if self.parent.kind in ["FunctionDef", "ClassDef", "Module"]:
+                return self.parent
+            else:
+                return self.parent.get_container_parent()
         else:
-            # TODO handle case when self.parent is None
-            return self.parent.get_container_parent()
+            return self
 
     @property
     def text(self) -> str:

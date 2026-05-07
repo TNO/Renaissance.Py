@@ -7,6 +7,7 @@ from ast_comments import *
 from libcst import SimpleStatementLine
 from more_itertools import flatten
 
+from renaissance.impl.types import KIND_MAP, UnknownKind, MatchAll, MatchOne
 from renaissance.impl import MATCH_ALL, MATCH_ONE
 from renaissance.impl.python.ast_node import ASTExtension
 from renaissance.impl.python.cst_node import PythonCstNode
@@ -15,7 +16,7 @@ from renaissance.impl.tree_sitter.adapter import TreeSitterAdapter
 from renaissance.impl.tree_sitter.lst import LSTNode
 from renaissance.syntax_tree import ASTFactory
 from renaissance.syntax_tree.match_finder import AstProtocol, is_match
-from renaissance.utils.ast_utils import replace_dollar
+from renaissance.utils.ast_utils import replace_dollar, use_dollar
 
 _MATCH_ALL_RE = re.compile(r"^" + re.escape(MATCH_ALL) + r"\w+$")
 _MATCH_ONE_RE = re.compile(r"^" + re.escape(MATCH_ONE) + r"\w+$")
@@ -26,19 +27,24 @@ SHOW_NODE = False
 class PythonPattern(AstProtocol):
 
     def __init__(self, node):
-
         self.node: PythonRstNode = node
+        if type(node) is str:
+            print(node)
+            return
         self.kind: str = self.derive_kind(node.node)
         self.properties: dict = node.properties
         self.children: list[PythonPattern] = [PythonPattern(node) for node in node.children]
         self.signature: str = node.signature
-        self.name: str = node.name.replace(MATCH_ALL, "$$").replace(MATCH_ONE, "$") if hasattr(node, "name") else ""
+        if hasattr(node, "name") and node.name:
+            self.name: str = use_dollar(node.name)
+        else:
+            self.name = ""
 
     def __eq__(self, other: AstProtocol) -> bool:
         return is_match(other, self)
 
     def __repr__(self):
-        return str(self.node).replace(MATCH_ALL, "$$").replace(MATCH_ONE, "$")
+        return use_dollar(str(self.node))
 
     def derive_kind(self, ast_node: AST) -> str:
         signature = ""
@@ -49,15 +55,18 @@ class PythonPattern(AstProtocol):
         elif isinstance(ast_node, ast.Expr) and isinstance(ast_node.value, ast.Name):
             signature = ast_node.value.id
         if _MATCH_ALL_RE.match(signature):
-            return MATCH_ALL
+            return MatchAll.__name__
         elif _MATCH_ONE_RE.match(signature):
-            return MATCH_ONE
-        return self.node.kind
+            return MatchOne.__name__
+        if isinstance(ast_node, LSTNode):
+            return ast_node.kind
+        else:
+            return KIND_MAP.get(type(ast_node).__name__, type(ast_node)).__name__
 
 
 class PythonFactory:
 
-    def __init__(self, clazz: type[PythonRstNode | PythonCstNode | LSTNode]) -> None:
+    def __init__(self, clazz: type[PythonRstNode | PythonCstNode | LSTNode | AST]) -> None:
         self.clazz = clazz
         if clazz == LSTNode:
             clazz.load_from_text = self.load_from_lst
@@ -74,7 +83,7 @@ class PythonFactory:
             clazz.text = ASTExtension.ast_signature
             clazz.filename = "dummy.py"
 
-            #shower
+            # shower
             clazz.is_implicit = True
             clazz.show_props = False
             clazz.indent = ""
@@ -115,15 +124,22 @@ class PythonPatternFactory:
 
     def create_statement(self, text: str) -> PythonPattern:
         stmt = self.create_statements(text)[-1]
-        if isinstance(stmt.node.node, SimpleStatementLine):
+        if isinstance(stmt.node.node, SimpleStatementLine) or (
+            isinstance(stmt.node, LSTNode) and stmt.node.kind == "Expr" and stmt.children[0].node.kind != "Call"
+        ):
             return stmt.children[0]
         else:
             return stmt
+        # return stmt
 
     def create_expression(self, text: str) -> PythonPattern:
         my_pattern = self.create_statement(text)
         if isinstance(my_pattern.node, PythonRstNode):
             return PythonPattern(my_pattern.node.expression)
+        elif isinstance(my_pattern.node, LSTNode):
+            return PythonPattern(my_pattern.node)
+        elif isinstance(my_pattern.node, PythonCstNode):
+            return PythonPattern(my_pattern.node.children[-1])
         else:
             return PythonPattern(my_pattern.node.children[0])
 

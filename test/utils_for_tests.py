@@ -1,6 +1,8 @@
 import re
 from typing import Sequence
 
+import hypothesis
+
 from renaissance.syntax_tree import ASTNode, ASTShower, PatternMatch
 
 VERBOSE = False
@@ -66,3 +68,14 @@ def debug_print(
 
         code_test_input = f'("{code}", {include_whitespace}, {include_comments}, "{actual}"),'.replace("\n", "\\n").replace("\r", "\\r")
         print("\nFull parameterized:" + code_test_input)
+
+
+def reject_unsupported_code(source_code: str) -> None:
+    if "\f" in source_code:
+        hypothesis.reject()
+
+    hypothesis.note(source_code)
+    try:
+        compile(source_code, "<string>", 'single')
+    except Exception:
+        hypothesis.reject()

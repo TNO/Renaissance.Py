@@ -24,7 +24,7 @@ Authors:
 
 ## Context
 
-The goal of this ADR is provide a guideline on what to focus on when selecting a parser for a new language in renaissance.
+The goal of this ADR is provided a guideline on what to focus on when selecting a parser for a new language in renaissance.
 
 Refactoring tools must preserve the exact formatting of source code, including whitespace and comments, which are
 not semantically significant to the language but are critical for producing output that is indistinguishable from
@@ -39,7 +39,7 @@ maintenance burden.
   output that is identical to the original source when no transformation is applied.
 - Comments and whitespace are made part of the AST node itself (as leading/trailing trivia attached to the node),
   rather than stored in a separate data structure.
-- The amount of glue code required to reassemble source text from the AST is minimised by design.
+- The amount of glue code required to reassemble source text from the AST is minimized by design.
 - For Python, **libcst** is used as the parser, as it natively represents whitespace and comments as part of its
   CST nodes and provides a lossless round-trip out of the box.
 

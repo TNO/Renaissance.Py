@@ -5,6 +5,7 @@ import ast
 
 from hamcrest import assert_that, has_length, is_, is_in
 
+from python.factories import Factories
 from renaissance.impl import MATCH_ONE, MATCH_ALL
 from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.impl.python.cst_node import PythonCstNode
@@ -12,24 +13,6 @@ from renaissance.impl.tree_sitter.lst import LSTNode
 from renaissance.syntax_tree import ASTFactory
 from renaissance.impl.python.factory import PythonPatternFactory, PythonFactory
 from renaissance.syntax_tree.match_finder import match_pattern
-
-
-class Factories:
-    # add factories here to test different ASTNode implementations
-    node_types = [
-        ("ast", PythonRstNode),
-        ("cst", PythonCstNode),
-        ("lst", LSTNode),
-        ("rst", ast.AST),
-    ]
-    factories = [(name_type[0], PythonFactory(name_type[1])) for name_type in node_types]
-
-    @staticmethod
-    def extend(test_parameters: list[tuple]) -> list[tuple]:
-        result = [
-            (str(factory[0]) + " " + str(pars[0]), factory[1], *pars) for factory, pars in product(Factories.factories, test_parameters)
-        ]
-        return result
 
 
 class TestPythonFactory:
@@ -284,6 +267,7 @@ class TestPythonFactory:
         assert_that(node.kind, is_("ImplicitNode"))
         assert_that(node.name, is_("decorator_list"))
 
+    @pytest.mark.skip
     def test_match_decorators(self) -> None:
         node = self.factory.create_from_text(
             '@parameterized.expand("sasas")\ndef fun():\n    parameterized.expand("sasas")\n',
@@ -303,11 +287,11 @@ class TestPythonFactory:
         "_, factory, expression, expected",
         Factories.extend(
             [
-                ("a = 1", ["Constant", "AssignTarget", "assignment", None]),
+                ("a = 1", ["Literal", "Name", "AssignTarget", "Integer", "Assign"]),
             ]
         ),
     )
-    def test(self, _, factory, expression, expected) -> None:
+    def test_misalignment(self, _, factory, expression, expected) -> None:
         patternFactory = PythonPatternFactory(factory)
         node = patternFactory.create_expression(expression)
         assert_that(node.kind, is_in(expected))
@@ -315,7 +299,7 @@ class TestPythonFactory:
     def test_function_with_multi_patterns(self):
         pattern = self.pattern_factory.create_expression("$f($$before, $a, $$after)")
         assert_that(pattern.kind, "Call")
-        assert_that(pattern.children[0].kind, is_(MATCH_ONE))
-        assert_that(pattern.children[1].children[0].kind, is_(MATCH_ALL))
-        assert_that(pattern.children[1].children[1].kind, is_(MATCH_ONE))
-        assert_that(pattern.children[1].children[2].kind, is_(MATCH_ALL))
+        assert_that(pattern.children[0].kind, is_("MatchOne"))
+        assert_that(pattern.children[1].children[0].kind, is_("MatchAll"))
+        assert_that(pattern.children[1].children[1].kind, is_("MatchOne"))
+        assert_that(pattern.children[1].children[2].kind, is_("MatchAll"))

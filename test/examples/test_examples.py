@@ -141,11 +141,9 @@ class TestExamplesDifferentStyles:
     def test_example_add_comment_and_commit_json(self):
         factory = ASTFactory(ClangJsonASTNode)
         pattern_factory = CPatternFactory(factory)
-        assert_that(calling(lambda:
-                            example_add_comment_and_commit(factory, pattern_factory)),not_(raises(Exception)))
+        assert_that(calling(lambda: example_add_comment_and_commit(factory, pattern_factory)), not_(raises(Exception)))
         result, expected = example_add_comment_and_commit(factory, pattern_factory)
         assert_that(result, contains_string("        // old has become obsolete\n        old b = 2;"))
-
 
     def test_example_replace_old_by_fancy_new(self):
         factory = ASTFactory(ClangASTNode)
@@ -156,7 +154,6 @@ class TestExamplesDifferentStyles:
         result, expected = example_replace_old_by_fancy_new(factory, pattern_factory)
         # shiould check this:
         # assert_that(result, contains_string("fancy_new b = 2;\n"))
-
 
     def test_make_sure_that_batch_proc_still_run(self):
         assert_that(calling(batch_remove_unused_variable_once_example), not_(raises(Exception)))
@@ -216,6 +213,8 @@ class TestExamplesDifferentStyles:
                 "        int d = 4;\n        void f(){\n            c++; b=(a==1) ? 2:3; d++;\n        }"
             ),
         )
+
+
 """
 
 E       Expected: Expected a callable raising <class 'Exception'>

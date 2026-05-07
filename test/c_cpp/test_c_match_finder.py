@@ -258,7 +258,6 @@ class TestFunctionCallStatements(TestCMatchFinder):
         self.assert_matches(expected_dicts_per_match, matches)
 
 
-
 class TestMultiAssignments(TestCMatchFinder):
 
     @pytest.mark.parametrize(
@@ -444,7 +443,6 @@ class TestUseAtuToCreatePattern(TestCMatchFinder):
         # text= result.filter(lambda match: match.patterns == names).map(lambda match: match.nodes[0]).filter(ASTNode.is_part_of_translation_unit).map(ASTNode.text).to_list()
         # assert_that(text, is_(expected))
 
-
     @pytest.mark.parametrize("_, factory", Factories.factories)
     @pytest.mark.skip("stmt and expr are the same")
     def test_is_match_expression_differs_from_stmt(self, _: str, factory: ASTFactory):
@@ -465,10 +463,12 @@ class TestUseAtuToCreatePattern(TestCMatchFinder):
             "An expression doesn't match a statement",
         )
 
+
 class TestIndividualCases:
     def test_multi_single(self):
         factory = ASTFactory(ClangASTNode)
-        atu = factory.create_from_text( """
+        atu = factory.create_from_text(
+            """
             int one(int a);
             int two(int a, int b);
             int three(int a, int b, int c);
@@ -478,19 +478,21 @@ class TestIndividualCases:
                 two(a,b);
                 three(a,b,c);
             }
-            """, "test.c")
-        pattern_factory= CPatternFactory(factory)
-        stmt_nodes =pattern_factory.create_statements("$f($$all, $a);",None, ["int $f(int,int);"])
+            """,
+            "test.c",
+        )
+        pattern_factory = CPatternFactory(factory)
+        stmt_nodes = pattern_factory.create_statements("$f($$all, $a);", None, ["int $f(int,int);"])
         variants = find_variants(atu.children[-1].children[-1].children, stmt_nodes)
 
         assert_that(variants, has_length(1))
         assert_that(variants[0].end_index, is_(0))
-        assert_that(variants[0].exp['$$all'], is_([]))
-        assert_that(variants[0].exp['$a'][0].name, is_('a'))
-        variants = find_in_list(atu.children[-1].children[-1].children, stmt_nodes,{}, 1)
-        assert_that(variants,1)
+        assert_that(variants[0].exp["$$all"], is_([]))
+        assert_that(variants[0].exp["$a"][0].name, is_("a"))
+        variants = find_in_list(atu.children[-1].children[-1].children, stmt_nodes, {}, 1)
+        assert_that(variants, 1)
 
-        variants = find_in_list(atu.children[-1].children[-1].children, stmt_nodes,{}, 1)
+        variants = find_in_list(atu.children[-1].children[-1].children, stmt_nodes, {}, 1)
 
         # assert_that(variants[0].exp['$$all'], has_length(1))
         {"$f": ["two"], "$$all": ["a"], "$a": ["b"]},

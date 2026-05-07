@@ -2,11 +2,8 @@ import pytest
 from hamcrest import has_length, greater_than_or_equal_to
 from hamcrest.core import assert_that
 
-from renaissance.impl.python.factory import PythonFactory
+from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
 from renaissance.impl.python.rst_node import PythonRstNode
-from renaissance.impl.python.python_pattern_factory import PythonPatternFactory
-from renaissance.syntax_tree.ast_factory import ASTFactory
-from renaissance.syntax_tree.match_finder import find_all
 from renaissance.syntax_tree.match_finder import find_variants
 
 code = """
@@ -45,9 +42,10 @@ class TestMatchFinderMultiAssignments:
             before_location = vatiant.locations[PLACEHOLDER_BEFORE]
             after_location = vatiant.locations[PLACEHOLDER_AFTER]
 
-            assignment: dict[str, str] = {}
-            assignment[PLACEHOLDER_BEFORE] = atu.translation_unit.content[before_location.offset : before_location.end_offset]
-            assignment[PLACEHOLDER_AFTER] = atu.translation_unit.content[after_location.offset : after_location.end_offset]
+            assignment: dict[str, str] = {
+                PLACEHOLDER_BEFORE: atu.translation_unit.content[before_location.offset: before_location.end_offset],
+                PLACEHOLDER_AFTER: atu.translation_unit.content[after_location.offset: after_location.end_offset]
+            }
 
             actual.add(frozenset(assignment.items()))
         assert expected == actual, "Unexpected assignments of placeholders"

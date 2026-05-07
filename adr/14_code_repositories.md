@@ -35,7 +35,7 @@ The project consists of two conceptually distinct layers:
    output into the unified AST.
 
 Keeping both layers in a single repository conflates their concerns, complicates licensing (an adapter
-author may not want to adopt the same licence as the core), and makes it harder for external contributors
+author may not want to adopt the same license as the core), and makes it harder for external contributors
 to develop or distribute adapters independently. Repository names must also clearly describe their contents;
 names like *rejuvenation* and *renaissance* do not communicate what belongs where.
 

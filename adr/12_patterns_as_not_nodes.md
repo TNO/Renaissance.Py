@@ -28,7 +28,7 @@ The goal of this ADR is to clarify the distinction between code factories and pa
 Renaissance project.
 
 In the current implementation a pattern is just an AST node. This is not desirable: while a pattern may be
-realised using an AST node under the hood, it may also carry additional information that has no place in a
+realized using an AST node under the hood, it may also carry additional information that has no place in a
 plain AST node.
 
 For example, to pattern-match `create_expression('$x')` it is convenient for the pattern to also record the

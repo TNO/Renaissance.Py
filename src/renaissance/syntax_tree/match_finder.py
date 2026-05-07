@@ -1,8 +1,6 @@
 from typing import Sequence, Self, Iterable, Protocol, runtime_checkable
 
-from renaissance.impl import MATCH_ALL, MATCH_ONE
-from ..utils.ast_utils import use_dollar
-
+from renaissance.utils.ast_utils import use_dollar
 
 IRRELEVANT_PROPS = {"macro_expansion", "start_point", "end_point", "source_code", "location", "type"}
 
@@ -19,6 +17,7 @@ class AstProtocol(Protocol):
     signature: str
     name: str
 
+
 class Variant:
     def __init__(self, index, exp, greedy, expansion_start, end_index=INCOMPLETE_MATCH):
         self.exp: dict = exp
@@ -31,7 +30,7 @@ class Variant:
         self.greedy = None
         self.expansion_start = -1
 
-    def close_greedy(self, key, nodes, start,end):
+    def close_greedy(self, key, nodes, start, end):
         """Store a completed greedy expansion and reset greedy state."""
         value = nodes[start:end]
         self.exp[key] = value
@@ -66,15 +65,19 @@ class PatternMatch:
 
     def _match_relations(self, attr: str, patterns, recursive: bool) -> list:
         return [
-            m for node in self.nodes for ref in getattr(node, attr)
-            for pattern in patterns for m in MatchFinder.match_pattern([ref.node], pattern, recursive)
+            m
+            for node in self.nodes
+            for ref in getattr(node, attr)
+            for pattern in patterns
+            for m in MatchFinder.match_pattern([ref.node], pattern, recursive)
         ]
 
     def offset_of(self, key):
         return self.expansions[key][0].offset
 
-    def length_of(self,  key):
+    def length_of(self, key):
         return self.expansions[key][-1].offset + self.expansions[key][-1].length - self.expansions[key][0].offset
+
 
 def _resolve_match_one(name: str, src: "AstProtocol", expansions: dict):
     """Handle a MATCH_ONE pattern node: bind or verify the named expansion. Returns True if matched."""
@@ -89,7 +92,7 @@ def is_match_tree(src: Sequence | None, cmp: Sequence | None, expansions=None):
 
 
 def variant_in_match_stmt(src: AstProtocol, cmp: AstProtocol, expansions) -> list:
-    if cmp.kind == MATCH_ONE and cmp.name:
+    if cmp.kind == "MatchOne" and cmp.name:
         matched = _resolve_match_one(cmp.name, src, expansions)
         return [Variant(0, expansions, None, 0, 0)] if matched else []
     if is_match_dict(src.properties, cmp.properties, expansions) and src.kind == cmp.kind:
@@ -99,16 +102,17 @@ def variant_in_match_stmt(src: AstProtocol, cmp: AstProtocol, expansions) -> lis
         return [v for v in variants if v.end_index == len(src.children) - 1]
     return []
 
+
 def _advance_match_all(variant: Variant, cmp: Sequence, src: Sequence, i: int, new_variants: list):
     """Advance variant.index past consecutive MATCH_ALL pattern nodes, forking new_variants as needed."""
-    while cmp[variant.index].kind == MATCH_ALL:
+    while cmp[variant.index].kind == "MatchAll":
         current_name = cmp[variant.index].name
         if variant.expansion_start == -1:
             variant.expansion_start = i
             variant.greedy = current_name
         elif current_name != variant.greedy and variant.greedy not in variant.exp:
             new_variants.append(variant.fork())
-            variant.close_greedy(variant.greedy, src,variant.expansion_start,i)
+            variant.close_greedy(variant.greedy, src, variant.expansion_start, i)
             variant.greedy = current_name
             variant.expansion_start = i
         else:
@@ -128,7 +132,7 @@ def _apply_child_match(variant: Variant, child_variants: list, cmp: Sequence, sr
         forked = variant.fork()
         forked.exp.pop(cmp[variant.index].name, None)
         new_variants.append(forked)
-        variant.close_greedy(variant.greedy, src,variant.expansion_start,i)
+        variant.close_greedy(variant.greedy, src, variant.expansion_start, i)
     if len(child_variants) > 1:
         for v in child_variants:
             new_variants.append(Variant(variant.index + 1, v.exp, variant.greedy, variant.expansion_start))
@@ -149,7 +153,7 @@ def _advance_greedy(variant: Variant, cmp: Sequence, src: Sequence, i: int):
         at_last_src_node = i == len(src) - 1
         greedy_matches_pattern = variant.greedy == cmp[variant.index].name
         if at_last_src_node and greedy_matches_pattern:
-            variant.close_greedy(variant.greedy, src,variant.expansion_start,i + 1)
+            variant.close_greedy(variant.greedy, src, variant.expansion_start, i + 1)
             variant.end_index = i
             variant.index += 1
     elif exp_index < len(exp_for_key):
@@ -168,8 +172,8 @@ def _advance_greedy(variant: Variant, cmp: Sequence, src: Sequence, i: int):
 def find_variants(src: Sequence, cmp: Sequence, expansion=None, start: int = 0, parent=None):
     if expansion is None:
         expansion = {}
-    if cmp==None:
-         return []
+    if cmp == None:
+        return []
     i = start
     variants = [Variant(0, expansion, None, -1)]
     while i < len(src):
@@ -186,10 +190,7 @@ def find_variants(src: Sequence, cmp: Sequence, expansion=None, start: int = 0, 
             if variant.index == len(cmp):
                 next_variants.append(variant)
                 continue
-            if (
-                cmp[variant.index].kind != MATCH_ALL
-                and (child_variants := variant_in_match_stmt(src[i], cmp[variant.index], variant.exp))
-            ):
+            if cmp[variant.index].kind != "MatchAll" and (child_variants := variant_in_match_stmt(src[i], cmp[variant.index], variant.exp)):
                 _apply_child_match(variant, child_variants, cmp, src, i, next_variants)
             elif variant.greedy:
                 _advance_greedy(variant, cmp, src, i)
@@ -207,24 +208,25 @@ def find_variants(src: Sequence, cmp: Sequence, expansion=None, start: int = 0, 
             continue
         if variant.index == len(cmp) - 1:
             last_cmp = cmp[variant.index]
-            trailing_wildcard = last_cmp.kind == MATCH_ALL and last_cmp.name not in variant.exp
+            trailing_wildcard = last_cmp.kind == "MatchAll" and last_cmp.name not in variant.exp
             if not trailing_wildcard:
                 continue
             key = variant.greedy if variant.expansion_start != -1 else last_cmp.name
-            variant.close_greedy(key, src,variant.expansion_start, -1 if variant.expansion_start != -1 else variant.expansion_start)
+            variant.close_greedy(key, src, variant.expansion_start, -1 if variant.expansion_start != -1 else variant.expansion_start)
         elif variant.index == len(cmp):
             greedy_unresolved = variant.greedy and variant.greedy not in variant.exp
             if greedy_unresolved:
-                variant.close_greedy(variant.greedy, src, variant.expansion_start,-1)
+                variant.close_greedy(variant.greedy, src, variant.expansion_start, -1)
         if variant.end_index == INCOMPLETE_MATCH:
             variant.end_index = full_match
         valid_variants.append(variant)
     return valid_variants
 
+
 def find_in_list(src: Sequence, cmp: Sequence, exp=None, start: int = 0):
     if exp is None:
         exp = {}
-    variants =  find_variants(src, cmp, exp, start)
+    variants = find_variants(src, cmp, exp, start)
     if not variants:
         return -2
     exp.update(variants[0].exp)
@@ -234,7 +236,8 @@ def find_in_list(src: Sequence, cmp: Sequence, exp=None, start: int = 0):
 
 
 def is_match(src: AstProtocol, cmp: AstProtocol, expansions=None) -> bool:
-    return variant_in_match_stmt(src, cmp, expansions)!=[]
+    return variant_in_match_stmt(src, cmp, expansions) != []
+
 
 def is_match_dict(src: dict, cmp: dict, expansions: dict = None) -> bool:
     if expansions is None:
@@ -257,13 +260,11 @@ def match_pattern(src_nodes, patterns, recursive=True) -> Sequence[PatternMatch]
         found_expansions = {}
         found_position = find_in_list(src_nodes, patterns, found_expansions, to_do)
         if found_position >= 0:
-            found_statements.append(PatternMatch(src_nodes[to_do:found_position + 1], found_expansions, patterns))
+            found_statements.append(PatternMatch(src_nodes[to_do : found_position + 1], found_expansions, patterns))
             to_do = found_position + 1
         else:
             if recursive:
-                found_statements.extend(
-                    match_pattern(getattr(src_nodes[to_do], "children", []), patterns, recursive)
-                )
+                found_statements.extend(match_pattern(getattr(src_nodes[to_do], "children", []), patterns, recursive))
             to_do += 1
     return found_statements
 

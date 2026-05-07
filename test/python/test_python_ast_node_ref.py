@@ -9,6 +9,7 @@ from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.impl.python.factory import PythonFactory
 from renaissance.impl.python.rst_node import PythonRSTReference
 from renaissance.syntax_tree import ASTNode, ASTFinder
+from renaissance.utils.ast_utils import traverse
 
 content = """
 # antagonist
@@ -141,18 +142,19 @@ class TestPythonNode:
         with tempfile.TemporaryDirectory(delete=True) as temp_dir:
             syntax_tree.ASTShower.store_node(temp_dir + "/py3.txt", ast)
 
-        param_node = first(n for n in ASTFinder.find_kind(ast, "arg") if n.name == "bruno")
+        param_node = [n for n in traverse(ast) if n.name == "bruno" and n.kind == "Argument"]
 
-        assert_that(param_node, is_(PythonRstNode))
+        assert_that(param_node[0], is_(PythonRstNode))
         ast.translation_unit.lazy_create_refers(ast)
-        refs = param_node.references
+        refs = param_node[0].references
         assert_that(refs, has_length(1))
         ref = refs[0]
         ref_node = ast.translation_unit._nodes[ref.node_id]
         assert_that(syntax_tree.ASTFinder.matches_kind(ref_node, "ClassDef"), is_(True))
         referenced_by = ref_node.referenced_by
         assert_that(referenced_by, has_length(2))
-        assert_that(param_node in [ast.translation_unit._nodes[r.node_id] for r in referenced_by])
+        types = [r.node_id for r in referenced_by]
+        assert_that(param_node[0].name, is_in(types))
 
     def test_function_reference(self):
         ast = self.factory.create_from_text(content, "content.py")

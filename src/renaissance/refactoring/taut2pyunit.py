@@ -15,8 +15,8 @@ class Taut2Pyunit(PythonRefactoring):
 
     def __init__(self, file):
         super().__init__(file)
-        self.white_list_reg = r'_test|_unittest|_tests'
-        self.black_list_reg = r'_migrated|_after|_original'
+        self.white_list_reg = r"_test|_unittest|_tests"
+        self.black_list_reg = r"_migrated|_after|_original"
         self.comp = "ABCD"
 
     def run(self):
@@ -44,8 +44,8 @@ class Taut2Pyunit(PythonRefactoring):
         self.convert_assert()
         self.convert_testdoubles_fun()
 
-        self.replace_log_compxtl('emrw')
-        self.replace_log_compxtl('abcd')
+        self.replace_log_compxtl("emrw")
+        self.replace_log_compxtl("abcd")
         self.remove_taut_import()
         self.replace_taut_import()
         self.convert_setup_common()
@@ -88,14 +88,11 @@ class Taut2Pyunit(PythonRefactoring):
         """
         replace TAUT.TestCase by unittest.TestCase
         """
-        [self.replace("unittest.TestCase", node, False, False)
-         for node in self.find_kind("Attribute") if node.name == "TAUT.TestCase"]
-        [self.replace("unittest.TestCase", node, False, False)
-         for node in self.find_kind("Name") if node.name == "TestCase"]
+        [self.replace("unittest.TestCase", node, False, False) for node in self.find_kind("Attribute") if node.name == "TAUT.TestCase"]
+        [self.replace("unittest.TestCase", node, False, False) for node in self.find_kind("Name") if node.name == "TestCase"]
 
     def remove_decorator(self):
-        [self.remove(node, False, False)
-         for node in self.find_kind("Attribute") if node.name == "TAUT.log_stub"]
+        [self.remove(node, False, False) for node in self.find_kind("Attribute") if node.name == "TAUT.log_stub"]
 
     def add_self(self):
         matching = [
@@ -117,34 +114,30 @@ class Taut2Pyunit(PythonRefactoring):
             "emrwxviprxtestlog",
             "emrwxviprxwh",
         ]
-        parent_func = [
-            "setUpCommon",
-            "setUp"
-        ]
-        [self.replace("self." + node.name, node, False, False)
-         for node in self.find_kind("Name") if node.name in matching]
+        parent_func = ["setUpCommon", "setUp"]
+        [self.replace("self." + node.name, node, False, False) for node in self.find_kind("Name") if node.name in matching]
 
-        matching2 = ['EMRWxREAD.emrwxread']
-        [self.replace('self.' + node.name.split('.')[1], node, False, False)
-         for node in self.find_kind("Attribute") if
-         node.name in matching2 and node.get_ancestor("FunctionDef").name not in parent_func]
+        matching2 = ["EMRWxREAD.emrwxread"]
+        [
+            self.replace("self." + node.name.split(".")[1], node, False, False)
+            for node in self.find_kind("Attribute")
+            if node.name in matching2 and node.get_ancestor("FunctionDef").name not in parent_func
+        ]
 
     def convert_assert(self):
-        [self.replace("self.assertFalse", node, False, False)
-         for node in self.find_kind("Attribute") if node.name == "self.assert_false"]
-        [self.replace("self.assertTrue", node, False, False)
-         for node in self.find_kind("Attribute") if node.name == "self.assert_true"]
-        [self.replace("self.assertEqual", node, False, False)
-         for node in self.find_kind("Attribute") if node.name == "self.assert_equal"]
+        [self.replace("self.assertFalse", node, False, False) for node in self.find_kind("Attribute") if node.name == "self.assert_false"]
+        [self.replace("self.assertTrue", node, False, False) for node in self.find_kind("Attribute") if node.name == "self.assert_true"]
+        [self.replace("self.assertEqual", node, False, False) for node in self.find_kind("Attribute") if node.name == "self.assert_equal"]
 
     def remove_stubserver(self):
-        [self.remove(node, False, False)
-         for node in self.find_kind("Attribute") if node.name == "TAUT.StubServer"]
+        [self.remove(node, False, False) for node in self.find_kind("Attribute") if node.name == "TAUT.StubServer"]
 
     def replace_mock(self):
-        [self.replace("patch", node, False, False)
-         for node in self.find_kind("Attribute") if
-         node.name == "mock.patch" and node.parent.parent.name == "decorator_list"]
+        [
+            self.replace("patch", node, False, False)
+            for node in self.find_kind("Attribute")
+            if node.name == "mock.patch" and node.parent.parent.name == "decorator_list"
+        ]
 
     def replace_log_compxtl(self, comp):
         func_call = self.pattern_factory.create_statements(f"{comp}xtl.$a($$bb)")
@@ -158,7 +151,8 @@ class Taut2Pyunit(PythonRefactoring):
             self.replace(repl, match.nodes, False, False)
         self.commit()
         taut_test_doubles = self.pattern_factory.create_statements(
-            f"with TAUT.TestDoubles({comp}xtl=Fake{comp.upper()}xTL(None)):\n    log = TAUT.Logger()\n    $$aa")
+            f"with TAUT.TestDoubles({comp}xtl=Fake{comp.upper()}xTL(None)):\n    log = TAUT.Logger()\n    $$aa"
+        )
         for match in match_pattern(self.root.children, taut_test_doubles):
             repl = f"fake_{comp}xtl = Fake{comp.upper()}xTL(None)\n{match["$$aa"]}"
             self.replace(repl, match.nodes, False, False)
@@ -210,16 +204,18 @@ ImprovedStub.store_args = {}
         p_start = """for p in self.patchers:
     p.start()
 """
-        tds_pattern = self.pattern_factory.create_statements('self.tds = [$$aa]')
+        tds_pattern = self.pattern_factory.create_statements("self.tds = [$$aa]")
         for match in match_pattern(self.root.children, tds_pattern):
-            init_stubs = ''
-            repl = 'self.patchers = [\n'
-            doubles_pattern = self.pattern_factory.create_expression('TestDoubles($a=ImprovedStub($b))')
+            init_stubs = ""
+            repl = "self.patchers = [\n"
+            doubles_pattern = self.pattern_factory.create_expression("TestDoubles($a=ImprovedStub($b))")
             for matched_doubles in match_pattern(match.expansions["$$aa"], [doubles_pattern]):
-                init_stubs += f'self.{matched_doubles.expansions["$a"][0]} = ImprovedStub({matched_doubles.expansions["$b"][0].signature})\n'
+                init_stubs += (
+                    f'self.{matched_doubles.expansions["$a"][0]} = ImprovedStub({matched_doubles.expansions["$b"][0].signature})\n'
+                )
                 interface_stub = self.find_import_interface(matched_doubles.expansions["$b"][0].signature)
                 repl += f'    patch.object({interface_stub}, \'{matched_doubles.expansions["$a"][0]}\', self.{matched_doubles.expansions["$a"][0]}),\n'
-            repl += ']\n\n'
+            repl += "]\n\n"
             repl = insert_code + init_stubs + repl + p_start
             self.replace(repl, match.nodes, False, False)
 
@@ -238,7 +234,7 @@ ImprovedStub.store_args = {}
     def convert_add_patcher(self):
         pattern = self.pattern_factory.create_statements("def tearDownCommon(self):\n    $$aa")
         for match in match_pattern(self.root.children, pattern):
-            patcher_pattern = [node for node in self.find_kind("FunctionDef") if node.name == "add_patcher" ]
+            patcher_pattern = [node for node in self.find_kind("FunctionDef") if node.name == "add_patcher"]
             if len(patcher_pattern) == 0:
                 self.insert_after(tst_class.insert_add_patcher, match.nodes)
 
@@ -247,11 +243,11 @@ ImprovedStub.store_args = {}
         if name.islower():
             node_list = [node for node in self.find_kind("Import(?:From)") if node.name == name]
             if node_list:
-                if node_list[0].kind == 'ImportFrom':
-                    interface = node_list[0].properties['module']
+                if node_list[0].kind == "ImportFrom":
+                    interface = node_list[0].properties["module"]
                 else:
                     interface = node_list[0].name if node_list else name
-        return interface.split('.')[0]
+        return interface.split(".")[0]
 
     def convert_setup(self):
         # remove doubles init
@@ -276,7 +272,7 @@ ImprovedStub.store_args = {}
             pattern4 = self.pattern_factory.create_statements("doubles.append(TAUT.TestDoubles(module=$mod, $b=$c))")
             matched_pattern = match_pattern(setup_func.nodes, pattern4)
             for index, match in enumerate(matched_pattern):
-                repl_pattern = f'self.patches.append(patch.object({match.expansions['$mod'][0].name}, \'{match.expansions['$b'][0]}\', {match.expansions['$c'][0].signature}))'
+                repl_pattern = f"self.patches.append(patch.object({match.expansions['$mod'][0].name}, '{match.expansions['$b'][0]}', {match.expansions['$c'][0].signature}))"
                 repl_pattern = repl_pattern.replace("context_stub", "self.context_stub")
                 self.replace(repl_pattern, match.nodes, False, False)
                 if index == len(matched_pattern) - 1:
@@ -285,11 +281,10 @@ ImprovedStub.store_args = {}
     p.start()"""
                     self.insert_after(insert_code, insert_node, False, False)
 
-            pattern4_1 = self.pattern_factory.create_statements(
-                "self.doubles.append(TAUT.TestDoubles(module=$mod, $b=$c))")
+            pattern4_1 = self.pattern_factory.create_statements("self.doubles.append(TAUT.TestDoubles(module=$mod, $b=$c))")
             matched_pattern_1 = match_pattern(setup_func.nodes, pattern4_1)
             for index, match in enumerate(matched_pattern_1):
-                repl_pattern = f'self.patches.append(patch.object({match.expansions['$mod'][0].name}, \'{match.expansions['$b'][0]}\', {match.expansions['$c'][0].signature}))'
+                repl_pattern = f"self.patches.append(patch.object({match.expansions['$mod'][0].name}, '{match.expansions['$b'][0]}', {match.expansions['$c'][0].signature}))"
                 repl_pattern = repl_pattern.replace("context_stub", "self.context_stub")
                 self.replace(repl_pattern, match.nodes, False, False)
                 if index == len(matched_pattern_1) - 1:
@@ -302,8 +297,7 @@ ImprovedStub.store_args = {}
         for match in match_pattern(self.root.children, pattern5):
             self.remove(match.nodes, False, False)
         self.commit()
-        [self.replace("self.context_stub", node, False, False)
-         for node in self.find_kind("Name") if node.name == "context_stub"]
+        [self.replace("self.context_stub", node, False, False) for node in self.find_kind("Name") if node.name == "context_stub"]
 
     def convert_teardown(self):
         matched_pattern = self.pattern_factory.create_statements("def tearDown(self):\n    $$aa")
@@ -332,16 +326,16 @@ ImprovedStub.store_args = {}
 
     def convert_test_doubles(self, doubles: str):
         mappings: Dict[str, str] = {
-            'emrmxcontext': 'EMRMxCONTEXT',
-            'acbdxcontext': 'ACBDxCONTEXT',
+            "emrmxcontext": "EMRMxCONTEXT",
+            "acbdxcontext": "ACBDxCONTEXT",
             # Add more mappings here
         }
         doubles_pattern = self.pattern_factory.create_statements(doubles)
         for match in match_pattern(self.root.children, doubles_pattern):
-            keyword = match.expansions['$a'][0]
-            if match.expansions['$a'][0] in mappings.keys():
-                keyword = mappings[match.expansions['$a'][0]]
-            repl_pattern = f'self.patches.append(patch(\'{keyword}.{match.expansions['$a'][0]}\', {match.expansions['$b'][0].name}))'
+            keyword = match.expansions["$a"][0]
+            if match.expansions["$a"][0] in mappings.keys():
+                keyword = mappings[match.expansions["$a"][0]]
+            repl_pattern = f"self.patches.append(patch('{keyword}.{match.expansions['$a'][0]}', {match.expansions['$b'][0].name}))"
             repl_pattern = repl_pattern.replace("context_stub", "self.context_stub")
             self.replace(repl_pattern, match.nodes, False, False)
 
@@ -357,8 +351,7 @@ ImprovedStub.store_args = {}
         """
         replace @TAUT.skip_test by @unittest.skip
         """
-        [self.replace("@unittest.skip", node)
-         for node in self.find_kind("Attribute") if node.name == "TAUT.skip_test"]
+        [self.replace("@unittest.skip", node) for node in self.find_kind("Attribute") if node.name == "TAUT.skip_test"]
 
     def convert_import_verify(self):
         import_verify = self.pattern_factory.create_statements("self.import_and_verify_module('$a')")
@@ -387,8 +380,7 @@ ImprovedStub.store_args = {}
                 self.insert_after(insert_code, match.nodes, False, False)
 
     def insert_asserter(self):
-        insert_pattern = self.pattern_factory.create_statements(
-            "def assert_double_equal($$arg, $$other=$$value):\n    $$bb")
+        insert_pattern = self.pattern_factory.create_statements("def assert_double_equal($$arg, $$other=$$value):\n    $$bb")
         insert_code = tst_insert.insert_code
         for match in match_pattern(self.root.children, insert_pattern):
             self.insert_after(insert_code, match.nodes, False, False)
@@ -413,8 +405,7 @@ ImprovedStub.store_args = {}
             "assert_raises",
             "assert_double_equal",
         ]
-        [self.replace("self." + node.name, node, False, False)
-         for node in self.find_kind("Name") if node.name in matching]
+        [self.replace("self." + node.name, node, False, False) for node in self.find_kind("Name") if node.name in matching]
 
     def move_indent(self, indent):
         pattern1 = self.pattern_factory.create_statements("""def $a($$b):
@@ -424,8 +415,9 @@ ImprovedStub.store_args = {}
             double_pattern = f"        self.doubles.append(TAUT.TestDoubles({match["$mod"]}, {match["$e"]}, {match["$f"]}))\n"
             func_header_index = match.signature.index("):\n")
             repl = f"""    with patch.object({match["$mod"]}, '{match["$e"]}', {match["$f"]}):\n"""
-            replace_pattern = match.signature[:func_header_index + 3] + repl + textwrap.indent(
-                match.signature[func_header_index + 3:], indent)
+            replace_pattern = (
+                match.signature[: func_header_index + 3] + repl + textwrap.indent(match.signature[func_header_index + 3 :], indent)
+            )
             replace_pattern = replace_pattern.replace(double_pattern, "")
             self.replace(replace_pattern, match.nodes, False, False)
 
@@ -462,8 +454,9 @@ ImprovedStub.store_args = {}
             func_header_index = match.signature.index("):\n")
             repl = f"""with patch.object({match["$mod1"]}, '{match["$e1"]}', {match["$f1"]}), \\
         patch.object({match["$mod2"]}, '{match["$e2"]}', {match["$f2"]}):\n"""
-            replace_pattern = match.signature[:func_header_index + 3] + textwrap.indent(repl, "    ") + match.signature[
-                func_header_index + 3:]
+            replace_pattern = (
+                match.signature[: func_header_index + 3] + textwrap.indent(repl, "    ") + match.signature[func_header_index + 3 :]
+            )
             replace_pattern = replace_pattern.replace(textwrap.indent(double_pattern, "    "), "")
             self.replace(replace_pattern, match.nodes, False, False)
             self.commit()
@@ -492,8 +485,9 @@ ImprovedStub.store_args = {}
 """
             func_header_index = match.signature.index("):\n")
             repl = f"""with patch.object({match["$mod"]}, '{match["$e"]}', {match["$f"]}):\n"""
-            replace_pattern = match.signature[:func_header_index + 3] + textwrap.indent(repl, "    ") + match.signature[
-                func_header_index + 3:]
+            replace_pattern = (
+                match.signature[: func_header_index + 3] + textwrap.indent(repl, "    ") + match.signature[func_header_index + 3 :]
+            )
             replace_pattern = replace_pattern.replace(textwrap.indent(double_pattern, "    "), "")
             replace_pattern = replace_pattern.replace(textwrap.indent(double_pattern1, "    "), "")
             self.replace(replace_pattern, match.nodes, False, False)
@@ -529,10 +523,9 @@ ImprovedStub.store_args = {}
             repl = f"""with patch.object({match["$mod1"]}, '{match["$e1"]}', {match["$f1"]}), \\
                         patch.object({match["$mod2"]}, '{match["$e2"]}', {match["$f2"]}):
             """
-            replace_pattern = match.signature[:func_header_index + 3] + textwrap.indent(repl +
-                                                                                        match.signature[
-                                                                                            func_header_index + 3:],
-                                                                                        "    ")
+            replace_pattern = match.signature[: func_header_index + 3] + textwrap.indent(
+                repl + match.signature[func_header_index + 3 :], "    "
+            )
             replace_pattern = replace_pattern.replace(double_pattern, "")
             replace_pattern = replace_pattern.replace(textwrap.indent(double_pattern, "    "), "")
             self.replace(replace_pattern, match.nodes, False, False)
@@ -554,10 +547,9 @@ ImprovedStub.store_args = {}
 """
             func_header_index = match.signature.index("):\n")
             repl = f"""with patch.object({match["$mod"]}, '{match["$e"]}', {match["$f"]}):\n"""
-            replace_pattern = match.signature[:func_header_index + 3] + textwrap.indent(repl +
-                                                                                        match.signature[
-                                                                                            func_header_index + 3:],
-                                                                                        "    ")
+            replace_pattern = match.signature[: func_header_index + 3] + textwrap.indent(
+                repl + match.signature[func_header_index + 3 :], "    "
+            )
             replace_pattern = replace_pattern.replace(double_pattern, "")
             replace_pattern = replace_pattern.replace(textwrap.indent(double_pattern, "    "), "")
             self.replace(replace_pattern, match.nodes, False, False)

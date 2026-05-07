@@ -11,11 +11,6 @@ from renaissance.impl.tree_sitter.extractor import (
     CppCodeGraphExtractor,
 )
 
-
-
-
-
-
 # ---------------------------------------------------------------------------
 # BaseCodeGraphExtractor
 # ---------------------------------------------------------------------------
@@ -86,6 +81,7 @@ class TestBaseCodeGraphExtractor:
         lst = MagicMock()
         lst.traverse.return_value = nodes
         return lst
+
 
 # ---------------------------------------------------------------------------
 # PythonCodeGraphExtractor
@@ -328,6 +324,3 @@ class TestCppCodeGraphExtractor(TestBaseCodeGraphExtractor):
         extractor._process_file("/src/main.cpp", lst)
 
         assert_that(extractor.graph.nodes, not_(has_item("// a comment")))
-
-    
-    

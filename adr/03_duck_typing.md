@@ -73,7 +73,7 @@ Negative:
 
 ## Comment and whitespace
 
-comment and white space belongs to astnode.
+comment and white space belongs to ast node.
 is comment need to it own property without "comment sign"
 
 ## Related decisions
