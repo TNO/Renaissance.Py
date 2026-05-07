@@ -2,6 +2,8 @@ import ast
 import textwrap
 from pathlib import Path
 
+import hypothesmith
+import libcst
 import pytest
 from hamcrest import (
     has_length,
@@ -9,15 +11,17 @@ from hamcrest import (
     is_in,
     is_,
     contains_string,
-    empty,
+    empty, instance_of,
 )
+from hypothesis import given, settings
 
 import targets
 from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
+from renaissance.impl.types import Statement
 from renaissance.syntax_tree import ASTShower
 from renaissance.utils.ast_utils import traverse
-from utils_for_tests import show_node
+from utils_for_tests import show_node, reject_unsupported_code
 
 
 class TestPythonRstNode:
@@ -145,18 +149,16 @@ class Parent:
 
         assert_that("\n" + it.signature + "\n", is_(ann_fun))
 
+    @given(code=hypothesmith.from_node(libcst.BaseStatement))
+    @settings(max_examples=50)
+    def test_from_cst_returns_statement(self, code):
+        reject_unsupported_code(code)
+        factory = PythonFactory(PythonRstNode)
+        node = factory.create_from_text(code)
+        print(f"testing {code=} with PythonRstNode")
+        assert_that(node.children[0].ast_type(), instance_of(Statement), f"{code=}")
 
-class TestGuardRewritable:
-    pass
-    # @ignore
-    # def test_text_equals_to_binary_content(self):
-    #     code = textwrap.dedent("""
-    #     @parameterized.expand(Factories.extend(['$x;$y;']))
-    #     def test(_):
-    #         atu = factory.create_from_text(TestStatements.SIMPLE_CPP, "test.c")
-    #         matches = match_pattern( func_body.children,patterns)
-    #         self.assert_matches( expected_dicts_per_match,matches)
-    #         """)
-    #     it = PythonASTNode.load_from_text(code, "fun.py", [], None).body[-1]
-    #     expected = it.binary_file_content()[it.offset: it.extended_end_offset]
-    #     assert_that(it.text, is_(expected))
+    def test_corner_case(self):
+        factory = PythonFactory(PythonRstNode)
+        node = factory.create_from_text('class ŻP𭻊鲖ÉØ_ąň𣑗: pass\n')
+        assert_that(node.children[0].ast_type(), instance_of(Statement))

@@ -12,7 +12,7 @@ from renaissance.impl.types import KIND_MAP
 from renaissance.impl.python.util import convert
 from renaissance.syntax_tree.match_finder import find_in_list
 from renaissance.utils.ast_utils import preceding_sibling, next_sibling, match_props, match_children, format_node
-from utils.ast_utils import traverse
+from renaissance.utils.ast_utils import traverse
 
 types = ["int", "float", "str", "list", "set", "tuple", "Mapping", "dict", "Optional"]
 IRRELEVANT_PROPS = {"comment"}

@@ -7,7 +7,7 @@ from renaissance.impl.tree_sitter.lst import LSTNode
 
 from renaissance.syntax_tree import ASTFinder
 from renaissance.syntax_tree.match_finder import is_match
-from utils.ast_utils import traverse
+from renaissance.utils.ast_utils import traverse
 
 
 class TestMatchers:

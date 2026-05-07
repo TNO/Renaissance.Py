@@ -8,6 +8,15 @@ resolution-markers = [
 ]
 
 [[package]]
+name = "antlr4-python3-runtime"
+version = "4.13.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/33/5f/2cdf6f7aca3b20d3f316e9f505292e1f256a32089bd702034c29ebde6242/antlr4_python3_runtime-4.13.2.tar.gz", hash = "sha256:909b647e1d2fc2b70180ac586df3933e38919c85f98ccc656a96cd3f25ef3916", size = 117467, upload-time = "2024-08-03T19:00:12.757Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/89/03/a851e84fcbb85214dc637b6378121ef9a0dd61b4c65264675d8a5c9b1ae7/antlr4_python3_runtime-4.13.2-py3-none-any.whl", hash = "sha256:fe3835eb8d33daece0e799090eda89719dbccee7aa39ef94eed3818cafa5a7e8", size = 144462, upload-time = "2024-08-03T19:00:11.134Z" },
+]
+
+[[package]]
 name = "arpeggio"
 version = "2.0.3"
 source = { registry = "https://pypi.org/simple" }
@@ -284,6 +293,24 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/19/89/0f50dd0d92e8a7dffc24f69ab910ff81db89b2f082ba42682bd57695e4d2/hypothesis-6.152.4-py3-none-any.whl", hash = "sha256:e730fd93c7578182efadc7f90b3c5437ee4d55edf738930eb5043c81ac1d97e8", size = 532145, upload-time = "2026-04-27T20:18:35.043Z" },
 ]
 
+[package.optional-dependencies]
+lark = [
+    { name = "lark" },
+]
+
+[[package]]
+name = "hypothesmith"
+version = "0.3.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "hypothesis", extra = ["lark"] },
+    { name = "libcst" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/e3/f6/1a64114dee6c46985482c35bdbc12025db59973a0225eec47ac4d306030f/hypothesmith-0.3.3.tar.gz", hash = "sha256:96c14802d6c8e85d8975264176878db54b28d2ed921fdbfedc2e6b8ce3c81716", size = 25529, upload-time = "2024-02-16T20:21:24.511Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/69/bc/78dcf42c6eaaf7d628f061f1e533a596f5bca2a53be2b714adc5d370d48e/hypothesmith-0.3.3-py3-none-any.whl", hash = "sha256:fdb0172f9de97d09450da40da7da083fdd118bcd2f88b1a2289413d2d496b1b1", size = 19247, upload-time = "2024-02-16T20:20:47.059Z" },
+]
+
 [[package]]
 name = "iniconfig"
 version = "2.3.0"
@@ -291,6 +318,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/72/34/14ca021ce8e5dfedc35312d08ba8bf51fdd999c576889fc2c24cb97f4f10/iniconfig-2.3.0.tar.gz", hash = "sha256:c76315c77db068650d49c5b56314774a7804df16fee4402c1f19d6d15d8c4730", size = 20503, upload-time = "2025-10-18T21:55:43.219Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/cb/b1/3846dd7f199d53cb17f49cba7e651e9ce294d8497c8c150530ed11865bb8/iniconfig-2.3.0-py3-none-any.whl", hash = "sha256:f631c04d2c48c52b84d0d0549c99ff3859c98df65b3101406327ecc7d53fbf12", size = 7484, upload-time = "2025-10-18T21:55:41.639Z" },
+]
+
+[[package]]
+name = "lark"
+version = "1.3.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/da/34/28fff3ab31ccff1fd4f6c7c7b0ceb2b6968d8ea4950663eadcb5720591a0/lark-1.3.1.tar.gz", hash = "sha256:b426a7a6d6d53189d318f2b6236ab5d6429eaf09259f1ca33eb716eed10d2905", size = 382732, upload-time = "2025-10-27T18:25:56.653Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/82/3d/14ce75ef66813643812f3093ab17e46d3a206942ce7376d31ec2d36229e7/lark-1.3.1-py3-none-any.whl", hash = "sha256:c629b661023a014c37da873b4ff58a817398d12635d3bbb2c5a03be7fe5d1e12", size = 113151, upload-time = "2025-10-27T18:25:54.882Z" },
 ]
 
 [[package]]
@@ -893,9 +929,11 @@ name = "renaissance"
 version = "0.3.1"
 source = { virtual = "." }
 dependencies = [
+    { name = "antlr4-python3-runtime" },
     { name = "ast-comments" },
     { name = "clang" },
     { name = "dataclasses-json" },
+    { name = "hypothesmith" },
     { name = "libclang" },
     { name = "libcst" },
     { name = "more-itertools" },
@@ -949,9 +987,11 @@ test = [
 
 [package.metadata]
 requires-dist = [
+    { name = "antlr4-python3-runtime", specifier = ">=4.13.2" },
     { name = "ast-comments", specifier = ">=1.0" },
     { name = "clang", specifier = "==18.1.8" },
     { name = "dataclasses-json", specifier = "==0.6.7" },
+    { name = "hypothesmith", specifier = ">=0.3.3" },
     { name = "libclang", specifier = "==18.1.1" },
     { name = "libcst", specifier = ">=1.8.6" },
     { name = "more-itertools", specifier = ">=10.0" },
@@ -977,6 +1017,7 @@ dev = [
     { name = "coverage", specifier = ">=7.0" },
     { name = "flake8", specifier = ">=7.0" },
     { name = "hypothesis", specifier = ">=6.0" },
+    { name = "hypothesis", specifier = ">=6.152.4" },
     { name = "parameterized", specifier = ">=0.9" },
     { name = "pytest", specifier = ">=8.0" },
     { name = "pytest-bdd", specifier = "==8.1.0" },

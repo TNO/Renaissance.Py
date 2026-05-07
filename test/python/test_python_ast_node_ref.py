@@ -9,7 +9,7 @@ from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.impl.python.factory import PythonFactory
 from renaissance.impl.python.rst_node import PythonRSTReference
 from renaissance.syntax_tree import ASTNode, ASTFinder
-from utils.ast_utils import traverse
+from renaissance.utils.ast_utils import traverse
 
 content = """
 # antagonist

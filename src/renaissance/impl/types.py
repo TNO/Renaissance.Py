@@ -1,11 +1,4 @@
 from abc import ABC
-from tkinter.constants import LEFT, RIGHT
-from xmlrpc.client import Boolean
-
-from libcst import In, LeftShift
-from libcst.matchers import BinaryOperation, RightShift, MatchCase
-from pyecore.commands import Compound
-from pygments.token import Keyword
 
 
 class Type(ABC):
@@ -593,9 +586,21 @@ class WithItem(Node):
     pass
 
 
+class Symbol(Node):
+    pass
+
+
+class Colon(Symbol):
+    pass
+
+
+class AssignTo(Symbol):
+    pass
+
+
 KIND_MAP = {
-    ":": UnknownKind,
-    "block": UnknownKind,
+    "block": CompoundStatement,
+    "except": Catch,
     "none": UnknownKind,
     "return": Return,
     "string": Literal,
@@ -609,6 +614,7 @@ KIND_MAP = {
     "Attribute": Attribute,
     "_": UnknownKind,
     "pass": Pass,
+    "def": Symbol,
     "&": BitAnd,
     "(": Tuple,
     ")": Tuple,
@@ -623,12 +629,14 @@ KIND_MAP = {
     "+=": UnknownKind,
     "<": LessThan,
     "==": Equal,
+    "=": AssignTo,
     ">": GreaterThan,
     ">=": GreaterThanEqual,
     "<=": LessThanEqual,
     "<<": LeftShift,
     ">>": RightShift,
     "!=": NotEqual,
+    ":": Colon,
     "Add": Add,
     "AnnAssign": Assign,
     "Assert": Assert,
