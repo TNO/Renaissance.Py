@@ -4,7 +4,9 @@ import pytest
 from hamcrest import *
 
 from renaissance.impl.clang import ClangASTNode, CPatternFactory
+from renaissance.impl.types import Declaration
 from renaissance.syntax_tree import ASTFactory, ASTFinder, MatchFinder, ASTShower
+from renaissance.syntax_tree.ast_finder import find_ast_type
 
 
 class ClangMatchFinderTest:
@@ -25,7 +27,7 @@ class ClangMatchFinderTest:
         atu = factory.create_from_text(code, "test.c")
         pattern_factory = CPatternFactory(factory, ref_node=atu)
         statements_atu = pattern_factory.create(fun)
-        statements = ASTFinder.find_kind(statements_atu, pattern_type).find_last().get()
+        statements = find_ast_type(statements_atu, Declaration).find_last().get()
 
         func_body = atu.children[-1].children[-1].children
         result = MatchFinder.match_pattern(func_body, [statements])

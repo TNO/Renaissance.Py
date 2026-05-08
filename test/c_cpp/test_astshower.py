@@ -5,7 +5,9 @@ import hamcrest
 from hamcrest import assert_that, matches_regexp
 
 from renaissance.impl.clang import ClangASTNode, CPatternFactory
+from renaissance.impl.types import Call, If
 from renaissance.syntax_tree import ASTFactory, ASTShower, ASTFinder
+from renaissance.syntax_tree.ast_finder import find_ast_type
 
 
 class TestCcppShower:
@@ -30,7 +32,7 @@ class TestCcppShower:
         void fff() {
         $pa($xx);
         }""")
-        simple = ASTFinder.find_kind(pattern, "(?i)Call_?Expr")[0]
+        simple = find_ast_type(pattern, Call)[0]
 
         assert_that(
             str(simple),
@@ -135,8 +137,8 @@ else
         )
         real_children = list(filter(lambda n: n.kind != "MACRO_DEFINITION", atu.children))[1]
 
-        # expect this to work
-        ifstmt = ASTFinder.find_kind(real_children, "ifstmt")[0]
+
+        ifstmt = find_ast_type(real_children, If)[0]
 
         text = ASTShower.get_node(ifstmt)
         assert_that(

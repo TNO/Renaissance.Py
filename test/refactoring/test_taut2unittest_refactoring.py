@@ -5,12 +5,14 @@ import pytest
 from hamcrest import ends_with, assert_that, is_
 
 import targets
+from renaissance.impl.types import Name
 from renaissance.refactoring.taut2pyunit import Taut2Pyunit
 import test_data.test_class as tst_class
 import test_data.test_code as tst_code
 import test_data.test_insert as tst_insert
 from renaissance.impl.python.rst_node import PythonRstNode
 import test_data.test_testdoubles as tst_testdoubles
+from renaissance.utils.ast_utils import traverse
 
 
 class TestTaut2Unittest:
@@ -246,10 +248,9 @@ class TestTaut2Unittest:
     )
     def test_assert_doubles(self, input_code, expected_code, mocker):
         subject = self._create(mocker, input_code)
-        [
-            subject.replace("self." + node.name, node, False, False)
-            for node in subject.find_kind("Name")
-            if node.name == "assert_double_equal"
+        [subject.replace("self." + node.name, node, False, False)
+            for node in traverse(subject.node)
+            if isinstance(node.ast_type(), Name) and node.name == "assert_double_equal"
         ]
         result = subject.apply_to_string()
         assert_that(result, is_(expected_code))

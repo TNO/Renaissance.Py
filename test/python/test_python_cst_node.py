@@ -33,7 +33,7 @@ class TestPythonCstNode:
     def test_slice(self):
         it = self.pattern_factory.create_expression("items[1:2:3]")
         assert_that(it.children[0].kind, is_("Name"))
-        assert_that(it.children[1].kind, is_("SimpleWhitespace"))
+        assert_that(it.children[1].kind, is_("Whitespace"))
         assert_that(it.children[2].kind, is_("LeftSquareBracket"))
         assert_that(it.children[3].kind, is_("SubscriptElement"))
         assert_that(it.children[4].kind, is_("RightSquareBracket"))

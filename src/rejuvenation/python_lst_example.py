@@ -7,9 +7,10 @@ from renaissance.impl.tree_sitter.lst import LST, LSTNode
 from renaissance.impl import MATCH_ONE
 from renaissance.impl.tree_sitter.adapter import TreeSitterAdapter
 from renaissance.impl.tree_sitter.factory import TreeStiterPatternFactory
+from renaissance.impl.types import Call
 
 from renaissance.syntax_tree import ASTShower, ASTRewriter
-from renaissance.syntax_tree.ast_finder import find_kind
+from renaissance.syntax_tree.ast_finder import find_ast_type
 from renaissance.syntax_tree.match_finder import match_pattern
 
 example_code = """
@@ -47,7 +48,7 @@ def python_lst_smoke_test():
     ASTShower.show_node(atu)
 
     print("_______________simple find____________________________________")
-    nodes = find_kind(atu, "Call")
+    nodes = find_ast_type(atu, Call)
 
     ASTShower.show_node(nodes[0])
 

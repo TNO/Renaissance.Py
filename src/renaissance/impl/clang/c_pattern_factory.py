@@ -4,8 +4,10 @@ from typing import Optional, Sequence
 from more_itertools import first
 from more_itertools.more import last
 
+from renaissance.impl.types import Declaration, MacroDefinition, CompoundStatement, ParenthesizedExpression, Call, Type, \
+    Statement
 from renaissance.syntax_tree.ast_factory import ASTFactory
-from renaissance.syntax_tree.ast_finder import ASTFinder
+from renaissance.syntax_tree.ast_finder import ASTFinder, find_ast_type
 from renaissance.syntax_tree.ast_node import ASTNode
 from renaissance.syntax_tree.ast_shower import ASTShower
 from renaissance.impl.clang.cpp_utils import CPPUtils
@@ -49,6 +51,8 @@ def derive_header_text(language: str, ref_node: ASTNode | None):
             and ASTFinder.matches_kind(n, "(?i)(Function|Var|Typedef)_?Decl|MACRO_?DEFINITION")
             and len(ASTFinder.find_kind(n, "(?i)Compound_?Stmt")) == 0
         )
+        # and isinstance(n.ast_type, (Declaration, MacroDefinition))
+        # and len(find_ast_type(n, CompoundStatement)) == 0
         header += "\n"
 
     return header, language
@@ -87,7 +91,7 @@ class CPatternFactory:
         )
         root = self._create(full_text)
         # return the first expression found in the tree as a ASTNode
-        return last(n.children[0] for n in ASTFinder.find_kind(root.children[-1], "(?i)PAREN_?EXPR") if n.is_part_of_translation_unit)
+        return last(n.children[0] for n in find_ast_type(root.children[-1], ParenthesizedExpression) if n.is_part_of_translation_unit)
 
     def create_declarations(
         self,
@@ -114,7 +118,7 @@ class CPatternFactory:
             and not any(k in ed for ed in types)
             and not any(k in ed for ed in declarations)
         ]
-        return self._create_body(text, types, [*parameters, *keywords], extra_declarations, "(?i).*DECL.*")
+        return self._create_body(text, types, [*parameters, *keywords], extra_declarations, Declaration)
 
     def create_declaration(
         self,
@@ -141,7 +145,7 @@ class CPatternFactory:
         text: str,
         types=None,
         extra_declarations=None,
-        kind: str = ".*",
+        kind: type[Type] = Type,
     ) -> Sequence[ASTNode]:
         # create a reference for all used variables excluding the specified types
         if extra_declarations is None:
@@ -171,7 +175,7 @@ class CPatternFactory:
         # print(self.header + text)
         root = self.factory.create_from_text(self.header + text, "test." + self.language)
         if kind:
-            return first(ASTFinder.find_kind(root.children[-1], kind))
+            return first(find_ast_type(root.children[-1], kind))
         return root
 
     def create_statement(
@@ -179,7 +183,7 @@ class CPatternFactory:
         text: str,
         types=None,
         extra_declarations=None,
-        kind: str = ".*",
+        kind: str = Type,
     ) -> ASTNode:
         if extra_declarations is None:
             extra_declarations = []
@@ -195,7 +199,7 @@ class CPatternFactory:
         types: Sequence[str],
         parameters: Sequence[str],
         extra_declarations: Sequence[str],
-        kind: str,
+        kind: type[Type],
     ) -> list[ASTNode]:
         full_text = (
             self.header + "\n".join(CPatternFactory._to_typedef(types)) + "\n"
@@ -208,8 +212,8 @@ class CPatternFactory:
         # from the children of the compound statement that contains the text, get for each child the first
         # node of the specified kind
 
-        body = first(ASTFinder.find_kind(root.children[-1], "(?i)COMPOUND_?STMT")).children
-        return list(n for n in body if n.is_part_of_translation_unit and first(ASTFinder.find_kind(n, kind)))
+        body = first(find_ast_type(root.children[-1], CompoundStatement)).children
+        return list(n for n in body if n.is_part_of_translation_unit and first(find_ast_type(n, kind)))
 
     def _create(self, text: str) -> ASTNode:
         atu = self.factory.create_from_text(text, "test." + self.language)
@@ -281,7 +285,7 @@ class CPPPatternFactory(CPatternFactory):
         if SHOW_NODE:
             ASTShower.show_node(target_class)
         # search the call expr and the preceding type ref
-        call_expr = last(ASTFinder.find_kind(target_class, "CallExpr"))
+        call_expr = last(find_ast_type(target_class, Call))
         # include the preceding type ref
         assert isinstance(call_expr, ASTNode), "No call expression found"
         type_ref = call_expr.preceding_sibling

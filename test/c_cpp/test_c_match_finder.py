@@ -7,6 +7,7 @@ from more_itertools.more import last
 from c_cpp.factories import Factories
 from renaissance.impl.clang import ClangASTNode, CPatternFactory
 from renaissance.impl.clang_json import ClangJsonASTNode
+from renaissance.impl.types import Declaration, Call
 from renaissance.syntax_tree import (
     ASTFactory,
     ASTFinder,
@@ -14,6 +15,7 @@ from renaissance.syntax_tree import (
     ASTNode,
     MatchFinder,
 )
+from renaissance.syntax_tree.ast_finder import find_ast_type
 from renaissance.syntax_tree.match_finder import match_pattern, find_variants, find_in_list, is_match
 from utils_for_tests import compress, show_node, debug_mismatch
 
@@ -367,43 +369,43 @@ class TestUseAtuToCreatePattern(TestCMatchFinder):
             [
                 (
                     "void f() {const char* bar = BAR;}",
-                    "(?i)Decl_?Stmt",
+                    Declaration,
                     ["const char* bar = BAR;"],
                     {},
                 ),
                 (
                     "void f() {const char* foo = FOO;}",
-                    "(?i)Decl_?Stmt",
+                    Declaration,
                     ["const char* foo = FOO;"],
                     {},
                 ),
                 (
                     "void f() {const char* same = SAME;}",
-                    "(?i)Decl_?Stmt",
+                    Declaration,
                     ["const char* same = SAME;"],
                     {},
                 ),
                 (
                     "void f() {const char* $name = BAR;}",
-                    "(?i)Decl_?Stmt",
+                    Declaration,
                     ["const char* bar = BAR;"],
                     {"$name": ["bar"]},
                 ),
                 (
                     "void f() {const char* $name = FOO;}",
-                    "(?i)Decl_?Stmt",
+                    Declaration,
                     ["const char* foo = FOO;"],
                     {"$name": ["foo"]},
                 ),
                 (
                     "void f() {const char* $name = SAME;}",
-                    "(?i)Decl_?Stmt",
+                    Declaration,
                     ["const char* same = SAME;"],
                     {"$name": ["same"]},
                 ),
                 (
                     "const char* $$args; void f() { print($$args);}",
-                    "(?i)Call_?Expr",
+                    Call,
                     ['print("%s %s %s", foo, bar, same);'],
                     {"$$args": ['"%s %s %s"', "foo", "bar", "same"]},
                 ),
@@ -434,7 +436,7 @@ class TestUseAtuToCreatePattern(TestCMatchFinder):
         atu = factory.create_from_text(code, "test.c")
         pattern_factory = CPatternFactory(factory, ref_node=atu)
         statements_atu = pattern_factory.create(statements)
-        statements = last(ASTFinder.find_kind(statements_atu, pattern_type))  # pick the last statement
+        statements = last(find_ast_type(statements_atu, pattern_type))  # pick the last statement
         func_body = atu.children[-1].children
         result = match_pattern(func_body, [statements], recursive=True)
         # should find multiple matches, at least the one in the pattern and the one in the function body

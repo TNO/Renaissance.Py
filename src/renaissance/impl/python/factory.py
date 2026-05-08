@@ -1,4 +1,5 @@
 import ast
+import re
 from pathlib import Path
 from typing import Sequence
 
@@ -7,7 +8,7 @@ from ast_comments import *
 from libcst import SimpleStatementLine
 from more_itertools import flatten
 
-from renaissance.impl.types import KIND_MAP, UnknownKind, MatchAll, MatchOne
+from renaissance.impl.types import KIND_MAP, BogusType, MatchAll, MatchOne
 from renaissance.impl import MATCH_ALL, MATCH_ONE
 from renaissance.impl.python.ast_node import ASTExtension
 from renaissance.impl.python.cst_node import PythonCstNode
@@ -41,7 +42,7 @@ class PythonPattern(AstProtocol):
             self.name = ""
 
     def __eq__(self, other: AstProtocol) -> bool:
-        return is_match(other, self)
+        return is_match(self, other)
 
     def __repr__(self):
         return use_dollar(str(self.node))
@@ -75,6 +76,7 @@ class PythonFactory:
             # matcher
             clazz.node = ASTExtension.ast_node
             clazz.kind = ASTExtension.ast_kind
+            clazz.ast_type = ASTExtension.ast_type
             clazz.properties = ASTExtension.ast_properties
             clazz.children = ASTExtension.ast_children
             clazz.signature = ASTExtension.ast_signature

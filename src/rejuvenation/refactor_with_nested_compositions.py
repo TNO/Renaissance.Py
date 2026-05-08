@@ -2,9 +2,11 @@
 # It specifically showcases nested replacements and multiple patterns.
 import textwrap
 
+from renaissance.impl.types import Call
 from renaissance.syntax_tree import ASTFactory, ASTRewriter
 from renaissance.impl.clang import ClangASTNode, CPatternFactory
 from renaissance.syntax_tree import ASTShower, TextUtils, ASTFinder
+from renaissance.syntax_tree.ast_finder import find_ast_type
 from renaissance.syntax_tree.match_finder import find_all
 
 example_code = """
@@ -81,7 +83,7 @@ def refactor_with_nested_compositions(args):
     ASTShower.show_node(pattern1[0], include_properties=True)
 
     # we only want to search the call expression as a pattern so it's searched using the kind
-    pattern2 = ASTFinder.find_kind(pattern2, "(?i)Call_?Expr")
+    pattern2 = find_ast_type(pattern2, Call)
 
     # the replacement code strip indent is used to be agnostic to the indentation of the replacement
     pattern1replacement = textwrap.dedent("""

@@ -12,7 +12,7 @@ from typing import Any, Optional, Sequence
 from typing_extensions import override
 import subprocess
 
-from renaissance.impl.types import MatchAll, MatchOne
+from renaissance.impl.types import MatchAll, MatchOne, KIND_MAP, UnknownType
 from renaissance.syntax_tree import ASTNode, CPPUtils, ASTReference
 from renaissance.utils.ast_utils import match_children, match_props
 
@@ -98,6 +98,7 @@ class ClangJsonASTNode(ASTNode):
         self._end_offset = self._offset + length if length != None else self.__derive_end_offset()
         self._length = self._end_offset - self._offset
         self._kind = insert_kind if insert_kind is not None else self.__derive_kind()
+        self.ast_type = KIND_MAP.get(self._kind, UnknownType)
         self._name = insert_name if insert_name is not None else self._derive_name()
         # a fake child is introduced to handle the case where the type of declaration is not found
         # for example in the case of a base type.

@@ -3,6 +3,8 @@ from typing import Callable, Iterator, Optional, Sequence
 
 
 from .ast_node import ASTNode
+from ..impl.types import Type
+from ..utils.ast_utils import traverse
 
 
 class ASTFinder:
@@ -53,5 +55,5 @@ class ASTFinder:
             yield from ASTFinder.__matches_kind(child, pattern)
 
 
-def find_kind(ast_node, kind: str) -> Sequence:
-    return ASTFinder.find_kind(ast_node, kind)
+def find_ast_type(ast_node, kind: type[Type]) -> Sequence:
+    return [n for n in traverse(ast_node) if isinstance(n.ast_type(), kind)]

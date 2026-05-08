@@ -8,7 +8,10 @@ class Type(ABC):
         self.__class__.__name__
 
 
-class UnknownKind:
+class UnknownType:
+    pass
+
+class BogusType(Type):
     pass
 
 
@@ -79,12 +82,14 @@ class FunctionDef(Statement):
 class If(Statement):
     pass
 
+class ImportStatement(Statement):
+    pass
 
-class Import(Statement):
+class Import(ImportStatement):
     pass
 
 
-class ImportFrom(Statement):
+class ImportFrom(ImportStatement):
     pass
 
 
@@ -598,10 +603,14 @@ class AssignTo(Symbol):
     pass
 
 
+class Whitespace(Type):
+    pass
+
+
 KIND_MAP = {
     "block": CompoundStatement,
     "except": Catch,
-    "none": UnknownKind,
+    "none": BogusType,
     "return": Return,
     "string": Literal,
     "string_start": Literal,
@@ -612,7 +621,7 @@ KIND_MAP = {
     "case_pattern": MatchSingleton,
     "withitem": WithItem,
     "Attribute": Attribute,
-    "_": UnknownKind,
+    "_": BogusType,
     "pass": Pass,
     "def": Symbol,
     "&": BitAnd,
@@ -626,7 +635,7 @@ KIND_MAP = {
     "%": Modulo,
     "/": Divide,
     "//": FloorDiv,
-    "+=": UnknownKind,
+    "+=": BogusType,
     "<": LessThan,
     "==": Equal,
     "=": AssignTo,
@@ -875,6 +884,7 @@ KIND_MAP = {
     "PAREN_EXPR": ParenthesizedExpression,
     "PARM_DECL": ParameterDeclaration,
     "ParenExpr": ParenthesizedExpression,
+
     "ParmVarDecl": ParameterDeclaration,
     "RETURN_STMT": Return,
     "RecordDecl": RecordDef,
@@ -898,5 +908,12 @@ KIND_MAP = {
     "WhileStmt": While,
     "_MatchAll__": MatchAll,
     "_MatchOne__": MatchOne,
-    None: UnknownKind,
+    "MatchAll": MatchAll,
+    "MatchOne": MatchOne,
+    None: BogusType,
+    "SimpleWhitespace": Whitespace,
+    "IndentedBlock": CompoundStatement,
+    "ImportAlias": Alias,
+    "Arg": Argument,
+    "Integer": Number,
 }

@@ -5,6 +5,7 @@ from pathlib import Path
 import targets
 from renaissance.impl.clang import CompilationDatabase, ClangASTNode
 from renaissance.impl.clang_json import ClangJsonASTNode
+from renaissance.impl.types import FunctionDef
 from renaissance.syntax_tree import ASTProcessor, ASTShower
 
 
@@ -20,7 +21,7 @@ def main(args):
             ASTShower.show_node(atu, include_properties=True)
             # do something with the factory and atu
             ast_refactor = ASTProcessor(atu, factory, in_memory=True)
-            [print(n.text) for n in ast_refactor.find_kind("(?i)Function_?Decl")]
+            [print(n.text) for n in ast_refactor.find_kind(FunctionDef)]
 
 
 if __name__ == "__main__":

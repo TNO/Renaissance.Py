@@ -7,7 +7,7 @@ from typing import Any, Optional, Sequence, override
 import clang.native
 from clang.cindex import TranslationUnit, Config, Index, TypeKind, CursorKind
 
-from renaissance.impl.types import MatchAll, MatchOne
+from renaissance.impl.types import MatchAll, MatchOne, UnknownType, KIND_MAP
 from renaissance.syntax_tree import ASTNode, ASTReference
 from renaissance.utils.ast_utils import match_children, match_props
 
@@ -110,6 +110,7 @@ class ClangASTNode(ASTNode):
         self._offset = start_offset if start_offset is not None else self.__derive_start_offset()
         self._length = length if length is not None else self.__derive_length()
         self._kind = insert_kind if insert_kind is not None else self.__derive_kind()
+        self.ast_type = KIND_MAP.get(self._kind, UnknownType)
         self.indent = ""
         # TODO: TextUtils.get_indent(self.content, self._offset)
         # an fake child is introduced to handle the case where the type of a declaration is not found

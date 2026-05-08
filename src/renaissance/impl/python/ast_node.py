@@ -6,7 +6,7 @@ require minimum amound of code to make the matcher work
 
 import ast
 
-from renaissance.impl.types import KIND_MAP, UnknownKind
+from renaissance.impl.types import KIND_MAP, BogusType
 
 
 class ASTExtension:
@@ -24,7 +24,12 @@ class ASTExtension:
     @staticmethod
     @property
     def ast_kind(self):
-        return KIND_MAP.get(type(self).__name__, UnknownKind).__name__
+        return KIND_MAP.get(type(self).__name__, BogusType).__name__
+
+    @staticmethod
+    @property
+    def ast_type(self):
+        return KIND_MAP.get(type(self).__name__, BogusType)
 
     @staticmethod
     @property
