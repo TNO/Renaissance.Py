@@ -6,7 +6,7 @@ from libcst import BaseSmallStatement, BaseCompoundStatement, CSTNode, MetadataW
 from libcst import FunctionDef
 from libcst.metadata import WhitespaceInclusivePositionProvider
 
-from renaissance.impl.types import KIND_MAP
+from renaissance.impl.types import KIND_MAP, UnknownType
 from renaissance.impl.python.util import convert
 from renaissance.utils.ast_utils import preceding_sibling, next_sibling
 
@@ -49,7 +49,9 @@ class PythonCstNode:
         self.is_statement = isinstance(self.node, (BaseSmallStatement, BaseCompoundStatement))
 
         # for matcher
-        self.ast_type = KIND_MAP.get(type(node).__name__, type(node))
+        self.ast_type = KIND_MAP.get(type(node).__name__, UnknownType) #type(node))
+        if self.ast_type ==UnknownType:
+            print(f'"{type(node).__name__}": {type(node).__name__},')
         self.kind = self.ast_type.__name__
         self.children: list[Self] = [PythonCstNode(node, translation_unit, self) for node in node.children]
         self.properties = {}

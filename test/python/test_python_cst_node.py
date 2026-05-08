@@ -10,7 +10,7 @@ from hamcrest import (
     is_,
     contains_string,
     empty,
-    is_not,
+    is_not, instance_of,
 )
 from libcst import ParserSyntaxError
 
@@ -18,7 +18,8 @@ import targets
 
 from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
 from renaissance.impl.python.cst_node import PythonCstNode
-from renaissance.syntax_tree import ASTFactory, ASTShower
+from renaissance.impl.types import *
+from renaissance.syntax_tree import ASTFactory, ASTShower, ast_shower
 from renaissance.utils.ast_utils import traverse
 
 
@@ -32,11 +33,12 @@ class TestPythonCstNode:
 
     def test_slice(self):
         it = self.pattern_factory.create_expression("items[1:2:3]")
-        assert_that(it.children[0].kind, is_("Name"))
-        assert_that(it.children[1].kind, is_("Whitespace"))
-        assert_that(it.children[2].kind, is_("LeftSquareBracket"))
-        assert_that(it.children[3].kind, is_("SubscriptElement"))
-        assert_that(it.children[4].kind, is_("RightSquareBracket"))
+
+        assert_that(it.children[0].ast_type(), instance_of(Name))
+        assert_that(it.children[1].ast_type(), instance_of(Whitespace))
+        assert_that(it.children[2].ast_type(), instance_of(ListComp))
+        assert_that(it.children[3].ast_type(), instance_of(SubscriptElement))
+        assert_that(it.children[4].ast_type(), instance_of(ListComp))
 
     def test_attribute_signature_has_at(self):
         src = self.pattern_factory.create_statement("@TUAT\ndef ba(): pass")

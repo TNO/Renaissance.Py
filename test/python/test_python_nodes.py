@@ -4,7 +4,7 @@ import pytest
 from hamcrest import (
     assert_that,
     is_in,
-    is_,
+    is_, instance_of,
 )
 
 from renaissance.impl.python.cst_node import PythonCstNode
@@ -12,6 +12,7 @@ from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.impl.tree_sitter.lst import LSTNode
 from python.factories import Factories
 from renaissance.impl.python.factory import PythonPatternFactory
+from renaissance.impl.types import *
 from renaissance.utils.ast_utils import traverse
 
 
@@ -21,35 +22,35 @@ class TestPythonNodes:
         "_, factory, raw, kind",
         Factories.extend(
             [
-                ("i:int=0", "Assign"),
-                ("assert 0", "Assert"),
-                ("async for f in fs:  pass", "For"),
-                ("async def fun(): pass", "FunctionDef"),
-                ('async with open("x"): pass', "With"),
-                ("x += 5", "AugAssign"),
-                ("break", "Break"),
-                ("class x:pass", "ClassDef"),
-                ("continue", "Continue"),
-                ("fun()", "Expr"),
-                ("def fun(): pass", "FunctionDef"),
-                ("for i in items: pass", "For"),
-                ("import x", "Import"),
-                ("if True: pass", "If"),
-                ("from x import y", "ImportFrom"),
-                ("match x:\n  case _:    pass", "Match"),
-                ("pass", "Pass"),
-                ("raise", "Raise"),
-                ("return", "Return"),
-                ("try:\n  pass\nfinally:\n  pass", "Try"),
-                ("try:\n  x()\nexcept* e:\n  pass", "Try"),
-                ("while True: pass", "While"),
+                ("i:int=0", Assign),
+                ("assert 0", Assert),
+                ("async for f in fs:  pass", For),
+                ("async def fun(): pass", FunctionDef),
+                ('async with open("x"): pass', With),
+                ("x += 5", AugAssign),
+                ("break", Break),
+                ("class x:pass", ClassDef),
+                ("continue", Continue),
+                ("fun()", ExpressionStatement),
+                ("def fun(): pass", FunctionDef),
+                ("for i in items: pass", For),
+                ("import x", Import),
+                ("if True: pass", If),
+                ("from x import y", ImportFrom),
+                ("match x:\n  case _:    pass", Match),
+                ("pass", Pass),
+                ("raise", Raise),
+                ("return", Return),
+                ("try:\n  pass\nfinally:\n  pass", Try),
+                ("try:\n  x()\nexcept* e:\n  pass", Try),
+                ("while True: pass", While),
             ],
         ),
     )
     def test_stmt_kind(self, _, factory, raw, kind):
         pattern_factory = PythonPatternFactory(factory)
         it = pattern_factory.create_statement(raw)
-        assert_that(it.kind, is_(kind))
+        assert_that(it.ast_type(), instance_of(kind))
 
     @pytest.mark.parametrize(
         "_, factory, raw, kind",
@@ -80,13 +81,13 @@ def outer():
     )
     def test_stmt_kind_in_context(self, _, factory, raw, kind):
         it = factory.create_from_text(raw, "context.py")
-        kinds = [node.kind for node in traverse(it) if hasattr(node, "kind")]
+        kinds = [node.ast_type for node in traverse(it) if hasattr(node, "ast_type")]
         assert_that(kind, is_in(kinds))
 
-    @pytest.mark.parametrize("_, factory, raw, kind", Factories.extend([("global x", ["Global", "Statement"])]))
+    @pytest.mark.parametrize("_, factory, raw, kind", Factories.extend([("global x", [Global, Statement])]))
     def test_global_stmt(self, _, factory, raw, kind):
         it = factory.create_from_text(raw).children[-1]
-        assert_that(it.kind, is_in(kind))
+        assert_that(it.ast_type(), instance_of(kind))
 
     @pytest.mark.parametrize(
         "_, factory, raw, kind",
@@ -194,37 +195,37 @@ def outer():
         "_, factory, raw, kind",
         Factories.extend(
             [
-                ("a % b", "Modulo"),
-                ("a / b", "Divide"),
-                ("a // b", "FloorDiv"),
-                ("a << b", "LeftShift"),
-                ("a >> b", "RightShift"),
-                ("a * b", "Multiply"),
-                ("a ** b", "Power"),
-                ("a - b", "Subtract"),
-                ("a + b", "Add"),
+                ("a % b", Modulo),
+                ("a / b", Divide),
+                ("a // b", FloorDiv),
+                ("a << b", LeftShift),
+                ("a >> b", RightShift),
+                ("a * b", Multiply),
+                ("a ** b", Power),
+                ("a - b", Subtract),
+                ("a + b", Add),
             ],
         ),
     )
     def test_binary_operator(self, _, factory, raw, kind):
         pattern_factory = PythonPatternFactory(factory)
         it = pattern_factory.create_expression(raw)
-        assert_that(it.children[1].kind, is_(kind))
+        assert_that(it.children[1].ast_type(), instance_of(kind))
 
     @pytest.mark.parametrize(
         "_, factory, raw, kind",
         Factories.extend(
             [
-                ("+b", "UnaryAdd"),
-                ("-b", "UnarySubtract"),
-                ("~b", "Invert"),
-                ("not b", "NotOperator"),
+                ("+b", UnaryAdd),
+                ("-b", UnarySubtract),
+                ("~b", Invert),
+                ("not b", NotOperator),
             ],
         ),
     )
     def test_unary_operator(self, _, factory, raw, kind):
         pattern_factory = PythonPatternFactory(factory)
         it = pattern_factory.create_expression(raw)
-        assert_that(it.kind, is_("UnaryOperation"))
+        assert_that(it.ast_type(), instance_of(UnaryOperation))
         if not isinstance(it.node, LSTNode):
-            assert_that(it.children[0].kind, is_(kind))
+            assert_that(it.children[0].ast_type(), instance_of(kind))

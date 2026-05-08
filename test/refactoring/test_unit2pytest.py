@@ -1,6 +1,6 @@
 import textwrap
 from pathlib import Path
-from renaissance.impl.types import SimpleNamespace
+
 
 from hamcrest import assert_that, contains_string, is_, ends_with, not_
 

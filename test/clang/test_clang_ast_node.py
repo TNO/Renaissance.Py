@@ -78,38 +78,38 @@ class TestClangAstNode:
         assert_that(src.children, has_length(8))
         assert_that(
             src.children[0],
-            has_string('(MACRO_DEFINITION, FOO, test.c[9:26]): |#define FOO "foo"|\n'),
+            has_string('(MacroDefinition, FOO, test.c[9:26]): |#define FOO "foo"|\n'),
         )
         assert_that(
             src.children[1],
-            has_string('(MACRO_DEFINITION, BAR, test.c[35:52]): |#define BAR "bar"|\n'),
+            has_string('(MacroDefinition, BAR, test.c[35:52]): |#define BAR "bar"|\n'),
         )
         assert_that(
             src.children[2],
-            has_string('(MACRO_DEFINITION, SAME, test.c[61:79]): |#define SAME "bar"|\n'),
+            has_string('(MacroDefinition, SAME, test.c[61:79]): |#define SAME "bar"|\n'),
         )
         assert_that(
             src.children[3],
             has_string(
-                "(STRUCT_DECL, struct A_Struct, test.c[88:153]):\n    |struct A_Struct{|\n    |            int a;|\n    |            int b;|\n    |        };|\n"
+                "(StructDeclaration, struct A_Struct, test.c[88:153]):\n    |struct A_Struct{|\n    |            int a;|\n    |            int b;|\n    |        };|\n"
             ),
         )
         assert_that(
             src.children[4],
-            has_string("(TYPEDEF_DECL, A, test.c[162:187]): |typedef struct A_Struct A|\n"),
+            has_string("(TypedefDeclaration, A, test.c[162:187]): |typedef struct A_Struct A|\n"),
         )
         assert_that(
             src.children[5],
-            has_string("(VAR_DECL, some_decl, test.c[197:215]): |int some_decl = 1;|\n"),
+            has_string("(VariableDeclaration, some_decl, test.c[197:215]): |int some_decl = 1;|\n"),
         )
         assert_that(
             src.children[6],
-            has_string("(FUNCTION_DECL, print, test.c[226:289]): |int print(const char*, const char " "*, const char *, const char*)|\n"),
+            has_string("(FunctionDef, print, test.c[226:289]): |int print(const char*, const char " "*, const char *, const char*)|\n"),
         )
         assert_that(
             src.children[7],
             has_string(
-                "(FUNCTION_DECL, f, test.c[299:495]):\n"
+                "(FunctionDef, f, test.c[299:495]):\n"
                 "    |void f(){|\n"
                 "    |            A a = {};|\n"
                 "    |            const char* foo = FOO;|\n"

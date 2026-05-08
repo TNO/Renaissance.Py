@@ -51,4 +51,12 @@ class ASTExtension:
     @staticmethod
     @property
     def ast_name(self):
-        return str(self)
+        if isinstance(self, ast.arg):
+            signature = self.arg
+        elif isinstance(self, ast.Name):
+            signature = self.id
+        elif isinstance(self, ast.Expr) and isinstance(self.value, ast.Name):
+            signature = self.value.id
+        else:
+            signature =  str(self)
+        return signature

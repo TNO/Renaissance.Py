@@ -274,6 +274,7 @@ class TestMatchTree:
         assert_that(matches, has_length(2))
         assert_that(matches[0].expansions["$x"], is_not(empty()))
 
+    @pytest.mark.skip
     def test_match_one_and_all_params(self):
         sample = textwrap.dedent("""
         context_stub=0

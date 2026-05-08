@@ -1,532 +1,309 @@
 from abc import ABC
 
-
 class Type(ABC):
     pass
 
     def __str__(self):
         self.__class__.__name__
 
-
 class UnknownType(Type):
     pass
-
-class BogusType(Type):
+class BogusType(UnknownType):
     pass
 
+class Pattern(Type):
+    pass
+class MatchOne(Pattern):
+    pass
+class MatchAll(Pattern):
+    pass
 
 class Node(Type):
     pass
-
-
-class Literal(Type):
-    pass
-
-
 class TranslationUnit(Node):
     pass
-
-
 class Statement(Node):
     pass
-
-
-class BodiedStatement(Statement):
+class Expression(Node):
     pass
-
-
-class For(Statement):
+class Operator(Node):
     pass
-
-
-class FunctionDef(Statement):
+class Literal(Node):
     pass
-
-
-class With(Statement):
-    pass
-
-
-class Assign(Statement):
-    pass
-
-
-class Assert(Statement):
-    pass
-
-
-class AugAssign(Statement):
-    pass
-
-
-class Break(Statement):
-    pass
-
-
-class ClassDef(Statement):
-    pass
-
-
-class Continue(Statement):
-    pass
-
-
-class Expr(Statement):
-    pass
-
 
 class Definition(Statement):
     pass
-
-
+class Declaration(Definition):
+    pass
 class FunctionDef(Definition):
     pass
+class ClassDef(Definition):
+    pass
 
+class BodiedStatement(Statement):
+    pass
+class Do(BodiedStatement):
+    pass
+class For(BodiedStatement):
+    pass
+class If(BodiedStatement):
+    pass
+class Try(BodiedStatement):
+    pass
+class With(BodiedStatement):
+    pass
+class While(BodiedStatement):
+    pass
 
-class If(Statement):
+class ExpressionStatement(Statement):
+    pass
+
+class Assign(Statement):
+    pass
+class Assert(Statement):
+    pass
+class AugAssign(Statement):
+    pass
+
+class Break(Statement):
+    pass
+class Continue(Statement):
     pass
 
 class ImportStatement(Statement):
     pass
-
 class Import(ImportStatement):
     pass
-
-
 class ImportFrom(ImportStatement):
     pass
-
 
 class Match(Statement):
     pass
 
-
 class Pass(Statement):
     pass
-
-
 class Raise(Statement):
     pass
-
-
 class Return(Statement):
     pass
 
-
-class Try(Statement):
-    pass
-
-
-class While(Statement):
-    pass
-
-
-class Do(Statement):
-    pass
-
-
-class With(Statement):
-    pass
-
-
-class Expression(Node):
-    pass
-
-
 class IfExp(Expression):
     pass
-
-
-class IfExp(Expression):
-    pass
-
 
 class Call(Expression):
     pass
-
-
 class Dict(Expression):
     pass
-
-
 class Set(Expression):
     pass
-
-
 class List(Expression):
     pass
-
-
 class DictComp(Expression):
     pass
-
-
 class ListComp(Expression):
     pass
-
-
 class SetComp(Expression):
     pass
-
-
 class Lambda(Expression):
     pass
-
-
 class Tuple(Expression):
     pass
-
-
 class GeneratorExp(Expression):
     pass
 
-
-class Operator(Node):
-    pass
-
-
 class Subscript(Operator):
     pass
-
-
 class UnaryOperation(Operator):
     pass
-
-
 class Yield(Operator):
     pass
-
-
 class Subscript(Operator):
     pass
-
-
 class NotOperator(UnaryOperation):
     pass
-
-
-class Name(Literal):
-    pass
-
-
-class Constant(Literal):
-    pass
-
-
-class Number(Literal):
-    pass
-
-
-class String(Literal):
-    pass
-
-
-class FormattedString(Literal):
-    pass
-
-
 class ImplicitNode(Node):
     pass
-
-
 class Argument(Node):
     pass
-
-
-class Pattern(Type):
-    pass
-
-
-class MatchOne(Pattern):
-    pass
-
-
-class MatchAll(Pattern):
-    pass
-
-
-class Declaration(Definition):
-    pass
-
-
 class DeclarationExpression(Expression):
     pass
-
-
 class TypeReference(Expression):
     pass
-
-
 class VariableDeclaration(Declaration):
     pass
-
-
 class FunctionDeclaration(Declaration):
     pass
-
-
 class ClassDeclaration(Declaration):
     pass
-
-
 class CompoundStatement(Statement):
     pass
-
-
 class ParenthesizedExpression(Expression):
     pass
-
-
 class Constructor(FunctionDef):
     pass
-
-
 class FieldDeclaration(Declaration):
     pass
-
-
 class MacroDefinition(Definition):
     pass
-
-
 class Namespace(Node):
     pass
-
-
 class ParameterDeclaration(Declaration):
     pass
-
-
 class StructDeclaration(Declaration):
     pass
-
-
 class TypedefDeclaration(Declaration):
     pass
-
-
 class Specifier(Node):
     pass
-
-
 class BaseSpecifier(Specifier):
     pass
-
-
 class Attribute(Literal):
     pass
-
-
 class ConstructorExpression(Call):
     pass
-
-
 class Definition(CompoundStatement):
     pass
-
-
 class RecordDef(Definition):
     pass
-
-
+class ArgumentList(Node):
+    pass
+class Compare(Node):
+    pass
+class Keyword(Node):
+    pass
+class Arguments(Node):
+    pass
+class Error(Node):
+    pass
+class CatchClause(Node):
+    pass
+class ClassSpecifier(Node):
+    pass
+class Alias(Node):
+    pass
+class WithItem(Node):
+    pass
+class Symbol(Node):
+    pass
+class Colon(Symbol):
+    pass
+class AssignTo(Symbol):
+    pass
+class Whitespace(Type):
+    pass
+class InclusionDirective(Import):
+    pass
 class BinaryOperation(Operator):
     pass
-
-
 class Cast(Node):
     pass
-
-
 class BuiltinType(Literal):
     pass
-
-
 class AccessSpecifier(Specifier):
     pass
-
-
 class DeclarationLoc(Declaration):
     pass
-
-
 class Await(Expression):
     pass
-
-
 class Delete(Expression):
     pass
-
-
 class AssignTarget(Expression):
     pass
-
-
 class Global(Statement):
     pass
-
-
-class Slice(Literal):
-    pass
-
-
 class NamedExpr(Expression):
     pass
-
-
+class Slice(Literal):
+    pass
 class Starred(Literal):
     pass
-
-
+class Name(Literal):
+    pass
+class Constant(Literal):
+    pass
+class Number(Literal):
+    pass
+class String(Literal):
+    pass
+class FormattedString(Literal):
+    pass
 class Catch(Statement):
     pass
-
-
 class ComparasionOperation(Expression):
     pass
-
-
 class Equal(ComparasionOperation):
     pass
-
-
 class NotEqual(ComparasionOperation):
     pass
-
-
 class In(ComparasionOperation):
     pass
-
-
 class NotIn(ComparasionOperation):
     pass
-
-
 class Is(ComparasionOperation):
     pass
-
-
 class IsNot(ComparasionOperation):
     pass
-
-
 class GreaterThanEqual(ComparasionOperation):
     pass
-
-
 class GreaterThan(ComparasionOperation):
     pass
-
-
 class LessThanEqual(ComparasionOperation):
     pass
-
-
 class LessThan(ComparasionOperation):
     pass
-
-
 class BitAnd(Operator):
     pass
-
-
 class BitOr(Operator):
     pass
-
-
 class BitXor(Operator):
     pass
-
-
 class BooleanOperation(Operator):
     pass
-
-
 class UnaryAdd(UnaryOperation):
     pass
-
-
 class UnarySubtract(UnaryOperation):
     pass
-
-
 class Invert(UnaryOperation):
     pass
-
-
 class Modulo(BinaryOperation):
     pass
-
-
 class Divide(BinaryOperation):
     pass
-
-
 class FloorDiv(BinaryOperation):
     pass
-
-
 class LeftShift(BinaryOperation):
     pass
-
-
 class RightShift(BinaryOperation):
     pass
-
-
 class Multiply(BinaryOperation):
     pass
-
-
 class Power(BinaryOperation):
     pass
-
-
 class Add(BinaryOperation):
     pass
-
-
 class Subtract(BinaryOperation):
     pass
-
-
 class Case(Statement):
     pass
-
-
 class MatchStar(Node):
     pass
-
-
 class MatchAs(Node):
     pass
-
-
 class MatchSingleton(Node):
     pass
-
-
 class MatchOr(Node):
     pass
-
-
 class MatchClass(Node):
     pass
-
-
 class MatchValue(Node):
     pass
-
-
 class MatchMapping(Node):
     pass
-
-
 class MatchSequence(Node):
     pass
-
-
 class Nonlocal(Node):
     pass
+
 
 
 OPERATOR_MAP = {
@@ -555,59 +332,19 @@ OPERATOR_MAP = {
 }
 
 
-class ArgumentList(Node):
+class SubscriptElement(Literal):
     pass
 
 
-class Compare(Node):
+class Text(Type):
     pass
 
 
-class Keyword(Node):
+class TrailingWhitespace(Text):
     pass
 
 
-class Arguments(Node):
-    pass
-
-
-class Error(Node):
-    pass
-
-
-class CatchClause(Node):
-    pass
-
-
-class ClassSpecifier(Node):
-    pass
-
-
-class Alias(Node):
-    pass
-
-
-class WithItem(Node):
-    pass
-
-
-class Symbol(Node):
-    pass
-
-
-class Colon(Symbol):
-    pass
-
-
-class AssignTo(Symbol):
-    pass
-
-
-class Whitespace(Type):
-    pass
-
-
-class InclusionDirective(Import):
+class Newline(Whitespace):
     pass
 
 
@@ -682,7 +419,7 @@ KIND_MAP = {
     "ERROR": Error,
     "Eq": Equal,
     "ExceptHandler": Catch,
-    "Expr": Expr,
+    "Expr": ExpressionStatement,
     "FloorDiv": FloorDiv,
     "FloorDivide": FloorDiv,
     "For": For,
@@ -725,6 +462,7 @@ KIND_MAP = {
     "Minus": UnarySubtract,
     "MinusOperator": UnarySubtract,
     "Mod": Modulo,
+    "Modulo": Modulo,
     "Module": TranslationUnit,
     "Mult": Multiply,
     "Multiply": Multiply,
@@ -746,6 +484,7 @@ KIND_MAP = {
     "SetComp": SetComp,
     "SimpleStatementLine": Statement,
     "Slice": Slice,
+    "Subscript": Slice,
     "Starred": Starred,
     "Sub": Subtract,
     "Subscript": Subscript,
@@ -761,8 +500,11 @@ KIND_MAP = {
     "With": With,
     "Yield": Yield,
     "YieldFrom": Yield,
-    "[": List,
-    "]": List,
+    "[": ListComp,
+    "]": ListComp,
+    "LeftSquareBracket": ListComp,
+    "SubscriptElement": SubscriptElement,
+    "RightSquareBracket": ListComp,
     "^": BitXor,
     "arg": Argument,
     "argument_list": ArgumentList,
@@ -792,7 +534,7 @@ KIND_MAP = {
     "del": Delete,
     "dictionary": Dict,
     "dictionary_comprehension": DictComp,
-    "expression_statement": Expr,
+    "expression_statement": ExpressionStatement,
     "field_declaration_list": Arguments,
     "for": For,
     "for_statement": For,
@@ -922,4 +664,8 @@ KIND_MAP = {
     "Integer": Number,
     "InclusionDirective": InclusionDirective,
     "INCLUSION_DIRECTIVE": InclusionDirective,
+    "TranslationUnit": TranslationUnit,
+    "Divide": Divide,
+    "TrailingWhitespace": TrailingWhitespace,
+    "Newline": Newline,
 }

@@ -55,7 +55,7 @@ class TestMatchers:
         assert_that(is_match(self.class_node, pattern))
 
     def test_node_type_match(self):
-        matches = [node for node in traverse(self.if_node) if node.kind == "Call"]
+        matches = [node for node in traverse(self.if_node) if node.ast_type == Call]
         assert_that(matches, has_length(1))
 
 

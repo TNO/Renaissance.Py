@@ -7,7 +7,7 @@ from typing import Dict
 
 import test_data.test_insert as tst_insert
 import test_data.test_class as tst_class
-from renaissance.impl.types import Name, Attribute, FunctionDef, ImportStatement
+from renaissance.impl.types import Name, Attribute, FunctionDef, ImportStatement, ImportFrom
 from renaissance.refactoring.python_refactoring import PythonRefactoring
 from renaissance.syntax_tree.match_finder import match_pattern
 
@@ -244,7 +244,7 @@ ImprovedStub.store_args = {}
         if name.islower():
             node_list = [node for node in self.find_ast_type(ImportStatement) if node.name == name]
             if node_list:
-                if node_list[0].kind == "ImportFrom":
+                if node_list[0].ast_type == ImportFrom:
                     interface = node_list[0].properties["module"]
                 else:
                     interface = node_list[0].name if node_list else name

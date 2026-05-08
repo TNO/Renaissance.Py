@@ -87,7 +87,7 @@ class LSTNode:
 
     @property
     def node(self):
-        return self
+        return self.ast_type()
 
     def __repr__(self):
         return format_node(self)
