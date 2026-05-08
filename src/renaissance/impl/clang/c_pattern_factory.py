@@ -5,9 +5,9 @@ from more_itertools import first
 from more_itertools.more import last
 
 from renaissance.impl.types import Declaration, MacroDefinition, CompoundStatement, ParenthesizedExpression, Call, Type, \
-    Statement, VariableDeclaration, TypedefDeclaration, FunctionDef
+    VariableDeclaration, TypedefDeclaration, FunctionDef, InclusionDirective
 from renaissance.syntax_tree.ast_factory import ASTFactory
-from renaissance.syntax_tree.ast_finder import ASTFinder, find_ast_type
+from renaissance.syntax_tree.ast_finder import find_ast_type
 from renaissance.syntax_tree.ast_node import ASTNode
 from renaissance.syntax_tree.ast_shower import ASTShower
 from renaissance.impl.clang.cpp_utils import CPPUtils
@@ -24,7 +24,7 @@ def derive_header_text(language: str, ref_node: ASTNode | None):
             (
                 n.offset
                 for n in ref_node.children
-                if n.is_part_of_translation_unit() and not ASTFinder.matches_kind(n, "(?i)Inclusion_?Directive")
+                if n.is_part_of_translation_unit() and n.ast_type==InclusionDirective
             ),
             default=0,
         )
