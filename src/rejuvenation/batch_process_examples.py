@@ -108,7 +108,7 @@ def batch_repeat_example():
 
     # remove a function to create more unused variables
     def remove_function(ast_processor: ASTProcessor):
-        [ast_processor.insert_before("// ", node, False, False) for node in ast_processor.find_kind(Call)]
+        [ast_processor.insert_before("// ", node, False, False) for node in ast_processor.find_ast_type(Call)]
 
     # batch_processor.repeat(simple_codebase_provider, [remove_function])
     batch_processor.repeat(
@@ -133,7 +133,7 @@ class AnalysisRecipe:
     def store_function_call(self, ast_processor: ASTProcessor) -> Callable[[], None] | None:
         # find all function calls and store them, this routing is invoked in parallel!
         calls = []
-        [AnalysisRecipe._add_function_call(node, calls) for node in ast_processor.find_kind(Call)]
+        [AnalysisRecipe._add_function_call(node, calls) for node in ast_processor.find_ast_type(Call)]
         # the resulting lambda is invoked single threaded
         # this kind of mechanism is mainly used to store results from multiple processors
         # for refactoring operations this is not needed as a refactoring operation is single threaded

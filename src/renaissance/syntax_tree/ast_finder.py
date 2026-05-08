@@ -3,8 +3,8 @@ from typing import Callable, Iterator, Optional, Sequence
 
 
 from .ast_node import ASTNode
-from ..impl.types import Type
-from ..utils.ast_utils import traverse
+from renaissance.impl.types import Type
+from renaissance.utils.ast_utils import traverse
 
 
 class ASTFinder:
@@ -14,9 +14,9 @@ class ASTFinder:
     def find_all(ast_node: ASTNode, function: Callable[[ASTNode], Iterator[ASTNode] | bool]) -> Sequence[ASTNode]:
         return list(ASTFinder.__find_all(ast_node, function))
 
-    @staticmethod
-    def find_kind(ast_node: ASTNode, kind: str | re.Pattern[str]) -> Sequence[ASTNode]:
-        return list(ASTFinder.__matches_kind(ast_node, kind))
+    # @staticmethod
+    # def find_kind(ast_node: ASTNode, kind: str | re.Pattern[str]) -> Sequence[ASTNode]:
+    #     return list(ASTFinder.__matches_kind(ast_node, kind))
 
     @staticmethod
     def find(ast_node: ASTNode, kind: str | re.Pattern[str]) -> Sequence[ASTNode]:

@@ -6,7 +6,6 @@ from renaissance.impl.types import VariableDeclaration, CompoundStatement
 from renaissance.refactoring import CleanupRefactoring
 from renaissance.syntax_tree import (
     ASTFactory,
-    ASTFinder,
     ASTRewriter,
     ASTShower,
     ASTProcessor,

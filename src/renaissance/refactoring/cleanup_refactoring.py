@@ -1,7 +1,7 @@
 from more_itertools import flatten
 
 from renaissance.impl.types import VariableDeclaration, CompoundStatement
-from renaissance.syntax_tree import ASTFinder, ASTProcessor
+from renaissance.syntax_tree import ASTProcessor
 from renaissance.syntax_tree.ast_finder import find_ast_type
 
 

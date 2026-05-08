@@ -1,14 +1,13 @@
 import pytest
 from hamcrest import *
 from hamcrest import assert_that, contains_string
-from mako.testing.assertions import not_in
 from more_itertools import last
 
 from c_cpp.factories import Factories
 from renaissance.impl.clang import CPatternFactory, ClangASTNode
 from renaissance.impl.clang.c_pattern_factory import derive_header_text
 from renaissance.impl.types import DeclarationExpression, MatchOne, VariableDeclaration
-from renaissance.syntax_tree import ASTFinder, ASTShower
+from renaissance.syntax_tree import ASTShower
 from renaissance.syntax_tree.ast_finder import find_ast_type
 
 
@@ -46,21 +45,22 @@ class TestCPatternFactory:
             if c.is_part_of_translation_unit() and not (c.kind == "FUNCTION_DECL" and c.children[-1].kind == "COMPOUND_STMT")
         )
 
-        assert_that(header, contains_string('#include <stdint.h>'))
         assert_that(header, contains_string('#define FOO "foo";'))
         assert_that(header, contains_string("int print(const char*,...);"))
         assert_that(header, contains_string("typedef struct A_Struct"))
         assert_that(header, contains_string("int some_decl = 1;"))
         assert_that(header, not_(contains_string('A a = {};')))
-        assert_that(simple_header, contains_string('#include <stdint.h>'))
         assert_that(simple_header, contains_string('#define FOO "foo"'))
         assert_that(simple_header, contains_string("int print(const char*,...);"))
         assert_that(simple_header, contains_string("typedef struct A_Struct"))
         assert_that(simple_header, contains_string("int some_decl = 1;"))
         assert_that(simple_header, not_(contains_string('A a = {};')))
 
+        assert_that(header, not_(contains_string('#include <stdint.h>')))
+        assert_that(simple_header, contains_string('#include <stdint.h>'))
 
-class TestExpression(TestCPatternFactory):
+
+class TestExpression:
 
     @pytest.mark.parametrize(
         "_, factory, expression, expected",
@@ -123,7 +123,7 @@ class TestExpression(TestCPatternFactory):
             assert_that(text, not_none())
 
 
-class TestDeclaration(TestCPatternFactory):
+class TestDeclaration:
 
     @pytest.mark.parametrize(
         "_, factory, declarationText, types, parameters, expected_vars, expected_refs",
@@ -161,7 +161,7 @@ class TestDeclaration(TestCPatternFactory):
         assert_that(count_refs, greater_than_or_equal_to(expected_refs))
 
 
-class TestStatements(TestCPatternFactory):
+class TestStatements:
 
     @pytest.mark.parametrize(
         "_, factory, statementText, extra_declarations, expected_stmts, expected_refs",
@@ -199,7 +199,7 @@ class TestStatements(TestCPatternFactory):
             assert_that(stmt.is_statement)
 
 
-class TestUseAtuToCreatePatterns(TestCPatternFactory):
+class TestUseAtuToCreatePatterns:
     """
     Test the creation of a complex pattern that includes a typedef, a struct, a define and a statement
 

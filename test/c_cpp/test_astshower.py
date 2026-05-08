@@ -1,12 +1,11 @@
 import pytest
 from hamcrest import *
 
-import hamcrest
 from hamcrest import assert_that, matches_regexp
 
 from renaissance.impl.clang import ClangASTNode, CPatternFactory
 from renaissance.impl.types import Call, If
-from renaissance.syntax_tree import ASTFactory, ASTShower, ASTFinder
+from renaissance.syntax_tree import ASTFactory, ASTShower
 from renaissance.syntax_tree.ast_finder import find_ast_type
 
 

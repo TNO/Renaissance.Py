@@ -1,12 +1,11 @@
 import os
 import textwrap
-from pathlib import Path
 from typing import Sequence
 
 from renaissance.impl.python.util import convert_function
 from renaissance.impl.types import Attribute
 from renaissance.refactoring.python_refactoring import PythonRefactoring
-from renaissance.syntax_tree import ASTFinder, PatternMatch
+from renaissance.syntax_tree import PatternMatch
 from renaissance.syntax_tree.ast_finder import find_ast_type
 from renaissance.syntax_tree.match_finder import match_pattern, AstProtocol
 

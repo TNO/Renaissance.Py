@@ -21,7 +21,7 @@ def main(args):
             ASTShower.show_node(atu, include_properties=True)
             # do something with the factory and atu
             ast_refactor = ASTProcessor(atu, factory, in_memory=True)
-            [print(n.text) for n in ast_refactor.find_kind(FunctionDef)]
+            [print(n.text) for n in ast_refactor.find_ast_type(FunctionDef)]
 
 
 if __name__ == "__main__":

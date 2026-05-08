@@ -5,8 +5,8 @@ from hamcrest import *
 from more_itertools.more import first
 
 from renaissance.impl.clang import ClangASTNode
-from renaissance.impl.types import Expression, FunctionDef, DeclarationExpression, TypeReference, ParameterDeclaration, \
-    VariableDeclaration, RecordDef, ClassDef, StructDeclaration, ConstructorExpression, Call, ClassDeclaration
+from renaissance.impl.types import FunctionDef, DeclarationExpression, TypeReference, ParameterDeclaration, \
+    VariableDeclaration, RecordDef, StructDeclaration, ConstructorExpression, Call, ClassDeclaration
 from renaissance.syntax_tree import ASTNode, ASTFinder, ASTShower
 from renaissance.syntax_tree.ast_finder import find_ast_type
 from .factories import Factories

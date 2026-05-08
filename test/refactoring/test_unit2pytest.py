@@ -1,18 +1,12 @@
 import textwrap
 from pathlib import Path
-from types import SimpleNamespace
-from unittest.mock import MagicMock, mock_open, patch
+from renaissance.impl.types import SimpleNamespace
 
-import pytest
-from hamcrest import assert_that, contains_string, has_length, is_, ends_with, not_
+from hamcrest import assert_that, contains_string, is_, ends_with, not_
 
 import targets
 from renaissance.impl.python.rst_node import PythonRstNode
-from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
-from renaissance.refactoring import unit2pytest as mod
 from renaissance.refactoring.unit2pytest import Unit2Pytest
-from renaissance.syntax_tree import ASTFactory
-from renaissance.syntax_tree.match_finder import match_pattern
 
 
 class TestUnit2Pytest:

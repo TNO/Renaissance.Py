@@ -10,10 +10,8 @@ from renaissance.impl.clang_json import ClangJsonASTNode
 from renaissance.impl.types import Declaration, Call
 from renaissance.syntax_tree import (
     ASTFactory,
-    ASTFinder,
     ASTShower,
     ASTNode,
-    MatchFinder,
 )
 from renaissance.syntax_tree.ast_finder import find_ast_type
 from renaissance.syntax_tree.match_finder import match_pattern, find_variants, find_in_list, is_match

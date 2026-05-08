@@ -8,7 +8,7 @@ class Type(ABC):
         self.__class__.__name__
 
 
-class UnknownType:
+class UnknownType(Type):
     pass
 
 class BogusType(Type):
@@ -607,6 +607,10 @@ class Whitespace(Type):
     pass
 
 
+class InclusionDirective(Import):
+    pass
+
+
 KIND_MAP = {
     "block": CompoundStatement,
     "except": Catch,
@@ -916,4 +920,6 @@ KIND_MAP = {
     "ImportAlias": Alias,
     "Arg": Argument,
     "Integer": Number,
+    "InclusionDirective": InclusionDirective,
+    "INCLUSION_DIRECTIVE": InclusionDirective,
 }

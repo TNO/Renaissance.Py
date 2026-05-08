@@ -334,7 +334,7 @@ class PythonRstNode:
             if isinstance(target, ast.Name):
                 name = target.id
             else:
-                name = self.kind
+                name = self.ast_type.__name__
         elif isinstance(self.node, ast.Name):
             name = self.node.id
         elif isinstance(self.node, ast.arg):
@@ -359,7 +359,7 @@ class PythonRstNode:
         elif isinstance(self.node, (ast.Module)) and self.translation_unit:
             name = self.translation_unit.file_name
         else:
-            name = self.kind
+            name = self.ast_type.__name__
         return name if name else ""
 
     @property
@@ -437,7 +437,7 @@ class PythonRstNode:
 
     def get_container_parent(self):
         if self.parent:
-            if self.parent.kind in ["FunctionDef", "ClassDef", "Module"]:
+            if self.parent.ast_type.__name__ in ["FunctionDef", "ClassDef", "Module"]:
                 return self.parent
             else:
                 return self.parent.get_container_parent()

@@ -4,7 +4,7 @@ from more_itertools import last
 from renaissance.impl.clang import CPatternFactory
 from renaissance.impl.clang_json import ClangJsonASTNode
 from renaissance.impl.types import Declaration
-from renaissance.syntax_tree import ASTFactory, ASTFinder, MatchFinder
+from renaissance.syntax_tree import ASTFactory, MatchFinder
 from renaissance.syntax_tree.ast_finder import find_ast_type
 
 

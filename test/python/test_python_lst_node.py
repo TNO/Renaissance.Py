@@ -4,10 +4,9 @@ import pytest
 from hamcrest import assert_that, is_, instance_of
 from hypothesis import given, settings
 
-import renaissance
 from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
 from renaissance.impl.tree_sitter.lst import LSTNode
-from renaissance.impl.types import Statement, Pass
+from renaissance.impl.types import Statement
 from utils_for_tests import reject_unsupported_code
 
 

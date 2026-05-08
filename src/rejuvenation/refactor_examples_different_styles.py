@@ -6,7 +6,6 @@ from renaissance.syntax_tree import (
     ASTRewriter,
     ASTShower,
     ASTFinder,
-    ASTProcessor,
 )
 from renaissance.impl.clang import ClangASTNode, CPatternFactory
 from renaissance.syntax_tree.ast_finder import find_ast_type
