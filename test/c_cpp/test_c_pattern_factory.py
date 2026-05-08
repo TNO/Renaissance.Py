@@ -1,6 +1,7 @@
 import pytest
 from hamcrest import *
 from hamcrest import assert_that, contains_string
+from mako.testing.assertions import not_in
 from more_itertools import last
 
 from c_cpp.factories import Factories
@@ -14,6 +15,7 @@ from renaissance.syntax_tree.ast_finder import find_ast_type
 class TestCPatternFactory:
     def test_derive_header(self):
         code = """
+                #include <stdint.h>
                 int print(const char*,...);
                 #define FOO "foo"
                 #define BAR "bar"
@@ -44,14 +46,18 @@ class TestCPatternFactory:
             if c.is_part_of_translation_unit() and not (c.kind == "FUNCTION_DECL" and c.children[-1].kind == "COMPOUND_STMT")
         )
 
+        assert_that(header, contains_string('#include <stdint.h>'))
         assert_that(header, contains_string('#define FOO "foo";'))
         assert_that(header, contains_string("int print(const char*,...);"))
         assert_that(header, contains_string("typedef struct A_Struct"))
         assert_that(header, contains_string("int some_decl = 1;"))
+        assert_that(header, not_(contains_string('A a = {};')))
+        assert_that(simple_header, contains_string('#include <stdint.h>'))
         assert_that(simple_header, contains_string('#define FOO "foo"'))
         assert_that(simple_header, contains_string("int print(const char*,...);"))
         assert_that(simple_header, contains_string("typedef struct A_Struct"))
         assert_that(simple_header, contains_string("int some_decl = 1;"))
+        assert_that(simple_header, not_(contains_string('A a = {};')))
 
 
 class TestExpression(TestCPatternFactory):

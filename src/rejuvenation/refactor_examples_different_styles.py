@@ -128,7 +128,7 @@ def example_use_ast_kind_finder(factory, _):
     [rewriter.replace("fancy_new", node) for node in find_ast_type(atu, TypeReference) if node.name == "old"]
 
     # Print the results after replacing the old type by fancy_new
-    print("results after replacing the old type by fancy_new using ASTFinder.find_kind")
+    print("results after replacing the old type by fancy_new using find_ast_type")
     result = rewriter.apply_to_string().strip()
     print(result)
     return result, expected_result_old_fancy_new

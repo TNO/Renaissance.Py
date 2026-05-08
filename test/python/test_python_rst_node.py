@@ -36,7 +36,7 @@ class TestPythonRstNode:
         it = self.factory.create_from_text("type UserId = int", "context.py")
         show_node(it)
         kinds = [node.kind for node in traverse(it)]
-        assert_that("Typedef", is_in(kinds))
+        assert_that("TypedefDeclaration", is_in(kinds))
 
     def test_slice(self):
         it = self.pattern_factory.create_expression("items[1:2:3]")

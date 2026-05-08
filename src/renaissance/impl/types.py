@@ -75,7 +75,11 @@ class Expr(Statement):
     pass
 
 
-class FunctionDef(Statement):
+class Definition(Statement):
+    pass
+
+
+class FunctionDef(Definition):
     pass
 
 
@@ -241,7 +245,7 @@ class MatchAll(Pattern):
     pass
 
 
-class Declaration(Statement):
+class Declaration(Definition):
     pass
 
 
@@ -281,7 +285,7 @@ class FieldDeclaration(Declaration):
     pass
 
 
-class MacroDefinition:
+class MacroDefinition(Definition):
     pass
 
 
@@ -358,10 +362,6 @@ class AssignTarget(Expression):
 
 
 class Global(Statement):
-    pass
-
-
-class Typedef(Declaration):
     pass
 
 
@@ -748,7 +748,7 @@ KIND_MAP = {
     "Try": Try,
     "TryStar": Try,
     "Tuple": Tuple,
-    "TypeAlias": Typedef,
+    "TypeAlias": TypedefDeclaration,
     "UAdd": UnaryAdd,
     "USub": UnarySubtract,
     "UnaryOp": UnaryOperation,
