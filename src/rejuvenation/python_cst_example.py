@@ -2,8 +2,10 @@ import textwrap
 
 from renaissance.impl.python.cst_node import PythonCstNode
 from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
+from renaissance.impl.types import Call
 from renaissance.syntax_tree import ASTShower, ASTRewriter
-from renaissance.syntax_tree.ast_finder import find_kind
+from renaissance.syntax_tree.ast_finder import find_ast_type
+
 from renaissance.syntax_tree.match_finder import match_pattern
 
 example_code = """
@@ -18,7 +20,7 @@ pa(54)
 """
 
 
-def python_lst_smoke_test():
+def python_cst_smoke_test():
 
     # adapter = TreeSitterAdapter(tree_sitter_python)
     # tree = adapter.parse_code(code)
@@ -41,7 +43,7 @@ def python_lst_smoke_test():
     ASTShower.show_node(atu)
 
     print("_______________simple find____________________________________")
-    nodes = find_kind(atu, "Call")
+    nodes = find_ast_type(atu, Call)
 
     ASTShower.show_node(nodes[0])
 

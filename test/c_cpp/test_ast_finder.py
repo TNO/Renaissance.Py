@@ -5,7 +5,9 @@ import pytest
 from hamcrest import assert_that, is_, greater_than, has_length
 
 import targets
+from renaissance.impl.types import Expression, BogusType
 from renaissance.syntax_tree import ASTFinder, ASTNode, ASTFactory, ASTShower
+from renaissance.syntax_tree.ast_finder import find_ast_type
 from .factories import Factories
 
 
@@ -20,14 +22,14 @@ class TestKindFinder(TestFinder):
     @pytest.mark.parametrize("_, factory", Factories.factories)
     def test_find_bogus(self, _, factory):
         model = self.load_model(factory)
-        total = len(ASTFinder.find_kind(model, "(?i).*bogus.*"))
+        total = len(find_ast_type(model, BogusType))
         assert_that(total, is_(0))
 
     @pytest.mark.parametrize("_, factory", Factories.factories)
     def test_find_expr(self, _, factory):
         model = self.load_model(factory)
         ASTShower.show_node(model)
-        assert_that(ASTFinder.find_kind(model, "(?i).*expr.*"), has_length(greater_than(0)))
+        assert_that(find_ast_type(model, Expression), has_length(greater_than(0)))
 
 
 class TestAllFinder(TestFinder):

@@ -4,8 +4,10 @@ from hamcrest import assert_that, has_length
 
 from renaissance.impl.tree_sitter.adapter import TreeSitterAdapter
 from renaissance.impl.tree_sitter.lst import LSTNode
+from renaissance.impl.types import Call
 
 from renaissance.syntax_tree import ASTFinder
+from renaissance.syntax_tree.ast_finder import find_ast_type
 from renaissance.syntax_tree.match_finder import is_match
 from renaissance.utils.ast_utils import traverse
 
@@ -57,9 +59,9 @@ class TestMatchers:
         matches = [node for node in traverse(self.if_node) if node.kind == "Call"]
         assert_that(matches, has_length(1))
 
-    @pytest.mark.skip("I expect 'call_expression' to work, or a defined way to get kind")
+
     def test_node_type_match_exact_type(self):
-        matches = ASTFinder.find_kind(self.if_node, "call_expression")
+        matches = find_ast_type(self.if_node, Call)
         assert_that(matches, has_length(1))
 
     def make_pattern(self, code: str, adapter: any) -> LSTNode:

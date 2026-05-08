@@ -2,6 +2,7 @@ import pytest
 from hamcrest import assert_that, is_
 
 from rejuvenation.python_ast_example import python_ast_smoke_test
+from rejuvenation.python_cst_example import python_cst_smoke_test
 from rejuvenation.python_lst_example import python_lst_smoke_test
 from rejuvenation.python_rst_example import python_rst_smoke_test
 
@@ -14,7 +15,7 @@ class TestPythonExamples:
         assert_that(result, is_(result))
 
     def test_python_cst_still_works(self):
-        result = python_rst_smoke_test()
+        result = python_cst_smoke_test()
         assert_that(result, is_(result))
 
     def test_python_lst_still_works(self):

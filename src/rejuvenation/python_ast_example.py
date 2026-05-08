@@ -2,8 +2,9 @@ import textwrap
 from ast import AST
 
 from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
+from renaissance.impl.types import Call
 from renaissance.syntax_tree import ASTShower, ASTRewriter
-from renaissance.syntax_tree.ast_finder import find_kind
+from renaissance.syntax_tree.ast_finder import find_ast_type
 from renaissance.syntax_tree.match_finder import match_pattern
 
 example_code = """
@@ -41,7 +42,7 @@ def python_ast_smoke_test():
     ASTShower.show_node(atu)
 
     print("_______________simple find____________________________________")
-    nodes = find_kind(atu, "Call")
+    nodes = find_ast_type(atu, Call)
 
     ASTShower.show_node(nodes[0])
 

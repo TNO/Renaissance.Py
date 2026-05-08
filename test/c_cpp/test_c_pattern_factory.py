@@ -6,7 +6,9 @@ from more_itertools import last
 from c_cpp.factories import Factories
 from renaissance.impl.clang import CPatternFactory, ClangASTNode
 from renaissance.impl.clang.c_pattern_factory import derive_header_text
+from renaissance.impl.types import DeclarationExpression, MatchOne, VariableDeclaration
 from renaissance.syntax_tree import ASTFinder, ASTShower
+from renaissance.syntax_tree.ast_finder import find_ast_type
 
 
 class TestCPatternFactory:
@@ -146,8 +148,8 @@ class TestDeclaration(TestCPatternFactory):
         count_refs = 0
         count_vars = 0
         for decl in created_declarations:
-            count_refs += len(ASTFinder.find_kind(decl, "(?i)(DECL_?REF_?EXPR)|(.*MatchOne.*)"))
-            count_vars += len(ASTFinder.find_kind(decl, "(?i)VAR_?DECL"))
+            count_refs += len(find_ast_type(decl, (DeclarationExpression,MatchOne)))
+            count_vars += len(find_ast_type(decl, VariableDeclaration))
             ASTShower.show_node(decl)
         assert_that(count_vars, is_(expected_vars))
         assert_that(count_refs, greater_than_or_equal_to(expected_refs))
@@ -184,7 +186,7 @@ class TestStatements(TestCPatternFactory):
 
         count_refs = 0
         for decl in created_statements:
-            count_refs += len(ASTFinder.find_kind(decl, "DECL_?REF_?EXPR|.*MatchOne.*"))
+            count_refs += len(find_ast_type(decl, (DeclarationExpression,MatchOne)))
         assert_that(expected_stmts, is_(len(created_statements)))
         assert_that(expected_refs, less_than_or_equal_to(count_refs))
         for stmt in created_statements:

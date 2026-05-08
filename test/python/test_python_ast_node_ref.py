@@ -8,7 +8,7 @@ from renaissance import syntax_tree
 from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.impl.python.factory import PythonFactory
 from renaissance.impl.python.rst_node import PythonRSTReference
-from renaissance.syntax_tree import ASTNode, ASTFinder
+from renaissance.impl.types import FunctionDef, Name, Call, ClassDef
 from renaissance.utils.ast_utils import traverse
 
 content = """
@@ -79,21 +79,21 @@ class TestPythonNode:
         with tempfile.TemporaryDirectory(delete=True) as temp_dir:
             syntax_tree.ASTShower.store_node(temp_dir + "/py0.txt", ast)
 
-        func_def = first(n for n in syntax_tree.ASTFinder.find_kind(ast, "FunctionDef") if n.name == "f")
+        func_def = first(n for n in traverse(ast) if isinstance(n.ast_type(), FunctionDef) and n.name == "f")
         assert_that(func_def, is_(PythonRstNode))
         ast.translation_unit.lazy_create_refers(ast)
         refs = func_def.references
         assert_that(refs, has_length(2))
         ref = refs[0]
         ref_node = ast.translation_unit._nodes[ref.node_id]
-        assert_that(syntax_tree.ASTFinder.matches_kind(ref_node, "FunctionDef"), is_(True))
+        assert_that(ref_node.ast_type(), instance_of(FunctionDef))
         assert_that(ref_node.name.lower(), is_("a"))
         referenced_by = ref_node.referenced_by
         assert_that(referenced_by, has_length(1))  # Function a referenced by function f and var x.
         assert_that(func_def in [ast.translation_unit._nodes[r.node_id] for r in referenced_by])
         ref1 = refs[1]
         ref_node1 = ast.translation_unit._nodes[ref1.node_id]
-        assert_that(syntax_tree.ASTFinder.matches_kind(ref_node, "FunctionDef"), is_(True))
+        assert_that(ref_node.ast_type(), instance_of(FunctionDef))
         assert_that(ref_node1.name.lower(), is_("b"))
         referenced_by1 = ref_node1.referenced_by
         assert_that(referenced_by1, has_length(1))  # Function b referenced by function f.
@@ -104,14 +104,14 @@ class TestPythonNode:
         ast = self.factory.create_from_text("from abc import a\nx = a()\nz: a = x", "content3.py")
         with tempfile.TemporaryDirectory(delete=True) as temp_dir:
             syntax_tree.ASTShower.store_node(temp_dir + "/py1.txt", ast)
-        type_node = first(n for n in syntax_tree.ASTFinder.find_kind(ast, "Name") if n.name == "z")
+        type_node = first(n for n in traverse(ast) if isinstance(n.ast_type(), Name) and n.name == "z")
         assert_that(type_node, is_(PythonRstNode))
         ast.translation_unit.lazy_create_refers(ast)
         refs = type_node.references
         assert_that(refs, has_length(1))
         ref = refs[0]
         ref_node = ast.translation_unit._nodes[ref.node_id]
-        assert_that(syntax_tree.ASTFinder.matches_kind(ref_node, "Name"), is_(True))
+        assert_that(ref_node.ast_type(), instance_of(Name))
         assert_that(ref_node.name.lower(), is_("a"))
         referenced_by = ref_node.referenced_by
         assert_that(referenced_by, has_length(greater_than(0)))
@@ -123,7 +123,7 @@ class TestPythonNode:
         with tempfile.TemporaryDirectory(delete=True) as temp_dir:
             syntax_tree.ASTShower.store_node(temp_dir + "/py2.txt", ast)
 
-        class_node = first(n for n in ASTFinder.find_kind(ast, "ClassDef") if n.name == "A")
+        class_node = first(n for n in traverse(ast) if isinstance(n.ast_type(),ClassDef) and n.name == "A")
 
         assert_that(class_node, is_(PythonRstNode))
         ast.translation_unit.lazy_create_refers(ast)
@@ -160,7 +160,7 @@ class TestPythonNode:
         ast = self.factory.create_from_text(content, "content.py")
         with tempfile.TemporaryDirectory(delete=True) as temp_dir:
             syntax_tree.ASTShower.store_node(temp_dir + "/py4.txt", ast)
-        call_node = first(n for n in ASTFinder.find_kind(ast, "Call") if n.name == "bruno.is_near()")
+        call_node = first(n for n in traverse(ast) if isinstance(n.ast_type(), Call) and n.name == "bruno.is_near()")
         assert_that(call_node, is_(PythonRstNode))
         ast.translation_unit.lazy_create_refers(ast)
         refs = call_node.references

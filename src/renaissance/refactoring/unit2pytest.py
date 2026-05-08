@@ -4,8 +4,10 @@ from pathlib import Path
 from typing import Sequence
 
 from renaissance.impl.python.util import convert_function
+from renaissance.impl.types import Attribute
 from renaissance.refactoring.python_refactoring import PythonRefactoring
 from renaissance.syntax_tree import ASTFinder, PatternMatch
+from renaissance.syntax_tree.ast_finder import find_ast_type
 from renaissance.syntax_tree.match_finder import match_pattern, AstProtocol
 
 
@@ -175,7 +177,7 @@ class Unit2Pytest(PythonRefactoring):
             self.replace(repl, match.nodes, False, False)
 
     def convert_skip_test(self):
-        nodes = ASTFinder.find_kind(self.root, "Attribute")
+        nodes = find_ast_type(self.root, Attribute)
         for node in nodes:
             if node.signature == "unittest.skip":
                 self.replace("pytest.mark.skip", node, False, False)

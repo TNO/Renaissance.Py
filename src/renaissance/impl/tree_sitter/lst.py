@@ -1,7 +1,7 @@
 import sys
 from typing import Any, Self, cast
 
-from renaissance.impl.types import KIND_MAP, UnknownKind
+from renaissance.impl.types import KIND_MAP, BogusType
 from renaissance.utils.ast_utils import preceding_sibling, next_sibling, match_props, match_children
 
 IRRELEVANT_PROPS = {"source_code", "end_point", "start_point", "location", "type"}
@@ -24,8 +24,8 @@ class LSTNode:
         self.parent = parent
         self.children = [] if children is None else children
         self.properties = properties
-        self.ast_type = KIND_MAP.get(node_type, UnknownKind)
-        if self.ast_type != UnknownKind:
+        self.ast_type = KIND_MAP.get(node_type, BogusType)
+        if self.ast_type != BogusType:
             self.kind = self.ast_type.__name__
         else:
             print(f'"{node_type}": ,')

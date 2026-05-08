@@ -5,7 +5,10 @@ from hamcrest import *
 from more_itertools.more import first
 
 from renaissance.impl.clang import ClangASTNode
+from renaissance.impl.types import Expression, FunctionDef, DeclarationExpression, TypeReference, ParameterDeclaration, \
+    VariableDeclaration, RecordDef, ClassDef, StructDeclaration, ConstructorExpression, Call, ClassDeclaration
 from renaissance.syntax_tree import ASTNode, ASTFinder, ASTShower
+from renaissance.syntax_tree.ast_finder import find_ast_type
 from .factories import Factories
 
 
@@ -27,11 +30,11 @@ class TestASTReference:
         ast = factory.create_from_text(code, "test.cpp")
         with tempfile.TemporaryDirectory() as temp_dir:
             ASTShower.store_node(f"{temp_dir}/c0.txt", ast)
-        call = first(ASTFinder.find_kind(ast, "(Call|CXXConstruct)Expr"))
+        call = first(find_ast_type(ast, (Call,ConstructorExpression)))
         assert_that(isinstance(call, ASTNode), is_(True))
         refs = call.references
         assert_that(refs, has_length(greater_than(0)))
-        refs = [r for r in refs if ASTFinder.matches_kind(r.node, ".*(Constructor|Function).*")]
+        refs = [r for r in refs if isinstance(r.node.ast_type(), FunctionDef)]
 
         assert_that(refs, has_length(greater_than(0)))
         for ref in refs:
@@ -41,13 +44,13 @@ class TestASTReference:
             assert_that(referenced_by, has_length(greater_than(0)))  # clang python return 2 references, clang json 1
             # clang python has a crosse reference to call clang json to the DeclRefExpr child of the call
             assert_that(call.name in [r.node.name for r in referenced_by] or call.children[0].name in [r.node.name for r in referenced_by])
-        declarations = list(n for n in ASTFinder.find_kind(ast, ".*(Constructor|Function_?Decl).*") if n.name != "f")
+        declarations = list(n for n in find_ast_type(ast, FunctionDef) if n.name != "f")
         assert_that(declarations, has_length(greater_than(0)))
 
     @pytest.mark.parametrize("_, factory", Factories.factories)
     def test_call_reference(self, _, factory):
         ast = factory.create_from_text("void f(){} void f1(){ f();}", "test.c")
-        call = first(ASTFinder.find_kind(ast, "Decl_?Ref_?Expr"))
+        call = first(find_ast_type(ast, DeclarationExpression))
         assert_that(isinstance(call, ASTNode), is_(True))
         refs = call.references
         assert_that(refs, has_length(is_(1)))
@@ -74,7 +77,7 @@ class TestASTReference:
     )
     def test_var_reference(self, _, factory, code, args):
         ast = factory.create_from_text(code, "test.c")
-        using = first(ASTFinder.find_kind(ast, "Decl_?Ref_?Expr"))
+        using = first(find_ast_type(ast, DeclarationExpression))
         assert_that(isinstance(using, ASTNode), is_(True))
         refs = using.references
         assert_that(refs, has_length(is_(1)))
@@ -103,9 +106,9 @@ class TestASTReference:
         # in clang json the VarDecl node contains the reference
         # use show_node to understand the difference
         # ASTShower.show_node(ast)
-        using = first((n for n in ASTFinder.find_kind(ast, "(Type)_?Ref") if len(n.references) > 0), None)
+        using = first((n for n in find_ast_type(ast, TypeReference) if len(n.references) > 0), None)
         if not using:
-            using = first(ASTFinder.find_kind(ast, "(Parm)?(Var)?_?Decl"))
+            using = first(find_ast_type(ast, (ParameterDeclaration,VariableDeclaration)))
         assert_that(isinstance(using, ASTNode), is_(True))
         refs = using.references
         assert_that(refs, has_length(is_(1)))
@@ -137,18 +140,15 @@ class TestASTReference:
         # in clang python, there is a TYPE_REF below the CLASS_DECL node whereas
         # in clang json there is a bases/base element
         # use show_node to understand the difference
-        using = first(ASTFinder.find_kind(ast, "(Type)_?Ref"), None)
+        using = first(find_ast_type(ast, TypeReference), None)
         if not using:
-            using = first(n for n in ASTFinder.find_kind(ast, "(CXX_?Record)_?Decl") if n.name == "B")
+            using = first(n for n in find_ast_type(ast, RecordDef) if n.name == "B")
         assert_that(isinstance(using, ASTNode), is_(True))
         refs = using.references
         assert_that(refs, has_length(is_(1)))
         ref = refs[0]
         ref_node = ref.node
-        assert_that(
-            ASTFinder.matches_kind(ref_node, "(CXX_?Record|Class|Struct)_?Decl"),
-            is_(True),
-        )
+        assert_that(isinstance(ref_node.ast_type(), (RecordDef, ClassDeclaration,StructDeclaration)))
         referenced_by = ref_node.referenced_by
         assert_that(referenced_by, has_length(greater_than(0)))  # clang python return 2 references, clang json 1
         if len(referenced_by[0].node.children):

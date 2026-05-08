@@ -7,7 +7,7 @@ from typing import Any, Sequence, Self, Callable
 from ast import *
 import ast
 
-from renaissance.impl.types import UnknownKind, OPERATOR_MAP
+from renaissance.impl.types import BogusType, OPERATOR_MAP
 from renaissance.impl.types import KIND_MAP
 from renaissance.impl.python.util import convert
 from renaissance.syntax_tree.match_finder import find_in_list
@@ -190,8 +190,8 @@ class PythonRstNode:
         self.node = node
         self.parent = parent
         self.translation_unit: PythonRstTranslationUnit = translation_unit
-        self.ast_type = KIND_MAP.get(type(node).__name__, UnknownKind)
-        if self.ast_type == UnknownKind:
+        self.ast_type = KIND_MAP.get(type(node).__name__, BogusType)
+        if self.ast_type == BogusType:
             print(f'"{type(node).__name__}": {type(node).__name__},')
         self.kind = self.ast_type.__name__
         self.indent = ""

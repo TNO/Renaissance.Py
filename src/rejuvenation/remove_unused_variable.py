@@ -2,6 +2,7 @@
 # It specifically showcases the replacement of if-else statements with ternary operators.
 from more_itertools import flatten
 
+from renaissance.impl.types import VariableDeclaration, CompoundStatement
 from renaissance.refactoring import CleanupRefactoring
 from renaissance.syntax_tree import (
     ASTFactory,
@@ -13,6 +14,7 @@ from renaissance.syntax_tree import (
 )
 from renaissance.impl.clang import ClangASTNode
 from renaissance.impl.clang_json import ClangJsonASTNode
+from renaissance.syntax_tree.ast_finder import find_ast_type
 
 example_code = """
         int a = 1;
@@ -75,7 +77,7 @@ def remove_unused_variable_low_level(node_type1: type[ASTNode]):
 
     ASTShower.show_node(atu)
     # search matches and replace them
-    funcs = flatten(ASTFinder.find_kind(func, "(?i)Var_?Decl") for func in (ASTFinder.find_kind(atu, "(?i)Compound?Stmt")))
+    funcs = flatten(find_ast_type(func, VariableDeclaration) for func in (find_ast_type(atu, CompoundStatement)))
     [rewriter.remove(node.parent, True, True) for node in funcs if len(node.referenced_by) == 0]
 
     # print the rewritten code

@@ -4,9 +4,10 @@ from pathlib import Path
 from typing import Callable, Iterator, Sequence
 
 import renaissance.syntax_tree.match_finder
+from renaissance.impl.types import Type
 from renaissance.syntax_tree import ASTNode
 from renaissance.syntax_tree.ast_factory import ASTFactory
-from renaissance.syntax_tree.ast_finder import ASTFinder
+from renaissance.syntax_tree.ast_finder import ASTFinder, find_ast_type
 from renaissance.syntax_tree.ast_rewriter import ASTRewriter
 from renaissance.syntax_tree.match_finder import PatternMatch
 
@@ -78,8 +79,8 @@ class ASTProcessor:
     def find_all(self, function: Callable[[ASTNode], Iterator[ASTNode] | bool]) -> Sequence[ASTNode]:
         return ASTFinder.find_all(self.__root_node, function)
 
-    def find_kind(self, kind: str) -> Sequence[ASTNode]:
-        return ASTFinder.find_kind(self.__root_node, kind)
+    def find_kind(self, kind: type[Type]) -> Sequence[ASTNode]:
+        return find_ast_type(self.__root_node, kind)
 
     def find_match(self, *patterns_list, recursive: bool = True) -> Sequence[PatternMatch]:
         return renaissance.syntax_tree.match_finder.find_all(
