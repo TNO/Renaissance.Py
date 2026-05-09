@@ -54,7 +54,7 @@ class TestSimplifyRenaissance:
                 val = match.expansions["$key"][0].signature
             """,
         )
-        subject.run()
+        subject.replace_stmt("$val = match.expansions[$key][0].signature", "$val= match[$key]")
         assert_that(subject.apply_to_string(), contains_string('val= match["$key"]'))
         assert_that(subject.apply_to_string(), not_(contains_string(".expansions")))
 

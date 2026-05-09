@@ -145,7 +145,7 @@ class CPatternFactory:
         ]
         return self._create_body(text, types, parameters, extra_declarations, kind)
 
-    def create(self, text: str, kind: str | None = None) -> ASTNode:
+    def create(self, text: str, kind: type[Type] = None) -> ASTNode:
         """
         Creates an object using the factory from the provided text.
         The object is created by the factory using the provided text and the header of the provided reference node.

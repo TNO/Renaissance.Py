@@ -1,14 +1,11 @@
+import ast
 import sys
 import textwrap
 from pathlib import Path
 from typing import Any, Sequence, Self, Callable
 
-# from ast_comments import *
-from ast import *
-import ast
+from renaissance.impl.types import *
 
-from renaissance.impl.types import BogusType, OPERATOR_MAP
-from renaissance.impl.types import KIND_MAP
 from renaissance.impl.python.util import convert
 from renaissance.syntax_tree.match_finder import find_in_list
 from renaissance.utils.ast_utils import preceding_sibling, next_sibling, match_props, match_children, format_node
@@ -17,7 +14,7 @@ from renaissance.utils.ast_utils import traverse
 types = ["int", "float", "str", "list", "set", "tuple", "Mapping", "dict", "Optional"]
 IRRELEVANT_PROPS = {"comment"}
 IRRELEVANT_NODES = {"comment"}
-IMPLICIT = ["ImplicitNode"]
+IMPLICIT = [ImplicitNode]
 
 
 class ImplicitNode(ast.Name):
@@ -83,7 +80,7 @@ class PythonRstTranslationUnit:
         self.references_initialized = True
 
     def add(self, node):
-        match node.kind:
+        match node.ast_type.__name__:
             case "Name":
                 if node.node.id not in self._nodes and node.node.id not in types:
                     self._nodes[node.node.id] = node
@@ -154,7 +151,7 @@ class PythonRstTranslationUnit:
                         self.add_reference(node_id, ref_id, ref_kind)
                     # call function 'a' in function 'b', then 'b' refers to 'a'
                     container = ast_node.get_container_parent()
-                    if container.kind == "FunctionDef" and isinstance(ast_node.node.func, ast.Name):
+                    if container.ast_type == FunctionDef and isinstance(ast_node.node.func, ast.Name):
                         node_id = container.name
                         ref_id = ast_node.node.func.id
                         ref_kind = "FuncCall"
@@ -191,15 +188,13 @@ class PythonRstNode:
         self.parent = parent
         self.translation_unit: PythonRstTranslationUnit = translation_unit
         self.ast_type = KIND_MAP.get(type(node).__name__, BogusType)
-        if self.ast_type == BogusType:
-            print(f'"{type(node).__name__}": {type(node).__name__},')
-        self.kind = self.ast_type.__name__
+
         self.indent = ""
         self.name = self._derive_name()
         self.show_props = False
         self.children = []
         self.properties = {}
-        self.is_implicit = self.kind not in IMPLICIT
+        self.is_implicit = self.ast_type not in IMPLICIT
         self.offset = 0
         self.length = 0
         if self.translation_unit:
@@ -245,7 +240,7 @@ class PythonRstNode:
     def __eq__(self, other):
         return (
             isinstance(other, type(self))
-            and self.kind == other.kind
+            and self.ast_type == other.ast_type
             and match_props(self.properties, other.properties, IRRELEVANT_PROPS)
             and match_children(self.children, other.children, IRRELEVANT_NODES)
         )
@@ -350,12 +345,12 @@ class PythonRstNode:
         elif isinstance(self.node, (ast.For, ast.AsyncFor)):
             if isinstance(self.node.target, Tuple):
                 name = getattr(self.node.target.dims[1], "id")
-            elif isinstance(self.node.target, Name):
+            elif isinstance(self.node.target, ast.Name):
                 name = self.node.target.id
             else:
                 name = str(self.node.target)
         elif "body" not in self.node._fields:
-            name = unparse(self.node)
+            name = ast.unparse(self.node)
         elif isinstance(self.node, (ast.Module)) and self.translation_unit:
             name = self.translation_unit.file_name
         else:
@@ -368,7 +363,7 @@ class PythonRstNode:
 
     @property
     def value(self):
-        if self.kind == "Assert":
+        if self.ast_type == Assert:
             return 0
         return self.node.value.value if hasattr(self.node, "value") else None
 
@@ -419,7 +414,7 @@ class PythonRstNode:
         return (
             self.translation_unit.content[self.offset : self.offset + self.length]
             if self.translation_unit
-            else unparse(self.node).encode(sys.getfilesystemencoding())
+            else ast.unparse(self.node).encode(sys.getfilesystemencoding())
         )
 
     @property

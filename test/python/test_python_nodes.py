@@ -50,20 +50,23 @@ class TestPythonNodes:
     def test_stmt_kind(self, _, factory, raw, kind):
         pattern_factory = PythonPatternFactory(factory)
         it = pattern_factory.create_statement(raw)
-        assert_that(it.ast_type(), instance_of(kind))
+        if isinstance(it.node, LSTNode) and kind in [Assign, AugAssign]:
+            assert_that(it.children[0].ast_type(), instance_of(kind))
+        else:
+            assert_that(it.ast_type(), instance_of(kind))
 
     @pytest.mark.parametrize(
         "_, factory, raw, kind",
         Factories.extend(
             [
-                ("with open() as c: pass", "With"),
-                ("await (fun(2))", "Await"),
-                ("a = 5 + 3", "BinaryOperation"),
-                ("0x01 & 0x10", "BitAnd" ""),
-                ("0x01 | 0x10", "BitOr"),
-                ("0x01 ^ 0x10", "BitXor"),
-                ("True and False", "BooleanOperation"),
-                ("del x", "Delete"),
+                ("with open() as c: pass", With),
+                ("await (fun(2))", Await),
+                ("a = 5 + 3", BinaryOperation),
+                ("0x01 & 0x10", BitAnd),
+                ("0x01 | 0x10", BitOr),
+                ("0x01 ^ 0x10", BitXor),
+                ("True and False", BooleanOperation),
+                ("del x", Delete),
                 (
                     """
 def outer():
@@ -74,7 +77,7 @@ def outer():
         x += 5
     return inner()
 """,
-                    "Nonlocal",
+                    Nonlocal,
                 ),
             ],
         ),
@@ -84,110 +87,90 @@ def outer():
         kinds = [node.ast_type for node in traverse(it) if hasattr(node, "ast_type")]
         assert_that(kind, is_in(kinds))
 
-    @pytest.mark.parametrize("_, factory, raw, kind", Factories.extend([("global x", [Global, Statement])]))
+    @pytest.mark.parametrize("_, factory, raw, kind", Factories.extend([("global x", Global)]))
     def test_global_stmt(self, _, factory, raw, kind):
-        it = factory.create_from_text(raw).children[-1]
-        assert_that(it.ast_type(), instance_of(kind))
+        pattern_factory = PythonPatternFactory(factory)
+        it = pattern_factory.create_statement(raw)
+        assert_that(it.ast_type(), is_(kind))
 
     @pytest.mark.parametrize(
         "_, factory, raw, kind",
         Factories.extend(
             [
-                ("fun()", "Call"),
-                ("{one: 1, two:2}", "Dict"),
-                ("{1,2}", "Set"),
-                ("[1, 2]", "List"),
-                ('{word: len(word) for word in ["one","two"]}', "DictComp"),
-                ("[ n*3 for n in [1, 2]]", "ListComp"),
-                ("{ n*3 for n in [1, 2]}", "SetComp"),
-                ("lambda: fun()", "Lambda"),
-                ("x = (n*2 for n in[1,2])", "GeneratorExp"),
-                ('f"{one}two"', "FormattedString"),
-                ("items[1:4]", "Subscript"),
-                ("(9, 10)", "Tuple"),
-                ("x = not True", "UnaryOperation"),
-                ("yield fun", "Yield"),
-                ("yield from [1,2]", "Yield"),
-                ("x = z if z>y else y", "IfExp"),
+                ("fun()", Call),
+                ("{one: 1, two:2}", Dict),
+                ("{1,2}", Set),
+                ("[1, 2]", List),
+                ('{word: len(word) for word in ["one","two"]}', DictComp),
+                ("[ n*3 for n in [1, 2]]", ListComp),
+                ("{ n*3 for n in [1, 2]}", SetComp),
+                ("lambda: fun()", Lambda),
+                ("(n*2 for n in[1,2])", GeneratorExp),
+                ('f"{1}two"', FormattedString),
+                ("items[1:4]", Subscript),
+                ("(9, 10)", Tuple),
+                ("not True", UnaryOperation),
+                ("yield fun", Yield),
+                ("yield from [1,2]", Yield),
+                ("z if z>y else y", IfExp),
             ],
         ),
     )
     def test_expr_kind(self, _, factory, raw, kind):
         pattern_factory = PythonPatternFactory(factory)
         it = pattern_factory.create_expression(raw)
-        if type(it.node).__name__ != "LSTNode":
-            assert_that(it.kind, is_(kind))
+        assert_that(it.ast_type(), instance_of(kind))
 
     @pytest.mark.parametrize(
         "_, factory, raw, kind",
         Factories.extend(
             [
-                ("a == b", "Equal"),
-                ("a in b", "In"),
-                ("a is b", "Is"),
-                ("a is not b", "IsNot"),
-                ("a < b", "LessThan"),
-                ("a <=b", "LessThanEqual"),
-                ("a != b", "NotEqual"),
-                ("a not in b", "NotIn"),
-                ("a > b", "GreaterThan"),
-                ("a >= b", "GreaterThanEqual"),
-            ],
-        ),
-    )
+                ("a == b", Equal),
+                ("a in b", In),
+                ("a is b", Is),
+                ("a is not b", IsNot),
+                ("a < b", LessThan),
+                ("a <=b", LessThanEqual),
+                ("a != b", NotEqual),
+                ("a not in b", NotIn),
+                ("a > b", GreaterThan),
+                ("a >= b", GreaterThanEqual)         ] ) )
     def test_comperator_operator(self, _, factory, raw, kind):
         pattern_factory = PythonPatternFactory(factory)
         it = pattern_factory.create_expression(raw)
         if isinstance(it.node, (AST, LSTNode)):
-            assert_that(it.children[1].kind, is_(kind))
+            assert_that(it.children[1].ast_type(), instance_of(kind))
         else:
-            assert_that(it.children[1].children[0].kind, is_(kind))
+            assert_that(it.children[1].children[0].ast_type(), instance_of(kind))
 
     @pytest.mark.parametrize(
         "_, factory, raw, kind",
         Factories.extend(
             [
-                ('case None: return "No data"', "MatchSingleton"),
-                ('case True | False:        return "Boolean value"', "MatchOr"),
-                (
-                    'case int(x) if x > 0:        return f"Positive integer: {x}"',
-                    "MatchClass",
-                ),
-                (
-                    'case str() as s if len(s) > 10:        return f"Long string: {s}"',
-                    "MatchAs",
-                ),
-                ('case "[]":        return "Empty list"', "MatchValue"),
-                (
-                    'case [first, *rest]:        return f"List with first element {first} and {len(rest)} more items"',
-                    "MatchSequence",
-                ),
-                (
-                    'case {"name": name, "age": age}:        return f"Person named {name}, age {age}"',
-                    "MatchMapping",
-                ),
-                ('case Point(x=0, y=0):        return "Origin point"', "MatchClass"),
-                (
-                    'case Point(x=x, y=y):        return f"Point at ({x}, {y})"',
-                    "MatchClass",
-                ),
-                ('case "str":        return "Unknown data"', "MatchValue"),
-                ('case _:        return "Unknown data"', "MatchAs"),
-            ],
-        ),
-    )
+                ('case None: return "No data"', MatchSingleton),
+                ('case True | False: return "Boolean value"', MatchOr),
+                ('case int(x) if x > 0:  return x', MatchClass ),
+                ('case str() as s if len(s) > 10: return s', MatchAs   ),
+                ('case "[]": return "Empty"', MatchValue),
+                ('case [first, *rest]: return f"Lis"', MatchSequence),
+                ('case {"n": n, "a": a}: return a', MatchMapping    ),
+                ('case Point(x=0, y=0): return "t"', MatchClass),
+                ('case Point(x=x, y=y): return y',MatchClass         ),
+                ('case "str":  return "U"', MatchValue),
+                ('case _:      return "_"', MatchAs),
+            ] ))
     def test_match_patterns(self, _, factory, raw, kind):
         pattern_factory = PythonPatternFactory(factory)
         sample_code = f"match data:\n  {raw}\n  case _: pass"
         stmt = pattern_factory.create_statement(sample_code)
         if isinstance(stmt.node, PythonRstNode):
-            case_kind = stmt.children[1].children[0].children[0].kind
+            case_kind = stmt.children[1].children[0].children[0].ast_type()
         elif isinstance(stmt.node, AST):
-            case_kind = stmt.children[1].children[0].kind
+            case_kind = stmt.children[1].children[0].ast_type()
         elif isinstance(stmt.node, PythonCstNode):
-            case_kind = stmt.children[4].children[1].kind
+            case_kind = stmt.children[4].children[1].ast_type()
         elif isinstance(stmt.node, LSTNode):
-            case_kind = stmt.children[3].children[0].children[1].kind
+            case_kind = stmt.children[3].children[0].children[1].ast_type()
             return
         assert_that(case_kind, is_(kind))
 

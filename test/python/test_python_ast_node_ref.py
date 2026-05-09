@@ -131,7 +131,7 @@ class TestPythonNode:
         assert_that(refs, has_length(1))
         ref = refs[0]
         ref_node = ast.translation_unit._nodes[ref.node_id]
-        assert_that(syntax_tree.ASTFinder.matches_kind(ref_node, "ClassDef"), is_(True))
+        assert_that(ref_node.ast_type(), instance_of(ClassDef))
         referenced_by = ref_node.referenced_by
         assert_that(referenced_by, has_length(2))
         assert_that(class_node in [ast.translation_unit._nodes[r.node_id] for r in referenced_by])
@@ -150,7 +150,7 @@ class TestPythonNode:
         assert_that(refs, has_length(1))
         ref = refs[0]
         ref_node = ast.translation_unit._nodes[ref.node_id]
-        assert_that(syntax_tree.ASTFinder.matches_kind(ref_node, "ClassDef"), is_(True))
+        assert_that(ref_node.ast_type(), instance_of(ClassDef))
         referenced_by = ref_node.referenced_by
         assert_that(referenced_by, has_length(2))
         types = [r.node_id for r in referenced_by]
@@ -167,7 +167,7 @@ class TestPythonNode:
         ref = refs[0]
         ref_node = ast.translation_unit._nodes[ref.node_id]
 
-        assert_that(syntax_tree.ASTFinder.matches_kind(ref_node, "FunctionDef"), is_(True))
+        assert_that(ref_node.ast_type(), instance_of(FunctionDef))
         referenced_by = ref_node.referenced_by
         assert_that(referenced_by, has_length(1))
         assert_that(call_node in [ast.translation_unit._nodes[r.node_id] for r in referenced_by])

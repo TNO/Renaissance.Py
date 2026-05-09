@@ -143,9 +143,10 @@ class ClangJsonASTNode(ASTNode):
         elif self._kind in ["DeclRefExpr"]:
             if self.name.startswith("$$"):
                 self._kind = MatchAll.__name__
+                self.ast_type=MatchAll
             elif self.name.startswith("$"):
                 self._kind = MatchOne.__name__
-
+                self.ast_type = MatchOne
         self._children = self.__inserted_children + [
             ClangJsonASTNode(
                 ClangJsonASTNode._remove_wrapper(n),

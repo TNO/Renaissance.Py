@@ -6,7 +6,8 @@ from more_itertools import last
 from c_cpp.factories import Factories
 from renaissance.impl.clang import CPatternFactory, ClangASTNode
 from renaissance.impl.clang.c_pattern_factory import derive_header_text
-from renaissance.impl.types import DeclarationExpression, MatchOne, VariableDeclaration, FunctionDef, CompoundStatement
+from renaissance.impl.types import DeclarationExpression, MatchOne, VariableDeclaration, FunctionDef, CompoundStatement, \
+    Expression, Declaration
 from renaissance.syntax_tree import ASTShower
 from renaissance.syntax_tree.ast_finder import find_ast_type
 
@@ -252,7 +253,7 @@ class TestUseAtuToCreatePatterns:
 
         # the user must pick it's own pattern in this case the last statement
         assert_that(pattern_root.children[-1].is_statement)
-        node = last(n for n in pattern_root.children if n.kind != "UNEXPOSED_DECL")
+        node = last(n for n in pattern_root.children if n.ast_type != Declaration)
         raw = node.signature
 
         assert_that(statementText, starts_with(raw))

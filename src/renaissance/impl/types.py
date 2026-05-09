@@ -1,5 +1,8 @@
 from abc import ABC
 
+from lark.grammar import Symbol
+
+
 class Type(ABC):
     pass
 
@@ -348,7 +351,42 @@ class Newline(Whitespace):
     pass
 
 
+class Comma(Symbol):
+    pass
+
+
+class And(Symbol):
+    pass
+
+
+class Comparison:
+    pass
+
+
+class ComparisonTarget:
+    pass
+
+
+class Annotation:
+    pass
+
+
+class AssignEqual:
+    pass
+
+
 KIND_MAP = {
+    "comparison_operator": Comparison,
+    "Comparison": Comparison,
+    "ComparisonTarget": ComparisonTarget,
+    "Equal": Equal,
+    "LessThanEqual": LessThanEqual,
+    "NotEqual": NotEqual,
+    "LessThan": LessThan,
+    "GreaterThanEqual": GreaterThanEqual,
+    "GreaterThan": GreaterThan,
+    "Power": Power,
+    "Subtract": Subtract,
     "block": CompoundStatement,
     "except": Catch,
     "none": BogusType,
@@ -668,4 +706,47 @@ KIND_MAP = {
     "Divide": Divide,
     "TrailingWhitespace": TrailingWhitespace,
     "Newline": Newline,
+    "Comma": Comma,
+    "BooleanOperation": BooleanOperation,
+    "And": And,
+    ",": Symbol,
+    ".": Symbol,
+    ";": Symbol,
+    "Annotation": Annotation,
+    "AssignEqual": AssignEqual,
+    "Colon": Colon,
+    # "CompFor": CompFor,
+    # "Decorator": Decorator,
+    # "DictElement": DictElement,
+    # "Dot": Dot,
+    # "Element": Element,
+    # "EmptyLine": EmptyLine,
+    # "Finally": Finally,
+    # "LeftCurlyBrace": LeftCurlyBrace,
+    # "LeftParen": LeftParen,
+    # "Param": Param,
+    # "Parameters": Parameters,
+    # "ParenthesizedWhitespace": ParenthesizedWhitespace,
+    # "RightCurlyBrace": RightCurlyBrace,
+    # "RightCurlyBrace": RightCurlyBrace,
+    # "RightParen": RightParen,
+    # "RightParen": RightParen,
+    # "SimpleStatementSuite": SimpleStatementSuite,
+    # "SimpleString": SimpleString,
+    # "\": \,
+    # "as": as,
+    # "as_pattern": as_pattern,
+    # "as_pattern_target": as_pattern_target,
+    # "comment": comment,
+    # "dotted_name": dotted_name,
+    # "ellipsis": ellipsis,
+    # "except_clause": except_clause,
+    # "float": Float,
+    # "import": Import,
+    # "parameters": parameters,
+    # "raise": Raise,
+    # "with": With,
+    # "with_clause": with_clause,
+    # "with_item": with_item,
+
 }

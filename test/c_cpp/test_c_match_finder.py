@@ -74,7 +74,6 @@ class TestExpressions(TestCMatchFinder):
         expr_node = CPatternFactory(factory).create_expression("a == $x")
         ASTShower.show_node(expr_node)
         atu = factory.create_from_text("void fun(){int a,b;\nb==5;\na==3;\na==4;}", "test.c")
-
         show_node(atu, "CPP code")
         # find all if and while statements
         matches = [match for match in match_pattern(atu.children, [expr_node]) if match.nodes[0].is_part_of_translation_unit()]
@@ -435,7 +434,7 @@ class TestUseAtuToCreatePattern(TestCMatchFinder):
         pattern_factory = CPatternFactory(factory, ref_node=atu)
         statements_atu = pattern_factory.create(statements)
         statements = last(find_ast_type(statements_atu, pattern_type))  # pick the last statement
-        func_body = atu.children[-1].children
+        func_body = atu.children[-1].children[2].children
         result = match_pattern(func_body, [statements], recursive=True)
         # should find multiple matches, at least the one in the pattern and the one in the function body
         assert_that(result, has_length(greater_than_or_equal_to(1)))

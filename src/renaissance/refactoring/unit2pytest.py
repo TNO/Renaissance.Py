@@ -127,7 +127,7 @@ class Unit2Pytest(PythonRefactoring):
             self.replace(repl, match.nodes, False, False)
 
     def is_swapped(self, match: PatternMatch) -> bool:
-        return match.expansions["$exp"][0].ast_type in [Literal, FormatedString, Number]
+        return match.expansions["$exp"][0].ast_type in [Literal, FormattedString, Number]
 
     def convert_parameterized_test(self):
         unittest = self.pattern_factory.create_statements(textwrap.dedent("""

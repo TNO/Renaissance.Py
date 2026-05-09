@@ -24,7 +24,7 @@ from renaissance.syntax_tree.match_finder import (
     is_match_tree,
     MatchFinder,
     find_in_list,
-    match_pattern,
+    match_pattern, is_match, variant_in_match_stmt,
 )
 
 
@@ -245,9 +245,12 @@ class TestMatchTree:
         """),
             "test_file.py",
         )
-        pattern = self.pattern_factory.create_statements("class $name(TestCase):\n    $$cases")
-        ASTShower.show_node(pattern[0])
-        matches = match_pattern(atu.children, pattern)
+        pattern = self.pattern_factory.create_statement("class $name(TestCase):\n    $$cases")
+        ASTShower.show_node(pattern)
+        expansions ={}
+        variants = variant_in_match_stmt(atu.children[-1],pattern, expansions)
+        single = is_match(atu.children[-1],pattern)
+        matches = match_pattern([atu.children[-1]], [pattern])
         assert_that(matches, has_length(1))
         assert_that(matches[0].expansions["$name"][0], is_("TestExample"))
 

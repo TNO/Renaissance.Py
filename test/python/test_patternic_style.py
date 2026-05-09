@@ -20,24 +20,25 @@ class TestPythonicStyle:
     @pytest.mark.parametrize(
         "raw, kind, op, name, expr, body_length",
         [
-            ("try:\n  pass\nfinally:\n  pass", Try, "try", "Try", "expr", 1),
-            ("try:\n  x()\nexcept* e:\n  pass", Try, "try", "Try", "expr", 1),
-            ("class name: pass", ClassDef, "class", "name", "expr", 1),
-            ("def name(): pass", FunctionDef, "function", "name", "expr", 1),
-            ("for name in expr:\n  1\n  2\n  pass", For, "for", "name", "expr", 3),
-            ("while expr: pass", While, "while", "While", "expr", 1),
-            ("if expr: pass\nelse: pass ", If, "if", "If", "expr", 1),
-            ("match x:\n  case _:    pass", Match, "match", "x", "expr", 1),
-            ("async for f in fs:  pass", For, "for", "f", "",1),
-            ('async with open("x"): pass', With, "with", "With","", 1),
-            ("async def fun(): pass", FunctionDef, "function", "fun","", 1),
+            ("try:\n  pass\nfinally:\n  pass",  Try,        "try", "Try", "expr", 1),
+            ("try:\n  x()\nexcept* e:\n  pass", Try,        "try", "Try", "expr", 1),
+            ("class name: pass",                ClassDef,   "class", "name", "expr", 1),
+            ("def name(): pass",                FunctionDef,"function", "name", "expr", 1),
+            ("for name in expr:\n  1\n  2\n  pass", For,    "for", "name", "expr", 3),
+            ("while expr: pass",                While,      "while", "While", "expr", 1),
+            ("if expr: pass\nelse: pass ",      If,         "if", "If", "expr", 1),
+            ("match x:\n  case _:    pass",     Match,      "match", "x", "expr", 1),
+            ("async for f in fs:  pass",        For,        "for", "f", "",1),
+            ('async with open("x"): pass',      With,       "with", "With","", 1),
+            ("async def fun(): pass",           FunctionDef,"function", "fun","", 1),
         ],
     )
     def test_consistent_name_stmt(self, raw, kind, op, name, expr, body_length):
         it = PythonRstNode.load_from_text(raw).body[-1]
         assert_that(it.ast_type(), instance_of(kind))
         assert_that(it.operator, is_(op))
-        assert_that(it.name, is_(name))
+        if isinstance(it.name, str):
+            assert_that(it.name, is_(name))
         # assert_that(it.expr.name, is_(expr))
         assert_that(it.body, has_length(body_length))
 

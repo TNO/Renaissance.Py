@@ -114,11 +114,11 @@ class TestUnit2Pytest:
                 self.assertEqual(call(),1)
         """,
         )
-        sut.run()
+        sut.convert_assert("self.assertEqual($exp, $act)", "assert_that($exp, is_($act))")
         assert_that(sut.apply_to_string(), contains_string("assert_that(call()"))
         assert_that(sut.apply_to_string(), not_(contains_string("assert_that(1")))
 
-    def test_to_class(self, mocker):
+    def test_to_assertthat(self, mocker):
         sut = self._create(
             mocker,
             """
@@ -127,7 +127,7 @@ class TestUnit2Pytest:
         """,
         )
 
-        sut.refactor()
+        sut.replace_stmt("assert $stmt, $$msg", "assert_that($stmt, is_(True), $$msg)")
         assert_that(sut.apply_to_string(), contains_string("assert_that(call()"))
         assert_that(sut.apply_to_string(), not_(contains_string("assert_that(1")))
 

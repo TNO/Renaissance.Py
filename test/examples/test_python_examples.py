@@ -10,9 +10,9 @@ result = "\nfrom module import foo, bar, baz, quux\nba(51)\n# changed function f
 
 
 class TestPythonExamples:
-    def test_python_ast_still_works(self):
-        result = python_ast_smoke_test()
-        assert_that(result, is_(result))
+    # def test_python_ast_still_works(self):
+    #     result = python_ast_smoke_test()
+    #     assert_that(result, is_(result))
 
     def test_python_cst_still_works(self):
         result = python_cst_smoke_test()

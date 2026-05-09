@@ -7,7 +7,7 @@ from termcolor import colored
 
 @runtime_checkable
 class Displayable(Protocol):
-    kind: str
+    ast_type: str
     children: list[Self]
     is_implicit: bool
     show_props: bool
