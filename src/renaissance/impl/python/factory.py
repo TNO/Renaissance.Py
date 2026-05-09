@@ -47,39 +47,39 @@ class PythonPattern(AstProtocol):
         return use_dollar(str(self.node))
 
     def derive_type(self, node) -> str:
-        signature = ""
-        if isinstance(node.ast_type(), Argument):
-            signature = node.node.arg
-        elif isinstance(node.ast_type(), Name):
-            signature = node.node.id
-        elif isinstance(node.ast_type(), ExpressionStatement) and isinstance(node.node.value, ast.Name):
-            signature = node.node.value.id
-        if _MATCH_ALL_RE.match(signature):
-            return MatchAll
-        elif _MATCH_ONE_RE.match(signature):
-            return MatchOne
-        if isinstance(node, LSTNode):
-            return node.ast_type
-        else:
-            return node.ast_type
-        # if isinstance(node, ast.arg):
-        #     signature = node.arg
-        # elif isinstance(node, ast.Name):
-        #     signature = node.id
-        # elif isinstance(node, ast.Expr) and isinstance(node.value, ast.Name):
-        #     signature = node.value.id
-        # elif isinstance(node, ast.AST):
-        #     signature = str(node)
-        # else:
-        #     signature = node.name
-        #
-        # if node.ast_type in [DeclarationExpression, ExpressionStatement, Name, Argument]:
-        #     if _MATCH_ALL_RE.match(signature):
-        #         return MatchAll
-        #     elif _MATCH_ONE_RE.match(signature):
-        #         return MatchOne
+        # signature = ""
+        # if isinstance(node.ast_type(), Argument):
+        #     signature = node.node.arg
+        # elif isinstance(node.ast_type(), Name):
+        #     signature = node.node.value
+        # elif isinstance(node.ast_type(), ExpressionStatement) and isinstance(node.node.value, ast.Name):
+        #     signature = node.node.value.id
+        # if _MATCH_ALL_RE.match(signature):
+        #     return MatchAll
+        # elif _MATCH_ONE_RE.match(signature):
+        #     return MatchOne
+        # if isinstance(node, LSTNode):
+        #     return node.ast_type
         # else:
         #     return node.ast_type
+        if isinstance(node, ast.arg):
+            signature = node.arg
+        elif isinstance(node, ast.Name):
+            signature = node.id
+        elif isinstance(node, ast.Expr) and isinstance(node.value, ast.Name):
+            signature = node.value.id
+        elif isinstance(node, ast.AST):
+            signature = str(node)
+        else:
+            signature = node.name
+
+        if node.ast_type in [DeclarationExpression, ExpressionStatement, Name, Argument]:
+            if _MATCH_ALL_RE.match(signature):
+                return MatchAll
+            elif _MATCH_ONE_RE.match(signature):
+                return MatchOne
+
+        return node.ast_type
 
 
 class PythonFactory:
