@@ -7,7 +7,9 @@ from typing import Any, Optional, Sequence, override
 import clang.native
 from clang.cindex import TranslationUnit, Config, Index, TypeKind, CursorKind
 
-from renaissance.impl.types import MatchAll, MatchOne, UnknownType, KIND_MAP
+from renaissance.impl.clang.cpp_utils import get_ancestor
+from renaissance.impl.types import MatchAll, MatchOne, UnknownType, KIND_MAP, MacroDefinition, Statement, \
+    DeclarationExpression, Literal, BinaryOperation, UnaryOperation, CompoundStatement
 from renaissance.syntax_tree import ASTNode, ASTReference
 from renaissance.utils.ast_utils import match_children, match_props
 
@@ -150,14 +152,15 @@ class ClangASTNode(ASTNode):
 
     def __eq__(self, other):
         return (
-            isinstance(other, type(self))
-            and self.kind == other.kind
+            other
+            and isinstance(other, type(self))
+            and self.ast_type == other.ast_type
             and match_props(self.properties, other.properties, IRRELEVANT_PROPS)
             and match_children(self.children, other.children, IRRELEVANT_NODES)
         )
 
     def __hash__(self):
-        return hash((self.kind, frozenset(self.properties.items())))
+        return hash((self.ast_type, frozenset(self.properties.items())))
 
     @override
     @staticmethod
@@ -223,7 +226,6 @@ class ClangASTNode(ASTNode):
             print(e)
         return EMPTY_STR
 
-    @cache
     def _get_containing_filename(self) -> str:
         if self is self.root:
             return self.translation_unit.clang_atu.spelling
@@ -240,7 +242,7 @@ class ClangASTNode(ASTNode):
             if (
                 (not self._is_statement_or_declaration())
                 and (self.parent and self.parent.kind in STMT_PARENTS)
-                and self.kind not in ["MACRO_DEFINITION"]
+                and self.ast_type not in [MacroDefinition]
             ):
                 content = self.root.binary_file_content()
                 while end_offset < len(content) and not content[end_offset - 1] in b";":
@@ -251,14 +253,15 @@ class ClangASTNode(ASTNode):
 
     def _is_statement_or_declaration(self):
         return re.match(".*(_STMT|_DECL|CXX_METHOD)", self.kind)
+        return isinstance(self.ast_type, Statement)
 
     @override
     def matches_kind(self, node: ASTNode) -> bool:
         return (
-            self._kind == node.kind
-            or (self._kind.endswith("_LITERAL") and node.kind == "DECL_REF_EXPR")
-            or (self._kind == "DECL_REF_EXPR" and node.kind.endswith("_LITERAL")) @ cache
-        )
+            self.ast_type == node.ast_type
+            or (isinstance(self.ast_type(), Literal) and isinstance(node.ast_type(), DeclarationExpression))
+            or (isinstance(node.ast_type(), Literal) and isinstance(self.ast_type(), DeclarationExpression)))
+
 
     def _derive_properties(self) -> dict[str, int | str]:
         result = {}
@@ -266,7 +269,7 @@ class ClangASTNode(ASTNode):
         if offsets in self.translation_unit.macro_expansions:
             result["macro_expansion"] = self.text
 
-        if self.kind == "BINARY_OPERATOR":
+        if self.ast_type == BinaryOperation:
             # TODO remove below code after clang release that supports the getOpCode() statement
             children = self.children
             start_offset = children[0].offset + children[0].length
@@ -275,7 +278,7 @@ class ClangASTNode(ASTNode):
             result["operator"] = operator.strip()
             # next statement works in C++ but not in Python (yet) will be released later
             # result['operator'] =  self.node.getOpCode()
-        elif self.kind == "UNARY_OPERATOR":
+        elif self.ast_type == UnaryOperation:
             # TODO remove below code after clang release that supports the getOpCode() statement
             child = self.children[0]
             # list all attributes of self.node excluding the once starting with _
@@ -294,9 +297,9 @@ class ClangASTNode(ASTNode):
             result["prefixOperator"] = prefix_operator
             # next statement works in C++ but not in Python (yet) will be released later
             # result['operator'] =  self.node.getOpCode()
-        elif self.kind.endswith("_LITERAL"):
+        elif isinstance(self.ast_type(),Literal):
             self._add_tokens(result, "LITERAL")
-        elif self.kind == "DECL_REF_EXPR":
+        elif self.ast_type == DeclarationExpression:
             self._add_tokens(result, "LITERAL")
 
         is_all = {
@@ -310,7 +313,9 @@ class ClangASTNode(ASTNode):
     @override
     @property
     def is_statement(self) -> bool:
+        "pretty good definition"
         return self.parent is not None and self.parent.kind in STMT_PARENTS
+        return self.parent is not None and self.parent.ast_type in [CompoundStatement, TranslationUnit]
 
     @override
     @property
@@ -449,6 +454,9 @@ class ClangASTNode(ASTNode):
     @property
     def is_implicit(self):
         return self.is_part_of_translation_unit()
+
+#    def get_ancestor(self, types ):
+#        return get_ancestor(self, types)
 
 
 SYSTEM_MACROS = {
