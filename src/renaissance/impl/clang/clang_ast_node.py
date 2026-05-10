@@ -147,7 +147,7 @@ class ClangASTNode(ASTNode):
                 self._children.append(ClangASTNode(ClangASTNode.remove_wrapper(n), self.translation_unit, self))
 
         self._properties = self._derive_properties()
-        if self.kind == "DECL_REF_EXPR":
+        if self.ast_type == DeclarationExpression:
             self._properties["name"] = self._name
 
     def __eq__(self, other):
