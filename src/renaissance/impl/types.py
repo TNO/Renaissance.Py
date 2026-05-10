@@ -374,6 +374,8 @@ class Annotation:
 class AssignEqual:
     pass
 
+class Comment(Type):
+    pass
 
 KIND_MAP = {
     "comparison_operator": Comparison,
