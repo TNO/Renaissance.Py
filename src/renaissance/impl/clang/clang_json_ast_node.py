@@ -32,7 +32,7 @@ ID_TAGS = [
 
 STMT_PARENTS = [CompoundStatement, TranslationUnit]
 IRRELEVANT_PROPS = {"macro_expansion", "start_point", "end_point", "source_code", "location", "type"}
-IRRELEVANT_NODES = {"COMMENT", "FullComment", "MACRO_DEFINITION", "Comment"}
+IRRELEVANT_NODES = {Comment, MacroDefinition, FullComment}
 VERBOSE = False
 
 
@@ -106,7 +106,7 @@ class ClangJsonASTNode(ASTNode):
         # without the fake child pattern matching on types will be difficult
         self.__inserted_children: list[ClangJsonASTNode] = []
         type = self.node.get("type")
-        if insert_kind == None and type and not self.node.get("implicit") and isinstance(self.ast_type, (VariableDeclaration,FunctionDef)):
+        if insert_kind == None and type and not self.node.get("implicit") and re.fullmatch("(Var|Function|CxxMethod)Decl", self._kind):
             declared_type = type["qualType"].replace("(", "").replace(")", "").strip()
             if self.node.get("loc"):
                 loc = self.node["loc"]
@@ -162,7 +162,7 @@ class ClangJsonASTNode(ASTNode):
     def __eq__(self, other):
         return (
             isinstance(other, type(self))
-            and self.ast_type == other.ast_type
+            and self.kind == other.kind
             and match_props(self.properties, other.properties, IRRELEVANT_PROPS)
             and match_children(self.children, other.children, IRRELEVANT_NODES)
         )
@@ -288,19 +288,21 @@ class ClangJsonASTNode(ASTNode):
             return 0
 
     def _is_statement_or_declaration(self):
+        return re.match("(?i).*(Stmt|Decl)", self.kind)
         return isinstance(self.ast_type(), (Statement))
+
 
     @override
     @property
-    def matches_kind(self, other: Self) -> bool:
+    def matches_kind(self, node: ASTNode) -> bool:
+        self_kind = self._kind
+        node_kind = node.kind
+        return (
+            self_kind == node_kind
+            or (self_kind.endswith("Literal") and node_kind == "DeclRefExpr")
+            or (self_kind == "DeclRefExpr" and node_kind.endswith("Literal"))
+        )
         return self.ast_type == other.ast_type
-        # self_kind = self._kind
-        # node_kind = node.kind
-        # return (
-        #     self_kind == node_kind
-        #     or (self_kind.endswith("Literal") and node_kind == "DeclRefExpr")
-        #     or (self_kind == "DeclRefExpr" and node_kind.endswith("Literal"))
-        # )
 
     @override
     @property
@@ -590,6 +592,7 @@ class ReferenceHelper:
                     matches = node._get(["type", "qualType"], EMPTY_STR) == ctor_type
                     if matches:
                         ids.append((node.ast_type, id))
+            return ids
         except:
             pass
         return []

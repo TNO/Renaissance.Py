@@ -377,6 +377,11 @@ class AssignEqual:
 class Comment(Type):
     pass
 
+
+class FullComment(Comment):
+    pass
+
+
 KIND_MAP = {
     "comparison_operator": Comparison,
     "Comparison": Comparison,
@@ -717,6 +722,7 @@ KIND_MAP = {
     "Annotation": Annotation,
     "AssignEqual": AssignEqual,
     "Colon": Colon,
+    "FullComment": FullComment,
     # "CompFor": CompFor,
     # "Decorator": Decorator,
     # "DictElement": DictElement,
