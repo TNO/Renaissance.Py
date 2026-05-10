@@ -6,7 +6,7 @@ from typing import Sequence
 import tree_sitter_python
 from libcst import SimpleStatementLine
 
-from renaissance.impl.types import KIND_MAP, MatchAll, MatchOne, Call, ExpressionStatement, Type, UnknownType, \
+from renaissance.impl.types import MatchAll, MatchOne, Call, ExpressionStatement, Type, UnknownType, \
     DeclarationExpression, Name, Argument
 from renaissance.impl import MATCH_ALL, MATCH_ONE
 from renaissance.impl.python.ast_node import ASTExtension

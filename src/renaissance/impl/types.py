@@ -382,6 +382,14 @@ class FullComment(Comment):
     pass
 
 
+class ParagraphComment(Comment):
+    pass
+
+
+class TextComment(Comment):
+    pass
+
+
 KIND_MAP = {
     "comparison_operator": Comparison,
     "Comparison": Comparison,
@@ -672,6 +680,7 @@ KIND_MAP = {
     "IntegerLiteral": Number,
     "MACRO_DEFINITION": MacroDefinition,
     "NAMESPACE": Namespace,
+    "NamespaceDecl": Namespace,
     "PAREN_EXPR": ParenthesizedExpression,
     "PARM_DECL": ParameterDeclaration,
     "ParenExpr": ParenthesizedExpression,
@@ -723,6 +732,8 @@ KIND_MAP = {
     "AssignEqual": AssignEqual,
     "Colon": Colon,
     "FullComment": FullComment,
+    "ParagraphComment": ParagraphComment,
+    "TextComment": TextComment,
     # "CompFor": CompFor,
     # "Decorator": Decorator,
     # "DictElement": DictElement,

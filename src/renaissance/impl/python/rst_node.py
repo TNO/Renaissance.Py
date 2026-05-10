@@ -187,7 +187,9 @@ class PythonRstNode:
         self.node = node
         self.parent = parent
         self.translation_unit: PythonRstTranslationUnit = translation_unit
-        self.ast_type = KIND_MAP.get(type(node).__name__, BogusType)
+        self.ast_type = KIND_MAP.get(type(node).__name__, UnknownType)
+        if self.ast_type ==UnknownType:
+            print(f'"{type(node).__name__}": {type(node).__name__},')
 
         self.indent = ""
         self.name = self._derive_name()
