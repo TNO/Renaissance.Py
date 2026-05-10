@@ -6,6 +6,7 @@ from typing import List
 from renaissance.impl.tree_sitter.adapter import TreeSitterAdapter
 
 from renaissance.impl.tree_sitter.factory import TreeStiterPatternFactory
+from renaissance.impl.types import *
 from renaissance.syntax_tree import PatternMatch
 from renaissance.syntax_tree.match_finder import match_pattern
 
@@ -34,7 +35,7 @@ class BaseCodeGraphExtractor:
         self.adapter = TreeSitterAdapter(lib_path)
         self.graph = networkx.DiGraph()
 
-    def extract(self, files: List[str]):
+    def extract(self, files):
         for f in files:
             try:
                 code = Path(f).read_text()
@@ -61,12 +62,12 @@ class PythonCodeGraphExtractor(BaseCodeGraphExtractor):
         self.graph.add_edge(folder, file_path, type="contains")
 
         for node in lst.traverse():
-            if node.kind == "function_definition":
+            if node.ast_type == FunctionDef:
                 name = node.signature.split("(")[0].split()[-1]
                 self.graph.add_node(name, type="function", file=file_path)
                 self.graph.add_edge(file_path, name, type="defines")
 
-            elif node.kind == "call":
+            elif node.ast_type == Call:
                 call_target = node.signature.strip().split("(")[0]
                 self.graph.add_node(call_target, type="call_target")
                 self.graph.add_edge(file_path, call_target, type="calls")
@@ -80,12 +81,12 @@ class JavaCodeGraphExtractor(BaseCodeGraphExtractor):
         self.graph.add_edge(folder, file_path, type="contains")
 
         for node in lst.traverse():
-            if node.kind == "method_declaration":
+            if node.ast_type == FunctionDef:
                 name = node.properties.get("name", "method")
                 self.graph.add_node(name, type="method", file=file_path)
                 self.graph.add_edge(file_path, name, type="defines")
 
-            elif node.kind == "method_invocation":
+            elif node.ast_type == Call:
                 target = node.signature.strip().split("(")[0]
                 self.graph.add_node(target, type="method_target")
                 self.graph.add_edge(file_path, target, type="calls")
@@ -99,12 +100,12 @@ class CppCodeGraphExtractor(BaseCodeGraphExtractor):
         self.graph.add_edge(folder, file_path, type="contains")
 
         for node in lst.traverse():
-            if node.kind == "function_definition":
+            if node.ast_type == FunctionDef:
                 name = node.properties.get("name", "func")
                 self.graph.add_node(name, type="function", file=file_path)
                 self.graph.add_edge(file_path, name, type="defines")
 
-            elif node.kind == "call_expression":
+            elif node.ast_type == Call:
                 call_expr = node.signature.strip().split("(")[0]
                 self.graph.add_node(call_expr, type="call_target")
                 self.graph.add_edge(file_path, call_expr, type="calls")
