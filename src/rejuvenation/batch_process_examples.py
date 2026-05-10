@@ -10,7 +10,7 @@ from renaissance.syntax_tree.recipe_ast_processor import (
 )
 from typing_extensions import Iterable
 from renaissance.impl.clang import ClangASTNode
-from renaissance.impl.clang_json import ClangJsonASTNode
+from renaissance.impl.clang.clang_json_ast_node import ClangJsonASTNode
 from renaissance.refactoring import CleanupRefactoring
 from renaissance.syntax_tree import (
     ASTProcessor,

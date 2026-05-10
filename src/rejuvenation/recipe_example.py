@@ -5,7 +5,7 @@ from more_itertools import last
 from typing_extensions import Iterable
 
 from renaissance.impl.clang import ClangASTNode, CPPPatternFactory
-from renaissance.impl.clang_json import ClangJsonASTNode
+from renaissance.impl.clang.clang_json_ast_node import ClangJsonASTNode
 from renaissance.syntax_tree import (
     ASTFinder,
     ASTRefactorActions,

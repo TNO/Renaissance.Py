@@ -1,24 +1,25 @@
 # create a class that inherits syntax tree ASTNode
 
-from __future__ import annotations
-from functools import cache
 import json
 import os
-from pathlib import Path
 import re
+import subprocess
 import sys
 import tempfile
-from typing import Any, Optional, Sequence
-from typing_extensions import override
-import subprocess
+from functools import cache
+from pathlib import Path
+from typing import Any, Optional, Sequence, Self
 
-from renaissance.impl.types import MatchAll, MatchOne, KIND_MAP, UnknownType
-from renaissance.syntax_tree import ASTNode, CPPUtils, ASTReference
+from typing_extensions import override
+
+from renaissance.impl.clang.cpp_utils import CPPUtils
+from renaissance.impl.types import *
 from renaissance.utils.ast_utils import match_children, match_props
+from renaissance.syntax_tree import ASTNode, ASTReference
 
 EMPTY_DICT = {}
 EMPTY_STR = ""
-EMPTY_LIST: list[ClangJsonASTReference] = []
+EMPTY_LIST: list["ClangJsonASTReference"] = []
 ON_NODE_ID_TAGS = ["previousDecl", "parentDeclContextId"]
 ID_TAGS = [
     "id",
@@ -29,7 +30,7 @@ ID_TAGS = [
     *ON_NODE_ID_TAGS,
 ]
 
-STMT_PARENTS = ["CompoundStmt", "TranslationUnitDecl"]
+STMT_PARENTS = [CompoundStatement, TranslationUnit]
 IRRELEVANT_PROPS = {"macro_expansion", "start_point", "end_point", "source_code", "location", "type"}
 IRRELEVANT_NODES = {"COMMENT", "FullComment", "MACRO_DEFINITION", "Comment"}
 VERBOSE = False
@@ -53,7 +54,7 @@ class ClangJsonTranslationUnit:
         self._referenced_by: dict[str, list[ClangJsonASTReference]] = {}
         self._nodes: dict[str, ClangJsonASTNode] = {}
 
-    def lazy_create_references(self, node: ClangJsonASTNode) -> None:
+    def lazy_create_references(self, node: "ClangJsonASTNode") -> None:
         # TODO: Do I correctly assume that the usage of this function must be synchronized?
         if self.references_initialized:
             return
@@ -75,7 +76,7 @@ class ClangJsonASTNode(ASTNode):
         self,
         node: dict[str, Any],
         translation_unit: ClangJsonTranslationUnit,
-        parent: Optional[ClangJsonASTNode] = None,
+        parent: Optional[Self] = None,
         start_offset: Optional[int] = None,
         length: Optional[int] = None,
         insert_kind: Optional[str] = None,
@@ -105,7 +106,7 @@ class ClangJsonASTNode(ASTNode):
         # without the fake child pattern matching on types will be difficult
         self.__inserted_children: list[ClangJsonASTNode] = []
         type = self.node.get("type")
-        if insert_kind == None and type and not self.node.get("implicit") and re.fullmatch("(Var|Function|CxxMethod)Decl", self._kind):
+        if insert_kind == None and type and not self.node.get("implicit") and isinstance(self.ast_type, (VariableDeclaration,FunctionDef)):
             declared_type = type["qualType"].replace("(", "").replace(")", "").strip()
             if self.node.get("loc"):
                 loc = self.node["loc"]
@@ -140,7 +141,7 @@ class ClangJsonASTNode(ASTNode):
                     self.__inserted_children.append(insert_child)
             # add the declaration as node
             # deep clone the type node and remove the parentheses
-        elif self._kind in ["DeclRefExpr"]:
+        elif self.ast_type in [DeclarationExpression]:
             if self.name.startswith("$$"):
                 self._kind = MatchAll.__name__
                 self.ast_type=MatchAll
@@ -156,12 +157,12 @@ class ClangJsonASTNode(ASTNode):
             for n in self.node.get("inner", [])
             if not n.get("isImplicit", False)
         ]
-        self._children = [n for n in self._children if n.kind not in IRRELEVANT_NODES]
+        self._children = [n for n in self._children if n.ast_type not in IRRELEVANT_NODES]
 
     def __eq__(self, other):
         return (
             isinstance(other, type(self))
-            and self.kind == other.kind
+            and self.ast_type == other.ast_type
             and match_props(self.properties, other.properties, IRRELEVANT_PROPS)
             and match_children(self.children, other.children, IRRELEVANT_NODES)
         )
@@ -173,7 +174,7 @@ class ClangJsonASTNode(ASTNode):
         extra_args: Sequence[str],
         working_dir: Path,
         code: Optional[str] = None,
-    ) -> ClangJsonASTNode:
+    ) -> Self:
         # in a shell process compile the file_path with clang compiler
         try:
             # remove the compiler name if it is the first argument
@@ -244,7 +245,7 @@ class ClangJsonASTNode(ASTNode):
 
     @override
     @staticmethod
-    def load_from_text(text: str, file_name: str, extra_args: Sequence[str], working_dir: Path) -> ClangJsonASTNode:
+    def load_from_text(text: str, file_name: str, extra_args: Sequence[str], working_dir: Path) -> Self:
         return ClangJsonASTNode.load(Path(file_name), extra_args, working_dir, code=text)
 
     @cache
@@ -278,7 +279,7 @@ class ClangJsonASTNode(ASTNode):
             end_offset = self._end_offset
             # "f(x,y);" and "a = f(3);" that are according to clang NOT statements,
             # but expressions (without the semicolon)
-            if (not self._is_statement_or_declaration()) and (self.parent and self.parent.kind in STMT_PARENTS):
+            if (not self._is_statement_or_declaration()) and (self.parent and self.parent.ast_type in STMT_PARENTS):
                 content = self.root.binary_file_content()
                 while end_offset < len(content) and not content[end_offset - 1] in b";":  # Why use 'in' when list has one element, i.e. ';'?
                     end_offset += 1
@@ -287,18 +288,19 @@ class ClangJsonASTNode(ASTNode):
             return 0
 
     def _is_statement_or_declaration(self):
-        return re.match("(?i).*(Stmt|Decl)", self.kind)
+        return isinstance(self.ast_type(), (Statement))
 
     @override
     @property
-    def matches_kind(self, node: ASTNode) -> bool:
-        self_kind = self._kind
-        node_kind = node.kind
-        return (
-            self_kind == node_kind
-            or (self_kind.endswith("Literal") and node_kind == "DeclRefExpr")
-            or (self_kind == "DeclRefExpr" and node_kind.endswith("Literal"))
-        )
+    def matches_kind(self, other: Self) -> bool:
+        return self.ast_type == other.ast_type
+        # self_kind = self._kind
+        # node_kind = node.kind
+        # return (
+        #     self_kind == node_kind
+        #     or (self_kind.endswith("Literal") and node_kind == "DeclRefExpr")
+        #     or (self_kind == "DeclRefExpr" and node_kind.endswith("Literal"))
+        # )
 
     @override
     @property
@@ -312,7 +314,7 @@ class ClangJsonASTNode(ASTNode):
         if self._get(["range", "end", "expansionLoc", "offset"], -1) != -1:  # dealing with a macro expansion
             properties["macro_expansion"] = self.text
         # matching name through props
-        if self.kind == "DeclRefExpr":
+        if self.ast_type == DeclarationExpression:
             properties["name"] = self.name
 
         return properties
@@ -367,7 +369,7 @@ class ClangJsonASTNode(ASTNode):
     @property
     def is_statement(self) -> bool:
         return (
-            self.parent != None and self.parent.kind in STMT_PARENTS
+            self.parent != None and self.parent.ast_type in STMT_PARENTS
         )  # TODO: Why look at the kind of your parent and not at your own kind?
 
     def _derive_name(self) -> str:
@@ -494,9 +496,9 @@ class ReferenceHelper:
             # add the node if it contains a reference for example in case of previousDecl
 
         # to make clang json compatible with clang python, we add the reference of the DeclRefExpr child to the CallExpr
-        if ast_node._kind == "CallExpr":
+        if ast_node.ast_type == Call:
             for n in ast_node.children:
-                if n.kind == "DeclRefExpr":
+                if n.ast_type == DeclarationExpression:
                     ref_child = {
                         k: v for k, v in n.node.items() if not ReferenceHelper._is_child_node(k) and ClangJsonASTNode._is_reference(v)
                     }
@@ -570,25 +572,24 @@ class ReferenceHelper:
             qual_type = tp["qualType"]
             ids = []
             ctor_type = EMPTY_STR
-            if ast_node.kind == "CXXConstructExpr":
+            if ast_node.ast_type == ConstructorExpression:
                 ctor_type = ast_node._get(["ctorType", "qualType"], EMPTY_STR)
 
             for id, node in ast_node.translation_unit._nodes.items():
-                if node.kind == "CXXRecordDecl" and node.name == qual_type:
+                if node.ast_type == RecordDef and node.name == qual_type:
                     parent = node.parent
                     matches = True
                     for ns in namespaces:
-                        if ns != parent.name or parent.kind != "NamespaceDecl":
+                        if ns != parent.name or parent.ast_type != Namespace:
                             matches = False
                         parent = parent.parent
                     if matches:
-                        ids.append((node.kind, id))
-                if ctor_type != EMPTY_STR and node.kind == "CXXConstructorDecl":
+                        ids.append((node.ast_type, id))
+                if ctor_type != EMPTY_STR and node.ast_type == Constructor:
                     # link all matching
                     matches = node._get(["type", "qualType"], EMPTY_STR) == ctor_type
                     if matches:
-                        ids.append((node.kind, id))
-            return ids
+                        ids.append((node.ast_type, id))
         except:
             pass
         return []

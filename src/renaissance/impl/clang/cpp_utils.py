@@ -1,3 +1,13 @@
+from renaissance.impl.types import Type
+
+def get_ancestor(node:{"parent"}, kind: type[Type]) :
+    parent = node.parent
+    if not parent:
+        return None
+    if isinstance(parent.ast_type(),kind):
+        return parent
+    return parent.get_ancestor(kind)
+
 class CPPUtils:
 
     # a set of cpp reserved keywords in reverse alphabetical order:

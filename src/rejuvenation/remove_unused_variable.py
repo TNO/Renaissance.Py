@@ -12,7 +12,7 @@ from renaissance.syntax_tree import (
     ASTNode,
 )
 from renaissance.impl.clang import ClangASTNode
-from renaissance.impl.clang_json import ClangJsonASTNode
+from renaissance.impl.clang.clang_json_ast_node import ClangJsonASTNode
 from renaissance.syntax_tree.ast_finder import find_ast_type
 
 example_code = """

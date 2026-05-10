@@ -135,6 +135,7 @@ else
 
 
         ifstmt = find_ast_type(real_children, If)[0]
+        ASTShower.show_node(ifstmt)
 
         text = ASTShower.get_node(ifstmt)
         assert_that(
@@ -184,9 +185,6 @@ else
                 "        (DeclarationExpression, y, test.c[108:109]): |y|\n"
             ),
         )
-'(If, , test.c[47:113]):\n    |if (x >y)|\n    |{|\n    |    x=1;|\n    |    call(x);|\n    |}|\n    |else|\n    |{|\n    |    y=1;|\n    |    call(y);|\n    |}|\n  (BinaryOperation, , test.c[51:55]): |x >y|\n    (Expression, x, test.c[51:52]): |x|\n      (DeclarationExpression, x, test.c[51:52]): |x|\n    (Expression, y, test.c[54:55]): |y|\n      (DeclarationExpression, y, test.c[54:55]): |y|\n  (CompoundStatement, , test.c[57:82]):\n      |{|\n      |    x=1;|\n      |    call(x);|\n      |}|\n    (BinaryOperation, , test.c[63:66]): |x=1;|\n      (DeclarationExpression, x, test.c[63:64]): |x|\n      (INTEGER_LITERAL, , test.c[65:66]): |1|\n    (CALL_EXPR, call, test.c[72:79]): |call(x);|\n      (Expression, call, test.c[72:76]): |call|\n        (DeclarationExpression, call, test.c[72:76]): |call|\n      (Expression, x, test.c[77:78]): |x|\n        (DeclarationExpression, x, test.c[77:78]): |x|\n  (CompoundStatement, , test.c[88:113]):\n      |{|\n      |    y=1;|\n      |    call(y);|\n      |}|\n    (BinaryOperation, , test.c[94:97]): |y=1;|\n      (DeclarationExpression, y, test.c[94:95]): |y|\n      (Number, , test.c[96:97]): |1|\n    (Call, call, test.c[103:110]): |call(y);|\n      (Expression, call, test.c[103:107]): |call|\n        (DeclarationExpression, call, test.c[103:107]): |call|\n      (Expression, y, test.c[108:109]): |y|\n        (DeclarationExpression, y, test.c[108:109]): |y|\n'
-'(If, , test.c[47:113]):\n    |if (x >y)|\n    |{|\n    |    x=1;|\n    |    call(x);|\n    |}|\n    |else|\n    |{|\n    |    y=1;|\n    |    call(y);|\n    |}|\n  (BinaryOperation, , test.c[51:55]): |x >y|\n    (Expression, x, test.c[51:52]): |x|\n      (DeclarationExpression, x, test.c[51:52]): |x|\n    (Expression, y, test.c[54:55]): |y|\n      (DeclarationExpression, y, test.c[54:55]): |y|\n  (CompoundStatement, , test.c[57:82]):\n      |{|\n      |    x=1;|\n      |    call(x);|\n      |}|\n    (BinaryOperation, , test.c[63:66]): |x=1;|\n      (DeclarationExpression, x, test.c[63:64]): |x|\n      (Number, , test.c[65:66]): |1|\n    (Call, call, test.c[72:79]): |call(x);|\n      (Expression, call, test.c[72:76]): |call|\n        (DeclarationExpression, call, test.c[72:76]): |call|\n      (Expression, x, test.c[77:78]): |x|\n        (DeclarationExpression, x, test.c[77:78]): |x|\n  (CompoundStatement, , test.c[88:113]):\n      |{|\n      |    y=1;|\n      |    call(y);|\n      |}|\n    (BinaryOperation, , test.c[94:97]): |y=1;|\n      (DeclarationExpression, y, test.c[94:95]): |y|\n      (Number, , test.c[96:97]): |1|\n    (Call, call, test.c[103:110]): |call(y);|\n      (Expression, call, test.c[103:107]): |call|\n        (DeclarationExpression, call, test.c[103:107]): |call|\n      (Expression, y, test.c[108:109]): |y|\n        (DeclarationExpression, y, test.c[108:109]): |y|\n'
-
 
 if __name__ == "__main__":
     pytest.main()

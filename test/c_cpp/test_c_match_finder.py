@@ -6,7 +6,7 @@ from more_itertools.more import last
 
 from c_cpp.factories import Factories
 from renaissance.impl.clang import ClangASTNode, CPatternFactory
-from renaissance.impl.clang_json import ClangJsonASTNode
+from renaissance.impl.clang.clang_json_ast_node import ClangJsonASTNode
 from renaissance.impl.types import Declaration, Call
 from renaissance.syntax_tree import (
     ASTFactory,
