@@ -283,11 +283,12 @@ class EnumSpecifier(Specifier):    pass
 class StructSpecifier(Specifier):    pass
 
 # Reference
-class TypeReference(Expression):    pass
-class MemberRefence:    pass
-class NamespaceReference:    pass
-class OverloadedDeclRef:    pass
-class TemplateRef:    pass
+class Reference(Expression):    pass
+class TypeReference(Reference):    pass
+class MemberRefence(Reference):    pass
+class NamespaceReference(Reference):    pass
+class OverloadedDeclRef(Reference):    pass
+class TemplateRef(Reference):    pass
 
 # Attributes
 class AlignedAttribute:    pass

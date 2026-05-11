@@ -6,6 +6,7 @@ from typing_extensions import Iterable
 
 from renaissance.impl.clang import ClangASTNode, CPPPatternFactory
 from renaissance.impl.clang.clang_json_ast_node import ClangJsonASTNode
+from renaissance.impl.types import Constructor, Method, TypeReference
 from renaissance.syntax_tree import (
     ASTFinder,
     ASTRefactorActions,
@@ -13,6 +14,7 @@ from renaissance.syntax_tree import (
     recipe_step,
 )
 from renaissance.syntax_tree import ASTProcessor, ASTNode, TextUtils, ASTFactory
+from renaissance.syntax_tree.ast_finder import matches_kind
 
 example_1 = textwrap.dedent("""
 #include <vector>
@@ -221,8 +223,8 @@ class MyRefactor:
     def recipe(self, ast_processor: ASTProcessor):
         pattern = CPPPatternFactory(ast_processor.factory)
         actions = ASTRefactorActions(ast_processor, pattern)
-        actions.replace_text("ListView_LEGACY", "ListViewCustom", skip_kind="Type_?Ref")
-        actions.replace_name("another_func", "__REPLACEMENT__", "(?i)Cxx_?Method")
+        actions.replace_text("ListView_LEGACY", "ListViewCustom", skip_kind=TypeReference)
+        actions.replace_name("another_func", "__REPLACEMENT__", Method)
         actions.replace_text("idToBeReplaced", "NEW_ID")
         # TODO debate the way to replace this the options are:
         # 1. make a match of the consecutive nodes.
@@ -248,7 +250,7 @@ class MyRefactor:
                 # but currently (I guess) that would lead to a dangling comma
                 # TODO the items between the backtick represent a regex where all groups are the used replacements
                 # this might need some investigation what is the best way to handle this
-                if ASTFinder.matches_kind(parent, "Constructor"):
+                if matches_kind(parent, Constructor):
                     # remove constructor header count argument
                     ast_processor.replace(r"ListViewCustom($container)", constructor_call)
                     repl = ",\n    ".join(f"std:make_unique<ListViewHeader>(*this)" for _ in range(header_count))

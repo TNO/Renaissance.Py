@@ -7,7 +7,7 @@ from more_itertools.more import first
 from renaissance.impl.clang import ClangASTNode
 from renaissance.impl.types import *
 from renaissance.syntax_tree import ASTNode, ASTFinder, ASTShower
-from renaissance.syntax_tree.ast_finder import find_ast_type
+from renaissance.syntax_tree.ast_finder import find_ast_type, matches_kind
 from .factories import Factories
 
 
@@ -55,7 +55,7 @@ class TestASTReference:
         assert_that(refs, has_length(is_(1)))
         ref = refs[0]
         ref_node = ref.node
-        assert_that(ASTFinder.matches_kind(ref_node, "Function_?Decl"), is_(True))
+        assert_that(matches_kind(ref_node, FunctionDef), is_(True))
         assert_that(ref_node.name, is_("f"))
         referenced_by = ref_node.referenced_by
         assert_that(referenced_by, has_length(greater_than(0)))  # clang python return 2 references, clang json 1
@@ -82,7 +82,7 @@ class TestASTReference:
         assert_that(refs, has_length(is_(1)))
         ref = refs[0]
         ref_node = ref.node
-        assert_that(ASTFinder.matches_kind(ref_node, "(Parm)?(Var)?_?Decl"), is_(True))
+        assert_that(matches_kind(ref_node, (ParameterDef,VariableDef)), is_(True))
         referenced_by = ref_node.referenced_by
         assert_that(referenced_by, has_length(greater_than(0)))  # clang python return 2 references, clang json 1
         assert_that(using.text in [r.node.text for r in referenced_by])
@@ -113,10 +113,7 @@ class TestASTReference:
         assert_that(refs, has_length(is_(1)))
         ref = refs[0]
         ref_node = ref.node
-        assert_that(
-            ASTFinder.matches_kind(ref_node, "(CXXRecord|Typedef|Class)?_?Decl"),
-            is_(True),
-        )
+        assert_that(matches_kind(ref_node, (RecordDef,TypedefDef,ClassDef)),is_(True))
         referenced_by = ref_node.referenced_by
         assert_that(referenced_by, has_length(greater_than(0)))  # clang python returns 2 references, clang json 1
         assert_that(using.text in [r.node.text for r in referenced_by])

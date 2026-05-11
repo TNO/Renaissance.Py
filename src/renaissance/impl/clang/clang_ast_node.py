@@ -7,7 +7,7 @@ from typing import Any, Optional, Sequence, override
 import clang.native
 from clang.cindex import Config, Index, TypeKind, CursorKind
 
-from renaissance.impl.clang.cpp_utils import get_ancestor
+from renaissance.impl.clang.cpp_utils import get_ancestor, matches_kind
 from renaissance.impl.types import MatchAll, MatchOne, UnknownType, KIND_MAP, MacroDef, Statement, \
     DeclarationExpression, Literal, BinaryOperation, UnaryOperation, CompoundStatement, Declaration, Definition, \
     TranslationUnit
@@ -253,16 +253,12 @@ class ClangASTNode(ASTNode):
             return 0
 
     def _is_statement_or_declaration(self):
-        return re.match(".*(_STMT|_DECL|CXX_METHOD)", self.kind)
-#        return isinstance(self.ast_type, (Statement,Declaration,Definition))
+        print(f"{self.ast_type} is statement: {self.kind}")
+        return isinstance(self.ast_type(), (Statement,Declaration,Definition))
 
     @override
     def matches_kind(self, node: ASTNode) -> bool:
-        return (
-            self.ast_type == node.ast_type
-            or (isinstance(self.ast_type(), Literal) and isinstance(node.ast_type(), DeclarationExpression))
-            or (isinstance(node.ast_type(), Literal) and isinstance(self.ast_type(), DeclarationExpression)))
-
+        return matches_kind(self.ast_type, node.ast_type)
 
     def _derive_properties(self) -> dict[str, int | str]:
         result = {}

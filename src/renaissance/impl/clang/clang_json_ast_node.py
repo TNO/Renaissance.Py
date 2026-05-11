@@ -12,7 +12,7 @@ from typing import Any, Optional, Sequence, Self
 
 from typing_extensions import override
 
-from renaissance.impl.clang.cpp_utils import CPPUtils
+from renaissance.impl.clang.cpp_utils import CPPUtils, matches_kind
 from renaissance.impl.types import *
 from renaissance.utils.ast_utils import match_children, match_props
 from renaissance.syntax_tree import ASTNode, ASTReference
@@ -295,14 +295,7 @@ class ClangJsonASTNode(ASTNode):
     @override
     @property
     def matches_kind(self, node: ASTNode) -> bool:
-        self_kind = self._kind
-        node_kind = node.kind
-        return (
-            self_kind == node_kind
-            or (self_kind.endswith("Literal") and node_kind == "DeclRefExpr")
-            or (self_kind == "DeclRefExpr" and node_kind.endswith("Literal"))
-        )
-        return self.ast_type == other.ast_type
+        return matches_kind(self.ast_type, node.ast_type)
 
     @override
     @property
