@@ -66,7 +66,7 @@ class TestPythonNodes:
                 ("0x01 | 0x10", BitOr),
                 ("0x01 ^ 0x10", BitXor),
                 ("True and False", BooleanOperation),
-                ("del x", Delete),
+                ("del x", Del),
                 (
                     """
 def outer():

@@ -56,6 +56,7 @@ class TestPythonShower:
             "        (Literal, 4444, test.py[18:22]): |4444|\n"
             "  (Assign, na, test.py[24:29]): |na=55|\n"
             "      (Name, na, test.py[24:26]): |na|\n"
+            "      (IndentedBlock, args, test.py[0:0]):\n"
             "    (Literal, 55, test.py[27:29]): |55|\n"
         )
         assert_that(text, is_(expected))

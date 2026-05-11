@@ -5,8 +5,7 @@ from hamcrest import *
 from more_itertools.more import first
 
 from renaissance.impl.clang import ClangASTNode
-from renaissance.impl.types import FunctionDef, DeclarationExpression, TypeReference, ParameterDeclaration, \
-    VariableDeclaration, RecordDef, StructDeclaration, ConstructorExpression, Call, ClassDeclaration
+from renaissance.impl.types import *
 from renaissance.syntax_tree import ASTNode, ASTFinder, ASTShower
 from renaissance.syntax_tree.ast_finder import find_ast_type
 from .factories import Factories
@@ -148,7 +147,7 @@ class TestASTReference:
         assert_that(refs, has_length(is_(1)))
         ref = refs[0]
         ref_node = ref.node
-        assert_that(isinstance(ref_node.ast_type(), (RecordDef, ClassDeclaration,StructDeclaration)))
+        assert_that(isinstance(ref_node.ast_type(), (RecordDef, ClassDef,StructDef)))
         referenced_by = ref_node.referenced_by
         assert_that(referenced_by, has_length(greater_than(0)))  # clang python return 2 references, clang json 1
         if len(referenced_by[0].node.children):
