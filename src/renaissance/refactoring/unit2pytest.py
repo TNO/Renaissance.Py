@@ -1,12 +1,11 @@
 import os
 import textwrap
-from pathlib import Path
 from typing import Sequence
 
 from renaissance.impl.python.util import convert_function
-from renaissance.impl.types import Attribute
+from renaissance.impl.types import Attribute, Literal, Number, FormattedString, ClassDef, FunctionDef
 from renaissance.refactoring.python_refactoring import PythonRefactoring
-from renaissance.syntax_tree import ASTFinder, PatternMatch
+from renaissance.syntax_tree import PatternMatch
 from renaissance.syntax_tree.ast_finder import find_ast_type
 from renaissance.syntax_tree.match_finder import match_pattern, AstProtocol
 
@@ -128,7 +127,7 @@ class Unit2Pytest(PythonRefactoring):
             self.replace(repl, match.nodes, False, False)
 
     def is_swapped(self, match: PatternMatch) -> bool:
-        return match.expansions["$exp"][0].kind in ["Literal", "FormatedString", "Number"]
+        return match.expansions["$exp"][0].ast_type in [Literal, FormattedString, Number]
 
     def convert_parameterized_test(self):
         unittest = self.pattern_factory.create_statements(textwrap.dedent("""
@@ -193,8 +192,8 @@ class Unit2Pytest(PythonRefactoring):
                 self.replace(repl, match.nodes, False, False)
 
     def restructure_module(self):
-        funs = [stmt for stmt in self.body if stmt.kind == "FunctionDef"]
-        test_classes = [stmt for stmt in self.body if stmt.kind == "ClassDef" and stmt.name.startswith("Test")]
+        funs = [stmt for stmt in self.body if stmt.ast_type == FunctionDef]
+        test_classes = [stmt for stmt in self.body if stmt.ast_type == ClassDef and stmt.name.startswith("Test")]
         if len(funs) == 0:
             return
         if len(test_classes) == 0:

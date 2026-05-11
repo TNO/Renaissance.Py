@@ -1,11 +1,8 @@
-import pytest
-from hamcrest import *
-import pytest
 from hamcrest import *
 
 from renaissance.impl.clang import ClangASTNode, CPatternFactory
 from renaissance.impl.types import Declaration
-from renaissance.syntax_tree import ASTFactory, ASTFinder, MatchFinder, ASTShower
+from renaissance.syntax_tree import ASTFactory, MatchFinder
 from renaissance.syntax_tree.ast_finder import find_ast_type
 
 

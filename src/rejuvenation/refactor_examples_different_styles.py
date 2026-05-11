@@ -6,10 +6,9 @@ from renaissance.syntax_tree import (
     ASTRewriter,
     ASTShower,
     ASTFinder,
-    ASTProcessor,
 )
 from renaissance.impl.clang import ClangASTNode, CPatternFactory
-from renaissance.syntax_tree.ast_finder import find_ast_type
+from renaissance.syntax_tree.ast_finder import find_ast_type, matches_kind
 from renaissance.syntax_tree.match_finder import match_pattern, find_all
 
 example_code = """
@@ -128,7 +127,7 @@ def example_use_ast_kind_finder(factory, _):
     [rewriter.replace("fancy_new", node) for node in find_ast_type(atu, TypeReference) if node.name == "old"]
 
     # Print the results after replacing the old type by fancy_new
-    print("results after replacing the old type by fancy_new using ASTFinder.find_kind")
+    print("results after replacing the old type by fancy_new using find_ast_type")
     result = rewriter.apply_to_string().strip()
     print(result)
     return result, expected_result_old_fancy_new
@@ -144,7 +143,7 @@ def example_use_ast_function_finder(factory, _):
 
     # Define a match function to find nodes of kind TYPE_REF with name 'old'
     def match(node):
-        res = ASTFinder.matches_kind(node, "TYPE_?REF") and node.name == "old"
+        res = matches_kind(node, TypeReference) and node.name == "old"
         return res
 
     # Use ASTFinder to find all matching nodes and replace 'old' with 'fancy_new'

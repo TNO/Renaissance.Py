@@ -1,7 +1,7 @@
 from more_itertools import flatten
 
-from renaissance.impl.types import VariableDeclaration, CompoundStatement
-from renaissance.syntax_tree import ASTFinder, ASTProcessor
+from renaissance.impl.types import VariableDef, CompoundStatement
+from renaissance.syntax_tree import ASTProcessor
 from renaissance.syntax_tree.ast_finder import find_ast_type
 
 
@@ -14,5 +14,5 @@ class CleanupRefactoring:
         """
         Removes all unused variables from a function
         """
-        refs = flatten(find_ast_type(n, VariableDeclaration) for n in find_ast_type(ast_refactor.node, CompoundStatement))
+        refs = flatten(find_ast_type(n, VariableDef) for n in find_ast_type(ast_refactor.node, CompoundStatement))
         [ast_refactor.remove(ref.parent, True, True) for ref in refs if len(ref.referenced_by) == 0]

@@ -17,7 +17,7 @@ class PythonExtractor:
         self.graph.add_edge(folder, module_name, type="contains")
 
         for stmt in root:
-            match stmt.kind:
+            match stmt.ast_type:
                 case "Import":
                     self.graph.add_edge(module_name, stmt.name, type="include")
                 case "ImportFrom":

@@ -7,14 +7,6 @@ import targets
 from renaissance.impl.python.extractor import PythonExtractor
 
 
-def make_lst_node(kind, signature, name=None):
-    node = MagicMock()
-    node.kind = kind
-    node.signature = signature
-    node.properties = {"name": name} if name else {}
-    return node
-
-
 class TestPythonExtractor:
 
     def test_extractor(self):

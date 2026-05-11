@@ -79,7 +79,7 @@ class ASTProcessor:
     def find_all(self, function: Callable[[ASTNode], Iterator[ASTNode] | bool]) -> Sequence[ASTNode]:
         return ASTFinder.find_all(self.__root_node, function)
 
-    def find_kind(self, kind: type[Type]) -> Sequence[ASTNode]:
+    def find_ast_type(self, kind: type[Type]) -> Sequence[ASTNode]:
         return find_ast_type(self.__root_node, kind)
 
     def find_match(self, *patterns_list, recursive: bool = True) -> Sequence[PatternMatch]:

@@ -1,18 +1,12 @@
 import textwrap
 from pathlib import Path
-from types import SimpleNamespace
-from unittest.mock import MagicMock, mock_open, patch
 
-import pytest
-from hamcrest import assert_that, contains_string, has_length, is_, ends_with, not_
+
+from hamcrest import assert_that, contains_string, is_, ends_with, not_
 
 import targets
 from renaissance.impl.python.rst_node import PythonRstNode
-from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
-from renaissance.refactoring import unit2pytest as mod
 from renaissance.refactoring.unit2pytest import Unit2Pytest
-from renaissance.syntax_tree import ASTFactory
-from renaissance.syntax_tree.match_finder import match_pattern
 
 
 class TestUnit2Pytest:
@@ -120,11 +114,11 @@ class TestUnit2Pytest:
                 self.assertEqual(call(),1)
         """,
         )
-        sut.run()
+        sut.convert_assert("self.assertEqual($exp, $act)", "assert_that($exp, is_($act))")
         assert_that(sut.apply_to_string(), contains_string("assert_that(call()"))
         assert_that(sut.apply_to_string(), not_(contains_string("assert_that(1")))
 
-    def test_to_class(self, mocker):
+    def test_to_assertthat(self, mocker):
         sut = self._create(
             mocker,
             """
@@ -133,7 +127,7 @@ class TestUnit2Pytest:
         """,
         )
 
-        sut.refactor()
+        sut.replace_stmt("assert $stmt, $$msg", "assert_that($stmt, is_(True), $$msg)")
         assert_that(sut.apply_to_string(), contains_string("assert_that(call()"))
         assert_that(sut.apply_to_string(), not_(contains_string("assert_that(1")))
 

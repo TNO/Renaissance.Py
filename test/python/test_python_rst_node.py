@@ -1,4 +1,3 @@
-import ast
 import textwrap
 from pathlib import Path
 
@@ -18,7 +17,7 @@ from hypothesis import given, settings
 import targets
 from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
-from renaissance.impl.types import Statement
+from renaissance.impl.types import *
 from renaissance.syntax_tree import ASTShower
 from renaissance.utils.ast_utils import traverse
 from utils_for_tests import show_node, reject_unsupported_code
@@ -34,41 +33,42 @@ class TestPythonRstNode:
 
     def test_type_alias(self):
         it = self.factory.create_from_text("type UserId = int", "context.py")
-        show_node(it)
-        kinds = [node.kind for node in traverse(it)]
-        assert_that("Typedef", is_in(kinds))
+        assert_that(it.children[0].ast_type(), is_(TypeAlias))
 
     def test_slice(self):
         it = self.pattern_factory.create_expression("items[1:2:3]")
-        assert_that(it.children[1].kind, is_("Slice"))
+        assert_that(it.children[1].ast_type(), is_(Slice))
 
     def test_named_expr(self):
         it = self.pattern_factory.create_statement("if n:= len(items): pass")
-        # TODO: Is this the simplest context for the walrus operator?
-        # why not "(n:= 3)"?
-        assert_that(it.children[0].kind, is_("NamedExpr"))
+        assert_that(it.children[0].ast_type(), is_(NamedExpr))
 
+    def test_named_expr_simple(self):
+        it = self.pattern_factory.create_statement("(n:= 3)")
+        assert_that(it.children[0].ast_type(), is_(NamedExpr))
+
+    # why not ""?
     def test_starred(self):
         it = self.pattern_factory.create_statement("*x =[1,2]")
-        assert_that(it.children[0].children[0].kind, is_("Starred"))
+        assert_that(it.children[0].children[0].ast_type(), is_(Starred))
 
     def test_formatted_value(self):
         it = self.pattern_factory.create_expression('f"{one}two"')
-        assert_that(it.children[0].kind, is_("FormattedString"))
+        assert_that(it.children[0].ast_type(), is_(FormattedString))
 
     def test_except_handler(self):
         it = self.pattern_factory.create_statement("try: pass\nexcept NameError:pass")
-        assert_that(it.children[1].children[0].kind, is_("Catch"))
+        assert_that(it.children[1].children[0].ast_type(), is_(Catch))
 
     def test_match_stmt(self):
         sample_code = (
             'match data:\n  case [first, *rest]: return f"List with first element {first} and {len(rest)} more items"\n  case _: pass'
         )
         stmt = self.pattern_factory.create_statement(sample_code)
-        assert_that(stmt.kind, is_("Match"))
-        assert_that(stmt.children[1].children[0].kind, is_("Case"))
-        assert_that(stmt.children[1].children[0].children[0].children[1].kind, is_("MatchStar"))
-        assert_that(stmt.children[1].children[0].children[0].children[0].kind, is_("MatchAs"))
+        assert_that(stmt.ast_type(), is_(Match))
+        assert_that(stmt.children[1].children[0].ast_type(), is_(MatchCase))
+        assert_that(stmt.children[1].children[0].children[0].children[1].ast_type(), is_(MatchStar))
+        assert_that(stmt.children[1].children[0].children[0].children[0].ast_type(), is_(MatchAs))
 
     def test_show_call(self):
         atu = self.factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "apple.py")

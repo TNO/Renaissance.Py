@@ -10,6 +10,8 @@ from renaissance.impl.tree_sitter.extractor import (
     JavaCodeGraphExtractor,
     CppCodeGraphExtractor,
 )
+from renaissance.impl.types import FunctionDef, Call, Comment
+
 
 # ---------------------------------------------------------------------------
 # BaseCodeGraphExtractor
@@ -18,7 +20,7 @@ from renaissance.impl.tree_sitter.extractor import (
 
 def make_lst_node(kind, signature, name=None):
     node = MagicMock()
-    node.kind = kind
+    node.ast_type = kind
     node.signature = signature
     node.properties = {"name": name} if name else {}
     return node
@@ -114,7 +116,7 @@ class TestPythonCodeGraphExtractor(TestBaseCodeGraphExtractor):
 
     def test_adds_function_node_for_function_definition(self):
         extractor = self._make_extractor()
-        func_node = make_lst_node("function_definition", "def my_func(x):")
+        func_node = make_lst_node(FunctionDef, "def my_func(x):")
         lst = self.make_lst([func_node])
 
         extractor._process_file("/src/foo.py", lst)
@@ -124,7 +126,7 @@ class TestPythonCodeGraphExtractor(TestBaseCodeGraphExtractor):
 
     def test_adds_defines_edge_for_function(self):
         extractor = self._make_extractor()
-        func_node = make_lst_node("function_definition", "def my_func(x):")
+        func_node = make_lst_node(FunctionDef, "def my_func(x):")
         lst = self.make_lst([func_node])
 
         extractor._process_file("/src/foo.py", lst)
@@ -134,7 +136,7 @@ class TestPythonCodeGraphExtractor(TestBaseCodeGraphExtractor):
 
     def test_adds_call_node_for_call(self):
         extractor = self._make_extractor()
-        call_node = make_lst_node("call", "some_func(arg1)")
+        call_node = make_lst_node(Call, "some_func(arg1)")
         lst = self.make_lst([call_node])
 
         extractor._process_file("/src/foo.py", lst)
@@ -144,7 +146,7 @@ class TestPythonCodeGraphExtractor(TestBaseCodeGraphExtractor):
 
     def test_adds_calls_edge_for_call(self):
         extractor = self._make_extractor()
-        call_node = make_lst_node("call", "some_func(arg1)")
+        call_node = make_lst_node(Call, "some_func(arg1)")
         lst = self.make_lst([call_node])
 
         extractor._process_file("/src/foo.py", lst)
@@ -164,8 +166,8 @@ class TestPythonCodeGraphExtractor(TestBaseCodeGraphExtractor):
     def test_multiple_functions_all_added(self):
         extractor = self._make_extractor()
         nodes = [
-            make_lst_node("function_definition", "def foo(x):"),
-            make_lst_node("function_definition", "def bar(y):"),
+            make_lst_node(FunctionDef, "def foo(x):"),
+            make_lst_node(FunctionDef, "def bar(y):"),
         ]
         lst = self.make_lst(nodes)
 
@@ -197,7 +199,7 @@ class TestJavaCodeGraphExtractor(TestBaseCodeGraphExtractor):
 
     def test_adds_method_node_for_method_declaration(self):
         extractor = self._make_extractor()
-        method_node = make_lst_node("method_declaration", "void doSomething()", name="doSomething")
+        method_node = make_lst_node(FunctionDef, "void doSomething(){}", name="doSomething")
         lst = self.make_lst([method_node])
 
         extractor._process_file("/src/Main.java", lst)
@@ -207,7 +209,7 @@ class TestJavaCodeGraphExtractor(TestBaseCodeGraphExtractor):
 
     def test_method_node_uses_default_name_when_missing(self):
         extractor = self._make_extractor()
-        method_node = make_lst_node("method_declaration", "void doSomething()")
+        method_node = make_lst_node(FunctionDef, "void doSomething(){}")
         method_node.properties = {}
         lst = self.make_lst([method_node])
 
@@ -217,7 +219,7 @@ class TestJavaCodeGraphExtractor(TestBaseCodeGraphExtractor):
 
     def test_adds_defines_edge_for_method(self):
         extractor = self._make_extractor()
-        method_node = make_lst_node("method_declaration", "void doSomething()", name="doSomething")
+        method_node = make_lst_node(FunctionDef, "void doSomething()", name="doSomething")
         lst = self.make_lst([method_node])
 
         extractor._process_file("/src/Main.java", lst)
@@ -227,7 +229,7 @@ class TestJavaCodeGraphExtractor(TestBaseCodeGraphExtractor):
 
     def test_adds_method_invocation_node(self):
         extractor = self._make_extractor()
-        invocation_node = make_lst_node("method_invocation", "obj.doSomething(arg)")
+        invocation_node = make_lst_node(Call, "obj.doSomething(arg)")
         lst = self.make_lst([invocation_node])
 
         extractor._process_file("/src/Main.java", lst)
@@ -237,7 +239,7 @@ class TestJavaCodeGraphExtractor(TestBaseCodeGraphExtractor):
 
     def test_adds_calls_edge_for_invocation(self):
         extractor = self._make_extractor()
-        invocation_node = make_lst_node("method_invocation", "obj.doSomething(arg)")
+        invocation_node = make_lst_node(Call, "obj.doSomething(arg)")
         lst = self.make_lst([invocation_node])
 
         extractor._process_file("/src/Main.java", lst)
@@ -268,7 +270,7 @@ class TestCppCodeGraphExtractor(TestBaseCodeGraphExtractor):
 
     def test_adds_function_node_for_function_definition(self):
         extractor = self._make_extractor()
-        func_node = make_lst_node("function_definition", "int main()", name="main")
+        func_node = make_lst_node(FunctionDef, "int main()", name="main")
         lst = self.make_lst([func_node])
 
         extractor._process_file("/src/main.cpp", lst)
@@ -278,7 +280,7 @@ class TestCppCodeGraphExtractor(TestBaseCodeGraphExtractor):
 
     def test_function_node_uses_default_name_when_missing(self):
         extractor = self._make_extractor()
-        func_node = make_lst_node("function_definition", "int main()")
+        func_node = make_lst_node(FunctionDef, "int main()")
         func_node.properties = {}
         lst = self.make_lst([func_node])
 
@@ -288,7 +290,7 @@ class TestCppCodeGraphExtractor(TestBaseCodeGraphExtractor):
 
     def test_adds_defines_edge_for_function(self):
         extractor = self._make_extractor()
-        func_node = make_lst_node("function_definition", "int main()", name="main")
+        func_node = make_lst_node(FunctionDef, "int main()", name="main")
         lst = self.make_lst([func_node])
 
         extractor._process_file("/src/main.cpp", lst)
@@ -298,7 +300,7 @@ class TestCppCodeGraphExtractor(TestBaseCodeGraphExtractor):
 
     def test_adds_call_expression_node(self):
         extractor = self._make_extractor()
-        call_node = make_lst_node("call_expression", "printf(fmt)")
+        call_node = make_lst_node(Call, "printf(fmt)")
         lst = self.make_lst([call_node])
 
         extractor._process_file("/src/main.cpp", lst)
@@ -308,7 +310,7 @@ class TestCppCodeGraphExtractor(TestBaseCodeGraphExtractor):
 
     def test_adds_calls_edge_for_call_expression(self):
         extractor = self._make_extractor()
-        call_node = make_lst_node("call_expression", "printf(fmt)")
+        call_node = make_lst_node(Call, "printf(fmt)")
         lst = self.make_lst([call_node])
 
         extractor._process_file("/src/main.cpp", lst)
@@ -318,7 +320,7 @@ class TestCppCodeGraphExtractor(TestBaseCodeGraphExtractor):
 
     def test_ignores_unrelated_node_kinds(self):
         extractor = self._make_extractor()
-        other_node = make_lst_node("comment", "// a comment")
+        other_node = make_lst_node(Comment, "// a comment")
         lst = self.make_lst([other_node])
 
         extractor._process_file("/src/main.cpp", lst)

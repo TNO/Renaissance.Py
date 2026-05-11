@@ -4,10 +4,10 @@ from typing import Optional, Sequence
 from more_itertools import first
 from more_itertools.more import last
 
-from renaissance.impl.types import Declaration, MacroDefinition, CompoundStatement, ParenthesizedExpression, Call, Type, \
-    Statement
+from renaissance.impl.types import Declaration, MacroDef, CompoundStatement, ParenthesizedExpression, Call, Type, \
+    VariableDef, TypedefDef, FunctionDef, InclusionDirective
 from renaissance.syntax_tree.ast_factory import ASTFactory
-from renaissance.syntax_tree.ast_finder import ASTFinder, find_ast_type
+from renaissance.syntax_tree.ast_finder import find_ast_type
 from renaissance.syntax_tree.ast_node import ASTNode
 from renaissance.syntax_tree.ast_shower import ASTShower
 from renaissance.impl.clang.cpp_utils import CPPUtils
@@ -20,25 +20,11 @@ def derive_header_text(language: str, ref_node: ASTNode | None):
     header = "\n"
     if ref_node:
         language = ref_node.filename.split(".")[-1]
-        # header = "\n;\n".join(c.signature for c in ref_node.children if c.is_part_of_translation_unit() and not (
-        #             c.kind == 'FUNCTION_DECL' and c.children[-1].kind == 'COMPOUND_STMT'))
-
-        if ref_node:
-            matcher_set = {
-                "STRUCT_DECL",
-                "VAR_DECL",
-                "TYPE_DEF",
-                "MACRO_DEFINITION",
-                "INCLUSION_DIRECTIVE",
-            }
-            for c in ref_node.children:
-                if c.is_part_of_translation_unit() and c.kind in matcher_set:
-                    header += c.signature + "\n"
         offset = min(
             (
                 n.offset
                 for n in ref_node.children
-                if n.is_part_of_translation_unit() and not ASTFinder.matches_kind(n, "(?i)Inclusion_?Directive")
+                if n.is_part_of_translation_unit() and n.ast_type==InclusionDirective
             ),
             default=0,
         )
@@ -48,8 +34,8 @@ def derive_header_text(language: str, ref_node: ASTNode | None):
             n.text + ";"
             for n in ref_node.children
             if n.is_part_of_translation_unit()
-            and ASTFinder.matches_kind(n, "(?i)(Function|Var|Typedef)_?Decl|MACRO_?DEFINITION")
-            and len(ASTFinder.find_kind(n, "(?i)Compound_?Stmt")) == 0
+            and isinstance(n.ast_type(), (FunctionDef, VariableDef | TypedefDef, MacroDef))
+            and len(find_ast_type(n, CompoundStatement)) == 0
         )
         # and isinstance(n.ast_type, (Declaration, MacroDefinition))
         # and len(find_ast_type(n, CompoundStatement)) == 0
@@ -159,7 +145,7 @@ class CPatternFactory:
         ]
         return self._create_body(text, types, parameters, extra_declarations, kind)
 
-    def create(self, text: str, kind: str | None = None) -> ASTNode:
+    def create(self, text: str, kind: type[Type] = None) -> ASTNode:
         """
         Creates an object using the factory from the provided text.
         The object is created by the factory using the provided text and the header of the provided reference node.

@@ -5,8 +5,8 @@ import textwrap
 from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
 from renaissance.impl.types import Call
-from renaissance.syntax_tree import ASTFactory, ASTRewriter
-from renaissance.syntax_tree import ASTShower, TextUtils
+from renaissance.syntax_tree import ASTRewriter
+from renaissance.syntax_tree import ASTShower
 from renaissance.syntax_tree.ast_finder import find_ast_type
 from renaissance.syntax_tree.match_finder import match_pattern
 

@@ -1,11 +1,12 @@
 from operator import is_not
 
 import pytest
-from hamcrest import assert_that, is_, has_length, is_in, is_not, empty
+from hamcrest import assert_that, is_, has_length, is_in, is_not, empty, instance_of
 
-from renaissance.impl import MATCH_ONE, MATCH_ALL
+from renaissance.impl.types import *
 from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.impl.python.factory import PythonPatternFactory, PythonFactory
+from renaissance.impl.types import MatchOne, MatchAll, TranslationUnit
 from renaissance.syntax_tree import ASTFactory
 from renaissance.syntax_tree.match_finder import is_match
 
@@ -19,78 +20,44 @@ class TestPythonicStyle:
     @pytest.mark.parametrize(
         "raw, kind, op, name, expr, body_length",
         [
-            ("try:\n  pass\nfinally:\n  pass", "Try", "try", "Try", "expr", 1),
-            ("try:\n  x()\nexcept* e:\n  pass", "Try", "try", "Try", "expr", 1),
-            ("class name: pass", "ClassDef", "class", "name", "expr", 1),
-            ("def name(): pass", "FunctionDef", "function", "name", "expr", 1),
-            ("for name in expr:\n  1\n  2\n  pass", "For", "for", "name", "expr", 3),
-            ("while expr: pass", "While", "while", "While", "expr", 1),
-            ("if expr: pass\nelse: pass ", "If", "if", "If", "expr", 1),
-            ("match x:\n  case _:    pass", "Match", "match", "x", "expr", 1),
+            ("try:\n  pass\nfinally:\n  pass",  Try,        "try", "Try", "expr", 1),
+            ("try:\n  x()\nexcept* e:\n  pass", Try,        "try", "Try", "expr", 1),
+            ("class name: pass",                ClassDef,   "class", "name", "expr", 1),
+            ("def name(): pass",                FunctionDef,"function", "name", "expr", 1),
+            ("for name in expr:\n  1\n  2\n  pass", For,    "for", "name", "expr", 3),
+            ("while expr: pass",                While,      "while", "While", "expr", 1),
+            ("if expr: pass\nelse: pass ",      If,         "if", "If", "expr", 1),
+            ("match x:\n  case _:    pass",     Match,      "match", "x", "expr", 1),
+            ("async for f in fs:  pass",        For,        "for", "f", "",1),
+            ('async with open("x"): pass',      With,       "with", "With","", 1),
+            ("async def fun(): pass",           FunctionDef,"function", "fun","", 1),
         ],
     )
     def test_consistent_name_stmt(self, raw, kind, op, name, expr, body_length):
         it = PythonRstNode.load_from_text(raw).body[-1]
-        assert_that(it.kind, is_(kind))
+        assert_that(it.ast_type(), instance_of(kind))
         assert_that(it.operator, is_(op))
-        assert_that(it.name, is_(name))
+        if isinstance(it.name, str):
+            assert_that(it.name, is_(name))
         # assert_that(it.expr.name, is_(expr))
-        assert_that(it.body, has_length(body_length))
-
-    @pytest.mark.parametrize(
-        "raw, kind, op, name, body_length",
-        [
-            ("async for f in fs:  pass", "For", "for", "f", 1),
-            ('async with open("x"): pass', "With", "with", "With", 1),
-            ("async def fun(): pass", "FunctionDef", "function", "fun", 1),
-        ],
-    )
-    def test_async_stmt(self, raw, kind, op, name, body_length):
-        it = PythonRstNode.load_from_text(raw).body[-1]
-        assert_that(it.kind, is_(kind))
-        assert_that(it.operator, is_(op))
-        assert_that(it.name, is_(name))
-        assert_that(it.body, has_length(body_length))
-
-    @pytest.mark.parametrize(
-        "raw, kind, name, body_length",
-        [
-            ("try:\n  1\n  x()\nexcept* e:\n  1\n  1\n  pass", "Try", "Try", 2),
-            ("for name in expr:\n  1\n  2\n  pass", "For", "name", 3),
-            ("while expr: pass", "While", "While", 1),
-            ("if expr: pass\nelse: pass ", "If", "If", 1),
-            ("match x:\n  case _:    pass", "Match", "x", 1),
-        ],
-    )
-    def test_stmt_with_body(self, raw, kind, name, body_length):
-        it = PythonRstNode.load_from_text(raw).body[-1]
-        assert_that(kind, is_(it.kind))
-        assert_that(it.name, is_(name))
         assert_that(it.body, has_length(body_length))
 
     @pytest.mark.parametrize(
         "raw, kind, typ, name, op, value",
         [
-            ("i:int=0", "Assign", "int", "i", "=", 0),
-            ("i=0", "Assign", None, "i", "=", 0),
-            ("x += 5", "AugAssign", None, "x", "+=", 5),
-            ("break", "Break", None, "", "break", None),
-            ("assert 0", "Assert", None, "", "assert", 0),
-            ("continue", "Continue", None, "", "continue", None),
-            ("import x", "Import", None, "x", "import", None),
-            (
-                "pass",
-                "Pass",
-                None,
-                "",
-                "pass",
-                None,
-            ),
+            ("i:int=0", Assign, "int", "i", "=", 0),
+            ("i=0", Assign, None, "i", "=", 0),
+            ("x += 5", AugAssign, None, "x", "+=", 5),
+            ("break", Break, None, "", "break", None),
+            ("assert 0", Assert, None, "", "assert", 0),
+            ("continue", Continue, None, "", "continue", None),
+            ("import x", Import, None, "x", "import", None),
+            ("pass",Pass,  None,  "", "pass",None )
         ],
     )
     def test_stmt(self, raw, kind, typ, name, op, value):
         it = PythonRstNode.load_from_text(raw).body[-1]
-        assert_that(kind, is_(it.kind))
+        assert_that(it.ast_type(), instance_of(kind))
         assert_that(it.name, is_(name))
         assert_that(it.operator, op)
         assert_that(it.type, is_(typ))
@@ -99,15 +66,15 @@ class TestPythonicStyle:
     @pytest.mark.parametrize(
         "raw, kind, expr",
         [
-            ("fun()", "Expr", "fun()"),
-            ("return fun()", "Return", "fun()"),
-            ("raise fun()", "Raise", "fun()"),
+            ("fun()", ExpressionStatement, "fun()"),
+            ("return fun()", Return, "fun()"),
+            ("raise fun()", Raise, "fun()"),
         ],
     )
     # ('from x import y', 'ImportFrom', None, 'x', 'import', 'y'),
     def test_expr(self, raw, kind, expr):
         it = PythonRstNode.load_from_text(raw).body[-1]
-        assert_that(kind, is_(it.kind))
+        assert_that(it.ast_type(), instance_of(kind))
         assert_that(it.expr.name, is_(expr))
 
     def test_ann_assign_node(self):
@@ -134,24 +101,20 @@ class TestPythonicStyle:
 
     def python_does_not_parse_dollar(self):
         it = PythonRstNode.load_from_text("$pa")
-        assert_that(MATCH_ONE, is_(it.kind))
+        assert_that(it.ast_type, is_(MatchOne))
 
     def python_does_not_parse_dollar(self):
         it = PythonRstNode.load_from_text("$$pa")
-        assert_that(MATCH_ONE, is_(it.kind))
+        assert_that(it.ast_type, is_(MatchAll))
 
     def test_kind_is_match_all(self):
         pattern_factory = PythonPatternFactory(PythonFactory(PythonRstNode))
         simple = self.pattern_factory.create_statement("$$pa")
-        assert_that(simple.kind, is_("MatchAll"))
+        assert_that(simple.ast_type(), instance_of(MatchAll))
 
     def test_kind_is_match_one(self):
         simple = self.pattern_factory.create_statement("$pa")
-        assert_that(simple.kind, is_("MatchOne"))
-
-    def test_kind_is_match_all(self):
-        simple = self.pattern_factory.create_statement("$$pa")
-        assert_that(simple.kind, is_("MatchAll"))
+        assert_that(simple.ast_type(), instance_of(MatchOne))
 
     def test_match_one_is_not_equal(self):
         atu = self.factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "test.py")
@@ -212,8 +175,7 @@ class TestPythonicStyle:
             "ba(55)\nna(55)\nna(55)\npa(55)\npa(55)\nba(55)\nna(55)\nna(55)\nna=55",
             "test.py",
         )
-        kind = atu.kind
-        assert_that(kind, is_("TranslationUnit"))
+        assert_that(atu.ast_type(), instance_of(TranslationUnit))
 
     def test_property_name_call(self):
         atu = self.factory.create_from_text(

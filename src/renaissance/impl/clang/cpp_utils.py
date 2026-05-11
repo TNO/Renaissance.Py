@@ -1,3 +1,20 @@
+from renaissance.impl.types import Type, Literal, DeclarationExpression
+
+
+def get_ancestor(node:{"parent"}, kind: type[Type]) :
+    parent = node.parent
+    if not parent:
+        return None
+    if isinstance(parent.ast_type(),kind):
+        return parent
+    return parent.get_ancestor(kind)
+
+def matches_kind(mine, other) -> bool:
+    return (
+        mine == other
+        or (isinstance(mine(),  Literal) and isinstance(other(), DeclarationExpression))
+        or (isinstance(other(), Literal) and isinstance(mine() , DeclarationExpression)))
+
 class CPPUtils:
 
     # a set of cpp reserved keywords in reverse alphabetical order:

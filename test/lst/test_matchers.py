@@ -6,7 +6,6 @@ from renaissance.impl.tree_sitter.adapter import TreeSitterAdapter
 from renaissance.impl.tree_sitter.lst import LSTNode
 from renaissance.impl.types import Call
 
-from renaissance.syntax_tree import ASTFinder
 from renaissance.syntax_tree.ast_finder import find_ast_type
 from renaissance.syntax_tree.match_finder import is_match
 from renaissance.utils.ast_utils import traverse
@@ -56,7 +55,7 @@ class TestMatchers:
         assert_that(is_match(self.class_node, pattern))
 
     def test_node_type_match(self):
-        matches = [node for node in traverse(self.if_node) if node.kind == "Call"]
+        matches = [node for node in traverse(self.if_node) if node.ast_type == Call]
         assert_that(matches, has_length(1))
 
 

@@ -9,6 +9,7 @@ from .match_finder import PatternMatch
 from .ast_finder import ASTFinder
 from renaissance.utils.text_utils import TextUtils
 from renaissance.common import Rewriter
+from ..impl.types import CompoundStatement
 
 
 @runtime_checkable
@@ -573,7 +574,7 @@ class _RewriteActions:
         depth = 0
         parent = node.parent
         while parent:
-            if ASTFinder.matches_kind(parent, "(?i)Compound_?Stmt"):
+            if ASTFinder.matches_kind(parent, CompoundStatement):
                 depth += 1
             parent = parent.parent
         return depth

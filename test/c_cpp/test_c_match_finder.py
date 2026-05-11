@@ -6,14 +6,12 @@ from more_itertools.more import last
 
 from c_cpp.factories import Factories
 from renaissance.impl.clang import ClangASTNode, CPatternFactory
-from renaissance.impl.clang_json import ClangJsonASTNode
+from renaissance.impl.clang.clang_json_ast_node import ClangJsonASTNode
 from renaissance.impl.types import Declaration, Call
 from renaissance.syntax_tree import (
     ASTFactory,
-    ASTFinder,
     ASTShower,
     ASTNode,
-    MatchFinder,
 )
 from renaissance.syntax_tree.ast_finder import find_ast_type
 from renaissance.syntax_tree.match_finder import match_pattern, find_variants, find_in_list, is_match
@@ -76,7 +74,6 @@ class TestExpressions(TestCMatchFinder):
         expr_node = CPatternFactory(factory).create_expression("a == $x")
         ASTShower.show_node(expr_node)
         atu = factory.create_from_text("void fun(){int a,b;\nb==5;\na==3;\na==4;}", "test.c")
-
         show_node(atu, "CPP code")
         # find all if and while statements
         matches = [match for match in match_pattern(atu.children, [expr_node]) if match.nodes[0].is_part_of_translation_unit()]
@@ -437,7 +434,7 @@ class TestUseAtuToCreatePattern(TestCMatchFinder):
         pattern_factory = CPatternFactory(factory, ref_node=atu)
         statements_atu = pattern_factory.create(statements)
         statements = last(find_ast_type(statements_atu, pattern_type))  # pick the last statement
-        func_body = atu.children[-1].children
+        func_body = atu.children[-1].children[2].children
         result = match_pattern(func_body, [statements], recursive=True)
         # should find multiple matches, at least the one in the pattern and the one in the function body
         assert_that(result, has_length(greater_than_or_equal_to(1)))

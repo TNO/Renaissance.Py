@@ -1,5 +1,6 @@
 from typing import Sequence, Self, Iterable, Protocol, runtime_checkable
 
+from renaissance.impl.types import MatchAll, MatchOne, Type
 from renaissance.utils.ast_utils import use_dollar
 
 IRRELEVANT_PROPS = {"macro_expansion", "start_point", "end_point", "source_code", "location", "type"}
@@ -11,7 +12,7 @@ _TOP_LEVEL_KINDS = {"Module", "TRANSLATION_UNIT"}
 
 @runtime_checkable
 class AstProtocol(Protocol):
-    kind: str
+    ast_type: type[Type]
     properties: dict
     children: list[Self]
     signature: str
@@ -92,10 +93,10 @@ def is_match_tree(src: Sequence | None, cmp: Sequence | None, expansions=None):
 
 
 def variant_in_match_stmt(src: AstProtocol, cmp: AstProtocol, expansions) -> list:
-    if cmp.kind == "MatchOne" and cmp.name:
+    if cmp.ast_type == MatchOne and cmp.name:
         matched = _resolve_match_one(cmp.name, src, expansions)
         return [Variant(0, expansions, None, 0, 0)] if matched else []
-    if is_match_dict(src.properties, cmp.properties, expansions) and src.kind == cmp.kind:
+    if is_match_dict(src.properties, cmp.properties, expansions) and src.ast_type == cmp.ast_type:
         if not cmp.children and src.children:
             return []
         variants = find_variants(src.children, cmp.children, expansions)
@@ -105,7 +106,7 @@ def variant_in_match_stmt(src: AstProtocol, cmp: AstProtocol, expansions) -> lis
 
 def _advance_match_all(variant: Variant, cmp: Sequence, src: Sequence, i: int, new_variants: list):
     """Advance variant.index past consecutive MATCH_ALL pattern nodes, forking new_variants as needed."""
-    while cmp[variant.index].kind == "MatchAll":
+    while cmp[variant.index].ast_type == MatchAll:
         current_name = cmp[variant.index].name
         if variant.expansion_start == -1:
             variant.expansion_start = i
@@ -190,7 +191,7 @@ def find_variants(src: Sequence, cmp: Sequence, expansion=None, start: int = 0, 
             if variant.index == len(cmp):
                 next_variants.append(variant)
                 continue
-            if cmp[variant.index].kind != "MatchAll" and (child_variants := variant_in_match_stmt(src[i], cmp[variant.index], variant.exp)):
+            if cmp[variant.index].ast_type != MatchAll and (child_variants := variant_in_match_stmt(src[i], cmp[variant.index], variant.exp)):
                 _apply_child_match(variant, child_variants, cmp, src, i, next_variants)
             elif variant.greedy:
                 _advance_greedy(variant, cmp, src, i)
@@ -208,7 +209,7 @@ def find_variants(src: Sequence, cmp: Sequence, expansion=None, start: int = 0, 
             continue
         if variant.index == len(cmp) - 1:
             last_cmp = cmp[variant.index]
-            trailing_wildcard = last_cmp.kind == "MatchAll" and last_cmp.name not in variant.exp
+            trailing_wildcard = last_cmp.ast_type == MatchAll and last_cmp.name not in variant.exp
             if not trailing_wildcard:
                 continue
             key = variant.greedy if variant.expansion_start != -1 else last_cmp.name

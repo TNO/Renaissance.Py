@@ -74,7 +74,7 @@ def match_props(mine, other, irrelevant_props) -> bool:
 def match_children(mine, other, irrelevant_kinds):
     if mine == None or other == None:
         return mine == other
-    return all((i < len(mine) and mine[i] == child) or child.kind in irrelevant_kinds for i, child in enumerate(other))
+    return all((i < len(mine) and mine[i] == child) or child.ast_type.__name__ in irrelevant_kinds for i, child in enumerate(other))
 
 
 def format_node(node):
@@ -82,4 +82,4 @@ def format_node(node):
     properties_text = "" if not node.show_props else node.properties
     prefix = " " if len(raw_lines) < 2 else f"\n    {node.indent}"
     formatted_lines = [f"{prefix}|{line}|" for line in raw_lines]
-    return f"{node.indent}({node.kind}, {node.name}, {node.filename}[{node.offset}:{node.offset + node.length}]){properties_text}:{''.join(formatted_lines)}\n"
+    return f"{node.indent}({node.ast_type.__name__}, {node.name}, {node.filename}[{node.offset}:{node.offset + node.length}]){properties_text}:{''.join(formatted_lines)}\n"

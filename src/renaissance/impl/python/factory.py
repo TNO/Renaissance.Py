@@ -4,18 +4,16 @@ from pathlib import Path
 from typing import Sequence
 
 import tree_sitter_python
-from ast_comments import *
 from libcst import SimpleStatementLine
-from more_itertools import flatten
 
-from renaissance.impl.types import KIND_MAP, BogusType, MatchAll, MatchOne
+from renaissance.impl.types import MatchAll, MatchOne, Call, ExpressionStatement, Type, UnknownType, \
+    DeclarationExpression, Name, Arg
 from renaissance.impl import MATCH_ALL, MATCH_ONE
 from renaissance.impl.python.ast_node import ASTExtension
 from renaissance.impl.python.cst_node import PythonCstNode
 from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.impl.tree_sitter.adapter import TreeSitterAdapter
 from renaissance.impl.tree_sitter.lst import LSTNode
-from renaissance.syntax_tree import ASTFactory
 from renaissance.syntax_tree.match_finder import AstProtocol, is_match
 from renaissance.utils.ast_utils import replace_dollar, use_dollar
 
@@ -32,7 +30,8 @@ class PythonPattern(AstProtocol):
         if type(node) is str:
             print(node)
             return
-        self.kind: str = self.derive_kind(node.node)
+        self.ast_type: Type = self.derive_type(node)
+
         self.properties: dict = node.properties
         self.children: list[PythonPattern] = [PythonPattern(node) for node in node.children]
         self.signature: str = node.signature
@@ -42,40 +41,59 @@ class PythonPattern(AstProtocol):
             self.name = ""
 
     def __eq__(self, other: AstProtocol) -> bool:
-        return is_match(self, other)
+        return is_match(other,self)
 
     def __repr__(self):
         return use_dollar(str(self.node))
 
-    def derive_kind(self, ast_node: AST) -> str:
-        signature = ""
-        if isinstance(ast_node, ast.arg):
-            signature = ast_node.arg
-        elif isinstance(ast_node, ast.Name):
-            signature = ast_node.id
-        elif isinstance(ast_node, ast.Expr) and isinstance(ast_node.value, ast.Name):
-            signature = ast_node.value.id
-        if _MATCH_ALL_RE.match(signature):
-            return MatchAll.__name__
-        elif _MATCH_ONE_RE.match(signature):
-            return MatchOne.__name__
-        if isinstance(ast_node, LSTNode):
-            return ast_node.kind
+    def derive_type(self, node) -> str:
+        # signature = ""
+        # if isinstance(node.ast_type(), Argument):
+        #     signature = node.node.arg
+        # elif isinstance(node.ast_type(), Name):
+        #     signature = node.node.value
+        # elif isinstance(node.ast_type(), ExpressionStatement) and isinstance(node.node.value, ast.Name):
+        #     signature = node.node.value.id
+        # if _MATCH_ALL_RE.match(signature):
+        #     return MatchAll
+        # elif _MATCH_ONE_RE.match(signature):
+        #     return MatchOne
+        # if isinstance(node, LSTNode):
+        #     return node.ast_type
+        # else:
+        #     return node.ast_type
+        if isinstance(node, ast.arg):
+            signature = node.arg
+        elif isinstance(node, ast.Name):
+            signature = node.id
+        elif isinstance(node, ast.Expr) and isinstance(node.value, ast.Name):
+            signature = node.value.id
+        elif isinstance(node, ast.AST):
+            signature = str(node)
         else:
-            return KIND_MAP.get(type(ast_node).__name__, type(ast_node)).__name__
+            signature = node.name
+
+        if node.ast_type in [DeclarationExpression, ExpressionStatement, Name, Arg]:
+            if _MATCH_ALL_RE.match(signature):
+                return MatchAll
+            elif _MATCH_ONE_RE.match(signature):
+                return MatchOne
+
+        return node.ast_type
 
 
 class PythonFactory:
 
-    def __init__(self, clazz: type[PythonRstNode | PythonCstNode | LSTNode | AST]) -> None:
+    def __init__(self, clazz: type[PythonRstNode | PythonCstNode | LSTNode | ast.AST]) -> None:
         self.clazz = clazz
         if clazz == LSTNode:
             clazz.load_from_text = self.load_from_lst
-        elif clazz == AST:
+        elif clazz == ast.AST:
             clazz.load_from_text = ASTExtension.load_from_ast
             # matcher
             clazz.node = ASTExtension.ast_node
-            clazz.kind = ASTExtension.ast_kind
+
+            # clazz.name = ASTExtension.ast_name
             clazz.ast_type = ASTExtension.ast_type
             clazz.properties = ASTExtension.ast_properties
             clazz.children = ASTExtension.ast_children
@@ -95,7 +113,7 @@ class PythonFactory:
         assert isinstance(atu, self.clazz)
         return atu
 
-    def create_from_text(self, text: str, file_name: str = "snippet.py") -> PythonRstNode | PythonCstNode | LSTNode | AST:
+    def create_from_text(self, text: str, file_name: str = "snippet.py") -> PythonRstNode | PythonCstNode | LSTNode | ast.AST:
 
         atu = self.clazz.load_from_text(text, file_name)
         assert isinstance(atu, self.clazz)
@@ -126,9 +144,7 @@ class PythonPatternFactory:
 
     def create_statement(self, text: str) -> PythonPattern:
         stmt = self.create_statements(text)[-1]
-        if isinstance(stmt.node.node, SimpleStatementLine) or (
-            isinstance(stmt.node, LSTNode) and stmt.node.kind == "Expr" and stmt.children[0].node.kind != "Call"
-        ):
+        if isinstance(stmt.node.node, SimpleStatementLine):
             return stmt.children[0]
         else:
             return stmt
@@ -139,7 +155,7 @@ class PythonPatternFactory:
         if isinstance(my_pattern.node, PythonRstNode):
             return PythonPattern(my_pattern.node.expression)
         elif isinstance(my_pattern.node, LSTNode):
-            return PythonPattern(my_pattern.node)
+            return PythonPattern(my_pattern.node.children[-1])
         elif isinstance(my_pattern.node, PythonCstNode):
             return PythonPattern(my_pattern.node.children[-1])
         else:
@@ -150,7 +166,5 @@ class PythonPatternFactory:
 
     @staticmethod
     def create_kwargs(kw_str) -> Sequence[PythonPattern]:
-        call = ast.parse(f"fun({replace_dollar(kw_str)})", "kwarg_pattern.py", type_comments=True).body[0]
-        if isinstance(call, Expr) and isinstance(call.value, Call):
-            return [PythonPattern(PythonRstNode(kwarg)) for kwarg in call.value.keywords]
-        return []
+        call = ast.parse(f"fun({replace_dollar(kw_str)})", "kwarg_pattern.py", type_comments=True).body[0].value
+        return [PythonPattern(PythonRstNode(kwarg)) for kwarg in call.keywords]

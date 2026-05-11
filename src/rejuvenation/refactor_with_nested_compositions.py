@@ -5,7 +5,7 @@ import textwrap
 from renaissance.impl.types import Call
 from renaissance.syntax_tree import ASTFactory, ASTRewriter
 from renaissance.impl.clang import ClangASTNode, CPatternFactory
-from renaissance.syntax_tree import ASTShower, TextUtils, ASTFinder
+from renaissance.syntax_tree import ASTShower
 from renaissance.syntax_tree.ast_finder import find_ast_type
 from renaissance.syntax_tree.match_finder import find_all
 

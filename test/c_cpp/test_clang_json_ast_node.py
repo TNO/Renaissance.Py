@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from renaissance.impl.clang_json import ClangJsonASTNode
+from renaissance.impl.clang.clang_json_ast_node import ClangJsonASTNode
 from renaissance.impl.clang import CPatternFactory
 from renaissance.syntax_tree import ASTShower, ASTFactory
 import pytest

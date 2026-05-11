@@ -5,7 +5,7 @@ import pytest
 from hamcrest import assert_that, is_, greater_than, has_length
 
 import targets
-from renaissance.impl.types import Expression, BogusType
+from renaissance.impl.types import Expression, BogusType, BinaryOperation
 from renaissance.syntax_tree import ASTFinder, ASTNode, ASTFactory, ASTShower
 from renaissance.syntax_tree.ast_finder import find_ast_type
 from .factories import Factories
@@ -39,7 +39,7 @@ class TestAllFinder(TestFinder):
         model = self.load_model(factory)
 
         def is_bogus(node: ASTNode):
-            if "Bogus" in node.kind:
+            if node.ast_type==BogusType:
                 yield node
 
         assert_that(ASTFinder.find_all(model, is_bogus), has_length(0))
@@ -49,7 +49,13 @@ class TestAllFinder(TestFinder):
         model = self.load_model(factory)
 
         def is_binary_operator(node: ASTNode):
-            if re.fullmatch("(?i).*binary_?operator", node.kind):
+            if isinstance(node.ast_type(), BinaryOperation):
                 yield node
 
         assert_that(ASTFinder.find_all(model, is_binary_operator), has_length(greater_than(0)))
+
+
+
+
+
+

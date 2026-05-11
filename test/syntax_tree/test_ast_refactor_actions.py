@@ -1,7 +1,7 @@
 import hamcrest
 from hamcrest import assert_that, is_
 
-
+from renaissance.impl.types import Name
 from renaissance.syntax_tree import ASTRefactorActions
 
 
@@ -18,7 +18,7 @@ class TestASTRefactorActions:
         proc.find_all.return_value = []
         factory = mocker.Mock()
         refactor_actions = ASTRefactorActions(proc, factory)
-        refactor_actions.replace_expr("name", "my_awsome_name", "Name")
+        refactor_actions.replace_expr("name", "my_awsome_name", Name)
         assert_that(proc.find_all.called)
 
     def test_replace_name(self, mocker):

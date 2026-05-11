@@ -1,15 +1,13 @@
 from pathlib import Path
-from typing import Self, Callable
+from typing import Self
 
 import libcst
 from libcst import BaseSmallStatement, BaseCompoundStatement, CSTNode, MetadataWrapper, ClassDef
 from libcst import FunctionDef
-from libcst.display import dump
 from libcst.metadata import WhitespaceInclusivePositionProvider
 
-from renaissance.impl.types import KIND_MAP, BogusType
+from renaissance.impl.types import KIND_MAP, UnknownType
 from renaissance.impl.python.util import convert
-from renaissance.syntax_tree.match_finder import find_in_list, IRRELEVANT_PROPS
 from renaissance.utils.ast_utils import preceding_sibling, next_sibling
 
 
@@ -51,8 +49,9 @@ class PythonCstNode:
         self.is_statement = isinstance(self.node, (BaseSmallStatement, BaseCompoundStatement))
 
         # for matcher
-        self.ast_type = KIND_MAP.get(type(node).__name__, type(node))
-        self.kind = self.ast_type.__name__
+        self.ast_type = KIND_MAP.get(type(node).__name__, UnknownType) #type(node))
+        if self.ast_type ==UnknownType:
+            print(f'"{type(node).__name__}": {type(node).__name__},')
         self.children: list[Self] = [PythonCstNode(node, translation_unit, self) for node in node.children]
         self.properties = {}
 
