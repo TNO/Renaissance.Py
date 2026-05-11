@@ -216,8 +216,10 @@ class FunctionDef(Definition): pass
 class ClassDef(Definition): pass
 class StructDef(Definition):    pass
 class RecordDef(Definition):    pass
-class TypedefDef(Definition):    pass
+class TypeAlias(Definition): pass
+class TypedefDef(TypeAlias):    pass
 class PackageDef(Definition):    pass
+class ParameterDef(Definition):    pass
 class WithItem(Node): pass
 class With(BaseCompoundStatement): pass
 class Do(BaseCompoundStatement):     pass
@@ -250,10 +252,9 @@ class TypeVarTuple(Node): pass
 class ParamSpec(Node): pass
 class TypeParam(Node): pass
 class TypeParameters(Node): pass
-class TypeAlias(BaseSmallStatement): pass
 
 
-
+#==== added=====
 class Declaration(Definition):    pass
 
 
@@ -261,19 +262,18 @@ class Declaration(Definition):    pass
 class ImportStatement(Statement):    pass
 class Import(ImportStatement):    pass
 class ImportFrom(ImportStatement):    pass
-class NotOperator(UnaryOperation):    pass
+
 class ImplicitNode(Node):    pass
-class Argument(Node):    pass
+
 class DeclarationExpression(Expression):    pass
 class TypeReference(Expression):    pass
-class VariableDeclaration(Declaration):    pass
+class VariableDef(Declaration):    pass
 class FunctionDeclaration(Declaration):    pass
 class ParenthesizedExpression(Expression):    pass
 class Constructor(FunctionDef):    pass
 class FieldDeclaration(Declaration):    pass
-class MacroDefinition(Definition):    pass
+class MacroDef(Definition):    pass
 class Namespace(Node):    pass
-class ParameterDeclaration(Declaration):    pass
 class Specifier(Node):    pass
 class BaseSpecifier(Specifier):    pass
 class ConstructorExpression(Call):    pass
@@ -303,8 +303,6 @@ class Catch(Statement):    pass
 class ComparasionOperation(Expression):    pass
 class UnaryAdd(UnaryOperation):    pass
 class UnarySubtract(UnaryOperation):    pass
-class Invert(UnaryOperation):    pass
-class FloorDiv(BinaryOperation):    pass
 class Case(Statement):    pass
 class MatchSequence(Node):    pass
 
@@ -656,6 +654,7 @@ KIND_MAP = {
     "DEFAULT_STMT": DEFAULT_STMT,
     "Del": Del,
     "del": Del,
+    "Delete": Del,
     "delete_statement": Del,
     "DESTRUCTOR": Destructor,
     "Dict": Dict,
@@ -749,7 +748,7 @@ KIND_MAP = {
     "IF_STMT": If,
     "IfExp": IfExp,
     "IfStmt": If,
-    "ImplicitNode": IndentedBlock,
+    "ImplicitNode": ImplicitNode,
     "ImplicitValueInitExpr": Assign,
     "import": Import,
     "Import": Import,
@@ -806,7 +805,7 @@ KIND_MAP = {
     "LShift": LeftShift,
     "Lt": LessThan,
     "LtE": LessThanEqual,
-    "MACRO_DEFINITION": MacroDefinition,
+    "MACRO_DEFINITION": MacroDef,
     "marker_annotation": marker_annotation,
     "match": Match,
     "Match": Match,
@@ -875,7 +874,7 @@ KIND_MAP = {
     "pair": pair,
     "ParagraphComment": ParagraphComment,
     "Param": Param,
-    "parameter_declaration": ParameterDeclaration,
+    "parameter_declaration": ParameterDef,
     "parameter_list": ArgumentList,
     "Parameters": Parameters,
     "parameters": Parameters,
@@ -883,8 +882,8 @@ KIND_MAP = {
     "ParenExpr": ParenthesizedExpression,
     "parenthesized_expression": ParenthesizedExpression,
     "ParenthesizedWhitespace": ParenthesizedWhitespace,
-    "PARM_DECL": ParameterDeclaration,
-    "ParmVarDecl": ParameterDeclaration,
+    "PARM_DECL": ParameterDef,
+    "ParmVarDecl": ParameterDef,
     "pass": Pass,
     "Pass": Pass,
     "pass_statement": Pass,
@@ -941,7 +940,7 @@ KIND_MAP = {
     "STRUCT_DECL": StructDef,
     "struct_specifier": struct_specifier,
     "Sub": Subtract,
-    "Subscript": Slice,
+    "Subscript": Subscript,
     "subscript": Subscript,
     "SubscriptElement": SubscriptElement,
     "Subtract": Subtract,
@@ -979,7 +978,7 @@ KIND_MAP = {
     "type_parameter_declaration": TypeParameterDeclaration,
     "TYPE_REF": TypeReference,
     "TypeAlias": TypeAlias,
-    "TYPEDEF_DECL": TypeAlias,
+    "TYPEDEF_DECL": TypedefDef,
     "TypedefDecl": TypedefDef,
     "typename": TypeName,
     "TypeRef": TypeReference,
@@ -1000,9 +999,9 @@ KIND_MAP = {
     "using": Using,
     "USING_DIRECTIVE": Using,
     "USub": UnarySubtract,
-    "VAR_DECL": VariableDeclaration,
-    "VarDecl": VariableDeclaration,
-    "variable_declarator": VariableDeclaration,
+    "VAR_DECL": VariableDef,
+    "VarDecl": VariableDef,
+    "variable_declarator": VariableDef,
     "VISIBILITY_ATTR": VisibilityAttr,
     "void_type": VoidType,
     "WARN_UNUSED_RESULT_ATTR": WarnUnusedResultAttr,

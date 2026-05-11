@@ -4,8 +4,8 @@ from typing import Optional, Sequence
 from more_itertools import first
 from more_itertools.more import last
 
-from renaissance.impl.types import Declaration, MacroDefinition, CompoundStatement, ParenthesizedExpression, Call, Type, \
-    VariableDeclaration, TypedefDef, FunctionDef, InclusionDirective
+from renaissance.impl.types import Declaration, MacroDef, CompoundStatement, ParenthesizedExpression, Call, Type, \
+    VariableDef, TypedefDef, FunctionDef, InclusionDirective
 from renaissance.syntax_tree.ast_factory import ASTFactory
 from renaissance.syntax_tree.ast_finder import find_ast_type
 from renaissance.syntax_tree.ast_node import ASTNode
@@ -34,7 +34,7 @@ def derive_header_text(language: str, ref_node: ASTNode | None):
             n.text + ";"
             for n in ref_node.children
             if n.is_part_of_translation_unit()
-            and isinstance(n.ast_type(), (FunctionDef, VariableDeclaration | TypedefDef, MacroDefinition))
+            and isinstance(n.ast_type(), (FunctionDef, VariableDef | TypedefDef, MacroDef))
             and len(find_ast_type(n, CompoundStatement)) == 0
         )
         # and isinstance(n.ast_type, (Declaration, MacroDefinition))

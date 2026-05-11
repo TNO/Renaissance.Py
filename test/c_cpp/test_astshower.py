@@ -4,7 +4,7 @@ from hamcrest import *
 from hamcrest import assert_that, matches_regexp
 
 from renaissance.impl.clang import ClangASTNode, CPatternFactory
-from renaissance.impl.types import Call, If, MacroDefinition
+from renaissance.impl.types import Call, If, MacroDef
 from renaissance.syntax_tree import ASTFactory, ASTShower
 from renaissance.syntax_tree.ast_finder import find_ast_type
 
@@ -83,25 +83,25 @@ class TestCcppShower:
                 "  (FunctionDef, ba, test.c[9:25]): |void ba(int i){}|\n"
                 "    (DeclarationLoc, ba, test.c[14:16]): |ba|\n"
                 "    (TypeReference, ba, test.c[9:13]): |void|\n"
-                "    (ParameterDeclaration, i, test.c[17:22]): |int i|\n"
+                "    (ParameterDef, i, test.c[17:22]): |int i|\n"
                 "      (DeclarationLoc, i, test.c[21:22]): |i|\n"
                 "      (TypeReference, i, test.c[17:20]): |int|\n"
                 "    (CompoundStatement, , test.c[23:25]): |{}|\n"
                 "  (FunctionDef, ca, test.c[34:50]): |void ca(int i){}|\n"
                 "    (DeclarationLoc, ca, test.c[39:41]): |ca|\n"
                 "    (TypeReference, ca, test.c[34:38]): |void|\n"
-                "    (ParameterDeclaration, i, test.c[42:47]): |int i|\n"
+                "    (ParameterDef, i, test.c[42:47]): |int i|\n"
                 "      (DeclarationLoc, i, test.c[46:47]): |i|\n"
                 "      (TypeReference, i, test.c[42:45]): |int|\n"
                 "    (CompoundStatement, , test.c[48:50]): |{}|\n"
                 "  (FunctionDef, lo, test.c[59:75]): |void lo(int i){}|\n"
                 "    (DeclarationLoc, lo, test.c[64:66]): |lo|\n"
                 "    (TypeReference, lo, test.c[59:63]): |void|\n"
-                "    (ParameterDeclaration, i, test.c[67:72]): |int i|\n"
+                "    (ParameterDef, i, test.c[67:72]): |int i|\n"
                 "      (DeclarationLoc, i, test.c[71:72]): |i|\n"
                 "      (TypeReference, i, test.c[67:70]): |int|\n"
                 "    (CompoundStatement, , test.c[73:75]): |{}|\n"
-                "  (VariableDeclaration, na, test.c[84:96]): |int na = 55;|\n"
+                "  (VariableDef, na, test.c[84:96]): |int na = 55;|\n"
                 "    (DeclarationLoc, na, test.c[88:90]): |na|\n"
                 "    (TypeReference, na, test.c[84:87]): |int|\n"
                 "    (Number, , test.c[93:95]): |55|\n"
@@ -131,7 +131,7 @@ else
 """,
             "test.c",
         )
-        real_children = list(filter(lambda n: n.ast_type != MacroDefinition, atu.children))[1]
+        real_children = list(filter(lambda n: n.ast_type != MacroDef, atu.children))[1]
 
 
         ifstmt = find_ast_type(real_children, If)[0]

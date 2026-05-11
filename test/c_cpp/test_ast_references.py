@@ -107,7 +107,7 @@ class TestASTReference:
         # ASTShower.show_node(ast)
         using = first((n for n in find_ast_type(ast, TypeReference) if len(n.references) > 0), None)
         if not using:
-            using = first(find_ast_type(ast, (ParameterDeclaration,VariableDeclaration)))
+            using = first(find_ast_type(ast, (ParameterDef, VariableDef)))
         assert_that(isinstance(using, ASTNode), is_(True))
         refs = using.references
         assert_that(refs, has_length(is_(1)))

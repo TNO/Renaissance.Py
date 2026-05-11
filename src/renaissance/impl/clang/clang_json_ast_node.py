@@ -32,7 +32,7 @@ ID_TAGS = [
 
 STMT_PARENTS = [CompoundStatement, TranslationUnit]
 IRRELEVANT_PROPS = {"macro_expansion", "start_point", "end_point", "source_code", "location", "type"}
-IRRELEVANT_NODES = {Comment, MacroDefinition, FullComment}
+IRRELEVANT_NODES = {Comment, MacroDef, FullComment}
 VERBOSE = False
 
 

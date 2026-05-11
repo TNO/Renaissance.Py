@@ -8,7 +8,7 @@ import clang.native
 from clang.cindex import Config, Index, TypeKind, CursorKind
 
 from renaissance.impl.clang.cpp_utils import get_ancestor
-from renaissance.impl.types import MatchAll, MatchOne, UnknownType, KIND_MAP, MacroDefinition, Statement, \
+from renaissance.impl.types import MatchAll, MatchOne, UnknownType, KIND_MAP, MacroDef, Statement, \
     DeclarationExpression, Literal, BinaryOperation, UnaryOperation, CompoundStatement, Declaration, Definition, \
     TranslationUnit
 from renaissance.syntax_tree import ASTNode, ASTReference
@@ -243,7 +243,7 @@ class ClangASTNode(ASTNode):
             if (
                 (not self._is_statement_or_declaration())
                 and (self.parent and self.parent.ast_type in STMT_PARENTS)
-                and self.ast_type not in [MacroDefinition]
+                and self.ast_type not in [MacroDef]
             ):
                 content = self.root.binary_file_content()
                 while end_offset < len(content) and not content[end_offset - 1] in b";":

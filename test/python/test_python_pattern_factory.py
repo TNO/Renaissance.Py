@@ -172,7 +172,7 @@ class TestPythonFactory:
     def test_delete_statement(self, code) -> None:
         pattern_factory = PythonPatternFactory(self.factory)
         node = pattern_factory.create_statement(code)
-        assert_that(node.ast_type(), instance_of(Delete))
+        assert_that(node.ast_type(), instance_of(Del))
         assert_that(node.signature, is_(code))
 
     def test_pass(self) -> None:
@@ -194,19 +194,6 @@ class TestPythonFactory:
         pattern_factory = PythonPatternFactory(self.factory)
         node = pattern_factory.create_statement(code)
         assert_that(node.ast_type(), instance_of(Continue))
-        assert_that(node.signature, is_(code))
-
-    @pytest.mark.parametrize(
-        "code",
-        [
-            "del x",
-            "del my_set[0]",
-        ],
-    )
-    def test_variable_ref(self, code) -> None:
-        pattern_factory = PythonPatternFactory(self.factory)
-        node = pattern_factory.create_statement(code)
-        assert_that(node.ast_type(), instance_of(Delete))
         assert_that(node.signature, is_(code))
 
     ### Expressions patterns

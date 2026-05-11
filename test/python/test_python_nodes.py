@@ -180,7 +180,7 @@ def outer():
             [
                 ("a % b", Modulo),
                 ("a / b", Divide),
-                ("a // b", FloorDiv),
+                ("a // b", FloorDivide),
                 ("a << b", LeftShift),
                 ("a >> b", RightShift),
                 ("a * b", Multiply),
@@ -201,8 +201,8 @@ def outer():
             [
                 ("+b", UnaryAdd),
                 ("-b", UnarySubtract),
-                ("~b", Invert),
-                ("not b", NotOperator),
+                ("~b", BitInvert),
+                ("not b", Not),
             ],
         ),
     )

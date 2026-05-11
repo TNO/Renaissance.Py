@@ -33,7 +33,7 @@ class TestPythonRstNode:
 
     def test_type_alias(self):
         it = self.factory.create_from_text("type UserId = int", "context.py")
-        assert_that(it.children[0].ast_type(), is_(TypedefDef))
+        assert_that(it.children[0].ast_type(), is_(TypeAlias))
 
     def test_slice(self):
         it = self.pattern_factory.create_expression("items[1:2:3]")
@@ -66,7 +66,7 @@ class TestPythonRstNode:
         )
         stmt = self.pattern_factory.create_statement(sample_code)
         assert_that(stmt.ast_type(), is_(Match))
-        assert_that(stmt.children[1].children[0].ast_type(), is_(Case))
+        assert_that(stmt.children[1].children[0].ast_type(), is_(MatchCase))
         assert_that(stmt.children[1].children[0].children[0].children[1].ast_type(), is_(MatchStar))
         assert_that(stmt.children[1].children[0].children[0].children[0].ast_type(), is_(MatchAs))
 

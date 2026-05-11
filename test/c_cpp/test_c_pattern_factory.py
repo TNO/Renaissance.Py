@@ -6,7 +6,7 @@ from more_itertools import last
 from c_cpp.factories import Factories
 from renaissance.impl.clang import CPatternFactory, ClangASTNode
 from renaissance.impl.clang.c_pattern_factory import derive_header_text
-from renaissance.impl.types import DeclarationExpression, MatchOne, VariableDeclaration, FunctionDef, CompoundStatement, \
+from renaissance.impl.types import DeclarationExpression, MatchOne, VariableDef, FunctionDef, CompoundStatement, \
     Expression, Declaration
 from renaissance.syntax_tree import ASTShower
 from renaissance.syntax_tree.ast_finder import find_ast_type
@@ -156,7 +156,7 @@ class TestDeclaration:
         count_vars = 0
         for decl in created_declarations:
             count_refs += len(find_ast_type(decl, (DeclarationExpression,MatchOne)))
-            count_vars += len(find_ast_type(decl, VariableDeclaration))
+            count_vars += len(find_ast_type(decl, VariableDef))
             ASTShower.show_node(decl)
         assert_that(count_vars, is_(expected_vars))
         assert_that(count_refs, greater_than_or_equal_to(expected_refs))

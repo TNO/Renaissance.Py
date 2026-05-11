@@ -7,7 +7,7 @@ import tree_sitter_python
 from libcst import SimpleStatementLine
 
 from renaissance.impl.types import MatchAll, MatchOne, Call, ExpressionStatement, Type, UnknownType, \
-    DeclarationExpression, Name, Argument
+    DeclarationExpression, Name, Arg
 from renaissance.impl import MATCH_ALL, MATCH_ONE
 from renaissance.impl.python.ast_node import ASTExtension
 from renaissance.impl.python.cst_node import PythonCstNode
@@ -73,7 +73,7 @@ class PythonPattern(AstProtocol):
         else:
             signature = node.name
 
-        if node.ast_type in [DeclarationExpression, ExpressionStatement, Name, Argument]:
+        if node.ast_type in [DeclarationExpression, ExpressionStatement, Name, Arg]:
             if _MATCH_ALL_RE.match(signature):
                 return MatchAll
             elif _MATCH_ONE_RE.match(signature):
