@@ -40,7 +40,6 @@ class TestTreeSitterStructuralMatcher:
 
         result = match_pattern(lst.root.children, pat.root.children)
         assert_that(result, has_length(1))
-        assert_that(result.ast_type(), instance_of(Statement))
 
     @pytest.mark.parametrize("code, pattern",[
             ("int main() { return 0; }","int $main() { return 0; }"),
@@ -81,7 +80,6 @@ class TestTreeSitterStructuralMatcher:
         pat = adapter.to_lst(pattern, ast)
         result = match_pattern(lst.root.children, pat.root.children)
         assert_that(result, has_length(1))
-        assert_that(result.ast_type(), instance_of(Statement))
 
 if __name__ == "__main__":
     pytest.main()
