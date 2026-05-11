@@ -1,5 +1,4 @@
 from abc import ABC
-
 class Type(ABC):
     def __str__(self):
         return self.__class__.__name__
@@ -109,7 +108,7 @@ class BaseAssignTargetExpression(BaseExpression): pass
 class BaseDelTargetExpression(BaseExpression): pass
 class Literal(BaseExpression):    pass
 class Name(BaseAssignTargetExpression, BaseDelTargetExpression): pass
-class Ellipsis(BaseExpression): pass
+class EllipsisLiteral(BaseExpression): pass
 class BaseNumber(BaseExpression): pass
 class Integer(BaseNumber): pass
 class Float(BaseNumber): pass
@@ -203,9 +202,13 @@ class Catch(Node): pass
 class Finally(Node): pass
 class Try(BaseCompoundStatement): pass
 class TryStar(BaseCompoundStatement): pass
+class ImportStatement(BaseSmallStatement):    pass
 class ImportAlias(Node): pass
-class Import(BaseSmallStatement): pass
-class ImportFrom(BaseSmallStatement): pass
+class Import(ImportStatement): pass
+class ImportFrom(ImportStatement): pass
+class InclusionDirective(ImportStatement):    pass
+class IncludeDirective(ImportStatement):    pass
+
 class AssignTarget(Node): pass
 class Assign(BaseSmallStatement): pass
 class AnnAssign(BaseSmallStatement): pass
@@ -259,9 +262,7 @@ class Declaration(Definition):    pass
 
 
 
-class ImportStatement(Statement):    pass
-class Import(ImportStatement):    pass
-class ImportFrom(ImportStatement):    pass
+
 
 class ImplicitNode(Node):    pass
 
@@ -289,7 +290,6 @@ class Alias(Node):    pass
 class Symbol(Node):    pass
 class AssignTo(Symbol):    pass
 class Whitespace(Type):    pass
-class InclusionDirective(Import):    pass
 class Cast(Node):    pass
 class BuiltinType(Literal):    pass
 class AccessSpecifier(Specifier):    pass
@@ -300,7 +300,7 @@ class Constant(Literal):    pass
 class Number(Literal):    pass
 class String(Literal):    pass
 class Catch(Statement):    pass
-class ComparasionOperation(Expression):    pass
+class ComparisionOperation(Expression):    pass
 class UnaryAdd(UnaryOperation):    pass
 class UnarySubtract(UnaryOperation):    pass
 class Case(Statement):    pass
@@ -313,67 +313,63 @@ class MatchSequence(Node):    pass
 class AbstractFunctionDeclarator:   pass
 class AlignedAttribute:    pass
 class As:    pass
-class as_pattern:    pass
-class as_pattern_target:    pass
+class AsPattern:    pass
+class AsPatternTarget:    pass
 class AsmAttribute:   pass
 class Asterisk:    pass
 class Async:    pass
 class Auto:    pass
 class Backslash:    pass
-class catch_formal_parameter:    pass
-class catch_type:    pass
-class class_body:    pass
-class class_pattern:    pass
+class CatchFormalParameter:    pass
+class CatchType:    pass
+class ClassBody:    pass
+class ClassPattern:    pass
 class ClassTemplate:    pass
 class ClassTemplatePartial:    pass
 class Comprehension:    pass
-class CONDITIONAL_OPERATOR:    pass
+class ConditionalOperator:    pass
 class ConstAttr:    pass
 class ConstCastExpr:    pass
-class constructor_body:    pass
+class ConstructorBody:    pass
 class ConstructorDeclaration(Declaration):    pass
-class CONVERSION_FUNCTION:    pass
-class CXX_BOOL_LITERAL_EXPR:    pass
-class CXX_FUNCTIONAL_CAST_EXPR:    pass
-class CXX_NULL_PTR_LITERAL_EXPR:    pass
-class CXX_THIS_EXPR:    pass
-class CXX_THROW_EXPR:    pass
-class CXX_TRY_STMT:    pass
-class CXX_TYPEID_EXPR:    pass
-class CXX_UNARY_EXPR:    pass
-class declaration_list:    pass
-class DEFAULT_STMT:    pass
+class ConversionFunction:    pass
+class BooleanLiteral:    pass
+class FunctionalCast:    pass
+class NullPointer:    pass
+class This:    pass
+class Typeid:    pass
+class DeclarationList:    pass
+class DefaultStmt:    pass
 class Destructor:    pass
-class dict_pattern:    pass
-class dimensions:    pass
-class dotted_name:    pass
+class DictPattern:    pass
+class Dimensions:    pass
+class DottedName:    pass
 class DynamicCastExpr:    pass
 class Enum:    pass
-class enum_body:    pass
-class enum_constant:    pass
-class enum_specifier:    pass
-class enumerator_list:    pass
-class except_clause:    pass
-class extends:    pass
-class field_access:    pass
-class field_identifier:    pass
+class EnumBody:    pass
+class EnumConstant:    pass
+class EnumSpecifier:    pass
+class EnumeratorList:    pass
+class ExceptClause:    pass
+class Extends:    pass
+class FieldAccess:    pass
+class FieldIdentifier:    pass
 class FinalAttr:pass
 class FinallyClause:    pass
 class FormalParameter:    pass
 class FormalParameters:    pass
 class FriendDecl:    pass
-class FUNCTION_TEMPLATE:    pass
-class IncludeDirective:    pass
-class integral_type:    pass
-class interface:    pass
-class interface_body:    pass
+class FunctionTemplate:    pass
+class IntegralType:    pass
+class Interface:    pass
+class InterfaceBody:    pass
 class InterfaceDeclaration(Declaration):    pass
-class interpolation:    pass
-class lambda_parameters:    pass
-class LINKAGE_SPEC:    pass
-class list_pattern:    pass
+class Interpolation:    pass
+class LambdaParameters:    pass
+class LinkageSpec:    pass
+class ListPattern:    pass
 class LocalVariableDeclaration:    pass
-class marker_annotation:    pass
+class MarkerAnnotation:    pass
 class MemberRefence:    pass
 class Method:    pass
 class Modifiers:    pass
@@ -381,35 +377,35 @@ class NamespaceIdentifier:    pass
 class NamespaceReference:    pass
 class New:    pass
 class Null:    pass
-class object_creation_expression:    pass
+class ObjectCreationExpression:    pass
 class OverloadedDeclRef:    pass
 class OverrideAttr:    pass
-class PACK_EXPANSION_EXPR:    pass
+class PackExpansionExpr:    pass
 class Package:    pass
-class pair:    pass
+class Pair:    pass
 class PointerDeclarator:    pass
-class program:    pass
-class public:    pass
-class PURE_ATTR:    pass
-class qualified_identifier:    pass
+class Program:    pass
+class Public:    pass
+class PureAttr:    pass
+class QualifiedIdentifier:    pass
 class ReinterpretCastExpr:    pass
-class scoped_identifier:    pass
-class SIZE_OF_PACK_EXPR:    pass
-class splat_pattern:    pass
-class static:    pass
-class STATIC_ASSERT:    pass
+class ScopedIdentifier:    pass
+class SizeOfPackExpr:    pass
+class SplatPattern:    pass
+class Static:    pass
+class StaticAssert:    pass
 class StaticCastExpr:    pass
-class string_fragment:    pass
-class string_literal:    pass
-class struct_specifier:    pass
-class superclass:    pass
+class StringFragment:    pass
+class StringLiteral:    pass
+class StructSpecifier:    pass
+class Superclass:    pass
 class Switch(Match):    pass
 class SwitchBlock(CompoundStatement):    pass
 class SwitchBlockStatementGroup:    pass
 class SwitchExpression:    pass
 class SwitchLabel(MatchPattern):    pass
 class Symbol:    pass
-class system_lib_string:    pass
+class SystemLibString:    pass
 class TemplateDef:    pass
 class TemplateDeclaration(TemplateDef):    pass
 class TemplateNonTypeParameter:    pass
@@ -429,8 +425,6 @@ class Using:    pass
 class VisibilityAttr:    pass
 class VoidType:    pass
 class WarnUnusedResultAttr:    pass
-
-
 
 OPERATOR_MAP = {
     "AnnAssign": "=",
@@ -514,8 +508,8 @@ KIND_MAP = {
     "ARRAY_SUBSCRIPT_EXPR": Subscript,
     "array_type": List,
     "as": As,
-    "as_pattern": as_pattern,
-    "as_pattern_target": as_pattern_target,
+    "as_pattern": AsPattern,
+    "as_pattern_target": AsPatternTarget,
     "ASM_LABEL_ATTR": AsmAttribute,
     "AsName": AsName,
     "assert": Assert,
@@ -534,7 +528,6 @@ KIND_MAP = {
     "AsyncWith": With,
     "attribute": Attribute,
     "Attribute": Attribute,
-    "Attributr": Attribute,
     "AugAssign": AugAssign,
     "augmented_assignment": AugAssign,
     "auto": Auto,
@@ -571,17 +564,17 @@ KIND_MAP = {
     "CASE_STMT": MatchCase,
     "catch": ExceptHandler,
     "catch_clause": ExceptHandler,
-    "catch_formal_parameter": catch_formal_parameter,
-    "catch_type": catch_type,
+    "catch_formal_parameter": CatchFormalParameter,
+    "catch_type": CatchType,
     "char_literal": Character,
     "character": Character,
     "CHARACTER_LITERAL": Character,
     "class": ClassDef,
-    "class_body": class_body,
+    "class_body": ClassBody,
     "CLASS_DECL": ClassDef,
     "class_declaration": ClassDef,
     "class_definition": ClassDef,
-    "class_pattern": class_pattern,
+    "class_pattern": ClassPattern,
     "class_specifier": ClassSpecifier,
     "CLASS_TEMPLATE": ClassTemplate,
     "CLASS_TEMPLATE_PARTIAL_SPECIALIZATION": ClassTemplatePartial,
@@ -603,40 +596,40 @@ KIND_MAP = {
     "comprehension": Comprehension,
     "condition_clause": Compare,
     "conditional_expression": IfExp,
-    "CONDITIONAL_OPERATOR": CONDITIONAL_OPERATOR,
+    "CONDITIONAL_OPERATOR": ConditionalOperator,
     "CONST_ATTR": ConstAttr,
     "Constant": Literal,
     "CONSTRUCTOR": Constructor,
-    "constructor_body": constructor_body,
+    "constructor_body": ConstructorBody,
     "constructor_declaration": ConstructorDeclaration,
     "continue": Continue,
     "Continue": Continue,
     "continue_statement": Continue,
     "CONTINUE_STMT": Continue,
-    "CONVERSION_FUNCTION": CONVERSION_FUNCTION,
+    "CONVERSION_FUNCTION": ConversionFunction,
     "CSTYLE_CAST_EXPR": Cast,
     "CStyleCastExpr": Cast,
     "CXX_ACCESS_SPEC_DECL": AccessSpecifier,
     "CXX_BASE_SPECIFIER": BaseSpecifier,
-    "CXX_BOOL_LITERAL_EXPR": CXX_BOOL_LITERAL_EXPR,
+    "CXX_BOOL_LITERAL_EXPR": BooleanLiteral,
     "CXX_CATCH_STMT": ExceptHandler,
     "CXX_CONST_CAST_EXPR": ConstCastExpr,
     "CXX_DELETE_EXPR": Del,
     "CXX_DYNAMIC_CAST_EXPR": DynamicCastExpr,
     "CXX_FINAL_ATTR": FinalAttr,
     "CXX_FOR_RANGE_STMT": For,
-    "CXX_FUNCTIONAL_CAST_EXPR": CXX_FUNCTIONAL_CAST_EXPR,
+    "CXX_FUNCTIONAL_CAST_EXPR": FunctionalCast,
     "CXX_METHOD": Method,
     "CXX_NEW_EXPR": New,
-    "CXX_NULL_PTR_LITERAL_EXPR": CXX_NULL_PTR_LITERAL_EXPR,
+    "CXX_NULL_PTR_LITERAL_EXPR": NullPointer,
     "CXX_OVERRIDE_ATTR": OverrideAttr,
     "CXX_REINTERPRET_CAST_EXPR": ReinterpretCastExpr,
     "CXX_STATIC_CAST_EXPR": StaticCastExpr,
-    "CXX_THIS_EXPR": CXX_THIS_EXPR,
-    "CXX_THROW_EXPR": CXX_THROW_EXPR,
-    "CXX_TRY_STMT": CXX_TRY_STMT,
-    "CXX_TYPEID_EXPR": CXX_TYPEID_EXPR,
-    "CXX_UNARY_EXPR": CXX_UNARY_EXPR,
+    "CXX_THIS_EXPR": This,
+    "CXX_THROW_EXPR": Raise,
+    "CXX_TRY_STMT": Try,
+    "CXX_TYPEID_EXPR": Typeid,
+    "CXX_UNARY_EXPR": UnaryOperation,
     "CXXConstructExpr": ConstructorExpression,
     "CXXConstructorDecl": Constructor,
     "CXXRecordDecl": RecordDef,
@@ -645,25 +638,25 @@ KIND_MAP = {
     "DECL_REF_EXPR": DeclarationExpression,
     "DECL_STMT": Declaration,
     "declaration": Declaration,
-    "declaration_list": declaration_list,
+    "declaration_list": DeclarationList,
     "DeclLoc": DeclarationLoc,
     "DeclRefExpr": DeclarationExpression,
     "DeclStmt": Declaration,
     "Decorator": Decorator,
     "def": Symbol,
-    "DEFAULT_STMT": DEFAULT_STMT,
+    "DEFAULT_STMT": DefaultStmt,
     "Del": Del,
     "del": Del,
     "Delete": Del,
     "delete_statement": Del,
     "DESTRUCTOR": Destructor,
     "Dict": Dict,
-    "dict_pattern": dict_pattern,
+    "dict_pattern": DictPattern,
     "DictComp": DictComp,
     "DictElement": DictElement,
     "dictionary": Dict,
     "dictionary_comprehension": DictComp,
-    "dimensions": dimensions,
+    "dimensions": Dimensions,
     "Div": Divide,
     "Divide": Divide,
     "do": Do,
@@ -671,35 +664,35 @@ KIND_MAP = {
     "DO_STMT": Do,
     "DoStmt": Do,
     "Dot": Dot,
-    "dotted_name": dotted_name,
+    "dotted_name": DottedName,
     "Element": Element,
-    "ellipsis": Ellipsis,
+    "ellipsis": EllipsisLiteral,
     "else": Else,
     "EmptyLine": EmptyLine,
     "enum": Enum,
-    "enum_body": enum_body,
-    "enum_constant": enum_constant,
-    "ENUM_CONSTANT_DECL": enum_constant,
+    "enum_body": EnumBody,
+    "enum_constant": EnumConstant,
+    "ENUM_CONSTANT_DECL": EnumConstant,
     "ENUM_DECL": Enum,
     "enum_declaration": Enum,
-    "enum_specifier": enum_specifier,
+    "enum_specifier": EnumSpecifier,
     "enumerator": Enum,
-    "enumerator_list": enumerator_list,
+    "enumerator_list": EnumeratorList,
     "Eq": Equal,
     "Equal": Equal,
     "ERROR": Error,
     "except": Catch,
-    "except_clause": except_clause,
+    "except_clause": ExceptClause,
     "ExceptHandler": Catch,
     "ExceptStarHandler": ExceptStarHandler,
     "Expr": ExpressionStatement,
     "expression_statement": ExpressionStatement,
-    "extends": extends,
-    "field_access": field_access,
+    "extends": Extends,
+    "field_access": FieldAccess,
     "FIELD_DECL": FieldDeclaration,
     "field_declaration": FieldDeclaration,
     "field_declaration_list": Arguments,
-    "field_identifier": field_identifier,
+    "field_identifier": FieldIdentifier,
     "FieldDecl": FieldDeclaration,
     "Finally": Finally,
     "finally": Finally,
@@ -726,7 +719,7 @@ KIND_MAP = {
     "FUNCTION_DECL": FunctionDef,
     "function_declarator": FunctionDef,
     "function_definition": FunctionDef,
-    "FUNCTION_TEMPLATE": FUNCTION_TEMPLATE,
+    "FUNCTION_TEMPLATE": FunctionTemplate,
     "FunctionDecl": FunctionDef,
     "FunctionDef": FunctionDef,
     "generator_expression": GeneratorExp,
@@ -770,11 +763,11 @@ KIND_MAP = {
     "integer": Number,
     "INTEGER_LITERAL": Number,
     "IntegerLiteral": Number,
-    "integral_type": integral_type,
-    "interface": interface,
-    "interface_body": interface_body,
+    "integral_type": IntegralType,
+    "interface": Interface,
+    "interface_body": InterfaceBody,
     "interface_declaration": InterfaceDeclaration,
-    "interpolation": interpolation,
+    "interpolation": Interpolation,
     "Invert": BitInvert,
     "is not": IsNot,
     "Is": Is,
@@ -785,28 +778,28 @@ KIND_MAP = {
     "keyword_pattern": Keyword,
     "Lambda": Lambda,
     "lambda": Lambda,
-    "lambda_capture_specifier": lambda_parameters,
+    "lambda_capture_specifier": LambdaParameters,
     "LAMBDA_EXPR": Lambda,
     "lambda_expression": Lambda,
-    "lambda_parameters": lambda_parameters,
+    "lambda_parameters": LambdaParameters,
     "LeftCurlyBrace": LeftCurlyBrace,
     "LeftParen": LeftParen,
     "LeftShift": LeftShift,
     "LeftSquareBracket": ListComp,
     "LessThan": LessThan,
     "LessThanEqual": LessThanEqual,
-    "LINKAGE_SPEC": LINKAGE_SPEC,
+    "LINKAGE_SPEC": LinkageSpec,
     "List": List,
     "list": List,
     "list_comprehension": ListComp,
-    "list_pattern": list_pattern,
+    "list_pattern": ListPattern,
     "ListComp": ListComp,
     "local_variable_declaration": LocalVariableDeclaration,
     "LShift": LeftShift,
     "Lt": LessThan,
     "LtE": LessThanEqual,
     "MACRO_DEFINITION": MacroDef,
-    "marker_annotation": marker_annotation,
+    "marker_annotation": MarkerAnnotation,
     "match": Match,
     "Match": Match,
     "match_case": MatchCase,
@@ -866,12 +859,12 @@ KIND_MAP = {
     "NULL_STMT": Null,
     "nullptr": Null,
     "number_literal": Number,
-    "object_creation_expression": object_creation_expression,
+    "object_creation_expression": ObjectCreationExpression,
     "OVERLOADED_DECL_REF": OverloadedDeclRef,
-    "PACK_EXPANSION_EXPR": PACK_EXPANSION_EXPR,
+    "PACK_EXPANSION_EXPR": PackExpansionExpr,
     "package": Package,
     "package_declaration": PackageDef,
-    "pair": pair,
+    "pair": Pair,
     "ParagraphComment": ParagraphComment,
     "Param": Param,
     "parameter_declaration": ParameterDef,
@@ -893,10 +886,10 @@ KIND_MAP = {
     "Pow": Power,
     "Power": Power,
     "primitive_type": BuiltinType,
-    "program": program,
-    "public": public,
-    "PURE_ATTR": PURE_ATTR,
-    "qualified_identifier": qualified_identifier,
+    "program": Program,
+    "public": Public,
+    "PURE_ATTR": PureAttr,
+    "qualified_identifier": QualifiedIdentifier,
     "raise": Raise,
     "Raise": Raise,
     "raise_statement": Raise,
@@ -911,7 +904,7 @@ KIND_MAP = {
     "RightShift": RightShift,
     "RightSquareBracket": ListComp,
     "RShift": RightShift,
-    "scoped_identifier": scoped_identifier,
+    "scoped_identifier": ScopedIdentifier,
     "Set": Set,
     "set": Set,
     "set_comprehension": SetComp,
@@ -920,31 +913,31 @@ KIND_MAP = {
     "SimpleStatementSuite": SimpleStatementSuite,
     "SimpleString": SimpleString,
     "SimpleWhitespace": Whitespace,
-    "SIZE_OF_PACK_EXPR": SIZE_OF_PACK_EXPR,
+    "SIZE_OF_PACK_EXPR": SizeOfPackExpr,
     "slice": slice,
     "Slice": Slice,
-    "splat_pattern": splat_pattern,
+    "splat_pattern": SplatPattern,
     "Starred": Starred,
-    "static": static,
-    "STATIC_ASSERT": STATIC_ASSERT,
+    "static": Static,
+    "STATIC_ASSERT": StaticAssert,
     "str": str,
     "string": Literal,
     "string_content": Literal,
     "string_end": Literal,
-    "string_fragment": string_fragment,
+    "string_fragment": StringFragment,
     "STRING_LITERAL": FormattedString,
-    "string_literal": string_literal,
+    "string_literal": StringLiteral,
     "string_start": Literal,
     "StringLiteral": String,
     "struct": StructDef,
     "STRUCT_DECL": StructDef,
-    "struct_specifier": struct_specifier,
+    "struct_specifier": StructSpecifier,
     "Sub": Subtract,
     "Subscript": Subscript,
     "subscript": Subscript,
     "SubscriptElement": SubscriptElement,
     "Subtract": Subtract,
-    "superclass": superclass,
+    "superclass": Superclass,
     "switch": Switch,
     "switch_block": SwitchBlock,
     "switch_block_statement_group": SwitchBlockStatementGroup,
@@ -952,7 +945,7 @@ KIND_MAP = {
     "switch_label": SwitchLabel,
     "switch_statement": Switch,
     "SWITCH_STMT": Switch,
-    "system_lib_string": system_lib_string,
+    "system_lib_string": SystemLibString,
     "template": TemplateDef,
     "template_declaration": TemplateDeclaration,
     "TEMPLATE_NON_TYPE_PARAMETER": TemplateNonTypeParameter,
