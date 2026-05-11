@@ -1,10 +1,10 @@
 Plan for next sprints:
 
-* [ ] use type hierarchy to find type concisely instead of regexp
-* [ ] use hypothesis instead of parameterized test to get better coverage
 
-20-03-2026
+11-05-2026
 
+* [X] use type hierarchy to find type concisely instead of regexp
+* [X] use hypothesis instead of parameterized test to get better coverage
 * [X] convert more complex cases of TAUT test case and reviewed the conversion by Harry
 * [X] restructure with root namespace so that it can be packaged 
 * [X] apply ASTProtocol to Python and ~~Clang Node~~

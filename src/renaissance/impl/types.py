@@ -214,15 +214,27 @@ class Assign(BaseSmallStatement): pass
 class AnnAssign(BaseSmallStatement): pass
 class AugAssign(BaseSmallStatement): pass
 class Decorator(Node): pass
+
+class Declaration(BaseSmallStatement):    pass
 class Definition(BaseCompoundStatement): pass
+class DefinitionX(CompoundStatement):    pass
+
 class FunctionDef(Definition): pass
 class ClassDef(Definition): pass
 class StructDef(Definition):    pass
 class RecordDef(Definition):    pass
+class VariableDef(Definition):    pass
+class FieldDef(Definition):    pass
+class InterfaceDef(Definition):    pass
+class LocalVariableDef(Definition):    pass
+class TemplateDef(Definition):    pass
+class TypeParameterDef(Definition):   pass
 class TypeAlias(Definition): pass
 class TypedefDef(TypeAlias):    pass
 class PackageDef(Definition):    pass
 class ParameterDef(Definition):    pass
+class UnionDef(Definition):    pass
+
 class WithItem(Node): pass
 class With(BaseCompoundStatement): pass
 class Do(BaseCompoundStatement):     pass
@@ -258,41 +270,56 @@ class TypeParameters(Node): pass
 
 
 #==== added=====
-class Declaration(Definition):    pass
-
-
-
-
 
 class ImplicitNode(Node):    pass
 
-class DeclarationExpression(Expression):    pass
+# Specifier
+class Specifier(Node):    pass
+class Auto(Specifier):    pass
+class BaseSpecifier(Specifier):    pass
+class ClassSpecifier(Specifier):    pass
+class AccessSpecifier(Specifier):    pass
+class EnumSpecifier(Specifier):    pass
+class StructSpecifier(Specifier):    pass
+
+# Reference
 class TypeReference(Expression):    pass
-class VariableDef(Declaration):    pass
-class FunctionDeclaration(Declaration):    pass
+class MemberRefence:    pass
+class NamespaceReference:    pass
+class OverloadedDeclRef:    pass
+class TemplateRef:    pass
+
+# Attributes
+class AlignedAttribute:    pass
+class AsmAttribute:   pass
+class ConstAttr:    pass
+class VisibilityAttr:    pass
+class WarnUnusedResultAttr:    pass
+class FinalAttr:pass
+class OverrideAttr:    pass
+class PureAttr:    pass
+class UnexposedAttr:    pass
+
+
+class DeclarationExpression(Expression):    pass
 class ParenthesizedExpression(Expression):    pass
 class Constructor(FunctionDef):    pass
-class FieldDeclaration(Declaration):    pass
 class MacroDef(Definition):    pass
 class Namespace(Node):    pass
-class Specifier(Node):    pass
-class BaseSpecifier(Specifier):    pass
 class ConstructorExpression(Call):    pass
-class Definition(CompoundStatement):    pass
+
 class ArgumentList(Node):    pass
 class Compare(Node):    pass
 class Keyword(Node):    pass
 class Arguments(Node):    pass
 class Error(Node):    pass
 class CatchClause(Node):    pass
-class ClassSpecifier(Node):    pass
 class Alias(Node):    pass
 class Symbol(Node):    pass
 class AssignTo(Symbol):    pass
-class Whitespace(Type):    pass
 class Cast(Node):    pass
 class BuiltinType(Literal):    pass
-class AccessSpecifier(Specifier):    pass
+
 class DeclarationLoc(Declaration):    pass
 class Delete(Expression):    pass
 class Starred(Literal):    pass
@@ -306,19 +333,18 @@ class UnarySubtract(UnaryOperation):    pass
 class Case(Statement):    pass
 class MatchSequence(Node):    pass
 
-# ==============================================================
-# other
 
+# other
+class ConstructorDef(Definition):    pass
+class FriendDecl:    pass
 
 class AbstractFunctionDeclarator:   pass
-class AlignedAttribute:    pass
 class As:    pass
 class AsPattern:    pass
 class AsPatternTarget:    pass
-class AsmAttribute:   pass
 class Asterisk:    pass
 class Async:    pass
-class Auto:    pass
+
 class Backslash:    pass
 class CatchFormalParameter:    pass
 class CatchType:    pass
@@ -328,10 +354,8 @@ class ClassTemplate:    pass
 class ClassTemplatePartial:    pass
 class Comprehension:    pass
 class ConditionalOperator:    pass
-class ConstAttr:    pass
 class ConstCastExpr:    pass
 class ConstructorBody:    pass
-class ConstructorDeclaration(Declaration):    pass
 class ConversionFunction:    pass
 class BooleanLiteral:    pass
 class FunctionalCast:    pass
@@ -348,45 +372,38 @@ class DynamicCastExpr:    pass
 class Enum:    pass
 class EnumBody:    pass
 class EnumConstant:    pass
-class EnumSpecifier:    pass
+
 class EnumeratorList:    pass
 class ExceptClause:    pass
 class Extends:    pass
 class FieldAccess:    pass
 class FieldIdentifier:    pass
-class FinalAttr:pass
 class FinallyClause:    pass
 class FormalParameter:    pass
 class FormalParameters:    pass
-class FriendDecl:    pass
+
 class FunctionTemplate:    pass
 class IntegralType:    pass
 class Interface:    pass
 class InterfaceBody:    pass
-class InterfaceDeclaration(Declaration):    pass
+
 class Interpolation:    pass
 class LambdaParameters:    pass
 class LinkageSpec:    pass
 class ListPattern:    pass
-class LocalVariableDeclaration:    pass
 class MarkerAnnotation:    pass
-class MemberRefence:    pass
 class Method:    pass
 class Modifiers:    pass
 class NamespaceIdentifier:    pass
-class NamespaceReference:    pass
 class New:    pass
 class Null:    pass
 class ObjectCreationExpression:    pass
-class OverloadedDeclRef:    pass
-class OverrideAttr:    pass
 class PackExpansionExpr:    pass
 class Package:    pass
 class Pair:    pass
 class PointerDeclarator:    pass
 class Program:    pass
 class Public:    pass
-class PureAttr:    pass
 class QualifiedIdentifier:    pass
 class ReinterpretCastExpr:    pass
 class ScopedIdentifier:    pass
@@ -397,7 +414,7 @@ class StaticAssert:    pass
 class StaticCastExpr:    pass
 class StringFragment:    pass
 class StringLiteral:    pass
-class StructSpecifier:    pass
+
 class Superclass:    pass
 class Switch(Match):    pass
 class SwitchBlock(CompoundStatement):    pass
@@ -406,25 +423,19 @@ class SwitchExpression:    pass
 class SwitchLabel(MatchPattern):    pass
 class Symbol:    pass
 class SystemLibString:    pass
-class TemplateDef:    pass
-class TemplateDeclaration(TemplateDef):    pass
 class TemplateNonTypeParameter:    pass
 class TemplateParameterList:    pass
-class TemplateRef:    pass
 class TemplateTypeParameter:    pass
 class TypeAliasTemplateDecl: pass
 class TypeName:    pass
-class TypeParameterDeclaration:   pass
 class Underscore:    pass
-class UnexposedAttr:    pass
+
 class UnexposedStmt:    pass
-class UnionDecl:    pass
+
 class UnionPattern:    pass
 class UpdateExpression:    pass
 class Using:    pass
-class VisibilityAttr:    pass
 class VoidType:    pass
-class WarnUnusedResultAttr:    pass
 
 OPERATOR_MAP = {
     "AnnAssign": "=",
@@ -601,7 +612,7 @@ KIND_MAP = {
     "Constant": Literal,
     "CONSTRUCTOR": Constructor,
     "constructor_body": ConstructorBody,
-    "constructor_declaration": ConstructorDeclaration,
+    "constructor_declaration": ConstructorDef,
     "continue": Continue,
     "Continue": Continue,
     "continue_statement": Continue,
@@ -689,11 +700,11 @@ KIND_MAP = {
     "expression_statement": ExpressionStatement,
     "extends": Extends,
     "field_access": FieldAccess,
-    "FIELD_DECL": FieldDeclaration,
-    "field_declaration": FieldDeclaration,
+    "FIELD_DECL": FieldDef,
+    "field_declaration": FieldDef,
     "field_declaration_list": Arguments,
     "field_identifier": FieldIdentifier,
-    "FieldDecl": FieldDeclaration,
+    "FieldDecl": FieldDef,
     "Finally": Finally,
     "finally": Finally,
     "finally_clause": FinallyClause,
@@ -766,7 +777,7 @@ KIND_MAP = {
     "integral_type": IntegralType,
     "interface": Interface,
     "interface_body": InterfaceBody,
-    "interface_declaration": InterfaceDeclaration,
+    "interface_declaration": InterfaceDef,
     "interpolation": Interpolation,
     "Invert": BitInvert,
     "is not": IsNot,
@@ -794,7 +805,7 @@ KIND_MAP = {
     "list_comprehension": ListComp,
     "list_pattern": ListPattern,
     "ListComp": ListComp,
-    "local_variable_declaration": LocalVariableDeclaration,
+    "local_variable_declaration": LocalVariableDef,
     "LShift": LeftShift,
     "Lt": LessThan,
     "LtE": LessThanEqual,
@@ -947,7 +958,7 @@ KIND_MAP = {
     "SWITCH_STMT": Switch,
     "system_lib_string": SystemLibString,
     "template": TemplateDef,
-    "template_declaration": TemplateDeclaration,
+    "template_declaration": TemplateDef,
     "TEMPLATE_NON_TYPE_PARAMETER": TemplateNonTypeParameter,
     "template_parameter_list": TemplateParameterList,
     "TEMPLATE_REF": TemplateRef,
@@ -968,7 +979,7 @@ KIND_MAP = {
     "TYPE_ALIAS_DECL": TypeAlias,
     "TYPE_ALIAS_TEMPLATE_DECL": TypeAliasTemplateDecl,
     "type_identifier": TypeReference,
-    "type_parameter_declaration": TypeParameterDeclaration,
+    "type_parameter_declaration": TypeParameterDef,
     "TYPE_REF": TypeReference,
     "TypeAlias": TypeAlias,
     "TYPEDEF_DECL": TypedefDef,
@@ -986,7 +997,7 @@ KIND_MAP = {
     "UNEXPOSED_DECL": Declaration,
     "UNEXPOSED_EXPR": Expression,
     "UNEXPOSED_STMT": UnexposedStmt,
-    "UNION_DECL": UnionDecl,
+    "UNION_DECL": UnionDef,
     "union_pattern": UnionPattern,
     "update_expression": UpdateExpression,
     "using": Using,
