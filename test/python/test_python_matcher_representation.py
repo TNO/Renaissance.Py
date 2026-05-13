@@ -73,15 +73,17 @@ class TestPythonMatcherRepresentation:
         How are the different representations of literal instances of real numbers handled by the parser?
         """
         normal = "0.123456"
+        more_significant_digits = "0.123456000" 
         readable = "0.123_456"
         scientific_power_0 = "0.123456e0"
         scientific_power_plus0 = "0.123456e+0"
         scientific_power_minus0 = "0.123456e-0"
         scientific_power_minus3 = "123.456e-3"
         scientific_power_minus6 = "123456e-6"
-        
+
         representations = [
             normal,
+            more_significant_digits,
             readable,
             scientific_power_0,
             scientific_power_plus0,
