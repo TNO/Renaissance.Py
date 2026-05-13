@@ -15,9 +15,9 @@ class TestPythonMatcherRepresentation:
         self.factory = PythonFactory(PythonRstNode)
         self.pattern_factory = PythonPatternFactory(self.factory)
 
-    def test_literal_numerical_representation(self):
+    def test_literal_whole_numbers_representation(self):
         """
-        How are the different representations of literal numerical values handled by the parser?
+        How are the different representations of literal instances of whole numbers handled by the parser?
         """
         normal = "1000"
         readable = "1_000"
@@ -67,6 +67,39 @@ class TestPythonMatcherRepresentation:
         expression_signed = self.pattern_factory.create_expression(signed)
         for expression in expressions:
             assert_that(expression_signed, is_not(expression))
+
+    def test_literal_real_numbers_representation(self):
+        """
+        How are the different representations of literal instances of real numbers handled by the parser?
+        """
+        normal = "0.123456"
+        readable = "0.123_456"
+        scientific_power_0 = "0.123456e0"
+        scientific_power_plus0 = "0.123456e+0"
+        scientific_power_minus0 = "0.123456e-0"
+        scientific_power_minus3 = "123.456e-3"
+        scientific_power_minus6 = "123456e-6"
+        
+        representations = [
+            normal,
+            readable,
+            scientific_power_0,
+            scientific_power_plus0,
+            scientific_power_minus0,
+            scientific_power_minus3,
+            scientific_power_minus6,
+        ]
+
+        expressions = map(self.pattern_factory.create_expression, representations)
+
+        for expression1 in expressions:
+            for expression2 in expressions:
+                assert_that(expression1, is_(expression2))
+
+        fraction = "123456/1000000"
+        expression_fraction = self.pattern_factory.create_expression(fraction)
+        for expression in expressions:
+            assert_that(expression_fraction, is_not(expression))
 
     def test_character_representation(self):
         """
