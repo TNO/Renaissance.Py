@@ -15,34 +15,46 @@ class TestPythonMatcherRepresentation:
         self.factory = PythonFactory(PythonRstNode)
         self.pattern_factory = PythonPatternFactory(self.factory)
 
-    def test_integer_representation(self):
+    def test_literal_numerical_representation(self):
         """
-        How are the different integer representations handled by the parser?
+        How are the different representations of literal numerical values handled by the parser?
         """
         normal = "1000"
         readable = "1_000"
-        scientific_lower = "1e3"
-        scientific_upper = "1E3"
-        scientific_signed = "1E+3"
+        scientific_power_0 = "1000e0"
+        scientific_POWER_0 = "1000E0"
+        scientific_power_plus0 = "1000e+0"
+        scientific_power_minus0 = "1000e-0"
+        scientific_power_3 = "1e3"
+        scientific3_POWER_3 = "1E3"
+        scientific3_POWER_plus3 = "1E+3"
+        scientific3_POWER_minus3 = "1000000E-3"
         binary_lower = "0b1111101000"
         binary_upper = "0B1111101000"
         octal_lower = "0o1750"
         octal_upper = "0O1750"
         hexadecimal_lower = "0x3e8"
         hexadecimal_upper = "0X3E8"
+        float = "1000.000"
 
         representations = [
             normal,
             readable,
-            scientific_lower,
-            scientific_upper,
-            scientific_signed,
+            scientific_power_0,
+            scientific_POWER_0,
+            scientific_power_plus0,
+            scientific_power_minus0,
+            scientific_power_3,
+            scientific3_POWER_3,
+            scientific3_POWER_plus3,
+            scientific3_POWER_minus3,
             binary_lower,
             binary_upper,
             octal_lower,
             octal_upper,
             hexadecimal_lower,
             hexadecimal_upper,
+            float,
         ]
 
         expressions = map(self.pattern_factory.create_expression, representations)
@@ -67,7 +79,7 @@ class TestPythonMatcherRepresentation:
         escape_hexadecimal_single = "'\\x31'"
         escape_hexadecimal_double = '"\\x31"'
         unicode_single = "'\\u0031'"
-        unicode_double = '"\u0031"'
+        unicode_double = '"\\u0031"'
 
         representations = [
             normal_single,
