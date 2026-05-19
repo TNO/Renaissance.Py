@@ -70,6 +70,7 @@ taut2test = "rejuvenation.cli:refactor"
 [tool.pytest.ini_options]
 testpaths = ["test", "features"]
 pythonpath = ["src", "test", "features"]
+norecursedirs = ["features/targets"]
 
 [tool.coverage.run]
 source = ["src"]
