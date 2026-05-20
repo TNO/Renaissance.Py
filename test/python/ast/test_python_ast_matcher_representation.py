@@ -8,7 +8,15 @@ from renaissance.syntax_tree import ASTFactory, MatchFinder
 from renaissance.syntax_tree.match_finder import is_match, match_pattern
 
 
-class TestPythonMatcherRepresentation:
+class TestPythonAstMatcherRepresentation:
+    """
+    Test Class for elementary match functionality.
+    
+    This test class documents how the AST parser of Python matches "symbols with symbols".
+
+    The test class high-lights the representations of data-bearing, leave AST nodes
+    as used by the AST parser.
+    """
 
     @pytest.fixture(autouse=True)
     def setup(self):
@@ -73,7 +81,7 @@ class TestPythonMatcherRepresentation:
         How are the different representations of literal instances of real numbers handled by the parser?
         """
         normal = "0.123456"
-        more_significant_digits = "0.123456000" 
+        more_significant_digits = "0.123456000"
         readable = "0.123_456"
         scientific_power_0 = "0.123456e0"
         scientific_power_plus0 = "0.123456e+0"
@@ -199,3 +207,6 @@ class TestPythonMatcherRepresentation:
         for expression1 in expressions:
             for expression2 in expressions:
                 assert_that(expression1, is_(expression2))
+
+if __name__ == "__main__":
+    pytest.main()
