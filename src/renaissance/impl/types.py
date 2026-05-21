@@ -977,6 +977,7 @@ KIND_MAP = {
     "TryStar": Try,
     "Tuple": Tuple,
     "tuple": Tuple,
+    "type_alias_statement": TypeAlias,
     "TYPE_ALIAS_DECL": TypeAlias,
     "TYPE_ALIAS_TEMPLATE_DECL": TypeAliasTemplateDecl,
     "type_identifier": TypeReference,
