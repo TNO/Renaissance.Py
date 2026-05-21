@@ -7,7 +7,6 @@ import pytest
 from hamcrest import (
     has_length,
     assert_that,
-    is_in,
     is_,
     contains_string,
     empty, instance_of,
@@ -19,8 +18,7 @@ from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
 from renaissance.impl.types import *
 from renaissance.syntax_tree import ASTShower
-from renaissance.utils.ast_utils import traverse
-from utils_for_tests import show_node, reject_unsupported_code
+from utils_for_tests import reject_unsupported_code
 
 
 class TestPythonRstNode:
