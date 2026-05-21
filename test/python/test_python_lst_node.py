@@ -2,7 +2,7 @@ import hypothesmith
 import libcst
 import pytest
 from hamcrest import assert_that, is_, instance_of
-from hypothesis import given, settings, HealthCheck
+from hypothesis import given, settings
 
 from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
 from renaissance.impl.tree_sitter.lst import LSTNode
