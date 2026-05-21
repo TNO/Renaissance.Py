@@ -1,16 +1,14 @@
 import pytest
 
-from hamcrest import assert_that, is_, is_not
-
 from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
-from renaissance.syntax_tree import ASTFactory, MatchFinder
-from renaissance.syntax_tree.match_finder import is_match, match_pattern
+
+from utils.util_equivalence_classes import make_parametersets_of_equivalence_classes, assert_pair_equivalence
 
 
 class TestPythonMatcherBasic:
     """
-    Test Class for elementary match functionality.
+    Test Class for basic match functionality.
 
     This test class documents how we want to match "code with code" in Python.
 
@@ -22,28 +20,35 @@ class TestPythonMatcherBasic:
         self.factory = PythonFactory(PythonRstNode)
         self.pattern_factory = PythonPatternFactory(self.factory)
 
-    def test_statements_with_comment_and_whitespace(self):
-        """
-        How are statements with comments and whitespace handled by the parser?
-        """
-        statement = "x = 1"
-        statement_with_comment = "x = 1  # This is a comment"
-        statement_with_new_line = "x        =       1   "
-        statement_with_whitespace = "x   =   1   "
-        statement_with_comment_and_whitespace = "# This is a comment\nx    =    1   \n# This is a comment   "
+    TRIVIA_CLASSES: list[list[str]] = [
+        [
+            "x = 1",
+            "x = 1  # This is a comment",  # with comment
+            "x  =  1  ",  # with extra spaces
+            "x\t=\t1\t",  # with tabs
+            "# This is a comment\nx    =    1   \n# This is a comment   ",  # multi line - mixed
+        ],
+        [
+            "if c: pass\npass",
+            "if c:\n    pass\npass",
+        ],
+        [
+            "if c: pass;pass",      # with semicolon as statement separator
+            "if c:\n    pass\n    pass",
+        ],
+    ]
 
-        representations = [
-            statement,
-            statement_with_comment,
-            statement_with_new_line,
-            statement_with_whitespace,
-            statement_with_comment_and_whitespace,
-        ]
-        expressions = map(self.pattern_factory.create_statement, representations)
+    TRIVIA_PAIR_PARAMS = make_parametersets_of_equivalence_classes(TRIVIA_CLASSES)
 
-        for expression1 in expressions:
-            for expression2 in expressions:
-                assert_that(expression1, is_(expression2))
+    @pytest.mark.parametrize(
+        "a_txt, b_txt, expected",
+        TRIVIA_PAIR_PARAMS,
+    )
+    def test_trivia(self, a_txt: str, b_txt: str, expected: bool):
+        """
+        How are statements with comments and whitespaces handled by the parser?
+        """
+        assert_pair_equivalence(self.pattern_factory.create_statement, a_txt, b_txt, expected)
 
 
 if __name__ == "__main__":

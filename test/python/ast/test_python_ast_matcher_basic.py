@@ -1,10 +1,9 @@
 import pytest
 
-from hamcrest import assert_that, is_
 from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
-from renaissance.syntax_tree.match_finder import is_match
 
+from utils.util_equivalence_classes import make_parametersets_of_equivalence_classes, assert_pair_equivalence
 
 
 class TestPythonAstMatcherBasic:
@@ -13,7 +12,7 @@ class TestPythonAstMatcherBasic:
 
     This test class documents how the AST parser of Python matches "code with code".
 
-    The test class high-lights the representations of structure-bearing, composite AST nodes 
+    The test class high-lights the representations of structure-bearing, composite AST nodes
     as used by the AST parser.
     """
 
@@ -22,36 +21,30 @@ class TestPythonAstMatcherBasic:
         self.factory = PythonFactory(PythonRstNode)
         self.pattern_factory = PythonPatternFactory(self.factory)
 
-    def test_if_statements(self):
-        code_if_then_statement = "if c1:\n    pass"
-        code_if_then_else_statement = "if c1:\n    pass\nelse:   \n    pass"
-        code_if_then_elif_statement = "if c1:\n    pass\nelif c2:\n    pass"
-        code_if_then_else_if_statement = "if c1:\n    pass\nelse:\n    if c2:\n        pass"
+    IF_CLASSES: list[list[str]] = [
+        [
+            "if c1:\n    pass",  # if then statement
+        ],
+        [
+            "if c1:\n    pass\nelse:   \n    pass",  # if then else statement
+        ],
+        [
+            "if c1:\n    pass\nelif c2:\n    pass",  # if then elif statement
+            "if c1:\n    pass\nelse:\n    if c2:\n        pass",  # if then else if statement
+        ],
+    ]
 
-        if_then_statement = self.pattern_factory.create_statement(code_if_then_statement)
-        if_then_else_statement = self.pattern_factory.create_statement(code_if_then_else_statement)
-        if_then_elif_statement = self.pattern_factory.create_statement(code_if_then_elif_statement)
-        if_then_else_if_statement = self.pattern_factory.create_statement(code_if_then_else_if_statement)
+    IF_PAIR_PARAMS = make_parametersets_of_equivalence_classes(IF_CLASSES)
 
-        assert_that(is_match(if_then_statement, if_then_statement), is_(True))
-        assert_that(is_match(if_then_statement, if_then_else_statement), is_(False))
-        assert_that(is_match(if_then_statement, if_then_elif_statement), is_(False))
-        assert_that(is_match(if_then_statement, if_then_else_if_statement), is_(False))
-
-        assert_that(is_match(if_then_else_statement, if_then_statement), is_(False))
-        assert_that(is_match(if_then_else_statement, if_then_else_statement), is_(True))
-        assert_that(is_match(if_then_else_statement, if_then_elif_statement), is_(False))
-        assert_that(is_match(if_then_else_statement, if_then_else_if_statement), is_(False))
-
-        assert_that(is_match(if_then_elif_statement, if_then_statement), is_(False))
-        assert_that(is_match(if_then_elif_statement, if_then_else_statement), is_(False))
-        assert_that(is_match(if_then_elif_statement, if_then_elif_statement), is_(True))
-        assert_that(is_match(if_then_elif_statement, if_then_else_if_statement), is_(True))
-
-        assert_that(is_match(if_then_else_if_statement, if_then_statement), is_(False))
-        assert_that(is_match(if_then_else_if_statement, if_then_else_statement), is_(False))
-        assert_that(is_match(if_then_else_if_statement, if_then_elif_statement), is_(True))
-        assert_that(is_match(if_then_else_if_statement, if_then_else_if_statement), is_(True))
+    @pytest.mark.parametrize(
+        "a_txt, b_txt, expected",
+        IF_PAIR_PARAMS,
+    )
+    def test_if_statements(self, a_txt: str, b_txt: str, expected: bool):
+        """
+        How are the different if statements handled by the parser?
+        """
+        assert_pair_equivalence(self.pattern_factory.create_statement, a_txt, b_txt, expected)
 
 
 if __name__ == "__main__":

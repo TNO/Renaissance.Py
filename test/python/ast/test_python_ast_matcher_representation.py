@@ -1,17 +1,15 @@
 import pytest
 
-from hamcrest import assert_that, is_, is_not
-
 from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
-from renaissance.syntax_tree import ASTFactory, MatchFinder
-from renaissance.syntax_tree.match_finder import is_match, match_pattern
+
+from utils.util_equivalence_classes import make_parametersets_of_equivalence_classes, assert_pair_equivalence
 
 
 class TestPythonAstMatcherRepresentation:
     """
     Test Class for elementary match functionality.
-    
+
     This test class documents how the AST parser of Python matches "symbols with symbols".
 
     The test class high-lights the representations of data-bearing, leave AST nodes
@@ -23,190 +21,141 @@ class TestPythonAstMatcherRepresentation:
         self.factory = PythonFactory(PythonRstNode)
         self.pattern_factory = PythonPatternFactory(self.factory)
 
-    def test_literal_whole_numbers_representation(self):
+    WHOLE_NUMBER_REPRESENTATIONS: list[list[str]] = [
+        # Base class: all represent the same whole number 1000
+        [
+            "1000",  # normal
+            "1_000",  # readable
+            "0b1111101000",  # binary lowercase
+            "0B1111101000",  # binary uppercase
+            "0o1750",  # octal lowercase
+            "0O1750",  # octal uppercase
+            "0x3e8",  # hexadecimal lowercase
+            "0X3E8",  # hexadecimal uppercase
+            "1000e0",  # scientific lowercase power 0
+            "1000E0",  # scientific uppercase power 0
+            "1000e+0",  # scientific lowercase power plus sign 0
+            "1000e-0",  # scientific lowercase power minus sign 0
+            "1e3",  # scientific lowercase power 3
+            "1E3",  # scientific uppercase power 3
+            "1E+3",  # scientific uppercase power plus sign 3
+            "1000000E-3",  # scientific uppercase power minus sign 3
+            "1000.000",  # float
+        ],
+        # Signed version
+        [
+            "+1000",
+            "+1_000",
+        ],
+    ]
+
+    WHOLE_NUMBER_PAIR_PARAMS = make_parametersets_of_equivalence_classes(WHOLE_NUMBER_REPRESENTATIONS)
+
+    @pytest.mark.parametrize(
+        "a_txt, b_txt, expected",
+        WHOLE_NUMBER_PAIR_PARAMS,
+    )
+    def test_literal_whole_numbers_representation(self, a_txt: str, b_txt: str, expected: bool):
         """
-        How are the different representations of literal instances of whole numbers handled by the parser?
+        How are the different whole number representations handled by the parser?
         """
-        normal = "1000"
-        readable = "1_000"
-        scientific_power_0 = "1000e0"
-        scientific_POWER_0 = "1000E0"
-        scientific_power_plus0 = "1000e+0"
-        scientific_power_minus0 = "1000e-0"
-        scientific_power_3 = "1e3"
-        scientific3_POWER_3 = "1E3"
-        scientific3_POWER_plus3 = "1E+3"
-        scientific3_POWER_minus3 = "1000000E-3"
-        binary_lower = "0b1111101000"
-        binary_upper = "0B1111101000"
-        octal_lower = "0o1750"
-        octal_upper = "0O1750"
-        hexadecimal_lower = "0x3e8"
-        hexadecimal_upper = "0X3E8"
-        float = "1000.000"
+        assert_pair_equivalence(self.pattern_factory.create_expression, a_txt, b_txt, expected)
 
-        representations = [
-            normal,
-            readable,
-            scientific_power_0,
-            scientific_POWER_0,
-            scientific_power_plus0,
-            scientific_power_minus0,
-            scientific_power_3,
-            scientific3_POWER_3,
-            scientific3_POWER_plus3,
-            scientific3_POWER_minus3,
-            binary_lower,
-            binary_upper,
-            octal_lower,
-            octal_upper,
-            hexadecimal_lower,
-            hexadecimal_upper,
-            float,
-        ]
+    REAL_NUMBER_REPRESENTATIONS: list[list[str]] = [
+        # Base class: all represent the same real number 0.123456
+        [
+            "0.123456",  # normal
+            "0.123456000",  # more significant digits / trailing zeros
+            "0.123_456",  # readable (underscores)
+            "0.123456e0",  # scientific power 0
+            "0.123456e+0",  # scientific power +0
+            "0.123456e-0",  # scientific power -0 (lexical variant)
+            "123.456e-3",  # scientific power -3
+            "123456e-6",  # scientific power -6
+        ],
+        # Fraction representation (expected NOT equivalent to the real literals)
+        [
+            "123456/1000000",
+        ],
+    ]
 
-        expressions = map(self.pattern_factory.create_expression, representations)
+    REAL_NUMBER_PAIR_PARAMS = make_parametersets_of_equivalence_classes(REAL_NUMBER_REPRESENTATIONS)
 
-        for expression1 in expressions:
-            for expression2 in expressions:
-                assert_that(expression1, is_(expression2))
-
-        signed = "+1000"
-        expression_signed = self.pattern_factory.create_expression(signed)
-        for expression in expressions:
-            assert_that(expression_signed, is_not(expression))
-
-    def test_literal_real_numbers_representation(self):
+    @pytest.mark.parametrize(
+        "a_txt, b_txt, expected",
+        REAL_NUMBER_PAIR_PARAMS,
+    )
+    def test_literal_real_numbers_representation(self, a_txt: str, b_txt: str, expected: bool):
         """
-        How are the different representations of literal instances of real numbers handled by the parser?
+        How are the different real number representations handled by the parser?
         """
-        normal = "0.123456"
-        more_significant_digits = "0.123456000"
-        readable = "0.123_456"
-        scientific_power_0 = "0.123456e0"
-        scientific_power_plus0 = "0.123456e+0"
-        scientific_power_minus0 = "0.123456e-0"
-        scientific_power_minus3 = "123.456e-3"
-        scientific_power_minus6 = "123456e-6"
+        assert_pair_equivalence(self.pattern_factory.create_expression, a_txt, b_txt, expected)
 
-        representations = [
-            normal,
-            more_significant_digits,
-            readable,
-            scientific_power_0,
-            scientific_power_plus0,
-            scientific_power_minus0,
-            scientific_power_minus3,
-            scientific_power_minus6,
-        ]
+    CHARACTER_REPRESENTATIONS: list[list[str]] = [
+        # Class 0: all represent the same character "1"
+        [
+            "'1'",  # normal single
+            '"1"',  # normal double
+            "'\\061'",  # octal escape single
+            '"\\061"',  # octal escape double
+            "'\\x31'",  # hex escape single
+            '"\\x31"',  # hex escape double
+            "'\\u0031'",  # unicode escape single
+            '"\\u0031"',  # unicode escape double
+        ],
+        # Class 1: computed
+        [
+            "chr(49)",  # call producing "1"
+            "chr(0x31)",  # same, different integer literal
+        ],
+    ]
 
-        expressions = map(self.pattern_factory.create_expression, representations)
+    CHARACTER_PAIR_PARAMS = make_parametersets_of_equivalence_classes(CHARACTER_REPRESENTATIONS)
 
-        for expression1 in expressions:
-            for expression2 in expressions:
-                assert_that(expression1, is_(expression2))
-
-        fraction = "123456/1000000"
-        expression_fraction = self.pattern_factory.create_expression(fraction)
-        for expression in expressions:
-            assert_that(expression_fraction, is_not(expression))
-
-    def test_character_representation(self):
+    @pytest.mark.parametrize(
+        "a_txt, b_txt, expected",
+        CHARACTER_PAIR_PARAMS,
+    )
+    def test_character_representation(self, a_txt: str, b_txt: str, expected: bool):
         """
         How are the different character representations handled by the parser?
         """
-        normal_single = "'1'"
-        normal_double = '"1"'
-        escape_octal_single = "'\\061'"
-        escape_octal_double = '"\\061"'
-        escape_hexadecimal_single = "'\\x31'"
-        escape_hexadecimal_double = '"\\x31"'
-        unicode_single = "'\\u0031'"
-        unicode_double = '"\\u0031"'
+        assert_pair_equivalence(self.pattern_factory.create_expression, a_txt, b_txt, expected)
 
-        representations = [
-            normal_single,
-            normal_double,
-            escape_octal_single,
-            escape_octal_double,
-            escape_hexadecimal_single,
-            escape_hexadecimal_double,
-            unicode_single,
-            unicode_double,
-        ]
+    STRING_REPRESENTATIONS: list[list[str]] = [
+        # Class 0: string literal forms that the parser treats as the same string value
+        [
+            "'abcdef'",  # normal single quotes
+            '"abcdef"',  # normal double quotes
+            "'abc' 'def'",  # implicit concatenation: single quotes
+            '"abc" "def"',  # implicit concatenation: double quotes
+            "\"abc\" 'def'",  # implicit concatenation: mixed quotes
+        ],
+        # Class 1: explicit concatenation (should be a different AST construction)
+        [
+            "'abc' + 'def'",  # explicit concatenation: single quotes
+            '"abc" + "def"',  # explicit concatenation: double quotes
+            "\"abc\" + 'def'",  # explicit concatenation: mixed quotes
+        ],
+        # Class 2:formatted strings
+        [
+            "f'{\"abcdef\"}'",  # formatted string single quotes
+            "f\"{'abcdef'}\"",  # formatted string double quotes
+        ],
+    ]
 
-        expressions = map(self.pattern_factory.create_expression, representations)
+    STRING_PAIR_PARAMS = make_parametersets_of_equivalence_classes(STRING_REPRESENTATIONS)
 
-        for expression1 in expressions:
-            for expression2 in expressions:
-                assert_that(expression1, is_(expression2))
-
-    def test_string_representation(self):
+    @pytest.mark.parametrize(
+        "a_txt, b_txt, expected",
+        STRING_PAIR_PARAMS,
+    )
+    def test_string_representation(self, a_txt: str, b_txt: str, expected: bool):
         """
         How are the different string representations handled by the parser?
         """
-        normal_single = "'abcdef'"
-        normal_double = '"abcdef"'
+        assert_pair_equivalence(self.pattern_factory.create_expression, a_txt, b_txt, expected)
 
-        implicit_concatenated_single = "'abc' 'def'"
-        implicit_concatenated_double = '"abc" "def"'
-        implicit_concatenated_mixed = "\"abc\" 'def'"
-
-        representations = [
-            normal_single,
-            normal_double,
-            implicit_concatenated_single,
-            implicit_concatenated_double,
-            implicit_concatenated_mixed,
-        ]
-
-        expressions = map(self.pattern_factory.create_expression, representations)
-
-        for expression1 in expressions:
-            for expression2 in expressions:
-                assert_that(expression1, is_(expression2))
-
-        explicit_concatenated_single = "'abc' + 'def'"
-        explicit_concatenated_double = '"abc" + "def"'
-        explicit_concatenated_mixed = "\"abc\" + 'def'"
-
-        explicit_concatenated_representations = [
-            explicit_concatenated_single,
-            explicit_concatenated_double,
-            explicit_concatenated_mixed,
-        ]
-
-        expressions_explicit_concatenated = map(self.pattern_factory.create_expression, explicit_concatenated_representations)
-        for expression1 in expressions_explicit_concatenated:
-            for expression2 in expressions_explicit_concatenated:
-                assert_that(expression1, is_(expression2))
-
-        for expression_explicit_concatenated in expressions_explicit_concatenated:
-            for expression in expressions:
-                assert_that(expression_explicit_concatenated, is_not(expression))
-
-    def test_statements_with_comment_and_whitespace(self):
-        """
-        How are statements with comments and whitespace handled by the parser?
-        """
-        statement = "x = 1"
-        statement_with_comment = "x = 1  # This is a comment"
-        statement_with_new_line = "x        =       1   "
-        statement_with_whitespace = "x   =   1   "
-        statement_with_comment_and_whitespace = "# This is a comment\nx    =    1   \n# This is a comment   "
-
-        representations = [
-            statement,
-            statement_with_comment,
-            statement_with_new_line,
-            statement_with_whitespace,
-            statement_with_comment_and_whitespace,
-        ]
-        expressions = map(self.pattern_factory.create_statement, representations)
-
-        for expression1 in expressions:
-            for expression2 in expressions:
-                assert_that(expression1, is_(expression2))
 
 if __name__ == "__main__":
     pytest.main()
