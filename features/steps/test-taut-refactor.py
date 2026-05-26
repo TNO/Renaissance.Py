@@ -3,7 +3,7 @@ from steps.test_steps import *
 from pytest_bdd import when, scenario
 
 
-@scenario("../refactor-taut-test.feature", "migrate taut to unittest without syntax errors")
+@scenario("refactor-taut-test.feature", "migrate taut to unittest without syntax errors", " utf-8", "..")
 def test_taut_test():
     pass
 
