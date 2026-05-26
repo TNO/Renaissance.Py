@@ -1,9 +1,15 @@
-from renaissance.refactoring.taut2pyunit import Taut2Pyunit
-from steps.test_steps import *
 from pytest_bdd import when, scenario
 
+from features.steps.conftest import FEATURES_BASE_DIR
+from renaissance.refactoring.taut2pyunit import Taut2Pyunit
 
-@scenario("refactor-taut-test.feature", "migrate taut to unittest without syntax errors", " utf-8", "..")
+
+@scenario(
+    "refactor-taut-test.feature",
+    "migrate taut to unittest without syntax errors",
+    encoding="utf-8",
+    features_base_dir=str(FEATURES_BASE_DIR)
+)
 def test_taut_test():
     pass
 

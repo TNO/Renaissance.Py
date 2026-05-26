@@ -295,13 +295,26 @@ class PythonRstNode:
             self.length = 0
 
     @staticmethod
-    def load(file_path: Path) -> "PythonRstNode":
+    def load(
+        file_path: Path,
+        extra_args: Sequence[str] | None = None,
+        working_dir: Path | None = None,
+    ) -> "PythonRstNode":
+        # Keep a uniform loader signature across AST node implementations.
+        # Python's AST parser does not need extra arguments or a working dir.
+        _ = extra_args, working_dir
         with open(file_path, "r") as file:
             content = file.read()
             return PythonRstNode.load_from_text(content, str(file_path))
 
     @staticmethod
-    def load_from_text(text: str, file_name: str = "test.py") -> "PythonRstNode":
+    def load_from_text(
+        text: str,
+        file_name: str = "test.py",
+        extra_args: Sequence[str] | None = None,
+        working_dir: Path | None = None,
+    ) -> "PythonRstNode":
+        _ = extra_args, working_dir
         translation_unit = PythonRstTranslationUnit(text, file_name=str(file_name))
         translation_unit.check_diagnostics()
         root_node = PythonRstNode(translation_unit.atu, translation_unit)
