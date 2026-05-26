@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from pytest_bdd import when, scenario
 
 from features.steps.conftest import FEATURES_BASE_DIR
@@ -21,3 +23,4 @@ def step_when_convert(context):
     converter.run()
     context.atu = context.factory.create(context.file)
     context.signature = converter.apply_to_string()
+    Path(converter.get_migrated_path(context.file)).unlink(missing_ok=True)
