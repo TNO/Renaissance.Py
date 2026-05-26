@@ -29,10 +29,15 @@ class TestPythonExtractor:
         extractor = PythonExtractor()
         extractor.process(Path(targets.__file__).parent / "demo.py")
         graphml = Path(targets.__file__).parent / "demo.graphml"
-        extractor.save_graph(Path(targets.__file__).parent / "demo.graphml")
-        with open(graphml, "r") as f:
-            content = f.readlines()
-            assert_that(content, "demo.graphml")
+        extractor.save_graph(graphml)
+        try:
+            with open(graphml, "r") as f:
+                content = f.readlines()
+                assert_that(content, "demo.graphml")
+        finally:
+            if graphml.exists():
+                graphml.unlink()
+
 
 
 #     def test_adds_contains_edge_from_folder_to_file(self):
