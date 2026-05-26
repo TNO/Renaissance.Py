@@ -3,7 +3,7 @@ from steps.test_steps import *
 from renaissance.refactoring.unit2pytest import Unit2Pytest
 
 
-@scenario("../convert-unit-to-pytest.feature", "convert unittest to pytest")
+@scenario("convert-unit-to-pytest.feature", "convert unittest to pytest", "utf-8", "..")
 def test_convert_unit_to_pytest():
     pass
 
