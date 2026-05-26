@@ -3,7 +3,7 @@ Feature: taut migration
     Given 'targets/taut/taut_test.py' file
     And it contains 'import TAUT'
     And it contains 'class TestImport(TAUT.TestCase):'
-    And it contains 'self.import_and_verify_module('ABCDxTL')'
+    And it contains 'self.import_and_verify_module("ABCDxTL")'
     And it contains '@TAUT.log_stub'
     And it contains 'with TAUT.TestDoubles(abcdxtl=FakeABCDxTL(None)):'
     And it contains 'log = TAUT.Logger()'

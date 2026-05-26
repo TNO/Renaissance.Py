@@ -1,18 +1,34 @@
-import pytest
-from pytest_bdd import given, when, then, scenario, parsers
+from pathlib import Path
 
+import pytest
+from pytest_bdd import given, when, scenario, parsers, then
+
+from features.steps.conftest import FEATURES_BASE_DIR, REPO_BASE_DIR
 from renaissance.impl.python.factory import PythonPatternFactory
 from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.syntax_tree import ASTFactory, ASTRewriter
 from renaissance.syntax_tree.match_finder import match_pattern
 
 
+class Context(dict):
+    def __getattr__(self, name):
+        return self[name]
+
+    def __setattr__(self, name, value):
+        self[name] = value
+
+
 @pytest.fixture
 def context():
-    return {}
+    return Context()
 
 
-@scenario("../refactor-python-file.feature", "python code")
+@scenario(
+    "refactor-python-file.feature",
+    "python code",
+    encoding="utf-8",
+    features_base_dir=str(FEATURES_BASE_DIR)
+)
 def test_refactor_python_file():
     pass
 
@@ -24,12 +40,12 @@ def init_language_factory(context):
 
 @given(parsers.parse("'{file}' file written in that programming language"))
 def step_impl(context, file):
-    context["atu"] = context["factory"].create(file)
+    context["atu"] = context["factory"].create(REPO_BASE_DIR / Path(file))
 
 
 @given(parsers.parse("node '{old}' exits within that AST"))
 def step_impl(context, old):
-    pattern_factory = PythonPatternFactory(context["factory"], context["atu"])
+    pattern_factory = PythonPatternFactory(context["factory"])
     find = pattern_factory.create_statements(old)
     context["result"] = match_pattern(context["atu"].children, find)
     assert context["result"]
