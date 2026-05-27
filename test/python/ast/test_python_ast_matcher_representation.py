@@ -60,6 +60,10 @@ class TestPythonAstMatcherRepresentation:
         ],
         # Parsing from string (with int function)
         [
+            "int('1000')", # String representation, default base - decimal
+        ],
+        # Parsing from string (with int function and explicit base)
+        [
             "int('RS', 36)",  # String representation, base 36
         ],
         # Simplifiable expressions
