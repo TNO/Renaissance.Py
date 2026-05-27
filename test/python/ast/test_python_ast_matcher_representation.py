@@ -105,6 +105,46 @@ class TestPythonAstMatcherRepresentation:
         ],
     ]
 
+    TUPLE_REPRESENTATIONS: list[list[str]] = [
+        # Assign tuple value to single variable
+        [
+            "a = 0, 1",     # without brackets
+            "a = 0, 1,",    # without brackets, with trailing comma
+            "a = (0, 1)",   # with brackets
+            "a = (0, 1,)",   # with brackets, with trailing comma
+        ],
+        # Assign tuple variable to two variables
+        [
+            "a, b = tuple",     # without brackets
+            "a, b, = tuple",     # without brackets, with trailing comma
+            "(a, b) = tuple",   # with brackets
+            "(a, b) = tuple",   # with brackets, with trailing comma
+        ],
+        # Assign tuple value to two variables
+        [
+            "a, b = 0, 1",       # without brackets
+            "a, b = 0, 1,",      # without brackets and with trailing comma for value
+            "a, b = (0, 1)",     # with bracket for value
+            "a, b = (0, 1,)",    # with bracket and trailing comma for value
+
+            "a, b, = 0, 1",      # without brackets, with trailing comma for variables
+            "a, b, = 0, 1,",     # without brackets, with trailing commas
+            "a, b, = (0, 1)",    # with bracket for value, with trailing comma for variables
+            "a, b, = (0, 1,)",    # with bracket for value, with trailing commas
+
+            "(a, b) = 0, 1",     # with bracket for variables
+            "(a, b) = 0, 1,",    # with bracket for variables, with trailing comma for value
+            "(a, b) = (0, 1)",   # with brackets
+            "(a, b) = (0, 1,)",  # with brackets, with trailing comma for value
+            
+            "(a, b,) = 0, 1",      # with brackets and trailing comma for variables
+            "(a, b,) = 0, 1,",     # with brackets for variables and with trailing commas
+            "(a, b,) = (0, 1)",    # with brackets, with trailing comma for variables
+            "(a, b,) = (0, 1,)",   # with brackets, with trailing commas
+        ],
+        
+    ]
+
     # generate test cases from equivalence classes
     PATTERN_FACTORY = PythonPatternFactory(PythonFactory(PythonRstNode))
 
@@ -113,7 +153,8 @@ class TestPythonAstMatcherRepresentation:
         make_parametersets_of_equivalence_classes("whole number", PATTERN_FACTORY.create_expression, WHOLE_NUMBER_REPRESENTATIONS)
         + make_parametersets_of_equivalence_classes("real number", PATTERN_FACTORY.create_expression, REAL_NUMBER_REPRESENTATIONS)
         + make_parametersets_of_equivalence_classes("character", PATTERN_FACTORY.create_expression, CHARACTER_REPRESENTATIONS)
-        + make_parametersets_of_equivalence_classes("string", PATTERN_FACTORY.create_expression, STRING_REPRESENTATIONS),
+        + make_parametersets_of_equivalence_classes("string", PATTERN_FACTORY.create_expression, STRING_REPRESENTATIONS)
+        + make_parametersets_of_equivalence_classes("string", PATTERN_FACTORY.create_statement, TUPLE_REPRESENTATIONS)
     )
     def test_pairs_of_equivalence_classes(self, a: AstProtocol, b: AstProtocol, expected: bool):
         assert_pair_equivalence(a, b, expected)
