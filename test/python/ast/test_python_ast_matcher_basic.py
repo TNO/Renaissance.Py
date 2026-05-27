@@ -3,6 +3,8 @@ import pytest
 from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
 
+from renaissance.syntax_tree.match_finder import AstProtocol
+
 from utils.util_equivalence_classes import make_parametersets_of_equivalence_classes, assert_pair_equivalence
 
 
@@ -15,11 +17,6 @@ class TestPythonAstMatcherBasic:
     The test class high-lights the representations of structure-bearing, composite AST nodes
     as used by the AST parser.
     """
-
-    @pytest.fixture(autouse=True)
-    def setup(self):
-        self.factory = PythonFactory(PythonRstNode)
-        self.pattern_factory = PythonPatternFactory(self.factory)
 
     IF_CLASSES: list[list[str]] = [
         [
@@ -34,17 +31,14 @@ class TestPythonAstMatcherBasic:
         ],
     ]
 
-    IF_PAIR_PARAMS = make_parametersets_of_equivalence_classes(IF_CLASSES)
+    # generate test cases from equivalence classes
+    PATTERN_FACTORY = PythonPatternFactory(PythonFactory(PythonRstNode))
 
     @pytest.mark.parametrize(
-        "a_txt, b_txt, expected",
-        IF_PAIR_PARAMS,
+        "a, b, expected", make_parametersets_of_equivalence_classes("if statement", PATTERN_FACTORY.create_statement, IF_CLASSES)
     )
-    def test_if_statements(self, a_txt: str, b_txt: str, expected: bool):
-        """
-        How are the different if statements handled by the parser?
-        """
-        assert_pair_equivalence(self.pattern_factory.create_statement, a_txt, b_txt, expected)
+    def test_pairs_of_equivalence_classes(self, a: AstProtocol, b: AstProtocol, expected: bool):
+        assert_pair_equivalence(a, b, expected)
 
 
 if __name__ == "__main__":

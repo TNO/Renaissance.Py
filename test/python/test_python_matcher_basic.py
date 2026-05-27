@@ -3,6 +3,8 @@ import pytest
 from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
 
+from renaissance.syntax_tree.match_finder import AstProtocol
+
 from utils.util_equivalence_classes import make_parametersets_of_equivalence_classes, assert_pair_equivalence
 
 
@@ -15,11 +17,6 @@ class TestPythonMatcherBasic:
     The test class high-lights the insensitivity of code to comments and white spaces.
     """
 
-    @pytest.fixture(autouse=True)
-    def setup(self):
-        self.factory = PythonFactory(PythonRstNode)
-        self.pattern_factory = PythonPatternFactory(self.factory)
-
     TRIVIA_CLASSES: list[list[str]] = [
         [
             "x = 1",
@@ -27,29 +24,29 @@ class TestPythonMatcherBasic:
             "x  =  1  ",  # with extra spaces
             "x\t=\t1\t",  # with tabs
             "# This is a comment\nx    =    1   \n# This is a comment   ",  # multi line - mixed
+        #    " x = 1",  # start with extra space
         ],
-        [
-            "if c: pass\npass",
-            "if c:\n    pass\npass",
-        ],
+        # single if statement containing multiple statements
         [
             "if c: pass;pass",      # with semicolon as statement separator
             "if c:\n    pass\n    pass",
         ],
-    ]
+        # multiple statements, first statement is if statement 
+        [
+            "if c: pass\npass",
+            "if c:\n    pass\npass",
+        ],    
+        ]
 
-    TRIVIA_PAIR_PARAMS = make_parametersets_of_equivalence_classes(TRIVIA_CLASSES)
+    # generate test cases from equivalence classes
+    PATTERN_FACTORY = PythonPatternFactory(PythonFactory(PythonRstNode))
 
     @pytest.mark.parametrize(
-        "a_txt, b_txt, expected",
-        TRIVIA_PAIR_PARAMS,
+        "a, b, expected", make_parametersets_of_equivalence_classes("trivia", PATTERN_FACTORY.create_statements, TRIVIA_CLASSES)
     )
-    def test_trivia(self, a_txt: str, b_txt: str, expected: bool):
-        """
-        How are statements with comments and whitespaces handled by the parser?
-        """
-        assert_pair_equivalence(self.pattern_factory.create_statement, a_txt, b_txt, expected)
+    def test_pairs_of_equivalence_classes(self, a: AstProtocol, b: AstProtocol, expected: bool):
+        assert_pair_equivalence(a, b, expected)
 
-
+  
 if __name__ == "__main__":
     pytest.main()

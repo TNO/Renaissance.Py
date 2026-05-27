@@ -3,6 +3,8 @@ import pytest
 from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
 
+from renaissance.syntax_tree.match_finder import AstProtocol
+
 from utils.util_equivalence_classes import make_parametersets_of_equivalence_classes, assert_pair_equivalence
 
 
@@ -15,11 +17,6 @@ class TestPythonAstMatcherRepresentation:
     The test class high-lights the representations of data-bearing, leave AST nodes
     as used by the AST parser.
     """
-
-    @pytest.fixture(autouse=True)
-    def setup(self):
-        self.factory = PythonFactory(PythonRstNode)
-        self.pattern_factory = PythonPatternFactory(self.factory)
 
     WHOLE_NUMBER_REPRESENTATIONS: list[list[str]] = [
         # Base class: all represent the same whole number 1000
@@ -49,18 +46,6 @@ class TestPythonAstMatcherRepresentation:
         ],
     ]
 
-    WHOLE_NUMBER_PAIR_PARAMS = make_parametersets_of_equivalence_classes(WHOLE_NUMBER_REPRESENTATIONS)
-
-    @pytest.mark.parametrize(
-        "a_txt, b_txt, expected",
-        WHOLE_NUMBER_PAIR_PARAMS,
-    )
-    def test_literal_whole_numbers_representation(self, a_txt: str, b_txt: str, expected: bool):
-        """
-        How are the different whole number representations handled by the parser?
-        """
-        assert_pair_equivalence(self.pattern_factory.create_expression, a_txt, b_txt, expected)
-
     REAL_NUMBER_REPRESENTATIONS: list[list[str]] = [
         # Base class: all represent the same real number 0.123456
         [
@@ -78,18 +63,6 @@ class TestPythonAstMatcherRepresentation:
             "123456/1000000",
         ],
     ]
-
-    REAL_NUMBER_PAIR_PARAMS = make_parametersets_of_equivalence_classes(REAL_NUMBER_REPRESENTATIONS)
-
-    @pytest.mark.parametrize(
-        "a_txt, b_txt, expected",
-        REAL_NUMBER_PAIR_PARAMS,
-    )
-    def test_literal_real_numbers_representation(self, a_txt: str, b_txt: str, expected: bool):
-        """
-        How are the different real number representations handled by the parser?
-        """
-        assert_pair_equivalence(self.pattern_factory.create_expression, a_txt, b_txt, expected)
 
     CHARACTER_REPRESENTATIONS: list[list[str]] = [
         # Class 0: all represent the same character "1"
@@ -109,18 +82,6 @@ class TestPythonAstMatcherRepresentation:
             "chr(0x31)",  # same, different integer literal
         ],
     ]
-
-    CHARACTER_PAIR_PARAMS = make_parametersets_of_equivalence_classes(CHARACTER_REPRESENTATIONS)
-
-    @pytest.mark.parametrize(
-        "a_txt, b_txt, expected",
-        CHARACTER_PAIR_PARAMS,
-    )
-    def test_character_representation(self, a_txt: str, b_txt: str, expected: bool):
-        """
-        How are the different character representations handled by the parser?
-        """
-        assert_pair_equivalence(self.pattern_factory.create_expression, a_txt, b_txt, expected)
 
     STRING_REPRESENTATIONS: list[list[str]] = [
         # Class 0: string literal forms that the parser treats as the same string value
@@ -144,17 +105,18 @@ class TestPythonAstMatcherRepresentation:
         ],
     ]
 
-    STRING_PAIR_PARAMS = make_parametersets_of_equivalence_classes(STRING_REPRESENTATIONS)
+    # generate test cases from equivalence classes
+    PATTERN_FACTORY = PythonPatternFactory(PythonFactory(PythonRstNode))
 
     @pytest.mark.parametrize(
-        "a_txt, b_txt, expected",
-        STRING_PAIR_PARAMS,
+        "a, b, expected",
+        make_parametersets_of_equivalence_classes("whole number", PATTERN_FACTORY.create_expression, WHOLE_NUMBER_REPRESENTATIONS)
+        + make_parametersets_of_equivalence_classes("real number", PATTERN_FACTORY.create_expression, REAL_NUMBER_REPRESENTATIONS)
+        + make_parametersets_of_equivalence_classes("character", PATTERN_FACTORY.create_expression, CHARACTER_REPRESENTATIONS)
+        + make_parametersets_of_equivalence_classes("string", PATTERN_FACTORY.create_expression, STRING_REPRESENTATIONS),
     )
-    def test_string_representation(self, a_txt: str, b_txt: str, expected: bool):
-        """
-        How are the different string representations handled by the parser?
-        """
-        assert_pair_equivalence(self.pattern_factory.create_expression, a_txt, b_txt, expected)
+    def test_pairs_of_equivalence_classes(self, a: AstProtocol, b: AstProtocol, expected: bool):
+        assert_pair_equivalence(a, b, expected)
 
 
 if __name__ == "__main__":
