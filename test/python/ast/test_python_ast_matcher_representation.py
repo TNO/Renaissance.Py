@@ -54,6 +54,10 @@ class TestPythonAstMatcherRepresentation:
             "-(-1000)",  # middle brackets
             "(--1000)",  # outer brackets
         ],
+        # Simplifiable expressions
+        [
+            "1000 if True else 2000",  # simplifiable ternary operator (due to constant condition)
+        ],
     ]
 
     REAL_NUMBER_REPRESENTATIONS: list[list[str]] = [
