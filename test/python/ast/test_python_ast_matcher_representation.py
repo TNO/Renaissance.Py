@@ -54,9 +54,13 @@ class TestPythonAstMatcherRepresentation:
             "-(-1000)",  # middle brackets
             "(--1000)",  # outer brackets
         ],
-        # Explicitly typed value
+        # Explicitly typed value (with int function)
         [
             "int(1000)",  # explicitly typed
+        ],
+        # Parsing from string (with int function)
+        [
+            "int('RS', 36)",  # String representation, base 36
         ],
         # Simplifiable expressions
         [
