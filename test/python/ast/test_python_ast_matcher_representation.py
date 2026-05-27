@@ -54,6 +54,10 @@ class TestPythonAstMatcherRepresentation:
             "-(-1000)",  # middle brackets
             "(--1000)",  # outer brackets
         ],
+        # Explicitly typed value
+        [
+            "int(1000)",  # explicitly typed
+        ],
         # Simplifiable expressions
         [
             "1000 if True else 2000",  # simplifiable ternary operator (due to constant condition)
