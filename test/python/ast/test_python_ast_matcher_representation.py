@@ -22,7 +22,7 @@ class TestPythonAstMatcherRepresentation:
         # Base class: all represent the same whole number 1000
         [
             "1000",  # normal
-            "1_000",  # readable
+            "1_000",  # readable (underscores)
             "0b1111101000",  # binary lowercase
             "0B1111101000",  # binary uppercase
             "0o1750",  # octal lowercase
@@ -38,11 +38,21 @@ class TestPythonAstMatcherRepresentation:
             "1E+3",  # scientific uppercase power plus sign 3
             "1000000E-3",  # scientific uppercase power minus sign 3
             "1000.000",  # float
+            "(1000)",  # with brackets
         ],
         # Signed version
         [
             "+1000",
-            "+1_000",
+            "+1_000",  # readable (underscores)
+            "+(1000)",  # with inner brackets
+            "(+1000)",  # with outer brackets
+        ],
+        # Double unary operator
+        [
+            "--1000",
+            "--(1000)",  # inner brackets
+            "-(-1000)",  # middle brackets
+            "(--1000)",  # outer brackets
         ],
     ]
 
@@ -79,7 +89,7 @@ class TestPythonAstMatcherRepresentation:
         # Class 1: computed
         [
             "chr(49)",  # call producing "1"
-            "chr(0x31)",  # same, different integer literal
+            "chr(0x31)",  # same, different representation of integer literal
         ],
     ]
 
@@ -98,10 +108,15 @@ class TestPythonAstMatcherRepresentation:
             '"abc" + "def"',  # explicit concatenation: double quotes
             "\"abc\" + 'def'",  # explicit concatenation: mixed quotes
         ],
-        # Class 2:formatted strings
+        # Class 2: formatted strings
         [
-            "f'{\"abcdef\"}'",  # formatted string single quotes
-            "f\"{'abcdef'}\"",  # formatted string double quotes
+            "f'{\"abcdef\"}'",  # formatted string - single quotes
+            "f\"{'abcdef'}\"",  # formatted string - double quotes
+        ],
+        # Class 3: formatted strings with concatenation
+        [
+            'f\'{"abc"}{"def"}\'',  # formatted string with concatenation - single quotes
+            "f\"{'abc'}{'def'}\"",  # formatted string with concatenation - double quotes
         ],
     ]
 
