@@ -160,6 +160,15 @@ class TestPythonAstMatcherRepresentation:
         ],
     ]
 
+    EQUAL_REPRESENTATIONS: list[list[str]] = [
+        [
+            "1 == 2",
+        ],
+        [
+            "2 == 1",  # symmetric operator, but asymmetrically stored
+        ],
+    ]
+
     # generate test cases from equivalence classes
     PATTERN_FACTORY = PythonPatternFactory(PythonFactory(PythonRstNode))
 
@@ -169,7 +178,8 @@ class TestPythonAstMatcherRepresentation:
         + make_parametersets_of_equivalence_classes("real number", PATTERN_FACTORY.create_expression, REAL_NUMBER_REPRESENTATIONS)
         + make_parametersets_of_equivalence_classes("character", PATTERN_FACTORY.create_expression, CHARACTER_REPRESENTATIONS)
         + make_parametersets_of_equivalence_classes("string", PATTERN_FACTORY.create_expression, STRING_REPRESENTATIONS)
-        + make_parametersets_of_equivalence_classes("string", PATTERN_FACTORY.create_statement, TUPLE_REPRESENTATIONS),
+        + make_parametersets_of_equivalence_classes("tuple", PATTERN_FACTORY.create_statement, TUPLE_REPRESENTATIONS)
+        + make_parametersets_of_equivalence_classes("equal", PATTERN_FACTORY.create_expression, EQUAL_REPRESENTATIONS),
     )
     def test_pairs_of_equivalence_classes(self, a: AstProtocol, b: AstProtocol, expected: bool):
         assert_pair_equivalence(a, b, expected)
