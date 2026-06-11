@@ -49,8 +49,8 @@ class PythonCstNode:
         self.is_statement = isinstance(self.node, (BaseSmallStatement, BaseCompoundStatement))
 
         # for matcher
-        self.ast_type = KIND_MAP.get(type(node).__name__, UnknownType) #type(node))
-        if self.ast_type ==UnknownType:
+        self.ast_type = KIND_MAP.get(type(node).__name__, UnknownType)  # type(node))
+        if self.ast_type == UnknownType:
             print(f'"{type(node).__name__}": {type(node).__name__},')
         self.children: list[Self] = [PythonCstNode(node, translation_unit, self) for node in node.children]
         self.properties = {}

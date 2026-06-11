@@ -191,7 +191,9 @@ def find_variants(src: Sequence, cmp: Sequence, expansion=None, start: int = 0, 
             if variant.index == len(cmp):
                 next_variants.append(variant)
                 continue
-            if cmp[variant.index].ast_type != MatchAll and (child_variants := variant_in_match_stmt(src[i], cmp[variant.index], variant.exp)):
+            if cmp[variant.index].ast_type != MatchAll and (
+                child_variants := variant_in_match_stmt(src[i], cmp[variant.index], variant.exp)
+            ):
                 _apply_child_match(variant, child_variants, cmp, src, i, next_variants)
             elif variant.greedy:
                 _advance_greedy(variant, cmp, src, i)

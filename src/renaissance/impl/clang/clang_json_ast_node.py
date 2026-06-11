@@ -144,7 +144,7 @@ class ClangJsonASTNode(ASTNode):
         elif self.ast_type in [DeclarationExpression]:
             if self.name.startswith("$$"):
                 self._kind = MatchAll.__name__
-                self.ast_type=MatchAll
+                self.ast_type = MatchAll
             elif self.name.startswith("$"):
                 self._kind = MatchOne.__name__
                 self.ast_type = MatchOne
@@ -281,7 +281,9 @@ class ClangJsonASTNode(ASTNode):
             # but expressions (without the semicolon)
             if (not self._is_statement_or_declaration()) and (self.parent and self.parent.ast_type in STMT_PARENTS):
                 content = self.root.binary_file_content()
-                while end_offset < len(content) and not content[end_offset - 1] in b";":  # Why use 'in' when list has one element, i.e. ';'?
+                while (
+                    end_offset < len(content) and not content[end_offset - 1] in b";"
+                ):  # Why use 'in' when list has one element, i.e. ';'?
                     end_offset += 1
             return end_offset
         except:
@@ -290,7 +292,6 @@ class ClangJsonASTNode(ASTNode):
     def _is_statement_or_declaration(self):
         return re.match("(?i).*(Stmt|Decl)", self.kind)
         return isinstance(self.ast_type(), (Statement))
-
 
     @override
     @property

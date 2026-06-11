@@ -8,9 +8,22 @@ import clang.native
 from clang.cindex import Config, Index, TypeKind, CursorKind
 
 from renaissance.impl.clang.cpp_utils import get_ancestor, matches_kind
-from renaissance.impl.types import MatchAll, MatchOne, UnknownType, KIND_MAP, MacroDef, Statement, \
-    DeclarationExpression, Literal, BinaryOperation, UnaryOperation, CompoundStatement, Declaration, Definition, \
-    TranslationUnit
+from renaissance.impl.types import (
+    MatchAll,
+    MatchOne,
+    UnknownType,
+    KIND_MAP,
+    MacroDef,
+    Statement,
+    DeclarationExpression,
+    Literal,
+    BinaryOperation,
+    UnaryOperation,
+    CompoundStatement,
+    Declaration,
+    Definition,
+    TranslationUnit,
+)
 from renaissance.syntax_tree import ASTNode, ASTReference
 from renaissance.utils.ast_utils import match_children, match_props
 
@@ -254,7 +267,7 @@ class ClangASTNode(ASTNode):
 
     def _is_statement_or_declaration(self):
         print(f"{self.ast_type} is statement: {self.kind}")
-        return isinstance(self.ast_type(), (Statement,Declaration,Definition))
+        return isinstance(self.ast_type(), (Statement, Declaration, Definition))
 
     @override
     def matches_kind(self, node: ASTNode) -> bool:
@@ -294,7 +307,7 @@ class ClangASTNode(ASTNode):
             result["prefixOperator"] = prefix_operator
             # next statement works in C++ but not in Python (yet) will be released later
             # result['operator'] =  self.node.getOpCode()
-        elif isinstance(self.ast_type(),Literal):
+        elif isinstance(self.ast_type(), Literal):
             self._add_tokens(result, "LITERAL")
         elif self.ast_type == DeclarationExpression:
             self._add_tokens(result, "LITERAL")
@@ -450,6 +463,7 @@ class ClangASTNode(ASTNode):
     @property
     def is_implicit(self):
         return self.is_part_of_translation_unit()
+
 
 #    def get_ancestor(self, types ):
 #        return get_ancestor(self, types)

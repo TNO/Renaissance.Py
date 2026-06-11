@@ -6,8 +6,7 @@ from typing import Sequence
 import tree_sitter_python
 from libcst import SimpleStatementLine
 
-from renaissance.impl.types import MatchAll, MatchOne, Call, ExpressionStatement, Type, UnknownType, \
-    DeclarationExpression, Name, Arg
+from renaissance.impl.types import MatchAll, MatchOne, Call, ExpressionStatement, Type, UnknownType, DeclarationExpression, Name, Arg
 from renaissance.impl import MATCH_ALL, MATCH_ONE
 from renaissance.impl.python.ast_node import ASTExtension
 from renaissance.impl.python.cst_node import PythonCstNode
@@ -41,7 +40,7 @@ class PythonPattern(AstProtocol):
             self.name = ""
 
     def __eq__(self, other: AstProtocol) -> bool:
-        return is_match(other,self)
+        return is_match(other, self)
 
     def __repr__(self):
         return use_dollar(str(self.node))

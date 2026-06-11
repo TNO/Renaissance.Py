@@ -188,7 +188,7 @@ class PythonRstNode:
         self.parent = parent
         self.translation_unit: PythonRstTranslationUnit = translation_unit
         self.ast_type = KIND_MAP.get(type(node).__name__, UnknownType)
-        if self.ast_type ==UnknownType:
+        if self.ast_type == UnknownType:
             print(f'"{type(node).__name__}": {type(node).__name__},')
 
         self.indent = ""
@@ -261,6 +261,7 @@ class PythonRstNode:
 
     def __repr__(self):
         return format_node(self)
+
     @property
     def next_sibling(self) -> Self | None:
         return next_sibling(self)
