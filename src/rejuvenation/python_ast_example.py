@@ -1,6 +1,7 @@
 import textwrap
 from ast import AST
 
+from rejuvenation.python_lst_example import python_lst_smoke_test
 from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
 from renaissance.impl.types import Call
 from renaissance.syntax_tree import ASTShower, ASTRewriter

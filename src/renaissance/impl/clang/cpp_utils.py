@@ -1,7 +1,7 @@
 from renaissance.impl.types import Type, Literal, DeclarationExpression
 
 
-def get_ancestor(node: {"parent"}, kind: type[Type]):
+def get_ancestor(node, kind: type[Type]):
     parent = node.parent
     if not parent:
         return None

@@ -1,5 +1,6 @@
 import textwrap
 
+from rejuvenation.python_lst_example import python_lst_smoke_test
 from renaissance.impl.python.cst_node import PythonCstNode
 from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
 from renaissance.impl.types import Call
