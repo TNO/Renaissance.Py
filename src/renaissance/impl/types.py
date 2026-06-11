@@ -1,442 +1,1574 @@
 from abc import ABC
+
+
 class Type(ABC):
     def __str__(self):
         return self.__class__.__name__
 
+
 # Fallback
-class UnknownType(Type):    pass
-class BogusType(UnknownType):    pass
+class UnknownType(Type):
+    pass
+
+
+class BogusType(UnknownType):
+    pass
+
 
 # Pattern
-class Pattern(Type):  pass
-class MatchOne(Pattern): pass
-class MatchAll(Pattern): pass
+class Pattern(Type):
+    pass
+
+
+class MatchOne(Pattern):
+    pass
+
+
+class MatchAll(Pattern):
+    pass
+
 
 # Base
-class Node(Type): pass
-class BaseLeaf(Node): pass
-class BaseValueToken(BaseLeaf): pass
-class TranslationUnit(Node):    pass
-class Expression(Node):    pass
-class Operator(Node):    pass
+class Node(Type):
+    pass
 
+
+class BaseLeaf(Node):
+    pass
+
+
+class BaseValueToken(BaseLeaf):
+    pass
+
+
+class TranslationUnit(Node):
+    pass
+
+
+class Expression(Node):
+    pass
+
+
+class Operator(Node):
+    pass
 
 
 # whitespaces
-class Whitespace(Type):    pass
-class BaseParenthesizableWhitespace(Whitespace): pass
-class SimpleWhitespace(BaseParenthesizableWhitespace, BaseValueToken): pass
-class Newline(BaseLeaf): pass
-class Comment(Whitespace, BaseValueToken): pass
-class ParagraphComment(Comment):    pass
-class TextComment(Comment):    pass
-class TrailingWhitespace(Whitespace): pass
-class FullComment(Comment):    pass
-class EmptyLine(Whitespace): pass
-class ParenthesizedWhitespace(BaseParenthesizableWhitespace): pass
+class Whitespace(Type):
+    pass
+
+
+class BaseParenthesizableWhitespace(Whitespace):
+    pass
+
+
+class SimpleWhitespace(BaseParenthesizableWhitespace, BaseValueToken):
+    pass
+
+
+class Newline(BaseLeaf):
+    pass
+
+
+class Comment(Whitespace, BaseValueToken):
+    pass
+
+
+class ParagraphComment(Comment):
+    pass
+
+
+class TextComment(Comment):
+    pass
+
+
+class TrailingWhitespace(Whitespace):
+    pass
+
+
+class FullComment(Comment):
+    pass
+
+
+class EmptyLine(Whitespace):
+    pass
+
+
+class ParenthesizedWhitespace(BaseParenthesizableWhitespace):
+    pass
+
 
 # Operators
-class _BaseOneTokenOp(Node): pass
-class _BaseTwoTokenOp(Node): pass
-class BaseUnaryOp(Node): pass
-class BaseBooleanOp(_BaseOneTokenOp): pass
-class BaseBinaryOp(Node): pass
-class BaseCompOp(Node): pass
-class BaseAugOp(Node): pass
-class Semicolon(_BaseOneTokenOp): pass
-class Colon(_BaseOneTokenOp): pass
-class Comma(_BaseOneTokenOp): pass
-class Dot(_BaseOneTokenOp): pass
-class ImportStar(BaseLeaf): pass
-class AssignEqual(_BaseOneTokenOp): pass
-class Plus(BaseUnaryOp): pass
-class Minus(BaseUnaryOp): pass
-class BitInvert(BaseUnaryOp): pass
-class Not(BaseUnaryOp): pass
-class And(BaseBooleanOp): pass
-class Or(BaseBooleanOp): pass
-class Add(BaseBinaryOp, _BaseOneTokenOp): pass
-class Subtract(BaseBinaryOp, _BaseOneTokenOp): pass
-class Multiply(BaseBinaryOp, _BaseOneTokenOp): pass
-class Divide(BaseBinaryOp, _BaseOneTokenOp): pass
-class FloorDivide(BaseBinaryOp, _BaseOneTokenOp): pass
-class Modulo(BaseBinaryOp, _BaseOneTokenOp): pass
-class Power(BaseBinaryOp, _BaseOneTokenOp): pass
-class LeftShift(BaseBinaryOp, _BaseOneTokenOp): pass
-class RightShift(BaseBinaryOp, _BaseOneTokenOp): pass
-class BitOr(BaseBinaryOp, _BaseOneTokenOp): pass
-class BitAnd(BaseBinaryOp, _BaseOneTokenOp): pass
-class BitXor(BaseBinaryOp, _BaseOneTokenOp): pass
-class MatrixMultiply(BaseBinaryOp, _BaseOneTokenOp): pass
-class LessThan(BaseCompOp, _BaseOneTokenOp): pass
-class GreaterThan(BaseCompOp, _BaseOneTokenOp): pass
-class Equal(BaseCompOp, _BaseOneTokenOp): pass
-class LessThanEqual(BaseCompOp, _BaseOneTokenOp): pass
-class GreaterThanEqual(BaseCompOp, _BaseOneTokenOp): pass
-class NotEqual(BaseCompOp, _BaseOneTokenOp): pass
-class In(BaseCompOp, _BaseOneTokenOp): pass
-class NotIn(BaseCompOp, _BaseTwoTokenOp): pass
-class Is(BaseCompOp, _BaseOneTokenOp): pass
-class IsNot(BaseCompOp, _BaseTwoTokenOp): pass
-class AddAssign(BaseAugOp, _BaseOneTokenOp): pass
-class SubtractAssign(BaseAugOp, _BaseOneTokenOp): pass
-class MultiplyAssign(BaseAugOp, _BaseOneTokenOp): pass
-class MatrixMultiplyAssign(BaseAugOp, _BaseOneTokenOp): pass
-class DivideAssign(BaseAugOp, _BaseOneTokenOp): pass
-class ModuloAssign(BaseAugOp, _BaseOneTokenOp): pass
-class BitAndAssign(BaseAugOp, _BaseOneTokenOp): pass
-class BitOrAssign(BaseAugOp, _BaseOneTokenOp): pass
-class BitXorAssign(BaseAugOp, _BaseOneTokenOp): pass
-class LeftShiftAssign(BaseAugOp, _BaseOneTokenOp): pass
-class RightShiftAssign(BaseAugOp, _BaseOneTokenOp): pass
-class PowerAssign(BaseAugOp, _BaseOneTokenOp): pass
-class FloorDivideAssign(BaseAugOp, _BaseOneTokenOp): pass
+class _BaseOneTokenOp(Node):
+    pass
+
+
+class _BaseTwoTokenOp(Node):
+    pass
+
+
+class BaseUnaryOp(Node):
+    pass
+
+
+class BaseBooleanOp(_BaseOneTokenOp):
+    pass
+
+
+class BaseBinaryOp(Node):
+    pass
+
+
+class BaseCompOp(Node):
+    pass
+
+
+class BaseAugOp(Node):
+    pass
+
+
+class Semicolon(_BaseOneTokenOp):
+    pass
+
+
+class Colon(_BaseOneTokenOp):
+    pass
+
+
+class Comma(_BaseOneTokenOp):
+    pass
+
+
+class Dot(_BaseOneTokenOp):
+    pass
+
+
+class ImportStar(BaseLeaf):
+    pass
+
+
+class AssignEqual(_BaseOneTokenOp):
+    pass
+
+
+class Plus(BaseUnaryOp):
+    pass
+
+
+class Minus(BaseUnaryOp):
+    pass
+
+
+class BitInvert(BaseUnaryOp):
+    pass
+
+
+class Not(BaseUnaryOp):
+    pass
+
+
+class And(BaseBooleanOp):
+    pass
+
+
+class Or(BaseBooleanOp):
+    pass
+
+
+class Add(BaseBinaryOp, _BaseOneTokenOp):
+    pass
+
+
+class Subtract(BaseBinaryOp, _BaseOneTokenOp):
+    pass
+
+
+class Multiply(BaseBinaryOp, _BaseOneTokenOp):
+    pass
+
+
+class Divide(BaseBinaryOp, _BaseOneTokenOp):
+    pass
+
+
+class FloorDivide(BaseBinaryOp, _BaseOneTokenOp):
+    pass
+
+
+class Modulo(BaseBinaryOp, _BaseOneTokenOp):
+    pass
+
+
+class Power(BaseBinaryOp, _BaseOneTokenOp):
+    pass
+
+
+class LeftShift(BaseBinaryOp, _BaseOneTokenOp):
+    pass
+
+
+class RightShift(BaseBinaryOp, _BaseOneTokenOp):
+    pass
+
+
+class BitOr(BaseBinaryOp, _BaseOneTokenOp):
+    pass
+
+
+class BitAnd(BaseBinaryOp, _BaseOneTokenOp):
+    pass
+
+
+class BitXor(BaseBinaryOp, _BaseOneTokenOp):
+    pass
+
+
+class MatrixMultiply(BaseBinaryOp, _BaseOneTokenOp):
+    pass
+
+
+class LessThan(BaseCompOp, _BaseOneTokenOp):
+    pass
+
+
+class GreaterThan(BaseCompOp, _BaseOneTokenOp):
+    pass
+
+
+class Equal(BaseCompOp, _BaseOneTokenOp):
+    pass
+
+
+class LessThanEqual(BaseCompOp, _BaseOneTokenOp):
+    pass
+
+
+class GreaterThanEqual(BaseCompOp, _BaseOneTokenOp):
+    pass
+
+
+class NotEqual(BaseCompOp, _BaseOneTokenOp):
+    pass
+
+
+class In(BaseCompOp, _BaseOneTokenOp):
+    pass
+
+
+class NotIn(BaseCompOp, _BaseTwoTokenOp):
+    pass
+
+
+class Is(BaseCompOp, _BaseOneTokenOp):
+    pass
+
+
+class IsNot(BaseCompOp, _BaseTwoTokenOp):
+    pass
+
+
+class AddAssign(BaseAugOp, _BaseOneTokenOp):
+    pass
+
+
+class SubtractAssign(BaseAugOp, _BaseOneTokenOp):
+    pass
+
+
+class MultiplyAssign(BaseAugOp, _BaseOneTokenOp):
+    pass
+
+
+class MatrixMultiplyAssign(BaseAugOp, _BaseOneTokenOp):
+    pass
+
+
+class DivideAssign(BaseAugOp, _BaseOneTokenOp):
+    pass
+
+
+class ModuloAssign(BaseAugOp, _BaseOneTokenOp):
+    pass
+
+
+class BitAndAssign(BaseAugOp, _BaseOneTokenOp):
+    pass
+
+
+class BitOrAssign(BaseAugOp, _BaseOneTokenOp):
+    pass
+
+
+class BitXorAssign(BaseAugOp, _BaseOneTokenOp):
+    pass
+
+
+class LeftShiftAssign(BaseAugOp, _BaseOneTokenOp):
+    pass
+
+
+class RightShiftAssign(BaseAugOp, _BaseOneTokenOp):
+    pass
+
+
+class PowerAssign(BaseAugOp, _BaseOneTokenOp):
+    pass
+
+
+class FloorDivideAssign(BaseAugOp, _BaseOneTokenOp):
+    pass
 
 
 #  Expression
-class LeftSquareBracket(Node): pass
-class RightSquareBracket(Node): pass
-class LeftCurlyBrace(Node): pass
-class RightCurlyBrace(Node): pass
-class LeftParen(Node): pass
-class RightParen(Node): pass
-class Asynchronous(Node): pass
-class _BaseParenthesizedNode(Node): pass
+class LeftSquareBracket(Node):
+    pass
+
+
+class RightSquareBracket(Node):
+    pass
+
+
+class LeftCurlyBrace(Node):
+    pass
+
+
+class RightCurlyBrace(Node):
+    pass
+
+
+class LeftParen(Node):
+    pass
+
+
+class RightParen(Node):
+    pass
+
+
+class Asynchronous(Node):
+    pass
+
+
+class _BaseParenthesizedNode(Node):
+    pass
+
+
 # class ExpressionPosition(Enum): pass
-class BaseExpression(_BaseParenthesizedNode): pass
-class BaseAssignTargetExpression(BaseExpression): pass
-class BaseDelTargetExpression(BaseExpression): pass
-class Literal(BaseExpression):    pass
-class Name(BaseAssignTargetExpression, BaseDelTargetExpression): pass
-class EllipsisLiteral(BaseExpression): pass
-class BaseNumber(BaseExpression): pass
-class Integer(BaseNumber): pass
-class Float(BaseNumber): pass
-class Imaginary(BaseNumber): pass
-class BaseString(BaseExpression): pass
-class Character(BaseExpression):    pass
+class BaseExpression(_BaseParenthesizedNode):
+    pass
+
+
+class BaseAssignTargetExpression(BaseExpression):
+    pass
+
+
+class BaseDelTargetExpression(BaseExpression):
+    pass
+
+
+class Literal(BaseExpression):
+    pass
+
+
+class Name(BaseAssignTargetExpression, BaseDelTargetExpression):
+    pass
+
+
+class EllipsisLiteral(BaseExpression):
+    pass
+
+
+class BaseNumber(BaseExpression):
+    pass
+
+
+class Integer(BaseNumber):
+    pass
+
+
+class Float(BaseNumber):
+    pass
+
+
+class Imaginary(BaseNumber):
+    pass
+
+
+class BaseString(BaseExpression):
+    pass
+
+
+class Character(BaseExpression):
+    pass
+
+
 # StringQuoteLiteral = Literal['"', "'", '"""', "'''"]
-class _BasePrefixedString(BaseString): pass
-class SimpleString(_BasePrefixedString): pass
-class BaseFormattedStringContent(Node): pass
-class FormattedStringText(BaseFormattedStringContent): pass
-class FormattedStringExpression(BaseFormattedStringContent): pass
-class FormattedString(_BasePrefixedString): pass
-class BaseTemplatedStringContent(Node): pass
-class TemplatedStringText(BaseTemplatedStringContent): pass
-class TemplatedStringExpression(BaseTemplatedStringContent): pass
-class TemplatedString(_BasePrefixedString): pass
-class ConcatenatedString(BaseString): pass
-class ComparisonTarget(Node): pass
-class Comparison(BaseExpression): pass
-class UnaryOperation(BaseExpression): pass
-class BinaryOperation(BaseExpression): pass
-class BooleanOperation(BaseExpression): pass
-class Attribute(BaseAssignTargetExpression, BaseDelTargetExpression): pass
-class BaseSlice(Node): pass
-class Index(BaseSlice): pass
-class Slice(BaseSlice): pass
-class SubscriptElement(Node): pass
-class Subscript(BaseAssignTargetExpression, BaseDelTargetExpression): pass
-class Annotation(Node): pass
-class ParamStar(Node): pass
-class ParamSlash(Node): pass
-class Param(Node): pass
-class Parameters(Node): pass
-class Lambda(BaseExpression): pass
-class Arg(Node): pass
-class _BaseExpressionWithArgs(BaseExpression): pass
-class Call(_BaseExpressionWithArgs): pass
-class Await(BaseExpression): pass
-class IfExp(BaseExpression): pass
-class From(Node): pass
-class Yield(BaseExpression): pass
-class _BaseElementImpl(Node): pass
-class BaseElement(_BaseElementImpl): pass
-class BaseDictElement(_BaseElementImpl): pass
-class Element(BaseElement): pass
-class DictElement(BaseDictElement): pass
-class StarredElement(BaseElement, BaseExpression, _BaseParenthesizedNode): pass
-class StarredDictElement(BaseDictElement): pass
-class Tuple(BaseAssignTargetExpression, BaseDelTargetExpression): pass
-class BaseList(BaseExpression): pass
-class List(BaseList, BaseAssignTargetExpression, BaseDelTargetExpression): pass
-class _BaseSetOrDict(BaseExpression): pass
-class BaseSet(_BaseSetOrDict): pass
-class Set(BaseSet): pass
-class BaseDict(_BaseSetOrDict): pass
-class Dict(BaseDict): pass
-class CompFor(Node): pass
-class CompIf(Node): pass
-class BaseComp(BaseExpression): pass
-class BaseSimpleComp(BaseComp): pass
-class GeneratorExp(BaseSimpleComp): pass
-class ListComp(BaseList, BaseSimpleComp): pass
-class SetComp(BaseSet, BaseSimpleComp): pass
-class DictComp(BaseDict, BaseComp): pass
-class NamedExpr(BaseExpression): pass
+class _BasePrefixedString(BaseString):
+    pass
+
+
+class SimpleString(_BasePrefixedString):
+    pass
+
+
+class BaseFormattedStringContent(Node):
+    pass
+
+
+class FormattedStringText(BaseFormattedStringContent):
+    pass
+
+
+class FormattedStringExpression(BaseFormattedStringContent):
+    pass
+
+
+class FormattedString(_BasePrefixedString):
+    pass
+
+
+class BaseTemplatedStringContent(Node):
+    pass
+
+
+class TemplatedStringText(BaseTemplatedStringContent):
+    pass
+
+
+class TemplatedStringExpression(BaseTemplatedStringContent):
+    pass
+
+
+class TemplatedString(_BasePrefixedString):
+    pass
+
+
+class ConcatenatedString(BaseString):
+    pass
+
+
+class ComparisonTarget(Node):
+    pass
+
+
+class Comparison(BaseExpression):
+    pass
+
+
+class UnaryOperation(BaseExpression):
+    pass
+
+
+class BinaryOperation(BaseExpression):
+    pass
+
+
+class BooleanOperation(BaseExpression):
+    pass
+
+
+class Attribute(BaseAssignTargetExpression, BaseDelTargetExpression):
+    pass
+
+
+class BaseSlice(Node):
+    pass
+
+
+class Index(BaseSlice):
+    pass
+
+
+class Slice(BaseSlice):
+    pass
+
+
+class SubscriptElement(Node):
+    pass
+
+
+class Subscript(BaseAssignTargetExpression, BaseDelTargetExpression):
+    pass
+
+
+class Annotation(Node):
+    pass
+
+
+class ParamStar(Node):
+    pass
+
+
+class ParamSlash(Node):
+    pass
+
+
+class Param(Node):
+    pass
+
+
+class Parameters(Node):
+    pass
+
+
+class Lambda(BaseExpression):
+    pass
+
+
+class Arg(Node):
+    pass
+
+
+class _BaseExpressionWithArgs(BaseExpression):
+    pass
+
+
+class Call(_BaseExpressionWithArgs):
+    pass
+
+
+class Await(BaseExpression):
+    pass
+
+
+class IfExp(BaseExpression):
+    pass
+
+
+class From(Node):
+    pass
+
+
+class Yield(BaseExpression):
+    pass
+
+
+class _BaseElementImpl(Node):
+    pass
+
+
+class BaseElement(_BaseElementImpl):
+    pass
+
+
+class BaseDictElement(_BaseElementImpl):
+    pass
+
+
+class Element(BaseElement):
+    pass
+
+
+class DictElement(BaseDictElement):
+    pass
+
+
+class StarredElement(BaseElement, BaseExpression, _BaseParenthesizedNode):
+    pass
+
+
+class StarredDictElement(BaseDictElement):
+    pass
+
+
+class Tuple(BaseAssignTargetExpression, BaseDelTargetExpression):
+    pass
+
+
+class BaseList(BaseExpression):
+    pass
+
+
+class List(BaseList, BaseAssignTargetExpression, BaseDelTargetExpression):
+    pass
+
+
+class _BaseSetOrDict(BaseExpression):
+    pass
+
+
+class BaseSet(_BaseSetOrDict):
+    pass
+
+
+class Set(BaseSet):
+    pass
+
+
+class BaseDict(_BaseSetOrDict):
+    pass
+
+
+class Dict(BaseDict):
+    pass
+
+
+class CompFor(Node):
+    pass
+
+
+class CompIf(Node):
+    pass
+
+
+class BaseComp(BaseExpression):
+    pass
+
+
+class BaseSimpleComp(BaseComp):
+    pass
+
+
+class GeneratorExp(BaseSimpleComp):
+    pass
+
+
+class ListComp(BaseList, BaseSimpleComp):
+    pass
+
+
+class SetComp(BaseSet, BaseSimpleComp):
+    pass
+
+
+class DictComp(BaseDict, BaseComp):
+    pass
+
+
+class NamedExpr(BaseExpression):
+    pass
+
 
 # Statement
-class Statement(Node): pass
-class BaseSuite(Statement): pass
-class BaseStatement(Statement): pass
-class BaseSmallStatement(Statement): pass
-class Del(BaseSmallStatement): pass
-class Pass(BaseSmallStatement): pass
-class Break(BaseSmallStatement): pass
-class Continue(BaseSmallStatement): pass
-class Return(BaseSmallStatement): pass
-class ExpressionStatement(BaseSmallStatement): pass
-class _BaseSimpleStatement(Node): pass
-class SimpleStatementLine(_BaseSimpleStatement, BaseStatement): pass
-class SimpleStatementSuite(_BaseSimpleStatement, BaseSuite): pass
-class Else(Node): pass
-class BaseCompoundStatement(BaseStatement): pass
-class If(BaseCompoundStatement): pass
-class CompoundStatement(BaseSuite): pass
-class IndentedBlock(BaseSuite): pass
-class AsName(Node): pass
-class ExceptHandler(Node): pass
-class ExceptStarHandler(Node): pass
-class Catch(Node): pass
-class Finally(Node): pass
-class Try(BaseCompoundStatement): pass
-class TryStar(BaseCompoundStatement): pass
-class ImportStatement(BaseSmallStatement):    pass
-class ImportAlias(Node): pass
-class Import(ImportStatement): pass
-class ImportFrom(ImportStatement): pass
-class InclusionDirective(ImportStatement):    pass
-class IncludeDirective(ImportStatement):    pass
-
-class AssignTarget(Node): pass
-class Assign(BaseSmallStatement): pass
-class AnnAssign(BaseSmallStatement): pass
-class AugAssign(BaseSmallStatement): pass
-class Decorator(Node): pass
-
-class Declaration(BaseSmallStatement):    pass
-class Definition(BaseCompoundStatement): pass
-class DefinitionX(CompoundStatement):    pass
-
-class FunctionDef(Definition): pass
-class ClassDef(Definition): pass
-class StructDef(Definition):    pass
-class RecordDef(Definition):    pass
-class VariableDef(Definition):    pass
-class FieldDef(Definition):    pass
-class InterfaceDef(Definition):    pass
-class LocalVariableDef(Definition):    pass
-class TemplateDef(Definition):    pass
-class TypeParameterDef(Definition):   pass
-class TypeAlias(Definition): pass
-class TypedefDef(TypeAlias):    pass
-class PackageDef(Definition):    pass
-class ParameterDef(Definition):    pass
-class UnionDef(Definition):    pass
-
-class WithItem(Node): pass
-class With(BaseCompoundStatement): pass
-class Do(BaseCompoundStatement):     pass
-class For(BaseCompoundStatement): pass
-class While(BaseCompoundStatement): pass
-class Raise(BaseSmallStatement): pass
-class Assert(BaseSmallStatement): pass
-class NameItem(Node): pass
-class Global(BaseSmallStatement): pass
-class Nonlocal(BaseSmallStatement): pass
-class MatchPattern(_BaseParenthesizedNode): pass
-class Match(BaseCompoundStatement): pass
-class MatchCase(Node): pass
-class MatchValue(MatchPattern): pass
-class MatchSingleton(MatchPattern): pass
-class MatchSequenceElement(Node): pass
-class MatchStar(Node): pass
-class MatchSequence(MatchPattern): pass
-class MatchList(MatchSequence): pass
-class MatchTuple(MatchSequence): pass
-class MatchMappingElement(Node): pass
-class MatchMapping(MatchPattern): pass
-class MatchKeywordElement(Node): pass
-class MatchClass(MatchPattern): pass
-class MatchAs(MatchPattern): pass
-class MatchOrElement(Node): pass
-class MatchOr(MatchPattern): pass
-class TypeVar(Node): pass
-class TypeVarTuple(Node): pass
-class ParamSpec(Node): pass
-class TypeParam(Node): pass
-class TypeParameters(Node): pass
+class Statement(Node):
+    pass
 
 
-#==== added=====
+class BaseSuite(Statement):
+    pass
 
-class ImplicitNode(Node):    pass
+
+class BaseStatement(Statement):
+    pass
+
+
+class BaseSmallStatement(Statement):
+    pass
+
+
+class Del(BaseSmallStatement):
+    pass
+
+
+class Pass(BaseSmallStatement):
+    pass
+
+
+class Break(BaseSmallStatement):
+    pass
+
+
+class Continue(BaseSmallStatement):
+    pass
+
+
+class Return(BaseSmallStatement):
+    pass
+
+
+class ExpressionStatement(BaseSmallStatement):
+    pass
+
+
+class _BaseSimpleStatement(Node):
+    pass
+
+
+class SimpleStatementLine(_BaseSimpleStatement, BaseStatement):
+    pass
+
+
+class SimpleStatementSuite(_BaseSimpleStatement, BaseSuite):
+    pass
+
+
+class Else(Node):
+    pass
+
+
+class BaseCompoundStatement(BaseStatement):
+    pass
+
+
+class If(BaseCompoundStatement):
+    pass
+
+
+class CompoundStatement(BaseSuite):
+    pass
+
+
+class IndentedBlock(BaseSuite):
+    pass
+
+
+class AsName(Node):
+    pass
+
+
+class ExceptHandler(Node):
+    pass
+
+
+class ExceptStarHandler(Node):
+    pass
+
+
+class Catch(Node):
+    pass
+
+
+class Finally(Node):
+    pass
+
+
+class Try(BaseCompoundStatement):
+    pass
+
+
+class TryStar(BaseCompoundStatement):
+    pass
+
+
+class ImportStatement(BaseSmallStatement):
+    pass
+
+
+class ImportAlias(Node):
+    pass
+
+
+class Import(ImportStatement):
+    pass
+
+
+class ImportFrom(ImportStatement):
+    pass
+
+
+class InclusionDirective(ImportStatement):
+    pass
+
+
+class IncludeDirective(ImportStatement):
+    pass
+
+
+class AssignTarget(Node):
+    pass
+
+
+class Assign(BaseSmallStatement):
+    pass
+
+
+class AnnAssign(BaseSmallStatement):
+    pass
+
+
+class AugAssign(BaseSmallStatement):
+    pass
+
+
+class Decorator(Node):
+    pass
+
+
+class Declaration(BaseSmallStatement):
+    pass
+
+
+class Definition(BaseCompoundStatement):
+    pass
+
+
+class DefinitionX(CompoundStatement):
+    pass
+
+
+class FunctionDef(Definition):
+    pass
+
+
+class ClassDef(Definition):
+    pass
+
+
+class StructDef(Definition):
+    pass
+
+
+class RecordDef(Definition):
+    pass
+
+
+class VariableDef(Definition):
+    pass
+
+
+class FieldDef(Definition):
+    pass
+
+
+class InterfaceDef(Definition):
+    pass
+
+
+class LocalVariableDef(Definition):
+    pass
+
+
+class TemplateDef(Definition):
+    pass
+
+
+class TypeParameterDef(Definition):
+    pass
+
+
+class TypeAlias(Definition):
+    pass
+
+
+class TypedefDef(TypeAlias):
+    pass
+
+
+class PackageDef(Definition):
+    pass
+
+
+class ParameterDef(Definition):
+    pass
+
+
+class UnionDef(Definition):
+    pass
+
+
+class WithItem(Node):
+    pass
+
+
+class With(BaseCompoundStatement):
+    pass
+
+
+class Do(BaseCompoundStatement):
+    pass
+
+
+class For(BaseCompoundStatement):
+    pass
+
+
+class While(BaseCompoundStatement):
+    pass
+
+
+class Raise(BaseSmallStatement):
+    pass
+
+
+class Assert(BaseSmallStatement):
+    pass
+
+
+class NameItem(Node):
+    pass
+
+
+class Global(BaseSmallStatement):
+    pass
+
+
+class Nonlocal(BaseSmallStatement):
+    pass
+
+
+class MatchPattern(_BaseParenthesizedNode):
+    pass
+
+
+class Match(BaseCompoundStatement):
+    pass
+
+
+class MatchCase(Node):
+    pass
+
+
+class MatchValue(MatchPattern):
+    pass
+
+
+class MatchSingleton(MatchPattern):
+    pass
+
+
+class MatchSequenceElement(Node):
+    pass
+
+
+class MatchStar(Node):
+    pass
+
+
+class MatchSequence(MatchPattern):
+    pass
+
+
+class MatchList(MatchSequence):
+    pass
+
+
+class MatchTuple(MatchSequence):
+    pass
+
+
+class MatchMappingElement(Node):
+    pass
+
+
+class MatchMapping(MatchPattern):
+    pass
+
+
+class MatchKeywordElement(Node):
+    pass
+
+
+class MatchClass(MatchPattern):
+    pass
+
+
+class MatchAs(MatchPattern):
+    pass
+
+
+class MatchOrElement(Node):
+    pass
+
+
+class MatchOr(MatchPattern):
+    pass
+
+
+class TypeVar(Node):
+    pass
+
+
+class TypeVarTuple(Node):
+    pass
+
+
+class ParamSpec(Node):
+    pass
+
+
+class TypeParam(Node):
+    pass
+
+
+class TypeParameters(Node):
+    pass
+
+
+# ==== added=====
+
+
+class ImplicitNode(Node):
+    pass
+
 
 # Specifier
-class Specifier(Node):    pass
-class Auto(Specifier):    pass
-class BaseSpecifier(Specifier):    pass
-class ClassSpecifier(Specifier):    pass
-class AccessSpecifier(Specifier):    pass
-class EnumSpecifier(Specifier):    pass
-class StructSpecifier(Specifier):    pass
+class Specifier(Node):
+    pass
+
+
+class Auto(Specifier):
+    pass
+
+
+class BaseSpecifier(Specifier):
+    pass
+
+
+class ClassSpecifier(Specifier):
+    pass
+
+
+class AccessSpecifier(Specifier):
+    pass
+
+
+class EnumSpecifier(Specifier):
+    pass
+
+
+class StructSpecifier(Specifier):
+    pass
+
 
 # Reference
-class Reference(Expression):    pass
-class TypeReference(Reference):    pass
-class MemberRefence(Reference):    pass
-class NamespaceReference(Reference):    pass
-class OverloadedDeclRef(Reference):    pass
-class TemplateRef(Reference):    pass
+class Reference(Expression):
+    pass
+
+
+class TypeReference(Reference):
+    pass
+
+
+class MemberRefence(Reference):
+    pass
+
+
+class NamespaceReference(Reference):
+    pass
+
+
+class OverloadedDeclRef(Reference):
+    pass
+
+
+class TemplateRef(Reference):
+    pass
+
 
 # Attributes
-class AlignedAttribute:    pass
-class AsmAttribute:   pass
-class ConstAttr:    pass
-class VisibilityAttr:    pass
-class WarnUnusedResultAttr:    pass
-class FinalAttr:pass
-class OverrideAttr:    pass
-class PureAttr:    pass
-class UnexposedAttr:    pass
+class AlignedAttribute:
+    pass
 
 
-class DeclarationExpression(Expression):    pass
-class ParenthesizedExpression(Expression):    pass
-class Constructor(FunctionDef):    pass
-class MacroDef(Definition):    pass
-class Namespace(Node):    pass
-class ConstructorExpression(Call):    pass
+class AsmAttribute:
+    pass
 
-class ArgumentList(Node):    pass
-class Compare(Node):    pass
-class Keyword(Node):    pass
-class Arguments(Node):    pass
-class Error(Node):    pass
-class CatchClause(Node):    pass
-class Alias(Node):    pass
-class Symbol(Node):    pass
-class AssignTo(Symbol):    pass
-class Cast(Node):    pass
-class BuiltinType(Literal):    pass
 
-class DeclarationLoc(Declaration):    pass
-class Delete(Expression):    pass
-class Starred(Literal):    pass
-class Constant(Literal):    pass
-class Number(Literal):    pass
-class String(Literal):    pass
-class Catch(Statement):    pass
-class ComparisionOperation(Expression):    pass
-class UnaryAdd(UnaryOperation):    pass
-class UnarySubtract(UnaryOperation):    pass
-class Case(Statement):    pass
-class MatchSequence(Node):    pass
+class ConstAttr:
+    pass
+
+
+class VisibilityAttr:
+    pass
+
+
+class WarnUnusedResultAttr:
+    pass
+
+
+class FinalAttr:
+    pass
+
+
+class OverrideAttr:
+    pass
+
+
+class PureAttr:
+    pass
+
+
+class UnexposedAttr:
+    pass
+
+
+class DeclarationExpression(Expression):
+    pass
+
+
+class ParenthesizedExpression(Expression):
+    pass
+
+
+class Constructor(FunctionDef):
+    pass
+
+
+class MacroDef(Definition):
+    pass
+
+
+class Namespace(Node):
+    pass
+
+
+class ConstructorExpression(Call):
+    pass
+
+
+class ArgumentList(Node):
+    pass
+
+
+class Compare(Node):
+    pass
+
+
+class Keyword(Node):
+    pass
+
+
+class Arguments(Node):
+    pass
+
+
+class Error(Node):
+    pass
+
+
+class CatchClause(Node):
+    pass
+
+
+class Alias(Node):
+    pass
+
+
+class Symbol(Node):
+    pass
+
+
+class AssignTo(Symbol):
+    pass
+
+
+class Cast(Node):
+    pass
+
+
+class BuiltinType(Literal):
+    pass
+
+
+class DeclarationLoc(Declaration):
+    pass
+
+
+class Delete(Expression):
+    pass
+
+
+class Starred(Literal):
+    pass
+
+
+class Constant(Literal):
+    pass
+
+
+class Number(Literal):
+    pass
+
+
+class String(Literal):
+    pass
+
+
+class Catch(Statement):
+    pass
+
+
+class ComparisionOperation(Expression):
+    pass
+
+
+class UnaryAdd(UnaryOperation):
+    pass
+
+
+class UnarySubtract(UnaryOperation):
+    pass
+
+
+class Case(Statement):
+    pass
+
+
+class MatchSequence(Node):
+    pass
 
 
 # other
-class ConstructorDef(Definition):    pass
-class FriendDecl:    pass
+class ConstructorDef(Definition):
+    pass
 
-class AbstractFunctionDeclarator:   pass
-class As:    pass
-class AsPattern:    pass
-class AsPatternTarget:    pass
-class Asterisk:    pass
-class Async:    pass
 
-class Backslash:    pass
-class CatchFormalParameter:    pass
-class CatchType:    pass
-class ClassBody:    pass
-class ClassPattern:    pass
-class ClassTemplate:    pass
-class ClassTemplatePartial:    pass
-class Comprehension:    pass
-class ConditionalOperator:    pass
-class ConstCastExpr:    pass
-class ConstructorBody:    pass
-class ConversionFunction:    pass
-class BooleanLiteral:    pass
-class FunctionalCast:    pass
-class NullPointer:    pass
-class This:    pass
-class Typeid:    pass
-class DeclarationList:    pass
-class DefaultStmt:    pass
-class Destructor:    pass
-class DictPattern:    pass
-class Dimensions:    pass
-class DottedName:    pass
-class DynamicCastExpr:    pass
-class Enum:    pass
-class EnumBody:    pass
-class EnumConstant:    pass
+class FriendDecl:
+    pass
 
-class EnumeratorList:    pass
-class ExceptClause:    pass
-class Extends:    pass
-class FieldAccess:    pass
-class FieldIdentifier:    pass
-class FinallyClause:    pass
-class FormalParameter:    pass
-class FormalParameters:    pass
 
-class FunctionTemplate:    pass
-class IntegralType:    pass
-class Interface:    pass
-class InterfaceBody:    pass
+class AbstractFunctionDeclarator:
+    pass
 
-class Interpolation:    pass
-class LambdaParameters:    pass
-class LinkageSpec:    pass
-class ListPattern:    pass
-class MarkerAnnotation:    pass
-class Method:    pass
-class Modifiers:    pass
-class NamespaceIdentifier:    pass
-class New:    pass
-class Null:    pass
-class ObjectCreationExpression:    pass
-class PackExpansionExpr:    pass
-class Package:    pass
-class Pair:    pass
-class PointerDeclarator:    pass
-class Program:    pass
-class Public:    pass
-class QualifiedIdentifier:    pass
-class ReinterpretCastExpr:    pass
-class ScopedIdentifier:    pass
-class SizeOfPackExpr:    pass
-class SplatPattern:    pass
-class Static:    pass
-class StaticAssert:    pass
-class StaticCastExpr:    pass
-class StringFragment:    pass
-class StringLiteral:    pass
 
-class Superclass:    pass
-class Switch(Match):    pass
-class SwitchBlock(CompoundStatement):    pass
-class SwitchBlockStatementGroup:    pass
-class SwitchExpression:    pass
-class SwitchLabel(MatchPattern):    pass
-class Symbol:    pass
-class SystemLibString:    pass
-class TemplateNonTypeParameter:    pass
-class TemplateParameterList:    pass
-class TemplateTypeParameter:    pass
-class TypeAliasTemplateDecl: pass
-class TypeName:    pass
-class Underscore:    pass
+class As:
+    pass
 
-class UnexposedStmt:    pass
 
-class UnionPattern:    pass
-class UpdateExpression:    pass
-class Using:    pass
-class VoidType:    pass
+class AsPattern:
+    pass
+
+
+class AsPatternTarget:
+    pass
+
+
+class Asterisk:
+    pass
+
+
+class Async:
+    pass
+
+
+class Backslash:
+    pass
+
+
+class CatchFormalParameter:
+    pass
+
+
+class CatchType:
+    pass
+
+
+class ClassBody:
+    pass
+
+
+class ClassPattern:
+    pass
+
+
+class ClassTemplate:
+    pass
+
+
+class ClassTemplatePartial:
+    pass
+
+
+class Comprehension:
+    pass
+
+
+class ConditionalOperator:
+    pass
+
+
+class ConstCastExpr:
+    pass
+
+
+class ConstructorBody:
+    pass
+
+
+class ConversionFunction:
+    pass
+
+
+class BooleanLiteral:
+    pass
+
+
+class FunctionalCast:
+    pass
+
+
+class NullPointer:
+    pass
+
+
+class This:
+    pass
+
+
+class Typeid:
+    pass
+
+
+class DeclarationList:
+    pass
+
+
+class DefaultStmt:
+    pass
+
+
+class Destructor:
+    pass
+
+
+class DictPattern:
+    pass
+
+
+class Dimensions:
+    pass
+
+
+class DottedName:
+    pass
+
+
+class DynamicCastExpr:
+    pass
+
+
+class Enum:
+    pass
+
+
+class EnumBody:
+    pass
+
+
+class EnumConstant:
+    pass
+
+
+class EnumeratorList:
+    pass
+
+
+class ExceptClause:
+    pass
+
+
+class Extends:
+    pass
+
+
+class FieldAccess:
+    pass
+
+
+class FieldIdentifier:
+    pass
+
+
+class FinallyClause:
+    pass
+
+
+class FormalParameter:
+    pass
+
+
+class FormalParameters:
+    pass
+
+
+class FunctionTemplate:
+    pass
+
+
+class IntegralType:
+    pass
+
+
+class Interface:
+    pass
+
+
+class InterfaceBody:
+    pass
+
+
+class Interpolation:
+    pass
+
+
+class LambdaParameters:
+    pass
+
+
+class LinkageSpec:
+    pass
+
+
+class ListPattern:
+    pass
+
+
+class MarkerAnnotation:
+    pass
+
+
+class Method:
+    pass
+
+
+class Modifiers:
+    pass
+
+
+class NamespaceIdentifier:
+    pass
+
+
+class New:
+    pass
+
+
+class Null:
+    pass
+
+
+class ObjectCreationExpression:
+    pass
+
+
+class PackExpansionExpr:
+    pass
+
+
+class Package:
+    pass
+
+
+class Pair:
+    pass
+
+
+class PointerDeclarator:
+    pass
+
+
+class Program:
+    pass
+
+
+class Public:
+    pass
+
+
+class QualifiedIdentifier:
+    pass
+
+
+class ReinterpretCastExpr:
+    pass
+
+
+class ScopedIdentifier:
+    pass
+
+
+class SizeOfPackExpr:
+    pass
+
+
+class SplatPattern:
+    pass
+
+
+class Static:
+    pass
+
+
+class StaticAssert:
+    pass
+
+
+class StaticCastExpr:
+    pass
+
+
+class StringFragment:
+    pass
+
+
+class StringLiteral:
+    pass
+
+
+class Superclass:
+    pass
+
+
+class Switch(Match):
+    pass
+
+
+class SwitchBlock(CompoundStatement):
+    pass
+
+
+class SwitchBlockStatementGroup:
+    pass
+
+
+class SwitchExpression:
+    pass
+
+
+class SwitchLabel(MatchPattern):
+    pass
+
+
+class Symbol:
+    pass
+
+
+class SystemLibString:
+    pass
+
+
+class TemplateNonTypeParameter:
+    pass
+
+
+class TemplateParameterList:
+    pass
+
+
+class TemplateTypeParameter:
+    pass
+
+
+class TypeAliasTemplateDecl:
+    pass
+
+
+class TypeName:
+    pass
+
+
+class Underscore:
+    pass
+
+
+class UnexposedStmt:
+    pass
+
+
+class UnionPattern:
+    pass
+
+
+class UpdateExpression:
+    pass
+
+
+class Using:
+    pass
+
+
+class VoidType:
+    pass
+
 
 OPERATOR_MAP = {
     "AnnAssign": "=",
@@ -503,7 +1635,7 @@ KIND_MAP = {
     "_": Underscore,
     "_MatchAll__": MatchAll,
     "_MatchOne__": MatchOne,
-   "abstract_function_declarator": AbstractFunctionDeclarator,
+    "abstract_function_declarator": AbstractFunctionDeclarator,
     "AccessSpecDecl": AccessSpecifier,
     "Add": Add,
     "AddAssign": AddAssign,
@@ -1032,5 +2164,5 @@ KIND_MAP = {
     "}": Dict,
     "~": BitInvert,
     '"': Symbol,
-    None: BogusType,}
-
+    None: BogusType,
+}

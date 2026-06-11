@@ -58,5 +58,5 @@ class ASTExtension:
         elif isinstance(self, ast.Expr) and isinstance(self.value, ast.Name):
             signature = self.value.id
         else:
-            signature =  str(self)
+            signature = str(self)
         return signature

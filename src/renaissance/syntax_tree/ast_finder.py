@@ -58,6 +58,6 @@ class ASTFinder:
 def find_ast_type(ast_node, kind: type[Type]) -> Sequence:
     return [n for n in traverse(ast_node) if isinstance(n.ast_type(), kind)]
 
-def matches_kind(ast_node, kind: type[Type])  -> bool:
-    return isinstance(ast_node.ast_type(), kind)
 
+def matches_kind(ast_node, kind: type[Type]) -> bool:
+    return isinstance(ast_node.ast_type(), kind)
