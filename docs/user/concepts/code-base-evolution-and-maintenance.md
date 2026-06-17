@@ -11,7 +11,7 @@ This concept describes the software landscape that the repository targets: evolv
 A **code base** is changed to
 * fix bugs and security vulnerabilities,
 * add new features,
-* respond to external changes, including changes in APIs, frameworks, and OSes; obselescence of components; and advancements in programming languages, and
+* respond to external changes and obselescence of components, interfaces, and tooling, and
 * improve quality aspects, such as performance and maintainability.  
 
 A code base
