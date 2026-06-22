@@ -9,9 +9,10 @@ from renaissance.syntax_tree import ASTShower
 
 def refactor():
     if sys.argv[1] == "refactor":
+        refactoring = sys.argv[2]
+        files = [sys.argv[3]] if len(sys.argv) > 3 else PythonScanner().find_sources()
         print(f'Refactor {Path(".").resolve()}')
-        for file in PythonScanner().find_sources():
-            refactoring = sys.argv[2]
+        for file in files:
             PythonRefactoring.process(refactoring, file)
 
     if sys.argv[1] == "extract":
