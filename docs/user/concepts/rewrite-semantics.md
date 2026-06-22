@@ -29,7 +29,9 @@ Based on our experience with Renaissance that
 many features were never needed by high-quality transformations, 
 we have decided to keep the rules as simple as possible.
 In particular, 
-* we don't support corner cases but just throw an error, e.g., replacing the same node with text twice is an error even when the text is the same.
+* we don't support corner cases but just throw an error, e.g., 
+  * removing and replacing two overlapping sequences of nodes is treated the same as an error,
+  * replacing the same node with text twice is an error even when the text is the same.
 * we don't make the behaviour of changes configurable, e.g., whether prepending is [idempotent](https://en.wikipedia.org/wiki/Idempotence) is not under the control of the user.
 
 
@@ -39,7 +41,7 @@ We have the following rules to combine and commit the collected changes.
 
 As different changes cannot be applied to the same range of text,
 an error will be raised whenever such situation occurs.
-For AST-based pattern matching, this situation can only occur when replacements are applied to the same node and to the same sequence of nodes.
+For AST-based pattern matching, this situation can only occur when replacements are applied to the same node or to the same sequence of nodes.
 So when multiple replacements are affecting the same AST node(s) an error is raised.
 
 Figure 1.1 shows an example where different replacements are applied to the same AST node.
@@ -81,7 +83,7 @@ For AST-based pattern matching this may occur when a change associated with an A
 
 ![Change covered by another change](rewrite-semantics/rewrite-semantics-cover.png)
 
-*Figure 1.1 (CONCEPT-REWRITE-SEMANTICS-COVER): Example of overlapping sequences of AST nodes.*
+*Figure 1.3 (CONCEPT-REWRITE-SEMANTICS-COVER): Example of overlapping sequences of AST nodes.*
 
 </a>
 
@@ -94,3 +96,10 @@ For AST-based pattern matching this may occur when a change associated with an A
     * same node
 
 6. Appends and prepends at the same text location
+
+
+7. Prepend, around, and append
+
+The expected order in the modified source file is:
+
+prepend_text, around_before_text, AST Node text, around_after_text, append_text
