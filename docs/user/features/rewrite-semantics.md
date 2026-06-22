@@ -9,18 +9,36 @@ Define predictable and understandable semantics for collected and committed chan
 
 # Corner case: Covered, overlapping replacements
 
-Covered changes are hidden.
+Covered replacements are not applied to the source file.
 Overlapping replacements are considered an error.
-An error is raised even when the overlapping replacements are covered,
-and thus, as they are hidden, not observable in the modified source file.   
+
+Two interpretations are possible:
+1. Application-first interpretation:
+Since covered replacements are not applied, overlaps among covered replacements are irrelevant and do not result in an error.
+2. Validation-first interpretation:
+Since overlapping replacements are inherently inconsistent, any overlap — regardless of whether replacements are covered — is considered an error.
+
+**Decision**:
+
+This framework adopts the validation-first interpretation.
+Covered replacements are excluded from application, but included in validation.
+Consequently, any overlap among replacements results in an error.
 
 # Corner case: Identical changes
 
-The behaviour of identical changes is as follows:
-* Removing the same AST node more than once is considered an error.
-* Replacing the same AST node more than once is considered an error, even when the replacement text is the same.
-* Applying append, prepend, and around multiple times with the same text, results in multiple inserts of the same text.
+The behaviour of applying an operator multiple times with the same data can be specified as
+1. error: the combination of changes is not accepted and an error is raised. 
+1. repeat-apply: the combination of changes is accepted and the operator is applied multiple times.
+1. [idempotent](https://en.wikipedia.org/wiki/Idempotence): 
+   the combination of changes is accepted and the operator is only applied once.
 
+**Decision**:
+
+This framework adopts the error behaviour for replacements and the repeat-apply behaviour for insertions.
+In other words, removing the same AST node more than once is considered an error;
+replacing the same AST node more than once is considered an error, even when the replacement text is the same; and applying append, prepend, and around multiple times on the same AST node with the same text, will result in multiple inserts linked to that AST node of the same text. 
+
+ 
 
 # Scenario: Covered changes
 
