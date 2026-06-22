@@ -11,7 +11,7 @@ Define predictable and understandable semantics for collected and committed chan
 
 Covered changes are hidden.
 Overlapping replacements are considered an error.
-An error should be raised even when the overlapping replacements are covered,
+An error is raised even when the overlapping replacements are covered,
 and thus, as they are hidden, not observable in the modified source file.   
 
 # Corner case: Identical changes
@@ -19,15 +19,8 @@ and thus, as they are hidden, not observable in the modified source file.
 The behaviour of identical changes is as follows:
 * Removing the same AST node more than once is considered an error.
 * Replacing the same AST node more than once is considered an error, even when the replacement text is the same.
-* Applying append, prepend and around multiple times with the same text, results in multiple inserts of the same text.
+* Applying append, prepend, and around multiple times with the same text, results in multiple inserts of the same text.
 
-
-## Corner cases for test the rewrite seamatics
-
-1. AST node spanning the whole file, i.e., the complete range.
-2. AST beginning at the start of the file, i.e., the range starts at the first character.
-3. AST stopping at the end of the file, i.e., the range ends at the last character.
-   Last character might be End-Of-File (`EOF`) instead End-Of-Line (`EOL`). 
 
 # Scenario: Covered changes
 
@@ -144,9 +137,6 @@ and	| a descendant of that node
 When 	| that node is prepended by a concatenation of that string with "node"
 and	| that descendant is prepended by a concatenation of that string with "descendant"
 Then 	| in the modified source file the concatenation of that string with "node" occurs before the concatenation of that string with "descendant"  
-
-Discussion:
-* Alternative for then step: In the transformed source file the concatenation prepended before that node occurs before the concatenation prepended before that descendant
 
 # Scenario: Combination of multiple appends
 
