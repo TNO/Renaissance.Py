@@ -204,3 +204,31 @@ test_taut_doubles_class_new = """class test_abcdxwid(unittest.TestCase):
             self.assertEqual(ABCDxCONTEXT.abcdxcontext.method_called("start"), 1)
             self.assertEqual(ABCDxCONTEXT.abcdxcontext.method_called("finish"), 1)
 """
+test_taut_doubles_class_single_line = """class test_abcdxwid(unittest.TestCase):
+    def test_readout_is_ok(self):
+        self.doubles.append(TAUT.TestDoubles(module=ABCDxWID.abcdwid, get_wid_readouts=stub_get_wid_readouts))
+        id = ABCDxBASIC.id
+        read = True
+        ABCDxABxCommonFunctions.CLEAR_CALLED = False
+        self.assert_raises(
+            ABCD.Error(ABCDxERR.ABCD_SYS_ERR, "error message"),
+            ABCDxABxREADLib.read,
+            id,
+            read,
+        )
+        self.assertEqual(ABCDxCONTEXT.abcdxcontext.method_called("start"), 0)
+"""
+test_taut_doubles_class_single_line_new = """class test_abcdxwid(unittest.TestCase):
+    def test_readout_is_ok(self):
+        with patch.object(ABCDxWID.abcdwid, 'get_wid_readouts', stub_get_wid_readouts):
+            id = ABCDxBASIC.id
+            read = True
+            ABCDxABxCommonFunctions.CLEAR_CALLED = False
+            self.assert_raises(
+                ABCD.Error(ABCDxERR.ABCD_SYS_ERR, "error message"),
+                ABCDxABxREADLib.read,
+                id,
+                read,
+            )
+            self.assertEqual(ABCDxCONTEXT.abcdxcontext.method_called("start"), 0)
+"""
