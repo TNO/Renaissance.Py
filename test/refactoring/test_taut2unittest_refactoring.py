@@ -295,6 +295,12 @@ class TestTaut2Unittest:
         subject.convert_testdoubles_fun()
         result = subject.apply_to_string()
         assert_that(result, is_(tst_testdoubles.test_taut_doubles_class_new))
+        
+    def test_convert_testdoubles_func_single_line(self, mocker):
+        subject = self._create(mocker, tst_testdoubles.test_taut_doubles_class_single_line)
+        subject.convert_testdoubles_fun()
+        result = subject.apply_to_string()
+        assert_that(result, is_(tst_testdoubles.test_taut_doubles_class_single_line_new))
 
     def test_setup_common(self, mocker):
         subject = self._create(mocker, tst_class.set_up_common)
