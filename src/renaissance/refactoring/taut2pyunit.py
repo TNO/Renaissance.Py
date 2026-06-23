@@ -489,9 +489,12 @@ ImprovedStub.store_args = {}
             replace_pattern = (
                 match.signature[: func_header_index + 3] + textwrap.indent(repl, "    ") + match.signature[func_header_index + 3 :]
             )
+            double_pattern2 = f"    self.doubles.append(TAUT.TestDoubles(module={match['$mod']}, {match['$e']}={match['$f']}))\n"
             replace_pattern = replace_pattern.replace(textwrap.indent(double_pattern, "    "), "")
             replace_pattern = replace_pattern.replace(textwrap.indent(double_pattern1, "    "), "")
+            replace_pattern = replace_pattern.replace(textwrap.indent(double_pattern2, "    "), "")
             self.replace(replace_pattern, match.nodes, False, False)
+        self.commit()
 
     def refactor_testdoubles_fun(self):
         """this is used for unittest, where the function pattern is not found in a class"""
