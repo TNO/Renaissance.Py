@@ -24,20 +24,38 @@ This framework adopts the validation-first interpretation.
 Covered replacements are excluded from application, but included in validation.
 Consequently, any overlap among replacements results in an error.
 
-# Corner case: Identical changes
+# Corner case: Identical replacements
 
-The behaviour of applying an operator multiple times with the same data can be specified as
-1. error: the combination of changes is not accepted and an error is raised. 
-1. repeat-apply: the combination of changes is accepted and the operator is applied multiple times.
+Replacing the same AST node with different texts is not possible.
+In that case, an error must be raised.
+
+For the corner case of replacing the same AST node more than once with the same text, 
+different behaviour are possible.
+1. error: the combination of replacements is considered invalid and an error is raised. 
 1. [idempotent](https://en.wikipedia.org/wiki/Idempotence): 
-   the combination of changes is accepted and the operator is only applied once.
+   the combination of replacements is considered valid and the node is replaced by the text.
+1. warning: the combination of replacements is considered suspicious, a warning is raised while the node is replaced by the text.
 
 **Decision**:
 
-This framework adopts the error behaviour for replacements and the repeat-apply behaviour for insertions.
-In other words, removing the same AST node more than once is considered an error;
-replacing the same AST node more than once is considered an error, even when the replacement text is the same; and applying append, prepend, and around multiple times on the same AST node with the same text, will result in multiple inserts linked to that AST node of the same text. 
+This framework adopts the error behaviour for replacements. 
+In other words, replacing the same AST node more than once is considered an error, even when the replacement text is the same.
+Note that as this framework considers removing an AST node equal to replacing that AST node with an empty string, 
+removing the same AST node more than once is considered an error.
 
+# Corner case: Identical insertions
+
+Prepending, appending, and surrounding different texts before, around, and after an AST node is possible.
+
+For the corner case of using the same insertion operator on the same AST node with the same text more than once, 
+different behaviour are possible.
+1. repeat-apply: the text is inserted more than once - as often as the insertion operator is used.
+1. [idempotent](https://en.wikipedia.org/wiki/Idempotence): the text is inserted only once.
+
+**Decision**:
+This framework adopts the repeat-apply behaviour for all insertions.
+In other words, applying append, prepend, and surround multiple times on the same AST node, 
+will always result in multiple inserts linked to that AST node, even for identical texts. 
  
 
 # Scenario: Covered changes
@@ -60,7 +78,7 @@ and | an AST   extracted from that source file without errors
 and | a node   of that AST
 and | a sequence of descendant nodes of that node
 When | that node is replaced by a text
-and | Rewrites,   i.e., append, prepend, around, and replace, are performed on that sequence of descendant nodes
+and | Rewrites,   i.e., append, prepend, surround, and replace, are performed on that sequence of descendant nodes
 Then | in the modified source file that node is replaced by the given text and all rewrites   on that sequence of descendant nodes are not performed / hidden
 
 TODO: This description is only valid when a node is NOT considered a decendant of itself.
@@ -88,7 +106,7 @@ and	| two sequences of nodes of that AST that partly overlap
 When 	| both sequences are replaced with a string
 Then 	| an error with the text "overlapping changes are forbidden" is produced   
 
-# Scenario: Combination of prepend and around
+# Scenario: Combination of prepend and surround
 
 Three cases
 1. on the same node
@@ -96,16 +114,16 @@ Three cases
 3. on unrelated nodes
 
 ## Case 1
-Prepend before around
+Prepend before surround
 
 ## Case 2
-* Around of node always before prepend of descendant of that node
-* Prepend of node always before around of descendant of that node
+* Surround of node always before prepend of descendant of that node
+* Prepend of node always before surround of descendant of that node
 
 ## Case 3
 No interaction possible, so nothing to specify
 
-# Scenario: Combination of append and around
+# Scenario: Combination of append and surround
 
 Three cases
 1. on the same node
@@ -113,11 +131,11 @@ Three cases
 3. on unrelated nodes
 
 ## Case 1
-Append after around
+Append after surround
 
 ## Case 2
-* Around of node always after append of descendant of that node
-* Append of node always after around of descendant of that node
+* surround of node always after append of descendant of that node
+* Append of node always after surround of descendant of that node
 
 ## Case 3
 No interaction possible, so nothing to specify
@@ -182,9 +200,9 @@ When 	| that node is append by a concatenation of that string with "node"
 and	| that descendant is appended by a concatenation of that string with "descendant"
 Then 	| in the modified source file the concatenation of that string with "node" occurs after the concatenation of that string with "descendant"  
 
-# Scenario: Combination of multiple arounds
+# Scenario: Combination of multiple surrounds
 
-Around has before and after text.
+Surround has before and after text.
 
 Three cases
 1. on the same node
@@ -193,9 +211,9 @@ Three cases
 
 ## Case 1
 
-The order reflects the order of calling around. 
+The order reflects the order of calling surround. 
 Final order in modified source file: 
-Around Before N - ... - Around Before 2 - Around Before 1 - AST Node - Around After 1 - Around After 2 - ... - Around After N
+Surround Before N - ... - Surround Before 2 - Surround Before 1 - AST Node - Surround After 1 - Surround After 2 - ... - Surround After N
 
 ## Case 2
 
