@@ -1,10 +1,9 @@
 import pytest
 import tree_sitter_cpp as tscpp
 import tree_sitter_python as tspython
-from hamcrest import *
+from hamcrest import assert_that, has_length
 
 from renaissance.impl.tree_sitter.adapter import TreeSitterAdapter
-from renaissance.impl.types import Statement
 from renaissance.syntax_tree.match_finder import match_pattern
 
 

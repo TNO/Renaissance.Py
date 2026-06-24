@@ -1,5 +1,5 @@
 import pytest
-from hamcrest import has_length, greater_than_or_equal_to
+from hamcrest import has_length
 from hamcrest.core import assert_that
 
 from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory

@@ -1,4 +1,3 @@
-import pytest
 from hamcrest import assert_that, is_
 from tree_sitter import Language, Parser
 import tree_sitter_python as tspython

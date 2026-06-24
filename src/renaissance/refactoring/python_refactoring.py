@@ -7,7 +7,7 @@ from termcolor import colored
 from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.impl.python.factory import PythonPatternFactory, PythonFactory
 from renaissance.impl.python.util import to_str
-from renaissance.syntax_tree import ASTFactory, ASTProcessor
+from renaissance.syntax_tree import ASTProcessor
 from renaissance.syntax_tree.match_finder import match_pattern
 from renaissance.utils.text_utils import snake_case
 

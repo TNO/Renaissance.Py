@@ -6,15 +6,12 @@ from hamcrest import (
     assert_that,
     has_length,
     is_,
-    not_none,
     empty,
     is_not,
-    greater_than,
     less_than,
     raises,
     calling,
 )
-from marshmallow.utils import is_generator
 
 from renaissance.impl.clang import ClangASTNode, CPatternFactory
 from renaissance.impl.python.rst_node import PythonRstNode
@@ -254,7 +251,7 @@ class TestMatchTree:
         assert_that(matches, has_length(1))
         assert_that(matches[0].expansions["$name"][0], is_("TestExample"))
 
-    def test_find_all_in_python_arg_list_with_expansion(self):
+    def test_find_all_in_python_arg_list_with_expansion1(self):
         atu = self.factory.create_from_text("class klass: pass", "test_file.py")
         statement = self.pattern_factory.create_statements("assertEqual(1,2,34,5,6,7,7,8)")
         pattern = self.pattern_factory.create_statements("assertEqual($$args)")
@@ -262,7 +259,7 @@ class TestMatchTree:
         assert_that(matches, has_length(1))
         assert_that(matches[0].expansions["$$args"], is_not(empty()))
 
-    def test_find_all_in_python_arg_list_with_expansion(self):
+    def test_find_all_in_python_arg_list_with_expansion2(self):
         atu = self.factory.create_from_text("class klass:\n  def fun(a,b,c,d,f): pass", "test_file.py")
         pattern = self.pattern_factory.create_statements("def fun($$args): pass")
         matches = match_pattern(atu.children, pattern)
@@ -294,7 +291,7 @@ class TestMatchTree:
         matches = MatchFinder.match_pattern(atu.children, kwargs)
         assert_that(matches, has_length(1))
 
-    def test_match_pattern_for_parameterized_finds_one_match(self):
+    def test_match_pattern_for_parameterized_finds_one_match1(self):
         code = textwrap.dedent("""
         from parameterized import parameterized
 
@@ -309,7 +306,7 @@ class TestMatchTree:
         found = match_pattern(atu.children, unittest)
         assert_that(found, has_length(1))
 
-    def test_match_pattern_for_parameterized_finds_one_match(self):
+    def test_match_pattern_for_parameterized_finds_one_match2(self):
         code = textwrap.dedent("""
         from parameterized import parameterized
 

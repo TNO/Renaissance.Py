@@ -1,4 +1,3 @@
-import hamcrest
 from hamcrest import assert_that, is_
 
 from renaissance.impl.types import Name

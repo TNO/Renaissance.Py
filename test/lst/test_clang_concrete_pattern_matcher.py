@@ -1,6 +1,4 @@
-from pathlib import Path
 
-import clang
 from hamcrest import *
 
 import pytest

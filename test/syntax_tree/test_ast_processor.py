@@ -1,4 +1,3 @@
-from pathlib import Path
 
 from hamcrest import assert_that, is_
 

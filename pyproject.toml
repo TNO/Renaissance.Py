@@ -53,6 +53,7 @@ lint = [
     "black>=24.0",
     "autopep8>=2.0",
     "pytest-black>=0.6",
+    "ruff>=0.15.19",
 ]
 dev = [
     {include-group = "test"},
@@ -79,6 +80,12 @@ omit = ["test/*", "features/*"]
 [tool.coverage.report]
 show_missing = true
 skip_covered = false
+
+[tool.ruff.lint.per-file-ignores]
+"**/conftest.py" = ["F401"]
+
+[tool.ruff.lint]
+ignore = ["E731"]
 
 [tool.black]
 line-length = 140

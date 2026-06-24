@@ -1,9 +1,3 @@
-from python import (
-    test_python_matcher,
-    test_python_astshower,
-    test_python_ast_node_ref,
-    test_ast_factory,
-)
 
 
 def some_old_fun():

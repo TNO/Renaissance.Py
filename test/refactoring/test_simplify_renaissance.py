@@ -1,7 +1,6 @@
 import textwrap
 
-import pytest
-from hamcrest import assert_that, contains_string, ends_with, is_, not_
+from hamcrest import assert_that, contains_string, is_, not_
 
 from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.refactoring.simplify_renaissance import SimplifyRenaissance

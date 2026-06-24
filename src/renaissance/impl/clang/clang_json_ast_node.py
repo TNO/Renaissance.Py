@@ -123,7 +123,7 @@ class ClangJsonASTNode(ASTNode):
                     )
                     insert_child._children = []
                     self.__inserted_children.append(insert_child)
-            if not "TypeRef" in [inner["kind"] for inner in self.node.get("inner", [])]:
+            if "TypeRef" not in [inner["kind"] for inner in self.node.get("inner", [])]:
                 # deep clone the type node and remove the parentheses
                 base_type = type.get("desugaredQualType", declared_type).replace("(", "").replace(")", "").strip()
                 if base_type in CPPUtils.RESERVED_KEYWORDS:
@@ -181,7 +181,7 @@ class ClangJsonASTNode(ASTNode):
             if len(extra_args) > 0 and re.match(r".*(g\+\+|gcc|cl\.exe).*", extra_args[0]):
                 extra_args = extra_args[1:]
             # add clang compiler if it is not in the arguments
-            if len(extra_args) == 0 or not "clang" in extra_args[0]:
+            if len(extra_args) == 0 or "clang" not in extra_args[0]:
                 clang = "clang++" if file_path.suffix == ".cpp" else "clang"
                 extra_args = [clang, *extra_args]
 
@@ -190,9 +190,9 @@ class ClangJsonASTNode(ASTNode):
                 if str(file_path) in command:
                     command.remove(str(file_path))
                 compile = "-xc++" if file_path.suffix == ".cpp" else "-xc"
-                if not compile in command:
+                if compile not in command:
                     command.append(compile)
-                if not "-" in command:
+                if "-" not in command:
                     command.append("-")
                 # command.append('-main-file-name=' + str(file_path))
                 input = code
@@ -282,7 +282,7 @@ class ClangJsonASTNode(ASTNode):
             if (not self._is_statement_or_declaration()) and (self.parent and self.parent.ast_type in STMT_PARENTS):
                 content = self.root.binary_file_content()
                 while (
-                    end_offset < len(content) and not content[end_offset - 1] in b";"
+                    end_offset < len(content) and content[end_offset - 1] not in b";"
                 ):  # Why use 'in' when list has one element, i.e. ';'?
                     end_offset += 1
             return end_offset
@@ -420,7 +420,7 @@ class ClangJsonASTNode(ASTNode):
     def _remove_ids(json_node):
         if not isinstance(json_node, dict):
             return json_node
-        return {k: v for k, v in json_node.items() if not k in ID_TAGS}
+        return {k: v for k, v in json_node.items() if k not in ID_TAGS}
 
     @staticmethod
     def _is_reference(json_node):

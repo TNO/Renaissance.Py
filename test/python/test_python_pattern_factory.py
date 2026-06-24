@@ -1,4 +1,3 @@
-import ast
 
 import pytest
 from hamcrest import assert_that, has_length, is_, is_in, instance_of

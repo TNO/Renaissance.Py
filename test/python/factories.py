@@ -1,12 +1,10 @@
 import ast
-from ast import AST
 from itertools import product
 
 from renaissance.impl.python.factory import PythonFactory
 from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.impl.python.cst_node import PythonCstNode
 from renaissance.impl.tree_sitter.lst import LSTNode
-from renaissance.syntax_tree.ast_factory import ASTFactory
 
 
 class Factories:

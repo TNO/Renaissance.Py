@@ -7,7 +7,7 @@ from typing import Any, Optional, Sequence, override
 import clang.native
 from clang.cindex import Config, Index, TypeKind, CursorKind
 
-from renaissance.impl.clang.cpp_utils import get_ancestor, matches_kind
+from renaissance.impl.clang.cpp_utils import matches_kind
 from renaissance.impl.types import (
     MatchAll,
     MatchOne,
@@ -259,7 +259,7 @@ class ClangASTNode(ASTNode):
                 and self.ast_type not in [MacroDef]
             ):
                 content = self.root.binary_file_content()
-                while end_offset < len(content) and not content[end_offset - 1] in b";":
+                while end_offset < len(content) and content[end_offset - 1] not in b";":
                     end_offset += 1
             return end_offset
         except:

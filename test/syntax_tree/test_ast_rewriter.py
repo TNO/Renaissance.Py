@@ -1225,7 +1225,7 @@ class TestSyntaxAwareAdjacentComposition:
         rewriter.insert_before("++j;", match.expansions["$stmt2"])
 
         # verify
-        assert "void f(int i, int j) { i++;++i;++j;j++; }" == rewriter.apply_to_string(), f"Unexpected replacement"
+        assert "void f(int i, int j) { i++;++i;++j;j++; }" == rewriter.apply_to_string(), "Unexpected replacement"
 
     @pytest.mark.parametrize("name, factory", Factories.factories)
     @pytest.mark.skip("TODO: implement accordingly")
