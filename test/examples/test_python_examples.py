@@ -1,7 +1,5 @@
-import pytest
 from hamcrest import assert_that, is_
 
-from rejuvenation.python_ast_example import python_ast_smoke_test
 from rejuvenation.python_cst_example import python_cst_smoke_test
 from rejuvenation.python_lst_example import python_lst_smoke_test
 from rejuvenation.python_rst_example import python_rst_smoke_test

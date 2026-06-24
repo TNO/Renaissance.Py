@@ -99,7 +99,7 @@ class TextUtils:
 
         indent = offset - 1
         while indent > 0:
-            if not content[indent] in b" \t":
+            if content[indent] not in b" \t":
                 break
             indent -= 1
         return offset - indent - 1

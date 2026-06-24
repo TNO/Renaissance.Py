@@ -1,6 +1,6 @@
 from renaissance.impl.tree_sitter.lst import LST
 
-from renaissance.utils.text_utils import TextUtils, signature2id
+from renaissance.utils.text_utils import signature2id
 
 
 class LstVisualizer:

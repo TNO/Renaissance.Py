@@ -147,7 +147,7 @@ class CPatternFactory:
         parameters = [
             par
             for par in CPatternFactory._get_keywords_from_text(text)
-            if not par in types and not any(par in ed for ed in extra_declarations)
+            if par not in types and not any(par in ed for ed in extra_declarations)
         ]
         return self._create_body(text, types, parameters, extra_declarations, kind)
 

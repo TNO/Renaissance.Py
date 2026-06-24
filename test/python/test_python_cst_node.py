@@ -1,4 +1,3 @@
-import ast
 import textwrap
 from pathlib import Path
 
@@ -6,10 +5,8 @@ import pytest
 from hamcrest import (
     has_length,
     assert_that,
-    is_in,
     is_,
     contains_string,
-    empty,
     is_not, instance_of,
 )
 from libcst import ParserSyntaxError
@@ -19,8 +16,7 @@ import targets
 from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
 from renaissance.impl.python.cst_node import PythonCstNode
 from renaissance.impl.types import *
-from renaissance.syntax_tree import ASTFactory, ASTShower, ast_shower
-from renaissance.utils.ast_utils import traverse
+from renaissance.syntax_tree import ASTShower
 
 
 class TestPythonCstNode:

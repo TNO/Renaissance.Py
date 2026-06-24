@@ -7,7 +7,7 @@ from c_cpp.factories import Factories
 from renaissance.impl.clang import CPatternFactory, ClangASTNode
 from renaissance.impl.clang.c_pattern_factory import derive_header_text
 from renaissance.impl.types import DeclarationExpression, MatchOne, VariableDef, FunctionDef, CompoundStatement, \
-    Expression, Declaration
+    Declaration
 from renaissance.syntax_tree import ASTShower
 from renaissance.syntax_tree.ast_finder import find_ast_type
 

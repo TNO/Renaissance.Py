@@ -29,7 +29,7 @@ class ClangAdapter:
             kind = cursor.kind.name
         except Exception as e:
             print(e.__cause__)
-            kind = f"invalid kind"
+            kind = "invalid kind"
         signature = cursor.spelling or cursor.displayname or kind
 
         is_ph, coerced_type, ph_name = detect_placeholder(signature, kind)

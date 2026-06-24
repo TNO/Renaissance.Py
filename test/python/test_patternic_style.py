@@ -7,7 +7,6 @@ from renaissance.impl.types import *
 from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.impl.python.factory import PythonPatternFactory, PythonFactory
 from renaissance.impl.types import MatchOne, MatchAll, TranslationUnit
-from renaissance.syntax_tree import ASTFactory
 from renaissance.syntax_tree.match_finder import is_match
 
 

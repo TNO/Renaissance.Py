@@ -2,13 +2,13 @@ import ast
 import textwrap
 
 import pytest
-from hamcrest import assert_that, is_, is_not, empty, has_length
+from hamcrest import assert_that, is_, empty, has_length
 
 from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
 from renaissance.impl.python.rst_node import PythonRstNode
 
 from renaissance.syntax_tree import PatternMatch
-from renaissance.syntax_tree.match_finder import find_variants, match_pattern
+from renaissance.syntax_tree.match_finder import match_pattern
 
 
 class TestPatternMatch:

@@ -1,6 +1,5 @@
 from pathlib import Path
 
-from unittest.mock import MagicMock
 from hamcrest import assert_that, is_not, empty
 
 import targets

@@ -8,7 +8,6 @@ from renaissance.impl.clang import ClangASTNode, CPPPatternFactory
 from renaissance.impl.clang.clang_json_ast_node import ClangJsonASTNode
 from renaissance.impl.types import Constructor, Method, TypeReference
 from renaissance.syntax_tree import (
-    ASTFinder,
     ASTRefactorActions,
     RecipeASTProcessor,
     recipe_step,
@@ -253,7 +252,7 @@ class MyRefactor:
                 if matches_kind(parent, Constructor):
                     # remove constructor header count argument
                     ast_processor.replace(r"ListViewCustom($container)", constructor_call)
-                    repl = ",\n    ".join(f"std:make_unique<ListViewHeader>(*this)" for _ in range(header_count))
+                    repl = ",\n    ".join("std:make_unique<ListViewHeader>(*this)" for _ in range(header_count))
                     ast_processor.insert_after(", m_headers {" + repl + "}", constructor_call, True, False)
                 else:
                     var = parent.name

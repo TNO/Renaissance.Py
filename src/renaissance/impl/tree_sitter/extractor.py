@@ -1,7 +1,6 @@
 import os
 import networkx
 from pathlib import Path
-from typing import List
 
 from renaissance.impl.tree_sitter.adapter import TreeSitterAdapter
 
