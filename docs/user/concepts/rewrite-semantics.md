@@ -23,17 +23,49 @@ Three kind of insertions are supported, i.e., prepend, append, and around, that 
 2. collect changes,
 3. commit changes.
 
-## Rules for combining changes
+## General rules for combining changes
+
+### Repeated changes
+
+In the collected changes, the same changes might occur more than once.
+To give some examples,
+* a node is removed multiple times, and
+* a node is prepended with the same text multiple times.
+
+The behaviour of a change could be [idempotent](https://en.wikipedia.org/wiki/Idempotence) or not.
+Furthermore, who makes this decision? The user or the framework?
+
+### Impossible combinations
+
+The combination of some changes is not possible.
+For example, it is impossible to replace the same AST node with different texts.
+The following behaviours are possible when such a situation occurs:
+* **keep-first**: keep the first collected change and ignore later ones 
+* **keep-last**: drop earlier collected changes and keep the last one
+* **reject**: reject the combination and stop processing.
+
+Diagnostics may be produced in addition to the selected behaviour
+(e.g., warnings for keep-first/keep-last, errors for reject).
+
+The reject behaviour is independent of the order in which changes are collected,
+whereas keep-first and keep-last depend on that order.
+
+
+### decision
 
 Based on our experience with Renaissance that 
 many features were never needed by high-quality transformations, 
 we have decided to keep the rules as simple as possible.
-In particular, 
-* we don't support corner cases but just throw an error, e.g., 
-  * removing and replacing two overlapping sequences of nodes is treated the same as an error,
-  * replacing the same node with text twice is an error even when the text is the same.
-* we don't make the behaviour of changes configurable, e.g., whether prepending is [idempotent](https://en.wikipedia.org/wiki/Idempotence) is not under the control of the user.
 
+1. The behaviour of changes is not configurable.
+2. None of the changes is [idempotent](https://en.wikipedia.org/wiki/Idempotence).
+3. Impossible changes are rejected.
+
+As a consequence, we don't support corner cases but just throw an error, e.g., 
+  * replacing the same node with text twice is an error even when the text is the same; and
+  * removing two overlapping sequences of nodes is treated the same as replacing them and thus results in an error;
+
+## Particular combinations
 
 We have the following rules to combine and commit the collected changes.
 
@@ -98,8 +130,8 @@ For AST-based pattern matching this may occur when a change associated with an A
 6. Appends and prepends at the same text location
 
 
-7. Prepend, around, and append
+7. Prepend, surround, and append
 
 The expected order in the modified source file is:
 
-prepend_text, around_before_text, AST Node text, around_after_text, append_text
+prepend_text, surround_before_text, AST Node text, surround_after_text, append_text

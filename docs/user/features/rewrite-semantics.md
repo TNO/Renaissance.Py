@@ -27,8 +27,6 @@ Consequently, any overlap among replacements results in an error.
 # Corner case: Identical replacements
 
 Replacing the same AST node with different texts is not possible.
-In that case, an error must be raised.
-
 For the corner case of replacing the same AST node more than once with the same text, 
 different behaviours are possible:
 1. error: the combination of replacements is considered invalid and an error is raised. 
