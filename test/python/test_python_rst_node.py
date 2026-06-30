@@ -147,6 +147,7 @@ class Parent:
 
         assert_that("\n" + it.signature + "\n", is_(ann_fun))
 
+    @pytest.mark.slow
     @given(code=hypothesmith.from_node(libcst.BaseStatement))
     @settings(max_examples=50)
     def test_from_cst_returns_statement(self, code):

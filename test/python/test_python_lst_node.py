@@ -21,6 +21,7 @@ class TestPythonLstNode:
         target = self.factory.create_from_text("x   =  1")
         assert_that(src, is_(target))
 
+    @pytest.mark.slow
     @given(code=hypothesmith.from_node(libcst.BaseStatement))
     @settings(max_examples=500)
     def test_from_cst_returns_statement(self, code):
