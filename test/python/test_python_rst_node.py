@@ -11,9 +11,9 @@ from hamcrest import (
     contains_string,
     empty, instance_of,
 )
-from hypothesis import given, settings
+from hypothesis import given, settings, HealthCheck
 
-import targets
+import features.targets as targets
 from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
 from renaissance.impl.types import *
@@ -147,9 +147,9 @@ class Parent:
 
         assert_that("\n" + it.signature + "\n", is_(ann_fun))
 
-    @pytest.mark.slow
+    @pytest.mark.hypothesisslow
     @given(code=hypothesmith.from_node(libcst.BaseStatement))
-    @settings(max_examples=50)
+    @settings(max_examples=50, suppress_health_check=HealthCheck.all())
     def test_from_cst_returns_statement(self, code):
         reject_unsupported_code(code)
         factory = PythonFactory(PythonRstNode)

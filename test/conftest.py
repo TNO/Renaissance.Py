@@ -3,7 +3,7 @@ import pytest
 
 def pytest_addoption(parser):
     parser.addoption(
-        "--runslow",
+        "--run-slow-hypothesis",
         action="store_true",
         default=False,
         help="Run slow tests",
@@ -11,12 +11,12 @@ def pytest_addoption(parser):
 
 
 def pytest_configure(config):
-    config.addinivalue_line("markers", "slow: mark test as slow to run (usually a hypothesis test)")
+    config.addinivalue_line("markers", "hypothesisslow: mark test as a slow hypothesis test")
 
 
 def pytest_collection_modifyitems(config, items):
-    if not config.getoption("--runslow"):
-        skip = pytest.mark.skip(reason="Pass --runslow to run slow test")
+    if not config.getoption("--run-slow-hypothesis"):
+        skip = pytest.mark.skip(reason="Pass --run-slow-hypothesis to run slow hypothesis test")
         for item in items:
-            if "slow" in item.keywords:
+            if "hypothesisslow" in item.keywords:
                 item.add_marker(skip)
