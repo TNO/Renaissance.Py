@@ -4,7 +4,7 @@ from pathlib import Path
 
 from hamcrest import assert_that, contains_string, is_, ends_with, not_
 
-import targets
+import features.targets as targets
 from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.refactoring.unit2pytest import Unit2Pytest
 
