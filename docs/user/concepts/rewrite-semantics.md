@@ -63,10 +63,7 @@ Figure 1.2 shows an example where replacements are applied to overlapping sequen
 
 3. Covered changes are ignored.
 
-subset relation
-
-
-A change is covered if its range is a subset of the range of another change.
+A change is covered if its range is a proper subset of the range of another change.
 For AST-based pattern matching this may occur when a change associated with an AST node lies within the range of a change associated with one of its ancestors. 
 
 <a name="rewrite-semantics-cover">
@@ -78,14 +75,38 @@ For AST-based pattern matching this may occur when a change associated with an A
 </a>
 
 4. Multiple prepends at the same text location
-    * different nodes
-        Prepend of ancestor before prepend of descendant.
+
+* different nodes
+
+    Prepend of ancestor before prepend of descendant.
+
+    <a name="rewrite-semantics-prepends">
+
+    ![Prepends at the same textual location](rewrite-semantics/rewrite-semantics-prepends.png)
+
+    *Figure 1.3 (CONCEPT-REWRITE-SEMANTICS-PREPENDS): Example of prepends of different AST nodes at the same textual location.*
+
+    </a>
+    
     * same node
+        In order of insertion of change
 
 5. Multiple appends at the same text location
     * different nodes
-        Append of ancestor after append of descendant.
+    
+      Append of ancestor after append of descendant.
+
+      <a name="rewrite-semantics-prepends">
+
+    ![Appends at the same textual location](rewrite-semantics/rewrite-semantics-appends.png)
+
+    *Figure 1.3 (CONCEPT-REWRITE-SEMANTICS-APPENDS): Example of appends of different AST nodes at the same textual location.*
+
+    </a>
+    
     * same node
+
+        In reverse order of insertion of change
 
 6. Appends and prepends at the same text location
         Can only happen for consecutive sibling nodes

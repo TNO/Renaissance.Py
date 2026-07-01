@@ -66,3 +66,22 @@ we have decided to keep the rules as simple as possible.
 As a consequence, we don't support corner cases but just throw an error, e.g., 
   * replacing the same node with text twice is an error even when the text is the same; and
   * removing two overlapping sequences of nodes is treated the same as replacing them and thus results in an error;
+
+### Combinations at the same text location
+
+Choices
+1. Implementation freedom
+1. Specify
+
+We have chosen to specify as it makes the outcome more predictable and repeatable.
+
+How to specify order?
+Options include
+1. (reversed) order of insertion,
+1. (reversed) alphabetically, 
+1. AST-based
+
+We have chosen 
+1. When different AST-nodes are involved to order based on AST structure, e.g., for prepends and appends of different AST nodes 
+2. When the same AST-node is involved to order based on the (reversed) order of insertion into the collection of changes.
+The direction depends on the operator - multiple prepends in the order and multiple appends in the reversed order of insertion.
