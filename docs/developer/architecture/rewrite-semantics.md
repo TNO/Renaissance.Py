@@ -9,6 +9,24 @@ For the domain model of changes and the rewrite step, see [Rewrite semantics](..
 
 ## General rules for combining changes
 
+### Covered and overlapping replacements
+
+Covered replacements are not applied to the source file.
+Overlapping replacements are considered an error.
+Yet, what about overlapping replacements that covered by another replacement? 
+
+Two interpretations are possible:
+1. **Application-first**:
+Since covered replacements are not applied, overlaps among covered replacements are irrelevant and do not produce an error.
+1. **Validation-first**:
+Since overlapping replacements are inherently inconsistent, any overlap — regardless of whether replacements are covered — is considered an error.
+
+**Decision**:
+
+This framework adopts the **validation-first** interpretation.
+Covered replacements are excluded from application, but included in validation.
+Consequently, any overlap among replacements — whether covered or not — results in an error.
+
 ### Repeated changes
 
 In the collected changes, the same changes might occur more than once.

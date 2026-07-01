@@ -17,20 +17,12 @@ The rewrite semantics feature governs how multiple collected changes — replace
 
 # Corner case: Covered, overlapping replacements
 
-Covered replacements are not applied to the source file.
-Overlapping replacements are considered an error.
+When a replacement is covered by another replacement, it is excluded from the
+result — as if it were never collected. However, it is still checked for
+overlaps with other changes. An overlap among covered replacements therefore
+still produces an error.
 
-Two interpretations are possible:
-1. Application-first interpretation:
-Since covered replacements are not applied, overlaps among covered replacements are irrelevant and do not result in an error.
-2. Validation-first interpretation:
-Since overlapping replacements are inherently inconsistent, any overlap — regardless of whether replacements are covered — is considered an error.
-
-**Decision**:
-
-This framework adopts the validation-first interpretation.
-Covered replacements are excluded from application, but included in validation.
-Consequently, any overlap among replacements results in an error.
+See [Architecture: rewrite semantics](../../developer/architecture/rewrite-semantics.md) for the rationale behind this choice.
 
 # Corner case: Identical replacements
 
