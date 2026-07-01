@@ -9,6 +9,11 @@ The rewrite semantics feature governs how multiple collected changes — replace
 ## Related concepts
 - [Rewrite semantics](../concepts/rewrite-semantics.md)
 
+## Verified by test modules
+- [Rewrite semantics test module](../../developer/modules/rewrite-semantics.md)
+- BDD scenarios: `features/rewrite-semantics.feature`
+- BDD steps: `features/steps/test-rewrite-semantics.py`
+
 
 # Corner case: Covered, overlapping replacements
 
