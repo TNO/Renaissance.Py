@@ -182,26 +182,47 @@ Feature: Rewrite semantics
 
   # ════════════════════════════════════════════════════════════════════════════════
   # Group: Adjacent siblings — shared text boundary
-  # The append of a sibling always precedes the prepend of the next consecutive
-  # sibling at their shared text boundary, regardless of collection order.
+  # The operation on a sibling always places its text before the operation on the next
+  # consecutive sibling at their shared text boundary, regardless of collection order.
+  # (append vs. prepend/surround-before; surround-after vs. prepend/surround-before)
   # ════════════════════════════════════════════════════════════════════════════════
 
-  # ── Scenario Siblings — append + prepend at shared text location ──────────────────
-  Scenario: Append of sibling precedes prepend of next consecutive sibling — append collected first
+  # ── Scenario Siblings — shared text boundary, sib1 collected first ────────────────
+  # 'AFTER' is the canonical token for the text at the end of sib1 (append argument,
+  # or second argument of surround). 'BEFORE' is the canonical token for the text at
+  # the start of sib2 (prepend argument, or first argument of surround).
+  # 'DONT_CARE' marks surround arguments that are not at the shared boundary and
+  # are not part of the assertion.
+  Scenario Outline: Operation on first sibling precedes operation on second sibling — first sibling collected first
     Given the source 'a = 1\nb = 2\n'
     And the statement 'a = 1' is the first sibling
     And the statement 'b = 2' is the second sibling
-    When the first sibling is appended with 'FIRST'
-    And the second sibling is prepended with 'SECOND'
-    Then 'FIRST' appears before 'SECOND' in the result
+    When the first sibling is <sib1_op>
+    And the second sibling is <sib2_op>
+    Then 'AFTER' appears before 'BEFORE' in the result
 
-  Scenario: Append of sibling precedes prepend of next consecutive sibling — prepend collected first
+    Examples:
+      | sib1_op                                    | sib2_op                                    | combination                      |
+      | appended with 'AFTER'                      | prepended with 'BEFORE'                    | append + prepend                 |
+      | surrounded with 'DONT_CARE' and 'AFTER'    | prepended with 'BEFORE'                    | surround-after + prepend         |
+      | appended with 'AFTER'                      | surrounded with 'BEFORE' and 'DONT_CARE'   | append + surround-before         |
+      | surrounded with 'DONT_CARE' and 'AFTER'    | surrounded with 'BEFORE' and 'DONT_CARE'   | surround-after + surround-before |
+
+  # ── Scenario Siblings — shared text boundary, sib2 collected first ────────────────
+  Scenario Outline: Operation on first sibling precedes operation on second sibling — second sibling collected first
     Given the source 'a = 1\nb = 2\n'
     And the statement 'a = 1' is the first sibling
     And the statement 'b = 2' is the second sibling
-    When the second sibling is prepended with 'SECOND'
-    And the first sibling is appended with 'FIRST'
-    Then 'FIRST' appears before 'SECOND' in the result
+    When the second sibling is <sib2_op>
+    And the first sibling is <sib1_op>
+    Then 'AFTER' appears before 'BEFORE' in the result
+
+    Examples:
+      | sib1_op                                    | sib2_op                                    | combination                      |
+      | appended with 'AFTER'                      | prepended with 'BEFORE'                    | append + prepend                 |
+      | surrounded with 'DONT_CARE' and 'AFTER'    | prepended with 'BEFORE'                    | surround-after + prepend         |
+      | appended with 'AFTER'                      | surrounded with 'BEFORE' and 'DONT_CARE'   | append + surround-before         |
+      | surrounded with 'DONT_CARE' and 'AFTER'    | surrounded with 'BEFORE' and 'DONT_CARE'   | surround-after + surround-before |
 
   # ════════════════════════════════════════════════════════════════════════════════
   # Group: Cross-operator — same node
