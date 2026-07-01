@@ -13,8 +13,13 @@ Feature: Rewrite semantics
   # — is verified by Hypothesis tests
   # 
   # Scenario |  test
-  # Equal    | `test_replacing_same_node_twice_always_errors` in features/steps/test-rewrite-semantics.py.
+  # Equal    | `test_replacing_same_node_twice_always_errors` in test/syntax_tree/test_rewrite_semantics_properties.py.
   #
+
+  # ════════════════════════════════════════════════════════════════════════════════
+  # Group: Error cases
+  # Combinations that cannot produce a valid result are rejected immediately.
+  # ════════════════════════════════════════════════════════════════════════════════
 
   # ── Scenario Equal ────────────────────────────────────────────────────────────────
   Scenario Outline: Replacements of the same node produce an error
@@ -31,7 +36,7 @@ Feature: Rewrite semantics
       | a = 1      | a = 1      | ""      | ""      | assignment — identical removal (empty text) |
       | print(1)   | print(1)   | foo     | bar     | call statement                              |
 
-  # ── Scenario Overlap ────────────────────────────────────────────────────────────────
+  # ── Scenario Overlap ──────────────────────────────────────────────────────────────
   Scenario Outline: Overlapping replacements produce an error
     Given the source 'a = 1\nb = 2\nc = 3\n'
     And the statement 'a = 1' is the first sibling
@@ -46,26 +51,82 @@ Feature: Rewrite semantics
       | A       | B       | different replacement texts      |
       | A       | A       | identical replacement texts      |
       | ""      | ""      | overlapping removal (empty text) |
-     
+
+  # ════════════════════════════════════════════════════════════════════════════════
+  # Group: Dominance and suppression
+  # A change on an ancestor node suppresses any covered changes on its descendants.
+  # ════════════════════════════════════════════════════════════════════════════════
+
   # ── Scenario Cover ────────────────────────────────────────────────────────────────
-  Scenario Outline: Covered changes are not applied
+  Scenario: Covered replacement is not applied
     Given the source 'a = 1'
     And the statement 'a = 1' is the parent node
     And the first leaf of the parent is the child node
     When the parent node is replaced with 'x = 99'
-    And the child node is '<changed>' with 'COVERED'
+    And the child node is replaced with 'COVERED'
     Then the result contains 'x = 99'
     And the result does not contain 'COVERED'
 
-    Examples:
-      | changed   |
-      | replaced  |
-      | appended  |
-      | prepended |
+  Scenario: Covered append is not applied
+    Given the source 'a = 1'
+    And the statement 'a = 1' is the parent node
+    And the first leaf of the parent is the child node
+    When the parent node is replaced with 'x = 99'
+    And the child node is appended with 'COVERED'
+    Then the result contains 'x = 99'
+    And the result does not contain 'COVERED'
 
-  # ── Scenario Prepends - different nodes, with same text location ────────────────────────────────────────────────────────────────
-  # Both collection orders must yield the same result: AST structure, not
-  # insertion order, determines the output order.
+  Scenario: Covered prepend is not applied
+    Given the source 'a = 1'
+    And the statement 'a = 1' is the parent node
+    And the first leaf of the parent is the child node
+    When the parent node is replaced with 'x = 99'
+    And the child node is prepended with 'COVERED'
+    Then the result contains 'x = 99'
+    And the result does not contain 'COVERED'
+
+  # ════════════════════════════════════════════════════════════════════════════════
+  # Group: Single operator — same node
+  # Ordering when the same operator is applied to the same node more than once.
+  # ════════════════════════════════════════════════════════════════════════════════
+
+  # ── Scenario Prepends — same node ────────────────────────────────────────────────
+  # Multiple prepends on the same node are applied in collection order.
+  Scenario: Prepends of same node are applied in order of collection.
+    Given the source 'a = 1'
+    And the statement 'a = 1' is a node
+    When the node is prepended with 'FIRST'
+    And the node is prepended with 'SECOND'
+    Then 'FIRST' appears before 'SECOND' in the result
+
+  # ── Scenario Appends — same node ─────────────────────────────────────────────────
+  # Multiple appends on the same node are applied in reversed collection order.
+  Scenario: Appends of same node are applied in reversed order of collection.
+    Given the source 'a = 1'
+    And the statement 'a = 1' is a node
+    When the node is appended with 'FIRST'
+    And the node is appended with 'SECOND'
+    Then 'SECOND' appears before 'FIRST' in the result
+
+  # ── Scenario Surrounds — same node ───────────────────────────────────────────────
+  # Before texts appear in collection order; after texts in reversed collection order.
+  Scenario: Surrounds of same node: before texts in collection order, after texts in reversed collection order
+    Given the source 'a = 1'
+    And the statement 'a = 1' is a node
+    When the node is surrounded with 'BEFORE1' and 'AFTER1'
+    And the node is surrounded with 'BEFORE2' and 'AFTER2'
+    Then 'BEFORE1' appears before 'BEFORE2' in the result
+    And 'AFTER2' appears before 'AFTER1' in the result
+
+  # ════════════════════════════════════════════════════════════════════════════════
+  # Group: Single operator — different nodes sharing a text location
+  # AST structure determines order when ancestor
+  # and descendant nodes share a start or end text position — not collection order.
+  # ════════════════════════════════════════════════════════════════════════════════
+
+  # ── Scenario Prepends — different nodes, shared start location ───────────────────
+  # Both collection orders must yield the same result: 
+  # AST structure determines the order - not collection order.
   Scenario Outline: Prepend of ancestor precedes prepend of descendant regardless of collection order
     Given the source 'a = 1'
     And the statement 'a = 1' is the ancestor node
@@ -79,18 +140,9 @@ Feature: Rewrite semantics
       | ancestor   | ANC        | descendant | DESC        | ancestor collected first    |
       | descendant | DESC       | ancestor   | ANC         | descendant collected first  |
 
-  # ── Scenario Prepends - same node ────────────────────────────────────────────────────────────────
-  # insertion order, determines the output order.
-  Scenario: Prepends of same node are applied in order of collection.
-    Given the source 'a = 1'
-    And the statement 'a = 1' is a node
-    When the node is prepended with 'FIRST'
-    And the node is prepended with 'SECOND'
-    Then 'FIRST' appears before 'SECOND' in the result
-
-  # ── Scenario Appends - different nodes, with same text location ────────────────────────────────────────────────────────────────
-  # Both collection orders must yield the same result: AST structure, not
-  # insertion order, determines the output order.
+  # ── Scenario Appends — different nodes, shared end location ──────────────────────
+  # Both collection orders must yield the same result: 
+  # AST structure determines the order - not collection order.
   Scenario Outline: Append of descendant precedes append of ancestor regardless of collection order
     Given the source 'a = 1'
     And the statement 'a = 1' is the ancestor node
@@ -104,18 +156,9 @@ Feature: Rewrite semantics
       | ancestor   | ANC        | descendant | DESC        | ancestor collected first    |
       | descendant | DESC       | ancestor   | ANC         | descendant collected first  |
 
-  # ── Scenario Appends - same node ────────────────────────────────────────────────────────────────
-  # reversed insertion order, determines the output order.
-  Scenario: Appends of same node are applied in reversed order of collection.
-    Given the source 'a = 1'
-    And the statement 'a = 1' is a node
-    When the node is appended with 'FIRST'
-    And the node is appended with 'SECOND'
-    Then 'SECOND' appears before 'FIRST' in the result
-
-# ── Scenario Surrounds - different nodes, sharing start location ───────────────
-  # Both collection orders must yield the same result: AST structure, not
-  # insertion order, determines the output order of the before texts.
+  # ── Scenario Surrounds — different nodes, shared start location ──────────────────
+  # Both collection orders must yield the same result: 
+  # AST structure determines the order - not collection order.
   Scenario Outline: Surround of ancestor precedes surround of descendant at shared start location regardless of collection order
     Given the source 'a = 1'
     And the statement 'a = 1' is the ancestor node
@@ -129,7 +172,7 @@ Feature: Rewrite semantics
       | ancestor   | ANCBEF       | ANCAFT      | descendant | DESCBEF       | DESCAFT      | ancestor collected first   |
       | descendant | DESCBEF      | DESCAFT     | ancestor   | ANCBEF        | ANCAFT       | descendant collected first |
 
-  # ── Scenario Surrounds - different nodes, sharing end location ─────────────────
+  # ── Scenario Surrounds — different nodes, shared end location ────────────────────
   # Both collection orders must yield the same result: AST structure, not
   # insertion order, determines the output order of the after texts.
   Scenario Outline: Surround of descendant precedes surround of ancestor at shared end location regardless of collection order
@@ -145,17 +188,13 @@ Feature: Rewrite semantics
       | ancestor   | ANCBEF       | ANCAFT      | descendant | DESCBEF       | DESCAFT      | ancestor collected first   |
       | descendant | DESCBEF      | DESCAFT     | ancestor   | ANCBEF        | ANCAFT       | descendant collected first |
 
-  # ── Scenario Surrounds - same node ────────────────────────────────────────────
-  # Before texts appear in collection order; after texts in reversed collection order.
-  Scenario: Surrounds of same node: before texts in collection order, after texts in reversed collection order
-    Given the source 'a = 1'
-    And the statement 'a = 1' is a node
-    When the node is surrounded with 'BEFORE1' and 'AFTER1'
-    And the node is surrounded with 'BEFORE2' and 'AFTER2'
-    Then 'BEFORE1' appears before 'BEFORE2' in the result
-    And 'AFTER2' appears before 'AFTER1' in the result
+  # ════════════════════════════════════════════════════════════════════════════════
+  # Group: Adjacent siblings — shared text boundary
+  # The append of a sibling always precedes the prepend of the next consecutive
+  # sibling at their shared text boundary, regardless of collection order.
+  # ════════════════════════════════════════════════════════════════════════════════
 
-  # ── Scenario Append Prepend, at same text location ────────────────────────────────────────────────────────────────
+  # ── Scenario Siblings — append + prepend at shared text location ──────────────────
   Scenario: Append of sibling precedes prepend of next consecutive sibling — append collected first
     Given the source 'a = 1\nb = 2\n'
     And the statement 'a = 1' is the first sibling
@@ -164,7 +203,6 @@ Feature: Rewrite semantics
     And the second sibling is prepended with 'SECOND'
     Then 'FIRST' appears before 'SECOND' in the result
 
-  # ── Scenario Prepend Append, at same text location ────────────────────────────────────────────────────────────────
   Scenario: Append of sibling precedes prepend of next consecutive sibling — prepend collected first
     Given the source 'a = 1\nb = 2\n'
     And the statement 'a = 1' is the first sibling
@@ -173,7 +211,13 @@ Feature: Rewrite semantics
     And the first sibling is appended with 'FIRST'
     Then 'FIRST' appears before 'SECOND' in the result
 
-  # ── Scenario Prepend + Surround at same node ───────────────────────────────────
+  # ════════════════════════════════════════════════════════════════════════════════
+  # Group: Cross-operator — same node
+  # When different operators target the same node, surround is always closer to
+  # the node than prepend or append, regardless of collection order.
+  # ════════════════════════════════════════════════════════════════════════════════
+
+  # ── Scenario Prepend + Surround — same node ───────────────────────────────────────
   # Surround is always closer to the AST node than prepend, regardless of collection order.
   Scenario: Prepend is outside surround of the same node — prepend collected first
     Given the source 'a = 1'
@@ -189,7 +233,7 @@ Feature: Rewrite semantics
     And the node is prepended with 'FIRST'
     Then 'FIRST' appears before 'BEFORE' in the result
 
-  # ── Scenario Append + Surround at same node ───────────────────────────────────
+  # ── Scenario Append + Surround — same node ────────────────────────────────────────
   # Surround is always closer to the AST node than append, regardless of collection order.
   Scenario: Append is outside surround of the same node — append collected first
     Given the source 'a = 1'
@@ -205,7 +249,13 @@ Feature: Rewrite semantics
     And the node is appended with 'FIRST'
     Then 'AFTER' appears before 'FIRST' in the result
 
-  # ── Scenario Surround (ancestor) + Prepend (descendant) — shared start location ─
+  # ════════════════════════════════════════════════════════════════════════════════
+  # Group: Cross-operator — different nodes sharing a text location
+  # Insertions on a descendant node are always closer to that node than insertions
+  # on an ancestor node, regardless of collection order.
+  # ════════════════════════════════════════════════════════════════════════════════
+
+  # ── Scenario Surround (ancestor) + Prepend (descendant) — shared start location ───
   # Descendant's prepend is always closer to the descendant node than the ancestor's
   # surround before text, regardless of collection order.
   Scenario: Prepend of descendant is inside surround of ancestor at shared start location — prepend collected first
@@ -224,7 +274,7 @@ Feature: Rewrite semantics
     And the descendant is prepended with 'DESCPRE'
     Then 'ANCBEF' appears before 'DESCPRE' in the result
 
-  # ── Scenario Surround (ancestor) + Append (descendant) — shared end location ───
+  # ── Scenario Surround (ancestor) + Append (descendant) — shared end location ───────
   # Descendant's append is always closer to the descendant node than the ancestor's
   # surround after text, regardless of collection order.
   Scenario: Append of descendant is inside surround of ancestor at shared end location — append collected first
@@ -243,7 +293,7 @@ Feature: Rewrite semantics
     And the descendant is appended with 'DESCAPP'
     Then 'DESCAPP' appears before 'ANCAFT' in the result
 
-  # ── Scenario Surround (descendant) + Prepend (ancestor) — shared start location ─
+  # ── Scenario Surround (descendant) + Prepend (ancestor) — shared start location ───
   # Descendant's surround before text is always closer to the descendant node than
   # the ancestor's prepend, regardless of collection order.
   Scenario: Surround of descendant is inside prepend of ancestor at shared start location — prepend collected first
@@ -262,7 +312,7 @@ Feature: Rewrite semantics
     And the ancestor is prepended with 'ANCPRE'
     Then 'ANCPRE' appears before 'DESCBEF' in the result
 
-  # ── Scenario Surround (descendant) + Append (ancestor) — shared end location ───
+  # ── Scenario Surround (descendant) + Append (ancestor) — shared end location ───────
   # Descendant's surround after text is always closer to the descendant node than
   # the ancestor's append, regardless of collection order.
   Scenario: Surround of descendant is inside append of ancestor at shared end location — append collected first
@@ -280,5 +330,3 @@ Feature: Rewrite semantics
     When the descendant is surrounded with 'DESCBEF' and 'DESCAFT'
     And the ancestor is appended with 'ANCAPP'
     Then 'DESCAFT' appears before 'ANCAPP' in the result
-
-  
