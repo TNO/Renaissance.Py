@@ -5,7 +5,7 @@ Feature: Ast based changes
 
   Scenario: python code
     Given 'python' programming language
-    And 'features/targets/demo.py' file written in that programming language
+    And 'targets/demo.py' file written in that programming language
     And an AST extracted from that source file without errors
     And node 'a=1' exits within that AST
     And a sequence of descendant nodes of that node

@@ -2,7 +2,7 @@ from pathlib import Path
 
 from pytest_bdd import when, scenario
 
-from features.steps.conftest import FEATURES_BASE_DIR
+from steps.conftest import FEATURES_BASE_DIR
 from renaissance.refactoring.taut2pyunit import Taut2Pyunit
 
 

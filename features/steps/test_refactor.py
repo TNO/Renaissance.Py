@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 from pytest_bdd import given, when, scenario, parsers, then
 
-from features.steps.conftest import FEATURES_BASE_DIR, REPO_BASE_DIR
+from steps.conftest import FEATURES_BASE_DIR
 from renaissance.impl.python.factory import PythonPatternFactory
 from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.syntax_tree import ASTFactory, ASTRewriter
@@ -40,7 +40,7 @@ def init_language_factory(context):
 
 @given(parsers.parse("'{file}' file written in that programming language"))
 def step_impl(context, file):
-    context["atu"] = context["factory"].create(REPO_BASE_DIR / Path(file))
+    context["atu"] = context["factory"].create(FEATURES_BASE_DIR / Path(file))
 
 
 @given(parsers.parse("node '{old}' exits within that AST"))
