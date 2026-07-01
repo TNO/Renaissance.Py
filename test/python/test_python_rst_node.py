@@ -13,7 +13,7 @@ from hamcrest import (
 )
 from hypothesis import given, settings, HealthCheck
 
-import features.targets as targets
+import targets
 from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
 from renaissance.impl.types import *
