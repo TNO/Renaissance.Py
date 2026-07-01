@@ -1,3 +1,8 @@
+{ #testmod-rewrite-semantics }
+# Rewrite semantics test module
+
+**Stable ID:** `TESTMOD-REWRITE-SEMANTICS`
+
 ## Corner cases for test the rewrite seamatics
 
 1. AST node spanning the whole file, i.e., the complete range.

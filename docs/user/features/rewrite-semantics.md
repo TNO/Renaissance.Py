@@ -3,8 +3,11 @@
 
 **Stable ID:** `FEATURE-REWRITE-SEMANTICS`
 
-## Purpose
-Define predictable and understandable semantics for collected and committed changes.
+## User-facing summary
+The rewrite semantics feature governs how multiple collected changes — replacements and insertions — are applied to a source file in a single rewrite step. It defines which combinations are valid and which produce errors, so that transformation authors can reason about the outcome of composing changes.
+
+## Related concepts
+- [Rewrite semantics](../concepts/rewrite-semantics.md)
 
 
 # Corner case: Covered, overlapping replacements
@@ -58,13 +61,7 @@ even when the inserted text is identical.
 
 # Scenario: Covered changes
 
-<a name="rewrite-semantics-cover">
-
-![Change covered by another change](../concepts/rewrite-semantics/rewrite-semantics-cover.png)
-
-*Figure 1.3 (CONCEPT-REWRITE-SEMANTICS-COVER): Example of overlapping sequences of AST nodes.*
-
-</a>
+See [Figure 1.3 in the concept page](../concepts/rewrite-semantics.md#rewrite-semantics-cover) for an illustration.
 
 **Description**: Replacements hide covered changes
 
@@ -85,13 +82,7 @@ Check our definition (and implementation)!
 
 # Scenario: Overlapping changes
 
-<a name="rewrite-semantics-overlap">
-
-![Overlapping replacements](../concepts/rewrite-semantics/rewrite-semantics-overlap.png)
-
-*Figure 1.2 (CONCEPT-REWRITE-SEMANTICS-OVERLAP): Example of overlapping replacements.*
-
-</a>
+See [Figure 1.2 in the concept page](../concepts/rewrite-semantics.md#rewrite-semantics-overlap) for an illustration.
 
 **Description**: Replacements (including removal) cannot overlap
 
@@ -152,11 +143,7 @@ Final order in modified source file: Prepend N - ... -  Prepend 2 - Prepend 1 - 
 
 ## Case 2
 
-<a name="rewrite-semantics-prepends-shared-text-location">
-
-![Prepends at the same text location](../concepts/rewrite-semantics/rewrite-semantics-prepend-prepend-nodes-with-shared-text-location.png)
-
-*Figure 1.? (CONCEPT-REWRITE-SEMANTICS-PREPEND): Example of overlapping replacements.*
+See the concept page for an illustration of [prepends at the same text location](../concepts/rewrite-semantics.md#rewrite-semantics-prepends).
 
 </a>
 

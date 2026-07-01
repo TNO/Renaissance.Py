@@ -4,26 +4,8 @@
 **Stable ID:** `ARCHITECTURE-REWRITE-SEMANTICS`
 
 ## Purpose
-Define predictable and understandable semantics for collected and committed changes.
-
-## Kind of changes
-
-We distinguish two kinds of changes: Replacements and insertions.
-
-Each replacement affects a range within the original text. 
-In AST-based pattern matching that range of text corresponds to either an AST node or a sequence of consecutive sibling nodes.
-A removal is `just` a replacement with an empty string. 
-
-Each insertion relates to a location in the original text.
-In AST-based pattern matching that location of text corresponds to either the start location or the end location of an AST node.
-Three kind of insertions are supported, i.e., prepend, append, and around, that insert text at the start, end, and both locations of the AST node.
-
-## Rewrite step
-
-Each rewrite step consists of the following, sequential steps:
-1. parse code,
-1. collect changes, and
-1. commit changes.
+Document design decisions that determine how the rewrite semantics are implemented.
+For the domain model of changes and the rewrite step, see [Rewrite semantics](../../user/concepts/rewrite-semantics.md).
 
 ## General rules for combining changes
 
