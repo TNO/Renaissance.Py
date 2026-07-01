@@ -21,12 +21,12 @@ class Taut2Pyunit(PythonRefactoring):
         self.comp = "ABCD"
 
     def run(self):
-        if re.search(self.black_list_reg, self.filename):
-            print(f"skipping:         {Path(self.filename).resolve()}")
-            return
-        if not re.search(self.white_list_reg, self.filename):
-            print(f"skipping:         {Path(self.filename).resolve()}")
-            return
+        # if re.search(self.black_list_reg, self.filename):
+        #     print(f"skipping:         {Path(self.filename).resolve()}")
+        #     return
+        # if not re.search(self.white_list_reg, self.filename):
+        #     print(f"skipping:         {Path(self.filename).resolve()}")
+        #     return
         print(f"Taut to pyunit migration: {Path(self.filename).resolve()}")
 
         # conditional refactor
@@ -89,8 +89,18 @@ class Taut2Pyunit(PythonRefactoring):
         """
         replace TAUT.TestCase by unittest.TestCase
         """
-        [self.replace("unittest.TestCase", node, False, False) for node in self.find_ast_type(Attribute) if node.name == "TAUT.TestCase"]
-        [self.replace("unittest.TestCase", node, False, False) for node in self.find_ast_type(Name) if node.name == "TestCase"]
+        for index in range(self.find_ast_type(Attribute).__len__()):
+            node = self.find_ast_type(Attribute)[index]
+            if node.name == "TAUT.TestCase":
+                self.replace("unittest.TestCase", node, False, False)
+                self.commit()
+        for index in range(self.find_ast_type(Name).__len__()):
+            node = self.find_ast_type(Name)[index]
+            if node.name == "TestCase":
+                self.replace("unittest.TestCase", node, False, False)
+                self.commit()
+        # [(self.replace("unittest.TestCase", node, False, False), self.commit()) for node in self.find_ast_type(Attribute) if node.name == "TAUT.TestCase"]
+        # [(self.replace("unittest.TestCase", node, False, False), self.commit()) for node in self.find_ast_type(Name) if node.name == "TestCase"]
 
     def remove_decorator(self):
         [self.remove(node, False, False) for node in self.find_ast_type(Attribute) if node.name == "TAUT.log_stub"]
