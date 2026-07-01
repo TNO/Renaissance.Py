@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-import features.targets as targets
+import targets
 from renaissance.impl.clang import CompilationDatabase, ClangASTNode
 from renaissance.impl.clang.clang_json_ast_node import ClangJsonASTNode
 from renaissance.impl.types import FunctionDef
