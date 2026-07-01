@@ -97,6 +97,7 @@ validation:
 
 nav:
   - Home: index.md
+  - Glossary: glossary.md
 
   - User documentation:
       - Overview: user/index.md
@@ -174,6 +175,7 @@ nav:
               - Overview: documentation-system/policies/mandatory/index.md
               - Image policy: documentation-system/policies/mandatory/image-policy.md
               - Linking policy: documentation-system/policies/mandatory/linking-policy.md
+              - Glossary guide: documentation-system/policies/mandatory/glossary-guide.md
 
           - Recommended:
               - Overview: documentation-system/policies/recommended/index.md
