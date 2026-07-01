@@ -58,28 +58,51 @@ Feature: Rewrite semantics
     Then applying the changes raises an error
 
   # ── Scenario 4 ────────────────────────────────────────────────────────────────
-  Scenario: Prepend of ancestor precedes prepend of descendant at the same text location
+  # Both collection orders must yield the same result: AST structure, not
+  # insertion order, determines the output order.
+  Scenario Outline: Prepend of ancestor precedes prepend of descendant regardless of collection order
     Given the source 'a = 1'
     And the statement 'a = 1' is the ancestor node
     And the first leaf of the ancestor is the descendant node
-    When the ancestor is prepended with 'ANC'
-    And the descendant is prepended with 'DESC'
+    When the <first> is prepended with '<first_text>'
+    And the <second> is prepended with '<second_text>'
     Then 'ANC' appears before 'DESC' in the result
 
+    Examples:
+      | first      | first_text | second     | second_text | collection order            |
+      | ancestor   | ANC        | descendant | DESC        | ancestor collected first    |
+      | descendant | DESC       | ancestor   | ANC         | descendant collected first  |
+
   # ── Scenario 5 ────────────────────────────────────────────────────────────────
-  Scenario: Append of descendant precedes append of ancestor at the same text location
+  # Both collection orders must yield the same result: AST structure, not
+  # insertion order, determines the output order.
+  Scenario Outline: Append of descendant precedes append of ancestor regardless of collection order
     Given the source 'a = 1'
     And the statement 'a = 1' is the ancestor node
     And the last leaf of the ancestor is the descendant node
-    When the ancestor is appended with 'ANC'
-    And the descendant is appended with 'DESC'
+    When the <first> is appended with '<first_text>'
+    And the <second> is appended with '<second_text>'
     Then 'DESC' appears before 'ANC' in the result
 
+    Examples:
+      | first      | first_text | second     | second_text | collection order            |
+      | ancestor   | ANC        | descendant | DESC        | ancestor collected first    |
+      | descendant | DESC       | ancestor   | ANC         | descendant collected first  |
+
   # ── Scenario 6 ────────────────────────────────────────────────────────────────
-  Scenario: Append of sibling precedes prepend of next consecutive sibling
+  Scenario: Append of sibling precedes prepend of next consecutive sibling — append collected first
     Given the source 'a = 1\nb = 2\n'
     And the statement 'a = 1' is the first sibling
     And the statement 'b = 2' is the second sibling
     When the first sibling is appended with 'FIRST'
     And the second sibling is prepended with 'SECOND'
+    Then 'FIRST' appears before 'SECOND' in the result
+
+  # ── Scenario 7 ────────────────────────────────────────────────────────────────
+  Scenario: Append of sibling precedes prepend of next consecutive sibling — prepend collected first
+    Given the source 'a = 1\nb = 2\n'
+    And the statement 'a = 1' is the first sibling
+    And the statement 'b = 2' is the second sibling
+    When the second sibling is prepended with 'SECOND'
+    And the first sibling is appended with 'FIRST'
     Then 'FIRST' appears before 'SECOND' in the result

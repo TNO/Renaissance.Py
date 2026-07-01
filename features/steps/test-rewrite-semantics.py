@@ -57,7 +57,7 @@ def test_overlapping_replacements_produce_error():
     pass
 
 
-@scenario(_FEATURE, "Prepend of ancestor precedes prepend of descendant at the same text location")
+@scenario(_FEATURE, "Prepend of ancestor precedes prepend of descendant regardless of collection order")
 def test_prepend_ordering():
     pass
 
@@ -66,13 +66,18 @@ def test_prepend_ordering():
     reason="Append ordering (descendant before ancestor) not yet enforced: Rewriter appends in insertion order",
     strict=True,
 )
-@scenario(_FEATURE, "Append of descendant precedes append of ancestor at the same text location")
+@scenario(_FEATURE, "Append of descendant precedes append of ancestor regardless of collection order")
 def test_append_ordering():
     pass
 
 
-@scenario(_FEATURE, "Append of sibling precedes prepend of next consecutive sibling")
+@scenario(_FEATURE, "Append of sibling precedes prepend of next consecutive sibling \u2014 append collected first")
 def test_sibling_append_prepend_ordering():
+    pass
+
+
+@scenario(_FEATURE, "Append of sibling precedes prepend of next consecutive sibling \u2014 prepend collected first")
+def test_sibling_prepend_append_ordering():
     pass
 
 
@@ -200,24 +205,18 @@ def when_replace_second_third(context: dict, text: str) -> None:
     context["rewriter"].replace(text, [context["sibling2"], context["sibling3"]])
 
 
-@when(parsers.parse("the ancestor is prepended with '{text}'"))
-def when_prepend_ancestor(context: dict, text: str) -> None:
-    context["rewriter"].insert_before(text, [context["ancestor"]], include_whitespace=False, include_comments=False)
+# Role-dispatching steps used by the Scenario Outlines for scenarios 4 and 5.
+# The role ("ancestor" or "descendant") is looked up directly in the context
+# fixture, making it possible to parameterize the collection order in the
+# Examples table without duplicating step definitions.
+@when(parsers.re(r"the (?P<role>ancestor|descendant) is prepended with '(?P<text>[^']*)'" ))
+def when_prepend_by_role(context: dict, role: str, text: str) -> None:
+    context["rewriter"].insert_before(text, [context[role]], include_whitespace=False, include_comments=False)
 
 
-@when(parsers.parse("the descendant is prepended with '{text}'"))
-def when_prepend_descendant(context: dict, text: str) -> None:
-    context["rewriter"].insert_before(text, [context["descendant"]], include_whitespace=False, include_comments=False)
-
-
-@when(parsers.parse("the ancestor is appended with '{text}'"))
-def when_append_ancestor(context: dict, text: str) -> None:
-    context["rewriter"].insert_after(text, [context["ancestor"]], include_whitespace=False, include_comments=False)
-
-
-@when(parsers.parse("the descendant is appended with '{text}'"))
-def when_append_descendant(context: dict, text: str) -> None:
-    context["rewriter"].insert_after(text, [context["descendant"]], include_whitespace=False, include_comments=False)
+@when(parsers.re(r"the (?P<role>ancestor|descendant) is appended with '(?P<text>[^']*)'" ))
+def when_append_by_role(context: dict, role: str, text: str) -> None:
+    context["rewriter"].insert_after(text, [context[role]], include_whitespace=False, include_comments=False)
 
 
 @when(parsers.parse("the first sibling is appended with '{text}'"))
