@@ -161,8 +161,8 @@ Feature: Rewrite semantics
 
     Examples:
       | first      | first_before | first_after | second     | second_before | second_after | collection order           |
-      | ancestor   | ANC_BEF       | ANC_AFT      | descendant | DESC_BEF       | DESC_AFT      | ancestor collected first   |
-      | descendant | DESC_BEF      | DESC_AFT     | ancestor   | ANC_BEF        | ANC_AFT       | descendant collected first |
+      | ancestor   | ANC_BEF      | DONT_CARE   | descendant | DESC_BEF      | DONT_CARE    | ancestor collected first   |
+      | descendant | DESC_BEF     | DONT_CARE   | ancestor   | ANC_BEF       | DONT_CARE    | descendant collected first |
 
   # ── Scenario Surrounds — different nodes, shared end location ────────────────────
   # Both collection orders must yield the same result: AST structure, not
@@ -177,8 +177,8 @@ Feature: Rewrite semantics
 
     Examples:
       | first      | first_before | first_after | second     | second_before | second_after | collection order           |
-      | ancestor   | ANC_BEF      | ANC_AFT     | descendant | DESC_BEF      | DESC_AFT     | ancestor collected first   |
-      | descendant | DESC_BEF     | DESC_AFT    | ancestor   | ANC_BEF       | ANC_AFT      | descendant collected first |
+      | ancestor   | DONT_CARE    | ANC_AFT     | descendant | DONT_CARE     | DESC_AFT     | ancestor collected first   |
+      | descendant | DONT_CARE    | DESC_AFT    | ancestor   | DONT_CARE     | ANC_AFT      | descendant collected first |
 
   # ════════════════════════════════════════════════════════════════════════════════
   # Group: Adjacent siblings — shared text boundary
@@ -236,13 +236,13 @@ Feature: Rewrite semantics
     Given the source 'a = 1'
     And the statement 'a = 1' is a node
     When the node is prepended with 'FIRST'
-    And the node is surrounded with 'BEFORE' and 'AFTER'
+    And the node is surrounded with 'BEFORE' and 'DONT_CARE'
     Then 'FIRST' appears before 'BEFORE' in the result
 
   Scenario: Prepend is outside surround of the same node — surround collected first
     Given the source 'a = 1'
     And the statement 'a = 1' is a node
-    When the node is surrounded with 'BEFORE' and 'AFTER'
+    When the node is surrounded with 'BEFORE' and 'DONT_CARE'
     And the node is prepended with 'FIRST'
     Then 'FIRST' appears before 'BEFORE' in the result
 
@@ -252,13 +252,13 @@ Feature: Rewrite semantics
     Given the source 'a = 1'
     And the statement 'a = 1' is a node
     When the node is appended with 'FIRST'
-    And the node is surrounded with 'BEFORE' and 'AFTER'
+    And the node is surrounded with 'DONT_CARE' and 'AFTER'
     Then 'AFTER' appears before 'FIRST' in the result
 
   Scenario: Append is outside surround of the same node — surround collected first
     Given the source 'a = 1'
     And the statement 'a = 1' is a node
-    When the node is surrounded with 'BEFORE' and 'AFTER'
+    When the node is surrounded with 'DONT_CARE' and 'AFTER'
     And the node is appended with 'FIRST'
     Then 'AFTER' appears before 'FIRST' in the result
 
@@ -276,14 +276,14 @@ Feature: Rewrite semantics
     And the statement 'a = 1' is the ancestor node
     And the first leaf of the ancestor is the descendant node
     When the descendant is prepended with 'DESC_PRE'
-    And the ancestor is surrounded with 'ANC_BEF' and 'ANC_AFT'
+    And the ancestor is surrounded with 'ANC_BEF' and 'DONT_CARE'
     Then 'ANC_BEF' appears before 'DESC_PRE' in the result
 
   Scenario: Prepend of descendant is inside surround of ancestor at shared start location — surround collected first
     Given the source 'a = 1'
     And the statement 'a = 1' is the ancestor node
     And the first leaf of the ancestor is the descendant node
-    When the ancestor is surrounded with 'ANC_BEF' and 'ANC_AFT'
+    When the ancestor is surrounded with 'ANC_BEF' and 'DONT_CARE'
     And the descendant is prepended with 'DESC_PRE'
     Then 'ANC_BEF' appears before 'DESC_PRE' in the result
 
@@ -295,14 +295,14 @@ Feature: Rewrite semantics
     And the statement 'a = 1' is the ancestor node
     And the last leaf of the ancestor is the descendant node
     When the descendant is appended with 'DESC_APP'
-    And the ancestor is surrounded with 'ANC_BEF' and 'ANC_AFT'
+    And the ancestor is surrounded with 'DONT_CARE' and 'ANC_AFT'
     Then 'DESC_APP' appears before 'ANC_AFT' in the result
 
   Scenario: Append of descendant is inside surround of ancestor at shared end location — surround collected first
     Given the source 'a = 1'
     And the statement 'a = 1' is the ancestor node
     And the last leaf of the ancestor is the descendant node
-    When the ancestor is surrounded with 'ANC_BEF' and 'ANC_AFT'
+    When the ancestor is surrounded with 'DONT_CARE' and 'ANC_AFT'
     And the descendant is appended with 'DESC_APP'
     Then 'DESC_APP' appears before 'ANC_AFT' in the result
 
@@ -314,14 +314,14 @@ Feature: Rewrite semantics
     And the statement 'a = 1' is the ancestor node
     And the first leaf of the ancestor is the descendant node
     When the ancestor is prepended with 'ANC_PRE'
-    And the descendant is surrounded with 'DESC_BEF' and 'DESC_AFT'
+    And the descendant is surrounded with 'DESC_BEF' and 'DONT_CARE'
     Then 'ANC_PRE' appears before 'DESC_BEF' in the result
 
   Scenario: Surround of descendant is inside prepend of ancestor at shared start location — surround collected first
     Given the source 'a = 1'
     And the statement 'a = 1' is the ancestor node
     And the first leaf of the ancestor is the descendant node
-    When the descendant is surrounded with 'DESC_BEF' and 'DESC_AFT'
+    When the descendant is surrounded with 'DESC_BEF' and 'DONT_CARE'
     And the ancestor is prepended with 'ANC_PRE'
     Then 'ANC_PRE' appears before 'DESC_BEF' in the result
 
@@ -333,13 +333,13 @@ Feature: Rewrite semantics
     And the statement 'a = 1' is the ancestor node
     And the last leaf of the ancestor is the descendant node
     When the ancestor is appended with 'ANC_APP'
-    And the descendant is surrounded with 'DESC_BEF' and 'DESC_AFT'
+    And the descendant is surrounded with 'DONT_CARE' and 'DESC_AFT'
     Then 'DESC_AFT' appears before 'ANC_APP' in the result
 
   Scenario: Surround of descendant is inside append of ancestor at shared end location — surround collected first
     Given the source 'a = 1'
     And the statement 'a = 1' is the ancestor node
     And the last leaf of the ancestor is the descendant node
-    When the descendant is surrounded with 'DESC_BEF' and 'DESC_AFT'
+    When the descendant is surrounded with 'DONT_CARE' and 'DESC_AFT'
     And the ancestor is appended with 'ANC_APP'
     Then 'DESC_AFT' appears before 'ANC_APP' in the result
