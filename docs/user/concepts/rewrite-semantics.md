@@ -19,51 +19,11 @@ In AST-based pattern matching that location of text corresponds to either the st
 Three kind of insertions are supported, i.e., prepend, append, and around, that insert text at the start, end, and both locations of the AST node.
 
 ## Rewrite step
+
+Each rewrite step consists of the following, sequential steps:
 1. parse code,
-2. collect changes,
-3. commit changes.
-
-## General rules for combining changes
-
-### Repeated changes
-
-In the collected changes, the same changes might occur more than once.
-To give some examples,
-* a node is removed multiple times, and
-* a node is prepended with the same text multiple times.
-
-The behaviour of a change could be [idempotent](https://en.wikipedia.org/wiki/Idempotence) or not.
-Furthermore, who makes this decision? The user or the framework?
-
-### Impossible combinations
-
-The combination of some changes is not possible.
-For example, it is impossible to replace the same AST node with different texts.
-The following behaviours are possible when such a situation occurs:
-* **keep-first**: keep the first collected change and ignore later ones 
-* **keep-last**: drop earlier collected changes and keep the last one
-* **reject**: reject the combination and stop processing.
-
-Diagnostics may be produced in addition to the selected behaviour
-(e.g., warnings for keep-first/keep-last, errors for reject).
-
-The reject behaviour is independent of the order in which changes are collected,
-whereas keep-first and keep-last depend on that order.
-
-
-### decision
-
-Based on our experience with Renaissance that 
-many features were never needed by high-quality transformations, 
-we have decided to keep the rules as simple as possible.
-
-1. The behaviour of changes is not configurable.
-2. None of the changes is [idempotent](https://en.wikipedia.org/wiki/Idempotence).
-3. Impossible changes are rejected.
-
-As a consequence, we don't support corner cases but just throw an error, e.g., 
-  * replacing the same node with text twice is an error even when the text is the same; and
-  * removing two overlapping sequences of nodes is treated the same as replacing them and thus results in an error;
+1. collect changes, and
+1. commit changes.
 
 ## Particular combinations
 
@@ -71,8 +31,7 @@ We have the following rules to combine and commit the collected changes.
 
 1. Replacements affecting the same AST node(s) are erroneous.
 
-As different changes cannot be applied to the same range of text,
-an error will be raised whenever such situation occurs.
+Whenever different changes are applied to the same range of text, an error will be raised.
 For AST-based pattern matching, this situation can only occur when replacements are applied to the same node or to the same sequence of nodes.
 So when multiple replacements are affecting the same AST node(s) an error is raised.
 
@@ -88,10 +47,9 @@ Figure 1.1 shows an example where different replacements are applied to the same
 
 2. Overlapping replacements are erroneous.
 
-As different changes cannot be applied to overlapping ranges of text,
-an error will be raised whenever such situation occurs.
+Whenever different changes are applied to overlapping ranges of text, an error will be raised.
 For AST-based pattern matching, this situation can only occur when replacements are applied to overlapping sequence of nodes.
-So when multiple replacements are affecting the same seqeunce of AST nodes an error is raised.
+So when multiple replacements are affecting the same sequence of AST nodes an error is raised.
 
 Figure 1.2 shows an example where replacements are applied to overlapping sequences of arguments to a function call in which case an error is raised.
 
@@ -121,17 +79,20 @@ For AST-based pattern matching this may occur when a change associated with an A
 
 4. Multiple prepends at the same text location
     * different nodes
+        Prepend of ancestor before prepend of descendant.
     * same node
 
 5. Multiple appends at the same text location
     * different nodes
+        Append of ancestor after append of descendant.
     * same node
 
 6. Appends and prepends at the same text location
-
+        Can only happen for consecutive sibling nodes
+        append of sibling before prepend of next, consecutive sibling
 
 7. Prepend, surround, and append
+    * same node
+        The expected order in the modified source file is:
 
-The expected order in the modified source file is:
-
-prepend_text, surround_before_text, AST Node text, surround_after_text, append_text
+        prepend_text, surround_before_text, AST Node text, surround_after_text, append_text
