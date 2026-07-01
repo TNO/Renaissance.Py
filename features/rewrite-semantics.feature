@@ -8,12 +8,15 @@ Feature: Rewrite semantics
   Background:
     Given a Python language factory
 
-  # ── Scenario 0 ────────────────────────────────────────────────────────────────
-  # Representative examples only. The universal claim — that replacing the same
+  # Representative examples only. The universal claim — e.g., that replacing the same
   # node more than once ALWAYS raises an error regardless of the replacement text
-  # — is verified by the Hypothesis test
-  # `test_replacing_same_node_twice_always_errors` in
-  # features/steps/test-rewrite-semantics.py.
+  # — is verified by Hypothesis tests
+  # 
+  # Scenario |  test
+  # Equal    | `test_replacing_same_node_twice_always_errors` in features/steps/test-rewrite-semantics.py.
+  #
+
+  # ── Scenario Equal ────────────────────────────────────────────────────────────────
   Scenario Outline: Replacements of the same node produce an error
     Given the source '<source>'
     And the statement '<stmt>' is a node
@@ -22,42 +25,45 @@ Feature: Rewrite semantics
     Then applying the changes raises an error
 
     Examples:
-      | source     | stmt       | first   | second  | note                                    |
-      | a = 1      | a = 1      | A       | B       | assignment — different replacement texts |
-      | a = 1      | a = 1      | A       | A       | assignment — identical replacement texts |
-      | print(1)   | print(1)   | foo     | bar     | call statement                           |
+      | source     | stmt       | first   | second  | note                                        |
+      | a = 1      | a = 1      | A       | B       | assignment — different replacement texts    |
+      | a = 1      | a = 1      | A       | A       | assignment — identical replacement texts    |
+      | a = 1      | a = 1      | ""      | ""      | assignment — identical removal (empty text) |
+      | print(1)   | print(1)   | foo     | bar     | call statement                              |
 
-  # ── Scenario 1 ────────────────────────────────────────────────────────────────
-  Scenario: Covered replacements are not applied
-    Given the source 'a = 1'
-    And the statement 'a = 1' is the parent node
-    And the first leaf of the parent is the child node
-    When the parent node is replaced with 'x = 99'
-    And the child node is replaced with 'COVERED'
-    Then the result contains 'x = 99'
-    And the result does not contain 'COVERED'
-
-  # ── Scenario 2 ────────────────────────────────────────────────────────────────
-  Scenario: Covered inserts are not applied
-    Given the source 'a = 1'
-    And the statement 'a = 1' is the parent node
-    And the first leaf of the parent is the child node
-    When the parent node is replaced with 'x = 99'
-    And the child node is prepended with 'COVERED'
-    Then the result contains 'x = 99'
-    And the result does not contain 'COVERED'
-
-  # ── Scenario 3 ────────────────────────────────────────────────────────────────
-  Scenario: Overlapping replacements produce an error
+  # ── Scenario Overlap ────────────────────────────────────────────────────────────────
+  Scenario Outline: Overlapping replacements produce an error
     Given the source 'a = 1\nb = 2\nc = 3\n'
     And the statement 'a = 1' is the first sibling
     And the statement 'b = 2' is the second sibling
     And the statement 'c = 3' is the third sibling
-    When the first and second siblings are replaced with 'REPLACED'
-    And the second and third siblings are replaced with 'REPLACED'
+    When the first and second siblings are replaced with '<first>'
+    And the second and third siblings are replaced with '<second>'
     Then applying the changes raises an error
 
-  # ── Scenario 4 ────────────────────────────────────────────────────────────────
+    Examples:
+      | first   | second  | note                             |
+      | A       | B       | different replacement texts      |
+      | A       | A       | identical replacement texts      |
+      | ""      | ""      | overlapping removal (empty text) |
+     
+  # ── Scenario Cover ────────────────────────────────────────────────────────────────
+  Scenario Outline: Covered changes are not applied
+    Given the source 'a = 1'
+    And the statement 'a = 1' is the parent node
+    And the first leaf of the parent is the child node
+    When the parent node is replaced with 'x = 99'
+    And the child node is '<changed>' with 'COVERED'
+    Then the result contains 'x = 99'
+    And the result does not contain 'COVERED'
+
+    Examples:
+      | changed   |
+      | replaced  |
+      | appended  |
+      | prepended |
+
+  # ── Scenario Prepends - different nodes, with same text location ────────────────────────────────────────────────────────────────
   # Both collection orders must yield the same result: AST structure, not
   # insertion order, determines the output order.
   Scenario Outline: Prepend of ancestor precedes prepend of descendant regardless of collection order
@@ -73,7 +79,16 @@ Feature: Rewrite semantics
       | ancestor   | ANC        | descendant | DESC        | ancestor collected first    |
       | descendant | DESC       | ancestor   | ANC         | descendant collected first  |
 
-  # ── Scenario 5 ────────────────────────────────────────────────────────────────
+  # ── Scenario Prepends - same node ────────────────────────────────────────────────────────────────
+  # insertion order, determines the output order.
+  Scenario: Prepends of same node are applied in order of collection.
+    Given the source 'a = 1'
+    And the statement 'a = 1' is a node
+    When the node is prepended with 'FIRST'
+    And the node is prepended with 'SECOND'
+    Then 'FIRST' appears before 'SECOND' in the result
+
+  # ── Scenario Appends - different nodes, with same text location ────────────────────────────────────────────────────────────────
   # Both collection orders must yield the same result: AST structure, not
   # insertion order, determines the output order.
   Scenario Outline: Append of descendant precedes append of ancestor regardless of collection order
@@ -89,7 +104,58 @@ Feature: Rewrite semantics
       | ancestor   | ANC        | descendant | DESC        | ancestor collected first    |
       | descendant | DESC       | ancestor   | ANC         | descendant collected first  |
 
-  # ── Scenario 6 ────────────────────────────────────────────────────────────────
+  # ── Scenario Appends - same node ────────────────────────────────────────────────────────────────
+  # reversed insertion order, determines the output order.
+  Scenario: Appends of same node are applied in reversed order of collection.
+    Given the source 'a = 1'
+    And the statement 'a = 1' is a node
+    When the node is appended with 'FIRST'
+    And the node is appended with 'SECOND'
+    Then 'SECOND' appears before 'FIRST' in the result
+
+# ── Scenario Surrounds - different nodes, sharing start location ───────────────
+  # Both collection orders must yield the same result: AST structure, not
+  # insertion order, determines the output order of the before texts.
+  Scenario Outline: Surround of ancestor precedes surround of descendant at shared start location regardless of collection order
+    Given the source 'a = 1'
+    And the statement 'a = 1' is the ancestor node
+    And the first leaf of the ancestor is the descendant node
+    When the <first> is surrounded with '<first_before>' and '<first_after>'
+    And the <second> is surrounded with '<second_before>' and '<second_after>'
+    Then 'ANCBEF' appears before 'DESCBEF' in the result
+
+    Examples:
+      | first      | first_before | first_after | second     | second_before | second_after | collection order           |
+      | ancestor   | ANCBEF       | ANCAFT      | descendant | DESCBEF       | DESCAFT      | ancestor collected first   |
+      | descendant | DESCBEF      | DESCAFT     | ancestor   | ANCBEF        | ANCAFT       | descendant collected first |
+
+  # ── Scenario Surrounds - different nodes, sharing end location ─────────────────
+  # Both collection orders must yield the same result: AST structure, not
+  # insertion order, determines the output order of the after texts.
+  Scenario Outline: Surround of descendant precedes surround of ancestor at shared end location regardless of collection order
+    Given the source 'a = 1'
+    And the statement 'a = 1' is the ancestor node
+    And the last leaf of the ancestor is the descendant node
+    When the <first> is surrounded with '<first_before>' and '<first_after>'
+    And the <second> is surrounded with '<second_before>' and '<second_after>'
+    Then 'DESCAFT' appears before 'ANCAFT' in the result
+
+    Examples:
+      | first      | first_before | first_after | second     | second_before | second_after | collection order           |
+      | ancestor   | ANCBEF       | ANCAFT      | descendant | DESCBEF       | DESCAFT      | ancestor collected first   |
+      | descendant | DESCBEF      | DESCAFT     | ancestor   | ANCBEF        | ANCAFT       | descendant collected first |
+
+  # ── Scenario Surrounds - same node ────────────────────────────────────────────
+  # Before texts appear in collection order; after texts in reversed collection order.
+  Scenario: Surrounds of same node: before texts in collection order, after texts in reversed collection order
+    Given the source 'a = 1'
+    And the statement 'a = 1' is a node
+    When the node is surrounded with 'BEFORE1' and 'AFTER1'
+    And the node is surrounded with 'BEFORE2' and 'AFTER2'
+    Then 'BEFORE1' appears before 'BEFORE2' in the result
+    And 'AFTER2' appears before 'AFTER1' in the result
+
+  # ── Scenario Append Prepend, at same text location ────────────────────────────────────────────────────────────────
   Scenario: Append of sibling precedes prepend of next consecutive sibling — append collected first
     Given the source 'a = 1\nb = 2\n'
     And the statement 'a = 1' is the first sibling
@@ -98,7 +164,7 @@ Feature: Rewrite semantics
     And the second sibling is prepended with 'SECOND'
     Then 'FIRST' appears before 'SECOND' in the result
 
-  # ── Scenario 7 ────────────────────────────────────────────────────────────────
+  # ── Scenario Prepend Append, at same text location ────────────────────────────────────────────────────────────────
   Scenario: Append of sibling precedes prepend of next consecutive sibling — prepend collected first
     Given the source 'a = 1\nb = 2\n'
     And the statement 'a = 1' is the first sibling
@@ -106,3 +172,113 @@ Feature: Rewrite semantics
     When the second sibling is prepended with 'SECOND'
     And the first sibling is appended with 'FIRST'
     Then 'FIRST' appears before 'SECOND' in the result
+
+  # ── Scenario Prepend + Surround at same node ───────────────────────────────────
+  # Surround is always closer to the AST node than prepend, regardless of collection order.
+  Scenario: Prepend is outside surround of the same node — prepend collected first
+    Given the source 'a = 1'
+    And the statement 'a = 1' is a node
+    When the node is prepended with 'FIRST'
+    And the node is surrounded with 'BEFORE' and 'AFTER'
+    Then 'FIRST' appears before 'BEFORE' in the result
+
+  Scenario: Prepend is outside surround of the same node — surround collected first
+    Given the source 'a = 1'
+    And the statement 'a = 1' is a node
+    When the node is surrounded with 'BEFORE' and 'AFTER'
+    And the node is prepended with 'FIRST'
+    Then 'FIRST' appears before 'BEFORE' in the result
+
+  # ── Scenario Append + Surround at same node ───────────────────────────────────
+  # Surround is always closer to the AST node than append, regardless of collection order.
+  Scenario: Append is outside surround of the same node — append collected first
+    Given the source 'a = 1'
+    And the statement 'a = 1' is a node
+    When the node is appended with 'FIRST'
+    And the node is surrounded with 'BEFORE' and 'AFTER'
+    Then 'AFTER' appears before 'FIRST' in the result
+
+  Scenario: Append is outside surround of the same node — surround collected first
+    Given the source 'a = 1'
+    And the statement 'a = 1' is a node
+    When the node is surrounded with 'BEFORE' and 'AFTER'
+    And the node is appended with 'FIRST'
+    Then 'AFTER' appears before 'FIRST' in the result
+
+  # ── Scenario Surround (ancestor) + Prepend (descendant) — shared start location ─
+  # Descendant's prepend is always closer to the descendant node than the ancestor's
+  # surround before text, regardless of collection order.
+  Scenario: Prepend of descendant is inside surround of ancestor at shared start location — prepend collected first
+    Given the source 'a = 1'
+    And the statement 'a = 1' is the ancestor node
+    And the first leaf of the ancestor is the descendant node
+    When the descendant is prepended with 'DESCPRE'
+    And the ancestor is surrounded with 'ANCBEF' and 'ANCAFT'
+    Then 'ANCBEF' appears before 'DESCPRE' in the result
+
+  Scenario: Prepend of descendant is inside surround of ancestor at shared start location — surround collected first
+    Given the source 'a = 1'
+    And the statement 'a = 1' is the ancestor node
+    And the first leaf of the ancestor is the descendant node
+    When the ancestor is surrounded with 'ANCBEF' and 'ANCAFT'
+    And the descendant is prepended with 'DESCPRE'
+    Then 'ANCBEF' appears before 'DESCPRE' in the result
+
+  # ── Scenario Surround (ancestor) + Append (descendant) — shared end location ───
+  # Descendant's append is always closer to the descendant node than the ancestor's
+  # surround after text, regardless of collection order.
+  Scenario: Append of descendant is inside surround of ancestor at shared end location — append collected first
+    Given the source 'a = 1'
+    And the statement 'a = 1' is the ancestor node
+    And the last leaf of the ancestor is the descendant node
+    When the descendant is appended with 'DESCAPP'
+    And the ancestor is surrounded with 'ANCBEF' and 'ANCAFT'
+    Then 'DESCAPP' appears before 'ANCAFT' in the result
+
+  Scenario: Append of descendant is inside surround of ancestor at shared end location — surround collected first
+    Given the source 'a = 1'
+    And the statement 'a = 1' is the ancestor node
+    And the last leaf of the ancestor is the descendant node
+    When the ancestor is surrounded with 'ANCBEF' and 'ANCAFT'
+    And the descendant is appended with 'DESCAPP'
+    Then 'DESCAPP' appears before 'ANCAFT' in the result
+
+  # ── Scenario Surround (descendant) + Prepend (ancestor) — shared start location ─
+  # Descendant's surround before text is always closer to the descendant node than
+  # the ancestor's prepend, regardless of collection order.
+  Scenario: Surround of descendant is inside prepend of ancestor at shared start location — prepend collected first
+    Given the source 'a = 1'
+    And the statement 'a = 1' is the ancestor node
+    And the first leaf of the ancestor is the descendant node
+    When the ancestor is prepended with 'ANCPRE'
+    And the descendant is surrounded with 'DESCBEF' and 'DESCAFT'
+    Then 'ANCPRE' appears before 'DESCBEF' in the result
+
+  Scenario: Surround of descendant is inside prepend of ancestor at shared start location — surround collected first
+    Given the source 'a = 1'
+    And the statement 'a = 1' is the ancestor node
+    And the first leaf of the ancestor is the descendant node
+    When the descendant is surrounded with 'DESCBEF' and 'DESCAFT'
+    And the ancestor is prepended with 'ANCPRE'
+    Then 'ANCPRE' appears before 'DESCBEF' in the result
+
+  # ── Scenario Surround (descendant) + Append (ancestor) — shared end location ───
+  # Descendant's surround after text is always closer to the descendant node than
+  # the ancestor's append, regardless of collection order.
+  Scenario: Surround of descendant is inside append of ancestor at shared end location — append collected first
+    Given the source 'a = 1'
+    And the statement 'a = 1' is the ancestor node
+    And the last leaf of the ancestor is the descendant node
+    When the ancestor is appended with 'ANCAPP'
+    And the descendant is surrounded with 'DESCBEF' and 'DESCAFT'
+    Then 'DESCAFT' appears before 'ANCAPP' in the result
+
+  Scenario: Surround of descendant is inside append of ancestor at shared end location — surround collected first
+    Given the source 'a = 1'
+    And the statement 'a = 1' is the ancestor node
+    And the last leaf of the ancestor is the descendant node
+    When the descendant is surrounded with 'DESCBEF' and 'DESCAFT'
+    And the ancestor is appended with 'ANCAPP'
+    Then 'DESCAFT' appears before 'ANCAPP' in the result
+
+  
