@@ -9,12 +9,23 @@ Feature: Rewrite semantics
     Given a Python language factory
 
   # ── Scenario 0 ────────────────────────────────────────────────────────────────
-  Scenario: Replacements of the same node produce an error
-    Given the source 'a = 1'
-    And the statement 'a = 1' is a node
-    When the node is replaced with 'A'
-    And the node is replaced with 'B'
+  # Representative examples only. The universal claim — that replacing the same
+  # node more than once ALWAYS raises an error regardless of the replacement text
+  # — is verified by the Hypothesis test
+  # `test_replacing_same_node_twice_always_errors` in
+  # features/steps/test-rewrite-semantics.py.
+  Scenario Outline: Replacements of the same node produce an error
+    Given the source '<source>'
+    And the statement '<stmt>' is a node
+    When the node is replaced with '<first>'
+    And the node is replaced with '<second>'
     Then applying the changes raises an error
+
+    Examples:
+      | source     | stmt       | first   | second  | note                                    |
+      | a = 1      | a = 1      | A       | B       | assignment — different replacement texts |
+      | a = 1      | a = 1      | A       | A       | assignment — identical replacement texts |
+      | print(1)   | print(1)   | foo     | bar     | call statement                           |
 
   # ── Scenario 1 ────────────────────────────────────────────────────────────────
   Scenario: Covered replacements are not applied

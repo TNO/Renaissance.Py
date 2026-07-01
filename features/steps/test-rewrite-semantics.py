@@ -7,6 +7,10 @@ not yet fully implemented:
     (``__is_ancestor_in_nodes`` always returns False).
   - Scenario 2: the Rewriter merges overlapping rewrites instead of raising.
   - Scenario 4: append ordering (descendant before ancestor) is not yet enforced.
+
+Scenario 0 (Replacements of the same node produce an error) uses a Scenario
+Outline for representative examples. The universal property test is in:
+  test/syntax_tree/test_rewrite_semantics_properties.py
 """
 
 from __future__ import annotations
@@ -23,6 +27,17 @@ _FEATURE = "../rewrite-semantics.feature"
 
 
 # ── Scenario functions ────────────────────────────────────────────────────────
+
+# Scenario 0 — Scenario Outline: three representative examples.
+# Universal property test: test/syntax_tree/test_rewrite_semantics_properties.py
+@pytest.mark.xfail(
+    reason="Replacing the same node twice is not yet rejected by ASTRewriter",
+    strict=True,
+)
+@scenario(_FEATURE, "Replacements of the same node produce an error")
+def test_replacements_of_same_node_produce_error():
+    pass
+
 
 @pytest.mark.xfail(
     reason="Covered-change filtering not yet active: _RewriteActions.__is_ancestor_in_nodes always returns False",
@@ -113,6 +128,11 @@ def given_source(context: dict, source: str) -> None:
 
 # ── Node-selection Given steps ────────────────────────────────────────────────
 
+@given(parsers.parse("the statement '{text}' is a node"))
+def given_statement_as_node(context: dict, text: str) -> None:
+    context["node"] = _find_statement(context["atu"], context["factory"], text)
+
+
 @given(parsers.parse("the statement '{text}' is the parent node"))
 def given_statement_as_parent(context: dict, text: str) -> None:
     context["parent"] = _find_statement(context["atu"], context["factory"], text)
@@ -154,6 +174,11 @@ def given_third_sibling(context: dict, text: str) -> None:
 
 
 # ── When steps ────────────────────────────────────────────────────────────────
+
+@when(parsers.parse("the node is replaced with '{text}'"))
+def when_replace_node(context: dict, text: str) -> None:
+    context["rewriter"].replace(text, [context["node"]])
+
 
 @when(parsers.parse("the parent node is replaced with '{text}'"))
 def when_replace_parent(context: dict, text: str) -> None:
