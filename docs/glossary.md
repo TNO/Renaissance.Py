@@ -115,7 +115,7 @@ Each entry links to the concept page that is the authoritative source of the def
 **Node (AST node)**
 : A single element in an [AST](#ast-abstract-syntax-tree), representing a syntactic
   construct such as a statement, expression, identifier, or punctuation token.
-  Every node covers a contiguous span of the original source text defined by its
+  Every node has a [range](#range) in the original source text, defined by its
   start and end position.
   See [Matching](user/concepts/matching.md).
 
@@ -140,11 +140,13 @@ Each entry links to the concept page that is the authoritative source of the def
 ## R
 
 **Range**
-: The span of text in the original source, expressed as a start and end offset, that a [replacement](#replacement) is associated with.
+: A contiguous region of the original source text, expressed as a start and end offset.
+  Every AST [node](#node-ast-node) has a range; the range of a [replacement](#replacement)
+  is derived from the range of the replaced node or sequence of nodes.
   See [Rewrite semantics](user/concepts/rewrite-semantics.md).
 
 **Removal**
-: A [replacement](#replacement) where the replacement text is the empty string, effectively deleting the matched source range.
+: A [replacement](#replacement) where the replacement text is the empty string, effectively deleting the text of a source [range](#range).
   See [Rewrite semantics](user/concepts/rewrite-semantics.md).
 
 **Replacement**
