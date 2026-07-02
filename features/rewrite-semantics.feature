@@ -48,8 +48,9 @@ Feature: Rewrite semantics
   # Special tokens:
   #   DONT_CARE — a surround argument not at the boundary under test;
   #               its value is not part of the assertion.
-  #   COVERED   — must not appear in any source or replacement text; its presence
-  #               in the output would prove a suppressed change was wrongly applied.
+  #   COVERED   — used only in dominance scenarios to prove a suppressed change was
+  #               NOT applied: it must not appear in the source or in any dominating
+  #               replacement text, so any occurrence in the output is a test failure.
 
   # ── Collection order ─────────────────────────────────────────────────────────────
   # 'Collection order' is the sequence in which changes are registered before the
@@ -75,20 +76,34 @@ Feature: Rewrite semantics
   # Combinations that cannot produce a valid result are rejected immediately.
   # ════════════════════════════════════════════════════════════════════════════════
 
-  # ── Scenario Equal ────────────────────────────────────────────────────────────────
+  # ── Scenario Equal — node ────────────────────────────────────────────────────────────────
   Scenario Outline: Replacements of the same node produce an error
-    Given the source '<source>'
-    And the statement '<stmt>' is a node
+    Given the source 'a = 1'
+    And the statement 'a = 1' is a node
     When the node is replaced with '<first>'
     And the node is replaced with '<second>'
     Then applying the changes raises an error
 
     Examples:
-      | source     | stmt       | first   | second  | note                                        |
-      | a = 1      | a = 1      | A       | B       | assignment — different replacement texts    |
-      | a = 1      | a = 1      | A       | A       | assignment — identical replacement texts    |
-      | a = 1      | a = 1      | ""      | ""      | assignment — identical removal (empty text) |
-      | print(1)   | print(1)   | foo     | bar     | call statement                              |
+      | first   | second  | note                           |
+      | A       | B       | different replacement texts    |
+      | A       | A       | identical replacement texts    |
+      | ""      | ""      | identical removal (empty text) |
+
+  # ── Scenario Equal — sibling range ────────────────────────────────────────────────
+  Scenario Outline: Replacements of the same sibling range produce an error
+    Given the source 'a = 1\nb = 2\nc = 3\n'
+    And the statement 'a = 1' is the first sibling
+    And the statement 'b = 2' is the second sibling
+    When the first and second siblings are replaced with '<first>'
+    And the first and second siblings are replaced with '<second>'
+    Then applying the changes raises an error
+
+    Examples:
+      | first   | second  | note                                        |
+      | A       | B       | different replacement texts                 |
+      | A       | A       | identical replacement texts                 |
+      | ""      | ""      | identical removal (empty text)              |
 
   # ── Scenario Overlap ──────────────────────────────────────────────────────────────
   Scenario Outline: Overlapping replacements produce an error
@@ -108,13 +123,20 @@ Feature: Rewrite semantics
 
   # ════════════════════════════════════════════════════════════════════════════════
   # Group: Dominance and suppression
-  # A change on an ancestor node suppresses any covered changes on its descendants.
+  # At the text level all share the same principle: a replacement covering a
+  # larger text range suppresses any replacement covering a smaller text range that
+  # is fully contained within it.
+  # From an AST point of view this principle manifests in two ways:
+  #   Ancestor dominance: a replacement on an ancestor node suppresses changes on
+  #                       its descendants as the ancestor's text range contains the
+  #                       descendant's text range.
+  #   Range dominance:    a replacement on a sibling range suppresses replacements
+  #                       on any proper subrange (including a single sibling) that
+  #                       is fully contained within the larger range.
   # ════════════════════════════════════════════════════════════════════════════════
 
-  # ── Scenario Cover ────────────────────────────────────────────────────────────────
-  # 'COVERED' is a sentinel value: it must not appear in the source ('a = 1') or in
-  # the replacement text ('x = 99'). Any occurrence of 'COVERED' in the result
-  # therefore means the covered change was wrongly applied.
+  # ── Scenario Cover — ancestor dominance ──────────────────────────────────────────
+  # 'COVERED' is the dominated change text; see Sentinel tokens in the preamble.
   Scenario Outline: Covered change is not applied
     Given the source 'a = 1'
     And the statement 'a = 1' is the parent node
@@ -130,6 +152,41 @@ Feature: Rewrite semantics
       | appended with 'COVERED'                 |
       | prepended with 'COVERED'                |
       | surrounded with 'COVERED' and 'COVERED' |
+
+  # ── Scenario Range Cover — subrange dominated by range ──────────────────────────────
+  # Range [sib1, sib2, sib3] dominates the subrange [sib1, sib2].
+  # 'COVERED' is the dominated change text; see Sentinel tokens in the preamble.
+  Scenario Outline: Sibling range dominates a proper subrange regardless of collection order
+    Given the source 'a = 1\nb = 2\nc = 3\n'
+    And the statement 'a = 1' is the first sibling
+    And the statement 'b = 2' is the second sibling
+    And the statement 'c = 3' is the third sibling
+    When the <first_op>
+    And the <second_op>
+    Then the result contains 'RANGE'
+    But the result does not contain 'COVERED'
+
+    Examples:
+      | first_op                                                        | second_op                                                   | collection order             |
+      | first, second and third siblings are replaced with 'RANGE'      | first and second siblings are replaced with 'COVERED'       | range collected first        |
+      | first and second siblings are replaced with 'COVERED'           | first, second and third siblings are replaced with 'RANGE'  | subrange collected first     |
+
+  # ── Scenario Range Cover — single sibling dominated by range ──────────────────────────
+  # Range [sib1, sib2] dominates the single sibling [sib2]. 
+  # 'COVERED' is the dominated change text; see Sentinel tokens in the preamble.
+  Scenario Outline: Sibling range dominates a single contained sibling regardless of collection order
+    Given the source 'a = 1\nb = 2\nc = 3\n'
+    And the statement 'a = 1' is the first sibling
+    And the statement 'b = 2' is the second sibling
+    When the <first_op>
+    And the <second_op>
+    Then the result contains 'RANGE'
+    But the result does not contain 'COVERED'
+
+    Examples:
+      | first_op                                            | second_op                                          | collection order                |
+      | first and second siblings are replaced with 'RANGE' | second sibling is replaced with 'COVERED'          | range collected first           |
+      | second sibling is replaced with 'COVERED'           | first and second siblings are replaced with 'RANGE' | single sibling collected first  |
 
   # ════════════════════════════════════════════════════════════════════════════════
   # Group: Single operator — same node
