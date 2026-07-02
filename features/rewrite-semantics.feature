@@ -1,23 +1,74 @@
 Feature: Rewrite semantics
   # FEATURE-REWRITE-SEMANTICS
   # See: docs/user/features/rewrite-semantics.md
+  # See also: docs/glossary.md — definitions of operators, AST terms, and
+  #           collection of changes.
 
-  Governs how multiple collected changes are applied to a source file in a single
-  rewrite step; defines which combinations are valid and which produce errors.
+  Use this feature to understand how the tool applies multiple edits — insertions
+  and replacements — to a source file in one pass, and which combinations of edits
+  are valid or produce errors.
+
+  The rewrite semantics are language-agnostic and apply to every language supported
+  by the tool.
 
   Background:
     Given a Python language factory
 
+  # Python is chosen only to make the scenarios concrete and runnable; the rules
+  # described here hold for all supported languages.
+
+  # ── Format: Gherkin / BDD ────────────────────────────────────────────────────────
+  # These scenarios are written in Gherkin (https://cucumber.io/docs/gherkin/), the
+  # notation used by behaviour-driven development (BDD,
+  # https://cucumber.io/docs/bdd/).
+  #
+  # Scenario         — one concrete, self-contained example of a rule.
+  # Scenario Outline — a parameterised template expanded by an Examples table.
+  #                    Each row produces one test case; '<column>' placeholders in
+  #                    the steps are substituted with the row values at run time.
+  #                    The last column ('note', 'combination', or 'collection order')
+  #                    labels the case for human readers and is not used in any step.
+
+  # ── Operators ────────────────────────────────────────────────────────────────────
+  # Four operators can be applied to an AST node (full definitions: docs/glossary.md):
+  #   replace(text)           — substitute the node's source text with 'text'.
+  #   prepend(text)           — insert 'text' immediately before the node.
+  #   append(text)            — insert 'text' immediately after the node.
+  #   surround(before, after) — insert 'before' before and 'after' after the node.
+
+  # ── Sentinel tokens ──────────────────────────────────────────────────────────────
+  # All-caps tokens are literal strings used only to verify output ordering;
+  # they never appear in the source code under test.
+  # Self-describing tokens: the name describes the expected position in the output.
+  #   PREPEND, APPEND, REPLACEMENT
+  #   BEFORE, AFTER
+  #   SURROUND_BEFORE, SURROUND_AFTER
+  #   ANC, DESC, ANC_BEF, ANC_AFT, DESC_BEF, DESC_AFT
+  #   FIRST, SECOND, BEFORE1, AFTER1, BEFORE2, AFTER2
+  # Special tokens:
+  #   DONT_CARE — a surround argument not at the boundary under test;
+  #               its value is not part of the assertion.
+  #   COVERED   — must not appear in any source or replacement text; its presence
+  #               in the output would prove a suppressed change was wrongly applied.
+
+  # ── Collection order ─────────────────────────────────────────────────────────────
+  # 'Collection order' is the sequence in which changes are registered before the
+  # rewrite is committed (see docs/glossary.md — Collection of changes).
+  # Collection order is significant ONLY when the same operator is applied multiple
+  # times to the same node (see Group: Single operator — same node):
+  #   • prepend  — applied in collection order (first collected = leftmost).
+  #   • append   — applied in reversed collection order (first collected = rightmost).
+  #   • surround — before texts in collection order; after texts in reversed order.
+  # In all other situations the output order is determined by AST structure, not
+  # by collection order.
+
+  # ── Representative examples ──────────────────────────────────────────────────────
   # Representative examples only. The universal claim — e.g., that replacing the same
   # node more than once ALWAYS raises an error regardless of the replacement text
-  # — is verified by Hypothesis tests
-  # 
+  # — is verified by Hypothesis tests.
+  #
   # Scenario |  test
   # Equal    | `test_replacing_same_node_twice_always_errors` in test/syntax_tree/test_rewrite_semantics_properties.py.
-  #
-  # Sentinel tokens used across scenarios:
-  # 'DONT_CARE' marks a surround argument that is not at the boundary under test
-  #             and is not part of the assertion.
 
   # ════════════════════════════════════════════════════════════════════════════════
   # Group: Error cases
@@ -83,6 +134,7 @@ Feature: Rewrite semantics
   # ════════════════════════════════════════════════════════════════════════════════
   # Group: Single operator — same node
   # Ordering when the same operator is applied to the same node more than once.
+  # Collection order IS significant here — see the preamble for the per-operator rules.
   # ════════════════════════════════════════════════════════════════════════════════
 
   # ── Scenario Prepends — same node ────────────────────────────────────────────────
@@ -117,6 +169,7 @@ Feature: Rewrite semantics
   # Group: Single operator — different nodes sharing a text location
   # AST structure determines order when ancestor
   # and descendant nodes share a start or end text position — not collection order.
+  # Collection order is NOT significant here.
   # ════════════════════════════════════════════════════════════════════════════════
 
   # ── Scenario Prepends — different nodes, shared start location ───────────────────
@@ -228,8 +281,10 @@ Feature: Rewrite semantics
 
   # ════════════════════════════════════════════════════════════════════════════════
   # Group: Cross-operator — same node
-  # When different operators target the same node, surround is always closer to
-  # the node than prepend or append, regardless of collection order.
+  # Regardless of collection order, the output always follows the structural order:
+  #   prepend → surround-before → node → surround-after → append
+  # When the node is replaced, the replacement text occupies the node position:
+  #   prepend → surround-before → replacement → surround-after → append
   # ════════════════════════════════════════════════════════════════════════════════
 
   # ── Scenario Prepend + Surround — same node ───────────────────────────────────────
@@ -263,6 +318,57 @@ Feature: Rewrite semantics
     When the node is surrounded with 'DONT_CARE' and 'AFTER'
     And the node is appended with 'FIRST'
     Then 'AFTER' appears before 'FIRST' in the result
+
+  # ── Scenario Replace + Prepend — same node ────────────────────────────────────────
+  # Prepend text appears before the replacement text, regardless of collection order.
+  Scenario: Prepend appears before replacement of the same node — prepend collected first
+    Given the source 'a = 1'
+    And the statement 'a = 1' is a node
+    When the node is prepended with 'PREPEND'
+    And the node is replaced with 'REPLACEMENT'
+    Then 'PREPEND' appears before 'REPLACEMENT' in the result
+
+  Scenario: Prepend appears before replacement of the same node — replace collected first
+    Given the source 'a = 1'
+    And the statement 'a = 1' is a node
+    When the node is replaced with 'REPLACEMENT'
+    And the node is prepended with 'PREPEND'
+    Then 'PREPEND' appears before 'REPLACEMENT' in the result
+
+  # ── Scenario Replace + Append — same node ─────────────────────────────────────────
+  # Replacement text appears before append text, regardless of collection order.
+  Scenario: Replacement appears before append of the same node — replace collected first
+    Given the source 'a = 1'
+    And the statement 'a = 1' is a node
+    When the node is replaced with 'REPLACEMENT'
+    And the node is appended with 'APPEND'
+    Then 'REPLACEMENT' appears before 'APPEND' in the result
+
+  Scenario: Replacement appears before append of the same node — append collected first
+    Given the source 'a = 1'
+    And the statement 'a = 1' is a node
+    When the node is appended with 'APPEND'
+    And the node is replaced with 'REPLACEMENT'
+    Then 'REPLACEMENT' appears before 'APPEND' in the result
+
+  # ── Scenario Replace + Surround — same node ───────────────────────────────────────
+  # Surround before text appears before the replacement; replacement appears before
+  # surround after text, regardless of collection order.
+  Scenario: Surround wraps replacement of the same node — replace collected first
+    Given the source 'a = 1'
+    And the statement 'a = 1' is a node
+    When the node is replaced with 'REPLACEMENT'
+    And the node is surrounded with 'SURROUND_BEFORE' and 'SURROUND_AFTER'
+    Then 'SURROUND_BEFORE' appears before 'REPLACEMENT' in the result
+    And 'REPLACEMENT' appears before 'SURROUND_AFTER' in the result
+
+  Scenario: Surround wraps replacement of the same node — surround collected first
+    Given the source 'a = 1'
+    And the statement 'a = 1' is a node
+    When the node is surrounded with 'SURROUND_BEFORE' and 'SURROUND_AFTER'
+    And the node is replaced with 'REPLACEMENT'
+    Then 'SURROUND_BEFORE' appears before 'REPLACEMENT' in the result
+    And 'REPLACEMENT' appears before 'SURROUND_AFTER' in the result
 
   # ════════════════════════════════════════════════════════════════════════════════
   # Group: Cross-operator — different nodes sharing a text location

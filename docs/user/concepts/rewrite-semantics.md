@@ -100,7 +100,7 @@ For AST-based pattern matching this may occur when a change associated with an A
 
     ![Appends at the same textual location](rewrite-semantics/rewrite-semantics-appends.png)
 
-    *Figure 1.3 (CONCEPT-REWRITE-SEMANTICS-APPENDS): Example of appends of different AST nodes at the same textual location.*
+    *Figure 1.4 (CONCEPT-REWRITE-SEMANTICS-APPENDS): Example of appends of different AST nodes at the same textual location.*
 
     </a>
     
@@ -111,6 +111,14 @@ For AST-based pattern matching this may occur when a change associated with an A
 6. Appends and prepends at the same text location
         Can only happen for consecutive sibling nodes
         append of sibling before prepend of next, consecutive sibling
+
+    <a name="rewrite-semantics-append-prepend">
+
+    ![Append and prepend at the same textual location](rewrite-semantics/rewrite-semantics-append-prepend.png)
+
+    *Figure 1.5 (CONCEPT-REWRITE-SEMANTICS-APPEND-PREPEND): Example of append and prepend of adjacent siblings at the same textual location.*
+
+    </a>
 
 7. Prepend, surround, and append
     * same node

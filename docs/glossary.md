@@ -14,6 +14,13 @@ Each entry links to the concept page that is the authoritative source of the def
 : Extracts data from and computes information about a [code base](#code_base).
   See [Analysis](user/concepts/analysis.md).
 
+**Ancestor** (also: *ancestor-or-self*)
+: An AST node that contains another node within its subtree, at any depth,
+  including the node itself.
+  A *proper ancestor* excludes the node itself; the direct parent is the nearest
+  proper ancestor. The scenarios in this project use proper ancestor relationships.
+  See [Rewrite semantics](user/concepts/rewrite-semantics.md).
+
 **Append**
 : An [insertion](#insertion) that adds text immediately after the end location of an AST node.
   See [Rewrite semantics](user/concepts/rewrite-semantics.md).
@@ -42,6 +49,14 @@ Each entry links to the concept page that is the authoritative source of the def
   A code base is typically multi-language, multi-project, and evolves over decades.
   See [Evolving and maintaining code](user/concepts/code-base-evolution-and-maintenance.md).
 
+**Collection of changes**
+: The act of registering one or more [changes](#change) against a syntax tree during
+  the *collect* step of a [rewrite step](#rewrite-step), before any changes are
+  committed. The sequence in which changes are registered is the *collection order*,
+  which affects output ordering only when the same operator is applied multiple times
+  to the same node.
+  See [Rewrite semantics](user/concepts/rewrite-semantics.md).
+
 **Composition**
 : Combining language-specific patterns with language-agnostic orchestration to form higher-level analysis or transformation strategies.
   See [Composition](user/concepts/composition.md).
@@ -54,6 +69,17 @@ Each entry links to the concept page that is the authoritative source of the def
 **CST (Concrete Syntax Tree)**
 : A full parse tree that retains every syntactic token, including whitespace and comments.
   See [Matching](user/concepts/matching.md).
+
+---
+
+## D
+
+**Descendant** (also: *descendant-or-self*)
+: An AST node contained within the subtree of another node, at any depth,
+  including the node itself.
+  A *proper descendant* excludes the node itself. The scenarios in this project use
+  proper descendant relationships.
+  See [Rewrite semantics](user/concepts/rewrite-semantics.md).
 
 ---
 
@@ -82,6 +108,17 @@ Each entry links to the concept page that is the authoritative source of the def
 
 **Matching**
 : The process of locating occurrences in source code that satisfy a pattern, governed by a conceptual view that defines granularity, structure, classification, and equality.
+  See [Matching](user/concepts/matching.md).
+
+---
+
+## N
+
+**Node (AST node)**
+: A single element in an [AST](#ast-abstract-syntax-tree), representing a syntactic
+  construct such as a statement, expression, identifier, or punctuation token.
+  Every node covers a contiguous span of the original source text defined by its
+  start and end position.
   See [Matching](user/concepts/matching.md).
 
 ---
@@ -123,6 +160,10 @@ Each entry links to the concept page that is the authoritative source of the def
 ---
 
 ## S
+
+**Sibling**
+: Two AST nodes are siblings when they share the same direct parent.
+  *Adjacent siblings* are consecutive children of the same parent node in the AST.
 
 **Standard analyses and transformations**
 : A library of reusable, pre-built analysis and transformation building blocks that can be combined to improve quality and reduce duplication.
