@@ -15,6 +15,9 @@ Feature: Rewrite semantics
   # Scenario |  test
   # Equal    | `test_replacing_same_node_twice_always_errors` in test/syntax_tree/test_rewrite_semantics_properties.py.
   #
+  # Sentinel tokens used across scenarios:
+  # 'DONT_CARE' marks a surround argument that is not at the boundary under test
+  #             and is not part of the assertion.
 
   # ════════════════════════════════════════════════════════════════════════════════
   # Group: Error cases
@@ -185,14 +188,13 @@ Feature: Rewrite semantics
   # The operation on a sibling always places its text before the operation on the next
   # consecutive sibling at their shared text boundary, regardless of collection order.
   # (append vs. prepend/surround-before; surround-after vs. prepend/surround-before)
-  # ════════════════════════════════════════════════════════════════════════════════
-
-  # ── Scenario Siblings — shared text boundary, sib1 collected first ────────────────
+  #
   # 'AFTER' is the canonical token for the text at the end of sib1 (append argument,
   # or second argument of surround). 'BEFORE' is the canonical token for the text at
   # the start of sib2 (prepend argument, or first argument of surround).
-  # 'DONT_CARE' marks surround arguments that are not at the shared boundary and
-  # are not part of the assertion.
+  # ════════════════════════════════════════════════════════════════════════════════
+
+  # ── Scenario Siblings — shared text boundary, sib1 collected first ────────────────
   Scenario Outline: Operation on first sibling precedes operation on second sibling — first sibling collected first
     Given the source 'a = 1\nb = 2\n'
     And the statement 'a = 1' is the first sibling
