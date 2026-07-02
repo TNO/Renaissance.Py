@@ -48,7 +48,7 @@ Feature: Rewrite semantics
   # Special tokens:
   #   DONT_CARE — a surround argument not at the boundary under test;
   #               its value is not part of the assertion.
-  #   COVERED   — used only in dominance scenarios to prove a suppressed change was
+  #   DOMINATED — used only in dominance scenarios to prove a dominated change was
   #               NOT applied: it must not appear in the source or in any dominating
   #               replacement text, so any occurrence in the output is a test failure.
 
@@ -123,8 +123,8 @@ Feature: Rewrite semantics
 
   # ════════════════════════════════════════════════════════════════════════════════
   # Group: Dominance and suppression
-  # At the text level all share the same principle: a replacement covering a
-  # larger text range suppresses any replacement covering a smaller text range that
+  # At the text level all share the same principle: a replacement with a
+  # larger text range dominates any replacement with a smaller text range that
   # is fully contained within it.
   # From an AST point of view this principle manifests in two ways:
   #   Ancestor dominance: a replacement on an ancestor node suppresses changes on
@@ -135,27 +135,27 @@ Feature: Rewrite semantics
   #                       is fully contained within the larger range.
   # ════════════════════════════════════════════════════════════════════════════════
 
-  # ── Scenario Cover — ancestor dominance ──────────────────────────────────────────
-  # 'COVERED' is the dominated change text; see Sentinel tokens in the preamble.
-  Scenario Outline: Covered change is not applied
+  # ── Scenario Dominance — ancestor ────────────────────────────────────────────────
+  # 'DOMINATED' is the dominated change text; see Sentinel tokens in the preamble.
+  Scenario Outline: Dominated change is not applied
     Given the source 'a = 1'
     And the statement 'a = 1' is the parent node
     And the first leaf of the parent is the child node
     When the parent node is replaced with 'x = 99'
     And the child node is <changed>
     Then the result contains 'x = 99'
-    But the result does not contain 'COVERED'
+    But the result does not contain 'DOMINATED'
 
     Examples:
-      | changed                                 |
-      | replaced with 'COVERED'                 |
-      | appended with 'COVERED'                 |
-      | prepended with 'COVERED'                |
-      | surrounded with 'COVERED' and 'COVERED' |
+      | changed                                     |
+      | replaced with 'DOMINATED'                   |
+      | appended with 'DOMINATED'                   |
+      | prepended with 'DOMINATED'                  |
+      | surrounded with 'DOMINATED' and 'DOMINATED' |
 
-  # ── Scenario Range Cover — subrange dominated by range ──────────────────────────────
+  # ── Scenario Range Dominance — subrange ─────────────────────────────────────────────
   # Range [sib1, sib2, sib3] dominates the subrange [sib1, sib2].
-  # 'COVERED' is the dominated change text; see Sentinel tokens in the preamble.
+  # 'DOMINATED' is the dominated change text; see Sentinel tokens in the preamble.
   Scenario Outline: Sibling range dominates a proper subrange regardless of collection order
     Given the source 'a = 1\nb = 2\nc = 3\n'
     And the statement 'a = 1' is the first sibling
@@ -164,16 +164,16 @@ Feature: Rewrite semantics
     When the <first_op>
     And the <second_op>
     Then the result contains 'RANGE'
-    But the result does not contain 'COVERED'
+    But the result does not contain 'DOMINATED'
 
     Examples:
-      | first_op                                                        | second_op                                                   | collection order             |
-      | first, second and third siblings are replaced with 'RANGE'      | first and second siblings are replaced with 'COVERED'       | range collected first        |
-      | first and second siblings are replaced with 'COVERED'           | first, second and third siblings are replaced with 'RANGE'  | subrange collected first     |
+      | first_op                                                        | second_op                                                     | collection order             |
+      | first, second and third siblings are replaced with 'RANGE'      | first and second siblings are replaced with 'DOMINATED'       | range collected first        |
+      | first and second siblings are replaced with 'DOMINATED'         | first, second and third siblings are replaced with 'RANGE'    | subrange collected first     |
 
-  # ── Scenario Range Cover — single sibling dominated by range ──────────────────────────
-  # Range [sib1, sib2] dominates the single sibling [sib2]. 
-  # 'COVERED' is the dominated change text; see Sentinel tokens in the preamble.
+  # ── Scenario Range Dominance — single sibling ────────────────────────────────────────
+  # Range [sib1, sib2] dominates the single sibling [sib2].
+  # 'DOMINATED' is the dominated change text; see Sentinel tokens in the preamble.
   Scenario Outline: Sibling range dominates a single contained sibling regardless of collection order
     Given the source 'a = 1\nb = 2\nc = 3\n'
     And the statement 'a = 1' is the first sibling
@@ -181,12 +181,12 @@ Feature: Rewrite semantics
     When the <first_op>
     And the <second_op>
     Then the result contains 'RANGE'
-    But the result does not contain 'COVERED'
+    But the result does not contain 'DOMINATED'
 
     Examples:
-      | first_op                                            | second_op                                          | collection order                |
-      | first and second siblings are replaced with 'RANGE' | second sibling is replaced with 'COVERED'          | range collected first           |
-      | second sibling is replaced with 'COVERED'           | first and second siblings are replaced with 'RANGE' | single sibling collected first  |
+      | first_op                                            | second_op                                             | collection order                |
+      | first and second siblings are replaced with 'RANGE' | second sibling is replaced with 'DOMINATED'           | range collected first           |
+      | second sibling is replaced with 'DOMINATED'         | first and second siblings are replaced with 'RANGE'   | single sibling collected first  |
 
   # ════════════════════════════════════════════════════════════════════════════════
   # Group: Single operator — same node

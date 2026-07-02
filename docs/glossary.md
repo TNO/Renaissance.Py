@@ -14,13 +14,12 @@ Each entry links to the concept page that is the authoritative source of the def
 : Extracts data from and computes information about a [code base](#code_base).
   See [Analysis](user/concepts/analysis.md).
 
-**Ancestor** (also: *ancestor-or-self*)
+**Ancestor**
 : An AST node that contains another node within its subtree, at any depth,
   including the node itself.
   A *proper ancestor* excludes the node itself; the direct parent is the nearest
-  proper ancestor. The scenarios in this project use proper ancestor relationships.
-  See [Rewrite semantics](user/concepts/rewrite-semantics.md).
-
+  proper ancestor. 
+  
 **Append**
 : An [insertion](#insertion) that adds text immediately after the end location of an AST node.
   See [Rewrite semantics](user/concepts/rewrite-semantics.md).
@@ -61,11 +60,6 @@ Each entry links to the concept page that is the authoritative source of the def
 : Combining language-specific patterns with language-agnostic orchestration to form higher-level analysis or transformation strategies.
   See [Composition](user/concepts/composition.md).
 
-**Covered change**
-: A [change](#change) whose range is a proper subset of the range of another change.
-  Covered changes are silently ignored during the [rewrite step](#rewrite-step).
-  See [Rewrite semantics](user/concepts/rewrite-semantics.md).
-
 **CST (Concrete Syntax Tree)**
 : A full parse tree that retains every syntactic token, including whitespace and comments.
   See [Matching](user/concepts/matching.md).
@@ -74,11 +68,15 @@ Each entry links to the concept page that is the authoritative source of the def
 
 ## D
 
-**Descendant** (also: *descendant-or-self*)
+**Descendant**
 : An AST node contained within the subtree of another node, at any depth,
   including the node itself.
-  A *proper descendant* excludes the node itself. The scenarios in this project use
-  proper descendant relationships.
+  A *proper descendant* excludes the node itself; the direct children are the nearest
+  proper descendants.
+
+**Dominated change**
+: A [change](#change) whose range is a proper subset of the range of another change,
+  and which is therefore silently ignored during the [rewrite step](#rewrite-step).
   See [Rewrite semantics](user/concepts/rewrite-semantics.md).
 
 ---

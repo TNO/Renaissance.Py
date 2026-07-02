@@ -3,7 +3,7 @@ Step implementations for features/rewrite-semantics.feature.
 
 Scenarios 1, 2, and 4 are marked xfail because the corresponding behaviour is
 not yet fully implemented:
-  - Scenario 1: covered-change filtering is disabled in _RewriteActions
+  - Scenario 1: dominated-change filtering is disabled in _RewriteActions
     (``__is_ancestor_in_nodes`` always returns False).
   - Scenario 2: the Rewriter merges overlapping rewrites instead of raising.
   - Scenario 4: append ordering (descendant before ancestor) is not yet enforced.
@@ -40,11 +40,11 @@ def test_replacements_of_same_node_produce_error():
 
 
 @pytest.mark.xfail(
-    reason="Covered-change filtering not yet active: _RewriteActions.__is_ancestor_in_nodes always returns False",
+    reason="Dominated-change filtering not yet active: _RewriteActions.__is_ancestor_in_nodes always returns False",
     strict=True,
 )
-@scenario(_FEATURE, "Covered changes are not applied")
-def test_covered_changes_not_applied():
+@scenario(_FEATURE, "Dominated change is not applied")
+def test_dominated_change_not_applied():
     pass
 
 

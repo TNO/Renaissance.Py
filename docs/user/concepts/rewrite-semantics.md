@@ -61,16 +61,16 @@ Figure 1.2 shows an example where replacements are applied to overlapping sequen
 
 </a>
 
-3. Covered changes are ignored.
+3. Dominated changes are ignored.
 
-A change is covered if its range is a proper subset of the range of another change.
+A change is dominated if its range is a proper subset of the range of another change.
 For AST-based pattern matching this may occur when a change associated with an AST node lies within the range of a change associated with one of its ancestors. 
 
-<a name="rewrite-semantics-cover">
+<a name="rewrite-semantics-dominated">
 
-![Change covered by another change](rewrite-semantics/rewrite-semantics-cover.png)
+![Change dominated by another change](rewrite-semantics/rewrite-semantics-dominated.png)
 
-*Figure 1.3 (CONCEPT-REWRITE-SEMANTICS-COVER): Example of overlapping sequences of AST nodes.*
+*Figure 1.3 (CONCEPT-REWRITE-SEMANTICS-DOMINATED): Example of a dominated change.*
 
 </a>
 

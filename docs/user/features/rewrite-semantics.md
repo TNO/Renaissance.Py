@@ -15,11 +15,11 @@ The rewrite semantics feature governs how multiple collected changes — replace
 - BDD steps: `features/steps/test-rewrite-semantics.py`
 
 
-# Corner case: Covered, overlapping replacements
+# Corner case: Dominated, overlapping replacements
 
-When a replacement is covered by another replacement, it is excluded from the
+When a replacement is dominated by another replacement, it is excluded from the
 result — as if it were never collected. However, it is still checked for
-overlaps with other changes. An overlap among covered replacements therefore
+overlaps with other changes. An overlap among dominated replacements therefore
 still produces an error.
 
 See [Architecture: rewrite semantics](../../developer/architecture/rewrite-semantics.md) for the rationale behind this choice.
@@ -56,11 +56,11 @@ This framework adopts non-idempotent insertion semantics:
 applying append, prepend, or surround multiple times to the same AST node results in repeated insertions, 
 even when the inserted text is identical. 
 
-# Scenario: Covered changes
+# Scenario: Dominated changes
 
-See [Figure 1.3 in the concept page](../concepts/rewrite-semantics.md#rewrite-semantics-cover) for an illustration.
+See [Figure 1.3 in the concept page](../concepts/rewrite-semantics.md#rewrite-semantics-dominated) for an illustration.
 
-**Description**: Replacements hide covered changes
+**Description**: Replacements hide dominated changes
 
 BDD keyword | step description
 -- | --
