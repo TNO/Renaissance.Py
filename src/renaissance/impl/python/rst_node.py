@@ -1,6 +1,5 @@
 import ast
 import sys
-import textwrap
 from pathlib import Path
 from typing import Any, Sequence, Self, Callable
 
@@ -457,4 +456,4 @@ class PythonRstNode:
 
     @property
     def text(self) -> str:
-        return textwrap.dedent(self.signature)
+        return self.signature

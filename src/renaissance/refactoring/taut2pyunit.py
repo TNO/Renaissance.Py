@@ -93,12 +93,10 @@ class Taut2Pyunit(PythonRefactoring):
             node = self.find_ast_type(Attribute)[index]
             if node.name == "TAUT.TestCase":
                 self.replace("unittest.TestCase", node, False, False)
-                self.commit()
         for index in range(self.find_ast_type(Name).__len__()):
             node = self.find_ast_type(Name)[index]
             if node.name == "TestCase":
                 self.replace("unittest.TestCase", node, False, False)
-                self.commit()
         # [(self.replace("unittest.TestCase", node, False, False), self.commit()) for node in self.find_ast_type(Attribute) if node.name == "TAUT.TestCase"]
         # [(self.replace("unittest.TestCase", node, False, False), self.commit()) for node in self.find_ast_type(Name) if node.name == "TestCase"]
 
