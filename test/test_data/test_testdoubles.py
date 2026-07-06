@@ -172,6 +172,8 @@ test_taut_doubles_class = """class test_abcdxwid(unittest.TestCase):
             ABCDxABxREADLib.read,
             id,
         )
+        # An empty line like the line below this comment will also be indented after
+        # with `patch.object(...):` has been added
 
         self.assertEqual(ABCDxCONTEXT.abcdxcontext.method_called("start"), 1)
         self.assertEqual(ABCDxCONTEXT.abcdxcontext.method_called("finish"), 1)
@@ -200,6 +202,8 @@ test_taut_doubles_class_new = """class test_abcdxwid(unittest.TestCase):
                 ABCDxABxREADLib.read,
                 id,
             )
+            # An empty line like the line below this comment will also be indented after
+            # with `patch.object(...):` has been added
     
             self.assertEqual(ABCDxCONTEXT.abcdxcontext.method_called("start"), 1)
             self.assertEqual(ABCDxCONTEXT.abcdxcontext.method_called("finish"), 1)
