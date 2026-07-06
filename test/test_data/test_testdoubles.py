@@ -204,6 +204,64 @@ test_taut_doubles_class_new = """class test_abcdxwid(unittest.TestCase):
             self.assertEqual(ABCDxCONTEXT.abcdxcontext.method_called("start"), 1)
             self.assertEqual(ABCDxCONTEXT.abcdxcontext.method_called("finish"), 1)
 """
+test_taut_testcase_with_whitespace_on_empty_line = """class TestVExVSA(TAUT.TestCase):
+    '''Test class for the VExVSA interface'''
+
+    @classmethod
+    def sharedSetUp(cls):
+        '''Initialize the ME driver'''
+        cls.mesmxaxdc = SMXAxDC.SMXAxDC("ME")
+        cls.mesmxaxdc.initialize("ME", "", 0)
+       
+    @classmethod
+    def sharedTearDown(cls):
+        '''Terminate the ME driver'''
+        cls.mesmxaxdc.terminate("ME", "", 0)
+
+class TestVExWAF(TAUT.TestCase):
+    '''Test class for the VExWAF interface'''
+
+    @classmethod
+    def sharedSetUp(cls):
+        '''Initialize the ME driver'''
+        cls.mesmxaxdc = SMXAxDC.SMXAxDC("ME")
+        cls.mesmxaxdc.initialize("ME", "", 0)
+       
+    @classmethod
+    def sharedTearDown(cls):
+        '''Terminate the ME driver'''
+        cls.mesmxaxdc.terminate("ME", "", 0)
+
+"""
+test_taut_testcase_with_whitespace_on_empty_line_output = """class TestVExVSA(unittest.TestCase):
+    '''Test class for the VExVSA interface'''
+
+    @classmethod
+    def sharedSetUp(cls):
+        '''Initialize the ME driver'''
+        cls.mesmxaxdc = SMXAxDC.SMXAxDC("ME")
+        cls.mesmxaxdc.initialize("ME", "", 0)
+
+    @classmethod
+    def sharedTearDown(cls):
+        '''Terminate the ME driver'''
+        cls.mesmxaxdc.terminate("ME", "", 0)
+
+class TestVExWAF(unittest.TestCase):
+    '''Test class for the VExWAF interface'''
+
+    @classmethod
+    def sharedSetUp(cls):
+        '''Initialize the ME driver'''
+        cls.mesmxaxdc = SMXAxDC.SMXAxDC("ME")
+        cls.mesmxaxdc.initialize("ME", "", 0)
+
+    @classmethod
+    def sharedTearDown(cls):
+        '''Terminate the ME driver'''
+        cls.mesmxaxdc.terminate("ME", "", 0)
+
+"""
 test_taut_doubles_class_single_line = """class test_abcdxwid(unittest.TestCase):
     def test_readout_is_ok(self):
         self.doubles.append(TAUT.TestDoubles(module=ABCDxWID.abcdwid, get_wid_readouts=stub_get_wid_readouts))

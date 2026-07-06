@@ -342,3 +342,13 @@ class TestTaut2Unittest:
         subject.insert_patch_import()
         result = subject.apply_to_string()
         assert_that(result, is_(expected_code))
+
+    # Intent: prevent regression on case where whitespace in empty lines is removed internally in rewriter.
+    # The start and end offsets within the node object stay the same, so the rewriter would replace a wrong segment.
+    @pytest.mark.parametrize("input_code, expected_code", [(tst_testdoubles.test_taut_testcase_with_whitespace_on_empty_line, 
+                                                            tst_testdoubles.test_taut_testcase_with_whitespace_on_empty_line_output)])
+    def test_rewriter_handles_whitespace_on_empty_line(self, input_code, expected_code, mocker):
+        subject = self._create(mocker, input_code)
+        subject.replace_taut()
+        result = subject.apply_to_string()
+        assert_that(result, is_(expected_code))
