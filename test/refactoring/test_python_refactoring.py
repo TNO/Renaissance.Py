@@ -1,5 +1,6 @@
 import textwrap
 
+import pytest
 from hamcrest import assert_that, contains_string, is_
 
 from renaissance.impl.python.rst_node import PythonRstNode
