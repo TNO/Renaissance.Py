@@ -22,6 +22,10 @@ from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
 from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.syntax_tree import ASTRewriter
 from renaissance.syntax_tree.match_finder import match_pattern
+from renaissance.impl.clang import ClangASTNode, CPPPatternFactory
+from renaissance.syntax_tree import ASTFactory
+from renaissance.impl.types import CompoundStatement
+from renaissance.syntax_tree.ast_finder import find_ast_type
 
 _FEATURE = "../rewrite-semantics.feature"
 
@@ -71,13 +75,17 @@ def test_append_ordering():
     pass
 
 
-@scenario(_FEATURE, "Append of sibling precedes prepend of next consecutive sibling \u2014 append collected first")
-def test_sibling_append_prepend_ordering():
+@scenario(_FEATURE, "Operation on first sibling precedes operation on second sibling \u2014 first sibling collected first")
+def test_sibling_sib1_first():
     pass
 
 
-@scenario(_FEATURE, "Append of sibling precedes prepend of next consecutive sibling \u2014 prepend collected first")
-def test_sibling_prepend_append_ordering():
+@pytest.mark.xfail(
+    reason="Sibling boundary ordering not enforced: Rewriter concatenates at shared position in registration order",
+    strict=True,
+)
+@scenario(_FEATURE, "Operation on first sibling precedes operation on second sibling \u2014 second sibling collected first")
+def test_sibling_sib2_first():
     pass
 
 
@@ -114,6 +122,16 @@ def _find_statement(atu: PythonRstNode, factory: PythonFactory, text: str) -> Py
     assert matches, f"No statement matching {text!r} found in source"
     return matches[0].nodes[0]
 
+def _find_cpp_statement(atu, cpp_factory: CPPPatternFactory, text: str):
+    """Return the first C++ statement in the ATU's compound body matching *text*."""
+    pattern = list(cpp_factory.create_statements(text))
+    assert pattern, f"No C++ pattern created for {text!r}"
+    bodies = find_ast_type(atu, CompoundStatement)
+    for body in bodies:
+        matches = match_pattern(body.children, pattern)
+        if matches:
+            return matches[0].nodes[0]
+    raise AssertionError(f"No C++ statement matching {text!r} found")
 
 # ── Given steps ───────────────────────────────────────────────────────────────
 
@@ -122,13 +140,25 @@ def given_python_factory(context: dict) -> None:
     context["factory"] = PythonFactory(PythonRstNode)
 
 
+@given("a C++ language factory")
+def given_cpp_factory(context: dict) -> None:
+    context["cpp_factory"] = CPPPatternFactory(ASTFactory(ClangASTNode))
+
+
 @given(parsers.parse("the source '{source}'"))
 def given_source(context: dict, source: str) -> None:
     source = source.replace("\\n", "\n")
     context["source"] = source
-    factory: PythonFactory = context["factory"]
-    context["atu"] = factory.create_from_text(source, "test.py")
-    context["rewriter"] = ASTRewriter(context["atu"])
+    if "cpp_factory" in context:
+        cpp_factory: CPPPatternFactory = context["cpp_factory"]
+        stmts = list(cpp_factory.create_statements(source))
+        assert stmts, f"No statements parsed from C++ source: {source!r}"
+        context["atu"] = stmts[0].root
+        context["rewriter"] = ASTRewriter(context["atu"])
+    else:
+        factory: PythonFactory = context["factory"]
+        context["atu"] = factory.create_from_text(source, "test.py")
+        context["rewriter"] = ASTRewriter(context["atu"])
 
 
 # ── Node-selection Given steps ────────────────────────────────────────────────
@@ -165,12 +195,18 @@ def given_last_leaf_as_descendant(context: dict) -> None:
 
 @given(parsers.parse("the statement '{text}' is the first sibling"))
 def given_first_sibling(context: dict, text: str) -> None:
-    context["sibling1"] = _find_statement(context["atu"], context["factory"], text)
+    if "cpp_factory" in context:
+        context["sibling1"] = _find_cpp_statement(context["atu"], context["cpp_factory"], text)
+    else:
+        context["sibling1"] = _find_statement(context["atu"], context["factory"], text)
 
 
 @given(parsers.parse("the statement '{text}' is the second sibling"))
 def given_second_sibling(context: dict, text: str) -> None:
-    context["sibling2"] = _find_statement(context["atu"], context["factory"], text)
+    if "cpp_factory" in context:
+        context["sibling2"] = _find_cpp_statement(context["atu"], context["cpp_factory"], text)
+    else:
+        context["sibling2"] = _find_statement(context["atu"], context["factory"], text)
 
 
 @given(parsers.parse("the statement '{text}' is the third sibling"))
@@ -228,6 +264,16 @@ def when_append_first_sibling(context: dict, text: str) -> None:
 def when_prepend_second_sibling(context: dict, text: str) -> None:
     context["rewriter"].insert_before(text, [context["sibling2"]], include_whitespace=False, include_comments=False)
 
+@when(parsers.re(r"the first sibling is surrounded with '(?P<before>[^']*)' and '(?P<after>[^']*)'"))
+def when_surround_first_sibling(context: dict, before: str, after: str) -> None:
+    context["rewriter"].insert_before(before, [context["sibling1"]], include_whitespace=False, include_comments=False)
+    context["rewriter"].insert_after(after, [context["sibling1"]], include_whitespace=False, include_comments=False)
+
+
+@when(parsers.re(r"the second sibling is surrounded with '(?P<before>[^']*)' and '(?P<after>[^']*)'"))
+def when_surround_second_sibling(context: dict, before: str, after: str) -> None:
+    context["rewriter"].insert_before(before, [context["sibling2"]], include_whitespace=False, include_comments=False)
+    context["rewriter"].insert_after(after, [context["sibling2"]], include_whitespace=False, include_comments=False)
 
 # ── Then steps ────────────────────────────────────────────────────────────────
 

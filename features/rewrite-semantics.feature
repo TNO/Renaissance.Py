@@ -294,49 +294,6 @@ Feature: Rewrite semantics
       | descendant | DONT_CARE    | DESC_AFT    | ancestor   | DONT_CARE     | ANC_AFT      | descendant collected first |
 
   # ════════════════════════════════════════════════════════════════════════════════
-  # Group: Adjacent siblings — shared text boundary
-  # The operation on a sibling always places its text before the operation on the next
-  # consecutive sibling at their shared text boundary, regardless of collection order.
-  # (append vs. prepend/surround-before; surround-after vs. prepend/surround-before)
-  #
-  # 'AFTER' is the canonical token for the text at the end of sib1 (append argument,
-  # or second argument of surround). 'BEFORE' is the canonical token for the text at
-  # the start of sib2 (prepend argument, or first argument of surround).
-  # ════════════════════════════════════════════════════════════════════════════════
-
-  # ── Scenario Siblings — shared text boundary, sib1 collected first ────────────────
-  Scenario Outline: Operation on first sibling precedes operation on second sibling — first sibling collected first
-    Given the source 'a = 1\nb = 2\n'
-    And the statement 'a = 1' is the first sibling
-    And the statement 'b = 2' is the second sibling
-    When the first sibling is <sib1_op>
-    And the second sibling is <sib2_op>
-    Then 'AFTER' appears before 'BEFORE' in the result
-
-    Examples:
-      | sib1_op                                    | sib2_op                                    | combination                      |
-      | appended with 'AFTER'                      | prepended with 'BEFORE'                    | append + prepend                 |
-      | surrounded with 'DONT_CARE' and 'AFTER'    | prepended with 'BEFORE'                    | surround-after + prepend         |
-      | appended with 'AFTER'                      | surrounded with 'BEFORE' and 'DONT_CARE'   | append + surround-before         |
-      | surrounded with 'DONT_CARE' and 'AFTER'    | surrounded with 'BEFORE' and 'DONT_CARE'   | surround-after + surround-before |
-
-  # ── Scenario Siblings — shared text boundary, sib2 collected first ────────────────
-  Scenario Outline: Operation on first sibling precedes operation on second sibling — second sibling collected first
-    Given the source 'a = 1\nb = 2\n'
-    And the statement 'a = 1' is the first sibling
-    And the statement 'b = 2' is the second sibling
-    When the second sibling is <sib2_op>
-    And the first sibling is <sib1_op>
-    Then 'AFTER' appears before 'BEFORE' in the result
-
-    Examples:
-      | sib1_op                                    | sib2_op                                    | combination                      |
-      | appended with 'AFTER'                      | prepended with 'BEFORE'                    | append + prepend                 |
-      | surrounded with 'DONT_CARE' and 'AFTER'    | prepended with 'BEFORE'                    | surround-after + prepend         |
-      | appended with 'AFTER'                      | surrounded with 'BEFORE' and 'DONT_CARE'   | append + surround-before         |
-      | surrounded with 'DONT_CARE' and 'AFTER'    | surrounded with 'BEFORE' and 'DONT_CARE'   | surround-after + surround-before |
-
-  # ════════════════════════════════════════════════════════════════════════════════
   # Group: Cross-operator — same node
   # Regardless of collection order, the output always follows the structural order:
   #   prepend → surround-before → node → surround-after → append
@@ -427,8 +384,60 @@ Feature: Rewrite semantics
     Then 'SURROUND_BEFORE' appears before 'REPLACEMENT' in the result
     And 'REPLACEMENT' appears before 'SURROUND_AFTER' in the result
 
+# ════════════════════════════════════════════════════════════════════════════════
+  # Group: Cross-operator — different nodes sharing a text location
+  # Nodes are in adjacent sibling relationship.
+  # The operation on a sibling always places its text before the operation on the next
+  # consecutive sibling at their shared text boundary, regardless of collection order.
+  # (append vs. prepend/surround-before; surround-after vs. prepend/surround-before)
+  #
+  # C++ is used here: in 'a=1;b=2;', sib1's end location is equal to sib2's start location —
+  # a genuinely shared byte boundary. 
+  # In Python adjecent siblings never share a text location.
+  # For example, statements in python are always separated by either '\n' or ';' and these seprators are not part of the statement.
+
+  # 'AFTER' is the canonical token for the text at the end of sib1 (append argument,
+  # or second argument of surround). 'BEFORE' is the canonical token for the text at
+  # the start of sib2 (prepend argument, or first argument of surround).
+  # ════════════════════════════════════════════════════════════════════════════════
+
+  # ── Scenario Siblings — shared text boundary, sib1 collected first ────────────────
+  Scenario Outline: Operation on first sibling precedes operation on second sibling — first sibling collected first
+    Given a C++ language factory
+    And the source 'a=1;b=2;'
+    And the statement 'a=1' is the first sibling
+    And the statement 'b=2' is the second sibling
+    When the first sibling is <sib1_op>
+    And the second sibling is <sib2_op>
+    Then 'AFTER' appears before 'BEFORE' in the result
+
+    Examples:
+      | sib1_op                                    | sib2_op                                    | combination                      |
+      | appended with 'AFTER'                      | prepended with 'BEFORE'                    | append + prepend                 |
+      | surrounded with 'DONT_CARE' and 'AFTER'    | prepended with 'BEFORE'                    | surround-after + prepend         |
+      | appended with 'AFTER'                      | surrounded with 'BEFORE' and 'DONT_CARE'   | append + surround-before         |
+      | surrounded with 'DONT_CARE' and 'AFTER'    | surrounded with 'BEFORE' and 'DONT_CARE'   | surround-after + surround-before |
+
+  # ── Scenario Siblings — shared text boundary, sib2 collected first ────────────────
+  Scenario Outline: Operation on first sibling precedes operation on second sibling — second sibling collected first
+    Given a C++ language factory
+    And the source 'a=1;b=2;'
+    And the statement 'a=1' is the first sibling
+    And the statement 'b=2' is the second sibling
+    When the second sibling is <sib2_op>
+    And the first sibling is <sib1_op>
+    Then 'AFTER' appears before 'BEFORE' in the result
+
+    Examples:
+      | sib1_op                                    | sib2_op                                    | combination                      |
+      | appended with 'AFTER'                      | prepended with 'BEFORE'                    | append + prepend                 |
+      | surrounded with 'DONT_CARE' and 'AFTER'    | prepended with 'BEFORE'                    | surround-after + prepend         |
+      | appended with 'AFTER'                      | surrounded with 'BEFORE' and 'DONT_CARE'   | append + surround-before         |
+      | surrounded with 'DONT_CARE' and 'AFTER'    | surrounded with 'BEFORE' and 'DONT_CARE'   | surround-after + surround-before |
+
   # ════════════════════════════════════════════════════════════════════════════════
   # Group: Cross-operator — different nodes sharing a text location
+  # Nodes are in ancestor - descendant relationship.
   # Insertions on a descendant node are always closer to that node than insertions
   # on an ancestor node, regardless of collection order.
   # ════════════════════════════════════════════════════════════════════════════════
