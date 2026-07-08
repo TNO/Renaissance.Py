@@ -24,37 +24,7 @@ still produces an error.
 
 See [Architecture: rewrite semantics](../../developer/architecture/rewrite-semantics.md) for the rationale behind this choice.
 
-# Corner case: Identical replacements
 
-Replacing the same AST node with different texts is not possible.
-For the corner case of replacing the same AST node more than once with the same text, 
-different behaviours are possible:
-1. error: the combination of replacements is considered invalid and an error is raised. 
-1. [idempotent](https://en.wikipedia.org/wiki/Idempotence): 
-   the combination of replacements is considered valid and the node is replaced by the text.
-1. warning: the combination of replacements is considered suspicious, a warning is raised while the node is replaced by the text.
-
-**Decision**:
-
-This framework adopts the error behaviour for replacements. 
-In other words, replacing the same AST node more than once is considered an error, regardless of whether the replacement text is identical.
-Note that as this framework considers removing an AST node equal to replacing that AST node with an empty string, 
-removing the same AST node more than once is considered an error.
-
-# Corner case: Identical insertions
-
-Prepending, appending, and surrounding different texts before, around, and after an AST node is possible.
-
-For the corner case of using the same insertion operator on the same AST node with the same text more than once, 
-different behaviours are possible:
-1. [idempotent](https://en.wikipedia.org/wiki/Idempotence): the text is inserted only once.
-1. non-idempotent: the text is inserted more than once - as often as the insertion operator is used.
-
-**Decision**:
-
-This framework adopts non-idempotent insertion semantics:
-applying append, prepend, or surround multiple times to the same AST node results in repeated insertions, 
-even when the inserted text is identical. 
 
 # Scenario: Dominated changes
 
