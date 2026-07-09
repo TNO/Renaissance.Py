@@ -7,3 +7,4 @@ Templates strongly suggest a standard structure for documentation pages.
 3. [Test module template](test-module-template.md)
 4. [Code module template](code-module-template.md)
 5. [Feature-test mapping template](feature-test-map-template.md)
+6. [Architecture template](architecture-template.md)
