@@ -63,6 +63,29 @@ The user is responsible for ensuring that removal of an AST node results in corr
 
 For efficiency, it is recommended that the [standard libraries](standard-libraries.md#ast-aware-removal-of-node) provide, for each language, functionality for correct removal of an AST node in all situations.
 
+### Meta data 
+
+Analysis or a match (with a failing filter) do not justify that the the file or folder containing that source code changes.
+This not only holds for the content, but also the meta-data of the file and folder.
+A file and folder, including their meta-data, are only allowed to change when the contained source code changes. 
+
+#### Corner case - identity transformations
+
+Should an identity transformation, like a node replaced by itself,  be considered a change?
+
+The memory usage increases when the original content and the modified content have to be compared.
+
+As file access is slow, preventing unnecessary file access will improve execution performance.
+
+Scarce resources are needed to develop and maintain the logic to check for real, non-trivial changes.
+
+A transformation can always be designed, e.g., by including an equality check, to not perform the identity transformation.
+
+**Decision**
+
+As performance is not considered a bottleneck, we decided not to check for the corner case of the identity transformation.
+
+
 ## Invariants / guarantees
 
 * Both complete replacement and manipulation within a match are supported.
