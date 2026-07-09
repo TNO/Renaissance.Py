@@ -34,6 +34,8 @@ class TestPythonAstMatcherBasic:
     # generate test cases from equivalence classes
     PATTERN_FACTORY = PythonPatternFactory(PythonFactory(PythonRstNode))
 
+    # a and b have the same type as the return type of PATTERN_FACTORY.create_statement, 
+    # which is AstProtocol
     @pytest.mark.parametrize(
         "a, b, expected", make_parametersets_of_equivalence_classes("if statement", PATTERN_FACTORY.create_statement, IF_CLASSES)
     )

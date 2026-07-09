@@ -184,6 +184,9 @@ class TestPythonAstMatcherRepresentation:
     # generate test cases from equivalence classes
     PATTERN_FACTORY = PythonPatternFactory(PythonFactory(PythonRstNode))
 
+    # a and b have the same type as the union of return types of 
+    # PATTERN_FACTORY.create_expression and PATTERN_FACTORY.create_statement, 
+    # which is AstProtocol.
     @pytest.mark.parametrize(
         "a, b, expected",
         make_parametersets_of_equivalence_classes("whole number", PATTERN_FACTORY.create_expression, WHOLE_NUMBER_REPRESENTATIONS)

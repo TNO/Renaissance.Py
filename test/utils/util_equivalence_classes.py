@@ -12,7 +12,7 @@ def escape_new_lines(txt: str) -> str:
 
 def make_parametersets_of_equivalence_classes(
     info: str,
-    parse: Callable[[str], AstProtocol],
+    parse: Callable[[str], AstProtocol | Sequence[AstProtocol]],
     equiv_classes: Sequence[Sequence[str]],
 ) -> list[ParameterSet]:
     """
