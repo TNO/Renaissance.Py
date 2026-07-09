@@ -178,6 +178,12 @@ Each entry links to the concept page that is the authoritative source of the def
 
 ## T
 
+**Token**
+: smallest meaningful unit of code
+
 **Transformation**
 : Manipulating code using find / filter / manipulate workflows to produce modified source.
   See [Transformation](user/concepts/transformation.md).
+
+**Trivia**
+: white spaces and comments
