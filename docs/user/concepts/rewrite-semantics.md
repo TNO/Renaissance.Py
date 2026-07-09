@@ -125,3 +125,15 @@ For AST-based pattern matching this may occur when a change associated with an A
         The expected order in the modified source file is:
 
         prepend_text, surround_before_text, AST Node text, surround_after_text, append_text
+
+# MISC
+
+  * Rewrite-semantics
+    * Dominance rule: dominated operations are ignored
+    * Consistency rule: overlapping operations are not possible
+    * Containment rules: 
+      * A replace operation on an AST node, hides all operations on all contained AST nodes (a.k.a. descendants), i.e., they are ignored - prepend, append and around operations on that AST node are NOT affected.
+      * A prepend to an AST node is always before a prepend to any contained AST node
+      * An append to an AST node is always after an append to any contained AST node
+    * Sequence rule - Given two consecutive AST Nodes (a.k.a. siblings): 
+      * An append to the first AST Node is always before a prepend to the second AST Node

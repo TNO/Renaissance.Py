@@ -15,19 +15,6 @@ We should use a number of testing framework.
 
 We should at least test the following functionalities
 
-### Code Matching Functionality
-* Independent of layout (whitespaces) and comments (presence, absence, content)
-* Support of placeholders
-  * Placeholders are AST Nodes
-  * Support of explicit and implicit placeholders
-  * Robustness for occurrence of implicit placeholders
-    * in strings, e.g. `"$X"`
-    * in comments, e.g., `/* $X */`.
-  * Multiple occurrences of placeholders
-    * Equivalent AST nodes
-    * Access to all occurrences
-  * Multiple assignments of placeholders
-    * E.g., in patterns like `$f($$before, $arg, $$after)`
 
 ### Find Functionality
 * Find kind (nested)
@@ -130,45 +117,7 @@ We should at least test the following functionalities
   * Find "aa" in "aaa" has only one match
   * Find "aa" in "aaaa" has only two non-overlapping matches 
 
-### Navigation Functionality
-* AST structure
-  * Parent & Ancestors
-  * Children & Descendants
-  * Siblings
-* Usage
-  * definition / (forward) declaration - references (ONLY in current file / analysis unit)  
-* Inheritance
-  * Base - Derived classes 
 
-### Transformation Functionality
-
-* The encoding of a file should never be changed
-* The meta data of a file or directory is only allowed to change when an actual change happened
-  * Analysis or a match (with a failing filter) are NOT enough
-* Offset-based batch modifications of strings
-  * Insert and replace operations
-    * remove is just replace with ""
-  * Containment rule: contained operations are ignored
-  * Consistency rule: overlapping operations are not possible
-  * To be decided: 
-    * Are overlapping, contained operations just ignore, a warning, or an error?
-    * Are overlapping removals allowed?
-* AST-based batch modifications of strings
-  * Prepend, append, replace, around (e.g., for matching brackets) 
-  * Containment rules: 
-    * A replace operation on an AST node, hides all operations on all contained AST nodes (a.k.a. descendants), i.e., they are ignored - prepend, append and around operations on that AST node are NOT affected.
-    * A prepend to an AST node is always before a prepend to any contained AST node
-    * An append to an AST node is always after an append to any contained AST node
-  * Sequence rule - Given two consecutive AST Nodes (a.k.a. siblings): 
-    * An append to the first AST Node is always before a prepend to the second AST Node
-* Batch modification of Translation Unit (Single file of code)
-  * Prepend, append, around, replace of specific AST Node
-  * Find, Filter (possibly multiple), and Replace functionality (whole match is replaced)
-    * Replace recursively (so the AST nodes assigned to placeholders are also modified)
-  * Find (possibly multiple), Filter (possibly multiple), and modify functionality 
-    * Multiple operations on a single find
-    * Modification of any AST node possible
-      * not only contained in the find, but all via navigation (along parent and ancestor nodes)
 
 # placeholder requirements
 
