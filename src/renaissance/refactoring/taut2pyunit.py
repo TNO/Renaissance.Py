@@ -48,6 +48,7 @@ class Taut2Pyunit(PythonRefactoring):
         self.replace_log_compxtl("emrw")
         self.replace_log_compxtl("abcd")
         self.remove_taut_import()
+        self.remove_testoob_import()
         self.replace_taut_import()
         self.convert_setup_common()
         self.convert_teardown_common()
@@ -166,6 +167,31 @@ class Taut2Pyunit(PythonRefactoring):
             repl = f"fake_{comp}xtl = Fake{comp.upper()}xTL(None)\n{match["$$aa"]}"
             self.replace(repl, match.nodes, False, False)
         self.commit()
+
+    def remove_testoob_import(self):
+        testoob_import = self.pattern_factory.create_statements(
+            "try:\n    import testoob as unittest\nexcept ImportError:\n    import unittest\n"
+        )
+        matches = match_pattern(self.root.children, testoob_import)
+        if not matches:
+            return
+        excluded_ids = {id(n) for match in matches for n in match.nodes}
+        for match in matches:
+            self.remove(match.nodes, False, False)
+        result = self.apply_to_string()
+        if "\nimport unittest\n" not in result and not result.startswith("import unittest\n"):
+            anchor = self._first_top_level_import_node(excluded_ids) or self.root.children[0]
+            self.insert_before("import unittest\n", anchor, False, False)
+
+    def _first_top_level_import_node(self, excluded_ids: set):
+        """Return the first direct child of root that is a top-level import, skipping excluded nodes."""
+        for imp in self.find_ast_type(ImportStatement):
+            node = imp
+            while node.parent is not None and node.parent is not self.root:
+                node = node.parent
+            if node.parent is self.root and id(node) not in excluded_ids:
+                return node
+        return None
 
     def remove_taut_import(self):
         taut_import = self.pattern_factory.create_statements("import TAUT\n")

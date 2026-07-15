@@ -50,6 +50,43 @@ class TestTaut2Unittest:
         "input_code, expected_code",
         [
             (
+                # try/except removed; other imports present → prepend before first import
+                "import pytest\ntry:\n    import testoob as unittest\nexcept ImportError:\n    import unittest\nimport mock\n",
+                "import unittest\nimport pytest\nimport mock\n",
+            ),
+            (
+                # try/except removed; other imports present → prepend before first import
+                "try:\n    import testoob as unittest\nexcept ImportError:\n    import unittest\nimport mock\n",
+                "import unittest\nimport mock\n",
+            ),
+            (
+                # try/except removed; other imports present → prepend before first import
+                "class Foo:\n    pass\ntry:\n    import testoob as unittest\nexcept ImportError:\n    import unittest\n",
+                "import unittest\nclass Foo:\n    pass\n",
+            ),
+            (
+                # try/except removed; import unittest already present → not duplicated
+                "import unittest\ntry:\n    import testoob as unittest\nexcept ImportError:\n    import unittest\nimport mock\n",
+                "import unittest\nimport mock\n",
+            ),
+            (
+                # try/except only content; no other imports → prepend before first code node
+                "try:\n    import testoob as unittest\nexcept ImportError:\n    import unittest\nclass MyTest:\n    pass\n",
+                "import unittest\n\nclass MyTest:\n    pass\n",
+            ),
+        ],
+    )
+    def test_remove_testoob_import(self, input_code, expected_code, mocker):
+        subject = self._create(mocker, input_code)
+        subject.remove_testoob_import()
+        subject.commit()
+        result = subject.apply_to_string()
+        assert_that(result, is_(expected_code))
+
+    @pytest.mark.parametrize(
+        "input_code, expected_code",
+        [
+            (
                 "class ATestCase(TAUT.TestCase):\n    pass\n",
                 "class ATestCase(unittest.TestCase):\n    pass\n",
             ),
