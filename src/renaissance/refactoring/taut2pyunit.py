@@ -178,8 +178,7 @@ class Taut2Pyunit(PythonRefactoring):
         for match in matches:
             self.remove(match.nodes, False, False)
         self.commit()
-        result = self.apply_to_string()
-        if "\nimport unittest\n" not in result and not result.startswith("import unittest\n"):
+        if "import unittest\n" not in self.root.signature:
             anchor = self._first_top_level_import_node() or self.root.children[0]
             self.insert_before("import unittest\n", anchor, False, False)
 
