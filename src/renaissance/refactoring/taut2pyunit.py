@@ -175,21 +175,21 @@ class Taut2Pyunit(PythonRefactoring):
         matches = match_pattern(self.root.children, testoob_import)
         if not matches:
             return
-        excluded_ids = {id(n) for match in matches for n in match.nodes}
         for match in matches:
             self.remove(match.nodes, False, False)
+        self.commit()
         result = self.apply_to_string()
         if "\nimport unittest\n" not in result and not result.startswith("import unittest\n"):
-            anchor = self._first_top_level_import_node(excluded_ids) or self.root.children[0]
+            anchor = self._first_top_level_import_node() or self.root.children[0]
             self.insert_before("import unittest\n", anchor, False, False)
 
-    def _first_top_level_import_node(self, excluded_ids: set):
-        """Return the first direct child of root that is a top-level import, skipping excluded nodes."""
+    def _first_top_level_import_node(self):
+        """Return the first direct child of root that is a top-level import."""
         for imp in self.find_ast_type(ImportStatement):
             node = imp
             while node.parent is not None and node.parent is not self.root:
                 node = node.parent
-            if node.parent is self.root and id(node) not in excluded_ids:
+            if node.parent is self.root:
                 return node
         return None
 

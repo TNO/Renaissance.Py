@@ -57,7 +57,7 @@ class TestTaut2Unittest:
             (
                 # try/except removed; other imports present → prepend before first import
                 "try:\n    import testoob as unittest\nexcept ImportError:\n    import unittest\nimport mock\n",
-                "import unittest\nimport mock\n",
+                "\nimport unittest\nimport mock\n",
             ),
             (
                 # try/except removed; other imports present → prepend before first import
@@ -72,7 +72,7 @@ class TestTaut2Unittest:
             (
                 # try/except only content; no other imports → prepend before first code node
                 "try:\n    import testoob as unittest\nexcept ImportError:\n    import unittest\nclass MyTest:\n    pass\n",
-                "import unittest\n\nclass MyTest:\n    pass\n",
+                "\nimport unittest\nclass MyTest:\n    pass\n",
             ),
         ],
     )
