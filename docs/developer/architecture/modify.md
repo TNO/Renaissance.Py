@@ -67,7 +67,7 @@ For efficiency, it is recommended that the [standard libraries](standard-librari
 
 Analysis or a match (with a failing filter) do not justify that the the file or folder containing that source code changes.
 This not only holds for the content, but also the meta-data of the file and folder.
-A file and folder, including their meta-data, are only allowed to change when the contained source code changes. 
+A file and folder, including their meta-data, are only allowed to change when the contained source code changes.
 
 #### Corner case - identity transformations
 

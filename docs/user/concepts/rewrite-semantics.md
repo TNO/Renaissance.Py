@@ -89,7 +89,7 @@ For AST-based pattern matching this may occur when a change associated with an A
     </a>
     
     * same node
-        In order of insertion of change
+        In order of insertion of change / in collection order
 
 5. Multiple appends at the same text location
     * different nodes
@@ -106,7 +106,7 @@ For AST-based pattern matching this may occur when a change associated with an A
     
     * same node
 
-        In reverse order of insertion of change
+        In reverse order of insertion of change / in reversed collection order
 
 6. Appends and prepends at the same text location
         Can only happen for consecutive sibling nodes
