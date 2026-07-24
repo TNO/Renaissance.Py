@@ -89,11 +89,14 @@ class Taut2Pyunit(PythonRefactoring):
     def replace_taut(self):
         """
         replace TAUT.TestCase by unittest.TestCase
+        replace TAUT.unittest.main() by unittest.main()
         """
         for index in range(self.find_ast_type(Attribute).__len__()):
             node = self.find_ast_type(Attribute)[index]
             if node.name == "TAUT.TestCase":
                 self.replace("unittest.TestCase", node, False, False)
+            elif node.name == "TAUT.unittest.main":
+                self.replace("unittest.main", node, False, False)
         for index in range(self.find_ast_type(Name).__len__()):
             node = self.find_ast_type(Name)[index]
             if node.name == "TestCase":
