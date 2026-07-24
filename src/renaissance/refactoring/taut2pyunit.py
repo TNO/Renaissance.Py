@@ -138,6 +138,7 @@ class Taut2Pyunit(PythonRefactoring):
         [self.replace("self.assertFalse", node, False, False) for node in self.find_ast_type(Attribute) if node.name == "self.assert_false"]
         [self.replace("self.assertTrue", node, False, False) for node in self.find_ast_type(Attribute) if node.name == "self.assert_true"]
         [self.replace("self.assertEqual", node, False, False) for node in self.find_ast_type(Attribute) if node.name == "self.assert_equal"]
+        [self.replace("self.assertRaises", node, False, False) for node in self.find_ast_type(Attribute) if node.name == "self.assert_raises"]
 
     def remove_stubserver(self):
         [self.remove(node, False, False) for node in self.find_ast_type(Attribute) if node.name == "TAUT.StubServer"]
