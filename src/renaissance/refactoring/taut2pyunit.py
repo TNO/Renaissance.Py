@@ -61,8 +61,7 @@ class Taut2Pyunit(PythonRefactoring):
         self.with_testdoubles()
         self.commit()
 
-        if self.root.signature.find("self.patches = []") > 0 or self.root.signature.find("patch.object") > 0:
-            self.insert_patch_import()
+        self.insert_patch_import()
         self.commit()
         self.ensure_unittest_import()
         self.commit()
@@ -381,13 +380,36 @@ ImprovedStub.store_args = {}
             repl_pattern = repl_pattern.replace("context_stub", "self.context_stub")
             self.replace(repl_pattern, match.nodes, False, False)
 
-    def insert_patch_import(self):
+    def insert_patch_import(self, always: bool = False):
+        if not (self.root.signature.find("self.patches = []") > 0 
+            or self.root.signature.find("patch.object") > 0 
+            or always
+        ):
+            return
+        
+        # Check if patch is already imported
+        if self._patch_already_imported():
+            return
+        
         insert = "\ntry:\n    from unittest.mock import patch\nexcept ImportError:\n    from mock import patch"
-        insert_pattern = self.pattern_factory.create_statements(insert)
-        if len(match_pattern(self.root.children, insert_pattern)) == 0:
-            pattern = self.pattern_factory.create_statements("import unittest\n")
-            for match in match_pattern(self.root.children, pattern):
-                self.insert_after(insert, match.nodes, False, False)
+        anchor = self._first_top_level_import_node() or self.root.children[0]
+        self.insert_after(insert, anchor, False, False)
+
+    def _patch_already_imported(self):
+        """Check if patch is already imported using pattern matching."""
+        # Check for: from unittest.mock import $$anything (with patch somewhere in it)
+        pattern1 = self.pattern_factory.create_statements("from unittest.mock import $$aa")
+        for match in match_pattern(self.root.children, pattern1):
+            if "patch" in match.signature:
+                return True
+        
+        # Check for: from mock import $$anything (with patch somewhere in it)
+        pattern2 = self.pattern_factory.create_statements("from mock import $$aa")
+        for match in match_pattern(self.root.children, pattern2):
+            if "patch" in match.signature:
+                return True
+        
+        return False
 
     def replace_taut_skip(self):
         """
