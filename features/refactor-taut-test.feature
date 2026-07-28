@@ -56,5 +56,5 @@ Feature: taut migration
     And it should not contain 'TAUT.StubServer'
     And it should contain 'def setUp(self):'
     And it should not contain 'sharedSetUp(self):'
-    And it should contain 'with patch.object(ABCD, 'startup', new=startup_stub):'
+    And it should contain 'with patch.object(ABCD, 'startup', startup_stub):'
     And it should contain '@patch('
