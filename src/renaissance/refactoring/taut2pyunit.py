@@ -64,6 +64,8 @@ class Taut2Pyunit(PythonRefactoring):
         if self.root.signature.find("self.patches = []") > 0 or self.root.signature.find("patch.object") > 0:
             self.insert_patch_import()
         self.commit()
+        self.ensure_unittest_import()
+        self.commit()
 
         try:
             # result = insert_doc(result, "01-22-2026")
@@ -182,7 +184,6 @@ class Taut2Pyunit(PythonRefactoring):
         for match in matches:
             self.remove(match.nodes, False, False)
         self.commit()
-        self.ensure_unittest_import(always=True)
 
     def ensure_unittest_import(self, always: bool = False):
         if "import unittest\n" not in self.root.signature and ("unittest" in self.root.signature or always):

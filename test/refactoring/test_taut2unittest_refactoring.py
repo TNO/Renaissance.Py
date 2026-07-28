@@ -79,6 +79,7 @@ class TestTaut2Unittest:
     def test_remove_testoob_import(self, input_code, expected_code, mocker):
         subject = self._create(mocker, input_code)
         subject.remove_testoob_import()
+        subject.ensure_unittest_import(always=True)
         subject.commit()
         result = subject.apply_to_string()
         assert_that(result, is_(expected_code))
