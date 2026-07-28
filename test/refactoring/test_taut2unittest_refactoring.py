@@ -366,7 +366,7 @@ class TestTaut2Unittest:
 
     def test_with_testdoubles(self, mocker):
         subject = self._create(mocker, "with TAUT.TestDoubles(module=mod, b=c):\n    pass")
-        expected_code = "with patch.object(mod, 'b', new=c):\n    pass"
+        expected_code = "with patch.object(mod, 'b', c):\n    pass"
         subject.with_testdoubles()
         result = subject.apply_to_string()
         assert_that(result, is_(expected_code))
