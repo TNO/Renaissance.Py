@@ -380,6 +380,22 @@ class TestTaut2Unittest:
         result = subject.apply_to_string()
         assert_that(result, is_(expected_code))
 
+    @pytest.mark.parametrize(
+        "input_code, always, expected_code",
+        [
+            ("class MyTest(unittest.TestCase):\n    pass\n", False, "import unittest\nclass MyTest(unittest.TestCase):\n    pass\n"),
+            ("class MyTest:\n    pass\n", False, "class MyTest:\n    pass\n"),
+            ("import unittest\nclass MyTest(unittest.TestCase):\n    pass\n", False, "import unittest\nclass MyTest(unittest.TestCase):\n    pass\n"),
+            ("import unittest\nclass MyTest(unittest.TestCase):\n    pass\n", True, "import unittest\nclass MyTest(unittest.TestCase):\n    pass\n"),
+            ("class MyTest:\n    pass\n", True, "import unittest\nclass MyTest:\n    pass\n"),
+        ],
+    )
+    def test_ensure_unittest_import(self, input_code, always, expected_code, mocker):
+        subject = self._create(mocker, input_code)
+        subject.ensure_unittest_import(always=always)
+        result = subject.apply_to_string()
+        assert_that(result, is_(expected_code))
+
     # Intent: prevent regression on case where whitespace in empty lines is removed internally in rewriter.
     # The start and end offsets within the node object stay the same, so the rewriter would replace a wrong segment.
     @pytest.mark.parametrize("input_code, expected_code", [(tst_testdoubles.test_taut_testcase_with_whitespace_on_empty_line, 
