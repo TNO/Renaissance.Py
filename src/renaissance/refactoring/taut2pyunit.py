@@ -62,6 +62,7 @@ class Taut2Pyunit(PythonRefactoring):
         self.commit()
 
         self.insert_patch_import()
+        self.insert_Mock_import()
         self.commit()
         self.ensure_unittest_import()
         self.commit()
@@ -102,8 +103,6 @@ class Taut2Pyunit(PythonRefactoring):
             node = self.find_ast_type(Name)[index]
             if node.name == "TestCase":
                 self.replace("unittest.TestCase", node, False, False)
-        # [(self.replace("unittest.TestCase", node, False, False), self.commit()) for node in self.find_ast_type(Attribute) if node.name == "TAUT.TestCase"]
-        # [(self.replace("unittest.TestCase", node, False, False), self.commit()) for node in self.find_ast_type(Name) if node.name == "TestCase"]
 
     def remove_decorator(self):
         [self.remove(node, False, False) for node in self.find_ast_type(Attribute) if node.name == "TAUT.log_stub"]
@@ -381,9 +380,9 @@ ImprovedStub.store_args = {}
             self.replace(repl_pattern, match.nodes, False, False)
 
     def insert_patch_import(self, always: bool = False):
-        if not (self.root.signature.find("self.patches = []") > 0 
-            or self.root.signature.find("patch.object") > 0 
-            or always
+        if (not (self.root.signature.find("self.patches = []") > 0 
+            or self.root.signature.find("patch.object") > 0 )
+            and not always
         ):
             return
         
@@ -397,16 +396,42 @@ ImprovedStub.store_args = {}
 
     def _patch_already_imported(self):
         """Check if patch is already imported using pattern matching."""
-        # Check for: from unittest.mock import $$anything (with patch somewhere in it)
         pattern1 = self.pattern_factory.create_statements("from unittest.mock import $$aa")
         for match in match_pattern(self.root.children, pattern1):
             if "patch" in match.signature:
                 return True
         
-        # Check for: from mock import $$anything (with patch somewhere in it)
         pattern2 = self.pattern_factory.create_statements("from mock import $$aa")
         for match in match_pattern(self.root.children, pattern2):
             if "patch" in match.signature:
+                return True
+        
+        return False
+
+    def insert_Mock_import(self, always: bool = False):
+        if (not (self.root.signature.find("Mock(") > 0) 
+            and not always
+        ):
+            return
+        
+        # Check if Mock is already imported
+        if self._Mock_already_imported():
+            return
+        
+        insert = "\ntry:\n    from unittest.mock import Mock\nexcept ImportError:\n    from mock import Mock"
+        anchor = self._first_top_level_import_node() or self.root.children[0]
+        self.insert_after(insert, anchor, False, False)
+
+    def _Mock_already_imported(self):
+        """Check if Mock is already imported using pattern matching."""
+        pattern1 = self.pattern_factory.create_statements("from unittest.mock import $$aa")
+        for match in match_pattern(self.root.children, pattern1):
+            if "Mock" in match.signature:
+                return True
+        
+        pattern2 = self.pattern_factory.create_statements("from mock import $$aa")
+        for match in match_pattern(self.root.children, pattern2):
+            if "Mock" in match.signature:
                 return True
         
         return False

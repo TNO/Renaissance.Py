@@ -406,3 +406,19 @@ class TestTaut2Unittest:
         subject.replace_taut()
         result = subject.apply_to_string()
         assert_that(result, is_(expected_code))
+
+    @pytest.mark.parametrize(
+        "input_code, always, expected_code",
+        [
+            ( "import unittest\nx = Mock()", False, "import unittest\ntry:\n    from unittest.mock import Mock\nexcept ImportError:\n    from mock import Mock\nx = Mock()"),
+            ( "import unittest\nx = patch()", False, "import unittest\nx = patch()"),
+            ( "import unittest\nx = patch()", True, "import unittest\ntry:\n    from unittest.mock import Mock\nexcept ImportError:\n    from mock import Mock\nx = patch()"),
+            ( "from unittest.mock import Mock\nx = Mock()", False, "from unittest.mock import Mock\nx = Mock()"),
+            ( "from mock import Mock\nx = Mock()", False, "from mock import Mock\nx = Mock()"),
+        ],
+    )
+    def test_insert_Mock_import(self, input_code, always, expected_code, mocker):
+        subject = self._create(mocker, input_code)
+        subject.insert_Mock_import(always=always)
+        result = subject.apply_to_string()
+        assert_that(result, is_(expected_code))
