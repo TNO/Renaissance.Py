@@ -182,7 +182,10 @@ class Taut2Pyunit(PythonRefactoring):
         for match in matches:
             self.remove(match.nodes, False, False)
         self.commit()
-        if "import unittest\n" not in self.root.signature:
+        self.ensure_unittest_import(always=True)
+
+    def ensure_unittest_import(self, always: bool = False):
+        if "import unittest\n" not in self.root.signature and ("unittest" in self.root.signature or always):
             anchor = self._first_top_level_import_node() or self.root.children[0]
             self.insert_before("import unittest\n", anchor, False, False)
 
