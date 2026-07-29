@@ -41,6 +41,7 @@ class Taut2Pyunit(PythonRefactoring):
         self.remove_stubserver()
         self.replace_taut()
         self.replace_testoob_main()
+        self.replace_taut_mock()
         self.remove_decorator()
         self.add_self()
         self.convert_assert()
@@ -110,6 +111,12 @@ class Taut2Pyunit(PythonRefactoring):
         Replace testoob.main() by unittest.main()
         """
         [self.replace("unittest.main", node, False, False) for node in self.find_ast_type(Attribute) if node.name == "testoob.main"]
+
+    def replace_taut_mock(self):
+        """
+        Replace TAUT.Mock() by Mock()
+        """
+        [self.replace("Mock", node, False, False) for node in self.find_ast_type(Attribute) if node.name == "TAUT.Mock"]
 
     def remove_decorator(self):
         [self.remove(node, False, False) for node in self.find_ast_type(Attribute) if node.name == "TAUT.log_stub"]

@@ -130,6 +130,29 @@ class TestTaut2Unittest:
         "input_code, expected_code",
         [
             (
+                "m = TAUT.Mock()\n",
+                "m = Mock()\n",
+            ),
+            (
+                "x = TAUT.Mock(return_=(1234, True))\n",
+                "x = Mock(return_=(1234, True))\n",
+            ),
+            (
+                "class MyTest:\n    pass\n",
+                "class MyTest:\n    pass\n",
+            ),
+        ],
+    )
+    def test_replace_taut_mock(self, input_code, expected_code, mocker):
+        subject = self._create(mocker, input_code)
+        subject.replace_taut_mock()
+        result = subject.apply_to_string()
+        assert_that(result, is_(expected_code))
+
+    @pytest.mark.parametrize(
+        "input_code, expected_code",
+        [
+            (
                 "@TAUT.skip_test\ndef test(a, b):\n    pass\n",
                 "@unittest.skip\ndef test(a, b):\n    pass\n",
             )
