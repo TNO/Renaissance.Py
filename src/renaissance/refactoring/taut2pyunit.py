@@ -42,6 +42,7 @@ class Taut2Pyunit(PythonRefactoring):
         self.replace_taut()
         self.replace_testoob_main()
         self.replace_taut_mock()
+        self.replace_calls_to_call_args_list()
         self.remove_decorator()
         self.add_self()
         self.convert_assert()
@@ -117,6 +118,12 @@ class Taut2Pyunit(PythonRefactoring):
         Replace TAUT.Mock() by Mock()
         """
         [self.replace("Mock", node, False, False) for node in self.find_ast_type(Attribute) if node.name == "TAUT.Mock"]
+
+    def replace_calls_to_call_args_list(self):
+        """
+        Replace dpxap_write._calls by dpxap_write.call_args_list
+        """
+        [self.replace("dpxap_write.call_args_list", node, False, False) for node in self.find_ast_type(Attribute) if node.name == "dpxap_write._calls"]
 
     def remove_decorator(self):
         [self.remove(node, False, False) for node in self.find_ast_type(Attribute) if node.name == "TAUT.log_stub"]

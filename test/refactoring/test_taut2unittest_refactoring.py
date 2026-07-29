@@ -153,6 +153,29 @@ class TestTaut2Unittest:
         "input_code, expected_code",
         [
             (
+                "calls = dpxap_write._calls\n",
+                "calls = dpxap_write.call_args_list\n",
+            ),
+            (
+                "chuck_data = dpxap_write._calls[0][0][0].chuck_data",
+                "chuck_data = dpxap_write.call_args_list[0][0][0].chuck_data",
+            ),
+            (
+                "class MyTest:\n    pass\n",
+                "class MyTest:\n    pass\n",
+            ),
+        ],
+    )
+    def test_replace_calls_to_call_args_list(self, input_code, expected_code, mocker):
+        subject = self._create(mocker, input_code)
+        subject.replace_calls_to_call_args_list()
+        result = subject.apply_to_string()
+        assert_that(result, is_(expected_code))
+
+    @pytest.mark.parametrize(
+        "input_code, expected_code",
+        [
+            (
                 "@TAUT.skip_test\ndef test(a, b):\n    pass\n",
                 "@unittest.skip\ndef test(a, b):\n    pass\n",
             )
