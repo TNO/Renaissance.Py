@@ -107,6 +107,29 @@ class TestTaut2Unittest:
         "input_code, expected_code",
         [
             (
+                "if __name__ == '__main__':\n    testoob.main()\n",
+                "if __name__ == '__main__':\n    unittest.main()\n",
+            ),
+            (
+                "testoob.main()\n",
+                "unittest.main()\n",
+            ),
+            (
+                "class MyTest:\n    pass\n",
+                "class MyTest:\n    pass\n",
+            ),
+        ],
+    )
+    def test_replace_testoob_main(self, input_code, expected_code, mocker):
+        subject = self._create(mocker, input_code)
+        subject.replace_testoob_main()
+        result = subject.apply_to_string()
+        assert_that(result, is_(expected_code))
+
+    @pytest.mark.parametrize(
+        "input_code, expected_code",
+        [
+            (
                 "@TAUT.skip_test\ndef test(a, b):\n    pass\n",
                 "@unittest.skip\ndef test(a, b):\n    pass\n",
             )
