@@ -152,13 +152,38 @@ class PythonPatternFactory:
     def create_expression(self, text: str) -> PythonPattern:
         my_pattern = self.create_statement(text)
         if isinstance(my_pattern.node, PythonRstNode):
-            return PythonPattern(my_pattern.node.expression)
+            node = my_pattern.node.expression
+            self._inject_kw_wildcard_if_sole_arg(node)
+            return PythonPattern(node)
         elif isinstance(my_pattern.node, LSTNode):
             return PythonPattern(my_pattern.node.children[-1])
         elif isinstance(my_pattern.node, PythonCstNode):
             return PythonPattern(my_pattern.node.children[-1])
         else:
             return PythonPattern(my_pattern.node.children[0])
+
+    @staticmethod
+    def _inject_kw_wildcard_if_sole_arg(node: PythonRstNode) -> None:
+        """
+        If the expression node is a function Call where the sole argument is a MatchAll
+        wildcard ($$name) and there are no keyword args in the pattern, move that wildcard
+        into the keywords field instead.
+
+        This makes create_expression("func($$args)") capable of matching keyword-only
+        calls like func(key=value), not just positional calls.
+        """
+        args_implicit = next((c for c in node.children if getattr(c, 'name', None) == 'args'), None)
+        keywords_implicit = next((c for c in node.children if getattr(c, 'name', None) == 'keywords'), None)
+        if args_implicit is None or keywords_implicit is None:
+            return
+        wildcard_name = args_implicit.children[0].name if args_implicit.children else ""
+        if (len(args_implicit.children) == 1
+                and wildcard_name.startswith(MATCH_ALL)
+                and not keywords_implicit.children
+                and "kw" in use_dollar(wildcard_name)):
+            wildcard_node = args_implicit.children[0]
+            args_implicit.children = []
+            keywords_implicit.children = [wildcard_node]
 
     def create_decorators(self, param):
         return self.create_statement(param + "\ndef test(): pass").children[2]
