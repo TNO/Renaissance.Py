@@ -146,12 +146,16 @@ class TestTaut2Unittest:
                 "z = Mock(spec=MyClass, name='foo', return_value=99)\n",
             ),
             (
-                "a = TAUT.Mock(return_=0, side_effect=ValueError)\n",
+                "a = TAUT.Mock(return_=0, except_=ValueError)\n",
                 "a = Mock(return_value=0, side_effect=ValueError)\n",
             ),
             (
-                "b = TAUT.Mock(spec=MyClass, return_=0, side_effect=ValueError, name='x')\n",
+                "b = TAUT.Mock(spec=MyClass, return_=0, except_=ValueError, name='x')\n",
                 "b = Mock(spec=MyClass, return_value=0, side_effect=ValueError, name='x')\n",
+            ),
+            (
+                "c = TAUT.Mock(except_=ValueError)\n",
+                "c = Mock(side_effect=ValueError)\n",
             ),
             (
                 "class MyTest:\n    pass\n",

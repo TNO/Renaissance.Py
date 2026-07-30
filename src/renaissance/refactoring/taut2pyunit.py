@@ -115,17 +115,21 @@ class Taut2Pyunit(PythonRefactoring):
 
     def migrate_taut_mock(self):
         """
-        Replace TAUT.Mock() by Mock() and rename return_= parameter to return_value=
+        Replace TAUT.Mock() by Mock() and rename parameters:
+          return_= -> return_value=
+          except_= -> side_effect=
         """
         return_kwarg = self.pattern_factory.create_kwargs("return_=$val")
+        except_kwarg = self.pattern_factory.create_kwargs("except_=$val")
         pattern = self.pattern_factory.create_expression("TAUT.Mock($$kw)")
         for match in match_pattern(self.root.children, [pattern]):
             kw_nodes = match.expansions.get("$$kw", [])
             new_kwargs = []
             for kw_node in kw_nodes:
-                kw_matches = match_pattern([kw_node], return_kwarg)
-                if kw_matches:
-                    new_kwargs.append(f"return_value={kw_matches[0]['$val']}")
+                if match_pattern([kw_node], return_kwarg):
+                    new_kwargs.append(f"return_value={match_pattern([kw_node], return_kwarg)[0]['$val']}")
+                elif match_pattern([kw_node], except_kwarg):
+                    new_kwargs.append(f"side_effect={match_pattern([kw_node], except_kwarg)[0]['$val']}")
                 else:
                     new_kwargs.append(kw_node.signature)
             self.replace(f"TAUT.Mock({', '.join(new_kwargs)})", match.nodes, False, False)
