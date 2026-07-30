@@ -41,7 +41,7 @@ class Taut2Pyunit(PythonRefactoring):
         self.remove_stubserver()
         self.replace_taut()
         self.replace_testoob_main()
-        self.replace_taut_mock()
+        self.migrate_taut_mock()
         self.replace_calls_to_call_args_list()
         self.remove_decorator()
         self.add_self()
@@ -113,10 +113,25 @@ class Taut2Pyunit(PythonRefactoring):
         """
         [self.replace("unittest.main", node, False, False) for node in self.find_ast_type(Attribute) if node.name == "testoob.main"]
 
-    def replace_taut_mock(self):
+    def migrate_taut_mock(self):
         """
-        Replace TAUT.Mock() by Mock()
+        Replace TAUT.Mock() by Mock() and rename return_= parameter to return_value=
         """
+        return_kwarg = self.pattern_factory.create_kwargs("return_=$val")
+        pattern = self.pattern_factory.create_expression("TAUT.Mock($$kw)")
+        for match in match_pattern(self.root.children, [pattern]):
+            kw_nodes = match.expansions.get("$$kw", [])
+            new_kwargs = []
+            for kw_node in kw_nodes:
+                kw_matches = match_pattern([kw_node], return_kwarg)
+                if kw_matches:
+                    new_kwargs.append(f"return_value={kw_matches[0]['$val']}")
+                else:
+                    new_kwargs.append(kw_node.signature)
+            self.replace(f"TAUT.Mock({', '.join(new_kwargs)})", match.nodes, False, False)
+
+        self.commit()
+        # Replace TAUT.Mock with Mock
         [self.replace("Mock", node, False, False) for node in self.find_ast_type(Attribute) if node.name == "TAUT.Mock"]
 
     def replace_calls_to_call_args_list(self):

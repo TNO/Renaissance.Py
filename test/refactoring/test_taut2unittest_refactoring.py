@@ -135,7 +135,23 @@ class TestTaut2Unittest:
             ),
             (
                 "x = TAUT.Mock(return_=(1234, True))\n",
-                "x = Mock(return_=(1234, True))\n",
+                "x = Mock(return_value=(1234, True))\n",
+            ),
+            (
+                "y = TAUT.Mock(spec=MyClass, return_=42)\n",
+                "y = Mock(spec=MyClass, return_value=42)\n",
+            ),
+            (
+                "z = TAUT.Mock(spec=MyClass, name='foo', return_=99)\n",
+                "z = Mock(spec=MyClass, name='foo', return_value=99)\n",
+            ),
+            (
+                "a = TAUT.Mock(return_=0, side_effect=ValueError)\n",
+                "a = Mock(return_value=0, side_effect=ValueError)\n",
+            ),
+            (
+                "b = TAUT.Mock(spec=MyClass, return_=0, side_effect=ValueError, name='x')\n",
+                "b = Mock(spec=MyClass, return_value=0, side_effect=ValueError, name='x')\n",
             ),
             (
                 "class MyTest:\n    pass\n",
@@ -145,7 +161,7 @@ class TestTaut2Unittest:
     )
     def test_replace_taut_mock(self, input_code, expected_code, mocker):
         subject = self._create(mocker, input_code)
-        subject.replace_taut_mock()
+        subject.migrate_taut_mock()
         result = subject.apply_to_string()
         assert_that(result, is_(expected_code))
 
