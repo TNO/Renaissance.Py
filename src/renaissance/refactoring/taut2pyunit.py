@@ -42,6 +42,7 @@ class Taut2Pyunit(PythonRefactoring):
         self.replace_taut()
         self.replace_testoob_main()
         self.migrate_taut_mock()
+        self.migrate_dpxac_read()
         self.replace_calls_to_call_args_list()
         self.remove_decorator()
         self.add_self()
@@ -137,6 +138,9 @@ class Taut2Pyunit(PythonRefactoring):
         self.commit()
         # Replace TAUT.Mock with Mock
         [self.replace("Mock", node, False, False) for node in self.find_ast_type(Attribute) if node.name == "TAUT.Mock"]
+
+    def migrate_dpxac_read(self):
+        [self.replace("dpxac_read.side_effect.code", node, False, False) for node in self.find_ast_type(Attribute) if node.name == "dpxac_read._except.code"]
 
     def replace_calls_to_call_args_list(self):
         """
