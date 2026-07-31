@@ -454,9 +454,25 @@ class TestTaut2Unittest:
         result = subject.apply_to_string()
         assert_that(result, is_(expected_code))
 
-    def test_with_testdoubles(self, mocker):
-        subject = self._create(mocker, "with TAUT.TestDoubles(module=mod, b=c):\n    pass")
-        expected_code = "with patch.object(mod, 'b', c):\n    pass"
+    @pytest.mark.parametrize(
+        "input_code, expected_code",
+        [
+            ("""
+with TAUT.TestDoubles(module=ABCD, dummy=dummy):
+    with TAUT.TestDoubles(module=ABCD, example=example):
+        with self.assertRaises(WXYZ.Error) as err:
+            pass
+""", """
+with patch.object(ABCD, 'dummy', dummy):
+    with patch.object(ABCD, 'example', example):
+        with self.assertRaises(WXYZ.Error) as err:
+            pass
+"""),
+            ("with TAUT.TestDoubles(module=mod, b=c):\n    pass", "with patch.object(mod, 'b', c):\n    pass"),
+        ],
+    )
+    def test_with_testdoubles(self, input_code, expected_code, mocker):
+        subject = self._create(mocker, input_code)
         subject.with_testdoubles()
         result = subject.apply_to_string()
         assert_that(result, is_(expected_code))
