@@ -173,6 +173,12 @@ class TestTaut2Unittest:
         result = subject.apply_to_string()
         assert_that(result, is_(expected_code))
 
+    def test_migrate_dpxac_read(self, mocker):
+        subject = self._create(mocker, "self.assertEqual(err.exception.code, dpxac_read._except.code)")
+        subject.migrate_dpxac_read()
+        result = subject.apply_to_string()
+        assert_that(result, is_("self.assertEqual(err.exception.code, dpxac_read.side_effect.code)"))
+
     @pytest.mark.parametrize(
         "input_code, expected_code",
         [
