@@ -214,9 +214,12 @@ class Taut2Pyunit(PythonRefactoring):
 
     def remove_testoob_import(self):
         testoob_import = self.pattern_factory.create_statements(
-            "try:\n    import testoob as unittest\nexcept ImportError:\n    import unittest\n"
+            "try:\n    import testoob as unittest\nexcept ImportError:\n    $$e\n"
         )
-        matches = match_pattern(self.root.children, testoob_import)
+        testoob_import2 = self.pattern_factory.create_statements(
+            "try:\n    import testoob\nexcept ImportError:\n    $$e\n"
+        )
+        matches = list(match_pattern(self.root.children, testoob_import)) + list(match_pattern(self.root.children, testoob_import2))
         if not matches:
             return
         for match in matches:
