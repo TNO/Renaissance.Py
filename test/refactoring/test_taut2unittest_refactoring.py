@@ -74,6 +74,10 @@ class TestTaut2Unittest:
                 "try:\n    import testoob as unittest\nexcept ImportError:\n    import unittest\nclass MyTest:\n    pass\n",
                 "\nimport unittest\nclass MyTest:\n    pass\n",
             ),
+            (
+                "try:\n    import testoob\nexcept ImportError:\n    testoob = unittest\nimport mock",
+                "\nimport unittest\nimport mock",
+            ),
         ],
     )
     def test_remove_testoob_import(self, input_code, expected_code, mocker):
@@ -175,6 +179,10 @@ class TestTaut2Unittest:
             (
                 "calls = dpxap_write._calls\n",
                 "calls = dpxap_write.call_args_list\n",
+            ),
+            (
+                "chuck_data = dpxap_write._calls[0][0][0].chuck_data",
+                "chuck_data = dpxap_write.call_args_list[0][0][0].chuck_data",
             ),
             (
                 "chuck_data = dpxap_write._calls[0][0][0].chuck_data",
