@@ -489,10 +489,10 @@ ImprovedStub.store_args = {}
             self.replace(repl, match.nodes, False, False)
 
     def with_testdoubles(self):
-        pattern1 = self.pattern_factory.create_statements("with TAUT.TestDoubles(module=$a, $b=$c):\n    $$ee")
-        for match in match_pattern(self.root.children, pattern1):
-            repl_pattern = f"with patch.object({match["$a"]}, '{match["$b"]}', {match["$c"]}):\n    {match["$$ee"]}"
-            self.replace(repl_pattern, match.nodes, False, False)
+        pattern = self.pattern_factory.create_expression("TAUT.TestDoubles(module=$a, $b=$c)")
+        for match in match_pattern(self.root.children, [pattern]):
+            repl = f"patch.object({match['$a']}, '{match['$b']}', {match['$c']})"
+            self.replace(repl, match.nodes, False, False)
 
     def shared_setup(self):
         setup_function = self.pattern_factory.create_statements("def sharedSetUp(self):\n    $$stmts")
