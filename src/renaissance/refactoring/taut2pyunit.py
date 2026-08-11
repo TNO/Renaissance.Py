@@ -116,13 +116,16 @@ class Taut2Pyunit(PythonRefactoring):
         return
 
     def _mentioned_in_scenario(self):
-        """Return True when any sibling *.test_scenario.xml file mentions this test file."""
+        """
+        Return scenario filename when any sibling *.test_scenario.xml file mentions this test file.
+        Otherwise return empty string.
+        """
         source_path = Path(self.filename)
 
         try:
             scenario_files = source_path.parent.glob("*.test_scenario.xml")
         except OSError:
-            return False
+            return ""
 
         for scenario_file in scenario_files:
             try:
@@ -131,9 +134,9 @@ class Taut2Pyunit(PythonRefactoring):
                 continue
 
             if source_path.name in contents:
-                return True
+                return scenario_file.name
 
-        return False
+        return ""
 
     def _new_scenario_file_path(self, source_path: Path) -> Path:
         scenario_path = source_path.parent / f"{source_path.stem}.test_scenario.xml"
