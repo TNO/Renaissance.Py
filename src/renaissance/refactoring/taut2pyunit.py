@@ -109,6 +109,7 @@ class Taut2Pyunit(PythonRefactoring):
 """
 
         try:
+            print(f"TAUT> Making new scenario file in directory {source_path.parent} with name {scenario_path.name}")
             scenario_path.write_text(scenario_content, encoding="utf-8")
         except OSError:
             return
@@ -157,6 +158,8 @@ class Taut2Pyunit(PythonRefactoring):
                     return f"tb_cadenv_exec python {root}/tstpkg/{source_path.name}"
                 break
 
+        print("TAUT> Could not find component name while making exec_script for scenario file. "
+              "Be sure to inspect generated exec_script in new scenario_file for correctness")
         return f"tb_cadenv_exec python {source_path.name}"
 
     def get_migrated_path(self, file_path):
