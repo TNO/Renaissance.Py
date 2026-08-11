@@ -38,6 +38,7 @@ class Taut2Pyunit(PythonRefactoring):
             self.commit()
 
         self.add_testfile_to_scenario()
+        self.include_file_in_makefile()
         self.replace_mock()
         self.remove_stubserver()
         self.replace_taut()
@@ -78,6 +79,47 @@ class Taut2Pyunit(PythonRefactoring):
                 f.write(self.apply_to_string())
         except FileNotFoundError:
             print(f"Error: File '{self.filename}' not found.")
+
+    def _makefile_exists(self):
+        """Return True when a sibling 'makefile' exists"""
+        source_path = Path(self.filename)
+        makefile_path = source_path.parent / "makefile"
+
+        if not makefile_path.exists() or not makefile_path.is_file():
+            return False
+        return True
+
+    def include_file_in_makefile(self):
+        """
+        Add scenario file, that includes this testfile, to the makefile. If makefile does not exist, this function aborts.
+        If makefile exists but no scenario exists that includes this testfile, it also aborts.
+        If makefile already includes a scenario that includes this testfile, nothing happens.
+        """
+ 
+        if not self._makefile_exists():
+            return
+        
+        scenario_filename = self._mentioned_in_scenario()
+        if not scenario_filename:
+            return
+
+        source_path = Path(self.filename)
+        makefile_path = source_path.parent / "makefile"
+        try:
+            makefile_contents = makefile_path.read_text(encoding="utf-8", errors="ignore")
+        except OSError:
+            return
+
+        if scenario_filename in makefile_contents:
+            return
+
+        print(f"TAUT> Adding {scenario_filename} to EXPORTTARGET in makefile")
+        makefile_contents += f"\nEXPORTTARGET += {scenario_filename}\n"
+
+        try:
+            makefile_path.write_text(makefile_contents, encoding="utf-8")
+        except OSError:
+            return
 
     def add_testfile_to_scenario(self):
         """

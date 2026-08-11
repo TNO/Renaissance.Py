@@ -123,6 +123,54 @@ class TestTaut2Unittest:
             contains_string("<exec_script>tb_cadenv_exec python sample_test.py</exec_script>"),
         )
 
+    def test_include_file_in_makefile_no_makefile(self, mocker, tmp_path):
+        test_file = tmp_path / "sample_test.py"
+        test_file.write_text("x = 1\n", encoding="utf-8")
+
+        subject = self._create_for_filename(mocker, test_file)
+        subject.include_file_in_makefile()
+
+        assert_that((tmp_path / "makefile").exists(), is_(False))
+
+    def test_include_file_in_makefile_no_scenario_mention(self, mocker, tmp_path):
+        test_file = tmp_path / "sample_test.py"
+        test_file.write_text("x = 1\n", encoding="utf-8")
+        makefile = tmp_path / "makefile"
+        makefile.write_text("HEADER\n", encoding="utf-8")
+
+        subject = self._create_for_filename(mocker, test_file)
+        subject.include_file_in_makefile()
+
+        assert_that(makefile.read_text(encoding="utf-8"), is_("HEADER\n"))
+
+    def test_include_file_in_makefile_adds_exporttarget(self, mocker, tmp_path):
+        test_file = tmp_path / "sample_test.py"
+        test_file.write_text("x = 1\n", encoding="utf-8")
+        scenario_file = tmp_path / "abc.test_scenario.xml"
+        scenario_file.write_text("<exec_script>tb_cadenv_exec python sample_test.py</exec_script>\n", encoding="utf-8")
+        makefile = tmp_path / "makefile"
+        makefile.write_text("HEADER\n", encoding="utf-8")
+
+        subject = self._create_for_filename(mocker, test_file)
+        subject.include_file_in_makefile()
+
+        expected = "HEADER\n\nEXPORTTARGET += abc.test_scenario.xml\n"
+        assert_that(makefile.read_text(encoding="utf-8"), is_(expected))
+
+    def test_include_file_in_makefile_does_not_duplicate(self, mocker, tmp_path):
+        test_file = tmp_path / "sample_test.py"
+        test_file.write_text("x = 1\n", encoding="utf-8")
+        scenario_file = tmp_path / "abc.test_scenario.xml"
+        scenario_file.write_text("<exec_script>tb_cadenv_exec python sample_test.py</exec_script>\n", encoding="utf-8")
+        makefile = tmp_path / "makefile"
+        initial = "HEADER\nEXPORTTARGET += abc.test_scenario.xml\n"
+        makefile.write_text(initial, encoding="utf-8")
+
+        subject = self._create_for_filename(mocker, test_file)
+        subject.include_file_in_makefile()
+
+        assert_that(makefile.read_text(encoding="utf-8"), is_(initial))
+
     @pytest.mark.parametrize(
         "input_code, expected_code",
         [
