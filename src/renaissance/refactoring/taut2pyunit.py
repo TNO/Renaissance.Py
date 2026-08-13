@@ -110,16 +110,20 @@ class Taut2Pyunit(PythonRefactoring):
         except OSError:
             return
 
-        if scenario_filename in makefile_contents:
-            return
+        if not scenario_filename in makefile_contents:
+            self._add_to_exporttarget(scenario_filename, makefile_contents, makefile_path)
+        
+        if not source_path.name in makefile_contents:
+            self._add_to_exporttarget(source_path.name, makefile_contents, makefile_path)
+    
+    def _add_to_exporttarget(self, item: str, makefile_contents: str, makefile_path: Path):
+            print(f"TAUT> Adding {item} to EXPORTTARGET in makefile")
+            makefile_contents += f"\nEXPORTTARGET += {item}\n"
 
-        print(f"TAUT> Adding {scenario_filename} to EXPORTTARGET in makefile")
-        makefile_contents += f"\nEXPORTTARGET += {scenario_filename}\n"
-
-        try:
-            makefile_path.write_text(makefile_contents, encoding="utf-8")
-        except OSError:
-            return
+            try:
+                makefile_path.write_text(makefile_contents, encoding="utf-8")
+            except OSError:
+                return
 
     def add_testfile_to_scenario(self):
         """
