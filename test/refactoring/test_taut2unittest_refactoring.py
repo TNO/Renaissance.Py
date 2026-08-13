@@ -154,7 +154,7 @@ class TestTaut2Unittest:
         subject = self._create_for_filename(mocker, test_file)
         subject.include_file_in_makefile()
 
-        expected = "HEADER\n\nEXPORTTARGET += abc.test_scenario.xml\n"
+        expected = "HEADER\nEXPORTTARGET += abc.test_scenario.xml\nEXPORTTARGET += sample_test.py\n"
         assert_that(makefile.read_text(encoding="utf-8"), is_(expected))
 
     def test_include_file_in_makefile_does_not_duplicate(self, mocker, tmp_path):
@@ -163,13 +163,27 @@ class TestTaut2Unittest:
         scenario_file = tmp_path / "abc.test_scenario.xml"
         scenario_file.write_text("<exec_script>tb_cadenv_exec python sample_test.py</exec_script>\n", encoding="utf-8")
         makefile = tmp_path / "makefile"
-        initial = "HEADER\nEXPORTTARGET += abc.test_scenario.xml\n"
+        initial = "HEADER\nEXPORTTARGET += abc.test_scenario.xml\nEXPORTTARGET += sample_test.py\n"
         makefile.write_text(initial, encoding="utf-8")
 
         subject = self._create_for_filename(mocker, test_file)
         subject.include_file_in_makefile()
 
         assert_that(makefile.read_text(encoding="utf-8"), is_(initial))
+
+    def test_include_file_in_makefile_adds_missing_testfile_when_scenario_already_listed(self, mocker, tmp_path):
+        test_file = tmp_path / "sample_test.py"
+        test_file.write_text("x = 1\n", encoding="utf-8")
+        scenario_file = tmp_path / "abc.test_scenario.xml"
+        scenario_file.write_text("<exec_script>tb_cadenv_exec python sample_test.py</exec_script>\n", encoding="utf-8")
+        makefile = tmp_path / "makefile"
+        makefile.write_text("HEADER\nEXPORTTARGET += abc.test_scenario.xml\n", encoding="utf-8")
+
+        subject = self._create_for_filename(mocker, test_file)
+        subject.include_file_in_makefile()
+
+        expected = "HEADER\nEXPORTTARGET += abc.test_scenario.xml\nEXPORTTARGET += sample_test.py\n"
+        assert_that(makefile.read_text(encoding="utf-8"), is_(expected))
 
     @pytest.mark.parametrize(
         "input_code, expected_code",

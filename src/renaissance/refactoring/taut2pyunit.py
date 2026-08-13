@@ -110,20 +110,29 @@ class Taut2Pyunit(PythonRefactoring):
         except OSError:
             return
 
-        if not scenario_filename in makefile_contents:
-            self._add_to_exporttarget(scenario_filename, makefile_contents, makefile_path)
-        
-        if not source_path.name in makefile_contents:
-            self._add_to_exporttarget(source_path.name, makefile_contents, makefile_path)
-    
-    def _add_to_exporttarget(self, item: str, makefile_contents: str, makefile_path: Path):
-            print(f"TAUT> Adding {item} to EXPORTTARGET in makefile")
-            makefile_contents += f"\nEXPORTTARGET += {item}\n"
+        items_to_add = []
+        if scenario_filename not in makefile_contents:
+            items_to_add.append(scenario_filename)
+        if source_path.name not in makefile_contents:
+            items_to_add.append(source_path.name)
 
-            try:
-                makefile_path.write_text(makefile_contents, encoding="utf-8")
-            except OSError:
-                return
+        if not items_to_add:
+            return
+
+        updated_contents = self._add_to_exporttarget(items_to_add, makefile_contents)
+
+        try:
+            makefile_path.write_text(updated_contents, encoding="utf-8")
+        except OSError:
+            return
+
+    def _add_to_exporttarget(self, items: list[str], makefile_contents: str) -> str:
+        for item in items:
+            print(f"TAUT> Adding {item} to EXPORTTARGET in makefile")
+
+        separator = "\n" if not makefile_contents.endswith("\n") else ""
+        additions = "".join(f"EXPORTTARGET += {item}\n" for item in items)
+        return makefile_contents + separator + additions
 
     def add_testfile_to_scenario(self):
         """
