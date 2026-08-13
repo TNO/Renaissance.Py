@@ -73,13 +73,6 @@ class Taut2Pyunit(PythonRefactoring):
         self.ensure_unittest_import()
         self.commit()
 
-        try:
-            # result = insert_doc(result, "01-22-2026")
-            with open(self.get_migrated_path(self.filename), "w") as f:
-                f.write(self.apply_to_string())
-        except FileNotFoundError:
-            print(f"Error: File '{self.filename}' not found.")
-
     def _makefile_exists(self):
         """Return True when a sibling 'makefile' exists"""
         source_path = Path(self.filename)
@@ -216,20 +209,6 @@ class Taut2Pyunit(PythonRefactoring):
         print("TAUT> Could not find component name while making exec_script for scenario file. "
               "Be sure to inspect generated exec_script in new scenario_file for correctness")
         return f"tb_cadenv_exec python {source_path.name}"
-
-    def get_migrated_path(self, file_path):
-        """
-        Convert a file path to add '_migrated' before the extension.
-
-        Example: 'taut.py' -> 'taut_migrated.py'
-        """
-        # Split the path into filename and extension
-        base, ext = os.path.splitext(file_path)
-
-        # Create the new path with '_migrated' added
-        new_path = f"{base}_migrated{ext}"
-
-        return new_path
 
     def replace_taut(self):
         """
