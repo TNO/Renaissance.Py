@@ -1,0 +1,92 @@
+#[build-system]
+#requires = ["hatchling"]
+#build-backend = "hatchling.build"
+
+[project]
+name = "renaissance"
+version = "0.3.1"
+description = "Experimental Python version of the Renaissance refactoring tool"
+readme = "README.md"
+authors = [
+    { name = "Luna Li", email = "luna.li@capgemini.com" }
+]
+license = { text = "MIT" }
+requires-python = ">=3.12"
+dependencies = [
+    "textx==4.3.0",
+    "dataclasses-json==0.6.7",
+    "pyperclip>=1.8",
+    "clang==18.1.8",
+    "libclang==18.1.1",
+    "more-itertools>=10.0",
+    "networkx>=3.0",
+    "pyhamcrest>=2.1",
+    "pyecore>=0.14",
+    "pyyaml>=6.0",
+    "termcolor>=2.0",
+    "typing-extensions>=4.0",
+    "tree-sitter>=0.25",
+    "tree-sitter-python==0.25.0",
+    "tree-sitter-cpp==0.23.4",
+    "tree-sitter-java==0.23.5",
+    "ast-comments>=1.0",
+    "libcst>=1.8.6",
+    "antlr4-python3-runtime>=4.13.2",
+    "hypothesmith>=0.3.3",
+]
+
+[dependency-groups]
+test = [
+    "hypothesis>=6.152.4",
+    "hypothesmith>=0.3.3",
+    "parameterized>=0.9",
+    "pytest>=8.0",
+    "pytest-bdd==8.1.0",
+    "pytest-cov>=7.0",
+    "pytest-mock>=3.15",
+    "pytest-profiling>=1.8",
+    "coverage>=7.0",
+    "behave"
+]
+lint = [
+    "flake8>=7.0",
+    "black>=24.0",
+    "autopep8>=2.0",
+    "pytest-black>=0.6",
+    "ruff>=0.15.19",
+]
+dev = [
+    {include-group = "test"},
+    {include-group = "lint"},
+]
+
+[project.urls]
+Homepage = "https://github.com/TNO/Renaissance-Experiments"
+Issues = "https://github.com/TNO/Renaissance-Experiments/issues"
+
+[project.scripts]
+rejuvenate = "rejuvenation.cli:refactor"
+taut2test = "rejuvenation.cli:refactor"
+
+[tool.pytest.ini_options]
+testpaths = ["test", "features"]
+pythonpath = ["src", "test", "features"]
+norecursedirs = ["features/targets", "*.egg", ".*", "_darcs", "build", "CVS", "dist", "node_modules", "venv", "{arch}"]
+
+[tool.coverage.run]
+source = ["src"]
+omit = ["test/*", "features/*"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+
+[tool.ruff.lint.per-file-ignores]
+"**/conftest.py" = ["F401"]
+
+[tool.ruff.lint]
+ignore = ["E731"]
+
+[tool.black]
+line-length = 140
+
