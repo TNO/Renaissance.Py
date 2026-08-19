@@ -10,8 +10,8 @@ repo_name: TNO/renaissance.py
 edit_uri: blob/main/docs/
 
 theme:
-  name: material
-  language: en_GB
+  name: readthedocs
+  locale: en_GB
   features:
     - navigation.tabs
     - navigation.sections
@@ -26,7 +26,7 @@ theme:
 
 plugins:
   - search
-    - exporter:
+  - exporter:
       formats:
         pdf:
           enabled: !ENV [MKDOCS_EXPORTER_PDF_ENABLED, false]
@@ -106,8 +106,10 @@ nav:
           - 1. Evolving and maintaining code: user/concepts/code-base-evolution-and-maintenance.md
           - 2. Automation: user/concepts/automation.md
           - 3. Matching: user/concepts/matching.md
+          - Matching images: user/concepts/matching/README.md
           - 4. Filter: user/concepts/filter.md
           - 5. Rewrite semantics: user/concepts/rewrite-semantics.md
+          - Rewrite semantics images: user/concepts/rewrite-semantics/README.md
           - 6. Observability: user/concepts/observability.md
           - 7. Analysis: user/concepts/analysis.md
           - 8. Transformation: user/concepts/transformation.md
@@ -118,11 +120,16 @@ nav:
           - Overview: user/features/index.md
           - 1. Parsing and AST access: user/features/parsing-and-ast-access.md
           - 2. Pattern matching: user/features/pattern-matching.md
+          - Pattern matching images: user/features/pattern-matching/README.md
           - 3. Filtering and semantic checks: user/features/filtering-and-semantic-checks.md
           - 4. Analysis workflows: user/features/analysis-workflows.md
           - 5. Transformation workflows: user/features/transformation-workflows.md
           - 6. Strategy composition: user/features/strategy-composition.md
           - 7. Observability and reporting: user/features/observability-and-reporting.md
+          - 8. Navigation: user/features/navigation.md
+          - 9. Find: user/features/find.md
+          - 10. Modify: user/features/modify.md
+          - 11. Rewrite semantics: user/features/rewrite-semantics.md
 
       - Workflows:
           - Overview: user/workflows/index.md
@@ -136,6 +143,15 @@ nav:
       - Architecture:
           - Overview: developer/architecture/index.md
           - Code architecture: developer/architecture/code-architecture.md
+          - Code base: developer/architecture/code-base.md
+          - Navigation: developer/architecture/navigation.md
+          - Matching: developer/architecture/matching.md
+          - Find: developer/architecture/find.md
+          - Filter: developer/architecture/filter.md
+          - Modify: developer/architecture/modify.md
+          - Rewrite semantics: developer/architecture/rewrite-semantics.md
+          - Standard analyses and transformations: developer/architecture/standard-libraries.md
+          - Architecture images: developer/architecture/images/README.md
           - Test architecture: developer/architecture/test-architecture.md
           - Traceability model: developer/architecture/traceability-model.md
 
@@ -152,6 +168,7 @@ nav:
           - Transformation modules: developer/modules/transformation.md
           - Observability modules: developer/modules/observability.md
           - Strategy modules: developer/modules/strategy.md
+          - Rewrite semantics module: developer/modules/rewrite-semantics.md
 
       - API reference:
           - Overview: developer/api/index.md
@@ -162,6 +179,7 @@ nav:
 
       - Templates:
           - Overview: documentation-system/templates/index.md
+          - Architecture template: documentation-system/templates/architecture-template.md
           - Concept template: documentation-system/templates/concept-template.md
           - Feature template: documentation-system/templates/feature-template.md
           - Test module template: documentation-system/templates/test-module-template.md
@@ -186,4 +204,6 @@ nav:
           - Overview: documentation-system/enforcement/index.md
           - Image policy enforcement: documentation-system/enforcement/image-policy-enforcement.md
           - Linking policy enforcement: documentation-system/enforcement/linking-policy-enforcement.md
-          - CI overview: documentation-system/enforcement/ci-overview.md    
+          - CI overview: documentation-system/enforcement/ci-overview.md
+
+  - Shared images: assets/images/README.md

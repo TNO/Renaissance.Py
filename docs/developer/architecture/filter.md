@@ -9,12 +9,12 @@ Document the design decisions that determine how the filter step is implemented 
 
 ## Scope
 
-The [filter](..\..\user\concepts\filter.md) step refines candidate matches produced by the [find](find.md) step by applying structural and semantic checks.
+The [filter](../../user/concepts/filter.md) step refines candidate matches produced by the [find](find.md) step by applying structural and semantic checks.
 It does not modify code — that is the responsibility of the [modify](modify.md) step.
 
 ## Definition
 
-A [filter](..\..\user\concepts\filter.md) function checks a set of semantic properties to ensure correctness of the transformation.
+A [filter](../../user/concepts/filter.md) function checks a set of semantic properties to ensure correctness of the transformation.
 
 [Rice's theorem](https://en.wikipedia.org/wiki/Rice%27s_theorem) states that all non-trivial semantic properties of programs, such as [halting](https://en.wikipedia.org/wiki/Halting_problem), are undecidable.
 

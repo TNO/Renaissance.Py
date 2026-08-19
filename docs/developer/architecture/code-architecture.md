@@ -14,7 +14,7 @@
     
 1. We enable analyses purely based on the AST as being insensitive to layout and comments signanficantly simplifies the development and maintenance of these analyses.
 
-1. We do not limit analyses and transformations to the AST, as knowledge about the [tokens](../../glossary.md#tokens) and [trivia](../../glossary.md#trivia) is often also needed.
+1. We do not limit analyses and transformations to the AST, as knowledge about the [token](../../glossary.md#token) and [trivia](../../glossary.md#trivia) is often also needed.
 
 1. We defined AST Node as a [Protocol (a.k.a. statically duck typing)](https://typing.python.org/en/latest/spec/protocol.html), with basic functionality and a back door: `get_original_node` to obtain the AST node as provided by the parser.
 
@@ -24,7 +24,7 @@
 
 1. Standard 'semantic' functions must be provided that when given a code snippet will return the variables read or written. Based on the output of these functions dependencies between code snippets are determined.
 
-1. We enable syntax pattern matching and semantic filtering, see [Find, Filter, and Replace workflow](find-filter-replace.md) for details. 
+1. We enable syntax pattern matching and semantic filtering, see the [Find](find.md), [Filter](filter.md), and [Modify](modify.md) steps for details. 
 In most cases, standard filter functions (as describe before) are enough, but we enable user specific filter functions that access the original AST.
 
 1. We collect multiple transformations, we are syntax aware - to handle shared text boundaries, and then in one step [rewrite](rewrite-semantics.md) the code text.

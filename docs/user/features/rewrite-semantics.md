@@ -182,7 +182,7 @@ The expected output is `exp(abs(a) + b)` and NOT `abs(exp(a) + b)`.
 
 <a name="rewrite-semantics-append-prepend-shared-text-location">
 
-![Prepends at the same text location](../concepts/rewrite-semantics/rewrite-semantics-append-prepend-consecutive-nodes-with-shared-text-location.png)
+![Prepends at the same text location](../concepts/rewrite-semantics/rewrite-semantics-append-prepend.png)
 
 *Figure 1.? (CONCEPT-REWRITE-SEMANTICS-APPEND_PREPEND): Example of overlapping replacements.*
 

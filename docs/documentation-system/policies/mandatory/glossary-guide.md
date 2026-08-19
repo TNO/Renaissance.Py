@@ -9,7 +9,7 @@ This policy is **mandatory**.
 
 ## Scope
 
-This policy governs the content, structure, and maintenance of [`docs/glossary.md`](../../glossary.md) and the use of defined terms across all documentation.
+This policy governs the content, structure, and maintenance of [`docs/glossary.md`](../../../glossary.md) and the use of defined terms across all documentation.
 
 ---
 

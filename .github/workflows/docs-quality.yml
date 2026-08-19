@@ -17,7 +17,7 @@ jobs:
       - name: Install documentation tooling
         run: |
           python -m pip install --upgrade pip
-          pip install mkdocs mkdocs-material mkdocstrings[python] mkdocs-autorefs
+          pip install mkdocs mkdocs[i18n] mkdocs-material mkdocstrings[python] mkdocs-exporter mkdocs-autorefs
       - name: Build documentation strictly
         run: mkdocs build --strict
       - name: Check documentation image policy

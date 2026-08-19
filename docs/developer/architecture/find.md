@@ -9,7 +9,7 @@ Document the design decisions that determine how the find step is implemented wi
 
 ## Scope
 
-The find step locates syntactic [matches](..\..\user\concepts\matching.md) within a codebase given a find pattern.
+The find step locates syntactic [matches](../../user/concepts/matching.md) within a codebase given a find pattern.
 It does not evaluate semantic properties of matches — that is the responsibility of the [filter](filter.md) step.
 It does not modify code — that is the responsibility of the [modify](modify.md) step.
 
