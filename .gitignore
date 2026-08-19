@@ -1,0 +1,17 @@
+**/.venv
+**/.idea
+**/.hypothesis
+**/.modules
+**/*.pyc
+**/__pycache__
+**/*.log
+**/*.swp
+**/*.swo
+**/*.sqlite3
+**/*.db
+**/*.db-journal
+**/*.pyo
+**/bin
+**/*.exe
+**/*.dll
+**/.*.so

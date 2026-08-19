@@ -1,0 +1,7 @@
+textx
+dataclasses-json
+clang==18.1.8
+libclang
+parameterized
+coverage
+pyperclip
