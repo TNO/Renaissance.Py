@@ -8,6 +8,7 @@ ALLOWED_DIRS = {
     DOCS / 'assets' / 'images' / 'notation',
     DOCS / 'assets' / 'images' / 'logos',
     DOCS / 'user' / 'concepts' / 'matching',
+    DOCS / 'user' / 'concepts' / 'rewrite-semantics',
     DOCS / 'user' / 'features' / 'pattern-matching',
     DOCS / 'developer' / 'architecture' / 'images',
 }

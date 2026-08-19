@@ -30,6 +30,10 @@ This policy governs where images are stored, how they are named, and which forma
 
 ## Naming convention
 
+Allowed characters per segment: lowercase letters (`a–z`) and digits (`0–9`).
+Segments are separated by hyphens (`-`).
+Special characters such as `+`, `_`, spaces, or uppercase letters are not allowed.
+
 ### Local images
 `<page>-<section>-<purpose>.<ext>`
 
@@ -37,6 +41,7 @@ Examples:
 - `matching-overview.svg`
 - `matching-nested-if-example.svg`
 - `matching-greedy-vs-lazy.svg`
+- `matching-step2-result.png`
 
 ### Shared images
 `<domain>-<concept>-<variant>.<ext>`
