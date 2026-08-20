@@ -11,17 +11,14 @@ Each test references the BDD scenario it universally covers and the concept
 rule it enforces (CONCEPT-REWRITE-SEMANTICS).
 """
 
-from __future__ import annotations
-
 import pytest
-from hypothesis import given, settings, assume
+from hypothesis import assume, given, settings
 from hypothesis import strategies as st
 
 from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
 from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.syntax_tree import ASTRewriter
 from renaissance.syntax_tree.match_finder import match_pattern
-
 
 # ── Strategies ────────────────────────────────────────────────────────────────
 

@@ -4,7 +4,6 @@ import tree_sitter_python as tspython
 from hamcrest import *
 
 from renaissance.impl.tree_sitter.adapter import TreeSitterAdapter
-from renaissance.impl.types import Statement
 from renaissance.syntax_tree.match_finder import match_pattern
 
 
