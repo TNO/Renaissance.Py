@@ -1,5 +1,5 @@
 import functools
-from typing import Sequence, TypeVar, Callable, Any
+from typing import Any, Callable, Sequence, TypeVar
 
 from .ast_processor import ASTProcessor
 from .batch_ast_processor import BatchASTProcessor, IterableProvider
@@ -115,7 +115,7 @@ class RecipeASTProcessor:
             for idx in range(len(results)):
                 results[idx] = None
             self.__batch_processor.repeat(self.__iterableProvider, actions, self.__file_filter)
-            if all([result is None for result in results]):
+            if all(result is None for result in results):
                 break
             for after_step_action in after_step_actions:
                 after_step_action()

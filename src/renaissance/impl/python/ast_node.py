@@ -1,6 +1,6 @@
 """
 implementation that patches the native ast using 'traits' mechanism,
-require minimum amound of code to make the matcher work
+require minimum amount of code to make the matcher work
 
 """
 

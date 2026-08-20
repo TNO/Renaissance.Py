@@ -54,6 +54,7 @@ lint = [
     "ruff>=0.5",
     "autopep8>=2.0",
     "pytest-black>=0.6",
+    "codespell>=2.4",
 ]
 dev = [
     {include-group = "test"},
@@ -79,6 +80,9 @@ omit = ["test/*", "features/*"]
 [tool.coverage.report]
 show_missing = true
 skip_covered = false
+
+[tool.codespell]
+ignore-words-list = "notin"
 
 [tool.black]
 line-length = 140

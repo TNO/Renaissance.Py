@@ -81,7 +81,7 @@ The structure within a decision sub-section is:
 ### Invariants / guarantees
 
 List observable properties that hold as a direct consequence of the decisions recorded in this document.
-These serve as a contract for implementors and reviewers.
+These serve as a contract for implementers and reviewers.
 
 ### Leaving sections empty
 

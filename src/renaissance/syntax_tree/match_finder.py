@@ -242,7 +242,7 @@ def is_match(src: AstProtocol, cmp: AstProtocol, expansions=None) -> bool:
     return variant_in_match_stmt(src, cmp, expansions) != []
 
 
-def is_match_dict(src: dict, cmp: dict, expansions: dict = None) -> bool:
+def is_match_dict(src: dict, cmp: dict, expansions: dict | None = None) -> bool:
     if expansions is None:
         expansions = {}
 

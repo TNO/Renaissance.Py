@@ -204,7 +204,7 @@ class Unit2Pytest(PythonRefactoring):
                 self.remove([fun])
             self.insert_before(cls, funs[0])
         else:
-            # one or more class in file, add functio as member ot the last class in file
+            # one or more class in file, add function as member of the last class in file
             for fun in funs:
                 # assuming the class comes first
                 meth = convert_function(fun)

@@ -43,7 +43,7 @@ When | that node is replaced by a text
 and | Rewrites,   i.e., append, prepend, surround, and replace, are performed on that sequence of descendant nodes
 Then | in the modified source file that node is replaced by the given text and all rewrites   on that sequence of descendant nodes are not performed / hidden
 
-TODO: This description is only valid when a node is NOT considered a decendant of itself.
+TODO: This description is only valid when a node is NOT considered a descendant of itself.
 Check our definition (and implementation)!
 
 
