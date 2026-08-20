@@ -4,14 +4,16 @@
 
 [project]
 name = "renaissance"
-version = "0.3.1"
-description = "Experimental Python version of the Renaissance refactoring tool"
+version = "0.0.1"
+description = "Renaissance reimplementation in Python"
 readme = "README.md"
 authors = [
+    { name = "Pierre van de Laar", email = "pierre.vandelaar@tno.nl" },
+    { name = "Jinmin Hu", email = "jinmin.hu@capgemini.com" },
     { name = "Luna Li", email = "luna.li@capgemini.com" }
 ]
-license = { text = "MIT" }
-requires-python = ">=3.12"
+license = { text = "EPL-2.0" }
+requires-python = "==3.14.*"
 dependencies = [
     "textx==4.3.0",
     "dataclasses-json==0.6.7",
@@ -49,11 +51,8 @@ test = [
     "behave"
 ]
 lint = [
-    "flake8>=7.0",
-    "black>=24.0",
     "ruff>=0.5",
     "autopep8>=2.0",
-    "pytest-black>=0.6",
     "codespell>=2.4",
 ]
 dev = [
@@ -89,6 +88,10 @@ omit = ["test/*", "features/*"]
 show_missing = true
 skip_covered = false
 
-[tool.black]
-line-length = 140
+[tool.ruff]
+line-length = 120
+src = ["src", "test", "features"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "D", "UP"]
 
