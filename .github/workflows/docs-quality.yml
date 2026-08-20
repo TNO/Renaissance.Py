@@ -1,0 +1,26 @@
+name: Docs quality
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Set up Python
+        uses: actions/setup-python@v7.0.0
+        with:
+          python-version: '3.14'
+      - name: Install uv
+        uses: astral-sh/setup-uv@v10.0.1
+      - name: Install dependencies
+        run: uv sync --group dev
+      - name: Build documentation strictly
+        run: uv run mkdocs build --strict
+      - name: Check documentation image policy
+        run: uv run python tools/check_doc_images_policy.py
+      - name: Check spelling
+        run: uv run codespell ./docs

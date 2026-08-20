@@ -1,0 +1,44 @@
+# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+
+name: Python package
+
+on:
+  push:
+    branches: [ "main", "cge-main" ]
+  pull_request:
+    branches: [ "main", "cge-main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.14"]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v7.0.1
+    - name: Set up python ${{ matrix.python-version }}
+      uses: actions/setup-python@v7.0.0
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Set up uv
+      uses: astral-sh/setup-uv@v10.0.1
+    - name: Install dependencies
+      run: uv sync --group dev
+    - name: Lint with ruff
+      run: uv run ruff check ./src ./test ./tools ./features
+    - name: Test with pytest
+      run: uv run pytest ./test
+    - name: Type check with pyright
+      run: uv run pyright ./src ./test ./tools ./features
+    - name: Check spelling with codespell
+      run: uv run codespell ./src ./test ./tools ./features --ignore-words-list=notin
+    - name: Build release distributions
+      run: |
+        # NOTE: put your own distribution build steps here.
+        # python -m pip install build
+        # python -m build
