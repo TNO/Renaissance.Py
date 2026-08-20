@@ -7,5 +7,6 @@
             "source.organizeImports.ruff": "explicit"
         }
     },
-    "ruff.configuration": "${workspaceFolder}/pyproject.toml"
+    "ruff.configuration": "${workspaceFolder}/pyproject.toml",
+    "python.analysis.typeCheckingMode": "strict"
 }

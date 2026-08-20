@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.13", "3.14"]
+        python-version: ["3.14"]
 
     steps:
     - name: Checkout repository
@@ -37,6 +37,8 @@ jobs:
       run: uv run ruff check ./src ./test ./tools
     - name: Test with pytest
       run: uv run pytest ./test
+    - name: Type check with pyright
+      run: uv run pyright ./src ./test ./tools
     - name: Check spelling with codespell
       run: uv run codespell ./src ./test ./tools --ignore-words-list=notin
     - name: Build release distributions

@@ -54,6 +54,7 @@ lint = [
     "ruff>=0.5",
     "autopep8>=2.0",
     "codespell>=2.4",
+    "pyright>=1.1",
 ]
 dev = [
     {include-group = "test"},
@@ -94,4 +95,10 @@ src = ["src", "test", "features"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "N", "D", "UP"]
+
+[tool.pyright]
+pythonVersion = "3.14"
+typeCheckingMode = "strict"
+include = ["src", "test", "tools"]
+exclude = ["features"]
 
