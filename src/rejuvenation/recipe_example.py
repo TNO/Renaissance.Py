@@ -8,7 +8,6 @@ from renaissance.impl.clang import ClangASTNode, CPPPatternFactory
 from renaissance.impl.clang.clang_json_ast_node import ClangJsonASTNode
 from renaissance.impl.types import Constructor, Method, TypeReference
 from renaissance.syntax_tree import (
-    ASTFinder,
     ASTRefactorActions,
     RecipeASTProcessor,
     recipe_step,
@@ -59,10 +58,10 @@ class ListView_LEGACY{
 };
 
 ListView_LEGACY::ListView_LEGACY(string container, int val){
-    
+
 }
 ListView_LEGACY::ListView_LEGACY(){
-    
+
 }
 
 class derived : public ListView_LEGACY{
@@ -78,7 +77,7 @@ void derived::another_func(int s){
     // another_func 0
     // another_func 1
 }
-                                   
+                         
 void main2(string container){
     /* hahaha*/
     ListView_LEGACY listview(container, 3);

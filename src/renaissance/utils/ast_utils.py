@@ -1,4 +1,3 @@
-from pathlib import Path
 from collections import deque
 from typing import Tuple
 
@@ -72,7 +71,7 @@ def match_props(mine, other, irrelevant_props) -> bool:
 
 
 def match_children(mine, other, irrelevant_kinds):
-    if mine == None or other == None:
+    if mine is None or other is None:
         return mine == other
     return all((i < len(mine) and mine[i] == child) or child.ast_type.__name__ in irrelevant_kinds for i, child in enumerate(other))
 
