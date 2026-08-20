@@ -19,32 +19,33 @@ jobs:
         python-version: ["3.13", "3.14"]
 
     steps:
-    - uses: actions/checkout@v7
+    - uses: actions/checkout@v7.0.1
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v7
+      uses: actions/setup-python@v7.0.0
       with:
         python-version: ${{ matrix.python-version }}
+    - name: Install uv
+      uses: astral-sh/setup-uv@v10.0.1
     - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        python -m pip install pytest
-        python -m pip install flake8 black ruff
-        if [ -f python/requirements.txt ]; then pip install -r python/requirements.txt; fi
+      run: uv sync
     - name: Check code formatting
       run: |
-        black ./python
+        black ./src
+        black ./test
+        black ./tools
     - name: Lint with flake8
       run: |
-        # stop the build if there are Python syntax errors or undefined names
-        # flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        # flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        flake8 ./src
+        flake8 ./test
+        flake8 ./tools
     - name: Lint with ruff
       run: |
-        ruff ./python
+        ruff ./src
+        ruff ./test
+        ruff ./tools
     - name: Test with pytest
       run: |
-        pytest ./python
+        pytest ./test
     - name: Build release distributions
       run: |
         # NOTE: put your own distribution build steps here.
