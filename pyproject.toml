@@ -59,6 +59,13 @@ lint = [
 dev = [
     {include-group = "test"},
     {include-group = "lint"},
+    {include-group = "docs"},
+]
+docs = [
+    "mkdocs>=1.6",
+    "mkdocstrings[python]>=0.25",
+    "mkdocs-autorefs>=1.0",
+    "mkdocs-exporter>=6.0",
 ]
 
 [project.urls]
@@ -80,9 +87,6 @@ omit = ["test/*", "features/*"]
 [tool.coverage.report]
 show_missing = true
 skip_covered = false
-
-[tool.codespell]
-ignore-words-list = "notin"
 
 [tool.black]
 line-length = 140

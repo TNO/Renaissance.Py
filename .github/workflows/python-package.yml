@@ -46,6 +46,9 @@ jobs:
     - name: Test with pytest
       run: |
         uv run pytest ./test
+    - name: Check spelling
+      run: |
+        uv run codespell docs/ src/
     - name: Build release distributions
       run: |
         # NOTE: put your own distribution build steps here.
