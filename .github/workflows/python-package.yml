@@ -27,25 +27,25 @@ jobs:
     - name: Install uv
       uses: astral-sh/setup-uv@v10.0.1
     - name: Install dependencies
-      run: uv sync
+      run: uv sync --group dev
     - name: Check code formatting
       run: |
-        black ./src
-        black ./test
-        black ./tools
+        uv run black ./src
+        uv run black ./test
+        uv run black ./tools
     - name: Lint with flake8
       run: |
-        flake8 ./src
-        flake8 ./test
-        flake8 ./tools
+        uv run flake8 ./src
+        uv run flake8 ./test
+        uv run flake8 ./tools
     - name: Lint with ruff
       run: |
-        ruff ./src
-        ruff ./test
-        ruff ./tools
+        uv run ruff check ./src
+        uv run ruff check ./test
+        uv run ruff check ./tools
     - name: Test with pytest
       run: |
-        pytest ./test
+        uv run pytest ./test
     - name: Build release distributions
       run: |
         # NOTE: put your own distribution build steps here.
