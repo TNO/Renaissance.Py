@@ -29,18 +29,14 @@ jobs:
       uses: astral-sh/setup-uv@v10.0.1
     - name: Install dependencies
       run: uv sync --group dev
-    - name: Check format with black
-      run: uv run black ./src ./test ./tools
-    - name: Lint with flake8
-      run: uv run flake8 ./src ./test ./tools
     - name: Lint with ruff
-      run: uv run ruff check ./src ./test ./tools
+      run: uv run ruff check ./src ./test ./tools ./features
     - name: Test with pytest
       run: uv run pytest ./test
     - name: Type check with pyright
-      run: uv run pyright ./src ./test ./tools
+      run: uv run pyright ./src ./test ./tools ./features
     - name: Check spelling with codespell
-      run: uv run codespell ./src ./test ./tools --ignore-words-list=notin
+      run: uv run codespell ./src ./test ./tools ./features --ignore-words-list=notin
     - name: Build release distributions
       run: |
         # NOTE: put your own distribution build steps here.
