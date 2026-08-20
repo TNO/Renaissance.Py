@@ -19,36 +19,26 @@ jobs:
         python-version: ["3.13", "3.14"]
 
     steps:
-    - uses: actions/checkout@v7.0.1
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Checkout repository
+      uses: actions/checkout@v7.0.1
+    - name: Set up python ${{ matrix.python-version }}
       uses: actions/setup-python@v7.0.0
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Install uv
+    - name: Set up uv
       uses: astral-sh/setup-uv@v10.0.1
     - name: Install dependencies
       run: uv sync --group dev
-    - name: Check code formatting
-      run: |
-        uv run black ./src
-        uv run black ./test
-        uv run black ./tools
+    - name: Check format with black
+      run: uv run black ./src ./test ./tools
     - name: Lint with flake8
-      run: |
-        uv run flake8 ./src
-        uv run flake8 ./test
-        uv run flake8 ./tools
+      run: uv run flake8 ./src ./test ./tools
     - name: Lint with ruff
-      run: |
-        uv run ruff check ./src
-        uv run ruff check ./test
-        uv run ruff check ./tools
+      run: uv run ruff check ./src ./test ./tools
     - name: Test with pytest
-      run: |
-        uv run pytest ./test
-    - name: Check spelling
-      run: |
-        uv run codespell docs/ src/
+      run: uv run pytest ./test
+    - name: Check spelling with codespell
+      run: uv run codespell ./src ./test ./tools --ignore-words-list=notin
     - name: Build release distributions
       run: |
         # NOTE: put your own distribution build steps here.
