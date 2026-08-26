@@ -120,7 +120,7 @@ def camel_case(snippet: str) -> str:
 def snake_case(snippet: str) -> str:
     # TODO: Why is exactly one non-capital character allowed in the second group?
     # Is the regex correct? Should it be [A-Z][a-z]* or [A-Z][a-z]+ instead of [A-Z][a-z]?
-    return re.sub(r"([A-Z][A-z]+)([A-Z][a-z])", r"\1_\2", snippet).lower()
+    return re.sub(r"([A-Z][A-Za-z]+)([A-Z][a-z])", r"\1_\2", snippet).lower()
 
 
 def fix_indent(code_string: str) -> str | None:
