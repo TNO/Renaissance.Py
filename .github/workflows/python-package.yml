@@ -56,15 +56,30 @@ jobs:
       with:
         name: coverage-html-report
         path: htmlcov/
-    # Only publish a single, unambiguous coverage report to GitHub Pages: from
-    # the main branch build on the first (and currently only) matrix entry.
+    # Only publish a single, unambiguous site to GitHub Pages: from the main
+    # branch build on the first (and currently only) matrix entry.
+    - name: Build documentation with mkdocs
+      if: >-
+        github.ref == 'refs/heads/main' && github.event_name == 'push' &&
+        matrix.python-version == '3.14'
+      run: uv run mkdocs build --strict
+    # Docs are published at the site root and the coverage report is nested
+    # under /coverage/, so both are reachable from the same Pages deployment.
+    - name: Assemble combined Pages site (docs + coverage report)
+      if: >-
+        github.ref == 'refs/heads/main' && github.event_name == 'push' &&
+        matrix.python-version == '3.14'
+      run: |
+        mkdir -p _site/coverage
+        cp -r site/. _site/
+        cp -r htmlcov/. _site/coverage/
     - name: Upload GitHub Pages artifact
       if: >-
         github.ref == 'refs/heads/main' && github.event_name == 'push' &&
         matrix.python-version == '3.14'
       uses: actions/upload-pages-artifact@v3
       with:
-        path: htmlcov/
+        path: _site/
     - name: Build release distributions
       run: |
         # NOTE: put your own distribution build steps here.
