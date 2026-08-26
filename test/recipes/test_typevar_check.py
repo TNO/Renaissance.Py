@@ -1,12 +1,13 @@
 import textwrap
 import pytest
-from hamcrest import assert_that, has_key, is_not, has_key
+from hamcrest import assert_that, has_key, is_not  # pyright: ignore[reportUnknownVariableType]
+from pytest_mock import MockerFixture
 from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.refactoring.typevar_check import TypeVarCheck
 
 class TestTypeVarCheck:
 
-    def _create(self, mocker, text) -> TypeVarCheck:
+    def _create(self, mocker: MockerFixture, text: str) -> TypeVarCheck:
         code = textwrap.dedent(text)
         mocker.patch(
             "renaissance.impl.python.factory.PythonFactory.create",
@@ -16,7 +17,7 @@ class TestTypeVarCheck:
         subject.in_memory = True
         return subject
 
-    def test_typevar_used_in_multiple_functions(self, mocker):
+    def test_typevar_used_in_multiple_functions(self, mocker: MockerFixture) -> None:
         subject = self._create(mocker, """
             class Foo:
                 def a(self: T) -> T:
@@ -29,7 +30,7 @@ class TestTypeVarCheck:
         result = subject.find_multi_scope_typevars()
         assert_that(result, has_key("T"))
 
-    def test_typevar_used_in_single_function_not_flagged(self, mocker):
+    def test_typevar_used_in_single_function_not_flagged(self, mocker: MockerFixture) -> None:
         subject = self._create(mocker, """
             def a(x: T) -> T:
                 return x
@@ -129,7 +130,7 @@ class TestTypeVarCheck:
             True,
         )
     ])
-    def test_multi_scope_detection_cases(self, mocker, code, name, should_flag):
+    def test_multi_scope_detection_cases(self, mocker: MockerFixture, code: str, name: str, should_flag: bool) -> None:
         subject = self._create(mocker, code)
         result = subject.find_multi_scope_typevars()
         if should_flag:
