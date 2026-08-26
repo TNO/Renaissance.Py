@@ -15,6 +15,7 @@ class TestSnakeCase:
             ("already_snake", "already_snake"),
             ("A", "a"),
             ("HTMLParser", "html_parser"),
+            ("TestSnakeCase", "testsnake_case"),  # TODO: Is this really the expected / desired behaviour?
         ],
     )
     def test_snake_case(self, input_str, expected):
