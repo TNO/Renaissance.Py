@@ -1,16 +1,14 @@
 import sys
 from typing import Any
 
-from c_cpp.factories import Factories
-from renaissance.impl.python.rst_node import PythonRstNode
-from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
-
 import pytest
 from hamcrest import assert_that, is_
 
-
+from c_cpp.factories import Factories
 from renaissance.impl.clang import ClangASTNode, CPatternFactory
-from renaissance.syntax_tree import ASTRewriter, ASTFactory, PatternMatch
+from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
+from renaissance.impl.python.rst_node import PythonRstNode
+from renaissance.syntax_tree import ASTFactory, ASTRewriter, PatternMatch
 from renaissance.syntax_tree.ast_rewriter import _RewriteAction, _RewriteActions
 from renaissance.syntax_tree.match_finder import find_all, match_pattern
 from utils_for_tests import compress, debug_print
@@ -958,7 +956,7 @@ class TestComposeReplacement:
     @pytest.mark.skip("fail on empty nodes")
     def test_get_node_in_match_pattern_on_empty_pattern(self):
         it = _RewriteActions([], sys.getfilesystemencoding(), True)
-        text = getattr(it, "_RewriteActions__get_texts")([])
+        text = it._RewriteActions__get_texts([])
         assert_that(text, is_("node"))
 
     def test_get_text_from_rewrite(self, mocker):
@@ -970,13 +968,12 @@ class TestComposeReplacement:
         node.text = "int x =0"
 
         it = _RewriteActions(node, sys.getfilesystemencoding(), True)
-        text = getattr(it, "_RewriteActions__get_texts")([node])
+        text = it._RewriteActions__get_texts([node])
         assert_that(text, is_("int x =0"))
 
 
 class TestAroundComposition:
-    """
-    Test case to capture the requirements for `around` functionality that is composable.
+    """Test case to capture the requirements for `around` functionality that is composable.
     """
 
     @pytest.mark.skip(
@@ -1009,8 +1006,7 @@ class TestAroundComposition:
 
 
 class TestContainedOperations:
-    """
-    Test case to capture the requirements for a (completely) contained operation:
+    """Test case to capture the requirements for a (completely) contained operation:
     it is ignore.
 
     See https://github.com/TNO/Renaissance-Experiments/wiki/Transform-%E2%80%90-AST%E2%80%90aware-changes#scenario-contained-changes
@@ -1087,8 +1083,7 @@ class TestContainedOperations:
 
 
 class TestOverlappingOperations:
-    """
-    Test case to capture the requirements for partly overlapping operations:
+    """Test case to capture the requirements for partly overlapping operations:
     an exception is raised.
 
     See https://github.com/TNO/Renaissance-Experiments/wiki/Transform-%E2%80%90-AST%E2%80%90aware-changes#scenario-overlapping-changes
@@ -1134,8 +1129,7 @@ def f($a,$b,$c):
 
 
 class TestSyntaxAwareNestedComposition:
-    """
-    Test Class for Syntax Aware Nested / Hierarchical Compositions
+    """Test Class for Syntax Aware Nested / Hierarchical Compositions
     In Python
     * Prepend before parent and (first) child
       See https://github.com/TNO/Renaissance-Experiments/wiki/Transform-%E2%80%90-AST%E2%80%90aware-changes#scenario-combination-of-multiple-prepends
@@ -1188,8 +1182,7 @@ class TestSyntaxAwareNestedComposition:
 
 
 class TestSyntaxAwareAdjacentComposition:
-    """
-    Test Class for Syntax Aware Adjacent Compositions
+    """Test Class for Syntax Aware Adjacent Compositions
     In C/C++
     * Consecutive / contiguous nodes - append after first and prepend before second
       See https://github.com/TNO/Renaissance-Experiments/wiki/Transform-%E2%80%90-AST%E2%80%90aware-changes#scenario-combination-of-append-and-prepend-on-consecutive-nodes

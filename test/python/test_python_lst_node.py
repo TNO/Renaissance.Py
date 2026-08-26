@@ -1,7 +1,7 @@
 import hypothesmith
 import libcst
 import pytest
-from hamcrest import assert_that, is_, instance_of
+from hamcrest import assert_that, instance_of, is_
 from hypothesis import HealthCheck, given, settings
 
 from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory

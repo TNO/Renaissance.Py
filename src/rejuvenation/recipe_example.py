@@ -1,18 +1,21 @@
 # use clang to load and walk a compilation database
 import textwrap
+from collections.abc import Iterable
 
 from more_itertools import last
-from typing_extensions import Iterable
 
 from renaissance.impl.clang import ClangASTNode, CPPPatternFactory
 from renaissance.impl.clang.clang_json_ast_node import ClangJsonASTNode
 from renaissance.impl.types import Constructor, Method, TypeReference
 from renaissance.syntax_tree import (
+    ASTFactory,
+    ASTNode,
+    ASTProcessor,
     ASTRefactorActions,
     RecipeASTProcessor,
+    TextUtils,
     recipe_step,
 )
-from renaissance.syntax_tree import ASTProcessor, ASTNode, TextUtils, ASTFactory
 from renaissance.syntax_tree.ast_finder import matches_kind
 
 example_1 = textwrap.dedent("""

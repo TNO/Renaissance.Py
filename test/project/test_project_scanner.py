@@ -1,13 +1,14 @@
 import json
+
 import pytest
-from hamcrest import assert_that, is_, equal_to, contains_inanyorder, empty, calling, raises
+from hamcrest import assert_that, calling, contains_inanyorder, empty, equal_to, is_, raises
 
 from renaissance.project.project_scanner import (
-    ProjectScanner,
+    BearCppScanner,
     CppScanner,
     JavaScanner,
+    ProjectScanner,
     PythonScanner,
-    BearCppScanner,
 )
 
 # ---------------------------------------------------------------------------

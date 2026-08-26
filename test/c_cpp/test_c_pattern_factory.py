@@ -4,10 +4,16 @@ from hamcrest import assert_that, contains_string
 from more_itertools import last
 
 from c_cpp.factories import Factories
-from renaissance.impl.clang import CPatternFactory, ClangASTNode
+from renaissance.impl.clang import ClangASTNode, CPatternFactory
 from renaissance.impl.clang.c_pattern_factory import derive_header_text
-from renaissance.impl.types import DeclarationExpression, MatchOne, VariableDef, FunctionDef, CompoundStatement, \
-    Declaration
+from renaissance.impl.types import (
+    CompoundStatement,
+    Declaration,
+    DeclarationExpression,
+    FunctionDef,
+    MatchOne,
+    VariableDef,
+)
 from renaissance.syntax_tree import ASTShower
 from renaissance.syntax_tree.ast_finder import find_ast_type
 
@@ -201,8 +207,7 @@ class TestStatements:
 
 
 class TestUseAtuToCreatePatterns:
-    """
-    Test the creation of a complex pattern that includes a typedef, a struct, a define and a statement
+    """Test the creation of a complex pattern that includes a typedef, a struct, a define and a statement
 
     Complex pattern take the includes, defines and typedefs from the translation unit
 

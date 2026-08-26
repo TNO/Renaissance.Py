@@ -1,12 +1,13 @@
+from collections.abc import Callable, Sequence
 from functools import cache
-from typing import Callable, Optional, Sequence
 
 from renaissance.impl.clang.c_pattern_factory import CPPPatternFactory
+
+from ..impl.types import BogusType, Type
 from .ast_finder import ASTFinder, matches_kind
 from .ast_node import ASTNode
 from .ast_processor import ASTProcessor
 from .match_finder import MatchFinder, PatternMatch
-from ..impl.types import Type, BogusType
 
 
 class ASTRefactorActions:
@@ -16,7 +17,7 @@ class ASTRefactorActions:
         self.replaced: set[int] = set()
 
     def replace_expr(self, name: str, replacement: str, kind: type[Type]):
-        def test(n: "ASTNode"):
+        def test(n: ASTNode):
             if (kind and matches_kind(n, kind)) and n.name == name:
                 yield n
 
@@ -29,7 +30,7 @@ class ASTRefactorActions:
         kind: type[Type] = None,
         skip_kind: type[Type] = BogusType,
     ):
-        matches_name: Callable[[Optional["ASTNode"]], bool] = (
+        matches_name: Callable[[ASTNode | None], bool] = (
             lambda n1: (not kind or ASTFinder.matches_kind(n1, kind))
             and (not skip_kind or not ASTFinder.matches_kind(n1, skip_kind))
             and n1
@@ -47,7 +48,7 @@ class ASTRefactorActions:
         kind: type[Type] = None,
         skip_kind: type[Type] = BogusType,
     ):
-        matches_text: Callable[[Optional["ASTNode"]], bool] = (
+        matches_text: Callable[[ASTNode | None], bool] = (
             lambda n: (not kind or ASTFinder.matches_kind(n, kind))
             and (not skip_kind or not ASTFinder.matches_kind(n, skip_kind))
             and n is not None

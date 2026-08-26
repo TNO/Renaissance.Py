@@ -5,8 +5,7 @@ from test.syntax_tree.infra_text_segment import assert_valid_text_segment
 
 
 def assert_valid_syntax_node(node: SyntaxNode[Any]) -> None:
-    """
-    Validate local (non-recursive) invariants for a syntax node.
+    """Validate local (non-recursive) invariants for a syntax node.
 
     Uses `assert_valid_text_segment` to check text-segment invariants.
 
@@ -60,17 +59,16 @@ def _assert_child_valid(node: SyntaxNode[Any], child: SyntaxNode[Any], *, index:
 
     # (1) containment within parent span
     assert node.start_offset <= child.start_offset <= node.end_offset, (
-        "child[{idx}].start_offset must lie within the node span. " "Got child[{idx}].start_offset={cso}, expected in [{nso}, {neo}]."
-    ).format(idx=index, cso=child.start_offset, nso=node.start_offset, neo=node.end_offset)
+        f"child[{index}].start_offset must lie within the node span. " f"Got child[{index}].start_offset={child.start_offset}, expected in [{node.start_offset}, {node.end_offset}]."
+    )
 
     assert node.start_offset <= child.end_offset <= node.end_offset, (
-        "child[{idx}].end_offset must lie within the node span. " "Got child[{idx}].end_offset={ceo}, expected in [{nso}, {neo}]."
-    ).format(idx=index, ceo=child.end_offset, nso=node.start_offset, neo=node.end_offset)
+        f"child[{index}].end_offset must lie within the node span. " f"Got child[{index}].end_offset={child.end_offset}, expected in [{node.start_offset}, {node.end_offset}]."
+    )
 
 
 def assert_valid_syntax_tree(root: SyntaxNode[Any]) -> None:
-    """
-    Validate an entire syntax tree (all reachable nodes).
+    """Validate an entire syntax tree (all reachable nodes).
 
     Enforced invariants:
       - All local invariants (see assert_valid_syntax_node)

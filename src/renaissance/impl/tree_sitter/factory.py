@@ -1,4 +1,4 @@
-from typing import Sequence
+from collections.abc import Sequence
 
 from renaissance.impl.tree_sitter.adapter import TreeSitterAdapter
 from renaissance.impl.tree_sitter.lst import LSTNode

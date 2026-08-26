@@ -1,16 +1,16 @@
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Iterator
+
 from clang.cindex import CompilationDatabase as ClangCompilationDatabase
 
-from renaissance.syntax_tree import ASTNode, ASTFactory
+from renaissance.syntax_tree import ASTFactory, ASTNode
 
 
 class CompilationDatabase:
 
     @staticmethod
     def walk(typ: type[ASTNode], path: Path) -> Iterator[tuple[ASTFactory, ASTNode]]:
-        """
-        Load the Clang compilation database and yield factory and AST node type tuples.
+        """Load the Clang compilation database and yield factory and AST node type tuples.
 
         Args:
             typ (type[ASTNode]): The type of AST node to be used.
@@ -21,6 +21,7 @@ class CompilationDatabase:
             an AST factory and an AST node type.
 
             Be careful to not use the Iterable is a list as it will load ALL the AST nodes in memory.
+
         """
         db = ClangCompilationDatabase.fromDirectory(str(path))
 

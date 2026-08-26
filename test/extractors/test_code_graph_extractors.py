@@ -1,17 +1,16 @@
-import pytest
 from unittest.mock import MagicMock, patch
 
+import pytest
 import tree_sitter_python
-from hamcrest import assert_that, is_, has_item, not_, instance_of
+from hamcrest import assert_that, has_item, instance_of, is_, not_
 
 from renaissance.impl.tree_sitter.extractor import (
     BaseCodeGraphExtractor,
-    PythonCodeGraphExtractor,
-    JavaCodeGraphExtractor,
     CppCodeGraphExtractor,
+    JavaCodeGraphExtractor,
+    PythonCodeGraphExtractor,
 )
-from renaissance.impl.types import FunctionDef, Call, Comment
-
+from renaissance.impl.types import Call, Comment, FunctionDef
 
 # ---------------------------------------------------------------------------
 # BaseCodeGraphExtractor

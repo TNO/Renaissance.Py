@@ -1,6 +1,5 @@
 import pytest
 from hamcrest import *
-
 from hamcrest import assert_that, matches_regexp
 
 from renaissance.impl.clang import ClangASTNode, CPatternFactory

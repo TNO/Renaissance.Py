@@ -1,15 +1,17 @@
-from enum import Enum
 import re
 import sys
-from typing import Optional, Sequence, Protocol, runtime_checkable, Self
+from collections.abc import Sequence
+from enum import Enum
+from typing import Protocol, Self, runtime_checkable
 
 from more_itertools import flatten
 
-from .match_finder import PatternMatch
-from .ast_finder import ASTFinder
-from renaissance.utils.text_utils import TextUtils
 from renaissance.common import Rewriter
+from renaissance.utils.text_utils import TextUtils
+
 from ..impl.types import CompoundStatement
+from .ast_finder import ASTFinder
+from .match_finder import PatternMatch
 
 
 @runtime_checkable
@@ -115,8 +117,7 @@ class ASTRewriter:
 
 
 class _RewriteAction:
-    """
-    Data container for  a rewrite action to be applied later on to the AST.
+    """Data container for  a rewrite action to be applied later on to the AST.
     """
 
     def __init__(
@@ -155,8 +156,7 @@ class _RewriteAction:
 
 
 class _RewriteActions:
-    """
-    Data container for a list of rewrite actions to be applied later on to the AST.
+    """Data container for a list of rewrite actions to be applied later on to the AST.
     """
 
     def __init__(
@@ -164,7 +164,7 @@ class _RewriteActions:
         node: Rewritable,
         encoding: str,
         correct_indent: bool,
-        rewrites: Optional[list[_RewriteAction]] = None,
+        rewrites: list[_RewriteAction] | None = None,
     ) -> None:
         self.rewrites: list[_RewriteAction] = rewrites if rewrites else []
         self.node = node
@@ -235,14 +235,14 @@ class _RewriteActions:
         return self.apply().decode(self.encoding)
 
     def __is_ancestor_in_nodes(self, node: Rewritable) -> bool:
-        """
-        Check if the given node is a descendant of any nodes in the rewrite list.
+        """Check if the given node is a descendant of any nodes in the rewrite list.
 
         Args:
             node (Rewritable): The node to check.
 
         Returns:
             bool: True if the node is a descendant of any nodes in the rewrite list, False otherwise.
+
         """
         rewrite_nodes = list(flatten(rewrite.nodes for rewrite in self.rewrites))
         # need to test
@@ -265,12 +265,12 @@ class _RewriteActions:
         include_whitespace: bool,
         include_comments: bool,
     ):
-        """
-        Replaces the content of the given node(s) with new content.
+        """Replaces the content of the given node(s) with new content.
 
         Args:
             nodes (Sequence[Rewritable]): The nodes whose content is to be replaced.
             new_content (str): The new content to insert in the specified range.
+
         """
         if not nodes:
             return
@@ -295,8 +295,7 @@ class _RewriteActions:
         include_whitespace: bool = False,
         include_comments: bool = False,
     ):
-        """
-        Removes a list of AST nodes from the content, optionally including surrounding whitespace and comments.
+        """Removes a list of AST nodes from the content, optionally including surrounding whitespace and comments.
 
         Args:
             nodes (Sequence[Rewritable]): The list of AST nodes to remove.
@@ -305,6 +304,7 @@ class _RewriteActions:
 
         Returns:
             None
+
         """
         if not nodes:
             return
@@ -367,13 +367,13 @@ class _RewriteActions:
             self.__replace_bytes(rewriter, ext_end_offset, ext_end_offset, white_space + new_content)
 
     def __replace_bytes(self, rewriter: Rewriter, start: int, end: int, new_content: str) -> None:
-        """
-        Replaces the content in the specified range with new content.
+        """Replaces the content in the specified range with new content.
 
         Args:
             start (int): The starting index of the range to be replaced.
             end (int): The ending index of the range to be replaced.
             new_content (str): The new content to insert in the specified range.
+
         """
         rewriter.replace(start, end, new_content.encode(self.encoding))
 
@@ -457,8 +457,7 @@ class _RewriteActions:
         return new_content, node_list
 
     def _should_skip(self, node: Rewritable):
-        """
-        if the node is not the first node of a pattern match it should be skipped
+        """If the node is not the first node of a pattern match it should be skipped
         """
         return any(node in rewrite.nodes[1:] for rewrite in self.rewrites if isinstance(rewrite.target, PatternMatch))
 
@@ -509,7 +508,7 @@ class _RewriteActions:
 
     @staticmethod
     def get_comment_location(start_offset: int, stop_offset: int, content: bytes) -> tuple[int, int]:
-        """get the location of the comment before the location, but after the stop_location
+        """Get the location of the comment before the location, but after the stop_location
         a comment is a line that starts with // or a block that starts with /* and ends with */
         or a line that starts with #
         """
@@ -541,7 +540,7 @@ class _RewriteActions:
 
     @staticmethod
     def __get_comment_after_location(start_offset: int, end_offset: int, content: bytes) -> tuple[int, int]:
-        """get the location of the comment before the location, but after the stop_location
+        """Get the location of the comment before the location, but after the stop_location
         a comment is a line that starts with // or a block that starts with /* and ends with */
         or a line that starts with #
         """

@@ -1,10 +1,11 @@
 from pathlib import Path
 
-from renaissance.impl.clang.clang_json_ast_node import ClangJsonASTNode
-from renaissance.impl.clang import CPatternFactory
-from renaissance.syntax_tree import ASTShower, ASTFactory
 import pytest
 from hamcrest import *
+
+from renaissance.impl.clang import CPatternFactory
+from renaissance.impl.clang.clang_json_ast_node import ClangJsonASTNode
+from renaissance.syntax_tree import ASTFactory, ASTShower
 
 pytest.mark.skip("empty workdir should also work right?")
 

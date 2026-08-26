@@ -3,18 +3,18 @@ from pathlib import Path
 
 import pytest
 from hamcrest import (
-    has_length,
     assert_that,
-    is_,
     contains_string,
-    is_not, instance_of,
+    has_length,
+    instance_of,
+    is_,
+    is_not,
 )
 from libcst import ParserSyntaxError
 
 import targets
-
-from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
 from renaissance.impl.python.cst_node import PythonCstNode
+from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
 from renaissance.impl.types import *
 from renaissance.syntax_tree import ASTShower
 

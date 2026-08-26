@@ -1,6 +1,7 @@
-from io import StringIO
 import io
-from typing import Protocol, runtime_checkable, Self, Sequence
+from collections.abc import Sequence
+from io import StringIO
+from typing import Protocol, Self, runtime_checkable
 
 from termcolor import colored
 

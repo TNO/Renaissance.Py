@@ -6,20 +6,19 @@ import re
 import subprocess
 import sys
 import tempfile
+from collections.abc import Sequence
 from functools import cache
 from pathlib import Path
-from typing import Any, Optional, Sequence, Self
-
-from typing_extensions import override
+from typing import Any, Self, override
 
 from renaissance.impl.clang.cpp_utils import CPPUtils, matches_kind
 from renaissance.impl.types import *
-from renaissance.utils.ast_utils import match_children, match_props
 from renaissance.syntax_tree import ASTNode, ASTReference
+from renaissance.utils.ast_utils import match_children, match_props
 
 EMPTY_DICT = {}
 EMPTY_STR = ""
-EMPTY_LIST: list["ClangJsonASTReference"] = []
+EMPTY_LIST: list[ClangJsonASTReference] = []
 ON_NODE_ID_TAGS = ["previousDecl", "parentDeclContextId"]
 ID_TAGS = [
     "id",
@@ -54,7 +53,7 @@ class ClangJsonTranslationUnit:
         self._referenced_by: dict[str, list[ClangJsonASTReference]] = {}
         self._nodes: dict[str, ClangJsonASTNode] = {}
 
-    def lazy_create_references(self, node: "ClangJsonASTNode") -> None:
+    def lazy_create_references(self, node: ClangJsonASTNode) -> None:
         # TODO: Do I correctly assume that the usage of this function must be synchronized?
         if self.references_initialized:
             return
@@ -76,15 +75,15 @@ class ClangJsonASTNode(ASTNode):
         self,
         node: dict[str, Any],
         translation_unit: ClangJsonTranslationUnit,
-        parent: Optional[Self] = None,
-        start_offset: Optional[int] = None,
-        length: Optional[int] = None,
-        insert_kind: Optional[str] = None,
-        insert_name: Optional[str] = None,
+        parent: Self | None = None,
+        start_offset: int | None = None,
+        length: int | None = None,
+        insert_kind: str | None = None,
+        insert_name: str | None = None,
     ) -> None:
         super().__init__(self if parent is None else parent.root)
         self.node: dict[str, Any] = node
-        self._children: Optional[Sequence[ClangJsonASTNode]] = None
+        self._children: Sequence[ClangJsonASTNode] | None = None
         self._parent = parent
         self.translation_unit = translation_unit
         self._filename = translation_unit.filename
@@ -173,7 +172,7 @@ class ClangJsonASTNode(ASTNode):
         file_path: Path,
         extra_args: Sequence[str],
         working_dir: Path,
-        code: Optional[str] = None,
+        code: str | None = None,
     ) -> Self:
         # in a shell process compile the file_path with clang compiler
         try:
@@ -445,8 +444,7 @@ class ClangJsonASTNode(ASTNode):
 
     @staticmethod
     def _is_wrapped(node):
-        """
-        Check if a node is wrapped.
+        """Check if a node is wrapped.
 
         A node is considered wrapped if it meets the following conditions:
         1. The node does not have an 'id' or its 'kind' starts with "Implicit".
@@ -515,8 +513,7 @@ class ReferenceHelper:
 
     @staticmethod
     def add_record_references(ast_node: ClangJsonASTNode) -> None:
-        """
-        JSON does not contain direct references between classes and their base classes.
+        """JSON does not contain direct references between classes and their base classes.
 
         Hence these references are created in this method.
 
@@ -528,6 +525,7 @@ class ReferenceHelper:
 
         Raises:
             AssertionError: If the provided ast_node is not an instance of ClangJsonASTNode.
+
         """
         assert isinstance(
             ast_node, ClangJsonASTNode

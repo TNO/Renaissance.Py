@@ -1,5 +1,4 @@
-"""
-Step implementations for features/rewrite-semantics.feature.
+"""Step implementations for features/rewrite-semantics.feature.
 
 Scenarios 1, 2, and 4 are marked xfail because the corresponding behaviour is
 not yet fully implemented:
@@ -16,16 +15,15 @@ Outline for representative examples. The universal property test is in:
 from __future__ import annotations
 
 import pytest
-from pytest_bdd import given, when, then, scenario, parsers
+from pytest_bdd import given, parsers, scenario, then, when
 
+from renaissance.impl.clang import ClangASTNode, CPPPatternFactory
 from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
 from renaissance.impl.python.rst_node import PythonRstNode
-from renaissance.syntax_tree import ASTRewriter
-from renaissance.syntax_tree.match_finder import match_pattern
-from renaissance.impl.clang import ClangASTNode, CPPPatternFactory
-from renaissance.syntax_tree import ASTFactory
 from renaissance.impl.types import CompoundStatement
+from renaissance.syntax_tree import ASTFactory, ASTRewriter
 from renaissance.syntax_tree.ast_finder import find_ast_type
+from renaissance.syntax_tree.match_finder import match_pattern
 
 _FEATURE = "../rewrite-semantics.feature"
 

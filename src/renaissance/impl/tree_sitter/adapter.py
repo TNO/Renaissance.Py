@@ -1,7 +1,6 @@
-from tree_sitter import Parser, Language
-
 from renaissance.impl.tree_sitter.lst import LST, LSTNode
-from renaissance.utils.ast_utils import replace_dollar, detect_placeholder
+from renaissance.utils.ast_utils import detect_placeholder, replace_dollar
+from tree_sitter import Language, Parser
 
 
 class TreeSitterAdapter:

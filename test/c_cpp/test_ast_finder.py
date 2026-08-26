@@ -1,12 +1,13 @@
 from pathlib import Path
 
 import pytest
-from hamcrest import assert_that, is_, greater_than, has_length
+from hamcrest import assert_that, greater_than, has_length, is_
 
 import targets
-from renaissance.impl.types import Expression, BogusType, BinaryOperation
-from renaissance.syntax_tree import ASTFinder, ASTNode, ASTFactory, ASTShower
+from renaissance.impl.types import BinaryOperation, BogusType, Expression
+from renaissance.syntax_tree import ASTFactory, ASTFinder, ASTNode, ASTShower
 from renaissance.syntax_tree.ast_finder import find_ast_type
+
 from .factories import Factories
 
 

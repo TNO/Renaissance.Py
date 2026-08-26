@@ -1,8 +1,9 @@
 import ast
 import re
 
-from hypothesis import given, strategies as st
-from python_type_and_value import gen_list, gen_union, gen_tuple, gen_dict
+from hypothesis import given
+from hypothesis import strategies as st
+from python_type_and_value import gen_dict, gen_list, gen_tuple, gen_union
 
 
 @given(gen_union())

@@ -1,30 +1,30 @@
-from renaissance.syntax_tree import ASTFinder
 import sys
+from collections.abc import Sequence
 from functools import cache
 from pathlib import Path
-from typing import Any, Optional, Sequence, override
+from typing import Any, override
 
 import clang.native
-from clang.cindex import Config, Index, TypeKind, CursorKind
+from clang.cindex import Config, CursorKind, Index, TypeKind
 
 from renaissance.impl.clang.cpp_utils import matches_kind
 from renaissance.impl.types import (
-    MatchAll,
-    MatchOne,
-    UnknownType,
     KIND_MAP,
-    MacroDef,
-    Statement,
-    DeclarationExpression,
-    Literal,
     BinaryOperation,
-    UnaryOperation,
     CompoundStatement,
     Declaration,
+    DeclarationExpression,
     Definition,
+    Literal,
+    MacroDef,
+    MatchAll,
+    MatchOne,
+    Statement,
     TranslationUnit,
+    UnaryOperation,
+    UnknownType,
 )
-from renaissance.syntax_tree import ASTNode, ASTReference
+from renaissance.syntax_tree import ASTFinder, ASTNode, ASTReference
 from renaissance.utils.ast_utils import match_children, match_props
 
 EMPTY_DICT = {}
@@ -57,9 +57,9 @@ class ClangTranslationUnit:
         # they are stored as id for lazy creation
         self._references: dict[str, list[Clangastreference]] = {}
         self._referenced_by: dict[str, list[Clangastreference]] = {}
-        self._nodes: dict[str, "ClangASTNode"] = {}
+        self._nodes: dict[str, ClangASTNode] = {}
 
-    def lazy_create_references(self, node: "ClangASTNode") -> None:
+    def lazy_create_references(self, node: ClangASTNode) -> None:
         if self.references_initialized:
             return
         node.root.process(ReferenceHelper.create_references)
@@ -105,9 +105,9 @@ class ClangASTNode(ASTNode):
         node,
         translation_unit: ClangTranslationUnit,
         parent=None,
-        start_offset: Optional[int] = None,
-        length: Optional[int] = None,
-        insert_kind: Optional[str] = None,
+        start_offset: int | None = None,
+        length: int | None = None,
+        insert_kind: str | None = None,
     ):
         super().__init__(self if parent is None else parent.root)
         self.node = node
@@ -178,7 +178,7 @@ class ClangASTNode(ASTNode):
 
     @override
     @staticmethod
-    def load(file_path: Path, extra_args: Sequence[str], working_dir: Path) -> "ClangASTNode":
+    def load(file_path: Path, extra_args: Sequence[str], working_dir: Path) -> ClangASTNode:
         args = [*extra_args, *ClangASTNode.parse_args]
         translation_unit: clang.cindex.TranslationUnit = ClangASTNode.index.parse(working_dir / file_path, args=args[3:])
         ClangASTNode.check_diagnostics(translation_unit, file_path.name)
@@ -196,7 +196,7 @@ class ClangASTNode(ASTNode):
         file_name: str,
         extra_args: Sequence[str] = None,
         working_dir: Path = None,
-    ) -> "ClangASTNode":
+    ) -> ClangASTNode:
         # Convert file_content to bytes
         file_content_bytes = text.encode(sys.getfilesystemencoding())
         # add to cache to avoid reading the file again
@@ -323,7 +323,7 @@ class ClangASTNode(ASTNode):
     @override
     @property
     def is_statement(self) -> bool:
-        "pretty good definition"
+        """Pretty good definition"""
         return self.parent is not None and self.parent.ast_type in STMT_PARENTS
 
     @override

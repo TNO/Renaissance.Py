@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from hamcrest import assert_that, is_, has_length
+from hamcrest import assert_that, has_length, is_
 
 from renaissance.impl.clang import ClangASTNode, CPatternFactory
 from renaissance.syntax_tree import ASTFactory
-from renaissance.syntax_tree.match_finder import find_in_list, MatchFinder
+from renaissance.syntax_tree.match_finder import MatchFinder, find_in_list
 
 VERBOSE = False
 DEFAULT_EXCLUDE_KIND = "comment"

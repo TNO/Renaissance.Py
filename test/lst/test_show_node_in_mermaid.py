@@ -1,9 +1,9 @@
 import textwrap
 
-import tree_sitter_python as tspython
+import pytest
 import tree_sitter_cpp as tscpp
 import tree_sitter_java as tsjava
-import pytest
+import tree_sitter_python as tspython
 from hamcrest import *
 
 from renaissance.impl.tree_sitter.adapter import TreeSitterAdapter

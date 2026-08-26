@@ -1,16 +1,13 @@
 import pytest
 
-from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
-
+from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.syntax_tree.match_finder import AstProtocol
-
-from utils.util_equivalence_classes import make_parametersets_of_equivalence_classes, assert_pair_equivalence
+from utils.util_equivalence_classes import assert_pair_equivalence, make_parametersets_of_equivalence_classes
 
 
 class TestPythonAstMatcherRepresentation:
-    """
-    Test Class for elementary match functionality.
+    """Test Class for elementary match functionality.
 
     This test class documents how the AST parser of Python matches "symbols with symbols".
 
@@ -184,8 +181,8 @@ class TestPythonAstMatcherRepresentation:
     # generate test cases from equivalence classes
     PATTERN_FACTORY = PythonPatternFactory(PythonFactory(PythonRstNode))
 
-    # a and b have the same type as the union of return types of 
-    # PATTERN_FACTORY.create_expression and PATTERN_FACTORY.create_statement, 
+    # a and b have the same type as the union of return types of
+    # PATTERN_FACTORY.create_expression and PATTERN_FACTORY.create_statement,
     # which is AstProtocol.
     @pytest.mark.parametrize(
         "a, b, expected",

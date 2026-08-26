@@ -1,7 +1,7 @@
 import ast
 import unittest
 from unittest import TestCase
-from unittest import TestCase, main
+
 from parameterized import parameterized
 
 from c_cpp.factories import Factories
@@ -9,9 +9,6 @@ from renaissance.impl.clang import CPatternFactory
 from renaissance.impl.python import PythonRstNode
 from renaissance.syntax_tree import ASTFactory
 from renaissance.syntax_tree.match_finder import (
-    is_match,
-    find_in_list,
-    MatchFinder,
     match_pattern,
 )
 

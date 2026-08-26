@@ -1,11 +1,12 @@
-from functools import partial
 import concurrent.futures
 import re
-from typing import Any, Callable, Iterable, Optional, Sequence
+from collections.abc import Callable, Iterable, Sequence
+from functools import partial
+from typing import Any
 
-from .ast_processor import ASTProcessor
 from .ast_factory import ASTFactory
 from .ast_node import ASTNode
+from .ast_processor import ASTProcessor
 
 AST_FACTORY_AND_ATU = tuple[ASTFactory, ASTNode]
 Action = Callable[[ASTProcessor], Callable[[], Any] | None]
@@ -15,12 +16,12 @@ IterableProvider = Callable[[], Iterable[AST_FACTORY_AND_ATU]]
 class BatchASTProcessor:
 
     def __init__(self, in_memory: bool = False, max_processes: int = 4):
-        """
-        Initialize the BatchASTProcessor.
+        """Initialize the BatchASTProcessor.
 
         Args:
             in_memory (bool): Flag to indicate if processing should be done in memory. Defaults to False.
             max_processes (int): The maximum number of processes to use. Defaults to 4.
+
         """
         self.in_memory: bool = in_memory
         self.in_memory_files: dict[str, str] = {}
@@ -30,10 +31,9 @@ class BatchASTProcessor:
         self,
         iterable: Iterable[AST_FACTORY_AND_ATU] | IterableProvider,
         actions: Action | Sequence[Action],
-        file_filter: Optional[str | re.Pattern[str]] = None,
+        file_filter: str | re.Pattern[str] | None = None,
     ) -> None:
-        """
-        Processes a given iterable of ATU objects or an IterableProvider with specified actions.
+        """Processes a given iterable of ATU objects or an IterableProvider with specified actions.
 
         Args:
             iterable (Iterable[ATU] | IterableProvider): The iterable or provider of ATU objects to process.
@@ -42,6 +42,7 @@ class BatchASTProcessor:
 
         Returns:
             bool: True if processing was successful, False otherwise.
+
         """
         iterable = iterable() if callable(iterable) else iterable
         self.__process(iterable, actions, self.in_memory, file_filter)
@@ -50,11 +51,10 @@ class BatchASTProcessor:
         self,
         iterable_provider: IterableProvider,
         actions: Action | Sequence[Action],
-        file_filter: Optional[str | re.Pattern[str]] = None,
+        file_filter: str | re.Pattern[str] | None = None,
         max_repeat: int = 5,
     ) -> None:
-        """
-        Repeats the processing of items provided by the iterableProvider until no changes left.
+        """Repeats the processing of items provided by the iterableProvider until no changes left.
         Up to a maximum number of times.
 
         Args:
@@ -65,6 +65,7 @@ class BatchASTProcessor:
 
         Returns:
             bool: True if the processing still yields changes, False otherwise.
+
         """
         self.__process(iterable_provider(), actions, self.in_memory, file_filter, max_repeat)
 
@@ -73,7 +74,7 @@ class BatchASTProcessor:
         iterable: Iterable[tuple[ASTFactory, ASTNode]],
         actions: Action | Sequence[Action],
         in_memory: bool = False,
-        file_filter: Optional[str | re.Pattern[str]] = None,
+        file_filter: str | re.Pattern[str] | None = None,
         max_repeat: int = 1,
     ) -> None:
         filter_pattern = (
@@ -107,7 +108,7 @@ class BatchASTProcessor:
         return item
 
     @staticmethod
-    def __eligible_file(file_filter: Optional[re.Pattern[str]], item: AST_FACTORY_AND_ATU) -> bool:
+    def __eligible_file(file_filter: re.Pattern[str] | None, item: AST_FACTORY_AND_ATU) -> bool:
         return file_filter is None or file_filter.match(item[1].filename) is not None
 
 

@@ -35,8 +35,7 @@ expected_result = """
 
 
 def replace_if_with_ternary():
-    """
-    Replaces if-else statements in the given C code with ternary operator expressions.
+    """Replaces if-else statements in the given C code with ternary operator expressions.
     This function performs the following steps:
     1. Creates an AST factory with the specified arguments.
     2. Creates a pattern factory using the AST factory.
@@ -46,10 +45,11 @@ def replace_if_with_ternary():
     6. Searches for matches of the if-else pattern in the translation unit.
     7. Replaces matched if-else statements with ternary operator expressions.
     8. Returns the rewritten code as a string.
+
     Returns:
         str: The rewritten C code with if-else statements replaced by ternary operators.
-    """
 
+    """
     # Create a factory with arguments from the command line, for example, -I/usr/include
     factory = ASTFactory(ClangASTNode, [])
     # Create a pattern factory (using the factory (hence also its args)

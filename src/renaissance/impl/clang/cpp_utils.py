@@ -1,4 +1,4 @@
-from renaissance.impl.types import Type, Literal, DeclarationExpression
+from renaissance.impl.types import DeclarationExpression, Literal, Type
 
 
 def get_ancestor(node, kind: type[Type]):

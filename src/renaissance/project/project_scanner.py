@@ -1,6 +1,6 @@
-from os import path, system
-import json
 import glob
+import json
+from os import path, system
 from pathlib import Path
 
 

@@ -1,6 +1,7 @@
-from pytest_bdd import when, scenario
-from steps.test_steps import *
+from pytest_bdd import scenario, when
+
 from renaissance.refactoring.unit2pytest import Unit2Pytest
+from steps.test_steps import *
 
 
 @scenario("convert-unit-to-pytest.feature", "convert unittest to pytest", "utf-8", "..")

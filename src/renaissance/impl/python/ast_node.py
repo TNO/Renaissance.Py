@@ -1,5 +1,4 @@
-"""
-implementation that patches the native ast using 'traits' mechanism,
+"""implementation that patches the native ast using 'traits' mechanism,
 require minimum amount of code to make the matcher work
 
 """

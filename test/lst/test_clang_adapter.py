@@ -1,6 +1,7 @@
+from pathlib import Path
+
 import pytest
 from hamcrest import *
-from pathlib import Path
 
 import targets
 from renaissance.impl.clang.clang_adapter import ClangAdapter

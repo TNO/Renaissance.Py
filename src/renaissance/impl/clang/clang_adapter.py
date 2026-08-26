@@ -1,11 +1,12 @@
+
 from clang import cindex
-from renaissance.impl.tree_sitter.lst import LSTNode, LST
-from typing import Optional
+
+from renaissance.impl.tree_sitter.lst import LST, LSTNode
 from renaissance.utils.ast_utils import detect_placeholder
 
 
 class ClangAdapter:
-    def __init__(self, clang_path: Optional[str] = None, args: Optional[list] = None):
+    def __init__(self, clang_path: str | None = None, args: list | None = None):
         if clang_path and cindex.Config.library_path is None:
             cindex.Config.set_library_path(clang_path)
         self.args = args or ["-std=c++17"]
@@ -24,7 +25,7 @@ class ClangAdapter:
         # source_code= replace_dollar(source_code)
         return self.load_from_text(source_code, "no_src.cpp")
 
-    def _convert_node(self, cursor: cindex.Cursor, parent: Optional[LSTNode] = None) -> LSTNode:
+    def _convert_node(self, cursor: cindex.Cursor, parent: LSTNode | None = None) -> LSTNode:
         try:
             kind = cursor.kind.name
         except Exception as e:

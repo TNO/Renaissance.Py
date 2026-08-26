@@ -3,11 +3,10 @@ import re
 import textwrap
 from datetime import datetime
 from pathlib import Path
-from typing import Dict
 
-import test_data.test_insert as tst_insert
 import test_data.test_class as tst_class
-from renaissance.impl.types import Name, Attribute, FunctionDef, ImportStatement, ImportFrom
+import test_data.test_insert as tst_insert
+from renaissance.impl.types import Attribute, FunctionDef, ImportFrom, ImportStatement, Name
 from renaissance.refactoring.python_refactoring import PythonRefactoring
 from renaissance.syntax_tree.match_finder import match_pattern
 
@@ -72,8 +71,7 @@ class Taut2Pyunit(PythonRefactoring):
             print(f"Error: File '{self.filename}' not found.")
 
     def get_migrated_path(self, file_path):
-        """
-        Convert a file path to add '_migrated' before the extension.
+        """Convert a file path to add '_migrated' before the extension.
 
         Example: 'taut.py' -> 'taut_migrated.py'
         """
@@ -86,8 +84,7 @@ class Taut2Pyunit(PythonRefactoring):
         return new_path
 
     def replace_taut(self):
-        """
-        replace TAUT.TestCase by unittest.TestCase
+        """Replace TAUT.TestCase by unittest.TestCase
         """
         [self.replace("unittest.TestCase", node, False, False) for node in self.find_ast_type(Attribute) if node.name == "TAUT.TestCase"]
         [self.replace("unittest.TestCase", node, False, False) for node in self.find_ast_type(Name) if node.name == "TestCase"]
@@ -165,8 +162,7 @@ class Taut2Pyunit(PythonRefactoring):
             self.remove(match.nodes, False, False)
 
     def replace_taut_import(self):
-        """
-        replace mock by unittest.mock and using patch
+        """Replace mock by unittest.mock and using patch
         """
         mock = self.pattern_factory.create_statements("import mock\n")
         for match in match_pattern(self.root.children, mock):
@@ -326,7 +322,7 @@ ImprovedStub.store_args = {}
             self.insert_before(insert_code, match.nodes, False, False)
 
     def convert_test_doubles(self, doubles: str):
-        mappings: Dict[str, str] = {
+        mappings: dict[str, str] = {
             "emrmxcontext": "EMRMxCONTEXT",
             "acbdxcontext": "ACBDxCONTEXT",
             # Add more mappings here
@@ -349,8 +345,7 @@ ImprovedStub.store_args = {}
                 self.insert_after(insert, match.nodes, False, False)
 
     def replace_taut_skip(self):
-        """
-        replace @TAUT.skip_test by @unittest.skip
+        """Replace @TAUT.skip_test by @unittest.skip
         """
         [self.replace("@unittest.skip", node) for node in self.find_ast_type(Attribute) if node.name == "TAUT.skip_test"]
 
@@ -423,7 +418,7 @@ ImprovedStub.store_args = {}
             self.replace(replace_pattern, match.nodes, False, False)
 
     def convert_testdoubles_fun(self):
-        """this is used for taut migration, where the function pattern is found in a class"""
+        """This is used for taut migration, where the function pattern is found in a class"""
         # case1 two TestDoubles are defined
         pattern1 = self.pattern_factory.create_statements("""def $a($$b):
         self.doubles.append(
@@ -497,7 +492,7 @@ ImprovedStub.store_args = {}
         self.commit()
 
     def refactor_testdoubles_fun(self):
-        """this is used for unittest, where the function pattern is not found in a class"""
+        """This is used for unittest, where the function pattern is not found in a class"""
         # case1 two TestDoubles are defined
         pattern1 = self.pattern_factory.create_statements("""def $a($$b):
     self.doubles.append(
@@ -636,8 +631,7 @@ def insert_doc(content: str, date):
 
 
 def get_change_comment(date=None):
-    """
-    Generate a formatted change comment with today's date.
+    """Generate a formatted change comment with today's date.
 
     Args:
         change_id (str): The change ID (e.g., 'SWCHGxxxxxxxx')
@@ -645,6 +639,7 @@ def get_change_comment(date=None):
 
     Returns:
         str: Formatted change comment string
+
     """
     change_id = "SWCHGxxxxxxxx"
     description = "Add assert_raises method to Asserter class."

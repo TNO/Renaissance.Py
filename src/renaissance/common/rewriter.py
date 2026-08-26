@@ -9,8 +9,7 @@ class Rewrite:
 
 
 class Rewriter:
-    """
-    A class that allows for modifications to a byte sequence.
+    """A class that allows for modifications to a byte sequence.
     """
 
     def __init__(self, content: bytes) -> None:
@@ -18,8 +17,7 @@ class Rewriter:
         self.__rewrites: list[Rewrite] = []
 
     def replace(self, start: int, end: int, new_content: bytes) -> None:
-        """
-        Replaces a portion of the content with new content.
+        """Replaces a portion of the content with new content.
 
         This method will replace the content between the specified start and end
         indices with the provided new_content. If there is an existing rewrite
@@ -35,6 +33,7 @@ class Rewriter:
 
         Returns:
             None
+
         """
         for r in self.__rewrites:
             # if r partially overlaps with start and end then append the new content to the existing replacement
@@ -48,8 +47,7 @@ class Rewriter:
         self.__rewrites.append(Rewrite(real_start, real_end, new_content))
 
     def apply(self) -> bytes:
-        """
-        Applies the rewrites to a copied byte sequence.
+        """Applies the rewrites to a copied byte sequence.
 
         This method reverses the order of the rewrites to ensure that insertions
         are performed correctly. It then sorts the rewrites by their start position
@@ -57,6 +55,7 @@ class Rewriter:
 
         Returns:
             bytes: The modified byte sequence after all rewrites have been applied.
+
         """
         result = bytearray(self.__content[:])
         for rewrite in sorted(self.__rewrites, key=lambda x: x.start, reverse=True):

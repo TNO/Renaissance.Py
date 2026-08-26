@@ -1,9 +1,9 @@
 import os
-import networkx
 from pathlib import Path
 
-from renaissance.impl.tree_sitter.adapter import TreeSitterAdapter
+import networkx
 
+from renaissance.impl.tree_sitter.adapter import TreeSitterAdapter
 from renaissance.impl.tree_sitter.factory import TreeStiterPatternFactory
 from renaissance.impl.types import *
 from renaissance.syntax_tree import PatternMatch

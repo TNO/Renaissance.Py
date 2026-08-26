@@ -1,15 +1,21 @@
 import ast
 import sys
 import textwrap
+from collections.abc import Callable, Sequence
 from pathlib import Path
-from typing import Any, Sequence, Self, Callable
-
-from renaissance.impl.types import *
+from typing import Any, Self
 
 from renaissance.impl.python.util import convert
+from renaissance.impl.types import *
 from renaissance.syntax_tree.match_finder import find_in_list
-from renaissance.utils.ast_utils import preceding_sibling, next_sibling, match_props, match_children, format_node
-from renaissance.utils.ast_utils import traverse
+from renaissance.utils.ast_utils import (
+    format_node,
+    match_children,
+    match_props,
+    next_sibling,
+    preceding_sibling,
+    traverse,
+)
 
 types = ["int", "float", "str", "list", "set", "tuple", "Mapping", "dict", "Optional"]
 IRRELEVANT_PROPS = {"comment"}
@@ -60,7 +66,7 @@ class PythonRstTranslationUnit:
 
         self._references: dict[str, list[PythonRSTReference]] = {}
         self._referenced_by: dict[str, list[PythonRSTReference]] = {}
-        self._nodes: dict[str, "PythonRstNode"] = {}
+        self._nodes: dict[str, PythonRstNode] = {}
 
     def check_diagnostics(self, continue_with_warning=True) -> None:
         msg = None
@@ -72,7 +78,7 @@ class PythonRstTranslationUnit:
         if msg and not continue_with_warning:
             raise Exception(f"Error parsing: {self.file_name} \n+ errors: {errors}")
 
-    def lazy_create_refers(self, node: "PythonRstNode") -> None:
+    def lazy_create_refers(self, node: PythonRstNode) -> None:
         if self.references_initialized:
             return
         for n in traverse(node.root):
@@ -300,11 +306,11 @@ class PythonRstNode:
         file_path: Path,
         extra_args: Sequence[str] | None = None,
         working_dir: Path | None = None,
-    ) -> "PythonRstNode":
+    ) -> PythonRstNode:
         # Keep a uniform loader signature across AST node implementations.
         # Python's AST parser does not need extra arguments or a working dir.
         _ = extra_args, working_dir
-        with open(file_path, "r") as file:
+        with open(file_path) as file:
             content = file.read()
             return PythonRstNode.load_from_text(content, str(file_path))
 
@@ -314,7 +320,7 @@ class PythonRstNode:
         file_name: str = "test.py",
         extra_args: Sequence[str] | None = None,
         working_dir: Path | None = None,
-    ) -> "PythonRstNode":
+    ) -> PythonRstNode:
         _ = extra_args, working_dir
         translation_unit = PythonRstTranslationUnit(text, file_name=str(file_name))
         translation_unit.check_diagnostics()
@@ -360,7 +366,7 @@ class PythonRstNode:
             name = ""
         elif isinstance(self.node, (ast.For, ast.AsyncFor)):
             if isinstance(self.node.target, Tuple):
-                name = getattr(self.node.target.dims[1], "id")
+                name = self.node.target.dims[1].id
             elif isinstance(self.node.target, ast.Name):
                 name = self.node.target.id
             else:
@@ -399,7 +405,7 @@ class PythonRstNode:
                 ),
             )
             and hasattr(self.node, "value")
-            and getattr(self.node, "value") is not None
+            and self.node.value is not None
         ):
             return PythonRstNode(self.node.value, self.translation_unit, self)
         elif isinstance(self.node, ast.Expr) and hasattr(self.node, "value"):
