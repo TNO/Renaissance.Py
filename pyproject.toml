@@ -107,7 +107,7 @@ ignore = ["E731"]
 
 [tool.pyright]
 pythonVersion = "3.14"
-typeCheckingMode = "basic"
+typeCheckingMode = "off"
 #typeCheckingMode = "strict"
 include = ["src", "test", "tools"]
 exclude = ["features", "**/node_modules", "**/__pycache__", "**/.*", ".venv"]

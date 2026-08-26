@@ -1,11 +1,11 @@
 import functools
 from collections.abc import Callable, Sequence
-from typing import Any, TypeVar
+from typing import Any, Generic, TypeVar
 
 from .ast_processor import ASTProcessor
 from .batch_ast_processor import BatchASTProcessor, IterableProvider
 
-T = TypeVar("T")
+TRecipe = TypeVar("TRecipe")
 TFunc = Callable[..., Any]
 
 
@@ -75,17 +75,16 @@ def after_step(step: str) -> TFunc:
     return annotate_decorator(after_step_decorator, after_step.__name__)
 
 
-class RecipeASTProcessor:
-
+class RecipeASTProcessor(Generic[TRecipe]):
     def __init__(
         self,
-        recipe: TFunc,
+        recipe: TRecipe,
         iterable_provider: IterableProvider,
         file_filter: str,
         in_memory: bool = False,
         max_processes: int = 4,
     ):
-        self.__recipe: TFunc = recipe
+        self.__recipe: TRecipe = recipe
         self.__batch_processor = BatchASTProcessor(in_memory=in_memory, max_processes=max_processes)
         self.__iterableProvider = iterable_provider
         self.__file_filter = file_filter
