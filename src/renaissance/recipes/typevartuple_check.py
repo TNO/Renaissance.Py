@@ -7,14 +7,14 @@ from renaissance.utils.ast_utils import traverse
 
 
 class TypeVarTupleCheck(PythonRefactoring):
-    def run(self):
+    def run(self) -> None:
         self.result = self.find_legacy_unpack_usage()
 
-    def find_legacy_unpack_usage(self):
+    def find_legacy_unpack_usage(self) -> list[str]:
         declarations = find_type_param_declarations(self.root)
         typevartuple_names = {name for name, kind in declarations.items() if kind == "TypeVarTuple"}
 
-        found = []
+        found: list[str] = []
         for node in traverse(self.root):
             raw = cast(ast.AST, node.node)
             if isinstance(raw, ast.Subscript):

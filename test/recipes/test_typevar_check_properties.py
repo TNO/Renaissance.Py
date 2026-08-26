@@ -12,13 +12,12 @@ class TestTypeVarCheckProperties:
 
     @given(source=hypothesmith.from_grammar())
     @settings(max_examples=50, deadline=None)
-    def test_never_crashes(self, source):
+    def test_never_crashes(self, source: str) -> None:
         try:
             ast.parse(source)
         except SyntaxError:
             assume(False)
-            return
-    
+
         with patch(
             "renaissance.impl.python.factory.PythonFactory.create",
             return_value=PythonRstNode.load_from_text(source),
