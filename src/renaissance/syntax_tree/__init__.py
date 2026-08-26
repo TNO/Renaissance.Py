@@ -1,6 +1,4 @@
 # __init__.py
-from renaissance.impl.clang.cpp_utils import CPPUtils
-
 from ..utils.text_utils import TextUtils
 from .ast_factory import ASTFactory
 from .ast_finder import ASTFinder
@@ -22,6 +20,14 @@ from .recipe_ast_processor import (
     final_action,
     recipe_step,
 )
+
+# ruff: noqa: I001
+# isort: split
+# This import must come after the ones above: renaissance.impl.clang (imported via
+# cpp_utils) imports back from renaissance.syntax_tree (ASTFinder, ASTNode,
+# ASTReference), so those names must already be bound in this module's namespace
+# before cpp_utils is loaded, or the circular import fails.
+from renaissance.impl.clang.cpp_utils import CPPUtils  # noqa: E402
 
 __all__ = [
     "ASTNode",
