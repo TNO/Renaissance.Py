@@ -123,7 +123,6 @@ class TestExpressions(TestCMatchFinder):
 
 
 class TestStatements(TestCMatchFinder):
-
     @pytest.mark.parametrize(
         "_, factory, statements, expected_dicts_per_match",
         Factories.extend(
@@ -137,7 +136,8 @@ class TestStatements(TestCMatchFinder):
                                 "if(a == 3){\n                b=5;\n            }\n            else{\n                b--;\n            }"
                             ],
                             "$y": [
-                                "while(a != 3){\n                if  (a == 4 && b == 5){\n                    b = a;\n                }\n            }"
+                                "while(a != 3){\n                if  (a == 4 && b == 5){\n                    b = a;\n                }\n"
+                                "            }"
                             ],
                         },
                     ],
@@ -197,7 +197,6 @@ class TestStatements(TestCMatchFinder):
 
 
 class TestFunctionCallStatements(TestCMatchFinder):
-
     @pytest.mark.parametrize(
         "_, factory, statements, extra_declarations, expected_dicts_per_match",
         Factories.extend(
@@ -258,7 +257,6 @@ class TestFunctionCallStatements(TestCMatchFinder):
 
 
 class TestMultiAssignments(TestCMatchFinder):
-
     @pytest.mark.parametrize(
         "_, factory, statements, extra_declarations, expected_dicts_per_match",
         Factories.extend(
@@ -275,7 +273,8 @@ class TestMultiAssignments(TestCMatchFinder):
                     ],
                 ),
                 # skip the advanced undeterministic all placeholder
-                # ('$f($$before, $a, $$after);$f($$before, $b, $$after);',['int $f(int,int,int);'],[{'$f': ['fc'], '$$before': ['1', '2'], '$a': ['3'], '$$after': ['4', '5'], '$b': ['6']}]),
+                # ('$f($$before, $a, $$after);$f($$before, $b, $$after);',['int $f(int,int,int);'],[{'$f': ['fc'],
+                #                      '$$before': ['1', '2'], '$a': ['3'], '$$after': ['4', '5'], '$b': ['6']}]),
             ]
         ),
     )
@@ -409,7 +408,6 @@ class TestUseAtuToCreatePattern(TestCMatchFinder):
             ]
         ),
     )
-
     def test(self, name, factory, statements, pattern_type, expected, names):
         code = """
             #define FOO "foo"
@@ -444,7 +442,8 @@ class TestUseAtuToCreatePattern(TestCMatchFinder):
         # should find multiple matches, at least the one in the pattern and the one in the function body
         assert_that(result, has_length(greater_than_or_equal_to(1)))
         # unreliable to check the exact number of matches due to the pattern also matching the pattern itself
-        # text= result.filter(lambda match: match.patterns == names).map(lambda match: match.nodes[0]).filter(ASTNode.is_part_of_translation_unit).map(ASTNode.text).to_list()
+        # text= result.filter(lambda match: match.patterns == names).map(lambda match: match.nodes[0])
+        #             .filter(ASTNode.is_part_of_translation_unit).map(ASTNode.text).to_list()
         # assert_that(text, is_(expected))
 
     @pytest.mark.parametrize("_, factory", Factories.factories)
@@ -499,7 +498,7 @@ class TestIndividualCases:
         variants = find_in_list(atu.children[-1].children[-1].children, stmt_nodes, {}, 1)
 
         # assert_that(variants[0].exp['$$all'], has_length(1))
-        {"$f": ["two"], "$$all": ["a"], "$a": ["b"]},
-        {"$f": ["three"], "$$all": ["a", "b"], "$a": ["c"]},
+        ({"$f": ["two"], "$$all": ["a"], "$a": ["b"]},)
+        ({"$f": ["three"], "$$all": ["a", "b"], "$a": ["c"]},)
         found = match_pattern(atu.children[-1].children[-1].children, stmt_nodes)
         assert_that(found, has_length(3))

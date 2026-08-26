@@ -287,7 +287,7 @@ def test_validator_rejects_column_out_of_range() -> None:
 
 # strategy to generate lines of text (with newline character)
 text_line_strategy = st.text(
-    alphabet=st.characters(blacklist_categories=("Cs",), blacklist_characters=["\n"]),
+    alphabet=st.characters(exclude_categories=("Cs",), exclude_characters=["\n"]),
     min_size=0,
     max_size=25,
 )
@@ -296,7 +296,7 @@ text_line_strategy = st.text(
 # biased to contain multiple lines
 # biased to end with \n
 text_strategy = st.one_of(
-    st.text(alphabet=st.characters(blacklist_categories=("Cs",)), max_size=200),
+    st.text(alphabet=st.characters(exclude_categories=("Cs",)), max_size=200),
     st.lists(text_line_strategy, min_size=1, max_size=20).map("\n".join),
     st.lists(text_line_strategy, min_size=1, max_size=20).map("\n".join).map(lambda s: s + "\n"),
 )

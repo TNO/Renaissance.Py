@@ -1,4 +1,3 @@
-
 import pytest
 from hamcrest import assert_that, has_length, instance_of, is_, is_in
 
@@ -10,7 +9,6 @@ from renaissance.syntax_tree.match_finder import match_pattern
 
 
 class TestPythonFactory:
-
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
         self.factory = PythonFactory(PythonRstNode)
@@ -19,8 +17,7 @@ class TestPythonFactory:
     # Statements patterns
     @pytest.mark.parametrize("statement", ["x = 10", "x += y", "name = 'John'", "a, b, c = (1, 2, 3)"])
     def test_statement(self, statement) -> None:
-        """Test the creation of a statement in Python
-        """
+        """Test the creation of a statement in Python"""
         node = PythonRstNode.load_from_text(statement).body[-1]
         assert_that(node.is_statement, is_(True))
         assert_that(node.signature, is_(statement))
@@ -51,7 +48,10 @@ class TestPythonFactory:
         "statement",
         [
             "try:\n    pass\nexcept SomeException:\n    print('An error occurred.')",
-            "try:\n    pass\nexcept ExceptionType1:\n    print('An error occurred.')\nexcept ExceptionType2 as e:\n    print(f'Error: {e}')",
+            (
+                "try:\n    pass\nexcept ExceptionType1:\n    print('An error occurred.')"
+                "\nexcept ExceptionType2 as e:\n    print(f'Error: {e}')"
+            ),
         ],
     )
     def test_try_statement(self, statement) -> None:
@@ -232,8 +232,7 @@ class TestPythonFactory:
 
     @pytest.mark.parametrize("code", ["\"hello = 'hello' # comment to hello\""])
     def test_comments(self, code) -> None:
-        """TODO: what is tested?
-        """
+        """TODO: what is tested?"""
         pattern_factory = PythonPatternFactory(self.factory)
         node = pattern_factory.create_statement(code)
         assert_that(node.ast_type(), instance_of(ExpressionStatement))
@@ -265,7 +264,7 @@ class TestPythonFactory:
         "_, factory, raw, expected",
         Factories.extend(
             [
-                ("a = 1", [Number, Assign,Literal, "Name", "AssignTarget"]),
+                ("a = 1", [Number, Assign, Literal, "Name", "AssignTarget"]),
             ]
         ),
     )

@@ -65,7 +65,7 @@ class CPatternFactory:
 
     @staticmethod
     def remove_indent(text: str) -> str:
-        split = [len(l) - len(l.lstrip()) for l in text.splitlines() if l.strip()]
+        split = [len(line) - len(line.lstrip()) for line in text.splitlines() if line.strip()]
         indent = split[0] if split else 0
         return "\n".join([line[indent:] for line in text.splitlines()])
 
@@ -194,9 +194,11 @@ class CPatternFactory:
         kind: type[Type],
     ) -> list[ASTNode]:
         full_text = (
-            self.header + "\n".join(CPatternFactory._to_typedef(types)) + "\n"
-            "\n".join(CPatternFactory._to_declaration(parameters)) + "\n"
-            "\n".join(extra_declarations) + "\n"
+            self.header
+            + "\n".join(CPatternFactory._to_typedef(types))
+            + "\n\n".join(CPatternFactory._to_declaration(parameters))
+            + "\n\n".join(extra_declarations)
+            + "\n"
             "\nvoid " + CPatternFactory.reserved_function_name + "(){\n" + text + "\n}"
         )
         root = self._create(full_text)
@@ -240,7 +242,6 @@ class CPatternFactory:
 
 
 class CPPPatternFactory(CPatternFactory):
-
     def __init__(self, factory: ASTFactory, ref_node: ASTNode | None = None):
         super().__init__(factory, ref_node, "cpp")
 

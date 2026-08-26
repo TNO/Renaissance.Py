@@ -34,7 +34,8 @@ class TextUtils:
 
     @staticmethod
     def strip_indent(text: str, start_line: int = 0) -> str:
-        """Shifts left the text such that the first line has no leading spaces and all other lines shifted left with the first line spaces length."""
+        """Shifts left the text such that the first line has no leading spaces and all other lines shifted left
+        with the first line spaces length."""
         matcher = TextUtils.__PRECEDING_SPACES_PATTERN.search(text)
         if matcher:
             spaces = matcher[1]

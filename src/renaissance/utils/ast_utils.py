@@ -20,10 +20,10 @@ def detect_placeholder(signature: str, original_node_type: str) -> tuple[bool, s
     """
     if not signature:
         return False, original_node_type, ""
-    if signature.startswith((MATCH_ALL,"$$")) and " " not in signature and "(" not in signature:
+    if signature.startswith((MATCH_ALL, "$$")) and " " not in signature and "(" not in signature:
         # legacy compatibility
         return True, MATCH_ALL, signature
-    elif signature.startswith((MATCH_ONE,"$")) and " " not in signature and "(" not in signature:
+    elif signature.startswith((MATCH_ONE, "$")) and " " not in signature and "(" not in signature:
         return True, MATCH_ONE, signature
     return False, original_node_type, "-"
 
@@ -79,4 +79,8 @@ def format_node(node):
     properties_text = "" if not node.show_props else node.properties
     prefix = " " if len(raw_lines) < 2 else f"\n    {node.indent}"
     formatted_lines = [f"{prefix}|{line}|" for line in raw_lines]
-    return f"{node.indent}({node.ast_type.__name__}, {node.name}, {node.filename}[{node.offset}:{node.offset + node.length}]){properties_text}:{''.join(formatted_lines)}\n"
+    return (
+        f"{node.indent}({node.ast_type.__name__}, {node.name}, "
+        f"{node.filename}[{node.offset}:{node.offset + node.length}])"
+        f"{properties_text}:{''.join(formatted_lines)}\n"
+    )

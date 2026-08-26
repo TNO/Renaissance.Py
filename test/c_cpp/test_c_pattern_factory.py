@@ -56,54 +56,68 @@ class TestCPatternFactory:
         assert_that(header, contains_string("int print(const char*,...);"))
         assert_that(header, contains_string("typedef struct A_Struct"))
         assert_that(header, contains_string("int some_decl = 1;"))
-        assert_that(header, not_(contains_string('A a = {};')))
+        assert_that(header, not_(contains_string("A a = {};")))
         assert_that(simple_header, contains_string('#define FOO "foo"'))
         assert_that(simple_header, contains_string("int print(const char*,...);"))
         assert_that(simple_header, contains_string("typedef struct A_Struct"))
         assert_that(simple_header, contains_string("int some_decl = 1;"))
         # assert_that(simple_header, not_(contains_string('A a = {};')))
 
-        assert_that(header, not_(contains_string('#include <stdint.h>')))
-        assert_that(simple_header, contains_string('#include <stdint.h>'))
+        assert_that(header, not_(contains_string("#include <stdint.h>")))
+        assert_that(simple_header, contains_string("#include <stdint.h>"))
 
 
 class TestExpression:
-
     @pytest.mark.parametrize(
         "_, factory, expression, expected",
         Factories.extend(
             [
                 (
                     "a == $hallo",
-                    "(BinaryOperation, , test.c[123:134]): |a == $hallo|\n  (Expression, a, test.c[123:124]): |a|\n    (DeclarationExpression, a, test.c[123:124]): |a|\n  (MatchOne, $hallo, test.c[128:134]): |$hallo|\n    (MatchOne, $hallo, test.c[128:134]): |$hallo|\n",
+                    "(BinaryOperation, , test.c[123:134]): |a == $hallo|\n  (Expression, a, test.c[123:124]): |a|\n"
+                    "    (DeclarationExpression, a, test.c[123:124]): |a|\n  (MatchOne, $hallo, test.c[128:134]): |$hallo|\n"
+                    "    (MatchOne, $hallo, test.c[128:134]): |$hallo|\n",
                 ),
                 (
                     "2 != 3",
-                    "(BinaryOperation, , test.c[105:111]): |2 != 3|\n  (Number, , test.c[105:106]): |2|\n  (Number, , test.c[110:111]): |3|\n",
+                    "(BinaryOperation, , test.c[105:111]): |2 != 3|\n  (Number, , test.c[105:106]): |2|\n"
+                    "  (Number, , test.c[110:111]): |3|\n",
                 ),
                 (
                     "a != b",
-                    "(BinaryOperation, , test.c[118:124]): |a != b|\n  (Expression, a, test.c[118:119]): |a|\n    (DeclarationExpression, a, test.c[118:119]): |a|\n  (Expression, b, test.c[123:124]): |b|\n    (DeclarationExpression, b, test.c[123:124]): |b|\n",
+                    "(BinaryOperation, , test.c[118:124]): |a != b|\n  (Expression, a, test.c[118:119]): |a|\n"
+                    "    (DeclarationExpression, a, test.c[118:119]): |a|\n  (Expression, b, test.c[123:124]): |b|\n"
+                    "    (DeclarationExpression, b, test.c[123:124]): |b|\n",
                 ),
                 (
                     "b != $world",
-                    "(BinaryOperation, , test.c[123:134]): |b != $world|\n  (Expression, b, test.c[123:124]): |b|\n    (DeclarationExpression, b, test.c[123:124]): |b|\n  (MatchOne, $world, test.c[128:134]): |$world|\n    (MatchOne, $world, test.c[128:134]): |$world|\n",
+                    "(BinaryOperation, , test.c[123:134]): |b != $world|\n  (Expression, b, test.c[123:124]): |b|\n"
+                    "    (DeclarationExpression, b, test.c[123:124]): |b|\n  (MatchOne, $world, test.c[128:134]): |$world|\n"
+                    "    (MatchOne, $world, test.c[128:134]): |$world|\n",
                 ),
                 (
                     "c > $foo",
-                    "(BinaryOperation, , test.c[121:129]): |c > $foo|\n  (Expression, c, test.c[121:122]): |c|\n    (DeclarationExpression, c, test.c[121:122]): |c|\n  (MatchOne, $foo, test.c[125:129]): |$foo|\n    (MatchOne, $foo, test.c[125:129]): |$foo|\n",
+                    "(BinaryOperation, , test.c[121:129]): |c > $foo|\n  (Expression, c, test.c[121:122]): |c|\n"
+                    "    (DeclarationExpression, c, test.c[121:122]): |c|\n  (MatchOne, $foo, test.c[125:129]): |$foo|\n"
+                    "    (MatchOne, $foo, test.c[125:129]): |$foo|\n",
                 ),
                 (
                     "d < $bar",
-                    "(BinaryOperation, , test.c[121:129]): |d < $bar|\n  (Expression, d, test.c[121:122]): |d|\n    (DeclarationExpression, d, test.c[121:122]): |d|\n  (MatchOne, $bar, test.c[125:129]): |$bar|\n    (MatchOne, $bar, test.c[125:129]): |$bar|\n",
+                    "(BinaryOperation, , test.c[121:129]): |d < $bar|\n  (Expression, d, test.c[121:122]): |d|\n"
+                    "    (DeclarationExpression, d, test.c[121:122]): |d|\n  (MatchOne, $bar, test.c[125:129]): |$bar|\n"
+                    "    (MatchOne, $bar, test.c[125:129]): |$bar|\n",
                 ),
                 (
                     "e >= $baz",
-                    "(BinaryOperation, , test.c[121:130]): |e >= $baz|\n  (Expression, e, test.c[121:122]): |e|\n    (DeclarationExpression, e, test.c[121:122]): |e|\n  (MatchOne, $baz, test.c[126:130]): |$baz|\n    (MatchOne, $baz, test.c[126:130]): |$baz|\n",
+                    "(BinaryOperation, , test.c[121:130]): |e >= $baz|\n  (Expression, e, test.c[121:122]): |e|\n"
+                    "    (DeclarationExpression, e, test.c[121:122]): |e|\n  (MatchOne, $baz, test.c[126:130]): |$baz|\n"
+                    "    (MatchOne, $baz, test.c[126:130]): |$baz|\n",
                 ),
                 (
                     "f <= $qux",
-                    "(BinaryOperation, , test.c[121:130]): |f <= $qux|\n  (Expression, f, test.c[121:122]): |f|\n    (DeclarationExpression, f, test.c[121:122]): |f|\n  (MatchOne, $qux, test.c[126:130]): |$qux|\n    (MatchOne, $qux, test.c[126:130]): |$qux|\n",
+                    "(BinaryOperation, , test.c[121:130]): |f <= $qux|\n  (Expression, f, test.c[121:122]): |f|\n"
+                    "    (DeclarationExpression, f, test.c[121:122]): |f|\n  (MatchOne, $qux, test.c[126:130]): |$qux|\n"
+                    "    (MatchOne, $qux, test.c[126:130]): |$qux|\n",
                 ),
                 (
                     "g--",
@@ -115,7 +129,8 @@ class TestExpression:
                 ),
                 (
                     "!i",
-                    "(UnaryOperation, , test.c[111:113]): |!i|\n  (Expression, i, test.c[112:113]): |i|\n    (DeclarationExpression, i, test.c[112:113]): |i|\n",
+                    "(UnaryOperation, , test.c[111:113]): |!i|\n  (Expression, i, test.c[112:113]): |i|\n"
+                    "    (DeclarationExpression, i, test.c[112:113]): |i|\n",
                 ),
             ]
         ),
@@ -131,7 +146,6 @@ class TestExpression:
 
 
 class TestDeclaration:
-
     @pytest.mark.parametrize(
         "_, factory, declarationText, types, parameters, expected_vars, expected_refs",
         Factories.extend(
@@ -161,7 +175,7 @@ class TestDeclaration:
         count_refs = 0
         count_vars = 0
         for decl in created_declarations:
-            count_refs += len(find_ast_type(decl, (DeclarationExpression,MatchOne)))
+            count_refs += len(find_ast_type(decl, (DeclarationExpression, MatchOne)))
             count_vars += len(find_ast_type(decl, VariableDef))
             ASTShower.show_node(decl)
         assert_that(count_vars, is_(expected_vars))
@@ -169,7 +183,6 @@ class TestDeclaration:
 
 
 class TestStatements:
-
     @pytest.mark.parametrize(
         "_, factory, statementText, extra_declarations, expected_stmts, expected_refs",
         list(
@@ -199,7 +212,7 @@ class TestStatements:
 
         count_refs = 0
         for decl in created_statements:
-            count_refs += len(find_ast_type(decl, (DeclarationExpression,MatchOne)))
+            count_refs += len(find_ast_type(decl, (DeclarationExpression, MatchOne)))
         assert_that(expected_stmts, is_(len(created_statements)))
         assert_that(expected_refs, less_than_or_equal_to(count_refs))
         for stmt in created_statements:

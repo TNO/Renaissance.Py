@@ -34,13 +34,13 @@ def assert_valid_syntax_node(node: SyntaxNode[Any]) -> None:
         # (2) order: lowest offset first
         assert prev.start_offset <= cur.start_offset, (
             "Children must be ordered by non-decreasing start_offset. "
-            f"Found child[{i-1}].start_offset={prev.start_offset} > child[{i}].start_offset={cur.start_offset}."
+            f"Found child[{i - 1}].start_offset={prev.start_offset} > child[{i}].start_offset={cur.start_offset}."
         )
 
         # (3) non-overlap
         assert prev.end_offset <= cur.start_offset, (
             "Children must not overlap and must be in textual order. "
-            f"Found child[{i-1}].end_offset={prev.end_offset} > child[{i}].start_offset={cur.start_offset}."
+            f"Found child[{i - 1}].end_offset={prev.end_offset} > child[{i}].start_offset={cur.start_offset}."
         )
 
         prev = cur
@@ -59,11 +59,13 @@ def _assert_child_valid(node: SyntaxNode[Any], child: SyntaxNode[Any], *, index:
 
     # (1) containment within parent span
     assert node.start_offset <= child.start_offset <= node.end_offset, (
-        f"child[{index}].start_offset must lie within the node span. " f"Got child[{index}].start_offset={child.start_offset}, expected in [{node.start_offset}, {node.end_offset}]."
+        f"child[{index}].start_offset must lie within the node span. "
+        f"Got child[{index}].start_offset={child.start_offset}, expected in [{node.start_offset}, {node.end_offset}]."
     )
 
     assert node.start_offset <= child.end_offset <= node.end_offset, (
-        f"child[{index}].end_offset must lie within the node span. " f"Got child[{index}].end_offset={child.end_offset}, expected in [{node.start_offset}, {node.end_offset}]."
+        f"child[{index}].end_offset must lie within the node span. "
+        f"Got child[{index}].end_offset={child.end_offset}, expected in [{node.start_offset}, {node.end_offset}]."
     )
 
 
@@ -82,7 +84,7 @@ def assert_valid_syntax_tree(root: SyntaxNode[Any]) -> None:
 
         node_id = id(node)
         assert node_id not in visited, (
-            "Tree traversal encountered the same node object twice. " "This indicates a cycle or a DAG (shared subtree), not a tree."
+            "Tree traversal encountered the same node object twice. This indicates a cycle or a DAG (shared subtree), not a tree."
         )
         visited.add(node_id)
 

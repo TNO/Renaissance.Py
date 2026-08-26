@@ -1,11 +1,10 @@
-
 import pytest
 from hamcrest import *
 
 from renaissance.impl.clang.clang_adapter import ClangAdapter
 from renaissance.impl.tree_sitter.extractor import Extractor
 from renaissance.impl.tree_sitter.factory import TreeStiterPatternFactory
-from renaissance.syntax_tree.match_finder import MIS_MATCH
+from renaissance.syntax_tree.match_finder import MIS_MATCH, MatchFinder, find_variants, is_match, is_match_tree, match_pattern
 
 
 class TestClangConcretePatternMatcher:
@@ -114,9 +113,6 @@ class TestClangConcretePatternMatcher:
         p = interface.create_statement("int $body=0; int main() { return $body; }")
         match = MatchFinder.match_pattern([c.children[-1]], [p.children[-1]])
         assert_that(match, has_length(1))
-
-
-from renaissance.syntax_tree.match_finder import MatchFinder, find_variants, is_match, is_match_tree, match_pattern
 
 
 class Matchfinder:

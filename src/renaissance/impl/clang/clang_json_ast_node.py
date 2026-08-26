@@ -92,10 +92,10 @@ class ClangJsonASTNode(ASTNode):
         # if the node has not been added to the translation unit, add it
         # a node might already be added if it is split into multiple nodes
         # an example is for base types like int, char, etc. which are split into multiple nodes
-        if "id" in node and self.translation_unit._nodes.get(node["id"]) == None:
+        if "id" in node and self.translation_unit._nodes.get(node["id"]) is None:
             self.translation_unit._nodes[node["id"]] = self
         self._offset = start_offset if start_offset is not None else self.__derive_start_offset()
-        self._end_offset = self._offset + length if length != None else self.__derive_end_offset()
+        self._end_offset = self._offset + length if length is not None else self.__derive_end_offset()
         self._length = self._end_offset - self._offset
         self._kind = insert_kind if insert_kind is not None else self.__derive_kind()
         self.ast_type = KIND_MAP.get(self._kind, UnknownType)
@@ -105,7 +105,7 @@ class ClangJsonASTNode(ASTNode):
         # without the fake child pattern matching on types will be difficult
         self.__inserted_children: list[ClangJsonASTNode] = []
         type = self.node.get("type")
-        if insert_kind == None and type and not self.node.get("implicit") and re.fullmatch("(Var|Function|CxxMethod)Decl", self._kind):
+        if insert_kind is None and type and not self.node.get("implicit") and re.fullmatch("(Var|Function|CxxMethod)Decl", self._kind):
             declared_type = type["qualType"].replace("(", "").replace(")", "").strip()
             if self.node.get("loc"):
                 loc = self.node["loc"]
@@ -285,7 +285,7 @@ class ClangJsonASTNode(ASTNode):
                 ):  # Why use 'in' when list has one element, i.e. ';'?
                     end_offset += 1
             return end_offset
-        except:
+        except Exception:
             return 0
 
     def _is_statement_or_declaration(self):
@@ -300,11 +300,12 @@ class ClangJsonASTNode(ASTNode):
     @override
     @property
     def properties(self) -> dict[str, Any]:
-        # get all the attributes of self.node except the inner  nodes, id, location, range, kind and name and all reference nodes (that is children with 'id)
+        # get all the attributes of self.node except the inner  nodes, id, location, range, kind and name and
+        # all reference nodes (that is children with 'id)
         properties = {
             k: ClangJsonASTNode._remove_ids(v)
             for k, v in self.node.items()
-            if ClangJsonASTNode.__is_property(k) and not ClangJsonASTNode._is_reference(v) == None
+            if ClangJsonASTNode.__is_property(k) and ClangJsonASTNode._is_reference(v) is not None
         }
         if self._get(["range", "end", "expansionLoc", "offset"], -1) != -1:  # dealing with a macro expansion
             properties["macro_expansion"] = self.text
@@ -364,7 +365,7 @@ class ClangJsonASTNode(ASTNode):
     @property
     def is_statement(self) -> bool:
         return (
-            self.parent != None and self.parent.ast_type in STMT_PARENTS
+            self.parent is not None and self.parent.ast_type in STMT_PARENTS
         )  # TODO: Why look at the kind of your parent and not at your own kind?
 
     def _derive_name(self) -> str:
@@ -411,7 +412,7 @@ class ClangJsonASTNode(ASTNode):
         try:
             if ClangJsonASTNode._is_wrapped(node):
                 return ClangJsonASTNode._remove_wrapper(list(node["inner"])[0])
-        except:
+        except Exception:
             pass
         return node
 
@@ -464,7 +465,7 @@ class ClangJsonASTNode(ASTNode):
                 # TODO: Is this code really correct when path contains multiple strings?
                 # Doesn't target become an Any, and hence might not support __get_item__ any more?
             return target if isinstance(target, type(default)) else default
-        except:
+        except Exception:
             return default
 
     @property
@@ -473,12 +474,11 @@ class ClangJsonASTNode(ASTNode):
 
 
 class ReferenceHelper:
-
     @staticmethod
     def create_references(ast_node: ClangJsonASTNode) -> None:
-        assert isinstance(
-            ast_node, ClangJsonASTNode
-        ), f"Expected ClangJsonASTNode but got {type(ast_node)}"  # TODO: still needed when using type hints?
+        assert isinstance(ast_node, ClangJsonASTNode), (
+            f"Expected ClangJsonASTNode but got {type(ast_node)}"
+        )  # TODO: still needed when using type hints?
         if ast_node.inserted:
             return
         references = []
@@ -507,7 +507,7 @@ class ReferenceHelper:
                 referenced_by = ClangJsonASTReference(node_id, kind, properties)
                 try:
                     ast_node.translation_unit._referenced_by[ref_id].append(referenced_by)
-                except:
+                except Exception:
                     ast_node.translation_unit._referenced_by[ref_id] = [referenced_by]
                 references.append(reference)
 
@@ -527,9 +527,9 @@ class ReferenceHelper:
             AssertionError: If the provided ast_node is not an instance of ClangJsonASTNode.
 
         """
-        assert isinstance(
-            ast_node, ClangJsonASTNode
-        ), f"Expected ClangJsonASTNode but got {type(ast_node)}"  # TODO: still needed when using type hints?
+        assert isinstance(ast_node, ClangJsonASTNode), (
+            f"Expected ClangJsonASTNode but got {type(ast_node)}"
+        )  # TODO: still needed when using type hints?
         if ast_node.inserted:
             return
 
@@ -547,11 +547,11 @@ class ReferenceHelper:
                 referenced_by = ClangJsonASTReference(node_id, kind, properties)
                 try:
                     ast_node.translation_unit._referenced_by[ref_id].append(referenced_by)
-                except:
+                except Exception:
                     ast_node.translation_unit._referenced_by[ref_id] = [referenced_by]
                 try:
                     ast_node.translation_unit._references[node_id].append(reference)
-                except:
+                except Exception:
                     ast_node.translation_unit._references[node_id] = [reference]
 
     @staticmethod
@@ -585,7 +585,7 @@ class ReferenceHelper:
                     if matches:
                         ids.append((node.ast_type, id))
             return ids
-        except:
+        except Exception:
             pass
         return []
 
@@ -596,7 +596,7 @@ class ReferenceHelper:
             return result
         for key in ID_TAGS:
             value = json_node.get(key)
-            if value != None:
+            if value is not None:
                 result.append(value)
         return result
 
