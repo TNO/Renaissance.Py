@@ -2,13 +2,14 @@ import textwrap
 
 import pytest
 from hamcrest import assert_that, contains_inanyorder, empty
+from pytest_mock import MockerFixture
 
 from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.refactoring.typevartuple_check import TypeVarTupleCheck
 
 
 class TestTypeVarTupleCheck:
-    def _create(self, mocker, text) -> TypeVarTupleCheck:
+    def _create(self, mocker: MockerFixture, text: str) -> TypeVarTupleCheck:
         code = textwrap.dedent(text)
         mocker.patch(
             "renaissance.impl.python.factory.PythonFactory.create",
@@ -45,7 +46,7 @@ class TestTypeVarTupleCheck:
             [],
         ),
     ])
-    def test_legacy_unpack_usage(self, mocker, code, expected):
+    def test_legacy_unpack_usage(self, mocker: MockerFixture, code: str, expected: list[str]) -> None:
         subject = self._create(mocker, code)
         result = subject.find_legacy_unpack_usage()
         if expected:
