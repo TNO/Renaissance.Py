@@ -15,7 +15,10 @@ class TestPythonMatcherRepresentation:
 
     def test_literal_whole_numbers_representation(self):
         """
-        How are the different representations of literal instances of whole numbers handled by the parser?
+        This test case documents the semantic power of [the Python parser ast](https://docs.python.org/3/library/ast.html)
+        with respect to representations of literal instances of whole numbers.
+
+        In particular, different representations of literal instances of whole numbers are not semantically relevant.
         """
         normal = "1000"
         readable = "1_000"
@@ -103,7 +106,10 @@ class TestPythonMatcherRepresentation:
 
     def test_character_representation(self):
         """
-        How are the different character representations handled by the parser?
+        This test case documents the semantic power of [the Python parser ast](https://docs.python.org/3/library/ast.html)
+        with respect to character representations.
+
+        In particular, different character representations are not semantically relevant.
         """
         normal_single = "'1'"
         normal_double = '"1"'
