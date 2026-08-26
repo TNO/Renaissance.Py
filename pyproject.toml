@@ -101,6 +101,8 @@ ignore = ["E731"]
 
 [tool.ruff.lint.per-file-ignores]
 "**/conftest.py" = ["F401"]
+# Import order here breaks a circular import with renaissance.impl.clang if alphabetized.
+"src/renaissance/syntax_tree/__init__.py" = ["I001"]
 
 [tool.pyright]
 pythonVersion = "3.14"

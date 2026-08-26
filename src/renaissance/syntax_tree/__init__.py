@@ -1,6 +1,4 @@
 # __init__.py
-from renaissance.impl.clang.cpp_utils import CPPUtils
-
 from ..utils.text_utils import TextUtils
 from .ast_factory import ASTFactory
 from .ast_finder import ASTFinder
@@ -22,6 +20,11 @@ from .recipe_ast_processor import (
     final_action,
     recipe_step,
 )
+
+# Ruff added a circular dependency when reorganizing all imports alphatically
+# This import requires ASTFinder/ASTNode/ASTReference to already exist
+# Needs to come after them (added as ignore in pyproject.toml)
+from renaissance.impl.clang.cpp_utils import CPPUtils
 
 __all__ = [
     "ASTNode",
