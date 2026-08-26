@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from typing import Any, Self
+
 import pytest
 
 import test.syntax_tree.infra_syntax_node

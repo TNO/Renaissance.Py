@@ -567,13 +567,13 @@ ImprovedStub.store_args = {}
             $$cc
             self.doubles.append(
                 TAUT.TestDoubles(
-                    module=$mod1, 
+                    module=$mod1,
                     $e1=$f1,
                 )
             )
             self.doubles.append(
                 TAUT.TestDoubles(
-                    module=$mod2, 
+                    module=$mod2,
                     $e2=$f2,
                 )
             )

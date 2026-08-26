@@ -1,0 +1,209 @@
+site_name: renaissance.py
+site_description: Documentation for the renaissance.py project
+site_author: TNO ESI, Capgemini
+
+docs_dir: docs
+site_dir: site
+
+repo_url: https://github.com/TNO/renaissance.py
+repo_name: TNO/renaissance.py
+edit_uri: blob/main/docs/
+
+theme:
+  name: readthedocs
+  locale: en_GB
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.indexes
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - search.share
+    - content.code.copy
+    - content.code.annotate
+
+plugins:
+  - search
+  - exporter:
+      formats:
+        pdf:
+          enabled: !ENV [MKDOCS_EXPORTER_PDF_ENABLED, false]
+  - autorefs:
+      resolve_closest: true
+      link_titles: external
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          paths:
+            - src
+          inventories:
+            - https://docs.python.org/3/objects.inv
+          options:
+            show_root_heading: true
+            show_root_full_path: false
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+            heading_level: 2
+            members_order: source
+            show_source: true
+            show_signature_annotations: true
+            merge_init_into_class: true
+            separate_signature: true
+            parameter_headings: true
+            docstring_section_style: list
+            relative_crossrefs: true
+            signature_crossrefs: true
+            inherited_members: true
+            filters:
+              - "!^_"
+
+markdown_extensions:
+  - admonition
+  - codehilite
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+
+# We explicitly keep docs/templates/ visible in the built site.
+# MkDocs excludes top-level /templates/ by default, so we negate that.
+exclude_docs: |
+  !/templates/
+  !/templates/**
+  .*
+
+validation:
+  nav:
+    omitted_files: warn
+    not_found: warn
+    absolute_links: warn
+  links:
+    not_found: warn
+    anchors: warn
+    absolute_links: relative_to_docs
+    unrecognized_links: warn
+
+nav:
+  - Home: index.md
+  - Glossary: glossary.md
+
+  - User documentation:
+      - Overview: user/index.md
+      - Concepts:
+          - Overview: user/concepts/index.md
+          - 1. Evolving and maintaining code: user/concepts/code-base-evolution-and-maintenance.md
+          - 2. Automation: user/concepts/automation.md
+          - 3. Matching: user/concepts/matching.md
+          - Matching images: user/concepts/matching/README.md
+          - 4. Filter: user/concepts/filter.md
+          - 5. Rewrite semantics: user/concepts/rewrite-semantics.md
+          - Rewrite semantics images: user/concepts/rewrite-semantics/README.md
+          - 6. Observability: user/concepts/observability.md
+          - 7. Analysis: user/concepts/analysis.md
+          - 8. Transformation: user/concepts/transformation.md
+          - 9. Composition: user/concepts/composition.md
+          - 10. Standard analyses and transformations: user/concepts/standard-libraries.md
+
+      - Features:
+          - Overview: user/features/index.md
+          - 1. Parsing and AST access: user/features/parsing-and-ast-access.md
+          - 2. Pattern matching: user/features/pattern-matching.md
+          - Pattern matching images: user/features/pattern-matching/README.md
+          - 3. Filtering and semantic checks: user/features/filtering-and-semantic-checks.md
+          - 4. Analysis workflows: user/features/analysis-workflows.md
+          - 5. Transformation workflows: user/features/transformation-workflows.md
+          - 6. Strategy composition: user/features/strategy-composition.md
+          - 7. Observability and reporting: user/features/observability-and-reporting.md
+          - 8. Navigation: user/features/navigation.md
+          - 9. Find: user/features/find.md
+          - 10. Modify: user/features/modify.md
+          - 11. Rewrite semantics: user/features/rewrite-semantics.md
+
+      - Workflows:
+          - Overview: user/workflows/index.md
+          - 1. Analyse a code base: user/workflows/analyse-a-code-base.md
+          - 2. Apply a transformation strategy: user/workflows/apply-a-transformation-strategy.md
+          - 3. Investigate undecisive results: user/workflows/investigate-undecisive-results.md
+
+  - Developer documentation:
+      - Overview: developer/index.md
+
+      - Architecture:
+          - Overview: developer/architecture/index.md
+          - Code architecture: developer/architecture/code-architecture.md
+          - Code base: developer/architecture/code-base.md
+          - Navigation: developer/architecture/navigation.md
+          - Matching: developer/architecture/matching.md
+          - Find: developer/architecture/find.md
+          - Filter: developer/architecture/filter.md
+          - Modify: developer/architecture/modify.md
+          - Rewrite semantics: developer/architecture/rewrite-semantics.md
+          - Standard analyses and transformations: developer/architecture/standard-libraries.md
+          - Architecture images: developer/architecture/images/README.md
+          - Test architecture: developer/architecture/test-architecture.md
+          - Traceability model: developer/architecture/traceability-model.md
+
+      - Traceability:
+          - Overview: developer/feature-test-map/index.md
+          - Core mappings: developer/feature-test-map/core.md
+
+      - Code modules:
+          - Overview: developer/modules/index.md
+          - Parser and AST modules: developer/modules/parser-and-ast.md
+          - Matching modules: developer/modules/matching.md
+          - Filter modules: developer/modules/filter.md
+          - Analysis modules: developer/modules/analysis.md
+          - Transformation modules: developer/modules/transformation.md
+          - Observability modules: developer/modules/observability.md
+          - Strategy modules: developer/modules/strategy.md
+          - Rewrite semantics module: developer/modules/rewrite-semantics.md
+
+      - API reference:
+          - Overview: developer/api/index.md
+          - Public API: developer/api/public-api.md
+
+  - Documentation system:
+      - Overview: documentation-system/index.md
+
+      - Templates:
+          - Overview: documentation-system/templates/index.md
+          - Architecture template: documentation-system/templates/architecture-template.md
+          - Concept template: documentation-system/templates/concept-template.md
+          - Feature template: documentation-system/templates/feature-template.md
+          - Test module template: documentation-system/templates/test-module-template.md
+          - Code module template: documentation-system/templates/code-module-template.md
+          - Feature-test mapping template: documentation-system/templates/feature-test-map-template.md
+
+      - Policies:
+          - Overview: documentation-system/policies/index.md
+
+          - Mandatory:
+              - Overview: documentation-system/policies/mandatory/index.md
+              - Image policy: documentation-system/policies/mandatory/image-policy.md
+              - Linking policy: documentation-system/policies/mandatory/linking-policy.md
+              - Glossary guide: documentation-system/policies/mandatory/glossary-guide.md
+
+          - Recommended:
+              - Overview: documentation-system/policies/recommended/index.md
+              - Diagram style guide: documentation-system/policies/recommended/diagram-style-guide.md
+              - Caption style guide: documentation-system/policies/recommended/caption-style-guide.md
+
+      - Enforcement:
+          - Overview: documentation-system/enforcement/index.md
+          - Image policy enforcement: documentation-system/enforcement/image-policy-enforcement.md
+          - Linking policy enforcement: documentation-system/enforcement/linking-policy-enforcement.md
+          - CI overview: documentation-system/enforcement/ci-overview.md
+
+  - Shared images: assets/images/README.md

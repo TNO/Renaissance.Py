@@ -1,0 +1,43 @@
+
+## Documentation gaps: action points for docs
+
+### Stub pages that need content
+
+1. **apply-a-transformation-strategy.md** — Completely empty. The Java UserGuide.md describes exactly this workflow end-to-end: create a recipe class, annotate steps with `@RecipeStep`, run against a compilation database or inline test input, use `sourceFilePostfixes`/`sourceFileDirectories` to scope which files are processed.
+
+2. **analyse-a-code-base.md** — Completely empty. Java shows the pattern: use `apply` actions to extract information into fields, use `@AfterStepAction` / `@FinalAction` lifecycle hooks to aggregate and report collected data after all ATUs are processed.
+
+3. **investigate-undecisive-results.md** — Completely empty. Java has the `watch()` action on any `Action` chain, which enables match-diagnosis output to show _why_ a pattern did not match. Should document this debugging workflow.
+
+4. **observability-and-reporting.md** — Completely empty. Java documents: `watch()` action for non-match diagnostics, step-name logging, `@AfterStepAction(step=N)` and `@FinalAction` annotations for reporting callbacks.
+
+5. **strategy-composition.md** — Completely empty. Java documents: multiple `@RecipeStep` methods in one class, `order` attribute for sequencing, parallel-per-ATU / sequential-per-step execution model, `repeat=true` attribute for fixed-point iteration, and the two lifecycle hooks `@AfterStepAction` / `@FinalAction`.
+
+6. **navigation.md** — Near-empty stub. Java shows: `ASTNavigation.getAncestorOfType`, `NameBindings` for usage/definition resolution, and `getContainingClassNode`. Should cover parent/ancestor, children/descendants, siblings, and usage linkage (reference → definition).
+
+7. **traceability-model.md** — Completely empty. Should describe: how recipe steps are ordered and traced, how the compilation database (`output-proj.xml`) provides project-level traceability, and how match locations trace back to source text ranges.
+
+8. **composition.md** — Only a one-line purpose statement. Java shows composition as: chaining `find → filter → modify` within a step, chaining steps with `@RecipeStep(order=N)`, and using `findLinked`/`findInSameATU` to correlate matches across the same analysis unit.
+
+9. **analysis.md** — Near-empty. Should describe the analysis-only recipe pattern (using `apply` without any `replace`/`remove`), and distinguish it from transformation recipes.
+
+### Features documented in Java but absent in Python docs
+
+10. **`findLinked` and `findInSameATU`** (add to find.md) — Java documents a linked-find mechanism: `findLinked(pattern, "$placeholder")` constrains a subsequent search to the same analysis unit as the preceding match, using a shared placeholder as the correlation key. `findInSameATU` is the variant without a placeholder key.
+
+11. **`bindPlaceholder`** (add to find.md or a new concept page) — Allows computing and binding a placeholder value programmatically (e.g., the containing class name) so it can be used in a subsequent `findLinked` or in a filter function.
+
+12. **Modify: class-level manipulation actions** (add to modify.md) — Java documents actions not yet described in Python: `addMemberDeclaration`, `addMethodDefinition`, `changeMemberVisibility`, `addMemberQualifiers`, and their `…ToContainingClass` convenience variants; and include management: `addInclude`, `removeInclude`, `replaceInclude`.
+
+13. **Type constraints on patterns** (add to pattern-matching.md or find.md) — Java patterns support `rootTypes(…)` and `placeholderTypes(placeholder, …)` to restrict matches to nodes of specific CPP types. The Python docs have no equivalent coverage.
+
+14. **Two recipe modes: test vs production** (add to apply-a-transformation-strategy.md) — Java has `RecipeForTest` (runs on an inline code string, used during development) and `Recipe` (runs on a real codebase via a compilation database). This design decision and the rationale for having both modes should be documented.
+
+15. **Scoping: skip and filter at the file level** (add to strategy-composition.md or a new page) — Java's `skipATU`, `globalFilter`, `sourceFilePostfixes`, and `sourceFileDirectories` provide coarse-grained scoping before any pattern matching runs. The Python equivalent concept needs documentation.
+
+
+### New pages worth adding
+
+19. **Common parser problems** (new page, e.g., `docs/developer/modules/parser-known-limitations.md`) — Java has CommonCdtParsingProblems.md listing concrete CDT/MSVC-extension parsing failures with workarounds. A Python equivalent covering known tree-sitter, libcst, clang binding, and ANTLR limitations would be directly useful.
+
+20. **Related works and context** (new section in index.md or index.md) — The Java UserGuide.md relates the tool to WHARS and ADA tooling. Adding a "related works" section that situates Renaissance-Experiments relative to the Java version, comby, and other code transformation tools would help new contributors understand design choices.

@@ -1,5 +1,5 @@
 import re
-from typing import Sequence
+from collections.abc import Sequence
 
 import hypothesis
 
@@ -23,7 +23,7 @@ def compress(s: str):
 def show_node(node: ASTNode, title: str = ""):
     if VERBOSE:
         if title:
-            print(f'\n{"="*10} {title} {"="*10}')
+            print(f"\n{'=' * 10} {title} {'=' * 10}")
         ASTShower.show_node(node)
 
 
@@ -66,7 +66,9 @@ def debug_print(
         print("Expected:" + expected.replace("\n", "\\n").replace("\r", "\\r"))
         print("  Actual:" + actual.replace("\n", "\\n").replace("\r", "\\r"))
 
-        code_test_input = f'("{code}", {include_whitespace}, {include_comments}, "{actual}"),'.replace("\n", "\\n").replace("\r", "\\r")
+        code_test_input = f'("{code}", {include_whitespace}, {include_comments}, "{actual}"),'.replace(
+            "\n", "\\n"
+        ).replace("\r", "\\r")
         print("\nFull parameterized:" + code_test_input)
 
 
@@ -76,6 +78,6 @@ def reject_unsupported_code(source_code: str) -> None:
 
     hypothesis.note(source_code)
     try:
-        compile(source_code, "<string>", 'single')
+        compile(source_code, "<string>", "single")
     except Exception:
         hypothesis.reject()

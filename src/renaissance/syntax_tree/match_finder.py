@@ -173,7 +173,7 @@ def _advance_greedy(variant: Variant, cmp: Sequence, src: Sequence, i: int):
 def find_variants(src: Sequence, cmp: Sequence, expansion=None, start: int = 0, parent=None):
     if expansion is None:
         expansion = {}
-    if cmp == None:
+    if cmp is None:
         return []
     i = start
     variants = [Variant(0, expansion, None, -1)]
@@ -242,7 +242,7 @@ def is_match(src: AstProtocol, cmp: AstProtocol, expansions=None) -> bool:
     return variant_in_match_stmt(src, cmp, expansions) != []
 
 
-def is_match_dict(src: dict, cmp: dict, expansions: dict = None) -> bool:
+def is_match_dict(src: dict, cmp: dict, expansions: dict | None = None) -> bool:
     if expansions is None:
         expansions = {}
 

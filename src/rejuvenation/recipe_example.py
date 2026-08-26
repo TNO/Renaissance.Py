@@ -58,10 +58,10 @@ class ListView_LEGACY{
 };
 
 ListView_LEGACY::ListView_LEGACY(string container, int val){
-    
+
 }
 ListView_LEGACY::ListView_LEGACY(){
-    
+
 }
 
 class derived : public ListView_LEGACY{
@@ -77,7 +77,7 @@ void derived::another_func(int s){
     // another_func 0
     // another_func 1
 }
-                                   
+                         
 void main2(string container){
     /* hahaha*/
     ListView_LEGACY listview(container, 3);

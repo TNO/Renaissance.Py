@@ -36,7 +36,7 @@ class TestRecipeASTProcessor:
                 action(dummy)
 
         recipe = SimpleRecipe()
-        iterable_provider = lambda: []
+        iterable_provider = list
 
         mocker.patch.object(BatchASTProcessor, "repeat", new=fake_repeat)
 

@@ -4,14 +4,16 @@
 
 [project]
 name = "renaissance"
-version = "0.3.1"
-description = "Experimental Python version of the Renaissance refactoring tool"
+version = "0.0.1"
+description = "Renaissance reimplementation in Python"
 readme = "README.md"
 authors = [
+    { name = "Pierre van de Laar", email = "pierre.vandelaar@tno.nl" },
+    { name = "Jinmin Hu", email = "jinmin.hu@capgemini.com" },
     { name = "Luna Li", email = "luna.li@capgemini.com" }
 ]
-license = { text = "MIT" }
-requires-python = ">=3.12"
+license = { text = "EPL-2.0" }
+requires-python = "==3.14.*"
 dependencies = [
     "textx==4.3.0",
     "dataclasses-json==0.6.7",
@@ -33,6 +35,8 @@ dependencies = [
     "libcst>=1.8.6",
     "antlr4-python3-runtime>=4.13.2",
     "hypothesmith>=0.3.3",
+    "autopep8>=2.0",
+    "flake8>=7.0",
 ]
 
 [dependency-groups]
@@ -49,20 +53,26 @@ test = [
     "behave"
 ]
 lint = [
-    "flake8>=7.0",
-    "black>=24.0",
-    "autopep8>=2.0",
-    "pytest-black>=0.6",
-    "ruff>=0.15.19",
+    "ruff>=0.5",
+    "codespell>=2.4",
+    "pyright>=1.1",
 ]
 dev = [
     {include-group = "test"},
     {include-group = "lint"},
+    {include-group = "docs"},
+]
+docs = [
+    "mkdocs>=1.6",
+    "mkdocs-material>=9.0",
+    "mkdocstrings[python]>=0.25",
+    "mkdocs-autorefs>=1.0",
+    "mkdocs-exporter>=6.0",
 ]
 
 [project.urls]
-Homepage = "https://github.com/TNO/Renaissance-Experiments"
-Issues = "https://github.com/TNO/Renaissance-Experiments/issues"
+Homepage = "https://github.com/TNO/Renaissance.Py"
+Issues = "https://github.com/TNO/Renaissance.Py/issues"
 
 [project.scripts]
 rejuvenate = "rejuvenation.cli:refactor"
@@ -81,12 +91,20 @@ omit = ["test/*", "features/*"]
 show_missing = true
 skip_covered = false
 
+[tool.ruff]
+line-length = 120
+src = ["src", "test", "features"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "B", "D", "UP", "TD"]
+ignore = ["E731"]
+
 [tool.ruff.lint.per-file-ignores]
 "**/conftest.py" = ["F401"]
 
-[tool.ruff.lint]
-ignore = ["E731"]
-
-[tool.black]
-line-length = 140
+[tool.pyright]
+pythonVersion = "3.14"
+typeCheckingMode = "strict"
+include = ["src", "test", "tools"]
+exclude = ["features", "**/node_modules", "**/__pycache__", "**/.*", ".venv"]
 
