@@ -5,6 +5,7 @@ from renaissance.refactoring.python_refactoring import PythonRefactoring
 from renaissance.utils.ast_utils import traverse
 
 def get_enclosing_function(node):
+    # Walk up from this node to the nearest enclosing FunctionDef
     current = node.parent
     while current:
         if current.ast_type.__name__ == "FunctionDef":
@@ -12,20 +13,28 @@ def get_enclosing_function(node):
         current = current.parent
     return None
 
+def find_type_param_declarations(root):
+    # Find and collect every "X = TypeVar/ParamSpec/TypeVarTuple"
+    declarations = {}
+    for node in traverse(root):
+        raw = cast(ast.AST, node.node)
+        if isinstance(raw, ast.Assign):
+            value = raw.value
+            if isinstance(value, ast.Call) and isinstance(value.func, ast.Name) and value.func.id in ("TypeVar", "ParamSpec", "TypeVarTuple"):
+                for target in raw.targets:
+                    if isinstance(target, ast.Name):
+                        declarations[target.id] = value.func.id
+    return declarations
+
 class TypeVarCheck(PythonRefactoring):
     def run(self):
         self.result = self.find_multi_scope_typevars()
 
     def find_multi_scope_typevars(self):
-        typevar_names = []
-        for node in traverse(self.root):
-            raw = cast(ast.AST, node.node)
-            if isinstance(raw, ast.Assign):
-                value = raw.value
-                if isinstance(value, ast.Call) and isinstance(value.func, ast.Name) and value.func.id == "TypeVar":
-                    for target in raw.targets:
-                        if isinstance(target, ast.Name):
-                            typevar_names.append(target.id)
+        # Only flag names shared across 2+ functions
+        # Ruff can't safely decide what to do if typevars are reused across functions
+        # This function only detects and reports them
+        typevar_names = find_type_param_declarations(self.root).keys()
 
         results = {}
         for name in typevar_names:
