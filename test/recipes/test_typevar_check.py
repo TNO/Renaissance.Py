@@ -102,6 +102,32 @@ class TestTypeVarCheck:
             "T",
             False,
         ),
+        (
+            """
+            def a(x: P) -> P:
+                return x
+            def b(y: P) -> P:
+                return y
+            def c(z: P) -> P:
+                return z
+
+            P = ParamSpec("P")
+            """,
+            "P",
+            True,
+        ),
+        (
+            """
+            def a(*args: *Ts) -> tuple[*Ts]:
+                return args
+            def b(*args: *Ts) -> tuple[*Ts]:
+                return args
+
+            Ts = TypeVarTuple("Ts")
+            """,
+            "Ts",
+            True,
+        )
     ])
     def test_multi_scope_detection_cases(self, mocker, code, name, should_flag):
         subject = self._create(mocker, code)
