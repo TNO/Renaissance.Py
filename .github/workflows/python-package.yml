@@ -31,12 +31,12 @@ jobs:
       run: uv sync --group dev
     - name: Lint with ruff
       run: uv run ruff check ./src ./test ./tools ./features
-    - name: Test with pytest
-      run: uv run pytest ./test
     - name: Type check with pyright
       run: uv run pyright ./src ./test ./tools ./features
     - name: Check spelling with codespell
       run: uv run codespell ./src ./test ./tools ./features --ignore-words-list=notin
+    - name: Test with pytest
+      run: uv run pytest ./test
     - name: Build release distributions
       run: |
         # NOTE: put your own distribution build steps here.
