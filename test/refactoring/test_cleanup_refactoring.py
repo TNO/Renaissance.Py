@@ -3,7 +3,7 @@ from hamcrest import *
 
 from c_cpp.factories import Factories
 from renaissance.refactoring import CleanupRefactoring
-from renaissance.syntax_tree import ASTShower, ASTFactory, ASTProcessor
+from renaissance.syntax_tree import ASTFactory, ASTProcessor, ASTShower
 
 
 class TestCleanupRefactoring:

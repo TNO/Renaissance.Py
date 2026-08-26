@@ -1,12 +1,12 @@
 from operator import is_not
 
 import pytest
-from hamcrest import assert_that, is_, has_length, is_in, is_not, empty, instance_of
+from hamcrest import assert_that, empty, has_length, instance_of, is_, is_in, is_not
 
-from renaissance.impl.types import *
+from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
 from renaissance.impl.python.rst_node import PythonRstNode
-from renaissance.impl.python.factory import PythonPatternFactory, PythonFactory
-from renaissance.impl.types import MatchOne, MatchAll, TranslationUnit
+from renaissance.impl.types import *
+from renaissance.impl.types import MatchAll, MatchOne, TranslationUnit
 from renaissance.syntax_tree.match_finder import is_match
 
 

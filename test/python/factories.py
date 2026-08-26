@@ -1,9 +1,9 @@
 import ast
 from itertools import product
 
+from renaissance.impl.python.cst_node import PythonCstNode
 from renaissance.impl.python.factory import PythonFactory
 from renaissance.impl.python.rst_node import PythonRstNode
-from renaissance.impl.python.cst_node import PythonCstNode
 from renaissance.impl.tree_sitter.lst import LSTNode
 
 

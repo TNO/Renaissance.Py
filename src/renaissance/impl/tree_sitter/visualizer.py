@@ -1,5 +1,4 @@
 from renaissance.impl.tree_sitter.lst import LST
-
 from renaissance.utils.text_utils import signature2id
 
 

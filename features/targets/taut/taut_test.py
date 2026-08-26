@@ -3,14 +3,14 @@
 # 22-Jun-2010 : description                            #
 # ------------------------------------------------------#
 import unittest
-import mock
-import NNXA
-import LLXA
-import TAUT
-import VIPCxUNIT
-import ABCDxTL
+from unittest import mock
+
 import ABCDxABxCommonFunctions
 import ABCDxABxREADLib
+import ABCDxTL
+import NNXA
+import TAUT
+import VIPCxUNIT
 
 
 class TestImport(TAUT.TestCase):

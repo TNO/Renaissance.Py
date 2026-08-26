@@ -1,23 +1,23 @@
 # use clang to load and walk a compilation database
 import textwrap
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
-from typing import Callable
-from renaissance.syntax_tree.recipe_ast_processor import (
-    RecipeASTProcessor,
-    after_step,
-    recipe_step,
-    final_action,
-)
-from typing_extensions import Iterable
+
 from renaissance.impl.clang import ClangASTNode
 from renaissance.impl.clang.clang_json_ast_node import ClangJsonASTNode
 from renaissance.refactoring import CleanupRefactoring
 from renaissance.syntax_tree import (
-    ASTProcessor,
-    ASTNode,
-    TextUtils,
     ASTFactory,
+    ASTNode,
+    ASTProcessor,
     BatchASTProcessor,
+    TextUtils,
+)
+from renaissance.syntax_tree.recipe_ast_processor import (
+    RecipeASTProcessor,
+    after_step,
+    final_action,
+    recipe_step,
 )
 
 example_1 = textwrap.dedent("""
@@ -72,8 +72,7 @@ def print_results(title, batch_processor):
 
 
 def batch_remove_unused_variable_once_example():
-    """
-    This function demonstrates a batch processing example using different AST node implementations.
+    """This function demonstrates a batch processing example using different AST node implementations.
     It iterates over a list of AST node implementations (`ClangASTNode` and `ClangJsonASTNode`),
     and for each implementation, it generates a codebase provider that yields tuples of
     `ASTFactory` and `ASTNode` created from example source texts (`example_1` and `example_2`).
@@ -89,8 +88,7 @@ def batch_remove_unused_variable_once_example():
 
 
 def batch_repeat_example():
-    """
-    Demonstrates the use of a batch processor to perform multiple refactoring operations on a codebase.
+    """Demonstrates the use of a batch processor to perform multiple refactoring operations on a codebase.
     This example creates an in-memory batch processor and applies two refactoring operations:
     1. CleanupRefactoring.remove_unused_variables: Removes unused variables from the codebase.
     2. remove_function: Removes all function calls from the codebase.
@@ -100,8 +98,10 @@ def batch_repeat_example():
         the first time the codebase is processed, the unused variables are removed.
         and the function calls are removed.
         the second time the codebase is processed, the new unused variables are removed again.
+
     Note:
         In a real-world scenario, the rewritten code would typically be written to a file instead of being printed.
+
     """
     # generate a batch processor for testing purposes we store into memory
     batch_processor = BatchASTProcessor(in_memory=True)

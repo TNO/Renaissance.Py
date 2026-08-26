@@ -1,5 +1,4 @@
 import logging
-from unittest import skip
 
 import pytest
 from hamcrest import *
@@ -8,15 +7,15 @@ from more_itertools.more import last
 from c_cpp.factories import Factories
 from renaissance.impl.clang import ClangASTNode, CPatternFactory
 from renaissance.impl.clang.clang_json_ast_node import ClangJsonASTNode
-from renaissance.impl.types import Declaration, Call
+from renaissance.impl.types import Call, Declaration
 from renaissance.syntax_tree import (
     ASTFactory,
-    ASTShower,
     ASTNode,
+    ASTShower,
 )
 from renaissance.syntax_tree.ast_finder import find_ast_type
-from renaissance.syntax_tree.match_finder import match_pattern, find_variants, find_in_list, is_match
-from utils_for_tests import compress, show_node, debug_mismatch
+from renaissance.syntax_tree.match_finder import find_in_list, find_variants, is_match, match_pattern
+from utils_for_tests import compress, debug_mismatch, show_node
 
 logger = logging.getLogger(__name__)
 

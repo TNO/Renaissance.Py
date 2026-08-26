@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Callable, Iterator, Sequence
 from pathlib import Path
-from typing import Callable, Iterator, Sequence
 
 import renaissance.syntax_tree.match_finder
 from renaissance.impl.types import Type
@@ -96,8 +96,7 @@ class ASTProcessor:
         return self.__rewriter.apply_to_string()
 
     def commit(self) -> ASTProcessor:
-        """
-        Commits the current changes to the AST (Abstract Syntax Tree) and returns a new ASTProcessor instance.
+        """Commits the current changes to the AST (Abstract Syntax Tree) and returns a new ASTProcessor instance.
 
         This method applies the current changes to the source code and creates a new ASTProcessor instance
         with the updated AST. If the changes are in-memory, it directly creates the new AST from the updated
@@ -108,6 +107,7 @@ class ASTProcessor:
 
         Raises:
             IOError: If there is an error writing to the file.
+
         """
         if not self.__rewriter.has_changed():
             return self

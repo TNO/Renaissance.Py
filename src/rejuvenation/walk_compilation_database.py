@@ -3,7 +3,7 @@
 from pathlib import Path
 
 import targets
-from renaissance.impl.clang import CompilationDatabase, ClangASTNode
+from renaissance.impl.clang import ClangASTNode, CompilationDatabase
 from renaissance.impl.clang.clang_json_ast_node import ClangJsonASTNode
 from renaissance.impl.types import FunctionDef
 from renaissance.syntax_tree import ASTProcessor, ASTShower

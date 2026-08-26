@@ -1,9 +1,9 @@
 
 import pytest
-from hamcrest import assert_that, has_length, is_, is_in, instance_of
+from hamcrest import assert_that, has_length, instance_of, is_, is_in
 
 from python.factories import Factories
-from renaissance.impl.python.factory import PythonPatternFactory, PythonFactory
+from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
 from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.impl.types import *
 from renaissance.syntax_tree.match_finder import match_pattern
@@ -19,8 +19,7 @@ class TestPythonFactory:
     # Statements patterns
     @pytest.mark.parametrize("statement", ["x = 10", "x += y", "name = 'John'", "a, b, c = (1, 2, 3)"])
     def test_statement(self, statement) -> None:
-        """
-        Test the creation of a statement in Python
+        """Test the creation of a statement in Python
         """
         node = PythonRstNode.load_from_text(statement).body[-1]
         assert_that(node.is_statement, is_(True))
@@ -152,8 +151,7 @@ class TestPythonFactory:
         ],
     )
     def test_assert_statement(self, code) -> None:
-        """
-        test for an assert statement.
+        """Test for an assert statement.
         An assert statement has optionally a message.
         """
         pattern_factory = PythonPatternFactory(self.factory)
@@ -234,8 +232,7 @@ class TestPythonFactory:
 
     @pytest.mark.parametrize("code", ["\"hello = 'hello' # comment to hello\""])
     def test_comments(self, code) -> None:
-        """
-        TODO: what is tested?
+        """TODO: what is tested?
         """
         pattern_factory = PythonPatternFactory(self.factory)
         node = pattern_factory.create_statement(code)

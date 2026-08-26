@@ -1,30 +1,31 @@
-from typing import Callable
+from collections.abc import Callable
+
 import pytest
 from hamcrest import *
 
 from c_cpp.factories import Factories
 from rejuvenation.batch_process_examples import (
+    batch_recipe_example,
     batch_remove_unused_variable_once_example,
     batch_repeat_example,
-    batch_recipe_example,
 )
 from rejuvenation.recipe_example import batch_recipe_example as receipe_example
 from rejuvenation.refactor_examples_different_styles import (
-    example_use_ast_kind_finder,
-    example_use_ast_function_finder,
     example_add_comment_and_commit,
     example_replace_old_by_fancy_new,
+    example_use_ast_function_finder,
+    example_use_ast_kind_finder,
     main,
 )
 from rejuvenation.refactor_with_nested_compositions import (
     refactor_with_nested_compositions,
 )
 from rejuvenation.remove_unused_variable import (
-    remove_unused_variable_using_refactor_method,
     remove_unused_variable_low_level,
+    remove_unused_variable_using_refactor_method,
 )
 from rejuvenation.replace_if_with_ternary import replace_if_with_ternary
-from renaissance.impl.clang import CPatternFactory, ClangASTNode
+from renaissance.impl.clang import ClangASTNode, CPatternFactory
 from renaissance.impl.clang.clang_json_ast_node import ClangJsonASTNode
 from renaissance.syntax_tree import ASTFactory
 from renaissance.syntax_tree.ast_node import ASTNode

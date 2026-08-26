@@ -3,15 +3,16 @@ from ast import AST
 import pytest
 from hamcrest import (
     assert_that,
+    instance_of,
+    is_,
     is_in,
-    is_, instance_of,
 )
 
+from python.factories import Factories
 from renaissance.impl.python.cst_node import PythonCstNode
+from renaissance.impl.python.factory import PythonPatternFactory
 from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.impl.tree_sitter.lst import LSTNode
-from python.factories import Factories
-from renaissance.impl.python.factory import PythonPatternFactory
 from renaissance.impl.types import *
 from renaissance.utils.ast_utils import traverse
 

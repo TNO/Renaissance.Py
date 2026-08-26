@@ -1,6 +1,5 @@
 from pathlib import Path
-
-from typing_extensions import override
+from typing import override
 
 from renaissance.refactoring.python_refactoring import PythonRefactoring
 

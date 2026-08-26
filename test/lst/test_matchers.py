@@ -5,7 +5,6 @@ from hamcrest import assert_that, has_length
 from renaissance.impl.tree_sitter.adapter import TreeSitterAdapter
 from renaissance.impl.tree_sitter.lst import LSTNode
 from renaissance.impl.types import Call
-
 from renaissance.syntax_tree.ast_finder import find_ast_type
 from renaissance.syntax_tree.match_finder import is_match
 from renaissance.utils.ast_utils import traverse

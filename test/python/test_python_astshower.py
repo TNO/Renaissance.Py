@@ -1,9 +1,8 @@
 import pytest
 from hamcrest import *
 
-from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
-
+from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.syntax_tree import ASTShower
 
 

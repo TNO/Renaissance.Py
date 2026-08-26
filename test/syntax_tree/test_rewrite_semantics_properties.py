@@ -1,5 +1,4 @@
-"""
-Property-based tests for rewrite semantics.
+"""Property-based tests for rewrite semantics.
 
 Audience: developers and testers.
 

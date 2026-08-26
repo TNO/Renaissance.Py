@@ -12,11 +12,11 @@ def use_dollar(text: str) -> str:
 
 
 def detect_placeholder(signature: str, original_node_type: str) -> tuple[bool, str, str]:
-    """
-    Detect if the given signature represents a placeholder symbol.
+    """Detect if the given signature represents a placeholder symbol.
 
     Returns:
         (is_placeholder, coerced_node_type, placeholder_name_or_signature)
+
     """
     if not signature:
         return False, original_node_type, ""

@@ -1,4 +1,5 @@
-from typing import Sequence, Self, Iterable, Protocol, runtime_checkable
+from collections.abc import Iterable, Sequence
+from typing import Protocol, Self, runtime_checkable
 
 from renaissance.impl.types import MatchAll, MatchOne, Type
 from renaissance.utils.ast_utils import use_dollar
@@ -37,7 +38,7 @@ class Variant:
         self.exp[key] = value
         self.reset_greedy()
 
-    def fork(self) -> "Variant":
+    def fork(self) -> Variant:
         """Return a copy of this variant at the same position (for backtracking)."""
         return Variant(self.index, self.exp.copy(), self.greedy, self.expansion_start)
 
@@ -80,7 +81,7 @@ class PatternMatch:
         return self.expansions[key][-1].offset + self.expansions[key][-1].length - self.expansions[key][0].offset
 
 
-def _resolve_match_one(name: str, src: "AstProtocol", expansions: dict):
+def _resolve_match_one(name: str, src: AstProtocol, expansions: dict):
     """Handle a MATCH_ONE pattern node: bind or verify the named expansion. Returns True if matched."""
     if name in expansions:
         return src == expansions[name][0]

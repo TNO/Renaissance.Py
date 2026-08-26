@@ -5,17 +5,18 @@ import hypothesmith
 import libcst
 import pytest
 from hamcrest import (
-    has_length,
     assert_that,
-    is_,
     contains_string,
-    empty, instance_of,
+    empty,
+    has_length,
+    instance_of,
+    is_,
 )
-from hypothesis import given, settings, HealthCheck
+from hypothesis import HealthCheck, given, settings
 
 import targets
-from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
+from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.impl.types import *
 from renaissance.syntax_tree import ASTShower
 from utils_for_tests import reject_unsupported_code

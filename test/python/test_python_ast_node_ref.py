@@ -5,10 +5,9 @@ from hamcrest import *
 from more_itertools.more import first
 
 from renaissance import syntax_tree
-from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.impl.python.factory import PythonFactory
-from renaissance.impl.python.rst_node import PythonRSTReference
-from renaissance.impl.types import FunctionDef, Name, Call, ClassDef, Arg
+from renaissance.impl.python.rst_node import PythonRstNode, PythonRSTReference
+from renaissance.impl.types import Arg, Call, ClassDef, FunctionDef, Name
 from renaissance.utils.ast_utils import traverse
 
 content = """

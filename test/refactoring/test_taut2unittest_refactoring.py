@@ -2,16 +2,16 @@ import textwrap
 from pathlib import Path
 
 import pytest
-from hamcrest import ends_with, assert_that, is_
+from hamcrest import assert_that, ends_with, is_
 
 import targets
-from renaissance.impl.types import Name
-from renaissance.refactoring.taut2pyunit import Taut2Pyunit
 import test_data.test_class as tst_class
 import test_data.test_code as tst_code
 import test_data.test_insert as tst_insert
-from renaissance.impl.python.rst_node import PythonRstNode
 import test_data.test_testdoubles as tst_testdoubles
+from renaissance.impl.python.rst_node import PythonRstNode
+from renaissance.impl.types import Name
+from renaissance.refactoring.taut2pyunit import Taut2Pyunit
 from renaissance.utils.ast_utils import traverse
 
 
@@ -295,7 +295,7 @@ class TestTaut2Unittest:
         subject.convert_testdoubles_fun()
         result = subject.apply_to_string()
         assert_that(result, is_(tst_testdoubles.test_taut_doubles_class_new))
-        
+
     def test_convert_testdoubles_func_single_line(self, mocker):
         subject = self._create(mocker, tst_testdoubles.test_taut_doubles_class_single_line)
         subject.convert_testdoubles_fun()

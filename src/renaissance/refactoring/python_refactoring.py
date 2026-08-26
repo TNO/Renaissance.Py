@@ -1,11 +1,12 @@
 import importlib
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Sequence, cast
+from typing import cast
 
 from termcolor import colored
 
+from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
 from renaissance.impl.python.rst_node import PythonRstNode
-from renaissance.impl.python.factory import PythonPatternFactory, PythonFactory
 from renaissance.impl.python.util import to_str
 from renaissance.syntax_tree import ASTProcessor
 from renaissance.syntax_tree.match_finder import match_pattern

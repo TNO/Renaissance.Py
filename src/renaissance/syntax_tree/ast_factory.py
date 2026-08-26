@@ -1,23 +1,24 @@
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Optional, Sequence
 
 from .ast_node import ASTNode
 
 
 class ASTFactory:
-    """
-    A factory class for creating instances of ASTNode.
+    """A factory class for creating instances of ASTNode.
+
     Attributes:
         clazz (type[ASTNode]): The class type of the AST nodes to be created.
         extra_args (Optional[Sequence[str]]): Additional arguments to be passed during the creation of AST nodes.
         #TODO working_dir
+
     """
 
     def __init__(
         self,
         clazz: type[ASTNode],
-        extra_args: Optional[Sequence[str]] = None,
-        working_dir: Optional[Path] = None,
+        extra_args: Sequence[str] | None = None,
+        working_dir: Path | None = None,
     ) -> None:
         self.clazz = clazz
         self.extra_args: Sequence[str] = extra_args if isinstance(extra_args, Sequence) else []

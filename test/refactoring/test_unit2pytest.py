@@ -1,8 +1,7 @@
 import textwrap
 from pathlib import Path
 
-
-from hamcrest import assert_that, contains_string, is_, ends_with, not_
+from hamcrest import assert_that, contains_string, ends_with, is_, not_
 
 import targets
 from renaissance.impl.python.rst_node import PythonRstNode

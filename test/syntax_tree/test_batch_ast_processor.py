@@ -1,4 +1,4 @@
-from hamcrest import assert_that, is_, has_length
+from hamcrest import assert_that, has_length, is_
 
 from renaissance.syntax_tree import BatchASTProcessor
 

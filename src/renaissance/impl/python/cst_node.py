@@ -2,13 +2,12 @@ from pathlib import Path
 from typing import Self
 
 import libcst
-from libcst import BaseSmallStatement, BaseCompoundStatement, CSTNode, MetadataWrapper, ClassDef
-from libcst import FunctionDef
+from libcst import BaseCompoundStatement, BaseSmallStatement, ClassDef, CSTNode, FunctionDef, MetadataWrapper
 from libcst.metadata import WhitespaceInclusivePositionProvider
 
-from renaissance.impl.types import KIND_MAP, UnknownType
 from renaissance.impl.python.util import convert
-from renaissance.utils.ast_utils import preceding_sibling, next_sibling
+from renaissance.impl.types import KIND_MAP, UnknownType
+from renaissance.utils.ast_utils import next_sibling, preceding_sibling
 
 
 class PythonCstTranslationUnit:
@@ -105,8 +104,8 @@ class PythonCstNode:
         return preceding_sibling(self)
 
     @staticmethod
-    def load(file_path: Path) -> "PythonCstNode":
-        with open(file_path, "r") as file:
+    def load(file_path: Path) -> PythonCstNode:
+        with open(file_path) as file:
             content = file.read()
             return PythonCstNode.load_from_text(content, str(file_path))
 
@@ -114,7 +113,7 @@ class PythonCstNode:
     def load_from_text(
         text: str,
         file_name: str = "cst_snippet.py",
-    ) -> "PythonCstNode":
+    ) -> PythonCstNode:
         translation_unit = PythonCstTranslationUnit(text, file_name=str(file_name))
         root_node = PythonCstNode(translation_unit.atu, translation_unit)
         return root_node

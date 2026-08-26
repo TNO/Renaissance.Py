@@ -1,10 +1,10 @@
 import re
-from typing import Callable, Iterator, Optional, Sequence
+from collections.abc import Callable, Iterator, Sequence
 
-
-from .ast_node import ASTNode
 from renaissance.impl.types import Type
 from renaissance.utils.ast_utils import traverse
+
+from .ast_node import ASTNode
 
 
 class ASTFinder:
@@ -23,7 +23,7 @@ class ASTFinder:
         return list(ASTFinder.__matches_kind(ast_node, kind))
 
     @staticmethod
-    def matches_kind(ast_node: Optional[ASTNode], kind: str | re.Pattern[str]) -> bool:
+    def matches_kind(ast_node: ASTNode | None, kind: str | re.Pattern[str]) -> bool:
         # compare kind with the ast_node kind only using word characters
         # get kind of the ast_node with only word characters
         if ast_node is None:

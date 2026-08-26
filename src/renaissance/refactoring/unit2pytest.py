@@ -1,27 +1,25 @@
 import os
 import textwrap
-from typing import Sequence
+from collections.abc import Sequence
 
 from renaissance.impl.python.util import convert_function
-from renaissance.impl.types import Attribute, Literal, Number, FormattedString, ClassDef, FunctionDef
+from renaissance.impl.types import Attribute, ClassDef, FormattedString, FunctionDef, Literal, Number
 from renaissance.refactoring.python_refactoring import PythonRefactoring
 from renaissance.syntax_tree import PatternMatch
 from renaissance.syntax_tree.ast_finder import find_ast_type
-from renaissance.syntax_tree.match_finder import match_pattern, AstProtocol
+from renaissance.syntax_tree.match_finder import AstProtocol, match_pattern
 
 
 class Unit2Pytest(PythonRefactoring):
     def __init__(self, file):
-        """hide internal administration in the parent class so that this class you only deals with specific refactors"""
+        """Hide internal administration in the parent class so that this class you only deals with specific refactors"""
         super().__init__(file)
         self.black_list_pattern = "utils_for_test"
         self.white_list_pattern = "test"
 
     def run(self):
+        """Entry point for converting unittest to pytest
         """
-        entry point for converting unittest to pytest
-        """
-
         self.refactor()
 
         self.post_processing()

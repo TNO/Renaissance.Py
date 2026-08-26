@@ -13,8 +13,7 @@ factory = ASTFactory(PythonRstNode, [])
 
 
 def get_migrated_path(file_path):
-    """
-    Convert a file path to add '_migrated' before the extension.
+    """Convert a file path to add '_migrated' before the extension.
 
     Example: 'taut.py' -> 'taut_migrated.py'
     """

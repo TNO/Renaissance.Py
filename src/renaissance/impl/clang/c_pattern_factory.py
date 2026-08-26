@@ -1,26 +1,26 @@
 import re
-from typing import Optional, Sequence
+from collections.abc import Sequence
 
 from more_itertools import first
 from more_itertools.more import last
 
+from renaissance.impl.clang.cpp_utils import CPPUtils
 from renaissance.impl.types import (
-    Declaration,
-    MacroDef,
-    CompoundStatement,
-    ParenthesizedExpression,
     Call,
-    Type,
-    VariableDef,
-    TypedefDef,
+    CompoundStatement,
+    Declaration,
     FunctionDef,
     InclusionDirective,
+    MacroDef,
+    ParenthesizedExpression,
+    Type,
+    TypedefDef,
+    VariableDef,
 )
 from renaissance.syntax_tree.ast_factory import ASTFactory
 from renaissance.syntax_tree.ast_finder import find_ast_type
 from renaissance.syntax_tree.ast_node import ASTNode
 from renaissance.syntax_tree.ast_shower import ASTShower
-from renaissance.impl.clang.cpp_utils import CPPUtils
 
 SHOW_NODE = False
 
@@ -57,7 +57,7 @@ class CPatternFactory:
     def __init__(
         self,
         factory: ASTFactory,
-        ref_node: Optional[ASTNode] = None,
+        ref_node: ASTNode | None = None,
         language: str = "c",
     ):
         self.factory = factory
@@ -152,8 +152,7 @@ class CPatternFactory:
         return self._create_body(text, types, parameters, extra_declarations, kind)
 
     def create(self, text: str, kind: type[Type] = None) -> ASTNode:
-        """
-        Creates an object using the factory from the provided text.
+        """Creates an object using the factory from the provided text.
         The object is created by the factory using the provided text and the header of the provided reference node.
         It is up to the user to pick the right node for pattern matching
 
@@ -163,6 +162,7 @@ class CPatternFactory:
 
         Returns:
             object: The object created by the factory.
+
         """
         # print(self.header + text)
         root = self.factory.create_from_text(self.header + text, "test." + self.language)
@@ -241,7 +241,7 @@ class CPatternFactory:
 
 class CPPPatternFactory(CPatternFactory):
 
-    def __init__(self, factory: ASTFactory, ref_node: Optional[ASTNode] = None):
+    def __init__(self, factory: ASTFactory, ref_node: ASTNode | None = None):
         super().__init__(factory, ref_node, "cpp")
 
     def create_constructor_call(self, pattern: str):

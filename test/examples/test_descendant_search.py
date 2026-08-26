@@ -3,10 +3,10 @@ from hamcrest import *
 
 from c_cpp.factories import Factories
 from rejuvenation.descendant_search import find_descendant_match
-from renaissance.impl.clang import CPatternFactory, ClangASTNode
+from renaissance.impl.clang import ClangASTNode, CPatternFactory
 from renaissance.impl.clang.clang_json_ast_node import ClangJsonASTNode
 from renaissance.syntax_tree import ASTFactory
-from renaissance.syntax_tree.match_finder import is_match, AstProtocol, match_pattern
+from renaissance.syntax_tree.match_finder import AstProtocol, is_match, match_pattern
 
 
 class TestFindDescendantMatch:

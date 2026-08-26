@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from hamcrest import assert_that, is_not, empty
+from hamcrest import assert_that, empty, is_not
 
 import targets
 from renaissance.impl.python.extractor import PythonExtractor
@@ -30,7 +30,7 @@ class TestPythonExtractor:
         graphml = Path(targets.__file__).parent / "demo.graphml"
         extractor.save_graph(graphml)
         try:
-            with open(graphml, "r") as f:
+            with open(graphml) as f:
                 content = f.readlines()
                 assert_that(content, "demo.graphml")
         finally:

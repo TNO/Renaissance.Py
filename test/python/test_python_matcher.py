@@ -5,14 +5,14 @@ import pytest
 from hamcrest import *
 from hamcrest import assert_that, is_not
 
-from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
-from renaissance.impl.types import MatchOne, ExpressionStatement
+from renaissance.impl.python.rst_node import PythonRstNode
+from renaissance.impl.types import ExpressionStatement, MatchOne
 from renaissance.syntax_tree import MatchFinder
 from renaissance.syntax_tree.match_finder import (
+    find_variants,
     is_match,
     match_pattern,
-    find_variants,
     variant_in_match_stmt,
 )
 
@@ -25,8 +25,7 @@ class TestPythonMatcher:
         self.pattern_factory = PythonPatternFactory(self.factory)
 
     def test_if_statements(self):
-        """
-        This test case documents the semantic power of [the Python parser ast](https://docs.python.org/3/library/ast.html)
+        """This test case documents the semantic power of [the Python parser ast](https://docs.python.org/3/library/ast.html)
         with respect to if statements.
 
         In particular, syntax differences between `elif` and `else if` are not semantically relevant.

@@ -1,18 +1,18 @@
 import ast
 import re
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Sequence
 
 import tree_sitter_python
 from libcst import SimpleStatementLine
 
-from renaissance.impl.types import MatchAll, MatchOne, ExpressionStatement, Type, DeclarationExpression, Name, Arg
 from renaissance.impl import MATCH_ALL, MATCH_ONE
 from renaissance.impl.python.ast_node import ASTExtension
 from renaissance.impl.python.cst_node import PythonCstNode
 from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.impl.tree_sitter.adapter import TreeSitterAdapter
 from renaissance.impl.tree_sitter.lst import LSTNode
+from renaissance.impl.types import Arg, DeclarationExpression, ExpressionStatement, MatchAll, MatchOne, Name, Type
 from renaissance.syntax_tree.match_finder import AstProtocol, is_match
 from renaissance.utils.ast_utils import replace_dollar, use_dollar
 

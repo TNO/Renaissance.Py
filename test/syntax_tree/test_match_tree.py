@@ -4,24 +4,26 @@ import textwrap
 import pytest
 from hamcrest import (
     assert_that,
+    calling,
+    empty,
     has_length,
     is_,
-    empty,
     is_not,
     less_than,
     raises,
-    calling,
 )
 
 from renaissance.impl.clang import ClangASTNode, CPatternFactory
+from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
 from renaissance.impl.python.rst_node import PythonRstNode
-from renaissance.impl.python.factory import PythonPatternFactory, PythonFactory
 from renaissance.syntax_tree import ASTFactory, ASTShower
 from renaissance.syntax_tree.match_finder import (
-    is_match_tree,
     MatchFinder,
     find_in_list,
-    match_pattern, is_match, variant_in_match_stmt,
+    is_match,
+    is_match_tree,
+    match_pattern,
+    variant_in_match_stmt,
 )
 
 

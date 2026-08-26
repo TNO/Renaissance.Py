@@ -1,13 +1,13 @@
 from pathlib import Path
 
 import pytest
-from pytest_bdd import given, when, scenario, parsers, then
+from pytest_bdd import given, parsers, scenario, then, when
 
-from steps.conftest import FEATURES_BASE_DIR
 from renaissance.impl.python.factory import PythonPatternFactory
 from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.syntax_tree import ASTFactory, ASTRewriter
 from renaissance.syntax_tree.match_finder import match_pattern
+from steps.conftest import FEATURES_BASE_DIR
 
 
 class Context(dict):

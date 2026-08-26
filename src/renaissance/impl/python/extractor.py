@@ -26,7 +26,7 @@ class PythonExtractor:
                 case "FunctionDef":
                     self.graph.add_edge(module_name, f"{module_name}.{stmt.name}", type="definition")
                     self.graph.add_node(f"{module_name}.{stmt.name}", properties="function")
-                    # todo:  convert #, stmt.properties) to graphml
+                    # TODO:  convert #, stmt.properties) to graphml
                 case "ClassDef":
                     self.graph.add_edge(module_name, f"{module_name}.{stmt.name}", type="definition")
                     self.graph.add_node(f"{module_name}.{stmt.name}")  # convert to args, stmt.properties)

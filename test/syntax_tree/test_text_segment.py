@@ -15,8 +15,7 @@ from test.syntax_tree.infra_text_segment import (
 
 
 class AutoTextSegment:
-    """
-    Reference test implementation:
+    """Reference test implementation:
     Construct with offsets; derive (line, column) from full_text boundaries.
     """
 
@@ -99,8 +98,7 @@ class MissingProperty:
 
 
 class BadTypesButProtocolLike:
-    """
-    Has all required attributes/properties so runtime protocol check passes,
+    """Has all required attributes/properties so runtime protocol check passes,
     but types are wrong -> assert_valid_text_segment should fail.
     """
 
@@ -311,8 +309,7 @@ text_strategy = st.one_of(
 
 @given(text=text_strategy)
 def test_roundtrip_offset_loc_offset_for_all_cursor_offsets(text: str) -> None:
-    """
-    For all cursor offsets in [0, len(text)], converting
+    """For all cursor offsets in [0, len(text)], converting
         offset -> (line, col) -> offset
     yields the original offset.
 
@@ -328,8 +325,7 @@ def test_roundtrip_offset_loc_offset_for_all_cursor_offsets(text: str) -> None:
 def test_offset_to_loc_corresponds_to_split_lines_extended_with_newlines(
     text: str,
 ) -> None:
-    """
-    For all cursor offsets in [0, len(text)], offset_to_loc matches the location
+    """For all cursor offsets in [0, len(text)], offset_to_loc matches the location
     computed from:
         parts = split(text, '\n')
         lines = parts[:-1] + '\n' + parts[-1]  (i.e., all but last extended with '\n')

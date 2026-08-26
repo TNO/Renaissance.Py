@@ -1,21 +1,18 @@
 import pytest
-
 from hamcrest import assert_that, is_, is_not
 
-from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
+from renaissance.impl.python.rst_node import PythonRstNode
 
 
 class TestPythonMatcherRepresentation:
-
     @pytest.fixture(autouse=True)
     def setup(self):
         self.factory = PythonFactory(PythonRstNode)
         self.pattern_factory = PythonPatternFactory(self.factory)
 
     def test_literal_whole_numbers_representation(self):
-        """
-        This test case documents the semantic power of [the Python parser ast](https://docs.python.org/3/library/ast.html)
+        """This test case documents the semantic power of [the Python parser ast](https://docs.python.org/3/library/ast.html)
         with respect to representations of literal instances of whole numbers.
 
         In particular, different representations of literal instances of whole numbers are not semantically relevant.
@@ -70,11 +67,9 @@ class TestPythonMatcherRepresentation:
             assert_that(expression_signed, is_not(expression))
 
     def test_literal_real_numbers_representation(self):
-        """
-        How are the different representations of literal instances of real numbers handled by the parser?
-        """
+        """How are the different representations of literal instances of real numbers handled by the parser?"""
         normal = "0.123456"
-        more_significant_digits = "0.123456000" 
+        more_significant_digits = "0.123456000"
         readable = "0.123_456"
         scientific_power_0 = "0.123456e0"
         scientific_power_plus0 = "0.123456e+0"
@@ -105,8 +100,7 @@ class TestPythonMatcherRepresentation:
             assert_that(expression_fraction, is_not(expression))
 
     def test_character_representation(self):
-        """
-        This test case documents the semantic power of [the Python parser ast](https://docs.python.org/3/library/ast.html)
+        """This test case documents the semantic power of [the Python parser ast](https://docs.python.org/3/library/ast.html)
         with respect to character representations.
 
         In particular, different character representations are not semantically relevant.
@@ -138,9 +132,7 @@ class TestPythonMatcherRepresentation:
                 assert_that(expression1, is_(expression2))
 
     def test_string_representation(self):
-        """
-        How are the different string representations handled by the parser?
-        """
+        """How are the different string representations handled by the parser?"""
         normal_single = "'abcdef'"
         normal_double = '"abcdef"'
 
@@ -172,7 +164,9 @@ class TestPythonMatcherRepresentation:
             explicit_concatenated_mixed,
         ]
 
-        expressions_explicit_concatenated = map(self.pattern_factory.create_expression, explicit_concatenated_representations)
+        expressions_explicit_concatenated = map(
+            self.pattern_factory.create_expression, explicit_concatenated_representations
+        )
         for expression1 in expressions_explicit_concatenated:
             for expression2 in expressions_explicit_concatenated:
                 assert_that(expression1, is_(expression2))
@@ -182,9 +176,7 @@ class TestPythonMatcherRepresentation:
                 assert_that(expression_explicit_concatenated, is_not(expression))
 
     def test_statements_with_comment_and_whitespace(self):
-        """
-        How are statements with comments and whitespace handled by the parser?
-        """
+        """How are statements with comments and whitespace handled by the parser?"""
         statement = "x = 1"
         statement_with_comment = "x = 1  # This is a comment"
         statement_with_new_line = "x        =       1   "

@@ -1,12 +1,12 @@
-from hamcrest import assert_that, is_, has_length
+from hamcrest import assert_that, has_length, is_
 
 from renaissance.syntax_tree.recipe_ast_processor import (
-    RecipeASTProcessor,
-    recipe_step,
-    final_action,
     BatchASTProcessor,
+    RecipeASTProcessor,
     annotate_decorator,
+    final_action,
     get_methods_with_decorator,
+    recipe_step,
 )
 
 

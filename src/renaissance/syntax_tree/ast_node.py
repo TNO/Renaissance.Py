@@ -3,11 +3,12 @@ from __future__ import annotations
 import re
 import sys
 from abc import ABC, abstractmethod
+from collections.abc import Callable, Sequence
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Sequence, Self
+from typing import Any, Self
 
-from renaissance.utils.ast_utils import preceding_sibling, next_sibling, process_node, format_node
+from renaissance.utils.ast_utils import format_node, next_sibling, preceding_sibling, process_node
 from renaissance.utils.text_utils import TextUtils
 
 
@@ -199,14 +200,14 @@ class ASTNode(ABC):
         process_node(self, function)
 
     def accept(self, function: Callable[[Self], VisitorResult]) -> None:
-        """
-        Accepts a visitor function and applies it to the current node and its children.
+        """Accepts a visitor function and applies it to the current node and its children.
 
         Args:
             function (Callable[[Self], VisitorResult]): A function that takes an ASTNode as an argument and returns a VisitorResult.
 
         Returns:
             None
+
         """
         if function(self) == VisitorResult.CONTINUE:
             for child in self.children:
