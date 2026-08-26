@@ -5,9 +5,9 @@ name: Python package
 
 on:
   push:
-    branches: [ "main", "cge-main" ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ "main", "cge-main" ]
+    branches: [ "main" ]
 
 permissions:
   contents: read
@@ -26,7 +26,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.14"]
+        python-version: ["3.14.7"]
 
     steps:
     - name: Checkout repository
@@ -52,7 +52,7 @@ jobs:
     - name: Generate HTML coverage report
       run: uv run coverage html
     - name: Upload HTML coverage report artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7.0.1
       with:
         name: coverage-html-report
         path: htmlcov/
@@ -61,8 +61,8 @@ jobs:
     - name: Upload GitHub Pages artifact
       if: >-
         github.ref == 'refs/heads/main' && github.event_name == 'push' &&
-        matrix.python-version == '3.14'
-      uses: actions/upload-pages-artifact@v3
+        matrix.python-version == '3.14.7'
+      uses: actions/upload-pages-artifact@v5.0.0
       with:
         path: htmlcov/
     - name: Build release distributions
@@ -84,4 +84,4 @@ jobs:
     steps:
     - name: Deploy coverage report to GitHub Pages
       id: deployment
-      uses: actions/deploy-pages@v4
+      uses: actions/deploy-pages@v5.0.0
