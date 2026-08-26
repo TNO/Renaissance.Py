@@ -61,14 +61,14 @@ jobs:
     - name: Build documentation with mkdocs
       if: >-
         github.ref == 'refs/heads/main' && github.event_name == 'push' &&
-        matrix.python-version == '3.14'
+        matrix.python-version == '3.14.7'
       run: uv run mkdocs build --strict
     # Docs are published at the site root and the coverage report is nested
     # under /coverage/, so both are reachable from the same Pages deployment.
     - name: Assemble combined Pages site (docs + coverage report)
       if: >-
         github.ref == 'refs/heads/main' && github.event_name == 'push' &&
-        matrix.python-version == '3.14'
+        matrix.python-version == '3.14.7'
       run: |
         mkdir -p _site/coverage
         cp -r site/. _site/
