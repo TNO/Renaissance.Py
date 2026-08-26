@@ -1,10 +1,11 @@
 import ast
-from typing import cast
+from typing import Any, cast
 
 from renaissance.refactoring.python_refactoring import PythonRefactoring
 from renaissance.utils.ast_utils import traverse
 
-def get_enclosing_function(node):
+
+def get_enclosing_function(node: Any) -> Any | None:
     # Walk up from this node to the nearest enclosing FunctionDef
     current = node.parent
     while current:
@@ -13,9 +14,9 @@ def get_enclosing_function(node):
         current = current.parent
     return None
 
-def find_type_param_declarations(root):
+def find_type_param_declarations(root: Any) -> dict[str, str]:
     # Find and collect every "X = TypeVar/ParamSpec/TypeVarTuple"
-    declarations = {}
+    declarations: dict[str, str] = {}
     for node in traverse(root):
         raw = cast(ast.AST, node.node)
         if isinstance(raw, ast.Assign):
@@ -27,18 +28,18 @@ def find_type_param_declarations(root):
     return declarations
 
 class TypeVarCheck(PythonRefactoring):
-    def run(self):
+    def run(self) -> None:
         self.result = self.find_multi_scope_typevars()
 
-    def find_multi_scope_typevars(self):
+    def find_multi_scope_typevars(self) -> dict[str, set[str]]:
         # Only flag names shared across 2+ functions
         # Ruff can't safely decide what to do if typevars are reused across functions
         # This function only detects and reports them
         typevar_names = find_type_param_declarations(self.root).keys()
 
-        results = {}
+        results: dict[str, set[str]] = {}
         for name in typevar_names:
-            functions = set()
+            functions: set[str] = set()
             for node in traverse(self.root):
                 if node.name == name:
                     func = get_enclosing_function(node)
