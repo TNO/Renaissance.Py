@@ -1,4 +1,4 @@
-# Most usefull commands:
+# Most useful commands:
 
 ## gcc
 gcc -fdump-tree-all-raw-lineno   -fdump-rtl-all-raw-lineno -o main.exe main.c

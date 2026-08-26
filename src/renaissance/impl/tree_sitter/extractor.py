@@ -4,7 +4,7 @@ from pathlib import Path
 import networkx
 
 from renaissance.impl.tree_sitter.adapter import TreeSitterAdapter
-from renaissance.impl.tree_sitter.factory import TreeStiterPatternFactory
+from renaissance.impl.tree_sitter.factory import TreeSitterPatternFactory
 from renaissance.impl.types import *
 from renaissance.syntax_tree import PatternMatch
 from renaissance.syntax_tree.match_finder import match_pattern
@@ -14,7 +14,7 @@ os.makedirs(GRAPHML_DIR, exist_ok=True)
 
 
 class Extractor:
-    def __init__(self, factory: TreeStiterPatternFactory, patterns: list[str]):
+    def __init__(self, factory: TreeSitterPatternFactory, patterns: list[str]):
         self.pattern_factory = factory
         self.patterns = patterns
 

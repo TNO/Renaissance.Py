@@ -266,7 +266,7 @@ class TestUseAtuToCreatePatterns:
         # use the factory and the translation unit (for include, define and typedef reference) to create a pattern factory
         patternFactory = CPatternFactory(factory, atu)
 
-        # pick the last statement  fo match
+        # pick the last statement for match
         pattern_root = patternFactory.create(statementText)
 
         # the user must pick it's own pattern in this case the last statement

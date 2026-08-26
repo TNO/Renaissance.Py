@@ -37,17 +37,17 @@ class TestClangAstNode:
         src = ClangASTNode.load_from_text("int x= 0;", "test.c")
         assert_that(src.is_ancestor_of(src.children[-1].children[-1]))
 
-    @pytest.mark.skip("last semicolumn is cut off from decl")
+    @pytest.mark.skip("last semicolon is cut off from decl")
     def test_var_decl_include_semi_column_and_keep_space(self):
         src = ClangASTNode.load_from_text("   int    x   =    0   ;", "test.c")
         assert_that(src.children[-1].signature, is_("   int    x   =    0   ;"))
 
-    def test_struct_include_semicolumn(self):
+    def test_struct_include_semicolon(self):
         src = ClangASTNode.load_from_text("struct s;", "test.c")
         assert_that(src.children[-1].signature, is_("struct s;"))
 
-    @pytest.mark.skip("last semicolumn is cut off from struct")
-    def test_struct_include_semicolumn_and_space(self):
+    @pytest.mark.skip("last semicolon is cut off from struct")
+    def test_struct_include_semicolon_and_space(self):
         src = ClangASTNode.load_from_text("struct s{int x; int y;} ;", "test.c")
         assert_that("struct s{int x; int y;} ;", is_(src.children[-1].signature))
 

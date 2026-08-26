@@ -52,12 +52,12 @@ Implementation notes and recommendations for contributors:
 
 ```python
     # no problem
-    rewrite.replace(new_contetent, ast.child[1:3])    
-    # can bea problem because the line number chenged, but it is solvable
-    rewrite.replace(new_contetent, ast.child[4:6])    
+    rewrite.replace(new_content, ast.child[1:3])    
+    # can be a problem because the line number changed, but it is solvable
+    rewrite.replace(new_content, ast.child[4:6])    
     
-    # reaise exception, because it is partly changed end not gerantteed the result is still sytactical correct
-    rewrite.replace(new_contetent, ast.child[2:4])
+    # raise exception, because it is partly changed and not guaranteed the result is still syntactical correct
+    rewrite.replace(new_content, ast.child[2:4])
 
 ```
 

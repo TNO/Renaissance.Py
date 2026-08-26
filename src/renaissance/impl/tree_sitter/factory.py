@@ -5,8 +5,7 @@ from renaissance.impl.tree_sitter.lst import LSTNode
 from renaissance.utils.ast_utils import replace_dollar
 
 
-class TreeStiterPatternFactory:
-
+class TreeSitterPatternFactory:
     def __init__(self, adapter: TreeSitterAdapter, language: str = "python"):
         self.adapter = adapter
         self.language = language

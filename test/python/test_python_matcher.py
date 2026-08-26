@@ -18,7 +18,6 @@ from renaissance.syntax_tree.match_finder import (
 
 
 class TestPythonMatcher:
-
     @pytest.fixture(autouse=True)
     def setup(self):
         self.factory = PythonFactory(PythonRstNode)
@@ -192,7 +191,8 @@ class TestPythonMatcher:
         assert_that(results[0].nodes, has_length(3))
 
     def test_match_sandwitch_pattern_with_different_content(self):
-        atu = self.factory.create_from_text(textwrap.dedent("""
+        atu = self.factory.create_from_text(
+            textwrap.dedent("""
             ba(51)
             na(52)  
             na(52)  
@@ -211,7 +211,8 @@ class TestPythonMatcher:
                 na(52)  
                 ba(53)
             
-            """))
+            """)
+        )
 
         simple = self.pattern_factory.create_statements("ba($a)\n$$na\nba($c)")
         results = MatchFinder.match_pattern(atu.children, simple)
@@ -400,7 +401,7 @@ class TestPythonMatcher:
     def test_trim_variants(self):
         example_code = textwrap.dedent("0\n1\n2\n8\n0\n7\n2")
         atu = self.factory.create_from_text(example_code)
-        pattern = self.pattern_factory.create_statements("$$before\n$mid\n$$after\n8\n$$before\n$dito\n$$after")
+        pattern = self.pattern_factory.create_statements("$$before\n$mid\n$$after\n8\n$$before\n$dido\n$$after")
         variants = find_variants(atu.children, pattern)
         assert_that(variants, has_length(1))
 

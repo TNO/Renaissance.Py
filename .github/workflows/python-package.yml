@@ -34,7 +34,7 @@ jobs:
     - name: Type check with pyright
       run: uv run pyright ./src ./test ./tools ./features
     - name: Check spelling with codespell
-      run: uv run codespell ./src ./test ./tools ./features --ignore-words-list=notin
+      run: uv run codespell ./src ./test ./tools ./features --ignore-words-list=NotIn,ANC
     - name: Test with pytest
       run: uv run pytest ./test
     - name: Build release distributions
