@@ -35,14 +35,15 @@ See [Figure 1.3 in the concept page](../concepts/rewrite-semantics.md#rewrite-se
 
 BDD keyword | step description
 -- | --
-Given | a   programming language
-and | a   source file written in that programming language
-and | an AST   extracted from that source file without errors
-and | a node   of that AST
+Given | a programming language
+and | a source file written in that programming language
+and | an AST extracted from that source file without errors
+and | a node of that AST
 and | a sequence of descendant nodes of that node
 When | that node is replaced by a text
-and | Rewrites,   i.e., append, prepend, surround, and replace, are performed on that sequence of descendant nodes
-Then | in the modified source file that node is replaced by the given text and all rewrites   on that sequence of descendant nodes are not performed / hidden
+and | Rewrites, i.e., append, prepend, surround, and replace, are performed on that sequence of descendant nodes
+Then | in the modified source file that node is replaced by the given text and all rewrites 
+       on that sequence of descendant nodes are not performed / hidden
 
 TODO: This description is only valid when a node is NOT considered a descendant of itself.
 Check our definition (and implementation)!
@@ -209,8 +210,9 @@ Then     | in the modified source file the concatenation of that string with "no
 ## Example
 
 Given the two statements in C++ `i++;++j;` and two changes
+
 1. Append to each statement of a postfix increment operator, the comment `/* postfix increment */`
-2. Prepend to each statement of a prefix increment operator, the comment `/* prefix increment */`
+1. Prepend to each statement of a prefix increment operator, the comment `/* prefix increment */`
 
 Note that the statement `i++;` ends and the statement `++j;` starts at the same position in the source code.
 
