@@ -98,7 +98,7 @@ Regular expressions allow matching based on character classes, such as `\d` for 
 
 The regular-expression pattern `MyPrint\([^)]*\)` finds two matches within the following code:
 
-```
+```python
 MyPrint()
 MyPrint("Hello World")
 ```
@@ -106,7 +106,7 @@ MyPrint("Hello World")
 that correspond to calls to the function `MyPrint`.
 The same regular-expression pattern also yields two matches within the following code:
 
-```
+```python
 MyPrint(name, "is", age, "years (old).")
 MyPrint((a+12) * matrix[0][1])
 ```
@@ -124,7 +124,7 @@ When code is viewed as structured by delimiters, equality should respect this st
 The placeholder `:[arguments]` represents a sequence of characters with properly balanced delimiters.
 The following code contains three matches of this structure-based pattern:
 
-```
+```python
 MyPrint()
 MyPrint("Hello Word")
 MyPrint(name, "is", age, "years (old).")
@@ -142,14 +142,14 @@ For example, the AST-based pattern `MyPrint($argument)` matches calls to the fun
 The placeholder `$argument` represents one AST node.
 This AST-based pattern has no match within:
 
-```
+```python
 MyPrint()
 MyPrint(name, "is", age, "years (old).")
 ```
 
 and two matches within:
 
-```
+```python
 MyPrint("Hello Word")
 MyPrint((a+12) * matrix[0][1])
 ```
