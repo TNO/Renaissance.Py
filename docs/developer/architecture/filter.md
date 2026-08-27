@@ -53,7 +53,7 @@ In the example, one needs to duplicate the find, filter, modify workflow and ext
 
 Using multiple find, filter, and modify workflows compared to a switch step results in simpler, yet partly duplicated logic; requires a smaller API, and hence less infrastructural development; and a slower execution performance.
 
-#### Decision
+#### Decision - Switch functionality
 
 As execution performance is not a bottleneck, switch functionality is not supported (for now).
 

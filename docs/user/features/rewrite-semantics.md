@@ -10,15 +10,15 @@ The rewrite semantics feature governs how multiple collected changes — replace
 
 ## Related concepts
 
-- [Rewrite semantics](../concepts/rewrite-semantics.md)
+* [Rewrite semantics](../concepts/rewrite-semantics.md)
 
 ## Verified by test modules
 
-- [Rewrite semantics test module](../../developer/modules/rewrite-semantics.md)
-- BDD scenarios: `features/rewrite-semantics.feature`
-- BDD steps: `features/steps/test-rewrite-semantics.py`
+* [Rewrite semantics test module](../../developer/modules/rewrite-semantics.md)
+* BDD scenarios: `features/rewrite-semantics.feature`
+* BDD steps: `features/steps/test-rewrite-semantics.py`
 
-# Corner case: Dominated, overlapping replacements
+## Corner case: Dominated, overlapping replacements
 
 When a replacement is dominated by another replacement, it is excluded from the
 result — as if it were never collected. However, it is still checked for
@@ -27,7 +27,7 @@ still produces an error.
 
 See [Architecture: rewrite semantics](../../developer/architecture/rewrite-semantics.md) for the rationale behind this choice.
 
-# Scenario: Dominated changes
+## Scenario: Dominated changes
 
 See [Figure 1.3 in the concept page](../concepts/rewrite-semantics.md#rewrite-semantics-dominated) for an illustration.
 
@@ -48,7 +48,7 @@ Then | in the modified source file that node is replaced by the given text and a
 TODO: This description is only valid when a node is NOT considered a descendant of itself.
 Check our definition (and implementation)!
 
-# Scenario: Overlapping changes
+## Scenario: Overlapping changes
 
 See [Figure 1.2 in the concept page](../concepts/rewrite-semantics.md#rewrite-semantics-overlap) for an illustration.
 
@@ -63,130 +63,92 @@ and    | two sequences of nodes of that AST that partly overlap
 When     | both sequences are replaced with a string
 Then     | an error with the text "overlapping changes are forbidden" is produced
 
-# Scenario: Combination of prepend and surround
+## Scenario: Combination of prepend and surround
 
-Three cases
-1. on the same node
-2. on a node and a descendant of that node
-3. on unrelated nodes
+1. on the same node: Prepend before surround
+1. on a node and a descendant of that node:
+   * Surround of node always before prepend of descendant of that node
+   * Prepend of node always before surround of descendant of that node
+1. on unrelated nodes: No interaction possible, so nothing to specify
 
-## Case 1
+## Scenario: Combination of append and surround
 
-Prepend before surround
-
-## Case 2
-
-- Surround of node always before prepend of descendant of that node
-- Prepend of node always before surround of descendant of that node
-
-## Case 3
-
-No interaction possible, so nothing to specify
-
-# Scenario: Combination of append and surround
-
-Three cases
-1. on the same node
-2. on a node and a descendant of that node
-3. on unrelated nodes
-
-## Case 1
-
-Append after surround
-
-## Case 2
-
-- surround of node always after append of descendant of that node
-- Append of node always after surround of descendant of that node
-
-## Case 3
-
-No interaction possible, so nothing to specify
+1. on the same node: Append after surround
+1. on a node and a descendant of that node:
+   * Surround of node always after append of descendant of that node
+   * Append of node always after surround of descendant of that node
+1. on unrelated nodes: No interaction possible, so nothing to specify
 
 # Scenario: Combination of multiple prepends
 
-Three cases
-1. on the same node
-2. on a node and a descendant of that node
-3. on unrelated nodes
-
-## Case 1
-
-In the order of prepending.
+1. on the same node: In the order of prepending.
 Final order in modified source file: Prepend N - ... -  Prepend 2 - Prepend 1 - AST Node
+1. on a node and a descendant of that node:
+   See the concept page for an illustration of
+   [prepends at the same text location](../concepts/rewrite-semantics.md#rewrite-semantics-prepends).
 
-## Case 2
+   BDD keyword | step description
+   -- | --
+   Given     | a programming language
+   and    | a source file written in that programming language
+   and    | a string not contained in that source file
+   and    | an AST extracted from that source file without errors
+   and    | a node of that AST
+   and    | a descendant of that node
+   When     | that node is prepended by a concatenation of that string with "node"
+   and    | that descendant is prepended by a concatenation of that string with "descendant"
+   Then     | in the modified source file the concatenation of that string with "node" occurs before the
+              concatenation of that string with "descendant"
 
-See the concept page for an illustration of [prepends at the same text location](../concepts/rewrite-semantics.md#rewrite-semantics-prepends).
+1. on unrelated nodes: No interaction possible, so nothing to specify
 
-</a>
+## Scenario: Combination of multiple appends
 
-BDD keyword | step description
--- | --
-Given     | a programming language
-and    | a source file written in that programming language
-and    | a string not contained in that source file
-and    | an AST extracted from that source file without errors
-and    | a node of that AST
-and    | a descendant of that node
-When     | that node is prepended by a concatenation of that string with "node"
-and    | that descendant is prepended by a concatenation of that string with "descendant"
-Then     | in the modified source file the concatenation of that string with "node" occurs before the concatenation of that string with "descendant"
+1. on the same node: In the order of appending.
+   Final order in modified source file: AST Node - Append 1 - Append 2 - ... - Append N
+1. on a node and a descendant of that node
 
-# Scenario: Combination of multiple appends
+   BDD keyword | step description
+   -- | --
+   Given     | a programming language
+   and    | a source file written in that programming language
+   and    | a string not contained in that source file
+   and    | an AST extracted from that source file without errors
+   and    | a node of that AST
+   and    | a descendant of that node
+   When     | that node is append by a concatenation of that string with "node"
+   and    | that descendant is appended by a concatenation of that string with "descendant"
+   Then     | in the modified source file the concatenation of that string with "node" occurs after the
+              concatenation of that string with "descendant"
 
-Three cases
-1. on the same node
-2. on a node and a descendant of that node
-3. on unrelated nodes
+1. on unrelated nodes: No interaction possible, so nothing to specify
 
-## Case 1
+## Scenario: Combination of multiple surrounds
 
-In the order of appending.
-Final order in modified source file: AST Node - Append 1 - Append 2 - ... - Append N
+Surround has before- and after-text.
 
-## Case 2
+1. on the same node: The order reflects the order of calling surround.
+   Final order in modified source file:
+   Surround Before N - ... - Surround Before 2 - Surround Before 1 - AST Node - Surround After 1 - Surround After 2 - ... - Surround After N
+1. on a node and a descendant of that node:
+   * Before-text of surround of node always before before-text (and after-text)
+     of surround of descendant of that node
+   * After-text of surround of node always after (before-text and) after-text
+     of surround of descendant of that node
+1. on unrelated nodes: No interaction possible, so nothing to specify
 
-BDD keyword | step description
--- | --
-Given     | a programming language
-and    | a source file written in that programming language
-and    | a string not contained in that source file
-and    | an AST extracted from that source file without errors
-and    | a node of that AST
-and    | a descendant of that node
-When     | that node is append by a concatenation of that string with "node"
-and    | that descendant is appended by a concatenation of that string with "descendant"
-Then     | in the modified source file the concatenation of that string with "node" occurs after the concatenation of that string with "descendant"
+For example, given the addition `a + b` and two changes
 
-# Scenario: Combination of multiple surrounds
+1. the variable `a` should be wrapped in a call to `abs`, i.e., surrounded by `abs(` and `)`.
+1. the addition should be wrapped in a call to `exp`, i.e., surrounded by `exp(` and `)`.
 
-Surround has before and after text.
-
-Three cases
-1. on the same node
-2. on a node and a descendant of that node
-3. on unrelated nodes
-
-## Case 1
-
-The order reflects the order of calling surround.
-Final order in modified source file:
-Surround Before N - ... - Surround Before 2 - Surround Before 1 - AST Node - Surround After 1 - Surround After 2 - ... - Surround After N
-
-## Case 2
-
-### Example
-
-Given the addition `a + b` and two changes
-1. the variable `a` should be wrapped in a call to `abs`, i.e., surrounded by `abs(` and `)`
-2. the addition should be wrapped in a call to `exp`, i.e., surrounded by `exp(` and `)`
-
-Note that both the variable `a` and the addition start at the same position in the source code.
+Note that
+* both the variable `a` and the addition start at the same position in the source code.
+* the node of the variable `a` is a descendant of the node of the addition.
 
 The expected output is `exp(abs(a) + b)` and NOT `abs(exp(a) + b)`.
 
-# Scenario: Combination of append and prepend on consecutive nodes
+## Scenario: Combination of append and prepend on consecutive nodes
 
 /// html | figure#rewrite-semantics-append-prepend
 

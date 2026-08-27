@@ -8,11 +8,14 @@ To ensure that maintainability and extensibility a test architecture is crucial.
 
 We should use a number of testing framework.
 [Browserstack describes alternatives and selection criteria](https://www.browserstack.com/guide/top-python-testing-frameworks).
+<!-- TODO: check current state and improve the list below -->
 
-* [behave](https://behave.readthedocs.io/en/latest/) for BDD tests
 * pytest for unit tests
+* [pytest-bdd](https://pytest-bdd.readthedocs.io/en/stable/) for BDD tests
 * pytest-benchmark to track our performance
 * [doctest](https://docs.python.org/3/library/doctest.html) to add examples to our documentation and ensure they are correct.
+* hypothesis / hypothesmith
+* coverage
 
 We should at least test the following functionalities
 
@@ -33,7 +36,7 @@ We should at least test the following functionalities
   * Find "aa" in "aaa" has only one match
   * Find "aa" in "aaaa" has only two non-overlapping matches
 
-### Navigation Functionality
+## Navigation Functionality
 
 * AST structure
   * Parent & Ancestors
@@ -44,7 +47,7 @@ We should at least test the following functionalities
 * Inheritance
   * Base - Derived classes
 
-### Transformation Functionality
+## Transformation Functionality
 
 * The encoding of a file should never be changed
 * The meta data of a file or directory is only allowed to change when an actual change happened
@@ -74,20 +77,6 @@ We should at least test the following functionalities
     * Modification of any AST node possible
       * not only contained in the find, but all via navigation (along parent and ancestor nodes)
 
-# placeholder requirements
-
-To ensure that maintainability and extensibility a test architecture is crucial.
-
-We should use a number of testing framework.
-[Browserstack describes alternatives and selection criteria](https://www.browserstack.com/guide/top-python-testing-frameworks).
-
-* [behave](https://behave.readthedocs.io/en/latest/) for BDD tests
-* pytest for unit tests
-* pytest-benchmark to track our performance
-* [doctest](https://docs.python.org/3/library/doctest.html) to add examples to our documentation and ensure they are correct.
-
-We should at least test the following functionalities
-
 ## Code Matching Functionality
 
 * Independent of layout (whitespaces) and comments (presence, absence, content)
@@ -103,24 +92,7 @@ We should at least test the following functionalities
   * Multiple assignments of placeholders
     * E.g., in patterns like `$f($$before, $arg, $$after)`
 
-### Find Functionality
-
-* Find kind (nested)
-  * Example, find if statements
-  * A found match can contain another found match
-  * Support language agnostics kinds
-    * Definition, statement, expression, ...
-  * Support parser specific kinds
-    * e.g. IASTIfStatement
-  * To be decided: support of kind patterns (like XPath)?
-* Find AST Pattern (nested)
-  * Example, find `if ($x == MAX) { $$stmts; }`
-  * A found match can contain another found match
-* Find AST Pattern consecutive, i.e., the found matches do not overlap
-  * Find "aa" in "aaa" has only one match
-  * Find "aa" in "aaaa" has only two non-overlapping matches
-
-# placeholder requirements
+## placeholder requirements
 
 A.    We want placeholders at higher level than name to match more complicated AST nodes.
 Some examples
@@ -150,17 +122,17 @@ This expresses a constraint: same placeholder enforces same value in instance
 Unfortunately, the same placeholder can have multiple classes in a single pattern!
 We are aware of the following cases in C++  (in arbitrary order)
 
-1.     $type* ptr = new $type();
+1. $type* ptr = new $type();
         Class of $type is first IASTNamedTypeSpecifier and second IASTTypeId
-2. const $type* ptr = new $type();
+1. const $type* ptr = new $type();
      Class of $type is first IASTName and second IASTTypeId
-3. { int $x = 1; int y = $x; }
+1. { int $x = 1; int y = $x; }
      Class of $x is first IASTName and second IASTIdExpression
-4. int $var; $var = 1;
+1. int $var; $var = 1;
     Class of $var is first IASTDeclarator and second IASTIdExpression
-5. $f; var = $f;
+1. $f; var = $f;
     Class of $f is first IASTExpressionStatement and second IASTIdExpression
-6. var = $f; $f;
+1. var = $f; $f;
     Class of $f is first IASTIdExpression and second IASTExpressionStatement
 
 Hence, we can't just compare instances related to the same placeholder (because they will be of different classes)
@@ -169,16 +141,16 @@ How can it be done?
 The fifth and sixth cases show
 
 1. It is not limited to declarations and references (so using the declarations and references in the pattern and check that the instances have similar relations will only solve part of the problem).
-2. The comparison of the ASTNodes is not a comparison of IASTNames:
+1. The comparison of the ASTNodes is not a comparison of IASTNames:
      We have to compare expressions (the arguments) of the instance f(1); x = f(2);
      to find that it doesn't match the pattern $f; $var = $f;
 
 Solution:
 Pick the highest AST node allowed by the all placeholder together in the pattern!
 
-# equivalent code
+## equivalent code
 
-## When is code equivalent?
+### When is code equivalent?
 
 * Syntax
 * Semantics

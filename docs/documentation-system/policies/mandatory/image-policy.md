@@ -19,13 +19,13 @@ This policy governs where images are stored, how they are named, and which forma
 
 ## Allowed locations
 
-### Shared images
+### Allowed locations of shared images
 
 - `docs/assets/images/architecture/`
 - `docs/assets/images/notation/`
 - `docs/assets/images/logos/`
 
-### Local images
+### Allowed locations of local images
 
 - page-owned directories, such as `docs/user/concepts/matching-images/`
 - page-owned directories, such as `docs/user/features/pattern-matching-images/`
@@ -39,7 +39,7 @@ Allowed characters per segment: lowercase letters (`a–z`) and digits (`0–9`)
 Segments are separated by hyphens (`-`).
 Special characters such as `+`, `_`, spaces, or uppercase letters are not allowed.
 
-### Local images
+### Naming convention for local images
 
 `<page>-<section>-<purpose>.<ext>`
 
@@ -49,7 +49,7 @@ Examples:
 - `matching-greedy-vs-lazy.svg`
 - `matching-step2-result.png`
 
-### Shared images
+### Naming convention for shared images
 
 `<domain>-<concept>-<variant>.<ext>`
 

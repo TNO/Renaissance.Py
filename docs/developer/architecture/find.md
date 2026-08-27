@@ -45,7 +45,7 @@ three overlapping matches: `(0–1)`, `(1–2)`, and `(2–3)`.
 For transformation, overlapping matches are problematic.
 For example, it is ambiguous what the result of replacing `"aa"` with `"b"` within `"aaaa"` should be when the matches overlap.
 
-#### Decision
+#### Decision - Find-next behaviour
 
 Non-overlapping matches are used.
 The search for the next match starts after the last character of the current match.

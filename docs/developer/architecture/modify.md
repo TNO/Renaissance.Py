@@ -42,7 +42,7 @@ Replacing with a **pattern** enables:
   * the keyword `else` is absent when that branch has no statements;
   * in the function call `f($$before, 1)`, the comma is removed when `$$before` is empty.
 
-#### Decision
+#### Decision - Replacement text vs pattern
 
 At minimum, replacement by text is supported.
 
@@ -60,7 +60,7 @@ results in invalid Python code.
 
 Correctness of the final code is not guaranteed by text replacement.
 
-#### Decision
+#### Decision - AST-aware removal
 
 The user is responsible for ensuring that removal of an AST node results in correct code.
 
@@ -72,9 +72,12 @@ Analysis or a match (with a failing filter) do not justify that the the file or 
 This not only holds for the content, but also the meta-data of the file and folder.
 A file and folder, including their meta-data, are only allowed to change when the contained source code changes.
 
-#### Corner case - identity transformations
+### Identity transformations
 
-Should an identity transformation, like a node replaced by itself, be considered a change?
+An identity transformation, like a node replaced by itself, is a corner case
+in which nothing syntactically and semantically changes.
+
+Should an identity transformation be considered a change?
 
 The memory usage increases when the original content and the modified content have to be compared.
 
@@ -85,7 +88,7 @@ Scarce resources are needed to develop and maintain the logic to check for real,
 A transformation can always be designed, e.g., by including an equality check,
 to not perform the identity transformation.
 
-##### Decision
+#### Decision - Identity transformations
 
 As performance is not considered a bottleneck, we decided not to check for the corner case of the identity transformation.
 
