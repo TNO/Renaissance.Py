@@ -42,7 +42,7 @@ and | a node of that AST
 and | a sequence of descendant nodes of that node
 When | that node is replaced by a text
 and | Rewrites, i.e., append, prepend, surround, and replace, are performed on that sequence of descendant nodes
-Then | in the modified source file that node is replaced by the given text and all rewrites 
+Then | in the modified source file that node is replaced by the given text and all rewrites
        on that sequence of descendant nodes are not performed / hidden
 
 TODO: This description is only valid when a node is NOT considered a descendant of itself.
