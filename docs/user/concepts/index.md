@@ -9,20 +9,20 @@ This section introduces the conceptual model of the repository.
 
 ## 2. Core mechanisms
 
-3. [Matching](matching.md)
-4. [Filter](filter.md)
-5. [Rewrite semantics](rewrite-semantics.md)
+1. [Matching](matching.md)
+2. [Filter](filter.md)
+3. [Rewrite semantics](rewrite-semantics.md)
 
 ## 3. System qualities
 
-6. [Observability](observability.md)
-7. [Analysis](analysis.md)
+1. [Observability](observability.md)
+2. [Analysis](analysis.md)
 
 ## 4. Advanced mechanisms
 
-8. [Transformation](transformation.md)
-9. [Composition](composition.md)
+1. [Transformation](transformation.md)
+2. [Composition](composition.md)
 
 ## 5. Reusable libraries
 
-10. [Standard analyses and transformations](standard-libraries.md)
+1. [Standard analyses and transformations](standard-libraries.md)

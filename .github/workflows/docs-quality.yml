@@ -27,3 +27,5 @@ jobs:
         run: uv run python tools/check_doc_images_policy.py
       - name: Check spelling
         run: uv run codespell ./docs
+      - name: Lint markdown
+        run: uv run pymarkdown scan -r ./docs

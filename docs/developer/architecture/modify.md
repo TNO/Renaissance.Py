@@ -1,5 +1,6 @@
-{ #dev-architecture-code-modify }
 # Modify
+
+{ #dev-architecture-code-modify }
 
 **Stable ID:** `ARCH-CODE-MODIFY`
 
@@ -19,18 +20,20 @@ When a match is found, the modify step either replaces the entire match or perfo
 ### Replace vs manipulate
 
 **Replace** substitutes the entire matched node with new text or a new pattern.
-**Manipulate** performs targeted modifications within the match, such as inserting text before a placeholder or replacing a placeholder within the match.
+**Manipulate** performs targeted modifications within the match, such as inserting text before
+a placeholder or replacing a placeholder within the match.
 
 Code owners typically prefer minimally invasive changes: layout should be preserved and comments should not be removed.
-Because whitespace and comments are ignored when building an AST, manipulation within the match produces smaller diffs that are easier for code owners to review and accept.
+Because whitespace and comments are ignored when building an AST, manipulation within the match produces
+smaller diffs that are easier for code owners to review and accept.
 
-**Decision**
+#### Decision
 
 Both complete replacement of a match and manipulation within a match are supported.
 
 ### Replacement text vs pattern
 
-Replacing with **text** enables unstructured replacement and migration to another programming language (transpilation).
+Replacing with **text** enables unstructured replacement, including migration to another programming language (transpilation).
 
 Replacing with a **pattern** enables:
 
@@ -39,7 +42,7 @@ Replacing with a **pattern** enables:
   * the keyword `else` is absent when that branch has no statements;
   * in the function call `f($$before, 1)`, the comma is removed when `$$before` is empty.
 
-**Decision**
+#### Decision - Replacement text vs pattern
 
 At minimum, replacement by text is supported.
 
@@ -57,21 +60,25 @@ results in invalid Python code.
 
 Correctness of the final code is not guaranteed by text replacement.
 
-**Decision**
+#### Decision - AST-aware removal
 
 The user is responsible for ensuring that removal of an AST node results in correct code.
 
-For efficiency, it is recommended that the [standard libraries](standard-libraries.md#ast-aware-removal-of-node) provide, for each language, functionality for correct removal of an AST node in all situations.
+For efficiency, it is recommended that the [standard libraries](standard-libraries.md#ast-aware-removal-of-node)
+provide, for each language, functionality for correct removal of an AST node in all situations.
 
-### Meta data 
+### Meta data
 
 Analysis or a match (with a failing filter) do not justify that the the file or folder containing that source code changes.
 This not only holds for the content, but also the meta-data of the file and folder.
 A file and folder, including their meta-data, are only allowed to change when the contained source code changes.
 
-#### Corner case - identity transformations
+### Identity transformations
 
-Should an identity transformation, like a node replaced by itself,  be considered a change?
+An identity transformation, like a node replaced by itself, is a corner case
+in which nothing syntactically and semantically changes.
+
+Should an identity transformation be considered a change?
 
 The memory usage increases when the original content and the modified content have to be compared.
 
@@ -79,12 +86,12 @@ As file access is slow, preventing unnecessary file access will improve executio
 
 Scarce resources are needed to develop and maintain the logic to check for real, non-trivial changes.
 
-A transformation can always be designed, e.g., by including an equality check, to not perform the identity transformation.
+A transformation can always be designed, e.g., by including an equality check,
+to not perform the identity transformation.
 
-**Decision**
+#### Decision - Identity transformations
 
 As performance is not considered a bottleneck, we decided not to check for the corner case of the identity transformation.
-
 
 ## Invariants / guarantees
 

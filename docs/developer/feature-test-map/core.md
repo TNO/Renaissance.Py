@@ -1,10 +1,12 @@
 # Core feature ↔ test mappings
 
 ## 1. Pattern matching
+
 - **Feature:** [Pattern matching](../../user/features/pattern-matching.md)
 - **Suggested test modules:** `tests/matching/`
 
 ## 2. Rewrite semantics
+
 - **Feature:** [Rewrite semantics](../../user/features/rewrite-semantics.md)
 - **Concepts:** [Rewrite semantics](../../user/concepts/rewrite-semantics.md)
 - **Test modules:** [Rewrite semantics test module](../../developer/modules/rewrite-semantics.md)

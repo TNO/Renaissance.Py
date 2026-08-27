@@ -1,11 +1,13 @@
-{ #template-architecture }
 # Architecture template
+
+{ #template-architecture }
 
 **Stable ID:** `TEMPLATE-ARCH`
 
 ```md
-{ #dev-architecture-<slug> }
 # <Architecture topic title>
+
+{ #dev-architecture-<slug> }
 
 **Stable ID:** `ARCH-<AREA>-<NAME>`
 
@@ -26,6 +28,7 @@ Document the design decisions that determine how <topic> is implemented.
 <Context: describe the problem or question that needs to be decided.>
 
 <Options (optional):>
+
 * <Option A>
 * <Option B>
 

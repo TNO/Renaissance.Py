@@ -1,11 +1,13 @@
-{ #template-code-module }
 # Code module template
+
+{ #template-code-module }
 
 **Stable ID:** `TEMPLATE-CODEMOD`
 
 ```md
-{ #codemod-<slug> }
 # <Code module title>
+
+{ #codemod-<slug> }
 
 **Stable ID:** `CODEMOD-<AREA>-<NAME>`
 
