@@ -6,7 +6,8 @@
 
 ## Ancestors and descendants
 
-If node A contains node B in the AST at any depth — including when A and B are the same node — then A is an **ancestor** of B and B is a **descendant** of A.
+If node A contains node B in the AST at any depth — including when A and B are the same node —
+then A is an **ancestor** of B and B is a **descendant** of A.
 
 We use the terms *proper ancestor* and *proper descendant* to exclude the node itself.
 

@@ -22,4 +22,5 @@ The checker is intended to run from CI, for example through:
 
 ## Rationale
 
-Existing generic tools can validate broken links and some Markdown quality aspects, but repository-specific image placement and naming rules are best handled by custom code.
+Existing generic tools can validate broken links and some Markdown quality aspects,
+but repository-specific image placement and naming rules are best handled by custom code.

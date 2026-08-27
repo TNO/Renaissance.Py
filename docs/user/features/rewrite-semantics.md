@@ -6,7 +6,9 @@
 
 ## User-facing summary
 
-The rewrite semantics feature governs how multiple collected changes — replacements and insertions — are applied to a source file in a single rewrite step. It defines which combinations are valid and which produce errors, so that transformation authors can reason about the outcome of composing changes.
+The rewrite semantics feature governs how multiple collected changes — replacements and insertions —
+are applied to a source file in a single rewrite step. It defines which combinations are valid and
+which produce errors, so that transformation authors can reason about the outcome of composing changes.
 
 ## Related concepts
 

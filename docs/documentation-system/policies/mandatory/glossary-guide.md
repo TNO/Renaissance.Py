@@ -10,14 +10,16 @@ This policy is **mandatory**.
 
 ## Scope
 
-This policy governs the content, structure, and maintenance of [`docs/glossary.md`](../../../glossary.md) and the use of defined terms across all documentation.
+This policy governs the content, structure, and maintenance of [`docs/glossary.md`](../../../glossary.md)
+and the use of defined terms across all documentation.
 
 ---
 
 ## Purpose
 
 The glossary is the single source of truth for short definitions of domain-specific terms.
-It ensures that humans and AI tools working on this documentation use terms consistently and can trace each definition back to an authoritative concept page.
+It ensures that humans and AI tools working on this documentation use terms consistently and
+can trace each definition back to an authoritative concept page.
 
 ---
 
@@ -26,14 +28,15 @@ It ensures that humans and AI tools working on this documentation use terms cons
 Add a term to the glossary when **all** of the following hold:
 
 1. The term is domain-specific — it carries meaning beyond its everyday English sense in this project's context.
-2. The term appears, or is expected to appear, in more than one documentation page.
-3. A concept page exists (or is planned) that serves as the authoritative source for the definition.
+1. The term appears, or is expected to appear, in more than one documentation page.
+1. A concept page exists (or is planned) that serves as the authoritative source for the definition.
 
 Do **not** add:
 
 - General English words that need no special definition in this project.
 - Implementation-specific identifiers (class names, function names) — define those inline in the relevant architecture or module page.
-- Abbreviations that are standard in software engineering without a project-specific meaning (e.g., *API*, *CI*), unless the project assigns them a particular meaning.
+- Abbreviations that are standard in software engineering without a project-specific meaning (e.g., *API*, *CI*),
+  unless the project assigns them a particular meaning.
 
 ---
 
@@ -69,17 +72,20 @@ The glossary provides a **concise summary**; it does not replace the concept pag
 | Alphabetical index entry | Authoritative source |
 | Links to the concept page | May link back to the glossary anchor |
 
-The concept page is the authoritative source. If the definition on the concept page and the glossary entry conflict, the concept page takes precedence and the glossary entry must be updated.
+The concept page is the authoritative source. If the definition on the concept page and the glossary entry conflict,
+the concept page takes precedence and the glossary entry must be updated.
 
 ---
 
 ## Maintenance rules
 
-1. **Keep definitions in sync.** When a concept page changes a definition, update the corresponding glossary entry in the same commit or pull request.
-2. **Add before first use.** A term should be in the glossary before (or at the same time as) it is first introduced in concept documentation.
-3. **One entry per term.** Aliases redirect to the canonical entry using a `see` reference (e.g., `**Surround** — see [Around](#around).`).
-4. **No orphan entries.** Every glossary entry must link to an existing concept page. Remove entries whose concept page has been removed.
-5. **No duplicate definitions.** Do not define the same term in both a concept page and the glossary in full — the concept page holds the full definition; the glossary holds only the summary.
+1. **Keep definitions in sync.** When a concept page changes a definition,
+   update the corresponding glossary entry in the same commit or pull request.
+1. **Add before first use.** A term should be in the glossary before (or at the same time as) it is first introduced in concept documentation.
+1. **One entry per term.** Aliases redirect to the canonical entry using a `see` reference (e.g., `**Surround** — see [Around](#around).`).
+1. **No orphan entries.** Every glossary entry must link to an existing concept page. Remove entries whose concept page has been removed.
+1. **No duplicate definitions.** Do not define the same term in both a concept page and the glossary in full —
+   the concept page holds the full definition; the glossary holds only the summary.
 
 ---
 

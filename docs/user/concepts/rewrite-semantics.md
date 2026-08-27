@@ -18,7 +18,8 @@ A removal is `just` a replacement with an empty string.
 
 Each insertion relates to a location in the original text.
 In AST-based pattern matching that location of text corresponds to either the start location or the end location of an AST node.
-Three kind of insertions are supported, i.e., prepend, append, and around, that insert text at the start, end, and both locations of the AST node.
+Three kind of insertions are supported, i.e., prepend, append, and around,
+that insert text at the start, end, and both locations of the AST node.
 
 ## Rewrite step
 
@@ -54,7 +55,8 @@ Whenever different changes are applied to overlapping ranges of text, an error w
 For AST-based pattern matching, this situation can only occur when replacements are applied to overlapping sequence of nodes.
 So when multiple replacements are affecting the same sequence of AST nodes an error is raised.
 
-Figure 1.2 shows an example where replacements are applied to overlapping sequences of arguments to a function call in which case an error is raised.
+Figure 1.2 shows an example where replacements are applied to overlapping sequences of arguments
+to a function call in which case an error is raised.
 
 /// html | figure#rewrite-semantics-overlap
 
@@ -67,7 +69,8 @@ Figure 1.2 shows an example where replacements are applied to overlapping sequen
 1. Dominated changes are ignored.
 
 A change is dominated if its range is a proper subset of the range of another change.
-For AST-based pattern matching this may occur when a change associated with an AST node lies within the range of a change associated with one of its ancestors.
+For AST-based pattern matching this may occur when a change associated with an AST node lies
+within the range of a change associated with one of its ancestors.
 
 /// html | figure#rewrite-semantics-dominated
 
@@ -136,7 +139,8 @@ For AST-based pattern matching this may occur when a change associated with an A
   * Dominance rule: dominated operations are ignored
   * Consistency rule: overlapping operations are not possible
   * Containment rules:
-    * A replace operation on an AST node, hides all operations on all contained AST nodes (a.k.a. descendants), i.e., they are ignored - prepend, append and around operations on that AST node are NOT affected.
+    * A replace operation on an AST node, hides all operations on all contained AST nodes (a.k.a. descendants),
+      i.e., they are ignored - prepend, append and around operations on that AST node are NOT affected.
     * A prepend to an AST node is always before a prepend to any contained AST node
     * An append to an AST node is always after an append to any contained AST node
   * Sequence rule - Given two consecutive AST Nodes (a.k.a. siblings):

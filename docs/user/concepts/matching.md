@@ -42,7 +42,9 @@ i.e., whether a needle occurs within a haystack, for several conceptual views.
 
 ///
 
-Text editors provide options that influence matching, such as case sensitivity, whole-word matching, and pattern-based descriptions using regular expressions, which correspond respectively to the conceptual-view dimensions of equality, granularity, and classification.
+Text editors provide options that influence matching,
+such as case sensitivity, whole-word matching, and pattern-based descriptions using regular expressions,
+which correspond respectively to the conceptual-view dimensions of equality, granularity, and classification.
 See for example [Figure 1.1](#matching-equal-notepadplusplus-find) that shows options supported by Notepad++.
 
 /// html | figure#matching-equal-notepadplusplus-find
@@ -81,7 +83,8 @@ Similarly, within source code one might find matches to:
 To support finding matches in a uniform way across different programming languages,
 it is necessary to abstract from language-specific and parser-specific details.
 Therefore, a generic classification is introduced that captures common programming concepts.
-This generic classification includes elements such as declarations and definitions (of e.g., variables, functions, and classes), expressions, and statements.
+This generic classification includes elements such as declarations and definitions
+(of e.g., variables, functions, and classes), expressions, and statements.
 
 ## 1.3 Pattern matching
 
@@ -89,12 +92,14 @@ Matches can also be found based on a pattern.
 A pattern can contain placeholders, also known as a meta variables, holes, or wildcards, to represent its variable parts.
 A pattern can contain back references, either by name or position, to express constraints between parts of the pattern.
 Each match found corresponds to an element that adheres to that pattern, i.e., the element is an instance of the pattern.
-As in the previous sections, the result of pattern matching depends on the conceptual view, in particular on the chosen granularity, structure, classification, and equality.
+As in the previous sections, the result of pattern matching depends on the conceptual view,
+in particular on the chosen granularity, structure, classification, and equality.
 The following subsections contain examples showing that different conceptual views may yield different matches on the same input.
 
 ### Regular-expression patterns
 
-When code is viewed as a sequence of characters, patterns are typically expressed using regular expressions. For example, the regular-expression pattern `b.d` has one match within the text `abcde`, namely `bcd`.
+When code is viewed as a sequence of characters, patterns are typically expressed using regular expressions.
+For example, the regular-expression pattern `b.d` has one match within the text `abcde`, namely `bcd`.
 Regular expressions allow matching based on character classes, such as `\d` for digits, and local structure.
 
 The regular-expression pattern `MyPrint\([^)]*\)` finds two matches within the following code:
@@ -134,7 +139,8 @@ MyPrint(name, "is", age, "years (old).")
 <!---
 Should the example have unbalanced delimiters within a literal text string?
 -->
-The matching is language-agnostic and can handle arbitrarily deep nesting of delimiters. However, the matching does not capture the internal structure of the arguments, such as their number or types.
+The matching is language-agnostic and can handle arbitrarily deep nesting of delimiters.
+However, the matching does not capture the internal structure of the arguments, such as their number or types.
 
 ### AST-based patterns
 
@@ -155,8 +161,10 @@ MyPrint("Hello Word")
 MyPrint((a+12) * matrix[0][1])
 ```
 
-AST-based patterns respect the grammar of the language and distinguish syntactic constructs precisely. However, they do not account for semantic properties, such as the type of an argument.
-Consequently, AST-based patterns cannot distinguish between the distinct overloads of a function, e.g., `MyPrint(string)` and `MyPrint(int)` in the previous example.
+AST-based patterns respect the grammar of the language and distinguish syntactic constructs precisely.
+However, they do not account for semantic properties, such as the type of an argument.
+Consequently, AST-based patterns cannot distinguish between the distinct overloads of a function,
+e.g., `MyPrint(string)` and `MyPrint(int)` in the previous example.
 
 ## 2. Pattern language
 

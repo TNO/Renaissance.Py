@@ -34,7 +34,8 @@ See [Surround](#surround).
 
 ### AST (Abstract Syntax Tree)
 
-A hierarchical representation of source code produced by a compiler front-end, abstracting over syntactic details such as whitespace, comments, and delimiters.
+A hierarchical representation of source code produced by a compiler front-end,
+abstracting over syntactic details such as whitespace, comments, and delimiters.
 See [Matching](user/concepts/matching.md).
 
 ### Automation
@@ -54,7 +55,9 @@ See [Rewrite semantics](user/concepts/rewrite-semantics.md).
 
 ### Code base
 
-The full set of production, validation, and supporting artifacts — including source code, tests, build scripts, and documentation — that together constitute a software system.
+The full set of production, validation, and
+supporting artifacts — including source code, tests, build scripts, and documentation —
+that together constitute a software system.
 A code base is typically multi-language, multi-project, and evolves over decades.
 See [Evolving and maintaining code](user/concepts/code-base-evolution-and-maintenance.md).
 
@@ -100,7 +103,8 @@ See [Rewrite semantics](user/concepts/rewrite-semantics.md).
 
 ### Filter
 
-A check applied to candidate [matches](#match) that produces an *include*, *remove*, or *undecisive* result, thereby refining the match set before further processing.
+A check applied to candidate [matches](#match) that produces an *include*, *remove*, or *undecisive* result,
+thereby refining the match set before further processing.
 See [Filter](user/concepts/filter.md).
 
 ---
@@ -124,7 +128,8 @@ See [Matching](user/concepts/matching.md).
 
 ### Matching
 
-The process of locating occurrences in source code that satisfy a pattern, governed by a conceptual view that defines granularity, structure, classification, and equality.
+The process of locating occurrences in source code that satisfy a pattern,
+governed by a conceptual view that defines granularity, structure, classification, and equality.
 See [Matching](user/concepts/matching.md).
 
 ---
@@ -145,7 +150,8 @@ See [Matching](user/concepts/matching.md).
 
 ### Observability
 
-The degree to which the behavior of the tool can be inspected and described, supporting understanding and debugging of analysis and transformation results.
+The degree to which the behavior of the tool can be inspected and described,
+supporting understanding and debugging of analysis and transformation results.
 See [Observability](user/concepts/observability.md).
 
 ---
@@ -180,7 +186,8 @@ See [Rewrite semantics](user/concepts/rewrite-semantics.md).
 
 ### Rewrite step
 
-The sequential process of (1) parsing source code, (2) collecting [changes](#change), and (3) committing those changes to produce modified source code.
+The sequential process of (1) parsing source code, (2) collecting [changes](#change), and
+(3) committing those changes to produce modified source code.
 See [Rewrite semantics](user/concepts/rewrite-semantics.md).
 
 ---

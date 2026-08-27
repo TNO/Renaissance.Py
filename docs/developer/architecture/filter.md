@@ -10,18 +10,21 @@ Document the design decisions that determine how the filter step is implemented 
 
 ## Scope
 
-The [filter](../../user/concepts/filter.md) step refines candidate matches produced by the [find](find.md) step by applying structural and semantic checks.
+The [filter](../../user/concepts/filter.md) step refines candidate matches produced
+by the [find](find.md) step by applying structural and semantic checks.
 It does not modify code — that is the responsibility of the [modify](modify.md) step.
 
 ## Definition
 
 A [filter](../../user/concepts/filter.md) function checks a set of semantic properties to ensure correctness of the transformation.
 
-[Rice's theorem](https://en.wikipedia.org/wiki/Rice%27s_theorem) states that all non-trivial semantic properties of programs, such as [halting](https://en.wikipedia.org/wiki/Halting_problem), are undecidable.
+[Rice's theorem](https://en.wikipedia.org/wiki/Rice%27s_theorem) states that
+all non-trivial semantic properties of programs, such as [halting](https://en.wikipedia.org/wiki/Halting_problem), are undecidable.
 
 When a user combines multiple filter functions into a single filter function that user also becomes responsible for the diagnostics of the combination.
 
-When a framework allows the combination of filter functions (under the `and` operator), the framework can also provide the diagnostics for the combination.
+When a framework allows the combination of filter functions (under the `and` operator),
+the framework can also provide the diagnostics for the combination.
 
 ### Decision
 
@@ -46,12 +49,18 @@ Note that when a filter function returns `undecisive` the next filter function w
 ### Switch functionality
 
 After filtering, yet before modification a switch step could be added.
-Switch functionality would enable different modifications for different situations, for example choosing between the replacements  `f(1)` and `f($$before, 1)` depending on whether the placeholder `$$before` is empty.
+Switch functionality would enable different modifications for different situations,
+for example choosing between the replacements  `f(1)` and `f($$before, 1)` depending
+on whether the placeholder `$$before` is empty.
 
 The same result can be achieved by using multiple find, filter, modify workflows with slightly different filter functions for the different situations.
-In the example, one needs to duplicate the find, filter, modify workflow and extend with an additional filter to check that the placeholder `$$before` is empty or not before applying the replacements `f(1)` and `f($$before, 1)`, respectively.
+In the example, one needs to duplicate the find, filter, modify workflow and extend with an additional filter
+to check that the placeholder `$$before` is empty or not before applying
+the replacements `f(1)` and `f($$before, 1)`, respectively.
 
-Using multiple find, filter, and modify workflows compared to a switch step results in simpler, yet partly duplicated logic; requires a smaller API, and hence less infrastructural development; and a slower execution performance.
+Using multiple find, filter, and modify workflows compared to a switch step results in simpler,
+yet partly duplicated logic; requires a smaller API, and hence less infrastructural development;
+and a slower execution performance.
 
 #### Decision - Switch functionality
 

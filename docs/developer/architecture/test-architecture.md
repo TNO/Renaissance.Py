@@ -63,7 +63,8 @@ We should at least test the following functionalities
 * AST-based batch modifications of strings
   * Prepend, append, replace, around (e.g., for matching brackets)
   * Containment rules:
-    * A replace operation on an AST node, hides all operations on all contained AST nodes (a.k.a. descendants), i.e., they are ignored - prepend, append and around operations on that AST node are NOT affected.
+    * A replace operation on an AST node, hides all operations on all contained AST nodes (a.k.a. descendants),
+      i.e., they are ignored - prepend, append and around operations on that AST node are NOT affected.
     * A prepend to an AST node is always before a prepend to any contained AST node
     * An append to an AST node is always after an append to any contained AST node
   * Sequence rule - Given two consecutive AST Nodes (a.k.a. siblings):
@@ -140,7 +141,9 @@ Hence, we can't just compare instances related to the same placeholder (because 
 How can it be done?
 The fifth and sixth cases show
 
-1. It is not limited to declarations and references (so using the declarations and references in the pattern and check that the instances have similar relations will only solve part of the problem).
+1. It is not limited to declarations and references
+   (so using the declarations and references in the pattern and
+   check that the instances have similar relations will only solve part of the problem).
 1. The comparison of the ASTNodes is not a comparison of IASTNames:
      We have to compare expressions (the arguments) of the instance f(1); x = f(2);
      to find that it doesn't match the pattern $f; $var = $f;

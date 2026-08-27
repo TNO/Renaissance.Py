@@ -64,7 +64,8 @@ Correctness of the final code is not guaranteed by text replacement.
 
 The user is responsible for ensuring that removal of an AST node results in correct code.
 
-For efficiency, it is recommended that the [standard libraries](standard-libraries.md#ast-aware-removal-of-node) provide, for each language, functionality for correct removal of an AST node in all situations.
+For efficiency, it is recommended that the [standard libraries](standard-libraries.md#ast-aware-removal-of-node)
+provide, for each language, functionality for correct removal of an AST node in all situations.
 
 ### Meta data
 

@@ -23,4 +23,5 @@ A code base
 * is organized in multiple hierarchical folders and/or projects,
 * is typically written using multiple programming languages,
 * depends on external libraries, APIs, OSes, and services,
-* may evolve over decades, with developers and maintainers joining and leaving, creating a need for adequate knowledge management to preserve knowledge.
+* may evolve over decades, with developers and maintainers joining and leaving,
+  creating a need for adequate knowledge management to preserve knowledge.
