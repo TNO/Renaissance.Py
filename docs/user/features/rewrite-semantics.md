@@ -69,8 +69,8 @@ Then     | an error with the text "overlapping changes are forbidden" is produce
 1. on the same node: Prepend before surround
 1. on a node and a descendant of that node:
 
-    * Surround of node always before prepend of descendant of that node
-    * Prepend of node always before surround of descendant of that node
+   * Surround of node always before prepend of descendant of that node
+   * Prepend of node always before surround of descendant of that node
 1. on unrelated nodes: No interaction possible, so nothing to specify
 
 ## Scenario: Combination of append and surround
@@ -78,8 +78,8 @@ Then     | an error with the text "overlapping changes are forbidden" is produce
 1. on the same node: Append after surround
 1. on a node and a descendant of that node:
 
-    * Surround of node always after append of descendant of that node
-    * Append of node always after surround of descendant of that node
+   * Surround of node always after append of descendant of that node
+   * Append of node always after surround of descendant of that node
 1. on unrelated nodes: No interaction possible, so nothing to specify
 
 ## Scenario: Combination of multiple prepends
@@ -132,9 +132,9 @@ Surround has before- and after-text.
    Surround Before N - ... - Surround Before 2 - Surround Before 1 - AST Node - Surround After 1 - Surround After 2 - ... - Surround After N
 1. on a node and a descendant of that node:
 
-    * Before-text of surround of node always before before-text (and after-text)
+   * Before-text of surround of node always before before-text (and after-text)
       of surround of descendant of that node
-    * After-text of surround of node always after (before-text and) after-text
+   * After-text of surround of node always after (before-text and) after-text
       of surround of descendant of that node
 1. on unrelated nodes: No interaction possible, so nothing to specify
 
