@@ -5,7 +5,7 @@ from hypothesis import given, settings, assume
 import hypothesmith
 
 from renaissance.impl.python.rst_node import PythonRstNode
-from renaissance.refactoring.typevartuple_check import TypeVarTupleCheck
+from renaissance.refactoring.type_var_tuple_check import TypeVarTupleCheck
 
 
 class TestTypeVarTupleCheckProperties:
