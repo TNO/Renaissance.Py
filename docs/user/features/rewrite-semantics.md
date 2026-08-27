@@ -55,12 +55,12 @@ See [Figure 1.2 in the concept page](../concepts/rewrite-semantics.md#rewrite-se
 
 BDD keyword | step description
 -- | --
-Given 	| a programming language
-and	| a source file written in that programming language
-and	| an AST extracted from that source file without errors
-and	| two sequences of nodes of that AST that partly overlap
-When 	| both sequences are replaced with a string
-Then 	| an error with the text "overlapping changes are forbidden" is produced   
+Given     | a programming language
+and    | a source file written in that programming language
+and    | an AST extracted from that source file without errors
+and    | two sequences of nodes of that AST that partly overlap
+When     | both sequences are replaced with a string
+Then     | an error with the text "overlapping changes are forbidden" is produced   
 
 # Scenario: Combination of prepend and surround
 
@@ -116,15 +116,15 @@ See the concept page for an illustration of [prepends at the same text location]
 
 BDD keyword | step description
 -- | --
-Given 	| a programming language
-and	| a source file written in that programming language
-and	| a string not contained in that source file
-and	| an AST extracted from that source file without errors
-and	| a node of that AST
-and	| a descendant of that node
-When 	| that node is prepended by a concatenation of that string with "node"
-and	| that descendant is prepended by a concatenation of that string with "descendant"
-Then 	| in the modified source file the concatenation of that string with "node" occurs before the concatenation of that string with "descendant"  
+Given     | a programming language
+and    | a source file written in that programming language
+and    | a string not contained in that source file
+and    | an AST extracted from that source file without errors
+and    | a node of that AST
+and    | a descendant of that node
+When     | that node is prepended by a concatenation of that string with "node"
+and    | that descendant is prepended by a concatenation of that string with "descendant"
+Then     | in the modified source file the concatenation of that string with "node" occurs before the concatenation of that string with "descendant"  
 
 # Scenario: Combination of multiple appends
 
@@ -142,15 +142,15 @@ Final order in modified source file: AST Node - Append 1 - Append 2 - ... - Appe
 
 BDD keyword | step description
 -- | --
-Given 	| a programming language
-and	| a source file written in that programming language
-and	| a string not contained in that source file
-and	| an AST extracted from that source file without errors
-and	| a node of that AST
-and	| a descendant of that node
-When 	| that node is append by a concatenation of that string with "node"
-and	| that descendant is appended by a concatenation of that string with "descendant"
-Then 	| in the modified source file the concatenation of that string with "node" occurs after the concatenation of that string with "descendant"  
+Given     | a programming language
+and    | a source file written in that programming language
+and    | a string not contained in that source file
+and    | an AST extracted from that source file without errors
+and    | a node of that AST
+and    | a descendant of that node
+When     | that node is append by a concatenation of that string with "node"
+and    | that descendant is appended by a concatenation of that string with "descendant"
+Then     | in the modified source file the concatenation of that string with "node" occurs after the concatenation of that string with "descendant"  
 
 # Scenario: Combination of multiple surrounds
 
@@ -191,14 +191,14 @@ The expected output is `exp(abs(a) + b)` and NOT `abs(exp(a) + b)`.
 
 BDD keyword | step description
 -- | --
- Given 	| a programming language
-and	| a source file written in that programming language
-and	| a string not contained in that source file
-and	| an AST extracted from that source file without errors
-and	| two consecutive nodes of that AST
-When 	| the first node is append by a concatenation of that string with "node"
-and	| the second node is prepended by a concatenation of that string with "descendant"
-Then 	| in the modified source file the concatenation of that string with "node" occurs before the concatenation of that string with "descendant"
+ Given     | a programming language
+and    | a source file written in that programming language
+and    | a string not contained in that source file
+and    | an AST extracted from that source file without errors
+and    | two consecutive nodes of that AST
+When     | the first node is append by a concatenation of that string with "node"
+and    | the second node is prepended by a concatenation of that string with "descendant"
+Then     | in the modified source file the concatenation of that string with "node" occurs before the concatenation of that string with "descendant"
 
 ### Example
 Given the two statements in C++ `i++;++j;` and two changes

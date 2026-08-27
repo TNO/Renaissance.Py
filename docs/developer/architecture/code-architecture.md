@@ -7,11 +7,11 @@
 
     a. We have chosen the latest released version, currently 3.14, and when a new version is released we intend to follow within three months, given that resources permit.
     
-    b. We have chosen to use [typing](https://docs.python.org/3/library/typing.html) on all functions and their parameters.
+    a. We have chosen to use [typing](https://docs.python.org/3/library/typing.html) on all functions and their parameters.
        We use [pyright](https://github.com/microsoft/pyright) as type checker.
    
-    c. Our code should adhere to the conventions of Python, such as [philosophy](https://peps.python.org/pep-0020/), 
-	    [style](https://peps.python.org/pep-0008/), and [documentation](https://peps.python.org/pep-0257/). 
+    a. Our code should adhere to the conventions of Python, such as [philosophy](https://peps.python.org/pep-0020/), 
+       [style](https://peps.python.org/pep-0008/), and [documentation](https://peps.python.org/pep-0257/). 
        We use [ruff](https://docs.astral.sh/ruff/) as code formatter and linter. 
     
 1. We enable analyses purely based on the AST as being insensitive to layout and comments signanficantly simplifies the development and maintenance of these analyses.

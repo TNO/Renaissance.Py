@@ -124,7 +124,7 @@ We should at least test the following functionalities
 
 # placeholder requirements
 
-A.	We want placeholders at higher level than name to match more complicated AST nodes.
+A.    We want placeholders at higher level than name to match more complicated AST nodes.
 Some examples
 
 | match pattern |  with code |
@@ -147,23 +147,23 @@ A placeholder can match multiple ASTNodes: e.g. IASTName and IASTIdExpression
 We prefer the highest ASTnode
 
 
-B.	We want to support that placeholders can occur multiple times
+B.    We want to support that placeholders can occur multiple times
 This expresses a constraint: same placeholder enforces same value in instance
  
 Unfortunately, the same placeholder can have multiple classes in a single pattern!
 We are aware of the following cases in C++  (in arbitrary order)
 
-1. 	$type* ptr = new $type();
+1.     $type* ptr = new $type();
         Class of $type is first IASTNamedTypeSpecifier and second IASTTypeId
-2.	const $type* ptr = new $type();
+2.    const $type* ptr = new $type();
         Class of $type is first IASTName and second IASTTypeId
-3.	{ int $x = 1; int y = $x; }
+3.    { int $x = 1; int y = $x; }
         Class of $x is first IASTName and second IASTIdExpression
-4.	int $var; $var = 1;
+4.    int $var; $var = 1;
        Class of $var is first IASTDeclarator and second IASTIdExpression
-5.	$f; var = $f;
+5.    $f; var = $f;
        Class of $f is first IASTExpressionStatement and second IASTIdExpression
-6.	var = $f; $f;
+6.    var = $f; $f;
        Class of $f is first IASTIdExpression and second IASTExpressionStatement
  
 Hence, we can't just compare instances related to the same placeholder (because they will be of different classes)
@@ -171,8 +171,8 @@ Hence, we can't just compare instances related to the same placeholder (because 
 How can it be done?
 The fifth and sixth cases show
 
-1.	It is not limited to declarations and references (so using the declarations and references in the pattern and check that the instances have similar relations will only solve part of the problem).
-2.	The comparison of the ASTNodes is not a comparison of IASTNames:
+1.    It is not limited to declarations and references (so using the declarations and references in the pattern and check that the instances have similar relations will only solve part of the problem).
+2.    The comparison of the ASTNodes is not a comparison of IASTNames:
      We have to compare expressions (the arguments) of the instance f(1); x = f(2); 
      to find that it doesn't match the pattern $f; $var = $f;
  
@@ -198,10 +198,10 @@ Pick the highest AST node allowed by the all placeholder together in the pattern
 | String   concatenation | "con"   "cat" | "concat" | 
 
   * Symmetry
-    * Operators, like ==, are symmetric (for some data types), and hence `0 == x` matches 	`x == 0`
-			
+    * Operators, like ==, are symmetric (for some data types), and hence `0 == x` matches     `x == 0`
+            
   * Purpose
-    * E.g. in C++ exist multiple ways to initialize a variable:	`int x = 1;` matches `int x { 1 };` and `int x(1);`
+    * E.g. in C++ exist multiple ways to initialize a variable:    `int x = 1;` matches `int x { 1 };` and `int x(1);`
 
 # BDD framework
 
