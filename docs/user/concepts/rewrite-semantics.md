@@ -39,7 +39,7 @@ Figure 1.1 shows an example where different replacements are applied to the same
 
 <a name="rewrite-semantics-equal">
 
-![Multiple replacements to the same AST-node](rewrite-semantics/rewrite-semantics-equal.png)
+![Multiple replacements to the same AST-node](rewrite-semantics-images/rewrite-semantics-equal.png)
 
 *Figure 1.1 (CONCEPT-REWRITE-SEMANTICS-EQUAL): Example of multiple replacements to the same AST node.*
 
@@ -55,7 +55,7 @@ Figure 1.2 shows an example where replacements are applied to overlapping sequen
 
 <a name="rewrite-semantics-overlap">
 
-![Overlapping replacements](rewrite-semantics/rewrite-semantics-overlap.png)
+![Overlapping replacements](rewrite-semantics-images/rewrite-semantics-overlap.png)
 
 *Figure 1.2 (CONCEPT-REWRITE-SEMANTICS-OVERLAP): Example of overlapping replacements.*
 
@@ -68,7 +68,7 @@ For AST-based pattern matching this may occur when a change associated with an A
 
 <a name="rewrite-semantics-dominated">
 
-![Change dominated by another change](rewrite-semantics/rewrite-semantics-dominated.png)
+![Change dominated by another change](rewrite-semantics-images/rewrite-semantics-dominated.png)
 
 *Figure 1.3 (CONCEPT-REWRITE-SEMANTICS-DOMINATED): Example of a dominated change.*
 
@@ -82,7 +82,7 @@ For AST-based pattern matching this may occur when a change associated with an A
 
     <a name="rewrite-semantics-prepends">
 
-    ![Prepends at the same textual location](rewrite-semantics/rewrite-semantics-prepends.png)
+    ![Prepends at the same textual location](rewrite-semantics-images/rewrite-semantics-prepends.png)
 
     *Figure 1.3 (CONCEPT-REWRITE-SEMANTICS-PREPENDS): Example of prepends of different AST nodes at the same textual location.*
 
@@ -98,7 +98,7 @@ For AST-based pattern matching this may occur when a change associated with an A
 
       <a name="rewrite-semantics-prepends">
 
-    ![Appends at the same textual location](rewrite-semantics/rewrite-semantics-appends.png)
+    ![Appends at the same textual location](rewrite-semantics-images/rewrite-semantics-appends.png)
 
     *Figure 1.4 (CONCEPT-REWRITE-SEMANTICS-APPENDS): Example of appends of different AST nodes at the same textual location.*
 
@@ -114,7 +114,7 @@ For AST-based pattern matching this may occur when a change associated with an A
 
     <a name="rewrite-semantics-append-prepend">
 
-    ![Append and prepend at the same textual location](rewrite-semantics/rewrite-semantics-append-prepend.png)
+    ![Append and prepend at the same textual location](rewrite-semantics-images/rewrite-semantics-append-prepend.png)
 
     *Figure 1.5 (CONCEPT-REWRITE-SEMANTICS-APPEND-PREPEND): Example of append and prepend of adjacent siblings at the same textual location.*
 

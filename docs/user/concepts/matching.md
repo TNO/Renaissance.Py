@@ -44,7 +44,7 @@ See for example [Figure 1.1](#matching-equal-notepadplusplus-find) that shows op
 
 <a name="matching-equal-notepadplusplus-find">
 
-![Find window of Notepad++](matching/matching-equal-notepadplusplus-find.png)
+![Find window of Notepad++](matching-images/matching-equal-notepadplusplus-find.png)
 
 *Figure 1.1 (CONCEPT-MATCHING): Selecting the desired conceptual view for text in the Find window of Notepad++.*
 
@@ -175,7 +175,7 @@ Relevant strategies include eager, lazy, and all-possible matching.
 - first, next, and all
 
 ## Related images
-- Local image directory: [matching/](matching/README.md)
+- Local image directory: [matching-images/](matching-images/README.md)
 
 
 
