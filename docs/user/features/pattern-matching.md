@@ -55,11 +55,12 @@ In other words, no illegal `match` pattern exists.
 -------------------------------------------------
 
 1. Match functionality
-   a. Elementary matching - "symbols with symbols" - representations of  integers, characters, etc.
-   a. Basic matching - "code with code" - with(out) comment, with white spaces - note: python is sensitive for  indentation
-   a. Single placeholder - "pattern with code" - pattern has only one instance of a single placeholder
-   a. Multi placeholder - "pattern with code" - pattern has only one instance of a multi placeholder
-   a. different placeholders - "pattern with code" with different placeholders (each placeholder occurs only once & only single assignment)
-   a. constraint / recurring placeholder - "pattern with code" with single placeholder that occurs multiple times
-   a. patterns with multi placeholders that can have multiple assignments
-   a. mixed
+
+    1. Elementary matching - "symbols with symbols" - representations of  integers, characters, etc.
+    1. Basic matching - "code with code" - with(out) comment, with white spaces - note: python is sensitive for  indentation
+    1. Single placeholder - "pattern with code" - pattern has only one instance of a single placeholder
+    1. Multi placeholder - "pattern with code" - pattern has only one instance of a multi placeholder
+    1. different placeholders - "pattern with code" with different placeholders (each placeholder occurs only once & only single assignment)
+    1. constraint / recurring placeholder - "pattern with code" with single placeholder that occurs multiple times
+    1. patterns with multi placeholders that can have multiple assignments
+    1. mixed

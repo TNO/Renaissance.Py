@@ -115,4 +115,6 @@ exclude = ["features", "**/node_modules", "**/__pycache__", "**/.*", ".venv"]
 
 [tool.pymarkdown]
 plugins.md013.line_length = 140
+plugins.md013.tables = false
+extensions.markdown-tables.enabled = true
 

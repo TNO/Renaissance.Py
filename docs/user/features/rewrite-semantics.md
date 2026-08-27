@@ -44,8 +44,7 @@ and | a node of that AST
 and | a sequence of descendant nodes of that node
 When | that node is replaced by a text
 and | Rewrites, i.e., append, prepend, surround, and replace, are performed on that sequence of descendant nodes
-Then | in the modified source file that node is replaced by the given text and all rewrites
-       on that sequence of descendant nodes are not performed / hidden
+Then | in the modified source file that node is replaced by the given text and all rewrites on that sequence of descendant nodes are not performed / hidden
 
 TODO: This description is only valid when a node is NOT considered a descendant of itself.
 Check our definition (and implementation)!
@@ -69,16 +68,18 @@ Then     | an error with the text "overlapping changes are forbidden" is produce
 
 1. on the same node: Prepend before surround
 1. on a node and a descendant of that node:
-   * Surround of node always before prepend of descendant of that node
-   * Prepend of node always before surround of descendant of that node
+
+    * Surround of node always before prepend of descendant of that node
+    * Prepend of node always before surround of descendant of that node
 1. on unrelated nodes: No interaction possible, so nothing to specify
 
 ## Scenario: Combination of append and surround
 
 1. on the same node: Append after surround
 1. on a node and a descendant of that node:
-   * Surround of node always after append of descendant of that node
-   * Append of node always after surround of descendant of that node
+
+    * Surround of node always after append of descendant of that node
+    * Append of node always after surround of descendant of that node
 1. on unrelated nodes: No interaction possible, so nothing to specify
 
 ## Scenario: Combination of multiple prepends
@@ -99,9 +100,7 @@ Final order in modified source file: Prepend N - ... -  Prepend 2 - Prepend 1 - 
    and    | a descendant of that node
    When     | that node is prepended by a concatenation of that string with "node"
    and    | that descendant is prepended by a concatenation of that string with "descendant"
-   Then     | in the modified source file the concatenation of that string with "node" occurs before the
-              concatenation of that string with "descendant"
-
+   Then     | in the modified source file the concatenation of that string with "node" occurs before the concatenation of that string with "descendant"
 1. on unrelated nodes: No interaction possible, so nothing to specify
 
 ## Scenario: Combination of multiple appends
@@ -120,8 +119,7 @@ Final order in modified source file: Prepend N - ... -  Prepend 2 - Prepend 1 - 
    and    | a descendant of that node
    When     | that node is append by a concatenation of that string with "node"
    and    | that descendant is appended by a concatenation of that string with "descendant"
-   Then     | in the modified source file the concatenation of that string with "node" occurs after the
-              concatenation of that string with "descendant"
+   Then     | in the modified source file the concatenation of that string with "node" occurs after the concatenation of that string with "descendant"
 
 1. on unrelated nodes: No interaction possible, so nothing to specify
 
@@ -133,10 +131,11 @@ Surround has before- and after-text.
    Final order in modified source file:
    Surround Before N - ... - Surround Before 2 - Surround Before 1 - AST Node - Surround After 1 - Surround After 2 - ... - Surround After N
 1. on a node and a descendant of that node:
-   * Before-text of surround of node always before before-text (and after-text)
-     of surround of descendant of that node
-   * After-text of surround of node always after (before-text and) after-text
-     of surround of descendant of that node
+
+    * Before-text of surround of node always before before-text (and after-text)
+      of surround of descendant of that node
+    * After-text of surround of node always after (before-text and) after-text
+      of surround of descendant of that node
 1. on unrelated nodes: No interaction possible, so nothing to specify
 
 For example, given the addition `a + b` and two changes
@@ -153,13 +152,8 @@ The expected output is `exp(abs(a) + b)` and NOT `abs(exp(a) + b)`.
 
 ## Scenario: Combination of append and prepend on consecutive nodes
 
-/// html | figure#rewrite-semantics-append-prepend
-
-![Prepends at the same text location](../concepts/rewrite-semantics-images/rewrite-semantics-append-prepend.png)
-
-*Figure 1.6 (CONCEPT-REWRITE-SEMANTICS-APPEND_PREPEND): Example of overlapping replacements.*
-
-///
+See the concept page for an illustration of
+   [append and prepend at the same text location](../concepts/rewrite-semantics.md#rewrite-semantics-append-prepend).
 
 BDD keyword | step description
 -- | --

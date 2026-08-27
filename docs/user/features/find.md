@@ -7,13 +7,13 @@
 ## MISC
 
 1. Find all functionality
-    a. Basic find - "code only" no nested structures
-    b. find first, next, all - especially find "aa" in "aaaa" - two matches only
-    c. basic nested find - "code only" nested if statements, nested for statements, ...
-    d. single placeholder find
-    e. multi placeholder find [sublist search] incl. error on illegal patterns (starting / ending with unconstrainted multi placeholder)
-    f. multiple assignments find
-    g. mixed
+    1. Basic find - "code only" no nested structures
+    1. find first, next, all - especially find "aa" in "aaaa" - two matches only
+    1. basic nested find - "code only" nested if statements, nested for statements, ...
+    1. single placeholder find
+    1. multi placeholder find [sublist search] incl. error on illegal patterns (starting / ending with unconstrainted multi placeholder)
+    1. multiple assignments find
+    1. mixed
 
 ## Scenario: Find by kind
 
