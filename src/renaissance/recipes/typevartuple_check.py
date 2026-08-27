@@ -2,7 +2,7 @@ import ast
 from typing import cast
 
 from renaissance.refactoring.python_refactoring import PythonRefactoring
-from renaissance.refactoring.typevar_check import find_type_param_declarations
+from renaissance.refactoring.type_var_check import find_type_param_declarations
 from renaissance.utils.ast_utils import traverse
 
 
