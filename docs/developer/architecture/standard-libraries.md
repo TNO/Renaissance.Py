@@ -31,7 +31,7 @@ So how can we enable sharing transformations given the different points of view?
 1. We could define transformations and analysis / filter functions independently from each other and make the user responsible to combine them as needed.
 This approach scales as it allows points of view to be added incrementally.
 
-**Decision**
+### Decision
 
 We have chosen for the last option.
 For the following reasons:

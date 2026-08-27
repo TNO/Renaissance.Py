@@ -20,14 +20,14 @@ Given a find pattern expressed in concrete syntax, the find step traverses the A
 
 ### Pattern specification
 
-The find pattern can be specified using one of three approaches:
+The find pattern can be specified using the following approaches:
 
 * representation of the parser
 * grammar of the language
 * concrete syntax
 * kind of node
 
-**Decision**
+#### Decision
 
 We support concrete syntax.
 As most developers are most familiar with concrete syntax, it minimises the learning curve and makes the tool easy to adopt.
@@ -45,7 +45,7 @@ three overlapping matches: `(0–1)`, `(1–2)`, and `(2–3)`.
 For transformation, overlapping matches are problematic.
 For example, it is ambiguous what the result of replacing `"aa"` with `"b"` within `"aaaa"` should be when the matches overlap.
 
-**Decision**
+#### Decision
 
 Non-overlapping matches are used.
 The search for the next match starts after the last character of the current match.

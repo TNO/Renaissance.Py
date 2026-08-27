@@ -23,7 +23,7 @@ When a user combines multiple filter functions into a single filter function tha
 
 When a framework allows the combination of filter functions (under the `and` operator), the framework can also provide the diagnostics for the combination.
 
-**Decision**
+### Decision
 
 Filter functions have a human-readable description for diagnostic purposes.
 
@@ -53,7 +53,7 @@ In the example, one needs to duplicate the find, filter, modify workflow and ext
 
 Using multiple find, filter, and modify workflows compared to a switch step results in simpler, yet partly duplicated logic; requires a smaller API, and hence less infrastructural development; and a slower execution performance.
 
-**Decision**
+#### Decision
 
 As execution performance is not a bottleneck, switch functionality is not supported (for now).
 
