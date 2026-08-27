@@ -68,20 +68,20 @@ within the range of a change associated with one of its ancestors.
 1. Multiple prepends at the same text location  
    * different nodes:
      Prepend of ancestor before prepend of descendant.  
-     /// html | figure#rewrite-semantics-prepends
-     ![Prepends at the same textual location](rewrite-semantics-images/rewrite-semantics-prepends.png)
-     *Figure 1.4 (CONCEPT-REWRITE-SEMANTICS-PREPENDS): Example of prepends of different AST nodes at the same textual location.*
-     ///
+/// html | figure#rewrite-semantics-prepends
+![Prepends at the same textual location](rewrite-semantics-images/rewrite-semantics-prepends.png)
+*Figure 1.4 (CONCEPT-REWRITE-SEMANTICS-PREPENDS): Example of prepends of different AST nodes at the same textual location.*
+///
    * same node:
      In order of insertion of change / in collection order
 
 1. Multiple appends at the same text location
    * different nodes:
      Append of ancestor after append of descendant.  
-     /// html | figure#rewrite-semantics-appends
-     ![Appends at the same textual location](rewrite-semantics-images/rewrite-semantics-appends.png)
-     *Figure 1.5 (CONCEPT-REWRITE-SEMANTICS-APPENDS): Example of appends of different AST nodes at the same textual location.*
-     ///
+/// html | figure#rewrite-semantics-appends
+![Appends at the same textual location](rewrite-semantics-images/rewrite-semantics-appends.png)
+*Figure 1.5 (CONCEPT-REWRITE-SEMANTICS-APPENDS): Example of appends of different AST nodes at the same textual location.*
+///
    * same node:
      In reverse order of insertion of change / in reversed collection order
 
