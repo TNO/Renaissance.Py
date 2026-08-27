@@ -23,6 +23,7 @@ Three kind of insertions are supported, i.e., prepend, append, and around, that 
 ## Rewrite step
 
 Each rewrite step consists of the following, sequential steps:
+
 1. parse code,
 1. collect changes, and
 1. commit changes.

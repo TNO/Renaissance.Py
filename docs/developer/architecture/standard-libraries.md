@@ -35,6 +35,7 @@ This approach scales as it allows points of view to be added incrementally.
 
 We have chosen for the last option.
 For the following reasons:
+
 1. The approach scales as it allows points of view to be added incrementally, and
 1. The code owner knows best what is valid and effective for the code base.
 
@@ -140,6 +141,7 @@ x = cond
 Analyses and transformations can benefit when the code adheres to some `rules`.
 These rules might be enforced by a linter, considered a good coding practice, or change the human-readable into machine-analyzable code.
 Examples of such rules include
+
 * each line contains at most one statement,
 * all branches of if statements in C++ are compound statements, i.e., have brackets `{` and `}`, and
 * all names are fully qualified names.

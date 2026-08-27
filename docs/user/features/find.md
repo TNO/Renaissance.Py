@@ -36,6 +36,7 @@
 # Scenario: Find All
 
 AST Pattern are found consecutive, i.e., the found matches do not overlap
+
 * Find "aa" in "aaa" has only one match
 * Find "aa" in "aaaa" has only two non-overlapping matches
 

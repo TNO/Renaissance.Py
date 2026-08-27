@@ -23,6 +23,7 @@ The system supports sequence-based, kind-based, and structural matching with pla
 # Scenario: Independent of comments
 
 Three cases
+
 1. absent in pattern, present in code
 2. present in pattern, absent in code
 3. present in pattern, present in code, yet different content
@@ -55,10 +56,10 @@ In other words, no illegal `match` pattern exists.
 
 1. Match functionality
    a. Elementary matching - "symbols with symbols" - representations of  integers, characters, etc.
-   b. Basic matching - "code with code" - with(out) comment, with white spaces - note: python is sensitive for  indentation
-   c. Single placeholder - "pattern with code" - pattern has only one instance of a single placeholder
-   d. Multi placeholder - "pattern with code" - pattern has only one instance of a multi placeholder
-   e. different placeholders - "pattern with code" with different placeholders (each placeholder occurs only once & only single assignment)
-   f. constraint / recurring placeholder - "pattern with code" with single placeholder that occurs multiple times
-   g. patterns with multi placeholders that can have multiple assignments
-   h. mixed
+   a. Basic matching - "code with code" - with(out) comment, with white spaces - note: python is sensitive for  indentation
+   a. Single placeholder - "pattern with code" - pattern has only one instance of a single placeholder
+   a. Multi placeholder - "pattern with code" - pattern has only one instance of a multi placeholder
+   a. different placeholders - "pattern with code" with different placeholders (each placeholder occurs only once & only single assignment)
+   a. constraint / recurring placeholder - "pattern with code" with single placeholder that occurs multiple times
+   a. patterns with multi placeholders that can have multiple assignments
+   a. mixed

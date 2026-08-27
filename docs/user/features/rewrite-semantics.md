@@ -143,6 +143,7 @@ For example, given the addition `a + b` and two changes
 1. the addition should be wrapped in a call to `exp`, i.e., surrounded by `exp(` and `)`.
 
 Note that
+
 * both the variable `a` and the addition start at the same position in the source code.
 * the node of the variable `a` is a descendant of the node of the addition.
 

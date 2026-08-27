@@ -64,6 +64,7 @@ Note that non-idempotence results in quite different behaviours, depending on th
 ## Combinations at the same text location
 
 Choices
+
 1. Implementation freedom
 1. Specify
 
@@ -71,13 +72,15 @@ We have chosen to specify as it makes the outcome more predictable and repeatabl
 
 How to specify order?
 Options include
+
 1. (reversed) order of insertion,
 1. (reversed) alphabetically,
 1. AST-based
 
 We have chosen
+
 1. When different AST-nodes are involved to order based on AST structure, e.g., for prepends and appends of different AST nodes
-2. When the same AST-node is involved to order based on the (reversed) order of insertion into the collection of changes.
+1. When the same AST-node is involved to order based on the (reversed) order of insertion into the collection of changes.
 The direction depends on the operator - multiple prepends in the order and multiple appends in the reversed order of insertion.
 
 ## TO BE Removed?
@@ -89,6 +92,7 @@ The following text is already covered by previous remarks, yet without some deta
 Replacing the same AST node with different texts is not possible.
 For the corner case of replacing the same AST node more than once with the same text,
 different behaviours are possible:
+
 1. error: the combination of replacements is considered invalid and an error is raised.
 1. [idempotent](https://en.wikipedia.org/wiki/Idempotence):
    the combination of replacements is considered valid and the node is replaced by the text.
@@ -107,6 +111,7 @@ Prepending, appending, and surrounding different texts before, around, and after
 
 For the corner case of using the same insertion operator on the same AST node with the same text more than once,
 different behaviours are possible:
+
 1. [idempotent](https://en.wikipedia.org/wiki/Idempotence): the text is inserted only once.
 1. non-idempotent: the text is inserted more than once - as often as the insertion operator is used.
 

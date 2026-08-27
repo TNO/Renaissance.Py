@@ -30,6 +30,7 @@ Add a term to the glossary when **all** of the following hold:
 3. A concept page exists (or is planned) that serves as the authoritative source for the definition.
 
 Do **not** add:
+
 - General English words that need no special definition in this project.
 - Implementation-specific identifiers (class names, function names) — define those inline in the relevant architecture or module page.
 - Abbreviations that are standard in software engineering without a project-specific meaning (e.g., *API*, *CI*), unless the project assigns them a particular meaning.
@@ -48,6 +49,7 @@ Each glossary entry must follow this structure:
 ```
 
 Requirements:
+
 - The term itself is in **bold**.
 - Known aliases are listed in parentheses after the term using *italics*.
 - The definition uses a Markdown definition-list colon (`:`).

@@ -66,6 +66,7 @@ Matches can be found based on class.
 Each match found corresponds to an element belonging to that particular class.
 
 For example, within a text one might find matches to:
+
 * numbers (e.g., `42`),
 * email addresses (e.g., `user@example.com`), and
 * specific sentence classes, such as questions or exclamations.

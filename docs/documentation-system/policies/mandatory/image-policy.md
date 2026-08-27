@@ -44,6 +44,7 @@ Special characters such as `+`, `_`, spaces, or uppercase letters are not allowe
 `<page>-<section>-<purpose>.<ext>`
 
 Examples:
+
 - `matching-overview.svg`
 - `matching-nested-if-example.svg`
 - `matching-greedy-vs-lazy.svg`
@@ -54,6 +55,7 @@ Examples:
 `<domain>-<concept>-<variant>.<ext>`
 
 Examples:
+
 - `architecture-overview.svg`
 - `notation-placeholder-semantics.svg`
 
