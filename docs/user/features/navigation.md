@@ -6,6 +6,7 @@
 # MISC
 
 Navigate the AST based on
+
 * AST structure, e.g., get the parent, ancestors, children, descendants, or siblings of an AST node.
 * Usage, e.g., from reference to [fully qualified name of] definition, from reference to (forward) declaration, from definition to all references.
   * (probably) limited to current file, as not all ASTs of all files might fit into memory

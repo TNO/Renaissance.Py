@@ -34,6 +34,7 @@ a filter function receives a match and returns one of three results:
 * **undecisive** — the check cannot determine inclusion or exclusion.
 
 The framework should provide diagnostics for each matched location. Besides the location, the diagnostics should include
+
 * in case of rejection, the human-readable description of the filter function that rejected the location, and
 * in case of indecisive, the human-readable description of the filter functions that were indecisive.
 

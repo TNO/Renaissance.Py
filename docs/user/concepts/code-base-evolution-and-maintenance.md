@@ -9,12 +9,14 @@ This concept describes the software landscape that the repository targets: evolv
 ## Definition
 
 A **code base** is changed to
+
 * fix bugs and security vulnerabilities,
 * add new features,
 * respond to external changes and obselescence of components, interfaces, and tooling, and
 * improve quality aspects, such as performance and maintainability.  
 
 A code base
+
 * comprises production, validation, and supporting artifacts, including source code, tests, build scripts, and documentation,
 * is organized in multiple hierarchical folders and/or projects,
 * is typically written using multiple programming languages,

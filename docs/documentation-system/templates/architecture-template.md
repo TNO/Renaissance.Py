@@ -26,6 +26,7 @@ Document the design decisions that determine how <topic> is implemented.
 <Context: describe the problem or question that needs to be decided.>
 
 <Options (optional):>
+
 * <Option A>
 * <Option B>
 

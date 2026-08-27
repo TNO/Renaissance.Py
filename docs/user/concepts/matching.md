@@ -14,12 +14,14 @@ The Cambridge dictionary describes match (_noun_) [EQUAL] as
 Finding matches is not absolute but depends on the conceptual view of the objects.
 
 For example, a conceptual view on text is defined by a set of dimensions, such as:
+
 * **Granularity:** What is the smallest element? E.g., character or word.
 * **Structure:** Is the text a flat sequence or a hierarchy, with chapters, sections, and paragraphs?
 * **Classification:** What classes of elements exist? E.g., nouns, verbs, numbers, email addresses, exclamations, and questions.   
 * **Equality:** When are two elements considered equal? E.g., is case relevant (e.g., `here`, `Here`, `HERE`)?
 
 The different conceptual views lead to different matching outcomes. For example:
+
 * `a` and `A` are different characters, but might represent the same letter.
 * `here` and `there` are different words, but the sequence of characters `here` occurs within `there` under a character-based view.
 * A chapter and a section might share the same title, e.g., `Introduction`.
@@ -51,6 +53,7 @@ See for example [Figure 1.1](#matching-equal-notepadplusplus-find) that shows op
 </a>
 
 Code can be conceptually viewed as
+
 * text,
 * nested blocks indicated by matching delimiters, such as `{` `}`, `(` `)`, and `[` `]`, as is done by [comby](https://comby.dev/).
 * Concrete Syntax Tree (CST) as is done by IDEs for editing and refactoring.
@@ -67,6 +70,7 @@ For example, within a text one might find matches to:
 * specific sentence classes, such as questions or exclamations.
 
 Similarly, within source code one might find matches to:
+
 * statements (e.g., `return 12;`), 
 * if statements (e.g., `if (a > b) { max = a; } else { max = b; }`), 
 * expressions (e.g., `a + b`), and

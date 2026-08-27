@@ -48,6 +48,7 @@ So the sequence of arguments `0,3` is found in `f(0,3)`, `g(0,3,1)`, `h(1,0,3)`,
 As we are already looking for (sub)sequences, starting and/or ending a `find` pattern with a `unconstrainted` multi placeholders is considered an error.
 
 We allow for the following kinds of constraints
+
 * Equivalence
   * For example, `$$args, $$args` to find argument lists in `f(0,3,0,3)`, `g(3,0,3,0,3)`, and `h()`.
 * Back references

@@ -12,6 +12,7 @@ For the domain model of changes and the rewrite step, see [Rewrite semantics](..
 The collected changes might contain changes whose combination is not possible.
 For example, it is impossible to replace the same AST node with different texts.
 The following behaviours are possible when such a situation occurs:
+
 * **keep-first**: keep the first collected change and ignore later ones 
 * **keep-last**: drop earlier collected changes and keep the last one
 * **reject**: reject the combination and stop processing.
@@ -34,6 +35,7 @@ Note that removing two overlapping sequences of nodes is treated the same as rep
 
 In the collected changes, the same changes might occur more than once.
 To give some examples,
+
 * a node is removed multiple times, and
 * a node is prepended with the same text multiple times.
 

@@ -7,6 +7,7 @@ To ensure that maintainability and extensibility a test architecture is crucial.
 
 We should use a number of testing framework.
 [Browserstack describes alternatives and selection criteria](https://www.browserstack.com/guide/top-python-testing-frameworks).
+
 * [behave](https://behave.readthedocs.io/en/latest/) for BDD tests
 * pytest for unit tests
 * pytest-benchmark to track our performance
@@ -17,6 +18,7 @@ We should at least test the following functionalities
 
 
 ### Find Functionality
+
 * Find kind (nested)
   * Example, find if statements 
   * A found match can contain another found match
@@ -79,6 +81,7 @@ To ensure that maintainability and extensibility a test architecture is crucial.
 
 We should use a number of testing framework.
 [Browserstack describes alternatives and selection criteria](https://www.browserstack.com/guide/top-python-testing-frameworks).
+
 * [behave](https://behave.readthedocs.io/en/latest/) for BDD tests
 * pytest for unit tests
 * pytest-benchmark to track our performance

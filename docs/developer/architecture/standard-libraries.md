@@ -44,6 +44,7 @@ For the following reasons:
 Analysis can be indecisive: external function is called with no access to the code (OS, third party library).
 
 Possible realizations
+
 * special set `ALL` to signal that every variable might be read or written 
 and special logic for union / intersection involving this special set.
 * undecisive result
