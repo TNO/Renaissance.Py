@@ -14,9 +14,9 @@ The system supports sequence-based, kind-based, and structural matching with pla
 
 # MISC
 
-# Scenario: Independent of layout (whitespaces) 
+# Scenario: Independent of layout (whitespaces)
 
-# Scenario: Independent of comments 
+# Scenario: Independent of comments
 
 Three cases
 1. absent in pattern, present in code
@@ -53,7 +53,7 @@ In other words, no illegal `match` pattern exists.
 
 
 1. Match functionality
-   a. Elementary matching - "symbols with symbols" - representations of  integers, characters, etc. 
+   a. Elementary matching - "symbols with symbols" - representations of  integers, characters, etc.
    b. Basic matching - "code with code" - with(out) comment, with white spaces - note: python is sensitive for  indentation
    c. Single placeholder - "pattern with code" - pattern has only one instance of a single placeholder
    d. Multi placeholder - "pattern with code" - pattern has only one instance of a multi placeholder

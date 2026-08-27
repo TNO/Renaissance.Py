@@ -10,9 +10,9 @@ Define predictable and understandable semantics for collected and committed chan
 
 We distinguish two kinds of changes: Replacements and insertions.
 
-Each replacement affects a range within the original text. 
+Each replacement affects a range within the original text.
 In AST-based pattern matching that range of text corresponds to either an AST node or a sequence of consecutive sibling nodes.
-A removal is `just` a replacement with an empty string. 
+A removal is `just` a replacement with an empty string.
 
 Each insertion relates to a location in the original text.
 In AST-based pattern matching that location of text corresponds to either the start location or the end location of an AST node.
@@ -64,7 +64,7 @@ Figure 1.2 shows an example where replacements are applied to overlapping sequen
 3. Dominated changes are ignored.
 
 A change is dominated if its range is a proper subset of the range of another change.
-For AST-based pattern matching this may occur when a change associated with an AST node lies within the range of a change associated with one of its ancestors. 
+For AST-based pattern matching this may occur when a change associated with an AST node lies within the range of a change associated with one of its ancestors.
 
 <a name="rewrite-semantics-dominated">
 
@@ -87,13 +87,13 @@ For AST-based pattern matching this may occur when a change associated with an A
     *Figure 1.3 (CONCEPT-REWRITE-SEMANTICS-PREPENDS): Example of prepends of different AST nodes at the same textual location.*
 
     </a>
-    
+
     * same node
         In order of insertion of change / in collection order
 
 5. Multiple appends at the same text location
     * different nodes
-    
+
       Append of ancestor after append of descendant.
 
       <a name="rewrite-semantics-prepends">
@@ -103,7 +103,7 @@ For AST-based pattern matching this may occur when a change associated with an A
     *Figure 1.4 (CONCEPT-REWRITE-SEMANTICS-APPENDS): Example of appends of different AST nodes at the same textual location.*
 
     </a>
-    
+
     * same node
 
         In reverse order of insertion of change / in reversed collection order
@@ -131,9 +131,9 @@ For AST-based pattern matching this may occur when a change associated with an A
   * Rewrite-semantics
     * Dominance rule: dominated operations are ignored
     * Consistency rule: overlapping operations are not possible
-    * Containment rules: 
+    * Containment rules:
       * A replace operation on an AST node, hides all operations on all contained AST nodes (a.k.a. descendants), i.e., they are ignored - prepend, append and around operations on that AST node are NOT affected.
       * A prepend to an AST node is always before a prepend to any contained AST node
       * An append to an AST node is always after an append to any contained AST node
-    * Sequence rule - Given two consecutive AST Nodes (a.k.a. siblings): 
+    * Sequence rule - Given two consecutive AST Nodes (a.k.a. siblings):
       * An append to the first AST Node is always before a prepend to the second AST Node

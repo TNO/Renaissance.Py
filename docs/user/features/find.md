@@ -11,30 +11,30 @@
     c. basic nested find - "code only" nested if statements, nested for statements, ...
     d. single placeholder find
     e. multi placeholder find [sublist search] incl. error on illegal patterns (starting / ending with unconstrainted multi placeholder)
-    f. multiple assignments find 
+    f. multiple assignments find
     g. mixed
 
 
 # Scenario: Find by kind
-  * Example, find if statements 
+  * Example, find if statements
   * Nesting: A found match can contain another found match
 
 # Scenario: kind of nodes
   * Support language agnostics kinds
     * Definition, statement, expression, ...
   * Support parser specific kinds
-    * e.g. IASTIfStatement 
+    * e.g. IASTIfStatement
   * To be decided: support of kind patterns (like XPath)?
 
 # Scenario: Find by AST Pattern matching
   * Example, find `if ($x == MAX) { $$stmts; }`
-  * Nesting: A found match can contain another found match 
+  * Nesting: A found match can contain another found match
 
 # Scenario: Find All
 
 AST Pattern are found consecutive, i.e., the found matches do not overlap
   * Find "aa" in "aaa" has only one match
-  * Find "aa" in "aaaa" has only two non-overlapping matches 
+  * Find "aa" in "aaaa" has only two non-overlapping matches
 
 # Scenario: Find sequence
 

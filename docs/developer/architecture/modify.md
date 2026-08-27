@@ -63,7 +63,7 @@ The user is responsible for ensuring that removal of an AST node results in corr
 
 For efficiency, it is recommended that the [standard libraries](standard-libraries.md#ast-aware-removal-of-node) provide, for each language, functionality for correct removal of an AST node in all situations.
 
-### Meta data 
+### Meta data
 
 Analysis or a match (with a failing filter) do not justify that the the file or folder containing that source code changes.
 This not only holds for the content, but also the meta-data of the file and folder.

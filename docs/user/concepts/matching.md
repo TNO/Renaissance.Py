@@ -3,7 +3,7 @@
 **Stable ID:** `CONCEPT-MATCHING`
 
 ## Purpose
-This document describes the concept of a match, i.e., when two objects are considered equal, 
+This document describes the concept of a match, i.e., when two objects are considered equal,
 and of finding matches that locates occurrences where this relation holds.
 
 ## 1.1 When do objects match?
@@ -17,7 +17,7 @@ For example, a conceptual view on text is defined by a set of dimensions, such a
 
 * **Granularity:** What is the smallest element? E.g., character or word.
 * **Structure:** Is the text a flat sequence or a hierarchy, with chapters, sections, and paragraphs?
-* **Classification:** What classes of elements exist? E.g., nouns, verbs, numbers, email addresses, exclamations, and questions.   
+* **Classification:** What classes of elements exist? E.g., nouns, verbs, numbers, email addresses, exclamations, and questions.
 * **Equality:** When are two elements considered equal? E.g., is case relevant (e.g., `here`, `Here`, `HERE`)?
 
 The different conceptual views lead to different matching outcomes. For example:
@@ -26,7 +26,7 @@ The different conceptual views lead to different matching outcomes. For example:
 * `here` and `there` are different words, but the sequence of characters `here` occurs within `there` under a character-based view.
 * A chapter and a section might share the same title, e.g., `Introduction`.
 
-[Table 1.1](#matching-table-text_examples) clearly illustrates the difference in finding matches, 
+[Table 1.1](#matching-table-text_examples) clearly illustrates the difference in finding matches,
 i.e., whether a needle occurs within a haystack, for several conceptual views.
 
 <a name="matching-table-text_examples">
@@ -61,23 +61,23 @@ Code can be conceptually viewed as
 
 ### 1.2 Find matches based on classification
 
-Matches can be found based on class. 
+Matches can be found based on class.
 Each match found corresponds to an element belonging to that particular class.
 
-For example, within a text one might find matches to: 
-* numbers (e.g., `42`), 
+For example, within a text one might find matches to:
+* numbers (e.g., `42`),
 * email addresses (e.g., `user@example.com`), and
 * specific sentence classes, such as questions or exclamations.
 
 Similarly, within source code one might find matches to:
 
-* statements (e.g., `return 12;`), 
-* if statements (e.g., `if (a > b) { max = a; } else { max = b; }`), 
+* statements (e.g., `return 12;`),
+* if statements (e.g., `if (a > b) { max = a; } else { max = b; }`),
 * expressions (e.g., `a + b`), and
 * declarations and definitions (e.g., variables, functions, and classes).
 
-To support finding matches in a uniform way across different programming languages, 
-it is necessary to abstract from language-specific and parser-specific details. 
+To support finding matches in a uniform way across different programming languages,
+it is necessary to abstract from language-specific and parser-specific details.
 Therefore, a generic classification is introduced that captures common programming concepts.
 This generic classification includes elements such as declarations and definitions (of e.g., variables, functions, and classes), expressions, and statements.
 
@@ -107,16 +107,16 @@ The same regular-expression pattern also yields two matches within the following
 MyPrint(name, "is", age, "years (old).")
 MyPrint((a+12) * matrix[0][1])
 ```
-However, the matches — `MyPrint(name, "is", age, "years (old)` and `MyPrint((a+12)` — do not correspond to function calls. 
+However, the matches — `MyPrint(name, "is", age, "years (old)` and `MyPrint((a+12)` — do not correspond to function calls.
 
 The inability to capture all function calls is not specific to this particular pattern, but reflects a fundamental limitation of regular expressions.
 Regular expressions lack the expressive power to represent unbounded hierarchical structure.
 Consequently, regular expressions cannot match arbitrarily deep nesting of balanced delimiters, such as parentheses, quotes, brackets, and braces.
 
 ### Structure-based patterns
-When code is viewed as structured by delimiters, equality should respect this structure. 
+When code is viewed as structured by delimiters, equality should respect this structure.
 [Comby](https://comby.dev), for example, matches the structure-based pattern `MyPrint(:[arguments])` to calls to the function `MyPrint`.
-The placeholder `:[arguments]` represents a sequence of characters with properly balanced delimiters. 
+The placeholder `:[arguments]` represents a sequence of characters with properly balanced delimiters.
 The following code contains three matches of this structure-based pattern:
 ```
 MyPrint()
@@ -124,7 +124,7 @@ MyPrint("Hello Word")
 MyPrint(name, "is", age, "years (old).")
 ```
 <!---
-Should the example have unbalanced delimiters within a literal text string? 
+Should the example have unbalanced delimiters within a literal text string?
 -->
 The matching is language-agnostic and can handle arbitrarily deep nesting of delimiters. However, the matching does not capture the internal structure of the arguments, such as their number or types.
 

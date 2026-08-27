@@ -8,7 +8,7 @@
 # File and Folder properties
 
 # Scenario: file encoding
- 
+
 The encoding of a file should never be changed
 
 # Scenario: meta data

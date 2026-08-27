@@ -26,7 +26,7 @@ When a framework allows the combination of filter functions (under the `and` ope
 
 Filter functions have a human-readable description for diagnostic purposes.
 
-We support undecisive filter results. In other words, 
+We support undecisive filter results. In other words,
 a filter function receives a match and returns one of three results:
 
 * **include** — the match passes the check and proceeds to the modify step.

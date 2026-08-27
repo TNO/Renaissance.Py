@@ -60,7 +60,7 @@ and    | a source file written in that programming language
 and    | an AST extracted from that source file without errors
 and    | two sequences of nodes of that AST that partly overlap
 When     | both sequences are replaced with a string
-Then     | an error with the text "overlapping changes are forbidden" is produced   
+Then     | an error with the text "overlapping changes are forbidden" is produced
 
 # Scenario: Combination of prepend and surround
 
@@ -105,7 +105,7 @@ Three cases
 
 ## Case 1
 
-In the order of prepending. 
+In the order of prepending.
 Final order in modified source file: Prepend N - ... -  Prepend 2 - Prepend 1 - AST Node
 
 ## Case 2
@@ -124,7 +124,7 @@ and    | a node of that AST
 and    | a descendant of that node
 When     | that node is prepended by a concatenation of that string with "node"
 and    | that descendant is prepended by a concatenation of that string with "descendant"
-Then     | in the modified source file the concatenation of that string with "node" occurs before the concatenation of that string with "descendant"  
+Then     | in the modified source file the concatenation of that string with "node" occurs before the concatenation of that string with "descendant"
 
 # Scenario: Combination of multiple appends
 
@@ -135,7 +135,7 @@ Three cases
 
 ## Case 1
 
-In the order of appending. 
+In the order of appending.
 Final order in modified source file: AST Node - Append 1 - Append 2 - ... - Append N
 
 ## Case 2
@@ -150,7 +150,7 @@ and    | a node of that AST
 and    | a descendant of that node
 When     | that node is append by a concatenation of that string with "node"
 and    | that descendant is appended by a concatenation of that string with "descendant"
-Then     | in the modified source file the concatenation of that string with "node" occurs after the concatenation of that string with "descendant"  
+Then     | in the modified source file the concatenation of that string with "node" occurs after the concatenation of that string with "descendant"
 
 # Scenario: Combination of multiple surrounds
 
@@ -163,8 +163,8 @@ Three cases
 
 ## Case 1
 
-The order reflects the order of calling surround. 
-Final order in modified source file: 
+The order reflects the order of calling surround.
+Final order in modified source file:
 Surround Before N - ... - Surround Before 2 - Surround Before 1 - AST Node - Surround After 1 - Surround After 2 - ... - Surround After N
 
 ## Case 2
@@ -174,7 +174,7 @@ Given the addition `a + b` and two changes
 1. the variable `a` should be wrapped in a call to `abs`, i.e., surrounded by `abs(` and `)`
 2. the addition should be wrapped in a call to `exp`, i.e., surrounded by `exp(` and `)`
 
-Note that both the variable `a` and the addition start at the same position in the source code. 
+Note that both the variable `a` and the addition start at the same position in the source code.
 
 The expected output is `exp(abs(a) + b)` and NOT `abs(exp(a) + b)`.
 
@@ -208,4 +208,4 @@ Given the two statements in C++ `i++;++j;` and two changes
 Note that the statement `i++;` ends and the statement `++j;` starts at the same position in the source code.
 
 The expected output is `i++;/* postfix increment *//* prefix increment */++j;` and NOT `i++;/* prefix increment *//* postfix increment */++j;`.
- 
+
