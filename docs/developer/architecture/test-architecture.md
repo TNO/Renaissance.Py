@@ -172,16 +172,16 @@ Pick the highest AST node allowed by the all placeholder together in the pattern
 * Purpose
   * E.g. in C++ exist multiple ways to initialize a variable:    `int x = 1;` matches `int x { 1 };` and `int x(1);`
 
-# BDD framework
+## BDD framework
 
 Which BDD framework should we pick?
 I got from Paul the following input.
 
-## Python BDD Framework Recommendation Based on Maturity, Support, and Usage
+### Python BDD Framework Recommendation Based on Maturity, Support, and Usage
 
 When evaluating Python BDD frameworks based on maturity, support, and community adoption, here's a more detailed analysis:
 
-### Comparative Analysis
+#### Comparative Analysis
 
 | Framework | Maturity | Community Support | Usage/Popularity | GitHub Stats (approx.) |
 | -- | -- | -- | -- | -- |
@@ -190,7 +190,7 @@ When evaluating Python BDD frameworks based on maturity, support, and community 
 | Robot Framework | Very High (since 2008) | Large enterprise adoption | Very High | 7k+ stars, corporate backing |
 | Lettuce | Medium | Limited (less active) | Declining | 1.2k+ stars, minimal updates |
 
-### Recommendation: pytest-bdd
+#### Recommendation: pytest-bdd
 
 *For most modern Python codebases, I recommend pytest-bdd* for these reasons:
 
@@ -201,12 +201,13 @@ If you're already using pytest (which most Python projects do), this means:
   * Same command-line interface
   * Compatible plugins
   * Familiar reporting
+
 * *Active Development*: Regular updates and maintenance with good GitHub activity
 * *Modern Python Support*: Excellent support for recent Python versions
 * *Strong Documentation*: Clear, comprehensive documentation with examples
 * *Industry Adoption*: Used by many companies including some large enterprises
 
-### Strong Alternative: Behave
+#### Strong Alternative: Behave
 
 Behave is a very close second and might be preferable if:
 
@@ -216,7 +217,7 @@ Behave is a very close second and might be preferable if:
 
 Behave has slightly higher raw usage numbers historically, but pytest-bdd is gaining ground rapidly due to pytest's dominance in the Python ecosystem.
 
-### Robot Framework Consideration
+#### Robot Framework Consideration
 
 Robot Framework deserves mention as the most comprehensive option with the largest enterprise adoption, but it's:
 

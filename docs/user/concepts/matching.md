@@ -199,7 +199,7 @@ Relevant strategies include eager, lazy, and all-possible matching.
 
 * Local image directory: [matching-images/](matching-images/README.md)
 
-# MISC
+## MISC
 
 ## Code Matching Functionality
 

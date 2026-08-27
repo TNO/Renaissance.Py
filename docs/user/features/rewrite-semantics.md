@@ -79,7 +79,7 @@ Then     | an error with the text "overlapping changes are forbidden" is produce
    * Append of node always after surround of descendant of that node
 1. on unrelated nodes: No interaction possible, so nothing to specify
 
-# Scenario: Combination of multiple prepends
+## Scenario: Combination of multiple prepends
 
 1. on the same node: In the order of prepending.
 Final order in modified source file: Prepend N - ... -  Prepend 2 - Prepend 1 - AST Node

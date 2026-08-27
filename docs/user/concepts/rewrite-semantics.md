@@ -130,7 +130,7 @@ For AST-based pattern matching this may occur when a change associated with an A
 
        prepend_text, surround_before_text, AST Node text, surround_after_text, append_text
 
-# MISC
+## MISC
 
 * Rewrite-semantics
   * Dominance rule: dominated operations are ignored

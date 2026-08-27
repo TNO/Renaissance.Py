@@ -4,7 +4,7 @@
 
 **Stable ID:** `FEATURE-NAVIGATION`
 
-# MISC
+## MISC
 
 Navigate the AST based on
 
