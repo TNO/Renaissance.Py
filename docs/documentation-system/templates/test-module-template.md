@@ -1,11 +1,13 @@
-{ #template-test-module }
 # Test module template
+
+{ #template-test-module }
 
 **Stable ID:** `TEMPLATE-TESTMOD`
 
 ```md
-{ #testmod-<slug> }
 # <Test module title>
+
+{ #testmod-<slug> }
 
 **Stable ID:** `TESTMOD-<AREA>-<NAME>`
 

@@ -8,16 +8,16 @@ This section documents the main user-visible features of the repository.
 
 ## 2. Matching and filtering
 
-2. [Pattern matching](pattern-matching.md)
-3. [Filtering and semantic checks](filtering-and-semantic-checks.md)
-4. [Rewrite semantics](rewrite-semantics.md)
+1. [Pattern matching](pattern-matching.md)
+2. [Filtering and semantic checks](filtering-and-semantic-checks.md)
+3. [Rewrite semantics](rewrite-semantics.md)
 
 ## 3. Analysis and transformation
 
-5. [Analysis workflows](analysis-workflows.md)
-6. [Transformation workflows](transformation-workflows.md)
-7. [Strategy composition](strategy-composition.md)
+1. [Analysis workflows](analysis-workflows.md)
+2. [Transformation workflows](transformation-workflows.md)
+3. [Strategy composition](strategy-composition.md)
 
 ## 4. Reporting
 
-8. [Observability and reporting](observability-and-reporting.md)
+1. [Observability and reporting](observability-and-reporting.md)

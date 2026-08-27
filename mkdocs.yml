@@ -76,6 +76,7 @@ markdown_extensions:
   - pymdownx.snippets
   - pymdownx.tabbed:
       alternate_style: true
+  - pymdownx.blocks.html
 
 # We explicitly keep docs/templates/ visible in the built site.
 # MkDocs excludes top-level /templates/ by default, so we negate that.
