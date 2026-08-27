@@ -117,9 +117,16 @@ def camel_case(snippet: str) -> str:
 
 
 def snake_case(snippet: str) -> str:
-    # TODO: Why is exactly one non-capital character allowed in the second group?
-    # Is the regex correct? Should it be [A-Z][a-z]* or [A-Z][a-z]+ instead of [A-Z][a-z]?
-    return re.sub(r"([A-Z][A-z]+)([A-Z][a-z])", r"\1_\2", snippet).lower()
+    """Convert a PascalCase/camelCase identifier to snake_case.
+
+    Splits on two kinds of word boundary: an acronym followed by a word
+    (e.g. "HTMLParser" -> "HTML_Parser"), and a lowercase letter followed
+    by an uppercase letter (e.g. "TypeVarCheck" -> "Type_Var_Check"). A
+    digit does not trigger a split, so "Unit2Pytest" stays "unit2pytest".
+    """
+    s1 = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1_\2", snippet)
+    s2 = re.sub(r"([a-z])([A-Z])", r"\1_\2", s1)
+    return s2.lower()
 
 
 def fix_indent(code_string: str) -> str | None:

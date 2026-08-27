@@ -5,10 +5,10 @@ from hypothesis import given, settings, assume
 import hypothesmith
 
 from renaissance.impl.python.rst_node import PythonRstNode
-from renaissance.refactoring.typevar_check import TypeVarCheck
+from renaissance.refactoring.type_var_tuple_check import TypeVarTupleCheck
 
 
-class TestTypeVarCheckProperties:
+class TestTypeVarTupleCheckProperties:
 
     @given(source=hypothesmith.from_grammar())
     @settings(max_examples=50, deadline=None)
@@ -22,6 +22,6 @@ class TestTypeVarCheckProperties:
             "renaissance.impl.python.factory.PythonFactory.create",
             return_value=PythonRstNode.load_from_text(source),
         ):
-            subject = TypeVarCheck("x.py")
+            subject = TypeVarTupleCheck("x.py")
             subject.in_memory = True
-            subject.find_multi_scope_typevars()
+            subject.find_legacy_unpack_usage()

@@ -3,7 +3,7 @@ import pytest
 from hamcrest import assert_that, has_key, is_not  # pyright: ignore[reportUnknownVariableType]
 from pytest_mock import MockerFixture
 from renaissance.impl.python.rst_node import PythonRstNode
-from renaissance.refactoring.typevar_check import TypeVarCheck
+from renaissance.refactoring.type_var_check import TypeVarCheck
 
 class TestTypeVarCheck:
 
