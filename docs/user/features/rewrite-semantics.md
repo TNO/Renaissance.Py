@@ -188,13 +188,13 @@ The expected output is `exp(abs(a) + b)` and NOT `abs(exp(a) + b)`.
 
 # Scenario: Combination of append and prepend on consecutive nodes
 
-<a name="rewrite-semantics-append-prepend-shared-text-location">
+/// html | figure#rewrite-semantics-append-prepend
 
 ![Prepends at the same text location](../concepts/rewrite-semantics-images/rewrite-semantics-append-prepend.png)
 
-*Figure 1.? (CONCEPT-REWRITE-SEMANTICS-APPEND_PREPEND): Example of overlapping replacements.*
+*Figure 1.6 (CONCEPT-REWRITE-SEMANTICS-APPEND_PREPEND): Example of overlapping replacements.*
 
-</a>
+///
 
 BDD keyword | step description
 -- | --

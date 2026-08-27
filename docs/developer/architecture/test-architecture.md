@@ -205,9 +205,11 @@ Pick the highest AST node allowed by the all placeholder together in the pattern
 Which BDD framework should we pick?
 I got from Paul the following input.
 
-<html>
-<body>
-<!--StartFragment--><span data-teams="true"><h1><span style="font-size: x-large;">Python BDD Framework Recommendation Based on Maturity, Support, and Usage</span></h1><p><span style="font-size: inherit;">When evaluating Python BDD frameworks based on maturity, support, and community adoption, here's a more detailed analysis:</span></p><h2>Comparative Analysis</h2>
+## Python BDD Framework Recommendation Based on Maturity, Support, and Usage
+
+When evaluating Python BDD frameworks based on maturity, support, and community adoption, here's a more detailed analysis:
+
+### Comparative Analysis
 
 | Framework | Maturity | Community Support | Usage/Popularity | GitHub Stats (approx.) |
 | -- | -- | -- | -- | -- |
@@ -216,7 +218,36 @@ I got from Paul the following input.
 | Robot Framework | Very High (since 2008) | Large enterprise adoption | Very High | 7k+ stars, corporate backing |
 | Lettuce | Medium | Limited (less active) | Declining | 1.2k+ stars, minimal updates |
 
-<h2>Recommendation: pytest-bdd</h2><p><span style="font-size: inherit;"><strong>For most modern Python codebases, I recommend pytest-bdd</strong> for these reasons:</span></p><ol><li><strong>Ecosystem Integration</strong>: It integrates seamlessly with pytest, which is the de facto standard for Python testing. If you're already using pytest (which most Python projects do), this means:
-<ul><li>Shared fixtures</li><li>Same command-line interface</li><li>Compatible plugins</li><li>Familiar reporting</li></ul></li><li><strong>Active Development</strong>: Regular updates and maintenance with good GitHub activity</li><li><strong>Modern Python Support</strong>: Excellent support for recent Python versions</li><li><strong>Strong Documentation</strong>: Clear, comprehensive documentation with examples</li><li><strong>Industry Adoption</strong>: Used by many companies including some large enterprises</li></ol><h2>Strong Alternative: Behave</h2><p><span style="font-size: inherit;">Behave is a very close second and might be preferable if:</span></p><ul><li>You want something that feels more like traditional Cucumber</li><li>You need a standalone BDD solution not tied to pytest</li><li>You prefer its slightly more mature feature set</li></ul><p><span style="font-size: inherit;">Behave has slightly higher raw usage numbers historically, but pytest-bdd is gaining ground rapidly due to pytest's dominance in the Python ecosystem.</span></p><h2>Robot Framework Consideration</h2><p><span style="font-size: inherit;">Robot Framework deserves mention as the most comprehensive option with the largest enterprise adoption, but it's:</span></p><ul><li>Much more than just a BDD tool (full test automation framework)</li><li>Has a steeper learning curve</li><li>May be overkill if you just need BDD capabilities</li></ul></span><!--EndFragment-->
-</body>
-</html>
+### Recommendation: pytest-bdd
+
+*For most modern Python codebases, I recommend pytest-bdd* for these reasons:
+
+* *Ecosystem Integration*: It integrates seamlessly with pytest, which is the de facto standard for Python testing.
+If you're already using pytest (which most Python projects do), this means:
+
+  * Shared fixtures
+  * Same command-line interface
+  * Compatible plugins
+  * Familiar reporting
+* *Active Development*: Regular updates and maintenance with good GitHub activity
+* *Modern Python Support*: Excellent support for recent Python versions
+* *Strong Documentation*: Clear, comprehensive documentation with examples
+* *Industry Adoption*: Used by many companies including some large enterprises
+
+### Strong Alternative: Behave
+
+Behave is a very close second and might be preferable if:
+
+* You want something that feels more like traditional Cucumber
+* You need a standalone BDD solution not tied to pytest
+* You prefer its slightly more mature feature set
+
+Behave has slightly higher raw usage numbers historically, but pytest-bdd is gaining ground rapidly due to pytest's dominance in the Python ecosystem.
+
+### Robot Framework Consideration
+
+Robot Framework deserves mention as the most comprehensive option with the largest enterprise adoption, but it's:
+
+* Much more than just a BDD tool (full test automation framework)
+* Has a steeper learning curve
+* May be overkill if you just need BDD capabilities

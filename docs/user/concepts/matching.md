@@ -30,7 +30,7 @@ The different conceptual views lead to different matching outcomes. For example:
 [Table 1.1](#matching-table-text_examples) clearly illustrates the difference in finding matches,
 i.e., whether a needle occurs within a haystack, for several conceptual views.
 
-<a name="matching-table-text_examples">
+/// html | figure#matching-table-text_examples
 
 *Table 1.1: Examples of whether a match is present under several conceptual views of text.*
 
@@ -40,18 +40,18 @@ i.e., whether a needle occurs within a haystack, for several conceptual views.
 | sequence of letters     | yes            | yes                   |
 | sequence of words       | no             | no                    |
 
-</a>
+///
 
 Text editors provide options that influence matching, such as case sensitivity, whole-word matching, and pattern-based descriptions using regular expressions, which correspond respectively to the conceptual-view dimensions of equality, granularity, and classification.
 See for example [Figure 1.1](#matching-equal-notepadplusplus-find) that shows options supported by Notepad++.
 
-<a name="matching-equal-notepadplusplus-find">
+/// html | figure#matching-equal-notepadplusplus-find
 
 ![Find window of Notepad++](matching-images/matching-equal-notepadplusplus-find.png)
 
 *Figure 1.1 (CONCEPT-MATCHING): Selecting the desired conceptual view for text in the Find window of Notepad++.*
 
-</a>
+///
 
 Code can be conceptually viewed as
 
