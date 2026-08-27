@@ -303,7 +303,7 @@ class PythonRstNode:
 
     @staticmethod
     def load(
-        file_path: Path,
+        file_path: Path,  # TODO: why Path - why not FileDescriptorOrPath (the type of the file parameter of the open function)?
         extra_args: Sequence[str] | None = None,
         working_dir: Path | None = None,
     ) -> PythonRstNode:

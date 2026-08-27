@@ -5,6 +5,7 @@ from dataclasses import dataclass
 
 from renaissance.impl.clang import ClangASTNode
 from renaissance.impl.clang.clang_json_ast_node import ClangJsonASTNode
+from renaissance.impl.types import Call
 from renaissance.refactoring import CleanupRefactoring
 from renaissance.syntax_tree import (
     ASTFactory,
@@ -120,7 +121,7 @@ def batch_repeat_example():
 
 
 @dataclass
-class Call:
+class CallInfo:
     callee: str
     calls: str
 
@@ -132,7 +133,7 @@ class AnalysisRecipe:
     @recipe_step(order=0)
     def store_function_call(self, ast_processor: ASTProcessor) -> Callable[[], None] | None:
         # find all function calls and store them, this routing is invoked in parallel!
-        calls = []
+        calls: list[CallInfo] = []
         [AnalysisRecipe._add_function_call(node, calls) for node in ast_processor.find_ast_type(Call)]
         # the resulting lambda is invoked single threaded
         # this kind of mechanism is mainly used to store results from multiple processors
@@ -152,10 +153,10 @@ class AnalysisRecipe:
             print("    " + call.callee + " --  calls --> " + call.calls)
 
     @staticmethod
-    def _add_function_call(call: ASTNode, calls: list[Call]):
+    def _add_function_call(call: ASTNode, calls: list[CallInfo]):
         callee = call.get_ancestor("(?i)Function_?Decl")
         if callee:
-            calls.append(Call(callee.name, call.children[0].name))
+            calls.append(CallInfo(callee.name, call.children[0].name))
 
 
 def batch_recipe_example():

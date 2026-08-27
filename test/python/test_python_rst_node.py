@@ -150,7 +150,7 @@ class Parent:
 
     @pytest.mark.hypothesisslow
     @given(code=hypothesmith.from_node(libcst.BaseStatement))
-    @settings(max_examples=50, suppress_health_check=HealthCheck.all())
+    @settings(max_examples=50, suppress_health_check=list(HealthCheck))
     def test_from_cst_returns_statement(self, code):
         reject_unsupported_code(code)
         factory = PythonFactory(PythonRstNode)

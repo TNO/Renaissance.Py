@@ -106,10 +106,10 @@ nav:
           - 1. Evolving and maintaining code: user/concepts/code-base-evolution-and-maintenance.md
           - 2. Automation: user/concepts/automation.md
           - 3. Matching: user/concepts/matching.md
-          - Matching images: user/concepts/matching/README.md
+          - Matching images: user/concepts/matching-images/README.md
           - 4. Filter: user/concepts/filter.md
           - 5. Rewrite semantics: user/concepts/rewrite-semantics.md
-          - Rewrite semantics images: user/concepts/rewrite-semantics/README.md
+          - Rewrite semantics images: user/concepts/rewrite-semantics-images/README.md
           - 6. Observability: user/concepts/observability.md
           - 7. Analysis: user/concepts/analysis.md
           - 8. Transformation: user/concepts/transformation.md
@@ -120,7 +120,7 @@ nav:
           - Overview: user/features/index.md
           - 1. Parsing and AST access: user/features/parsing-and-ast-access.md
           - 2. Pattern matching: user/features/pattern-matching.md
-          - Pattern matching images: user/features/pattern-matching/README.md
+          - Pattern matching images: user/features/pattern-matching-images/README.md
           - 3. Filtering and semantic checks: user/features/filtering-and-semantic-checks.md
           - 4. Analysis workflows: user/features/analysis-workflows.md
           - 5. Transformation workflows: user/features/transformation-workflows.md

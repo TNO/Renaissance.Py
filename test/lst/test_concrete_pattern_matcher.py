@@ -4,7 +4,7 @@ from hamcrest import *
 
 from renaissance.impl.tree_sitter.adapter import TreeSitterAdapter
 from renaissance.impl.tree_sitter.extractor import Extractor
-from renaissance.impl.tree_sitter.factory import TreeStiterPatternFactory
+from renaissance.impl.tree_sitter.factory import TreeSitterPatternFactory
 from renaissance.syntax_tree.match_finder import is_match, is_match_tree, match_pattern
 
 
@@ -36,7 +36,7 @@ class TestConcretePatternMatcher:
     )
     def test_python_pattern(self, code, pattern):
         adapter = TreeSitterAdapter(tree_sitter_python)
-        interface = TreeStiterPatternFactory(adapter)
+        interface = TreeSitterPatternFactory(adapter)
         extractor = Extractor(interface, [pattern])
         matches = extractor.run(code)
 
@@ -44,7 +44,7 @@ class TestConcretePatternMatcher:
 
     def test_is_match_python_patterns(self):
         adapter = TreeSitterAdapter(tree_sitter_python)
-        interface = TreeStiterPatternFactory(adapter)
+        interface = TreeSitterPatternFactory(adapter)
         c = interface.create_statement("try: pass\nexcept Exception: pass")
         p = interface.create_statement("try: $b\nexcept Exception: $b")
         assert_that(is_match(c.children[0], p.children[0], {}), is_(True))  # type: ignore
@@ -54,14 +54,14 @@ class TestConcretePatternMatcher:
 
     def test_is_match_python_patterns_tree(self):
         adapter = TreeSitterAdapter(tree_sitter_python)
-        interface = TreeStiterPatternFactory(adapter)
+        interface = TreeSitterPatternFactory(adapter)
         c = interface.create_statement("try: pass\nexcept Exception: pass")
         p = interface.create_statement("try: $b\nexcept Exception: $b")
         assert_that(is_match_tree(c.children, p.children, {}), is_(True))
 
     def test_is_match_python_patterns_1(self):
         adapter = TreeSitterAdapter(tree_sitter_python)
-        interface = TreeStiterPatternFactory(adapter)
+        interface = TreeSitterPatternFactory(adapter)
         c = interface.create_statement("if x:  print(x)")
         p = interface.create_statement("if x:  $body")
         assert_that(is_match(c, p), is_(True))
@@ -69,7 +69,7 @@ class TestConcretePatternMatcher:
 
     def test_is_match(self):
         adapter = TreeSitterAdapter(tree_sitter_python)
-        interface = TreeStiterPatternFactory(adapter)
+        interface = TreeSitterPatternFactory(adapter)
         c = interface.create_statement("def foo(): pass")
         p = interface.create_statement("def foo(): pass")
         assert_that(is_match(c, p), is_(True))

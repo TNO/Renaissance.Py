@@ -21,10 +21,13 @@ from .recipe_ast_processor import (
     recipe_step,
 )
 
-# Ruff added a circular dependency when reorganizing all imports alphatically
-# This import requires ASTFinder/ASTNode/ASTReference to already exist
-# Needs to come after them (added as ignore in pyproject.toml)
-from renaissance.impl.clang.cpp_utils import CPPUtils
+# ruff: noqa: I001
+# isort: split
+# This import must come after the ones above: renaissance.impl.clang (imported via
+# cpp_utils) imports back from renaissance.syntax_tree (ASTFinder, ASTNode,
+# ASTReference), so those names must already be bound in this module's namespace
+# before cpp_utils is loaded, or the circular import fails.
+from renaissance.impl.clang.cpp_utils import CPPUtils  # noqa: E402
 
 __all__ = [
     "ASTNode",

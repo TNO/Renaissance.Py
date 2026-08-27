@@ -74,7 +74,7 @@ class PythonASTNode:
     def __init__(self, node: ast):
         self._node = node
     @property
-    def propertie(self):
+    def properties(self):
       return {'name':self._node.name, 'value':self._node.value}
     @property
     def children(self):

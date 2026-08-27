@@ -133,7 +133,12 @@ class ClangASTNode(ASTNode):
         # for example in the case of a base type.
         # without the fake child pattern matching on types will be difficult
         self.__inserted_children = []
-        if insert_kind is None and not self.node.location.is_in_system_header and self.node.kind.is_declaration() and self.node.type.kind != TypeKind.INVALID:  # type: ignore
+        if (
+            insert_kind is None
+            and not self.node.location.is_in_system_header
+            and self.node.kind.is_declaration()
+            and self.node.type.kind != TypeKind.INVALID
+        ):  # type: ignore
             loc_offset: int = self.node.location.offset
             length = len(self.node.spelling.encode(sys.getdefaultencoding()))
             insert_child = ClangASTNode(self.node, self.translation_unit, self, loc_offset, length, "DECL_LOC")
@@ -245,7 +250,7 @@ class ClangASTNode(ASTNode):
             return self.translation_unit.clang_atu.spelling
         try:
             return self.node.location.file.name
-        except:
+        except Exception:
             return EMPTY_STR
 
     @override
@@ -262,7 +267,7 @@ class ClangASTNode(ASTNode):
                 while end_offset < len(content) and content[end_offset - 1] not in b";":
                     end_offset += 1
             return end_offset
-        except:
+        except Exception:
             return 0
 
     def _is_statement_or_declaration(self):
@@ -315,7 +320,7 @@ class ClangASTNode(ASTNode):
         is_all = {
             attr[len("is_") :]: True
             for attr in dir(self.node)
-            if attr.startswith("is_") and callable(getattr(self.node, attr) and getattr(self.node, attr)() == True)
+            if attr.startswith("is_") and callable(getattr(self.node, attr)) and getattr(self.node, attr)()
         }
         result.update(is_all)
         return result
@@ -401,7 +406,7 @@ class ClangASTNode(ASTNode):
 
             return self.node.extent.start.offset
 
-        except:
+        except Exception:
             return 0
 
     def __derive_length(self) -> int:
@@ -413,7 +418,7 @@ class ClangASTNode(ASTNode):
             else:
                 end_offset = self.node.extent.end.offset
             return end_offset - self.__derive_start_offset()
-        except:
+        except Exception:
             return 0
 
     def __derive_kind(self) -> str:
@@ -434,7 +439,7 @@ class ClangASTNode(ASTNode):
         try:
             if ClangASTNode._is_wrapped(cursor):
                 return ClangASTNode.remove_wrapper(list(cursor.children)[0])
-        except:
+        except Exception:
             pass
         return cursor
 
@@ -448,7 +453,7 @@ class ClangASTNode(ASTNode):
             print(node.__dict__)
             node.__dict__["id"]
             return True
-        except:
+        except Exception:
             return False
 
     @staticmethod
@@ -515,8 +520,8 @@ class ReferenceHelper:
                 )
                 try:
                     ast_node.translation_unit._referenced_by[ref_id].append(referenced_by)
-                except:
+                except Exception:
                     ast_node.translation_unit._referenced_by[ref_id] = [referenced_by]
                 references.append(reference)
-            except:
+            except Exception:
                 pass

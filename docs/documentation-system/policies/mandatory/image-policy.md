@@ -24,9 +24,11 @@ This policy governs where images are stored, how they are named, and which forma
 - `docs/assets/images/logos/`
 
 ### Local images
-- page-owned directories, such as `docs/user/concepts/matching/`
-- page-owned directories, such as `docs/user/features/pattern-matching/`
+- page-owned directories, such as `docs/user/concepts/matching-images/`
+- page-owned directories, such as `docs/user/features/pattern-matching-images/`
 - page-owned directories for developer-facing pages, such as `docs/developer/architecture/images/`
+
+Page-owned directories **must not** share their name with the sibling page file (e.g. avoid pairing `matching.md` with a `matching/` directory). MkDocs builds `<page>.md` and `<page>/README.md` (or `<page>/index.md`) to the same output path (`<page>/index.html`) when directory URLs are enabled, so identically named siblings silently overwrite one another in the built site. Use a distinct suffix such as `-images` instead.
 
 ## Naming convention
 

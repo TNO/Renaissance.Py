@@ -393,9 +393,10 @@ Feature: Rewrite semantics
   #
   # C++ is used here: in 'a=1;b=2;', sib1's end location is equal to sib2's start location —
   # a genuinely shared byte boundary. 
-  # In Python adjecent siblings never share a text location.
-  # For example, statements in python are always separated by either '\n' or ';' and these seprators are not part of the statement.
-
+  # In Python adjacent siblings never share a text location.
+  # For example, statements in python are always separated by either '\n' or ';' 
+  # and these separators are not part of the statement.
+  #
   # 'AFTER' is the canonical token for the text at the end of sib1 (append argument,
   # or second argument of surround). 'BEFORE' is the canonical token for the text at
   # the start of sib2 (prepend argument, or first argument of surround).

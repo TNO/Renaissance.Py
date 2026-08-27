@@ -5,18 +5,28 @@ name: Python package
 
 on:
   push:
-    branches: [ "main", "cge-main" ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ "main", "cge-main" ]
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+
+# Avoid overlapping Pages deployments; let the latest push win.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+    permissions:
+      contents: read
+
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.14"]
+        python-version: ["3.14.7"]
 
     steps:
     - name: Checkout repository
@@ -31,14 +41,62 @@ jobs:
       run: uv sync --group dev
     - name: Lint with ruff
       run: uv run ruff check ./src ./test ./tools ./features
-    - name: Test with pytest
-      run: uv run pytest ./test
     - name: Type check with pyright
       run: uv run pyright ./src ./test ./tools ./features
     - name: Check spelling with codespell
-      run: uv run codespell ./src ./test ./tools ./features --ignore-words-list=notin
+      run: uv run codespell ./src ./test ./tools ./features --ignore-words-list=NotIn,ANC
+    - name: Test with pytest and collect coverage
+      run: uv run coverage run -m pytest ./test
+    - name: Coverage report
+      run: uv run coverage report
+    - name: Generate HTML coverage report
+      run: uv run coverage html
+    - name: Upload HTML coverage report artifact
+      uses: actions/upload-artifact@v7.0.1
+      with:
+        name: coverage-html-report
+        path: htmlcov/
+    # Only publish a single, unambiguous site to GitHub Pages: from the main
+    # branch build on the first (and currently only) matrix entry.
+    - name: Build documentation with mkdocs
+      if: >-
+        github.ref == 'refs/heads/main' && github.event_name == 'push' &&
+        matrix.python-version == '3.14.7'
+      run: uv run mkdocs build --strict
+    # Docs are published at the site root and the coverage report is nested
+    # under /coverage/, so both are reachable from the same Pages deployment.
+    - name: Assemble combined Pages site (docs + coverage report)
+      if: >-
+        github.ref == 'refs/heads/main' && github.event_name == 'push' &&
+        matrix.python-version == '3.14.7'
+      run: |
+        mkdir -p _site/coverage
+        cp -r site/. _site/
+        cp -r htmlcov/. _site/coverage/
+    - name: Upload GitHub Pages artifact
+      if: >-
+        github.ref == 'refs/heads/main' && github.event_name == 'push' &&
+        matrix.python-version == '3.14.7'
+      uses: actions/upload-pages-artifact@v5.0.0
+      with:
+        path: _site/
     - name: Build release distributions
       run: |
         # NOTE: put your own distribution build steps here.
         # python -m pip install build
         # python -m build
+
+  deploy-coverage-pages:
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+    - name: Deploy coverage report to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v5.0.0

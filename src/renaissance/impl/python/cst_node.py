@@ -31,7 +31,7 @@ class PythonCstTranslationUnit:
     def signature_of(self, node: CSTNode) -> str:
         try:
             return self.atu.code_for_node(node)
-        except:
+        except Exception:
             return ""
 
 

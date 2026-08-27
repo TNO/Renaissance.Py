@@ -13,7 +13,6 @@ from .factories import Factories
 
 
 class TestASTReference:
-
     @pytest.mark.parametrize(
         "_, factory, code, args",
         Factories.extend(
@@ -30,7 +29,7 @@ class TestASTReference:
         ast = factory.create_from_text(code, "test.cpp")
         with tempfile.TemporaryDirectory() as temp_dir:
             ASTShower.store_node(f"{temp_dir}/c0.txt", ast)
-        call = first(find_ast_type(ast, (Call,ConstructorExpression)))
+        call = first(find_ast_type(ast, (Call, ConstructorExpression)))
         assert_that(isinstance(call, ASTNode), is_(True))
         refs = call.references
         assert_that(refs, has_length(greater_than(0)))
@@ -83,7 +82,7 @@ class TestASTReference:
         assert_that(refs, has_length(is_(1)))
         ref = refs[0]
         ref_node = ref.node
-        assert_that(matches_kind(ref_node, (ParameterDef,VariableDef)), is_(True))
+        assert_that(matches_kind(ref_node, (ParameterDef, VariableDef)), is_(True))
         referenced_by = ref_node.referenced_by
         assert_that(referenced_by, has_length(greater_than(0)))  # clang python return 2 references, clang json 1
         assert_that(using.text in [r.node.text for r in referenced_by])
@@ -95,7 +94,7 @@ class TestASTReference:
                 ("typedef int a; a b;", "c"),
                 ("typedef int a; a b;", "cpp"),
                 ("typedef struct A_Struct {int x; int y;} a; a b;", "cpp"),
-                # diable failing test
+                # disable failing test
                 # ('class A {}; A a={};','cpp'),
             ]
         ),
@@ -114,7 +113,7 @@ class TestASTReference:
         assert_that(refs, has_length(is_(1)))
         ref = refs[0]
         ref_node = ref.node
-        assert_that(matches_kind(ref_node, (RecordDef,TypedefDef,ClassDef)),is_(True))
+        assert_that(matches_kind(ref_node, (RecordDef, TypedefDef, ClassDef)), is_(True))
         referenced_by = ref_node.referenced_by
         assert_that(referenced_by, has_length(greater_than(0)))  # clang python returns 2 references, clang json 1
         assert_that(using.text in [r.node.text for r in referenced_by])
@@ -145,7 +144,7 @@ class TestASTReference:
         assert_that(refs, has_length(is_(1)))
         ref = refs[0]
         ref_node = ref.node
-        assert_that(isinstance(ref_node.ast_type(), (RecordDef, ClassDef,StructDef)))
+        assert_that(isinstance(ref_node.ast_type(), (RecordDef, ClassDef, StructDef)))
         referenced_by = ref_node.referenced_by
         assert_that(referenced_by, has_length(greater_than(0)))  # clang python return 2 references, clang json 1
         if len(referenced_by[0].node.children):

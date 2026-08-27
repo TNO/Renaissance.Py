@@ -10,7 +10,7 @@ The system supports sequence-based, kind-based, and structural matching with pla
 - [Matching](../concepts/matching.md)
 
 ## Related images
-- Local image directory: [pattern-matching/](pattern-matching/README.md)
+- Local image directory: [pattern-matching-images/](pattern-matching-images/README.md)
 
 # MISC
 

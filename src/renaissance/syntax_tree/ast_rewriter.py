@@ -117,8 +117,7 @@ class ASTRewriter:
 
 
 class _RewriteAction:
-    """Data container for  a rewrite action to be applied later on to the AST.
-    """
+    """Data container for  a rewrite action to be applied later on to the AST."""
 
     def __init__(
         self,
@@ -156,8 +155,7 @@ class _RewriteAction:
 
 
 class _RewriteActions:
-    """Data container for a list of rewrite actions to be applied later on to the AST.
-    """
+    """Data container for a list of rewrite actions to be applied later on to the AST."""
 
     def __init__(
         self,
@@ -356,7 +354,9 @@ class _RewriteActions:
         white_space = (
             ""
             if not include_whitespace
-            else "\n" + spaces if ext_end_offset < len(content) and content[ext_end_offset] in b"\n" else spaces
+            else "\n" + spaces
+            if ext_end_offset < len(content) and content[ext_end_offset] in b"\n"
+            else spaces
         )
         # indent the new content except the first line
         new_content = TextUtils.shift_right(new_content, indent, start_line=1)
@@ -437,7 +437,8 @@ class _RewriteActions:
         if node == self.node:
             return node.text
         # the descendants may need to be rewritten as well
-        #        rewrites = [rewrite for rewrite in self.rewrites if any(node.is_ancestor_of(rewrite_node) for rewrite_node in rewrite.nodes)]
+        #        rewrites = [rewrite for rewrite in self.rewrites if any(node.is_ancestor_of(rewrite_node)
+        #                            for rewrite_node in rewrite.nodes)]
         rewrites = [rewrite for rewrite in self.rewrites if any(node.is_ancestor_of(rewrite_node) for rewrite_node in rewrite.nodes)]
         if rewrites:
             rewriter = _RewriteActions(node, self.encoding, self.correct_indent, rewrites)
@@ -457,8 +458,7 @@ class _RewriteActions:
         return new_content, node_list
 
     def _should_skip(self, node: Rewritable):
-        """If the node is not the first node of a pattern match it should be skipped
-        """
+        """If the node is not the first node of a pattern match it should be skipped"""
         return any(node in rewrite.nodes[1:] for rewrite in self.rewrites if isinstance(rewrite.target, PatternMatch))
 
     @staticmethod

@@ -32,7 +32,6 @@ from renaissance.syntax_tree.ast_node import ASTNode
 
 
 class TestRefactorWithNestedCompositions:
-
     def test_refactor_with_nested_compositions(self):
         result = refactor_with_nested_compositions(["", ""])
         assert_that(result, is_not(None))
@@ -76,7 +75,6 @@ f2(a,c);
 
 
 class TestReplaceIfWithTernaryOperator:
-
     # didn't check expected result
     def test_refactor_with_nested_compositions(self):
         result = replace_if_with_ternary()
@@ -95,7 +93,6 @@ class TestReplaceIfWithTernaryOperator:
 
 # add a testcase for remove unused variable
 class TestRemoveUnusedVariable:
-
     @pytest.mark.parametrize("_, node_type", Factories.node_types)
     def test_remove_unused_variable_using_refactor_method(self, _: str, node_type: type[ASTNode]):
         result, expected = remove_unused_variable_using_refactor_method(node_type)
@@ -108,7 +105,6 @@ class TestRemoveUnusedVariable:
 
 
 class TestExamplesDifferentStyles:
-
     @pytest.mark.parametrize(
         "_, factory, _node_type, method",
         list(
@@ -220,8 +216,10 @@ class TestExamplesDifferentStyles:
 
 E       Expected: Expected a callable raising <class 'Exception'>
 E            but: Correct assertion type raised, but a string containing 
-"Error parsing: ClangASTNode1.cpp \n       + errors: 4: 'stddef.h' file not found at <SourceLocation file '/../lib/gcc/x86_64-linux-gnu/13/../../../../include/c++/13/cstddef', line 50, column 10>\n       " not found. 
+"Error parsing: ClangASTNode1.cpp \n       + errors: 4: 'stddef.h' file not found at
+<SourceLocation file '/../lib/gcc/x86_64-linux-gnu/13/../../../../include/c++/13/cstddef', line 50, column 10>\n       " not found. 
 Exception message was: 
-"Error parsing: ClangASTNode1.cpp errors: 4: 'stddef.h' file not found at <SourceLocation file '/../lib/gcc/x86_64-linux-gnu/13/../../../../include/c++/13/cstddef', line 50, column 10>
+"Error parsing: ClangASTNode1.cpp errors: 4: 'stddef.h' file not found at 
+<SourceLocation file '/../lib/gcc/x86_64-linux-gnu/13/../../../../include/c++/13/cstddef', line 50, column 10>
 E       "
 """
