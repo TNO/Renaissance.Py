@@ -1,14 +1,16 @@
-{ #concept-filter }
 # Filter
+
+{ #concept-filter }
 
 **Stable ID:** `CONCEPT-FILTER`
 
 ## Purpose
+
 Filtering refines candidate matches by applying semantic or structural checks.
 
 ## Practical consequence
-A filter result may be include, remove, or undecisive.
 
+A filter result may be include, remove, or undecisive.
 
 # MISC
 

@@ -1,5 +1,6 @@
-{ #policy-glossary-mandatory }
 # Glossary guide
+
+{ #policy-glossary-mandatory }
 
 **Stable ID:** `POLICY-GLOSSARY-MANDATORY`
 
@@ -49,7 +50,7 @@ Each glossary entry must follow this structure:
 Requirements:
 - The term itself is in **bold**.
 - Known aliases are listed in parentheses after the term using *italics*.
-- The definition uses a Markdown definition-list colon (`: `).
+- The definition uses a Markdown definition-list colon (`:`).
 - The final line of every entry is a `See` link to the authoritative concept page.
 - Entries are ordered **alphabetically** within lettered sections (`## A`, `## B`, …).
 - Omit a lettered section if no terms begin with that letter.

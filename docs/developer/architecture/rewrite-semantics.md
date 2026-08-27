@@ -1,9 +1,11 @@
-{ #architecture-rewrite-semantics }
 # Rewrite semantics
+
+{ #architecture-rewrite-semantics }
 
 **Stable ID:** `ARCHITECTURE-REWRITE-SEMANTICS`
 
 ## Purpose
+
 Document design decisions that determine how the rewrite semantics are implemented.
 For the domain model of changes and the rewrite step, see [Rewrite semantics](../../user/concepts/rewrite-semantics.md).
 
@@ -78,8 +80,8 @@ We have chosen
 2. When the same AST-node is involved to order based on the (reversed) order of insertion into the collection of changes.
 The direction depends on the operator - multiple prepends in the order and multiple appends in the reversed order of insertion.
 
-
 ## TO BE Removed?
+
 The following text is already covered by previous remarks, yet without some details. Are the details relevant, useful for our developers?
 
 ### Corner case: Identical replacements
@@ -113,4 +115,3 @@ different behaviours are possible:
 This framework adopts non-idempotent insertion semantics:
 applying append, prepend, or surround multiple times to the same AST node results in repeated insertions,
 even when the inserted text is identical.
-

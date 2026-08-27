@@ -1,14 +1,16 @@
-{ #concept-transformation }
 # Transformation
+
+{ #concept-transformation }
 
 **Stable ID:** `CONCEPT-TRANSFORMATION`
 
 ## Purpose
+
 Transformation manipulates code using find / filter / manipulate workflows.
 
 # MISC
 
-### Transformation Functionality
+## Transformation Functionality
 
 * The encoding of a file should never be changed
 * The meta data of a file or directory is only allowed to change when an actual change happened
@@ -28,4 +30,3 @@ Transformation manipulates code using find / filter / manipulate workflows.
     * Multiple operations on a single find
     * Modification of any AST node possible
       * not only contained in the found match, but all via navigation (along parent and ancestor nodes)
-

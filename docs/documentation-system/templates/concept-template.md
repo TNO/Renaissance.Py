@@ -1,11 +1,13 @@
-{ #template-concept }
 # Concept template
+
+{ #template-concept }
 
 **Stable ID:** `TEMPLATE-CONCEPT`
 
 ```md
-{ #concept-<slug> }
 # <Concept title>
+
+{ #concept-<slug> }
 
 **Stable ID:** `CONCEPT-<AREA>-<NAME>`
 

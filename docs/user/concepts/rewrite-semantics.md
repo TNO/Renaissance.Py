@@ -1,9 +1,11 @@
-{ #concept-rewrite-semantics }
 # Rewrite semantics
+
+{ #concept-rewrite-semantics }
 
 **Stable ID:** `CONCEPT-REWRITE-SEMANTICS`
 
 ## Purpose
+
 Define predictable and understandable semantics for collected and committed changes.
 
 ## Kind of changes
@@ -45,7 +47,7 @@ Figure 1.1 shows an example where different replacements are applied to the same
 
 </a>
 
-2. Overlapping replacements are erroneous.
+1. Overlapping replacements are erroneous.
 
 Whenever different changes are applied to overlapping ranges of text, an error will be raised.
 For AST-based pattern matching, this situation can only occur when replacements are applied to overlapping sequence of nodes.
@@ -61,7 +63,7 @@ Figure 1.2 shows an example where replacements are applied to overlapping sequen
 
 </a>
 
-3. Dominated changes are ignored.
+1. Dominated changes are ignored.
 
 A change is dominated if its range is a proper subset of the range of another change.
 For AST-based pattern matching this may occur when a change associated with an AST node lies within the range of a change associated with one of its ancestors.
@@ -74,7 +76,7 @@ For AST-based pattern matching this may occur when a change associated with an A
 
 </a>
 
-4. Multiple prepends at the same text location
+1. Multiple prepends at the same text location
 
 * different nodes
 
@@ -88,15 +90,15 @@ For AST-based pattern matching this may occur when a change associated with an A
 
     </a>
 
-    * same node
-        In order of insertion of change / in collection order
+  * same node
+      In order of insertion of change / in collection order
 
-5. Multiple appends at the same text location
-    * different nodes
+1. Multiple appends at the same text location
+   * different nodes
 
-      Append of ancestor after append of descendant.
+     Append of ancestor after append of descendant.
 
-      <a name="rewrite-semantics-prepends">
+     <a name="rewrite-semantics-prepends">
 
     ![Appends at the same textual location](rewrite-semantics-images/rewrite-semantics-appends.png)
 
@@ -104,11 +106,11 @@ For AST-based pattern matching this may occur when a change associated with an A
 
     </a>
 
-    * same node
+   * same node
 
-        In reverse order of insertion of change / in reversed collection order
+       In reverse order of insertion of change / in reversed collection order
 
-6. Appends and prepends at the same text location
+2. Appends and prepends at the same text location
         Can only happen for consecutive sibling nodes
         append of sibling before prepend of next, consecutive sibling
 
@@ -120,20 +122,20 @@ For AST-based pattern matching this may occur when a change associated with an A
 
     </a>
 
-7. Prepend, surround, and append
-    * same node
-        The expected order in the modified source file is:
+3. Prepend, surround, and append
+   * same node
+       The expected order in the modified source file is:
 
-        prepend_text, surround_before_text, AST Node text, surround_after_text, append_text
+       prepend_text, surround_before_text, AST Node text, surround_after_text, append_text
 
 # MISC
 
-  * Rewrite-semantics
-    * Dominance rule: dominated operations are ignored
-    * Consistency rule: overlapping operations are not possible
-    * Containment rules:
-      * A replace operation on an AST node, hides all operations on all contained AST nodes (a.k.a. descendants), i.e., they are ignored - prepend, append and around operations on that AST node are NOT affected.
-      * A prepend to an AST node is always before a prepend to any contained AST node
-      * An append to an AST node is always after an append to any contained AST node
-    * Sequence rule - Given two consecutive AST Nodes (a.k.a. siblings):
-      * An append to the first AST Node is always before a prepend to the second AST Node
+* Rewrite-semantics
+  * Dominance rule: dominated operations are ignored
+  * Consistency rule: overlapping operations are not possible
+  * Containment rules:
+    * A replace operation on an AST node, hides all operations on all contained AST nodes (a.k.a. descendants), i.e., they are ignored - prepend, append and around operations on that AST node are NOT affected.
+    * A prepend to an AST node is always before a prepend to any contained AST node
+    * An append to an AST node is always after an append to any contained AST node
+  * Sequence rule - Given two consecutive AST Nodes (a.k.a. siblings):
+    * An append to the first AST Node is always before a prepend to the second AST Node

@@ -1,5 +1,6 @@
-{ #policy-image-mandatory }
 # Image policy
+
+{ #policy-image-mandatory }
 
 **Stable ID:** `POLICY-IMAGE-MANDATORY`
 
@@ -19,11 +20,13 @@ This policy governs where images are stored, how they are named, and which forma
 ## Allowed locations
 
 ### Shared images
+
 - `docs/assets/images/architecture/`
 - `docs/assets/images/notation/`
 - `docs/assets/images/logos/`
 
 ### Local images
+
 - page-owned directories, such as `docs/user/concepts/matching-images/`
 - page-owned directories, such as `docs/user/features/pattern-matching-images/`
 - page-owned directories for developer-facing pages, such as `docs/developer/architecture/images/`
@@ -37,6 +40,7 @@ Segments are separated by hyphens (`-`).
 Special characters such as `+`, `_`, spaces, or uppercase letters are not allowed.
 
 ### Local images
+
 `<page>-<section>-<purpose>.<ext>`
 
 Examples:
@@ -46,6 +50,7 @@ Examples:
 - `matching-step2-result.png`
 
 ### Shared images
+
 `<domain>-<concept>-<variant>.<ext>`
 
 Examples:

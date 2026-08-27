@@ -1,5 +1,6 @@
-{ #template-feature-test-map }
 # Feature-test mapping template
+
+{ #template-feature-test-map }
 
 **Stable ID:** `TEMPLATE-FEATURE-TEST-MAP`
 

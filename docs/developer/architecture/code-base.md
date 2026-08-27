@@ -1,5 +1,6 @@
-{ #dev-architecture-code-base }
 # architecture code base
+
+{ #dev-architecture-code-base }
 
 **Stable ID:** `ARCH-CODE-BASE`
 

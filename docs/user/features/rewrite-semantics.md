@@ -1,19 +1,22 @@
-{ #feature-rewrite-semantics }
 # Rewrite semantics
+
+{ #feature-rewrite-semantics }
 
 **Stable ID:** `FEATURE-REWRITE-SEMANTICS`
 
 ## User-facing summary
+
 The rewrite semantics feature governs how multiple collected changes — replacements and insertions — are applied to a source file in a single rewrite step. It defines which combinations are valid and which produce errors, so that transformation authors can reason about the outcome of composing changes.
 
 ## Related concepts
+
 - [Rewrite semantics](../concepts/rewrite-semantics.md)
 
 ## Verified by test modules
+
 - [Rewrite semantics test module](../../developer/modules/rewrite-semantics.md)
 - BDD scenarios: `features/rewrite-semantics.feature`
 - BDD steps: `features/steps/test-rewrite-semantics.py`
-
 
 # Corner case: Dominated, overlapping replacements
 
@@ -23,8 +26,6 @@ overlaps with other changes. An overlap among dominated replacements therefore
 still produces an error.
 
 See [Architecture: rewrite semantics](../../developer/architecture/rewrite-semantics.md) for the rationale behind this choice.
-
-
 
 # Scenario: Dominated changes
 
@@ -45,7 +46,6 @@ Then | in the modified source file that node is replaced by the given text and a
 
 TODO: This description is only valid when a node is NOT considered a descendant of itself.
 Check our definition (and implementation)!
-
 
 # Scenario: Overlapping changes
 
@@ -70,13 +70,16 @@ Three cases
 3. on unrelated nodes
 
 ## Case 1
+
 Prepend before surround
 
 ## Case 2
-* Surround of node always before prepend of descendant of that node
-* Prepend of node always before surround of descendant of that node
+
+- Surround of node always before prepend of descendant of that node
+- Prepend of node always before surround of descendant of that node
 
 ## Case 3
+
 No interaction possible, so nothing to specify
 
 # Scenario: Combination of append and surround
@@ -87,13 +90,16 @@ Three cases
 3. on unrelated nodes
 
 ## Case 1
+
 Append after surround
 
 ## Case 2
-* surround of node always after append of descendant of that node
-* Append of node always after surround of descendant of that node
+
+- surround of node always after append of descendant of that node
+- Append of node always after surround of descendant of that node
 
 ## Case 3
+
 No interaction possible, so nothing to specify
 
 # Scenario: Combination of multiple prepends
@@ -170,6 +176,7 @@ Surround Before N - ... - Surround Before 2 - Surround Before 1 - AST Node - Sur
 ## Case 2
 
 ### Example
+
 Given the addition `a + b` and two changes
 1. the variable `a` should be wrapped in a call to `abs`, i.e., surrounded by `abs(` and `)`
 2. the addition should be wrapped in a call to `exp`, i.e., surrounded by `exp(` and `)`
@@ -188,7 +195,6 @@ The expected output is `exp(abs(a) + b)` and NOT `abs(exp(a) + b)`.
 
 </a>
 
-
 BDD keyword | step description
 -- | --
  Given     | a programming language
@@ -200,7 +206,8 @@ When     | the first node is append by a concatenation of that string with "node
 and    | the second node is prepended by a concatenation of that string with "descendant"
 Then     | in the modified source file the concatenation of that string with "node" occurs before the concatenation of that string with "descendant"
 
-### Example
+## Example
+
 Given the two statements in C++ `i++;++j;` and two changes
 1. Append to each statement of a postfix increment operator, the comment `/* postfix increment */`
 2. Prepend to each statement of a prefix increment operator, the comment `/* prefix increment */`
@@ -208,4 +215,3 @@ Given the two statements in C++ `i++;++j;` and two changes
 Note that the statement `i++;` ends and the statement `++j;` starts at the same position in the source code.
 
 The expected output is `i++;/* postfix increment *//* prefix increment */++j;` and NOT `i++;/* prefix increment *//* postfix increment */++j;`.
-

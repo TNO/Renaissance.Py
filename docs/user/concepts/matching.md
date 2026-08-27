@@ -3,6 +3,7 @@
 **Stable ID:** `CONCEPT-MATCHING`
 
 ## Purpose
+
 This document describes the concept of a match, i.e., when two objects are considered equal,
 and of finding matches that locates occurrences where this relation holds.
 
@@ -81,7 +82,6 @@ it is necessary to abstract from language-specific and parser-specific details.
 Therefore, a generic classification is introduced that captures common programming concepts.
 This generic classification includes elements such as declarations and definitions (of e.g., variables, functions, and classes), expressions, and statements.
 
-
 ## 1.3 Pattern matching
 
 Matches can also be found based on a pattern.
@@ -97,16 +97,20 @@ When code is viewed as a sequence of characters, patterns are typically expresse
 Regular expressions allow matching based on character classes, such as `\d` for digits, and local structure.
 
 The regular-expression pattern `MyPrint\([^)]*\)` finds two matches within the following code:
+
 ```
 MyPrint()
 MyPrint("Hello World")
 ```
+
 that correspond to calls to the function `MyPrint`.
 The same regular-expression pattern also yields two matches within the following code:
+
 ```
 MyPrint(name, "is", age, "years (old).")
 MyPrint((a+12) * matrix[0][1])
 ```
+
 However, the matches — `MyPrint(name, "is", age, "years (old)` and `MyPrint((a+12)` — do not correspond to function calls.
 
 The inability to capture all function calls is not specific to this particular pattern, but reflects a fundamental limitation of regular expressions.
@@ -114,30 +118,37 @@ Regular expressions lack the expressive power to represent unbounded hierarchica
 Consequently, regular expressions cannot match arbitrarily deep nesting of balanced delimiters, such as parentheses, quotes, brackets, and braces.
 
 ### Structure-based patterns
+
 When code is viewed as structured by delimiters, equality should respect this structure.
 [Comby](https://comby.dev), for example, matches the structure-based pattern `MyPrint(:[arguments])` to calls to the function `MyPrint`.
 The placeholder `:[arguments]` represents a sequence of characters with properly balanced delimiters.
 The following code contains three matches of this structure-based pattern:
+
 ```
 MyPrint()
 MyPrint("Hello Word")
 MyPrint(name, "is", age, "years (old).")
 ```
+
 <!---
 Should the example have unbalanced delimiters within a literal text string?
 -->
 The matching is language-agnostic and can handle arbitrarily deep nesting of delimiters. However, the matching does not capture the internal structure of the arguments, such as their number or types.
 
 ### AST-based patterns
+
 When code is viewed as an Abstract Syntax Tree (AST), patterns operate on syntactic structure rather than on text.
 For example, the AST-based pattern `MyPrint($argument)` matches calls to the function `MyPrint` with exactly one argument.
 The placeholder `$argument` represents one AST node.
 This AST-based pattern has no match within:
+
 ```
 MyPrint()
 MyPrint(name, "is", age, "years (old).")
 ```
+
 and two matches within:
+
 ```
 MyPrint("Hello Word")
 MyPrint((a+12) * matrix[0][1])
@@ -146,24 +157,28 @@ MyPrint((a+12) * matrix[0][1])
 AST-based patterns respect the grammar of the language and distinguish syntactic constructs precisely. However, they do not account for semantic properties, such as the type of an argument.
 Consequently, AST-based patterns cannot distinguish between the distinct overloads of a function, e.g., `MyPrint(string)` and `MyPrint(int)` in the previous example.
 
-
 ## 2. Pattern language
 
 ### 2.1 Concrete syntax
+
 Patterns may use ordinary source notation already known to developers.
 
 ### 2.2 Groups, placeholders, and holes
-- single placeholder: `$x`
-- multi placeholder: `$$xs`
+
+* single placeholder: `$x`
+* multi placeholder: `$$xs`
 
 ### 2.3 Matching constraints inside a pattern
+
 Repeated occurrences of the same placeholder act as a back-reference style constraint.
 
 ## 3. Nested matches
-- nested `if` statements and `for` loops in code
-- nested parentheses such as `(a(b(c)))` in text-like structures
+
+* nested `if` statements and `for` loops in code
+* nested parentheses such as `(a(b(c)))` in text-like structures
 
 ## 4. Multi-matches
+
 Patterns can admit more than one valid decomposition, for example:
 
 ```text
@@ -173,19 +188,20 @@ f($$before, $arg, $$after)
 Relevant strategies include eager, lazy, and all-possible matching.
 
 ## 5. Matching criteria
-- full
-- prefix
-- anywhere
-- first, next, and all
+
+* full
+* prefix
+* anywhere
+* first, next, and all
 
 ## Related images
-- Local image directory: [matching-images/](matching-images/README.md)
 
-
+* Local image directory: [matching-images/](matching-images/README.md)
 
 # MISC
 
-### Code Matching Functionality
+## Code Matching Functionality
+
 * Independent of layout (whitespaces) and comments (presence, absence, content)
 * Support of placeholders
   * Placeholders correspond to AST node (single) / sequence of AST Nodes (multi)

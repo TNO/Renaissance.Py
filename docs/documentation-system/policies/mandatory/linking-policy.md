@@ -1,5 +1,6 @@
-{ #policy-linking-mandatory }
 # Linking policy
+
+{ #policy-linking-mandatory }
 
 **Stable ID:** `POLICY-LINKING-MANDATORY`
 

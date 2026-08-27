@@ -1,5 +1,6 @@
-{ #dev-architecture-code-modify }
 # Modify
+
+{ #dev-architecture-code-modify }
 
 **Stable ID:** `ARCH-CODE-MODIFY`
 
@@ -84,7 +85,6 @@ A transformation can always be designed, e.g., by including an equality check, t
 **Decision**
 
 As performance is not considered a bottleneck, we decided not to check for the corner case of the identity transformation.
-
 
 ## Invariants / guarantees
 

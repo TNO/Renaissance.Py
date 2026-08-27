@@ -1,11 +1,13 @@
-{ #template-feature }
 # Feature template
+
+{ #template-feature }
 
 **Stable ID:** `TEMPLATE-FEATURE`
 
 ```md
-{ #feature-<slug> }
 # <Feature title>
+
+{ #feature-<slug> }
 
 **Stable ID:** `FEATURE-<AREA>-<NAME>`
 

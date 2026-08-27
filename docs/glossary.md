@@ -1,5 +1,6 @@
-{ #glossary }
 # Glossary
+
+{ #glossary }
 
 **Stable ID:** `GLOSSARY`
 

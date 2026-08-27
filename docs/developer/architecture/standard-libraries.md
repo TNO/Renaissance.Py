@@ -1,9 +1,11 @@
-{ #dev-architecture-code-standard-libraries }
 # Standard analyses and transformations
+
+{ #dev-architecture-code-standard-libraries }
 
 **Stable ID:** `ARCHITECTURE-CODE-STANDARD-LIBRARIES`
 
 ## Purpose
+
 A library of standard analyses and transformations can improve quality and reuse.
 
 ## How to enable sharing given different points of view?
@@ -36,7 +38,6 @@ For the following reasons:
 1. The approach scales as it allows points of view to be added incrementally, and
 1. The code owner knows best what is valid and effective for the code base.
 
-
 ## Filter functions
 
 ### Variables read and written
@@ -62,56 +63,74 @@ Such a function should handle the corner cases, where just replacing the node's 
 This function for Python should handle at least the following examples, when the AST node corresponding to the function call `f()` must be correctly removed.
 
 #### Example separator
+
 Original code
+
 ```python
 f() ; g()
 ```
+
 correct removal includes separator `;`
+
 ```python
 g()
 ```
 
 #### Example empty else branch
+
 Original code
+
 ```python
 if cond:
     g()
 else:
     f()
 ```
+
 correct removal includes removal of `else` keyword
+
 ```python
 if cond:
     g()
 ```
 
 #### Example empty then branch
+
 Original code
+
 ```python
 if cond:
     f()
 else:
     g()
 ```
+
 correct removal includes negation of the condition
+
 ```python
 if not cond:
     g()
 ```
 
 #### Example side-effect in condition
+
 Original code
+
 ```python
 if x := cond:
     f()
 ```
+
 correct removal requires that side effect is kept,
 so either
+
 ```python
 if x := cond:
     pass
 ```
+
 or
+
 ```python
 x = cond
 ```
@@ -127,4 +146,3 @@ Examples of such rules include
 
 By enforcing these rules, while capturing their locations, the analyses and transformations can be kept simple.
 Afterwards, the changes can be reverted at the captured locations.
-

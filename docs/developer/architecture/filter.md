@@ -1,5 +1,6 @@
-{ #dev-architecture-code-filter }
 # Filter
+
+{ #dev-architecture-code-filter }
 
 **Stable ID:** `ARCH-CODE-FILTER`
 

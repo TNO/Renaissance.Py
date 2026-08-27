@@ -1,11 +1,13 @@
-{ #template-architecture }
 # Architecture template
+
+{ #template-architecture }
 
 **Stable ID:** `TEMPLATE-ARCH`
 
 ```md
-{ #dev-architecture-<slug> }
 # <Architecture topic title>
+
+{ #dev-architecture-<slug> }
 
 **Stable ID:** `ARCH-<AREA>-<NAME>`
 

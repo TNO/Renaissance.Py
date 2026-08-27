@@ -1,5 +1,6 @@
-{ #feature-navigation }
 # Navigation
+
+{ #feature-navigation }
 
 **Stable ID:** `FEATURE-NAVIGATION`
 
@@ -12,8 +13,7 @@ Navigate the AST based on
   * (probably) limited to current file, as not all ASTs of all files might fit into memory
 * Inheritance, from base class to all derived classes, from derived class to (all) base class(es).
 
-
-3. Navigation
+1. Navigation
       a. parent, ancestors, children, descendants
       b. siblings
       c. Usage - definition / (forward) declaration - references (ONLY in current file / analysis unit)

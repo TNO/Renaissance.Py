@@ -1,11 +1,12 @@
-{ #feature-find }
 # Find
+
+{ #feature-find }
 
 **Stable ID:** `FEATURE-FIND`
 
 # MISC
 
-2. Find all functionality
+1. Find all functionality
     a. Basic find - "code only" no nested structures
     b. find first, next, all - especially find "aa" in "aaaa" - two matches only
     c. basic nested find - "code only" nested if statements, nested for statements, ...
@@ -14,27 +15,29 @@
     f. multiple assignments find
     g. mixed
 
-
 # Scenario: Find by kind
-  * Example, find if statements
-  * Nesting: A found match can contain another found match
+
+* Example, find if statements
+* Nesting: A found match can contain another found match
 
 # Scenario: kind of nodes
-  * Support language agnostics kinds
-    * Definition, statement, expression, ...
-  * Support parser specific kinds
-    * e.g. IASTIfStatement
-  * To be decided: support of kind patterns (like XPath)?
+
+* Support language agnostics kinds
+  * Definition, statement, expression, ...
+* Support parser specific kinds
+  * e.g. IASTIfStatement
+* To be decided: support of kind patterns (like XPath)?
 
 # Scenario: Find by AST Pattern matching
-  * Example, find `if ($x == MAX) { $$stmts; }`
-  * Nesting: A found match can contain another found match
+
+* Example, find `if ($x == MAX) { $$stmts; }`
+* Nesting: A found match can contain another found match
 
 # Scenario: Find All
 
 AST Pattern are found consecutive, i.e., the found matches do not overlap
-  * Find "aa" in "aaa" has only one match
-  * Find "aa" in "aaaa" has only two non-overlapping matches
+* Find "aa" in "aaa" has only one match
+* Find "aa" in "aaaa" has only two non-overlapping matches
 
 # Scenario: Find sequence
 

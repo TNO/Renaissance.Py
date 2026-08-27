@@ -1,5 +1,6 @@
-{ #dev-architecture-code-matching }
 # Matching of code
+
+{ #dev-architecture-code-matching }
 
 **Stable ID:** `ARCH-CODE-MATCHING`
 

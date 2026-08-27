@@ -1,5 +1,6 @@
-{ #testmod-rewrite-semantics }
 # Rewrite semantics test module
+
+{ #testmod-rewrite-semantics }
 
 **Stable ID:** `TESTMOD-REWRITE-SEMANTICS`
 
