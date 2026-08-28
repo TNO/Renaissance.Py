@@ -95,7 +95,7 @@ We should at least test the following functionalities
 
 ## placeholder requirements
 
-A.    We want placeholders at higher level than name to match more complicated AST nodes.
+1. We want placeholders at higher level than name to match more complicated AST nodes.
 Some examples
 
 | match pattern |  with code |
@@ -117,7 +117,7 @@ Note that in the match of `$x;` the concrete syntax of the placeholder name `$x`
 A placeholder can match multiple ASTNodes: e.g. IASTName and IASTIdExpression
 We prefer the highest ASTnode
 
-B.    We want to support that placeholders can occur multiple times
+1. We want to support that placeholders can occur multiple times
 This expresses a constraint: same placeholder enforces same value in instance
 
 Unfortunately, the same placeholder can have multiple classes in a single pattern!

@@ -14,7 +14,7 @@ Navigate the AST based on
 * Inheritance, from base class to all derived classes, from derived class to (all) base class(es).
 
 1. Navigation
-      a. parent, ancestors, children, descendants
-      b. siblings
-      c. Usage - definition / (forward) declaration - references (ONLY in current file / analysis unit)
-      d. Inheritance - base / derived class
+      1. parent, ancestors, children, descendants
+      1. siblings
+      1. Usage - definition / (forward) declaration - references (ONLY in current file / analysis unit)
+      1. Inheritance - base / derived class
