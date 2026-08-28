@@ -7,3 +7,5 @@
 5. [Transformation modules](transformation.md)
 6. [Observability modules](observability.md)
 7. [Strategy modules](strategy.md)
+8. [Refactoring recipes](recipes.md)
+9. [Python AST known limitations](python-ast-known-limitations.md)
