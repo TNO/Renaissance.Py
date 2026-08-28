@@ -59,7 +59,7 @@ class ASTNode(ABC):
         self.root: Self = root
         self._properties = {}
         self._name = ""
-        self.node = None
+        self.node: object | None = None
         self.indent = ""
 
     def __repr__(self):
