@@ -1,4 +1,3 @@
-
 ## Documentation gaps: action points for docs
 
 ### Stub pages that need content
@@ -21,6 +20,8 @@
 
 9. **analysis.md** — Near-empty. Should describe the analysis-only recipe pattern (using `apply` without any `replace`/`remove`), and distinguish it from transformation recipes.
 
+21. **python-ast-known-limitations.md** — page exists, covers the Python AST/RST (`renaissance.impl.python`) limitations found while building recipes: `referenced_by`/`references` missing `self` and return annotations, `get_ancestor()` declared but unavailable on `PythonRstNode`, a `pyright` narrowing false positive on `ASTNode.node`, and `KIND_MAP` missing operator entries (e.g. `Or`, `MatMult`) causing silent AST drops.
+
 ### Features documented in Java but absent in Python docs
 
 10. **`findLinked` and `findInSameATU`** (add to find.md) — Java documents a linked-find mechanism: `findLinked(pattern, "$placeholder")` constrains a subsequent search to the same analysis unit as the preceding match, using a shared placeholder as the correlation key. `findInSameATU` is the variant without a placeholder key.
@@ -35,9 +36,8 @@
 
 15. **Scoping: skip and filter at the file level** (add to strategy-composition.md or a new page) — Java's `skipATU`, `globalFilter`, `sourceFilePostfixes`, and `sourceFileDirectories` provide coarse-grained scoping before any pattern matching runs. The Python equivalent concept needs documentation.
 
-
 ### New pages worth adding
 
-19. **Common parser problems** (new page, e.g., `docs/developer/modules/parser-known-limitations.md`) — Java has CommonCdtParsingProblems.md listing concrete CDT/MSVC-extension parsing failures with workarounds. A Python equivalent covering known tree-sitter, libcst, clang binding, and ANTLR limitations would be directly useful.
+19. **Common parser problems** (new page, e.g., `docs/developer/modules/common-parser-problems.md`) — Java has CommonCdtParsingProblems.md listing concrete CDT/MSVC-extension parsing failures with workarounds. A Python equivalent covering known tree-sitter, libcst, clang binding, and ANTLR limitations would be directly useful.
 
 20. **Related works and context** (new section in index.md or index.md) — The Java UserGuide.md relates the tool to WHARS and ADA tooling. Adding a "related works" section that situates Renaissance-Experiments relative to the Java version, comby, and other code transformation tools would help new contributors understand design choices.
