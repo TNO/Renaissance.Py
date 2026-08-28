@@ -226,3 +226,8 @@ See [Transformation](user/concepts/transformation.md).
 ### Trivia
 
 White spaces and comments.
+
+### Type parameter scope
+
+Whether a `TypeVar`, `ParamSpec`, or `TypeVarTuple` declaration is referenced by exactly one function (single-scope) or by two or more functions (multi-scope) in the same file - the reason a tool converting it to [PEP 695](https://peps.python.org/pep-0695/) generic syntax one function at a time (like `ruff`) can never safely delete the multi-scope case's declaration, even though it can convert either case's signatures.
+See [Type parameter scope](user/concepts/type-parameter-scope.md).

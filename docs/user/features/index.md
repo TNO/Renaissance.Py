@@ -21,3 +21,7 @@ This section documents the main user-visible features of the repository.
 ## 4. Reporting
 
 1. [Observability and reporting](observability-and-reporting.md)
+
+## 5. Code modernization
+
+1. [TypeVar modernization](typevar-modernization.md)
