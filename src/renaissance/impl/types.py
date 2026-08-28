@@ -187,6 +187,10 @@ class Multiply(BaseBinaryOp, _BaseOneTokenOp):
     pass
 
 
+class MatrixMultiply(BaseBinaryOp, _BaseOneTokenOp):
+    pass
+
+
 class Divide(BaseBinaryOp, _BaseOneTokenOp):
     pass
 
@@ -1643,6 +1647,8 @@ KIND_MAP = {
     "ALIGNED_ATTR": AlignedAttribute,
     "and": And,
     "And": And,
+    "or": Or,
+    "Or": Or,
     "AnnAssign": Assign,
     "Annotation": Annotation,
     "Arg": Arg,
@@ -1944,6 +1950,7 @@ KIND_MAP = {
     "LtE": LessThanEqual,
     "MACRO_DEFINITION": MacroDef,
     "marker_annotation": MarkerAnnotation,
+    "MatMult": MatrixMultiply,
     "match": Match,
     "Match": Match,
     "match_case": MatchCase,

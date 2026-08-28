@@ -37,6 +37,7 @@ dependencies = [
     "hypothesmith>=0.3.3",
     "autopep8>=2.0",
     "flake8>=7.0",
+    "packaging>=24.0",
 ]
 
 [dependency-groups]
