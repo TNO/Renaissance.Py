@@ -3,6 +3,20 @@ from pathlib import Path
 from typing import Any, cast
 
 from renaissance.refactoring.python_refactoring import PythonRefactoring
+from renaissance.utils.python_version import minimum_python_version
+
+PEP_695_MINIMUM = (3, 12)
+
+
+def target_supports_pep695(file_path: str) -> bool:
+    """True only if the target codebase's minimum supported Python version (see
+    renaissance.utils.python_version.minimum_python_version) is 3.12+. Conservative by
+    design: an unknown minimum (no pyproject.toml, no/unparsable requires-python, or a
+    version below 3.12) all return False - PEP 695 syntax (`def f[T](...)`) is a hard
+    SyntaxError before Python 3.12, so an unknown minimum must never be treated as safe.
+    """
+    minimum = minimum_python_version(file_path)
+    return minimum is not None and minimum >= PEP_695_MINIMUM
 
 
 def _is_type_param_call(value: ast.expr) -> bool:
@@ -122,9 +136,9 @@ def _used_outside_functions(tree: ast.Module, name: str, decl_stmt: ast.Assign) 
 
 
 def is_safe_to_convert(tree: ast.Module, name: str, decl_stmt: ast.Assign) -> bool:
-    # A multi-scope TypeVar is safe to convert to PEP 695 syntax (and its declaration
-    # removed) only if it isn't referenced anywhere outside the functions using it - a
-    # Generic[...] base or a module-level type alias would break if the name disappeared.
+    # A TypeVar is safe to convert to PEP 695 syntax (and its declaration removed) only if
+    # it isn't referenced anywhere outside the functions using it - a Generic[...] base or
+    # a module-level type alias would break if the name disappeared.
     dunder_all = _find_dunder_all(tree)
     if dunder_all is not None and name in dunder_all:
         return False
@@ -132,11 +146,10 @@ def is_safe_to_convert(tree: ast.Module, name: str, decl_stmt: ast.Assign) -> bo
 
 
 def _all_refs_shadowed_by_pep695(tree: ast.Module, name: str, decl_stmt: ast.Assign) -> bool:
-    # True if every reference to `name` (other than its own declaration) sits inside a
-    # function that already declares its own PEP 695 type parameter of the same name -
-    # e.g. `def b[T](x: T) -> T:` - meaning those `T`s resolve to the function's own type
-    # parameter, not to the module-level declaration, which is therefore dead. Also true
-    # (vacuously) if `name` isn't referenced anywhere at all any more.
+    # True if every remaining reference to `name` sits inside a function that already
+    # declares its own PEP 695 type parameter of the same name - e.g. `def b[T](x: T) -> T:`,
+    # where `T` resolves to the function's own parameter, not the module-level declaration,
+    # making it dead. Also true (vacuously) if `name` isn't referenced anywhere at all.
     found_live_use = False
 
     def visit(node: ast.AST, shadowed: bool) -> None:
@@ -174,32 +187,56 @@ def _build_type_param(decl_stmt: ast.Assign) -> ast.type_param:
     return ast.TypeVar(name=name, bound=bound)
 
 
+def _normalize_docstring_indent(value: str, target_indent: int = 4) -> str:
+    # Works around a shared rewrite-pipeline bug where a docstring's continuation lines get
+    # shifted on top of their own already-correct indentation (python-ast-known-limitations.md
+    # item 5). Resetting them to one canonical indent level here means the later shift lands
+    # each line at the right depth instead of compounding.
+    lines = value.split("\n")
+    if len(lines) < 2:
+        return value  # single-line docstring - nothing to double-indent, see item 5
+    body = lines[1:]
+    non_blank = [line for line in body if line.strip()]
+    if not non_blank:
+        return value
+    common = min(len(line) - len(line.lstrip(" ")) for line in non_blank)
+    prefix = " " * target_indent
+    result = [lines[0]]
+    for i, line in enumerate(body):
+        content = line[common:] if common else line
+        is_last = i == len(body) - 1
+        # rstrip (not strip) preserves each line's own indentation *relative* to `common` -
+        # e.g. a nested list inside the docstring stays nested, not flattened to one level.
+        result.append(prefix + content.rstrip() if (content.strip() or is_last) else "")
+    return "\n".join(result)
+
+
+def _unparse_function(function: ast.FunctionDef | ast.AsyncFunctionDef) -> str:
+    docstring = ast.get_docstring(function, clean=False)
+    if docstring is not None and "\n" in docstring:
+        cast(ast.Constant, cast(ast.Expr, function.body[0]).value).value = _normalize_docstring_indent(docstring)
+    return ast.unparse(function)
+
+
 class TypeVarCheck(PythonRefactoring):
+    # Set directly (e.g. in a test) to skip the pyproject.toml lookup and use this value
+    # instead - mirrors how `in_memory` is set on the base class after construction.
+    min_python_override: tuple[int, int] | None = None
+
     def run(self) -> None:
         self.result = self.check()
 
+    def _target_supports_pep695(self) -> bool:
+        if self.min_python_override is not None:
+            return self.min_python_override >= PEP_695_MINIMUM
+        return target_supports_pep695(self.filename)
+
     def check(self) -> dict[str, dict[str, Any]]:
-        """Check this file's TypeVar/ParamSpec/TypeVarTuple usage end to end.
-
-        Three phases, in order:
-
-        1. Localize any TypeVars imported from a sibling module where it's safe to do
-           so (see is_safe_to_localize) - ruff's UP047 never even looks at these, since
-           it only looks at declarations in the same file.
-        2. Convert every declared TypeVar/ParamSpec/TypeVarTuple's use sites to PEP 695
-           generic syntax (`def f[T](...)`) where safe (see is_safe_to_convert), then
-           remove the now-redundant module-level declaration - both single- and
-           multi-scope. For a single function this is the same rewrite ruff's UP047
-           offers, done directly instead of relying on `--unsafe-fixes`; for 2+
-           functions sharing a name it's a fix ruff can't safely make at all, since
-           converting one function at a time never lets it see that every use site is
-           covered before removing the shared declaration.
-        3. Remove any declaration left dead by outside means (e.g. a signature already
-           converted to PEP 695 syntax by hand, or by running ruff itself before this
-           recipe) - see remove_orphaned_declarations.
-
-        Returns {"cross_file": {...}, "converted": {...}, "orphaned": {...}}, each mapping
-        name -> "fixed" | "unsafe".
+        """Check this file's TypeVar/ParamSpec/TypeVarTuple usage end to end, running three
+        phases in order - localize_imported_typevars, then convert_declared_typevars, then
+        remove_orphaned_declarations (see each method's own docstring for what it does and
+        why). Returns {"cross_file": {...}, "converted": {...}, "orphaned": {...}}, each
+        mapping name -> "fixed" | "unsafe".
         """
         cross_file = self.localize_imported_typevars()
         if "fixed" in cross_file.values():
@@ -232,10 +269,19 @@ class TypeVarCheck(PythonRefactoring):
         PEP 695 generic syntax (`def f[T](...)`), whether it's used by one function or
         shared across several, then remove the now-redundant module-level declaration -
         see is_safe_to_convert and the check() docstring. Returns {name: "fixed" | "unsafe"}.
+
+        PEP 695 syntax requires Python 3.12+ on the target codebase (see
+        target_supports_pep695); if the nearest pyproject.toml's `requires-python` doesn't
+        guarantee that, every candidate is reported "unsafe" and the file is left untouched
+        by this phase - localize_imported_typevars still runs regardless, since it never
+        introduces PEP 695 syntax.
         """
         tree = cast(ast.Module, self.root.node)
         declarations = find_type_param_declarations(tree)
         usage = _functions_using_nodes(tree, set(declarations.keys()))
+
+        if not self._target_supports_pep695():
+            return dict.fromkeys(usage, "unsafe")
 
         results: dict[str, str] = {}
         for name, functions in usage.items():
@@ -249,7 +295,7 @@ class TypeVarCheck(PythonRefactoring):
                 if any(existing.name == name for existing in function.type_params):
                     continue  # already PEP 695 syntax (e.g. converted by ruff already) - don't duplicate
                 function.type_params = [*function.type_params, type_param]
-                self.replace(ast.unparse(function), self._find_rst_node(function), False, False)
+                self.replace(_unparse_function(function), self._find_rst_node(function), False, False)
 
             self._remove_declaration(decl_stmt)
             results[name] = "fixed"
