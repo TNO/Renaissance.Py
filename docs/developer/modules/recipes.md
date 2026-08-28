@@ -16,6 +16,7 @@ page covers `TypeVarCheck` and `TypeVarTupleCheck`, the recipes built for
 - `src/renaissance/refactoring/type_var_check.py`
 - `src/renaissance/refactoring/type_var_tuple_check.py`
 - Base class: `src/renaissance/refactoring/python_refactoring.py`
+- Shared utility: `src/renaissance/utils/python_version.py` (minimum-supported-Python-version detection)
 
 ## Public entry points
 
@@ -45,11 +46,27 @@ against the raw `ast.FunctionDef`/`ast.AsyncFunctionDef` node. It skips a functi
 PEP 695 `type_param` (rather than adding a duplicate) - the same check that lets phase 2 absorb the "signature
 already converted, declaration left behind" case directly, without needing phase 3 for it.
 
+`convert_declared_typevars` calls `_unparse_function(function)` rather than `ast.unparse(function)` directly.
+It's the same output except when `function` has a multi-line docstring: `_normalize_docstring_indent` first resets
+the docstring's continuation lines to a single canonical indent (preserving their indentation *relative* to each
+other) before unparsing, working around a shared rewrite-mechanism bug that would otherwise double-indent those
+lines - see python-ast-known-limitations.md item 5 for the full mechanism and why the fix lives here rather than
+in `ast_rewriter.py`/`text_utils.py` themselves.
+
 `remove_orphaned_declarations` detects a dead declaration without counting references: `_all_refs_shadowed_by_pep695`
 walks the tree tracking whether the current position is "shadowed" (inside a function whose `type_params` already
 declares the same name) and only reports a live use for a `Name` node reached while *not* shadowed. This is what
 lets it recognize the state `ruff`'s `UP047` leaves behind — a signature already rewritten to `def f[T](...)`, with
 the old `T = TypeVar("T")` still sitting in the module, which `ruff` documents it will never remove itself.
+
+Before rewriting anything, `convert_declared_typevars` calls `TypeVarCheck._target_supports_pep695()`, which in turn
+calls `target_supports_pep695(file_path)` (a standalone function in `type_var_check.py`, so it can be tested without
+constructing a recipe). That function only compares `renaissance.utils.python_version.minimum_python_version(file_path)`
+against `PEP_695_MINIMUM = (3, 12)` - the filesystem lookup (nearest `pyproject.toml`, `requires-python` parsing)
+lives in that shared utility module, not here, since any future recipe whose rewrite depends on a minimum Python
+version needs the same detection, not just this one. `TypeVarCheck.min_python_override` is a class attribute a test
+can set after construction to bypass the filesystem lookup entirely - the same pattern `in_memory` already uses on
+the base class.
 
 ## Related features
 
@@ -78,7 +95,6 @@ the old `T = TypeVar("T")` still sitting in the module, which `ruff` documents i
   decide safety or apply a fix; both single- and multi-scope names are converted the same way by
   `convert_declared_typevars()`, which decides safety via `is_safe_to_convert`.
 - Neither recipe resolves package-qualified or dotted-module imports for the cross-file phase.
-- `convert_declared_typevars()` does not check the target codebase's minimum supported Python version. PEP 695
-  syntax requires 3.12+; nothing in `type_var_check.py` reads `requires-python` or otherwise gates the rewrite,
-  unlike `ruff`'s `UP047` - see the Constraints section of
-  [TypeVar modernization](../../user/features/typevar-modernization.md).
+- The Python-version gate (`target_supports_pep695`, backed by `renaissance.utils.python_version`) only recognises
+  `requires-python` specifiers matching a known, hardcoded list of versions (3.8-3.14) - an exotic specifier that
+  matches none of them is treated as unknown, the same as a missing one, and blocks the PEP 695 rewrite.

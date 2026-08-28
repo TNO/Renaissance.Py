@@ -39,14 +39,13 @@ A single Python source file, passed by path.
 
 ## Constraints
 
-- **Requires Python 3.12+ on the target codebase.** [PEP 695](https://peps.python.org/pep-0695/) generic syntax
-  (`def f[T](...)`) did not exist before Python 3.12 (released October 2023) — running this recipe against a
-  codebase that must keep supporting an older interpreter produces a hard `SyntaxError` there. This recipe is
-  currently scoped to 3.12+ targets only, by design: support for gating or targeting older Python versions is
-  intentionally deferred, not yet built. The recipe does not read the target project's `requires-python` (or any
-  other version marker) and does not check the interpreter it runs under either — unlike `ruff`, which skips
-  `UP047` unless the target's declared minimum version is 3.12+. Confirm the target project's minimum supported
-  Python version is 3.12+ before running it.
+- **PEP 695 conversion only applies when the target codebase declares Python 3.12+.**
+  [PEP 695](https://peps.python.org/pep-0695/) generic syntax (`def f[T](...)`) did not exist before Python 3.12
+  (released October 2023). Before rewriting, the recipe finds the nearest `pyproject.toml` above the file being
+  refactored and checks its `requires-python`; if the lowest version that specifier allows is below 3.12 - or no
+  `pyproject.toml` is found, or `requires-python` is missing or unparsable - every candidate is reported
+  `"unsafe"` and left untouched, the same conservative treatment as any other unsafe candidate. Cross-file
+  localization (phase 1) is unaffected by this check and always runs, since it never introduces PEP 695 syntax.
 - The cross-file phase only resolves simple, same-directory sibling imports (`from module_name import T`);
   dotted/package imports are out of scope.
 - A candidate is left unconverted (`"unsafe"`) if the name is re-exported via `__all__`, or referenced outside a
@@ -83,7 +82,20 @@ Equivalently, `PythonRefactoring.process("TypeVarCheck", file)`.
   `_build_type_param` in `type_var_check.py` together.
 - The cross-file phase only resolves same-directory imports; supporting package-qualified imports would need
   `_resolve_sibling_module` to handle dotted module names.
-- No Python-version gate exists yet (see Constraints above); the recipe intentionally targets 3.12+ codebases
-  only for now. Supporting older targets later would mean resolving the target project's `requires-python` (or
-  an explicit CLI flag) before `convert_declared_typevars` runs, and treating a too-low minimum version the same
-  way an unsafe candidate is treated today — reported, not converted.
+- The version gate (see Constraints above) only recognises versions in a known list (3.8 through 3.14, see
+  `_KNOWN_PYTHON_VERSIONS` in `type_var_check.py`); extending it to a new Python release means adding that
+  release to the list.
+- There's no CLI flag to override the detected minimum version; `TypeVarCheck.min_python_override` exists for
+  tests but isn't exposed on the command line.
+- **Whole-function replacement reformats more than the signature.** `convert_declared_typevars` only ever *adds*
+  a `type_params` entry, but because it replaces the *entire* function via `self.replace(_unparse_function(function), ...)`,
+  `ast.unparse()` regenerates every line of the body in its own style - confirmed live against
+  `sqlalchemy/lib/sqlalchemy/sql/elements.py`: a multi-line parameter list collapses onto one long line, an
+  inline stub body (`) -> ReturnType: ...`) moves its `...` to its own line, and `ast.unparse()` drops the PEP 8
+  spaces around `=` for an annotated default (`x: int=...` instead of `x: int = ...`) - the kind of thing
+  `ruff`/`black` would immediately flag on the code this recipe just produced. Not a correctness bug (the file
+  stays valid, and semantics don't change), but a much larger diff than the actual change, for any function whose
+  original formatting doesn't already match `ast.unparse()`'s conventions exactly. Replacing only the `def ... :`
+  header text and leaving the body's original source bytes untouched would eliminate this, but needs a way to
+  target just that sub-span of a function through `self.replace()` - the current API only accepts whole
+  `ASTNode`/sequence targets, not an arbitrary byte range - so this is future work, not yet started.

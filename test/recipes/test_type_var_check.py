@@ -5,7 +5,7 @@ import pytest
 from hamcrest import assert_that, contains_string, has_entry, has_key, is_, is_not, not_  # pyright: ignore[reportUnknownVariableType]
 from pytest_mock import MockerFixture
 from renaissance.impl.python.rst_node import PythonRstNode
-from renaissance.refactoring.type_var_check import TypeVarCheck
+from renaissance.refactoring.type_var_check import PEP_695_MINIMUM, TypeVarCheck, target_supports_pep695
 
 class TestTypeVarCheck:
 
@@ -17,6 +17,9 @@ class TestTypeVarCheck:
         )
         subject = TypeVarCheck("x.py")
         subject.in_memory = True
+        # These tests exercise other behaviour, not version gating - assume 3.12+ so they
+        # don't depend on whatever pyproject.toml happens to be found from the ambient cwd.
+        subject.min_python_override = PEP_695_MINIMUM
         return subject
 
     def _create_cross_file(
@@ -32,6 +35,7 @@ class TestTypeVarCheck:
         )
         subject = TypeVarCheck(importing_file)
         subject.in_memory = True
+        subject.min_python_override = PEP_695_MINIMUM
         return subject
 
     def test_typevar_used_in_multiple_functions(self, mocker: MockerFixture) -> None:
@@ -349,6 +353,87 @@ class TestTypeVarCheck:
         assert_that(output, contains_string("def a[T](self, x: T) -> T:"))
         assert_that(output, contains_string("def b[T](self, y: T) -> T:"))
 
+    def test_converts_function_with_multiline_docstring_without_double_indenting(
+        self, mocker: MockerFixture
+    ) -> None:
+        # Regression test for python-ast-known-limitations.md item 5: ast.unparse() plus
+        # the rewrite pipeline's indentation correction used to double-indent a multi-line
+        # docstring's continuation lines.
+        subject = self._create(mocker, """
+            from typing import TypeVar
+
+            class Foo:
+                def cast(self, x: T) -> T:
+                    \"\"\"First line.
+
+                    Second line already indented.
+                    Third line too.
+                    \"\"\"
+                    return x
+                def other(self, y: T) -> T:
+                    return y
+
+            T = TypeVar("T")
+        """)
+        result = subject.convert_declared_typevars()
+
+        assert_that(result, has_entry("T", "fixed"))
+        output = subject.apply_to_string()
+        assert_that(output, contains_string("def cast[T](self, x: T) -> T:"))
+        assert_that(output, contains_string('        """First line.'))
+        assert_that(output, contains_string("        Second line already indented."))
+        assert_that(output, contains_string("        Third line too."))
+        assert_that(output, contains_string('        """\n        return x'))
+        # would appear if the continuation lines got shifted twice
+        assert_that(output, not_(contains_string("            Second line already indented.")))
+
+    def test_converts_function_with_nested_docstring_indentation(self, mocker: MockerFixture) -> None:
+        # A docstring with an internal nested block (e.g. Sphinx's ".. seealso::") must keep
+        # that block's *relative* extra indentation, not get flattened to one uniform level.
+        subject = self._create(mocker, """
+            from typing import TypeVar
+
+            class Foo:
+                def cast(self, x: T) -> T:
+                    \"\"\"Produce a cast.
+
+                    .. seealso::
+
+                        :ref:`tutorial_casts`
+                    \"\"\"
+                    return x
+                def other(self, y: T) -> T:
+                    return y
+
+            T = TypeVar("T")
+        """)
+        result = subject.convert_declared_typevars()
+
+        assert_that(result, has_entry("T", "fixed"))
+        output = subject.apply_to_string()
+        assert_that(output, contains_string("        .. seealso::"))
+        assert_that(output, contains_string("            :ref:`tutorial_casts`"))
+
+    def test_converts_function_with_single_line_docstring(self, mocker: MockerFixture) -> None:
+        subject = self._create(mocker, """
+            from typing import TypeVar
+
+            class Foo:
+                def cast(self, x: T) -> T:
+                    \"\"\"One liner.\"\"\"
+                    return x
+                def other(self, y: T) -> T:
+                    return y
+
+            T = TypeVar("T")
+        """)
+        result = subject.convert_declared_typevars()
+
+        assert_that(result, has_entry("T", "fixed"))
+        output = subject.apply_to_string()
+        assert_that(output, contains_string("def cast[T](self, x: T) -> T:"))
+        assert_that(output, contains_string('        """One liner."""'))
+
     def test_converts_bound_typevar(self, mocker: MockerFixture) -> None:
         subject = self._create(mocker, """
             from typing import TypeVar
@@ -617,3 +702,92 @@ class TestTypeVarCheck:
         assert_that(output, contains_string("def b[T](x: T) -> T:"))
         assert_that(output, not_(contains_string("TypeVar")))
         assert_that(output, not_(contains_string("import")))
+
+    def _create_versioned(
+        self, mocker: MockerFixture, tmp_path: Path, requires_python: str | None, code: str
+    ) -> TypeVarCheck:
+        if requires_python is not None:
+            (tmp_path / "pyproject.toml").write_text(f'[project]\nrequires-python = "{requires_python}"\n')
+        file_path = str(tmp_path / "subject.py")
+        mocker.patch(
+            "renaissance.impl.python.factory.PythonFactory.create",
+            return_value=PythonRstNode.load_from_text(textwrap.dedent(code), file_path),
+        )
+        subject = TypeVarCheck(file_path)
+        subject.in_memory = True
+        return subject
+
+    # target_supports_pep695() is a thin wrapper around minimum_python_version() (see
+    # test/utils/test_python_version.py for the deep coverage of pyproject.toml lookup and
+    # requires-python parsing) - these two just confirm it applies the >=(3, 12) threshold.
+    def test_target_supports_pep695_true_for_3_12_plus(self, tmp_path: Path) -> None:
+        (tmp_path / "pyproject.toml").write_text('[project]\nrequires-python = ">=3.12"\n')
+        assert_that(target_supports_pep695(str(tmp_path / "file.py")), is_(True))
+
+    def test_target_supports_pep695_false_for_3_10(self, tmp_path: Path) -> None:
+        (tmp_path / "pyproject.toml").write_text('[project]\nrequires-python = ">=3.10"\n')
+        assert_that(target_supports_pep695(str(tmp_path / "file.py")), is_(False))
+
+    def test_convert_declared_typevars_reports_unsafe_when_target_too_old(
+        self, mocker: MockerFixture, tmp_path: Path
+    ) -> None:
+        subject = self._create_versioned(mocker, tmp_path, ">=3.10", """
+            from typing import TypeVar
+
+            def a(x: T) -> T:
+                return x
+            def b(y: T) -> T:
+                return y
+
+            T = TypeVar("T")
+        """)
+        result = subject.convert_declared_typevars()
+
+        assert_that(result, has_entry("T", "unsafe"))
+        assert_that(subject.apply_to_string(), contains_string('T = TypeVar("T")'))
+
+    def test_convert_declared_typevars_still_fixes_when_target_new_enough(
+        self, mocker: MockerFixture, tmp_path: Path
+    ) -> None:
+        subject = self._create_versioned(mocker, tmp_path, ">=3.12", """
+            from typing import TypeVar
+
+            def a(x: T) -> T:
+                return x
+
+            T = TypeVar("T")
+        """)
+        result = subject.convert_declared_typevars()
+
+        assert_that(result, has_entry("T", "fixed"))
+        assert_that(subject.apply_to_string(), contains_string("def a[T](x: T) -> T:"))
+
+    def test_check_still_localizes_when_target_too_old(self, mocker: MockerFixture, tmp_path: Path) -> None:
+        (tmp_path / "pyproject.toml").write_text('[project]\nrequires-python = ">=3.10"\n')
+        (tmp_path / "file_1.py").write_text(textwrap.dedent("""
+            from typing import TypeVar
+            T = TypeVar("T")
+            def a(x: T) -> T:
+                return x
+            """))
+        importing_file = str(tmp_path / "file_2.py")
+        mocker.patch(
+            "renaissance.impl.python.factory.PythonFactory.create",
+            return_value=PythonRstNode.load_from_text(
+                textwrap.dedent("""
+                    from file_1 import T
+                    def b(x: T) -> T:
+                        return x
+                    """),
+                importing_file,
+            ),
+        )
+        subject = TypeVarCheck(importing_file)
+        subject.in_memory = True
+        subject.run()
+
+        assert_that(subject.result["cross_file"], has_entry("T", "fixed"))
+        assert_that(subject.result["converted"], has_entry("T", "unsafe"))
+        output = subject.apply_to_string()
+        assert_that(output, contains_string('T = TypeVar(\'T\')'))
+        assert_that(output, not_(contains_string("def b[T]")))
