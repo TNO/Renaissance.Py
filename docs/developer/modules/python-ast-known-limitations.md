@@ -72,3 +72,48 @@ effect - whole-function replacement reformatting the entire body, not just the c
 bug. That item's future fix (replacing only the signature, leaving the body's original bytes untouched) would
 retire this workaround too, as a bonus rather than something to fix separately - the docstring would never be
 regenerated via `ast.unparse()` at all.
+
+## 5. Overlapping rewrites in one batch corrupt output instead of merging
+
+`_RewriteActions.__is_ancestor_in_nodes` (`renaissance/syntax_tree/ast_rewriter.py`) is meant to detect when two
+pending edits target overlapping source ranges, so `apply()` can skip the redundant one - but it ends with
+`return result and False`, which is always `False` regardless of `result`. The overlap check never fires. Two
+`replace()`/`remove()` calls queued against the same (or overlapping) node before the next `commit()` both get
+applied back to back, with no merging, ordering, or error - just concatenated/garbled text.
+
+**Consequence (before the fix below):** any recipe or base-class helper that edits the same node - e.g. the same
+`from ... import ...` statement, or the same function - more than once within one uncommitted batch produced
+invalid output instead of a clean result or a clear failure. Confirmed live in two places: `TypeVarCheck.
+convert_declared_typevars`, run against a file with `from typing import ParamSpec, TypeVar` where both names get
+converted in the same pass, called `PythonRefactoring.remove_import_alias()` twice against that same import
+statement, producing `from typing import TypeVarfrom typing import ParamSpec`; and the same recipe, run against a
+function using two different type params, replacing that function twice, producing its body duplicated back to
+back. Both are `SyntaxError` on the next parse.
+
+**Fixed: `apply()` now raises instead of corrupting.** `_RewriteActions.apply()` calls a new
+`__check_for_conflicting_rewrites()` that detects two queued rewrites on overlapping source ranges (excluding
+genuine ancestor/descendant nesting, walked via `.parent` rather than `.is_ancestor_of()` since not every
+`Rewritable` implements it - e.g. `PythonRstNode`) and raises `ValueError` instead of applying both. This matches
+the pre-existing "Error cases" group already specified in `features/rewrite-semantics.feature` and its Hypothesis
+counterpart `test_replacing_same_node_twice_always_errors` (`test/syntax_tree/test_rewrite_semantics_properties.py`),
+previously `xfail(strict=True)` and now passing, so the marker was removed. This only turns silent corruption into
+a clear error; it does not merge conflicting rewrites into a correct result, so callers must still avoid queuing
+more than one rewrite per node/range before a commit.
+
+**Still broken, not touched by the fix above:** the same feature file's "Dominance and suppression" group (an
+ancestor replacement should silently suppress a nested descendant edit, not error and not apply both) is a
+separate, pre-existing gap - confirmed live that a queued descendant edit still leaks into the output instead of
+being suppressed. `__is_ancestor_in_nodes` itself (the `return result and False` line) is untouched.
+
+**Workarounds applied in `TypeVarCheck`/`PythonRefactoring` (both `# TODO`-marked, pointing back here):**
+`PythonRefactoring.remove_import_alias()` now accepts a set of names and narrows/removes each shared import in one
+edit instead of one call per name; `TypeVarCheck.convert_declared_typevars` collects every function touched by
+any converted type param and does exactly one `unparse()`+`replace()` per function, after the whole pass, instead
+of one per name. Neither ever queues a second rewrite on the same node, so neither ever reaches the new check.
+
+**A third, unrelated occurrence found once the check went live:** `Taut2Pyunit.convert_setup()` and
+`insert_asserter()`/`remove_assert_func()` (`renaissance/refactoring/taut2pyunit.py`) hit the same pattern -
+queuing two rewrites on the same node before a commit. Their tests (`test_setup`, `test_insert_asserter` in
+`test/refactoring/test_taut2unittest_refactoring.py`) previously passed on silently corrupted output that
+happened to still satisfy the assertion; now correctly rejected, marked `xfail(strict=True)`, not fixed here -
+out of scope for this session's work on `TypeVarCheck`.
