@@ -221,7 +221,9 @@ class PythonRstNode:
                                 self.body = self.children
 
                         if isinstance(node, ImplicitNode) or isinstance(node, ast.Module) or len(node._fields) == 1:
-                            self.children.extend(PythonRstNode(n, translation_unit, self) for n in child)
+                            # A list field can hold a bare None at a position with no value
+                            # None isn't a real AST node, so it has nothing to build a child from.
+                            self.children.extend(PythonRstNode(n, translation_unit, self) for n in child if n is not None)
                             if name == "body":
                                 self.body = self.children
                         else:
