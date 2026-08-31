@@ -13,10 +13,14 @@ page covers `TypeVarCheck` and `TypeVarTupleCheck`, the recipes built for
 
 ## Location
 
-- `src/renaissance/refactoring/type_var_check.py`
+- `src/renaissance/refactoring/type_var_check.py` - the `TypeVarCheck` pipeline itself (orchestration only).
 - `src/renaissance/refactoring/type_var_tuple_check.py`
-- Base class: `src/renaissance/refactoring/python_refactoring.py`
-- Shared utility: `src/renaissance/utils/python_version.py` (minimum-supported-Python-version detection)
+- `src/renaissance/refactoring/type_var_domain.py` - TypeVar/ParamSpec/TypeVarTuple domain model and safety
+  analysis, shared between the two recipes above.
+- Base class: `src/renaissance/refactoring/python_refactoring.py` - also owns two generic, cross-recipe
+  primitives that `TypeVarCheck` uses: `find_rst_node` and `remove_import_alias`.
+- Shared utilities: `src/renaissance/utils/python_version.py` (minimum-supported-Python-version detection),
+  `src/renaissance/utils/unparse_utils.py` (the `ast.unparse()` docstring-indent workaround).
 
 ## Public entry points
 
@@ -36,28 +40,39 @@ page covers `TypeVarCheck` and `TypeVarTupleCheck`, the recipes built for
 
 Both recipes operate on the plain `ast` module directly (`ast.walk`, `ast.iter_child_nodes`, `ast.unparse`) rather
 than Renaissance's RstNode-tree traversal, because the cross-file phase already has to parse a second file from
-disk with `ast.parse()`. Shared helpers (`find_type_param_declarations`, `type_param_constructor_name`) live in
-`type_var_check.py` and are imported by `type_var_tuple_check.py` to avoid duplicating the declaration-scanning
-logic.
+disk with `ast.parse()`. Shared domain helpers (`find_type_param_declarations`, `type_param_constructor_name`,
+plus the safety-analysis functions `is_safe_to_convert`/`is_safe_to_localize`) live in `type_var_domain.py`,
+imported by both `type_var_check.py` and `type_var_tuple_check.py` - kept out of either recipe's own file so
+domain modelling doesn't mix with pipeline orchestration.
 
 `self.body` (top-level statements only) is not enough to rewrite a method nested in a class; `convert_declared_typevars`
-locates the owning `PythonRstNode` for a nested function via `self.root.process(...)`, matching by node identity
-against the raw `ast.FunctionDef`/`ast.AsyncFunctionDef` node. It skips a function that already declares a matching
-PEP 695 `type_param` (rather than adding a duplicate) - the same check that lets phase 2 absorb the "signature
-already converted, declaration left behind" case directly, without needing phase 3 for it.
+locates the owning `PythonRstNode` for a nested function via `self.find_rst_node(function)` - a generic
+`PythonRefactoring` base-class method (matching by node identity against the raw `ast.FunctionDef`/
+`ast.AsyncFunctionDef` node), available to any future recipe needing the same lookup, not just this one. It skips
+a function that already declares a matching PEP 695 `type_param` (rather than adding a duplicate) - the same
+check that lets phase 2 absorb the "signature already converted, declaration left behind" case directly, without
+needing phase 3 for it.
 
-`convert_declared_typevars` calls `_unparse_function(function)` rather than `ast.unparse(function)` directly.
-It's the same output except when `function` has a multi-line docstring: `_normalize_docstring_indent` first resets
-the docstring's continuation lines to a single canonical indent (preserving their indentation *relative* to each
-other) before unparsing, working around a shared rewrite-mechanism bug that would otherwise double-indent those
-lines - see python-ast-known-limitations.md item 5 for the full mechanism and why the fix lives here rather than
-in `ast_rewriter.py`/`text_utils.py` themselves.
+`convert_declared_typevars` calls `unparse_node(function)` (from `renaissance.utils.unparse_utils`) rather than
+`ast.unparse(function)` directly. It's the same output except when `function` has a multi-line docstring:
+`normalize_docstring_indent` first resets the docstring's continuation lines to a single canonical indent
+(preserving their indentation *relative* to each other) before unparsing, working around a shared rewrite-mechanism
+bug that would otherwise double-indent those lines - see python-ast-known-limitations.md item 4 for the full
+mechanism. The workaround lives in a shared utils module rather than in `type_var_check.py` itself, since any
+future recipe doing the same kind of whole-node `ast.unparse()` replacement needs it too.
+
+Removing a now-unused import (e.g. `from typing import TypeVar` once nothing calls it) uses
+`self.remove_import_alias(name)`, another generic `PythonRefactoring` base-class method - it only edits the import
+statement; deciding *whether* a name is still needed stays each recipe's own responsibility
+(`TypeVarCheck._remove_constructor_import_if_unused` walks the tree for remaining `Call` references,
+`_localize_import` reuses the same alias-filtering primitive via `narrowed_import_text`).
 
 `remove_orphaned_declarations` detects a dead declaration without counting references: `_all_refs_shadowed_by_pep695`
-walks the tree tracking whether the current position is "shadowed" (inside a function whose `type_params` already
-declares the same name) and only reports a live use for a `Name` node reached while *not* shadowed. This is what
-lets it recognize the state `ruff`'s `UP047` leaves behind — a signature already rewritten to `def f[T](...)`, with
-the old `T = TypeVar("T")` still sitting in the module, which `ruff` documents it will never remove itself.
+(in `type_var_domain.py`) walks the tree tracking whether the current position is "shadowed" (inside a function
+whose `type_params` already declares the same name) and only reports a live use for a `Name` node reached while
+*not* shadowed. This is what lets it recognize the state `ruff`'s `UP047` leaves behind — a signature already
+rewritten to `def f[T](...)`, with the old `T = TypeVar("T")` still sitting in the module, which `ruff` documents
+it will never remove itself.
 
 Before rewriting anything, `convert_declared_typevars` calls `TypeVarCheck._target_supports_pep695()`, which in turn
 calls `target_supports_pep695(file_path)` (a standalone function in `type_var_check.py`, so it can be tested without
@@ -78,16 +93,26 @@ the base class.
 
 ## Validated by test modules
 
-- `test/refactoring/test_type_var_check.py`
+- `test/refactoring/test_type_var_check.py` - multi-scope detection, the end-to-end `run()`/`check()` path, and
+  the Python-version gate.
+- `test/refactoring/test_type_var_check_localize.py`
+- `test/refactoring/test_type_var_check_convert.py`
+- `test/refactoring/test_type_var_check_orphaned.py`
 - `test/refactoring/test_type_var_check_properties.py`
 - `test/refactoring/test_type_var_tuple_check.py`
 - `test/refactoring/test_type_var_tuple_check_properties.py`
+- `test/refactoring/conftest.py` - shared fixtures (`make_recipe`, `create_type_var_check`) used across the files
+  above and by other recipes' tests.
 
 ## Extension points
 
 - A new recipe is added as a new `PythonRefactoring` subclass in its own `snake_case`-named module under
   `src/renaissance/refactoring/`; the CLI dispatch requires no separate registration.
-- `_build_type_param` is the place to extend if a future PEP adds a new kind of type-parameter declaration.
+- `_build_type_param` (in `type_var_domain.py`) is the place to extend if a future PEP adds a new kind of
+  type-parameter declaration.
+- `PythonRefactoring.find_rst_node`/`remove_import_alias` and `renaissance.utils.unparse_utils.unparse_node` are
+  available to any new recipe that needs the same lookups - a future recipe doing whole-node `ast.unparse()`
+  replacement or import cleanup doesn't need to reimplement them.
 
 ## Non-goals
 

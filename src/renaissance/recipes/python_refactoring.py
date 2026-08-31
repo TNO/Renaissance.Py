@@ -3,7 +3,7 @@
 import importlib
 from collections.abc import Sequence
 from pathlib import Path
-from typing import cast
+from typing import Any, cast
 
 from termcolor import colored
 
@@ -13,6 +13,20 @@ from renaissance.integrations.python.ast.util import to_str
 from renaissance.syntax_tree import ASTProcessor
 from renaissance.syntax_tree.match_finder import match_pattern
 from renaissance.utils.text_utils import snake_case
+
+
+def narrowed_import_text(raw: ast.ImportFrom, name: str) -> str | None:
+    """Build the "from module import ..." text for `raw` with `name`'s alias dropped.
+
+    Returns None if `name` was the only alias (meaning the whole import statement should be
+    removed instead).
+    """
+    remaining = [
+        alias.name if alias.asname is None else f"{alias.name} as {alias.asname}"
+        for alias in raw.names
+        if (alias.asname or alias.name) != name
+    ]
+    return f"from {raw.module} import {', '.join(remaining)}" if remaining else None
 
 
 class PythonRefactoring(ASTProcessor):
@@ -58,5 +72,43 @@ class PythonRefactoring(ASTProcessor):
         """AI: Return the root node's body statements."""
         return cast("PythonRstNode", cast("object", self.root)).body
 
+    def find_rst_node(self, target: ast.AST) -> Any:
+        """Locate the PythonRstNode wrapping a raw ast node.
+
+        E.g. after mutating an ast.FunctionDef in place, this finds the RST node to pass to
+        self.replace().
+        """
+        found: list[Any] = []
+
+        def visit(node: Any) -> None:
+            if node.node is target:
+                found.append(node)
+
+        self.root.process(visit)
+        return found[0]
+
+    def remove_import_alias(self, name: str) -> None:
+        """Narrow or remove the ast.ImportFrom in self.body whose aliases include `name`.
+
+        E.g. once nothing in the file still calls the "TypeVar" it imported. Does nothing if no
+        such import exists; deciding whether `name` is still needed is the caller's
+        responsibility.
+        """
+        for import_node in self.body:
+            raw = cast(ast.AST, import_node.node)
+            if not isinstance(raw, ast.ImportFrom) or not any((alias.asname or alias.name) == name for alias in raw.names):
+                continue
+
+            new_import = narrowed_import_text(raw, name)
+            if new_import is not None:
+                self.replace(new_import, import_node, False, False)
+            else:
+                self.remove(import_node)
+            break
+
     def run(self):
-        """AI: Run this refactoring recipe. Subclasses override this to perform the refactoring."""
+        """Perform this recipe's refactoring.
+
+        Overridden by every concrete subclass; the base no-op lets process() call it uniformly
+        even for a recipe that hasn't overridden it.
+        """

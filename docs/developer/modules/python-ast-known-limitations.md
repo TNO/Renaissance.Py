@@ -57,14 +57,18 @@ unwanted formatting diff to the docstring's internal whitespace on any whole-fun
 from `ast.unparse()`. Today only `TypeVarCheck.convert_declared_typevars` triggers it, being the only recipe that
 replaces a whole function this way, but it's a shared rewrite-mechanism gap, not something specific to `TypeVarCheck`.
 
-**Worked around in `TypeVarCheck` (not fixed in the shared mechanism).** Before `ast.unparse()` runs,
-`type_var_check.py`'s `_normalize_docstring_indent` rewrites a docstring's continuation lines to one canonical
-indent, preserving each line's indentation *relative* to that baseline so nested content (e.g. a Sphinx
-`.. seealso::` block) stays nested, leaving nothing pre-existing for the later shift to double up on. Verified line
-for line against the same real file, with one residual cosmetic-only difference (blank lines gain trailing
-whitespace).
-Any future recipe replacing/inserting a docstring-containing function/class/module the same way would need the same
-kind of workaround, absent a proper fix in `ast_rewriter.py`/`text_utils.py` themselves. A related but distinct side
+**Available as a shared workaround (not fixed in `ast_rewriter.py`/`text_utils.py` themselves).** Before
+`ast.unparse()` runs, `renaissance.utils.unparse_utils.normalize_docstring_indent` rewrites a docstring's
+continuation lines to one canonical indent, preserving each line's indentation *relative* to that baseline so
+nested content (e.g. a Sphinx `.. seealso::` block) stays nested, leaving nothing pre-existing for the later shift
+to double up on. `TypeVarCheck.convert_declared_typevars` uses it via that module's `unparse_node`, so any future
+recipe replacing/inserting a docstring-containing function/class/module the same way can reuse it directly instead
+of reimplementing the workaround, absent a proper fix in `ast_rewriter.py`/`text_utils.py` themselves. Verified
+line for line against the real file that surfaced the bug, with one residual cosmetic-only difference (blank
+lines gain trailing whitespace). A related but distinct side
 effect - whole-function replacement reformatting the entire body, not just the changed signature - is a
 `TypeVarCheck` design trade-off tracked separately in
-[TypeVar modernization](../../user/features/typevar-modernization.md)'s Change considerations, not a framework bug.
+[TypeVar modernization](../../user/features/typevar-modernization.md)'s Change considerations, not a framework
+bug. That item's future fix (replacing only the signature, leaving the body's original bytes untouched) would
+retire this workaround too, as a bonus rather than something to fix separately - the docstring would never be
+regenerated via `ast.unparse()` at all.
