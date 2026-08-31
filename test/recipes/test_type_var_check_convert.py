@@ -1,5 +1,6 @@
 """Tests for TypeVarCheck.convert_declared_typevars."""
 
+import ast
 from collections.abc import Callable
 
 from hamcrest import assert_that, contains_string, has_entry, not_
@@ -273,4 +274,31 @@ class TestTypeVarCheckConvert:
         assert_that(result, has_entry("T", "fixed"))
         output = subject.apply_to_string()
         assert_that(output, contains_string("def b[T](x: T) -> T:"))
+
+    def test_converts_two_type_params_sharing_one_import_without_corrupting_it(
+        self, create_type_var_check: Callable[[str], TypeVarCheck]
+    ) -> None:
+        # Regression test for python-ast-known-limitations.md item 5: converting both T and P
+        # used to queue two conflicting edits against their shared "from typing import ..." line,
+        # corrupting it into "from typing import ParamSpecfrom typing import TypeVar".
+        subject = create_type_var_check("""
+            from typing import ParamSpec, TypeVar
+            from collections.abc import Callable
+
+            P = ParamSpec("P")
+            T = TypeVar("T")
+
+            def run_in_threadpool(func: Callable[P, T]) -> T:
+                return func()
+
+            def identity(x: T) -> T:
+                return x
+        """)
+        result = subject.convert_declared_typevars()
+
+        assert_that(result, has_entry("P", "fixed"))
+        assert_that(result, has_entry("T", "fixed"))
+        output = subject.apply_to_string()
+        ast.parse(output)  # raises SyntaxError if the shared import got corrupted
+        assert_that(output, not_(contains_string("typing import")))
         assert_that(output, not_(contains_string("TypeVar")))
