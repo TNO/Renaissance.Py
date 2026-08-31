@@ -115,6 +115,12 @@ class TypeVarCheck(PythonRefactoring):
             return dict.fromkeys(usage, "unsafe")
 
         results: dict[str, str] = {}
+        removed: list[ast.Assign] = []
+        # Collected here instead of replaced immediately: a function using 2+ converted type
+        # params (e.g. TypeVar and ParamSpec) must get exactly one self.replace() covering all
+        # of them - queuing one per name would target the same function node twice before a
+        # commit, which corrupts the output (see python-ast-known-limitations.md item 5).
+        touched_functions: dict[int, ast.FunctionDef | ast.AsyncFunctionDef] = {}
         for name, functions in usage.items():
             decl_stmt = declarations[name]
             if not is_safe_to_convert(tree, name, decl_stmt):
@@ -126,11 +132,16 @@ class TypeVarCheck(PythonRefactoring):
                 if any(type_param_name(existing) == name for existing in function.type_params):
                     continue  # already PEP 695 syntax (e.g. converted by ruff already) - don't duplicate
                 function.type_params = [*function.type_params, type_param]
-                self.replace(unparse_node(function), self.find_rst_node(function), False, False)
+                touched_functions[id(function)] = function
 
             self._remove_declaration(decl_stmt)
+            removed.append(decl_stmt)
             results[name] = "fixed"
 
+        for function in touched_functions.values():
+            self.replace(unparse_node(function), self.find_rst_node(function), False, False)
+
+        self._remove_unused_constructor_imports(tree, removed)
         return results
 
     def remove_orphaned_declarations(self) -> dict[str, str]:
@@ -145,6 +156,7 @@ class TypeVarCheck(PythonRefactoring):
         declarations = find_type_param_declarations(tree)
 
         results: dict[str, str] = {}
+        removed: list[ast.Assign] = []
         for name, decl_stmt in declarations.items():
             if not all_refs_shadowed_by_pep695(tree, name, decl_stmt):
                 continue
@@ -154,35 +166,46 @@ class TypeVarCheck(PythonRefactoring):
                 continue
 
             self._remove_declaration(decl_stmt)
+            removed.append(decl_stmt)
             results[name] = "fixed"
 
+        self._remove_unused_constructor_imports(tree, removed)
         return results
 
     def _remove_declaration(self, decl_stmt: ast.Assign) -> None:
-        """Remove decl_stmt's statement from the file, and its constructor import if now unused."""
+        """Remove decl_stmt's statement from the file."""
         for stmt_node in self.body:
             if stmt_node.node is decl_stmt:
                 self.remove(stmt_node)
                 break
-        self._remove_constructor_import_if_unused(decl_stmt)
 
-    def _remove_constructor_import_if_unused(self, decl_stmt: ast.Assign) -> None:
-        """Drop the "from typing import TypeVar" (etc) import decl_stmt used, if now unused.
+    def _remove_unused_constructor_imports(self, tree: ast.Module, removed: list[ast.Assign]) -> None:
+        """Drop constructor imports (TypeVar/ParamSpec/TypeVarTuple) no longer used by anything.
 
-        Only if nothing else in the file still calls it - e.g. another, unrelated TypeVar
-        declaration.
+        Once every declaration in `removed` is gone - a declaration's own constructor call
+        doesn't count as "still used".
+
+        TODO: this checks every removed declaration together and does one import edit for the
+        whole batch, rather than one edit per declaration, specifically to avoid ever queuing two
+        edits against the same shared import statement - that corrupts the output instead of
+        merging (ast_rewriter.py, see python-ast-known-limitations.md item 5). If that's ever
+        fixed, this could go back to a simpler per-declaration call.
         """
-        tree = cast(ast.Module, self.root.node)
-        ctor_name = type_param_constructor_name(decl_stmt)
-        still_used = any(
-            isinstance(node, ast.Call)
-            and isinstance(node.func, ast.Name)
-            and node.func.id == ctor_name
-            and node is not decl_stmt.value
-            for node in ast.walk(tree)
-        )
-        if not still_used:
-            self.remove_import_alias(ctor_name)
+        removed_values = {decl_stmt.value for decl_stmt in removed}
+        unused: set[str] = set()
+        for decl_stmt in removed:
+            ctor_name = type_param_constructor_name(decl_stmt)
+            still_used = any(
+                isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Name)
+                and node.func.id == ctor_name
+                and node not in removed_values
+                for node in ast.walk(tree)
+            )
+            if not still_used:
+                unused.add(ctor_name)
+        if unused:
+            self.remove_import_alias(unused)
 
     def localize_imported_typevars(self) -> dict[str, str]:
         """Find TypeVar/ParamSpec/TypeVarTuple names imported from a sibling module.
