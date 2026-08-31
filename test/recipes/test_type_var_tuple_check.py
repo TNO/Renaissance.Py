@@ -1,23 +1,17 @@
-import textwrap
+"""Tests for the TypeVarTupleCheck recipe."""
+
+from collections.abc import Callable
+from typing import cast
 
 import pytest
 from hamcrest import assert_that, contains_inanyorder, empty
-from pytest_mock import MockerFixture
 
-from renaissance.impl.python.rst_node import PythonRstNode
+from renaissance.refactoring.python_refactoring import PythonRefactoring
 from renaissance.refactoring.type_var_tuple_check import TypeVarTupleCheck
 
 
 class TestTypeVarTupleCheck:
-    def _create(self, mocker: MockerFixture, text: str) -> TypeVarTupleCheck:
-        code = textwrap.dedent(text)
-        mocker.patch(
-            "renaissance.impl.python.factory.PythonFactory.create",
-            return_value=PythonRstNode.load_from_text(code),
-        )
-        subject = TypeVarTupleCheck("x.py")
-        subject.in_memory = True
-        return subject
+    """See module docstring."""
 
     @pytest.mark.parametrize("code,expected", [
         (
@@ -46,8 +40,10 @@ class TestTypeVarTupleCheck:
             [],
         ),
     ])
-    def test_legacy_unpack_usage(self, mocker: MockerFixture, code: str, expected: list[str]) -> None:
-        subject = self._create(mocker, code)
+    def test_legacy_unpack_usage(
+        self, make_recipe: Callable[[type[PythonRefactoring], str], PythonRefactoring], code: str, expected: list[str]
+    ) -> None:
+        subject = cast(TypeVarTupleCheck, make_recipe(TypeVarTupleCheck, code))
         result = subject.find_legacy_unpack_usage()
         if expected:
             assert_that(result, contains_inanyorder(*expected))
