@@ -29,6 +29,17 @@ def find_type_param_declarations(tree: ast.Module) -> dict[str, ast.Assign]:
     return declarations
 
 
+def type_param_name(param: ast.type_param) -> str:
+    """Return a PEP 695 type parameter's name.
+
+    `ast.type_param`'s own stub doesn't declare `.name` - only its three concrete subclasses
+    (`ast.TypeVar`/`ast.ParamSpec`/`ast.TypeVarTuple`) do, and every real type_param is one of
+    them, so this narrows to get at it.
+    """
+    assert isinstance(param, ast.TypeVar | ast.ParamSpec | ast.TypeVarTuple)
+    return param.name
+
+
 def type_param_constructor_name(decl_stmt: ast.Assign) -> str:
     """Return the name of the call a declaration uses, e.g. "TypeVar" for `T = TypeVar("T")`."""
     call = cast(ast.Call, decl_stmt.value)
@@ -165,7 +176,7 @@ def all_refs_shadowed_by_pep695(tree: ast.Module, name: str, decl_stmt: ast.Assi
             return
         current = shadowed
         if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
-            current = any(param.name == name for param in node.type_params)
+            current = any(type_param_name(param) == name for param in node.type_params)
         for child in ast.iter_child_nodes(node):
             visit(child, current)
 
