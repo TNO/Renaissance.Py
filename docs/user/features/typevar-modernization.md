@@ -79,16 +79,16 @@ Equivalently, `PythonRefactoring.process("TypeVarCheck", file)`.
 ## Change considerations
 
 - Supporting a future type-parameter-declaring construct means extending `_is_type_param_call` and
-  `_build_type_param` in `type_var_check.py` together.
+  `_build_type_param` in `type_var_domain.py` together.
 - The cross-file phase only resolves same-directory imports; supporting package-qualified imports would need
-  `_resolve_sibling_module` to handle dotted module names.
+  `_resolve_sibling_module` (also in `type_var_domain.py`) to handle dotted module names.
 - The version gate (see Constraints above) only recognises versions in a known list (3.8 through 3.14, see
-  `_KNOWN_PYTHON_VERSIONS` in `type_var_check.py`); extending it to a new Python release means adding that
-  release to the list.
+  `KNOWN_PYTHON_VERSIONS` in `renaissance/utils/python_version.py`); extending it to a new Python release means
+  adding that release to the list.
 - There's no CLI flag to override the detected minimum version; `TypeVarCheck.min_python_override` exists for
   tests but isn't exposed on the command line.
 - **Whole-function replacement reformats more than the signature.** `convert_declared_typevars` only ever *adds*
-  a `type_params` entry, but because it replaces the *entire* function via `self.replace(_unparse_function(function), ...)`,
+  a `type_params` entry, but because it replaces the *entire* function via `self.replace(unparse_node(function), ...)`,
   `ast.unparse()` regenerates every line of the body in its own style - confirmed live against
   `sqlalchemy/lib/sqlalchemy/sql/elements.py`: a multi-line parameter list collapses onto one long line, an
   inline stub body (`) -> ReturnType: ...`) moves its `...` to its own line, and `ast.unparse()` drops the PEP 8
@@ -98,4 +98,7 @@ Equivalently, `PythonRefactoring.process("TypeVarCheck", file)`.
   original formatting doesn't already match `ast.unparse()`'s conventions exactly. Replacing only the `def ... :`
   header text and leaving the body's original source bytes untouched would eliminate this, but needs a way to
   target just that sub-span of a function through `self.replace()` - the current API only accepts whole
-  `ASTNode`/sequence targets, not an arbitrary byte range - so this is future work, not yet started.
+  `ASTNode`/sequence targets, not an arbitrary byte range - so this is future work, not yet started. It's also a
+  nice-to-have on top of the fix itself: the docstring would never be regenerated via `ast.unparse()` at all, so
+  it would retire the docstring-indent workaround too (`renaissance.utils.unparse_utils` - see
+  python-ast-known-limitations.md item 4) rather than needing both to keep existing side by side.
