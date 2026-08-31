@@ -14,6 +14,7 @@ from renaissance.refactoring.type_var_domain import (
     is_safe_to_localize,
     resolve_sibling_module,
     type_param_constructor_name,
+    type_param_name,
 )
 from renaissance.utils.python_version import minimum_python_version
 from renaissance.utils.unparse_utils import unparse_node
@@ -122,7 +123,7 @@ class TypeVarCheck(PythonRefactoring):
 
             type_param = build_type_param(decl_stmt)
             for function in functions:
-                if any(existing.name == name for existing in function.type_params):
+                if any(type_param_name(existing) == name for existing in function.type_params):
                     continue  # already PEP 695 syntax (e.g. converted by ruff already) - don't duplicate
                 function.type_params = [*function.type_params, type_param]
                 self.replace(unparse_node(function), self.find_rst_node(function), False, False)
@@ -160,7 +161,7 @@ class TypeVarCheck(PythonRefactoring):
     def _remove_declaration(self, decl_stmt: ast.Assign) -> None:
         """Remove decl_stmt's statement from the file, and its constructor import if now unused."""
         for stmt_node in self.body:
-            if cast(ast.AST, stmt_node.node) is decl_stmt:
+            if stmt_node.node is decl_stmt:
                 self.remove(stmt_node)
                 break
         self._remove_constructor_import_if_unused(decl_stmt)
@@ -192,7 +193,7 @@ class TypeVarCheck(PythonRefactoring):
         results: dict[str, str] = {}
 
         for import_node in self.body:
-            raw = cast(ast.AST, import_node.node)
+            raw = import_node.node
             if not isinstance(raw, ast.ImportFrom) or raw.module is None or raw.level != 0:
                 continue
 
@@ -230,7 +231,7 @@ class TypeVarCheck(PythonRefactoring):
             return None
 
         for import_node in self.body:
-            raw = cast(ast.AST, import_node.node)
+            raw = import_node.node
             if isinstance(raw, ast.ImportFrom) and raw.module == ctor_module:
                 if any((alias.asname or alias.name) == ctor_name for alias in raw.names):
                     return None
