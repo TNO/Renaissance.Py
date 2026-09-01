@@ -75,7 +75,7 @@ def after_step(step: str) -> TFunc:
     return annotate_decorator(after_step_decorator, after_step.__name__)
 
 
-class RecipeASTProcessor(Generic[TRecipe]):
+class RecipeASTProcessor[TRecipe]:
     def __init__(
         self,
         recipe: TRecipe,
