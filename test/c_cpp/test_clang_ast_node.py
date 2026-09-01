@@ -62,7 +62,7 @@ class TestClangAstNode:
             int b;
         };
         typedef struct A_Struct A;
-        int some_decl = 1; 
+        int some_decl = 1;
 
         int print(const char*, const char *, const char *, const char*);
         void f(){

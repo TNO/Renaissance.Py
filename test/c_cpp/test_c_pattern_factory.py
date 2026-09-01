@@ -30,7 +30,7 @@ class TestCPatternFactory:
                     int a;
                     int b;
                 } A;
-                int some_decl = 1; 
+                int some_decl = 1;
 
                 void f(){
                     A a = {};
@@ -248,7 +248,7 @@ class TestUseAtuToCreatePatterns:
             int a;
             int b;
         } A;
-        int some_decl = 1; 
+        int some_decl = 1;
 
         void f(){
             A a = {};

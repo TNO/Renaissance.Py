@@ -85,7 +85,7 @@ class TestPythonRstNode:
 
     def test_node_family(self):
         src = PythonRstNode.load_from_text(textwrap.dedent("""
-import you 
+import you
 from other import dog
 class Parent:
     def previous_me():
@@ -124,9 +124,9 @@ class Parent:
     @parameterized.expand(Factories.extend(['$x;$y;']))
     def test(_):
         atu = factory.create_from_text(TestStatements.SIMPLE_CPP, "test.c")
-    
+
         matches = match_pattern( func_body.children,patterns)
-    
+
         self.assert_matches( expected_dicts_per_match,matches)
         """)
         it = PythonRstNode.load_from_text(ann_fun).body[-1]
@@ -139,9 +139,9 @@ class Parent:
         @parameterized.expand(Factories.extend(['$x;$y;']))
         def test(_):
             atu = factory.create_from_text(TestStatements.SIMPLE_CPP, "test.c")
-        
+
             matches = match_pattern( func_body.children,patterns)
-        
+
             self.assert_matches( expected_dicts_per_match,matches)
             """)
         it = PythonRstNode.load_from_text(ann_fun).body[-1]

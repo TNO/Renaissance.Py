@@ -13,7 +13,7 @@ class ClangMatchFinderTest:
         void g(int,int);
         int h=0;
         struct S {};
-        
+
         void f(){
             const char* bar = BAR;
         }

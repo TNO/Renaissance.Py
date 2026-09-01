@@ -194,23 +194,23 @@ class TestPythonMatcher:
         atu = self.factory.create_from_text(
             textwrap.dedent("""
             ba(51)
-            na(52)  
-            na(52)  
+            na(52)
+            na(52)
             na(53)
             ba(53)
             pa(54)
             if pa(55):
-                ba(51)  
-                na(52)  
+                ba(51)
+                na(52)
                 na(53)
                 ba(53)
-                na(53)  
+                na(53)
                 na=59
-            else:  
-                ba(51)  
-                na(52)  
+            else:
+                ba(51)
+                na(52)
                 ba(53)
-            
+
             """)
         )
 
@@ -223,23 +223,23 @@ class TestPythonMatcher:
         atu = self.factory.create_from_text(
             textwrap.dedent("""
             ba()
-            ca()  
-            lo()  
+            ca()
+            lo()
             na()
             ba()
             pa()
             if pa():
-                ba()  
-                ca()  
+                ba()
+                ca()
                 lo()
                 na()
-                na()  
+                na()
                 na=59
-            else:  
-                ba()  
-                na()  
+            else:
                 ba()
-            
+                na()
+                ba()
+
             """),
             "test.py",
         )
@@ -294,7 +294,7 @@ class TestPythonMatcher:
         pa(54)
         if pa():
           ba()
-        
+
         if pa(55):
           ba(51)
           na(52)
@@ -304,7 +304,7 @@ class TestPythonMatcher:
           ba(51)
           na(52)
           na(53)
-        
+
         """)
         atu = self.factory.create_from_text(example_code)
         assert_that(atu, is_not(None))

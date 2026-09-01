@@ -292,7 +292,7 @@ class TestMultiAssignments(TestCMatchFinder):
             void f(){
                 fc(1,2,3,4,5);
                 fc(1,2,6,4,5);
-    
+
                 fc(1,2,3,4,5);
                 fc_else(1,2,6,4,5);
             }
@@ -331,7 +331,7 @@ class TestMultiAssignments(TestCMatchFinder):
         expected_dicts_per_match: list[dict[str, list[str]]],
     ):
         code = """
-            
+
             void f(){
                 int a,b,c,d,e;
                 if(1){
@@ -417,8 +417,8 @@ class TestUseAtuToCreatePattern(TestCMatchFinder):
                 int a;
                 int b;
             } A;
-            int some_decl = 1; 
-    
+            int some_decl = 1;
+
             int print(const char*, ...);
             void f(){
                 A a = {};
@@ -426,7 +426,7 @@ class TestUseAtuToCreatePattern(TestCMatchFinder):
                 const char* bar = BAR;
                 const char* same = SAME;
                 print("%s %s %s", foo, bar, same);
-    
+
             }
             """
         atu = factory.create_from_text(code, "test.c")
