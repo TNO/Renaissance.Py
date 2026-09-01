@@ -25,7 +25,7 @@ class TestCcppShower:
 
     def test_show_call_using_repr(self):
         pattern = self.pattern_factory.create("""
-        int $xx; 
+        int $xx;
         void $pa();
         void fff() {
         $pa($xx);
@@ -125,7 +125,7 @@ else
 {
     y=1;
     call(y);
-}    
+}
 }
 """,
             "test.c",

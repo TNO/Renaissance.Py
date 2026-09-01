@@ -52,7 +52,7 @@ class FindMatchTest(unittest.TestCase):
         pattern_factory = CPatternFactory(factory)
         code_pattern = factory.create_from_text(self.code_text, "text.c")
         outer_pattern = pattern_factory.create_statement(self.outer_text)
-        inner_pattern = pattern_factory.create_expression(self.inner_text, self.extra_declarations_inner_text)
+        pattern_factory.create_expression(self.inner_text, self.extra_declarations_inner_text)
         results = match_pattern([code_pattern], [outer_pattern])
 
         # test length

@@ -9,7 +9,7 @@ class TestClangAstNode:
     def test_is_same_node(self):
         factory = ASTFactory(ClangASTNode, [])
         src = CPatternFactory(factory).create_statements("a == 3;a == 3;")
-        src2 = CPatternFactory(factory).create_statement("a == 3;")
+        CPatternFactory(factory).create_statement("a == 3;")
         assert_that(src[0], is_(src[1]))
 
     def test_find_all_in_clang_list_with_expansion(self):
@@ -62,7 +62,7 @@ class TestClangAstNode:
             int b;
         };
         typedef struct A_Struct A;
-        int some_decl = 1; 
+        int some_decl = 1;
 
         int print(const char*, const char *, const char *, const char*);
         void f(){
@@ -90,12 +90,12 @@ class TestClangAstNode:
         assert_that(src.children[5], has_string("(VariableDef, some_decl, test.c[197:215]): |int some_decl = 1;|\n"))
         assert_that(
             src.children[6],
-            has_string("(FunctionDef, print, test.c[226:289]): |int print(const char*, const char *, const char *, const char*)|\n"),
+            has_string("(FunctionDef, print, test.c[225:288]): |int print(const char*, const char *, const char *, const char*)|\n"),
         )
         assert_that(
             src.children[7],
             has_string(
-                "(FunctionDef, f, test.c[299:495]):\n"
+                "(FunctionDef, f, test.c[298:494]):\n"
                 "    |void f(){|\n"
                 "    |            A a = {};|\n"
                 "    |            const char* foo = FOO;|\n"

@@ -30,7 +30,7 @@ class TestCPatternFactory:
                     int a;
                     int b;
                 } A;
-                int some_decl = 1; 
+                int some_decl = 1;
 
                 void f(){
                     A a = {};
@@ -220,7 +220,7 @@ class TestStatements:
 
 
 class TestUseAtuToCreatePatterns:
-    """Test the creation of a complex pattern that includes a typedef, a struct, a define and a statement
+    """Test the creation of a complex pattern that includes a typedef, a struct, a define and a statement.
 
     Complex pattern take the includes, defines and typedefs from the translation unit
 
@@ -248,7 +248,7 @@ class TestUseAtuToCreatePatterns:
             int a;
             int b;
         } A;
-        int some_decl = 1; 
+        int some_decl = 1;
 
         void f(){
             A a = {};

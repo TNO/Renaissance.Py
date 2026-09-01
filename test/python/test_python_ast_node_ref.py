@@ -17,7 +17,7 @@ class cat:
         self.out_of_shadow =True
     def is_near(self):
         return not self.out_of_shadow
-# protagonist        
+# protagonist
 class mice:
     def be_high_alert_of(self):
         self.high_alert =True
@@ -58,7 +58,7 @@ class A(B):
         self.extra_value = extra_value
     def subclass_method(self):
         return "This method is only in subclass A"
-        
+
 # Create instances of both classes
 b_instance = B("Base")
 a_instance = A("Derived", "Extra")
@@ -69,7 +69,7 @@ class TestPythonNode:
 
     @pytest.fixture(autouse=True)
     def setup(self):
-        """Setup that runs before each test method"""
+        """Setup that runs before each test method."""
         self.factory = PythonFactory(PythonRstNode)
 
     def test_def_call_references(self):

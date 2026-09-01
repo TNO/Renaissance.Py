@@ -162,7 +162,7 @@ def tearDown(self):
     ABCDxCONTEXT.abcdxcontext.reset_method_attributes("finish_wafer")
     ABCDxCONTEXT.abcdxcontext.reset_method_attributes("start_lot")
     ABCDxCONTEXT.abcdxcontext.reset_method_attributes("finish_lot")
-    
+
     self._patch_readout_data_filler.stop()
     self._patch_readout_data_publisher.stop()
     self._patch_dt_context_rep.stop()
@@ -187,7 +187,7 @@ set_up_common_new = """def setUpCommon(self):
         ImprovedStub.ret_vals_ex = {}
         ImprovedStub.call_logs = {}
         ImprovedStub.store_args = {}
-        
+
         self.abcdxread = ImprovedStub(ABCDxREAD.abcdxread)
         self.abcdxws = ImprovedStub(ABCDxWS.abcdxws)
         self.abxstream2 = ImprovedStub(ABxSTREAM2.abxstream2)
@@ -200,10 +200,10 @@ set_up_common_new = """def setUpCommon(self):
             patch.object(BCxCLEAR, 'bcxclear', self.bcxclear),
             patch.object(BCxLOAD, 'bcxload', self.bcxload),
         ]
-        
+
         for p in self.patchers:
             p.start()
-        
+
         self.sut = ABCDxVIPCxAB.ABCDxVIPCxAB()"""
 
 tear_down_common = """def tearDownCommon(self):
