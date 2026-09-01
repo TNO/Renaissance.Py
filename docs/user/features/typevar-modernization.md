@@ -87,18 +87,19 @@ Equivalently, `PythonRefactoring.process("TypeVarCheck", file)`.
   adding that release to the list.
 - There's no CLI flag to override the detected minimum version; `TypeVarCheck.min_python_override` exists for
   tests but isn't exposed on the command line.
-- **Whole-function replacement reformats more than the signature.** `convert_declared_typevars` only ever *adds*
-  a `type_params` entry, but because it replaces the *entire* function via `self.replace(unparse_node(function), ...)`,
-  `ast.unparse()` regenerates every line of the body in its own style - confirmed live against
-  `sqlalchemy/lib/sqlalchemy/sql/elements.py`: a multi-line parameter list collapses onto one long line, an
-  inline stub body (`) -> ReturnType: ...`) moves its `...` to its own line, and `ast.unparse()` drops the PEP 8
-  spaces around `=` for an annotated default (`x: int=...` instead of `x: int = ...`) - the kind of thing
-  `ruff`/`black` would immediately flag on the code this recipe just produced. Not a correctness bug (the file
-  stays valid, and semantics don't change), but a much larger diff than the actual change, for any function whose
-  original formatting doesn't already match `ast.unparse()`'s conventions exactly. Replacing only the `def ... :`
-  header text and leaving the body's original source bytes untouched would eliminate this, but needs a way to
-  target just that sub-span of a function through `self.replace()` - the current API only accepts whole
-  `ASTNode`/sequence targets, not an arbitrary byte range - so this is future work, not yet started. It's also a
-  nice-to-have on top of the fix itself: the docstring would never be regenerated via `ast.unparse()` at all, so
-  it would retire the docstring-indent workaround too (`renaissance.utils.unparse_utils` - see
-  python-ast-known-limitations.md item 4) rather than needing both to keep existing side by side.
+- **Resolved: whole-function replacement used to reformat more than the signature, and delete comments.**
+  `convert_declared_typevars` only ever *adds* a `type_params` entry, but used to replace the *entire* function via
+  `self.replace(unparse_node(function), ...)`, so `ast.unparse()` regenerated every line of the body in its own
+  style - confirmed live against `sqlalchemy/lib/sqlalchemy/sql/elements.py` (reformatting) and
+  `starlette/starlette/concurrency.py` (a body comment deleted outright, since Python's `ast` module never records
+  comments at all). Fixed by replacing only the `def ...:` header text and leaving the body's original source
+  bytes untouched - `renaissance.utils.unparse_utils.unparse_signature_only`, which also retired the
+  docstring-indent workaround from python-ast-known-limitations.md item 4, since the docstring is never
+  regenerated via `ast.unparse()` any more.
+- **Resolved: a nested closure referencing an enclosing function's type parameter used to be treated as an
+  independent user, getting its own redundant (shadowing) type parameter added too** - which could corrupt the
+  file outright when combined with the rewrite engine's dominance/suppression gap. Confirmed live against
+  `starlette/starlette/authentication.py`'s `requires()` and its nested `websocket_wrapper`/`async_wrapper`/
+  `sync_wrapper` closures. Fixed by attributing a type parameter's usage to the outermost function in its nesting
+  chain (`type_var_domain.py`'s `functions_using_nodes`), since PEP 695 type parameters are already visible in
+  nested closures via the same lexical scoping as any other enclosing-scope name.

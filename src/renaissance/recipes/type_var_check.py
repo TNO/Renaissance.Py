@@ -17,7 +17,7 @@ from renaissance.refactoring.type_var_domain import (
     type_param_name,
 )
 from renaissance.utils.python_version import minimum_python_version
-from renaissance.utils.unparse_utils import unparse_node
+from renaissance.utils.unparse_utils import unparse_signature_only
 
 PEP_695_MINIMUM = (3, 12)
 
@@ -139,7 +139,8 @@ class TypeVarCheck(PythonRefactoring):
             results[name] = "fixed"
 
         for function in touched_functions.values():
-            self.replace(unparse_node(function), self.find_rst_node(function), False, False)
+            rst_node = self.find_rst_node(function)
+            self.replace(unparse_signature_only(function, rst_node.text), rst_node, False, False)
 
         self._remove_unused_constructor_imports(tree, removed)
         return results
