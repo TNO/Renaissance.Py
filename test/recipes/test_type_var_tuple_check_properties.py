@@ -1,8 +1,8 @@
 import ast
 from unittest.mock import patch
 
-from hypothesis import given, settings, assume
 import hypothesmith
+from hypothesis import assume, given, settings
 
 from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.refactoring.type_var_tuple_check import TypeVarTupleCheck
