@@ -283,6 +283,9 @@ class _RewriteActions:
         # end_offset =nodes[-1].get_start_offset()+nodes[-1].get_length()+1
         indent = self.derive_indent(start_offset)
         if self.correct_indent:
+            if new_content.startswith("\n"):
+                # a blank first line would otherwise strand the original indent as trailing whitespace
+                start_offset -= indent
             new_content = TextUtils.shift_right(new_content, indent, start_line=1)
         self.__replace_bytes(rewriter, start_offset, end_offset, new_content)
 
