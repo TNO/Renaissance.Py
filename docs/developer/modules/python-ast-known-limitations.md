@@ -52,17 +52,19 @@ body**; there is nothing for `ast.unparse()` to reproduce, and no future fix to 
 without Python itself changing. Both are real for any recipe that regenerates a whole node's source via
 `ast.unparse()` and replaces the original text with it wholesale.
 
-**`TypeVarCheck` avoids this, it doesn't fix it.** `renaissance.utils.unparse_utils.unparse_signature_only`
-replaces only a function's signature line(s), never the body: it `ast.unparse()`s the whole (mutated) node to get
-a correctly-formatted new header, finds where that header ends (via `tokenize`, tracking bracket depth so a colon
-inside a string default, a lambda default, or an annotation isn't mistaken for the real one), and splices it onto
-the *original* body text - comments, docstring formatting, and everything else untouched byte-for-byte, since
-that text is never passed through `ast.unparse()` or `shift_right` at all. `TypeVarCheck.convert_declared_typevars`
-uses it in place of the old `unparse_node`/`normalize_docstring_indent` pair, which are retired. Verified against
-a method's body (whose `.text` carries the file's real absolute indentation rather than the 4-space-relative-to-
-zero baseline `ast.unparse()`/the rewrite pipeline's shift expect - renormalized before splicing), an inline
-single-line body (`def f(x): ...`, kept inline rather than forced onto its own line), and the `starlette` case
-that surfaced this (see [Refactoring recipes](../../developer/modules/recipes.md)).
+**`TypeVarCheck` avoids this, it doesn't fix it.** `renaissance.utils.unparse_utils.unparse_signature_only` never
+regenerates a signature line via `ast.unparse()` at all any more - it only splices the new `[T]`/`[**P]`/`[*Ts]`
+bracket into the function's *original* text, right after its name, and leaves every other byte (parameter list,
+defaults, line breaks, return type, docstring, body, comments) exactly as it was. This was tightened a second time
+after the first version still regenerated the whole signature line via `ast.unparse()` - which fixed comment loss
+and docstring double-indenting, but still collapsed a multi-line parameter list onto one line, since `ast.unparse()`
+reformats whatever it touches regardless of the original layout. Since lines after the first are still passed
+through `shift_right`, they're renormalized to a column-0-`def` baseline before splicing (both the signature's own
+continuation lines and the body, each anchored independently - see the function's docstring for the detail).
+`TypeVarCheck.convert_declared_typevars` uses it in place of the old `unparse_node`/`normalize_docstring_indent`
+pair, which are retired. Verified against a method's body indentation, an inline single-line body
+(`def f(x): ...`), a multi-line signature, a function merging into an *existing* type-params bracket, and the
+`starlette` cases that surfaced this (see [Refactoring recipes](../../developer/modules/recipes.md)).
 
 A future recipe that genuinely needs to regenerate a whole body from the AST - not just a signature - still hits
 both issues above and has to work around them itself; neither `ast.unparse()`'s comment blindness nor
