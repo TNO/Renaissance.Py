@@ -27,7 +27,8 @@ class TextUtils:
         lines = text.split("\n")
         for idx, line in enumerate(lines):
             depth -= line.count("}")
-            lines[idx] = " " * depth * indent + re.sub(r"^\s*", "", line)
+            stripped = re.sub(r"^\s*", "", line)
+            lines[idx] = " " * depth * indent + stripped if stripped else stripped
             depth += line.count("{")
 
         return "\n".join(lines)
@@ -51,7 +52,7 @@ class TextUtils:
         lines = text.split("\n")
         spaces = " " * shift
         for idx, line in enumerate(lines[start_line:]):
-            lines[idx + start_line] = spaces + line
+            lines[idx + start_line] = spaces + line if line else line
         return "\n".join(lines)
 
     @staticmethod
