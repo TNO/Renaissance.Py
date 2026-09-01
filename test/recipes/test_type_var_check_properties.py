@@ -1,9 +1,10 @@
 import ast
 from unittest.mock import patch
 
-from hamcrest import assert_that, is_
-from hypothesis import given, settings, assume, strategies as st
 import hypothesmith
+from hamcrest import assert_that, is_
+from hypothesis import assume, given, settings
+from hypothesis import strategies as st
 
 from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.refactoring.type_var_check import TypeVarCheck
