@@ -99,7 +99,7 @@ extend-exclude = ["features/targets/invalid.py"]
 force-exclude = true
 
 [tool.ruff.lint]
-select = ["E", "W"]
+select = ["E", "W", "I", "UP"]
 #select = ["E", "F", "W", "I", "N", "B", "D", "UP", "TD"]
 ignore = ["E731"]
 
