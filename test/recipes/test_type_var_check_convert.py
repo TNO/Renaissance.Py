@@ -352,6 +352,75 @@ class TestTypeVarCheckConvert:
         assert_that(output, contains_string("def wrapper(*args: P.args, **kwargs: P.kwargs) -> int:"))
         assert_that(output, not_(contains_string("wrapper[**P]")))
 
+    def test_preserves_multiline_signature_formatting(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
+        # Regression test: unparse_signature_only used to regenerate the whole signature via
+        # ast.unparse(), which collapses a multi-line parameter list onto one line regardless of
+        # the original formatting - found live against a real multi-line __init__ signature.
+        subject = create_type_var_check("""
+            from typing import TypeVar
+
+            def b(
+                x: T,
+                y: int = 1,
+                *,
+                z: str | None = None,
+            ) -> T:
+                return x
+
+            T = TypeVar("T")
+        """)
+        result = subject.convert_declared_typevars()
+
+        assert_that(result, has_entry("T", "fixed"))
+        output = subject.apply_to_string()
+        assert_that(output, contains_string("def b[T](\n"))
+        assert_that(output, contains_string("    x: T,\n"))
+        assert_that(output, contains_string("    y: int = 1,\n"))
+        assert_that(output, contains_string("    *,\n"))
+        assert_that(output, contains_string("    z: str | None = None,\n"))
+        # would appear if the signature got collapsed onto one line, like ast.unparse() does by default
+        assert_that(output, not_(contains_string("def b[T](x: T")))
+
+    def test_merges_into_an_existing_type_params_bracket(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
+        # Regression test: a function that already declares one PEP 695 type parameter must gain
+        # the new one inside the same bracket, not a second bracket next to it.
+        subject = create_type_var_check("""
+            from typing import TypeVar
+
+            def f[U](x: U, y: T) -> T:
+                return y
+
+            T = TypeVar("T")
+        """)
+        result = subject.convert_declared_typevars()
+
+        assert_that(result, has_entry("T", "fixed"))
+        output = subject.apply_to_string()
+        assert_that(output, contains_string("def f[U, T](x: U, y: T) -> T:"))
+
+    def test_converts_a_decorated_overload(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
+        # Regression test: found live against starlette/starlette/config.py's __call__ overloads.
+        # A decorated function's captured source includes the decorator on line 1, so the "def"
+        # line itself is a continuation line carrying its own real indentation - not flush at
+        # column 0 like an undecorated function's "def" line always is.
+        subject = create_type_var_check("""
+            from typing import TypeVar, overload
+
+            class Config:
+                @overload
+                def get(self, key: str, default: T = ...) -> T: ...
+                def get(self, key: str, default: object = None) -> object:
+                    return default
+
+            T = TypeVar("T")
+        """)
+        result = subject.convert_declared_typevars()
+
+        assert_that(result, has_entry("T", "fixed"))
+        output = subject.apply_to_string()
+        assert_that(output, contains_string("@overload"))
+        assert_that(output, contains_string("def get[T](self, key: str, default: T = ...) -> T: ..."))
+
     def test_converts_two_type_params_sharing_one_import_without_corrupting_it(
         self, create_type_var_check: Callable[[str], TypeVarCheck]
     ) -> None:

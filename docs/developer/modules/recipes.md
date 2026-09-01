@@ -54,13 +54,14 @@ check that lets phase 2 absorb the "signature already converted, declaration lef
 needing phase 3 for it.
 
 `convert_declared_typevars` calls `unparse_signature_only(function, original_text)` (from
-`renaissance.utils.unparse_utils`) rather than `self.replace(unparse_node(function), ...)`: it `ast.unparse()`s
-only enough to regenerate the signature line(s) with the new `type_params`, then splices that onto `function`'s
-*original* body text untouched - comments, docstring formatting, everything - rather than regenerating the whole
-body from the AST, which used to reformat it and (since Python's `ast` module never records comments at all)
-silently delete any comments inside it. See python-ast-known-limitations.md item 4 for the full mechanism. It
-lives in a shared utils module rather than in `type_var_check.py` itself, since any future recipe doing the same
-kind of whole-node `ast.unparse()` replacement needs it too.
+`renaissance.utils.unparse_utils`) rather than `self.replace(unparse_node(function), ...)`: it splices only the
+new `[T]`/`[**P]`/`[*Ts]` bracket into `function`'s *original* source text, right after its name, and leaves
+everything else - parameter list, defaults, line breaks, return type, docstring, body, comments - byte-for-byte
+untouched, rather than regenerating anything from the AST, which used to reformat whatever it touched (including
+collapsing a multi-line parameter list onto one line) and, since Python's `ast` module never records comments at
+all, silently delete any comments inside the body. See python-ast-known-limitations.md item 4 for the full
+mechanism. It lives in a shared utils module rather than in `type_var_check.py` itself, since any future recipe
+adding a type-params bracket the same way needs it too.
 
 `functions_using_nodes` (`type_var_domain.py`) attributes a name's usage to the *outermost* function in a nesting
 chain, never a nested closure that merely references it - a PEP 695 type parameter declared on an enclosing
@@ -113,8 +114,8 @@ the base class.
 - `test/refactoring/test_type_var_tuple_check_properties.py`
 - `test/refactoring/conftest.py` - shared fixtures (`make_recipe`, `create_type_var_check`) used across the files
   above and by other recipes' tests.
-- `test/utils/test_unparse_utils.py` - the signature-only replacement mechanism itself (`_header_end_position`,
-  `unparse_signature_only`), independent of the recipe.
+- `test/utils/test_unparse_utils.py` - the bracket-splice mechanism itself (`unparse_signature_only` and its
+  helpers), independent of the recipe.
 
 ## Extension points
 
