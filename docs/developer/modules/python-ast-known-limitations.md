@@ -39,39 +39,34 @@ rather than raised or logged as a real failure.
 happened beyond a printed line easy to miss in a large batch run. A recipe scanning for a pattern that happens to
 sit inside an unmapped construct will silently miss it: a false negative, not a crash.
 
-## 4. `shift_right`/`shift_left` double-indent docstrings after a rewrite
+## 4. `ast.unparse()`/`shift_right` lose comments and indentation
 
 `TextUtils.shift_right`/`shift_left` (`renaissance/utils/text_utils.py`) are pure text operations with no notion of
 Python syntax - they shift every line in a range unconditionally, blind to whether a line sits inside a string
-literal. `renaissance/syntax_tree/ast_rewriter.py` calls them at three sites: `replace()`, `insert_before()`/
-`insert_after()`, and `__get_texts()`'s mirror-image `shift_left` (under-dedenting instead of over-indenting).
-`ast.unparse()` only ever emits a *docstring* as a real multi-line literal - every other multi-line string constant
-gets collapsed to one line with `\n` escapes - and already reproduces a docstring's continuation lines verbatim, so
-a whole-function/class/module replacement built from `ast.unparse()` then shifts those already-correctly-indented
-lines a second time: one indentation level too many, and a genuinely blank line gains trailing whitespace. Confirmed
-live against `sqlalchemy/lib/sqlalchemy/sql/elements.py` (the `cast` method); the same holds for class-level
-docstrings, while single-line docstrings are unaffected (no embedded newline to double-shift).
+literal. `ast.unparse()` already reproduces a docstring's continuation lines verbatim (it's the only multi-line
+string constant it emits as a real multi-line literal), so a whole-function/class/module replacement built from
+it shifts those already-correctly-indented lines a second time. Separately, regenerating a function's entire body
+from the AST also reformats it to `ast.unparse()`'s own style regardless of the original formatting, and -
+permanently, since Python's `ast` module never records comments at all - **deletes every comment inside the
+body**; there is nothing for `ast.unparse()` to reproduce, and no future fix to this framework can change that
+without Python itself changing. Both are real for any recipe that regenerates a whole node's source via
+`ast.unparse()` and replaces the original text with it wholesale.
 
-**Consequence:** not a correctness bug - indentation inside a string literal has no syntactic meaning - but an
-unwanted formatting diff to the docstring's internal whitespace on any whole-function/class/module rewrite built
-from `ast.unparse()`. Today only `TypeVarCheck.convert_declared_typevars` triggers it, being the only recipe that
-replaces a whole function this way, but it's a shared rewrite-mechanism gap, not something specific to `TypeVarCheck`.
+**`TypeVarCheck` avoids this, it doesn't fix it.** `renaissance.utils.unparse_utils.unparse_signature_only`
+replaces only a function's signature line(s), never the body: it `ast.unparse()`s the whole (mutated) node to get
+a correctly-formatted new header, finds where that header ends (via `tokenize`, tracking bracket depth so a colon
+inside a string default, a lambda default, or an annotation isn't mistaken for the real one), and splices it onto
+the *original* body text - comments, docstring formatting, and everything else untouched byte-for-byte, since
+that text is never passed through `ast.unparse()` or `shift_right` at all. `TypeVarCheck.convert_declared_typevars`
+uses it in place of the old `unparse_node`/`normalize_docstring_indent` pair, which are retired. Verified against
+a method's body (whose `.text` carries the file's real absolute indentation rather than the 4-space-relative-to-
+zero baseline `ast.unparse()`/the rewrite pipeline's shift expect - renormalized before splicing), an inline
+single-line body (`def f(x): ...`, kept inline rather than forced onto its own line), and the `starlette` case
+that surfaced this (see [Refactoring recipes](../../developer/modules/recipes.md)).
 
-**Available as a shared workaround (not fixed in `ast_rewriter.py`/`text_utils.py` themselves).** Before
-`ast.unparse()` runs, `renaissance.utils.unparse_utils.normalize_docstring_indent` rewrites a docstring's
-continuation lines to one canonical indent, preserving each line's indentation *relative* to that baseline so
-nested content (e.g. a Sphinx `.. seealso::` block) stays nested, leaving nothing pre-existing for the later shift
-to double up on. `TypeVarCheck.convert_declared_typevars` uses it via that module's `unparse_node`, so any future
-recipe replacing/inserting a docstring-containing function/class/module the same way can reuse it directly instead
-of reimplementing the workaround, absent a proper fix in `ast_rewriter.py`/`text_utils.py` themselves. Verified
-line for line against the real file that surfaced the bug, with one residual cosmetic-only difference (blank
-lines gain trailing whitespace). A related but distinct side
-effect - whole-function replacement reformatting the entire body, not just the changed signature - is a
-`TypeVarCheck` design trade-off tracked separately in
-[TypeVar modernization](../../user/features/typevar-modernization.md)'s Change considerations, not a framework
-bug. That item's future fix (replacing only the signature, leaving the body's original bytes untouched) would
-retire this workaround too, as a bonus rather than something to fix separately - the docstring would never be
-regenerated via `ast.unparse()` at all.
+A future recipe that genuinely needs to regenerate a whole body from the AST - not just a signature - still hits
+both issues above and has to work around them itself; neither `ast.unparse()`'s comment blindness nor
+`shift_right`/`shift_left`'s string-literal blindness was touched here.
 
 ## 5. Overlapping rewrites in one batch corrupt output instead of merging
 
@@ -105,11 +100,24 @@ ancestor replacement should silently suppress a nested descendant edit, not erro
 separate, pre-existing gap - confirmed live that a queued descendant edit still leaks into the output instead of
 being suppressed. `__is_ancestor_in_nodes` itself (the `return result and False` line) is untouched.
 
+Confirmed live a second time, and with a previously-undocumented mechanical detail: `renaissance/common/rewriter.py`'s
+low-level `Rewriter.replace()` doesn't reject or merge an edit whose `start` offset falls inside an
+*already-queued* edit's range - it just appends the new edit's replacement bytes onto the end of the existing one
+(`r.replacement += new_content`), with no separator. So when a nested edit isn't suppressed, its text doesn't
+overwrite or nest cleanly inside the ancestor edit's output - it gets tacked directly onto the end of it, producing
+concatenated/garbled text (e.g. `return decoratorapper@functools.wraps(func)`). This was hit for real via a
+`TypeVarCheck` domain bug (`functions_using_nodes` wrongly attributing a type parameter's usage to a nested
+closure instead of its outermost owning function, queuing a redundant nested edit) - that domain bug is now fixed
+(see [Refactoring recipes](../../developer/modules/recipes.md)), so this dominance/suppression gap and the
+`Rewriter.replace()` wrinkle are no longer reachable through `TypeVarCheck`, but remain open for any future recipe
+that queues genuinely nested edits.
+
 **Workarounds applied in `TypeVarCheck`/`PythonRefactoring` (both `# TODO`-marked, pointing back here):**
 `PythonRefactoring.remove_import_alias()` now accepts a set of names and narrows/removes each shared import in one
 edit instead of one call per name; `TypeVarCheck.convert_declared_typevars` collects every function touched by
-any converted type param and does exactly one `unparse()`+`replace()` per function, after the whole pass, instead
-of one per name. Neither ever queues a second rewrite on the same node, so neither ever reaches the new check.
+any converted type param and does exactly one `unparse_signature_only()`+`replace()` per function (see item 4),
+after the whole pass, instead of one per name. Neither ever queues a second rewrite on the same node, so neither
+ever reaches the new check.
 
 **Other, unrelated occurrences found once the check went live**, all previously passing on silently corrupted
 output that happened to still satisfy their assertion, now correctly rejected - none fixed here, out of scope for
@@ -123,3 +131,24 @@ this session's work on `TypeVarCheck`:
   code shipped with the framework, not a recipe. Six affected test variants in
   `test/examples/test_examples.py` marked `xfail` (two of them conditionally, via `pytest.xfail()` inside the
   test body, since only some of their parametrizations are affected).
+
+## 6. `Global`/`Nonlocal`'s `names` list crashes the tree builder (silently swallowed)
+
+`PythonRstNode.__init__` (`renaissance/impl/python/rst_node.py:212-232`) assumes any AST node whose `_fields`
+tuple has exactly one entry, and whose value there is a list, holds a list of *child AST nodes* - that branch
+recurses into `PythonRstNode(n, translation_unit, self)` for each list element. `ast.Global`/`ast.Nonlocal` don't
+fit that assumption: their sole field (`names`) is `list[str]` - plain Python strings, not AST nodes. Constructing
+a `PythonRstNode` from a bare string crashes immediately (`node._fields` on a `str`), since that access sits at
+the very top of `__init__`, outside any try/except.
+
+**Consequence:** the crash *is* caught, one level up, by the broad `except AttributeError as e: print(e);
+continue` already wrapping this loop (there to catch other, unrelated per-field failures) - so parsing a file
+with a `global`/`nonlocal` statement doesn't hard-fail; it prints `'str' object has no attribute '_fields'` (once
+per name-list) and moves on. But that means the `Global`/`Nonlocal` node's name list never becomes RST children at
+all - silently dropped, similar in spirit to item 3's silent-drop behaviour but a different mechanism (a genuine
+construction bug, not an unmapped `KIND_MAP` entry). Confirmed live parsing `starlette/starlette/testclient.py`,
+which has two `nonlocal` statements - one printed warning per statement, tree still builds and the recipe
+otherwise completes normally.
+
+Not fixed here - found via a `TypeVarCheck` run whose target file happened to contain `nonlocal`, but the bug
+itself lives entirely in the generic parsing layer (`rst_node.py`), unrelated to any recipe.

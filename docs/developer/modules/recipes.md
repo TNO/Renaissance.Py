@@ -53,13 +53,23 @@ a function that already declares a matching PEP 695 `type_param` (rather than ad
 check that lets phase 2 absorb the "signature already converted, declaration left behind" case directly, without
 needing phase 3 for it.
 
-`convert_declared_typevars` calls `unparse_node(function)` (from `renaissance.utils.unparse_utils`) rather than
-`ast.unparse(function)` directly. It's the same output except when `function` has a multi-line docstring:
-`normalize_docstring_indent` first resets the docstring's continuation lines to a single canonical indent
-(preserving their indentation *relative* to each other) before unparsing, working around a shared rewrite-mechanism
-bug that would otherwise double-indent those lines - see python-ast-known-limitations.md item 4 for the full
-mechanism. The workaround lives in a shared utils module rather than in `type_var_check.py` itself, since any
-future recipe doing the same kind of whole-node `ast.unparse()` replacement needs it too.
+`convert_declared_typevars` calls `unparse_signature_only(function, original_text)` (from
+`renaissance.utils.unparse_utils`) rather than `self.replace(unparse_node(function), ...)`: it `ast.unparse()`s
+only enough to regenerate the signature line(s) with the new `type_params`, then splices that onto `function`'s
+*original* body text untouched - comments, docstring formatting, everything - rather than regenerating the whole
+body from the AST, which used to reformat it and (since Python's `ast` module never records comments at all)
+silently delete any comments inside it. See python-ast-known-limitations.md item 4 for the full mechanism. It
+lives in a shared utils module rather than in `type_var_check.py` itself, since any future recipe doing the same
+kind of whole-node `ast.unparse()` replacement needs it too.
+
+`functions_using_nodes` (`type_var_domain.py`) attributes a name's usage to the *outermost* function in a nesting
+chain, never a nested closure that merely references it - a PEP 695 type parameter declared on an enclosing
+function is already visible inside its nested closures the same way any other name in an enclosing scope is, so a
+nested closure must never be treated as an independent user needing its own (shadowing) type parameter. Getting
+this wrong used to queue a redundant edit for the nested closure alongside the outer function's edit - which,
+combined with the rewrite dominance/suppression gap in python-ast-known-limitations.md item 5, corrupted the
+output outright. Confirmed live against `starlette/starlette/authentication.py`'s `requires()` and its nested
+`*_wrapper` closures.
 
 Removing a now-unused import (e.g. `from typing import TypeVar` once nothing calls it) uses
 `self.remove_import_alias(name)`, another generic `PythonRefactoring` base-class method - it only edits the import
@@ -103,6 +113,8 @@ the base class.
 - `test/refactoring/test_type_var_tuple_check_properties.py`
 - `test/refactoring/conftest.py` - shared fixtures (`make_recipe`, `create_type_var_check`) used across the files
   above and by other recipes' tests.
+- `test/utils/test_unparse_utils.py` - the signature-only replacement mechanism itself (`_header_end_position`,
+  `unparse_signature_only`), independent of the recipe.
 
 ## Extension points
 
@@ -110,9 +122,9 @@ the base class.
   `src/renaissance/refactoring/`; the CLI dispatch requires no separate registration.
 - `_build_type_param` (in `type_var_domain.py`) is the place to extend if a future PEP adds a new kind of
   type-parameter declaration.
-- `PythonRefactoring.find_rst_node`/`remove_import_alias` and `renaissance.utils.unparse_utils.unparse_node` are
-  available to any new recipe that needs the same lookups - a future recipe doing whole-node `ast.unparse()`
-  replacement or import cleanup doesn't need to reimplement them.
+- `PythonRefactoring.find_rst_node`/`remove_import_alias` and `renaissance.utils.unparse_utils.unparse_signature_only`
+  are available to any new recipe that needs the same lookups - a future recipe doing signature-only
+  `ast.unparse()` replacement or import cleanup doesn't need to reimplement them.
 
 ## Non-goals
 
