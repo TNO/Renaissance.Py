@@ -92,10 +92,13 @@ Equivalently, `PythonRefactoring.process("TypeVarCheck", file)`.
   `self.replace(unparse_node(function), ...)`, so `ast.unparse()` regenerated every line of the body in its own
   style - confirmed live against `sqlalchemy/lib/sqlalchemy/sql/elements.py` (reformatting) and
   `starlette/starlette/concurrency.py` (a body comment deleted outright, since Python's `ast` module never records
-  comments at all). Fixed by replacing only the `def ...:` header text and leaving the body's original source
-  bytes untouched - `renaissance.utils.unparse_utils.unparse_signature_only`, which also retired the
-  docstring-indent workaround from python-ast-known-limitations.md item 4, since the docstring is never
-  regenerated via `ast.unparse()` any more.
+  comments at all). Also confirmed live that a multi-line parameter list got collapsed onto one line, since
+  `ast.unparse()` reformats whatever it touches regardless of the original layout. Fixed by splicing only the new
+  `[T]`/`[**P]`/`[*Ts]` bracket into the function's original source right after its name, leaving every other byte
+  - parameter list, defaults, line breaks, return type, docstring, body, comments - untouched:
+  `renaissance.utils.unparse_utils.unparse_signature_only`, which also retired the docstring-indent workaround
+  from python-ast-known-limitations.md item 4, since nothing but the bracket is ever regenerated via
+  `ast.unparse()` any more.
 - **Resolved: a nested closure referencing an enclosing function's type parameter used to be treated as an
   independent user, getting its own redundant (shadowing) type parameter added too** - which could corrupt the
   file outright when combined with the rewrite engine's dominance/suppression gap. Confirmed live against
