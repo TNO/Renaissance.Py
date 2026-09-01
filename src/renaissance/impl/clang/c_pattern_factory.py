@@ -154,7 +154,7 @@ class CPatternFactory:
     def create(self, text: str, kind: type[Type] = None) -> ASTNode:
         """Creates an object using the factory from the provided text.
         The object is created by the factory using the provided text and the header of the provided reference node.
-        It is up to the user to pick the right node for pattern matching
+        It is up to the user to pick the right node for pattern matching.
 
         Args:
             text (str): The input text used to create the object.

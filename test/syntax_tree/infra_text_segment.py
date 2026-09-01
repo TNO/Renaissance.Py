@@ -2,7 +2,7 @@ from renaissance.syntax_tree.text_segment import TextSegment
 
 
 def offset_to_location(text: str, offset: int) -> tuple[int, int]:
-    """Convert a *cursor offset* (0 <= offset <= len(text)) to canonical (line, column),
+    r"""Convert a *cursor offset* (0 <= offset <= len(text)) to canonical (line, column),
     both 0-based.
 
     Canonical rule:
@@ -30,7 +30,7 @@ def offset_to_location(text: str, offset: int) -> tuple[int, int]:
 
 
 def location_to_offset(text: str, line: int, column: int) -> int:
-    """Convert canonical (line, column) back to a cursor offset, validating that the
+    r"""Convert canonical (line, column) back to a cursor offset, validating that the
     (line, column) is a valid cursor position under canonical rules.
 
     Valid cursor columns:
@@ -150,7 +150,7 @@ def _check_column_range(
 
 
 def split_lines_with_newlines(text: str) -> list[str]:
-    """Reference 'lines' derived from split(text, '\n') with all but last extended by '\n'.
+    r"""Reference 'lines' derived from split(text, '\n') with all but last extended by '\n'.
     This yields a list where each element corresponds to the characters of that line span,
     and all '\n' characters belong to the line they terminate.
     """
@@ -159,8 +159,7 @@ def split_lines_with_newlines(text: str) -> list[str]:
 
 
 def line_starts_from_lines(lines: list[str]) -> list[int]:
-    """Compute the starting cursor offsets for each line from the line-span strings.
-    """
+    """Compute the starting cursor offsets for each line from the line-span strings."""
     starts = [0]
     acc = 0
     for s in lines[:-1]:

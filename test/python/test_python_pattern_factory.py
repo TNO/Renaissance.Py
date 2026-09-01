@@ -17,7 +17,7 @@ class TestPythonFactory:
     # Statements patterns
     @pytest.mark.parametrize("statement", ["x = 10", "x += y", "name = 'John'", "a, b, c = (1, 2, 3)"])
     def test_statement(self, statement) -> None:
-        """Test the creation of a statement in Python"""
+        """Test the creation of a statement in Python."""
         node = PythonRstNode.load_from_text(statement).body[-1]
         assert_that(node.is_statement, is_(True))
         assert_that(node.signature, is_(statement))

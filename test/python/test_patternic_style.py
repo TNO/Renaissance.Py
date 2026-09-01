@@ -107,7 +107,7 @@ class TestPythonicStyle:
         assert_that(it.ast_type, is_(MatchAll))
 
     def test_kind_is_match_all(self):
-        pattern_factory = PythonPatternFactory(PythonFactory(PythonRstNode))
+        PythonPatternFactory(PythonFactory(PythonRstNode))
         simple = self.pattern_factory.create_statement("$$pa")
         assert_that(simple.ast_type(), instance_of(MatchAll))
 
@@ -117,7 +117,7 @@ class TestPythonicStyle:
 
     def test_match_one_is_not_equal(self):
         atu = self.factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "test.py")
-        pattern_factory = PythonPatternFactory(self.factory)
+        PythonPatternFactory(self.factory)
         match_one = self.pattern_factory.create("$pa")
         assert_that(atu.children[0], is_not(match_one))
 

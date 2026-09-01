@@ -138,8 +138,7 @@ def gen_tuple(draw: DrawFn, depth: int = DEFAULT_DEPTH) -> tuple[ast.expr, Searc
 
 @composite
 def gen_type(draw: DrawFn, depth: int = DEFAULT_DEPTH) -> tuple[ast.expr, SearchStrategy[ast.expr]]:
-    """Depth bounds recursion by forcing base at depth<=0.
-    """
+    """Depth bounds recursion by forcing base at depth<=0."""
     types = ["base"]
     if depth >= 1:
         types.extend(["list", "dict", "tuple"])

@@ -247,14 +247,14 @@ class TestMatchTree:
         pattern = self.pattern_factory.create_statement("class $name(TestCase):\n    $$cases")
         ASTShower.show_node(pattern)
         expansions ={}
-        variants = variant_in_match_stmt(atu.children[-1],pattern, expansions)
-        single = is_match(atu.children[-1],pattern)
+        variant_in_match_stmt(atu.children[-1],pattern, expansions)
+        is_match(atu.children[-1],pattern)
         matches = match_pattern([atu.children[-1]], [pattern])
         assert_that(matches, has_length(1))
         assert_that(matches[0].expansions["$name"][0], is_("TestExample"))
 
     def test_find_all_in_python_arg_list_with_expansion1(self):
-        atu = self.factory.create_from_text("class klass: pass", "test_file.py")
+        self.factory.create_from_text("class klass: pass", "test_file.py")
         statement = self.pattern_factory.create_statements("assertEqual(1,2,34,5,6,7,7,8)")
         pattern = self.pattern_factory.create_statements("assertEqual($$args)")
         matches = match_pattern(statement, pattern)

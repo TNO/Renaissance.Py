@@ -69,7 +69,7 @@ class TestPythonNode:
 
     @pytest.fixture(autouse=True)
     def setup(self):
-        """Setup that runs before each test method"""
+        """Setup that runs before each test method."""
         self.factory = PythonFactory(PythonRstNode)
 
     def test_def_call_references(self):

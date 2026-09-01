@@ -325,7 +325,7 @@ def test_roundtrip_offset_loc_offset_for_all_cursor_offsets(text: str) -> None:
 def test_offset_to_loc_corresponds_to_split_lines_extended_with_newlines(
     text: str,
 ) -> None:
-    """For all cursor offsets in [0, len(text)], offset_to_loc matches the location
+    r"""For all cursor offsets in [0, len(text)], offset_to_loc matches the location
     computed from:
         parts = split(text, '\n')
         lines = parts[:-1] + '\n' + parts[-1]  (i.e., all but last extended with '\n')
