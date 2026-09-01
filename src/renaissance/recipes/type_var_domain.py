@@ -112,12 +112,23 @@ def resolve_sibling_module(importing_file: str, module_name: str) -> Path | None
 def functions_using_nodes(
     tree: ast.Module, names: set[str]
 ) -> dict[str, list[ast.FunctionDef | ast.AsyncFunctionDef]]:
-    """Map each of `names` to the function/method nodes whose signature or body references it."""
+    """Map each of `names` to the outermost function/method node whose signature or body references it.
+
+    A name referenced inside a nested function (a closure) is attributed to the *outermost*
+    function in its nesting chain, never the nested one - a PEP 695 type parameter declared on an
+    enclosing function is already visible inside a nested closure the same way any other name in
+    an enclosing scope is, so the nested function must never be treated as an independent user
+    needing its own (shadowing) declaration. Getting this wrong doubled up as two bugs at once:
+    semantically pointless shadowing declarations, and - combined with the still-open rewrite
+    dominance/suppression gap - genuinely corrupted output, confirmed live against
+    `starlette/starlette/authentication.py`'s `requires()` and its nested `*_wrapper` closures.
+    See python-ast-known-limitations.md item 5.
+    """
     usage: dict[str, list[ast.FunctionDef | ast.AsyncFunctionDef]] = {name: [] for name in names}
 
     def visit(node: ast.AST, enclosing: ast.FunctionDef | ast.AsyncFunctionDef | None) -> None:
         current = enclosing
-        if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
+        if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef) and enclosing is None:
             current = node
         if isinstance(node, ast.Name) and current is not None and node.id in usage and current not in usage[node.id]:
             usage[node.id].append(current)
