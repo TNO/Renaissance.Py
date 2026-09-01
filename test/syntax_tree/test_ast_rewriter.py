@@ -937,7 +937,7 @@ class TestComposeReplacement:
         stmt_nodes = CPatternFactory(factory).create_statements(statements, extra_declarations=extra_declarations)
         matches = (match for match in match_pattern([atu], stmt_nodes) if match.nodes[0].is_part_of_translation_unit())
 
-        for match, exp in zip(matches, replacement.items()):
+        for match, exp in zip(matches, replacement.items(), strict=False):
             rewriter = ASTRewriter(match.nodes[0].root)
             org, expected = exp
             rewriter.replace(org, match)
@@ -973,8 +973,7 @@ class TestComposeReplacement:
 
 
 class TestAroundComposition:
-    """Test case to capture the requirements for `around` functionality that is composable.
-    """
+    """Test case to capture the requirements for `around` functionality that is composable."""
 
     @pytest.mark.skip(
         "TODO: Test fails due to two issues\n  1. order of inserts ([  )]\n  2. insert around whole pattern, not placeholder."
@@ -1134,7 +1133,7 @@ class TestSyntaxAwareNestedComposition:
     * Prepend before parent and (first) child
       See https://github.com/TNO/Renaissance-Experiments/wiki/Transform-%E2%80%90-AST%E2%80%90aware-changes#scenario-combination-of-multiple-prepends
     * Append after parent and (last) child
-      See https://github.com/TNO/Renaissance-Experiments/wiki/Transform-%E2%80%90-AST%E2%80%90aware-changes#scenario-combination-of-multiple-appends
+      See https://github.com/TNO/Renaissance-Experiments/wiki/Transform-%E2%80%90-AST%E2%80%90aware-changes#scenario-combination-of-multiple-appends.
     """
 
     def setup(self) -> tuple[ASTRewriter, PatternMatch]:
@@ -1185,7 +1184,7 @@ class TestSyntaxAwareAdjacentComposition:
     """Test Class for Syntax Aware Adjacent Compositions
     In C/C++
     * Consecutive / contiguous nodes - append after first and prepend before second
-      See https://github.com/TNO/Renaissance-Experiments/wiki/Transform-%E2%80%90-AST%E2%80%90aware-changes#scenario-combination-of-append-and-prepend-on-consecutive-nodes
+      See https://github.com/TNO/Renaissance-Experiments/wiki/Transform-%E2%80%90-AST%E2%80%90aware-changes#scenario-combination-of-append-and-prepend-on-consecutive-nodes.
 
     Note in C/C++ `;` is a terminator that is a part of a statement
          in Python `;` is a separator that can be used to put multiple statements on the same line

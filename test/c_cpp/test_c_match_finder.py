@@ -61,7 +61,7 @@ class TestCMatchFinder:
 
     @staticmethod
     def assert_matches(expected_dicts_per_match, actual_matches):
-        for actual, expected_dict in zip(actual_matches, expected_dicts_per_match):
+        for actual, expected_dict in zip(actual_matches, expected_dicts_per_match, strict=False):
             for k, v in actual.expansions.items():
                 for i, n in enumerate(v):
                     assert_that(n.text, is_(expected_dict[k][i]))

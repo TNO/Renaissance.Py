@@ -458,7 +458,7 @@ class _RewriteActions:
         return new_content, node_list
 
     def _should_skip(self, node: Rewritable):
-        """If the node is not the first node of a pattern match it should be skipped"""
+        """If the node is not the first node of a pattern match it should be skipped."""
         return any(node in rewrite.nodes[1:] for rewrite in self.rewrites if isinstance(rewrite.target, PatternMatch))
 
     @staticmethod
@@ -510,7 +510,7 @@ class _RewriteActions:
     def get_comment_location(start_offset: int, stop_offset: int, content: bytes) -> tuple[int, int]:
         """Get the location of the comment before the location, but after the stop_location
         a comment is a line that starts with // or a block that starts with /* and ends with */
-        or a line that starts with #
+        or a line that starts with #.
         """
         # search last occurrence of //, /*, # in a byte array
         comment_start = content.rfind(b"//", start_offset, stop_offset)
@@ -542,7 +542,7 @@ class _RewriteActions:
     def __get_comment_after_location(start_offset: int, end_offset: int, content: bytes) -> tuple[int, int]:
         """Get the location of the comment before the location, but after the stop_location
         a comment is a line that starts with // or a block that starts with /* and ends with */
-        or a line that starts with #
+        or a line that starts with #.
         """
         line_end_offset = _RewriteActions.__get_end_of_line(content, start_offset)
         if line_end_offset == -1:

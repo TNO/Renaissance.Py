@@ -83,7 +83,7 @@ class Taut2Pyunit(PythonRefactoring):
         return new_path
 
     def replace_taut(self):
-        """Replace TAUT.TestCase by unittest.TestCase"""
+        """Replace TAUT.TestCase by unittest.TestCase."""
         [self.replace("unittest.TestCase", node, False, False) for node in self.find_ast_type(Attribute) if node.name == "TAUT.TestCase"]
         [self.replace("unittest.TestCase", node, False, False) for node in self.find_ast_type(Name) if node.name == "TestCase"]
 
@@ -160,7 +160,7 @@ class Taut2Pyunit(PythonRefactoring):
             self.remove(match.nodes, False, False)
 
     def replace_taut_import(self):
-        """Replace mock by unittest.mock and using patch"""
+        """Replace mock by unittest.mock and using patch."""
         mock = self.pattern_factory.create_statements("import mock\n")
         for match in match_pattern(self.root.children, mock):
             self.remove(match.nodes, False, False)
@@ -350,7 +350,7 @@ ImprovedStub.store_args = {}
                 self.insert_after(insert, match.nodes, False, False)
 
     def replace_taut_skip(self):
-        """Replace @TAUT.skip_test by @unittest.skip"""
+        """Replace @TAUT.skip_test by @unittest.skip."""
         [self.replace("@unittest.skip", node) for node in self.find_ast_type(Attribute) if node.name == "TAUT.skip_test"]
 
     def convert_import_verify(self):
@@ -422,7 +422,7 @@ ImprovedStub.store_args = {}
             self.replace(replace_pattern, match.nodes, False, False)
 
     def convert_testdoubles_fun(self):
-        """This is used for taut migration, where the function pattern is found in a class"""
+        """This is used for taut migration, where the function pattern is found in a class."""
         # case1 two TestDoubles are defined
         pattern1 = self.pattern_factory.create_statements("""def $a($$b):
         self.doubles.append(
@@ -496,7 +496,7 @@ ImprovedStub.store_args = {}
         self.commit()
 
     def refactor_testdoubles_fun(self):
-        """This is used for unittest, where the function pattern is not found in a class"""
+        """This is used for unittest, where the function pattern is not found in a class."""
         # case1 two TestDoubles are defined
         pattern1 = self.pattern_factory.create_statements("""def $a($$b):
     self.doubles.append(

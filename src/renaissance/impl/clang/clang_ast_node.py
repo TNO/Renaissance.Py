@@ -328,7 +328,7 @@ class ClangASTNode(ASTNode):
     @override
     @property
     def is_statement(self) -> bool:
-        """Pretty good definition"""
+        """Pretty good definition."""
         return self.parent is not None and self.parent.ast_type in STMT_PARENTS
 
     @override

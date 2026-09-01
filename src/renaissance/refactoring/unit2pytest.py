@@ -12,14 +12,13 @@ from renaissance.syntax_tree.match_finder import AstProtocol, match_pattern
 
 class Unit2Pytest(PythonRefactoring):
     def __init__(self, file):
-        """Hide internal administration in the parent class so that this class you only deals with specific refactors"""
+        """Hide internal administration in the parent class so that this class you only deals with specific refactors."""
         super().__init__(file)
         self.black_list_pattern = "utils_for_test"
         self.white_list_pattern = "test"
 
     def run(self):
-        """Entry point for converting unittest to pytest
-        """
+        """Entry point for converting unittest to pytest."""
         self.refactor()
 
         self.post_processing()
