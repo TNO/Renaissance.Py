@@ -275,6 +275,83 @@ class TestTypeVarCheckConvert:
         output = subject.apply_to_string()
         assert_that(output, contains_string("def b[T](x: T) -> T:"))
 
+    def test_converts_function_preserving_internal_comments(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
+        # Regression test: ast.unparse() can't represent comments at all (Python's ast module
+        # never records them), so a whole-body replacement used to silently delete them - found
+        # live against starlette/starlette/concurrency.py's _next(). Signature-only replacement
+        # never regenerates the body, so this comment must survive untouched.
+        subject = create_type_var_check("""
+            from typing import TypeVar
+
+            def b(x: T) -> T:
+                # this explains something non-obvious
+                return x
+
+            T = TypeVar("T")
+        """)
+        result = subject.convert_declared_typevars()
+
+        assert_that(result, has_entry("T", "fixed"))
+        output = subject.apply_to_string()
+        assert_that(output, contains_string("def b[T](x: T) -> T:"))
+        assert_that(output, contains_string("# this explains something non-obvious"))
+
+    def test_converts_function_preserving_unusual_body_formatting(
+        self, create_type_var_check: Callable[[str], TypeVarCheck]
+    ) -> None:
+        # Regression test: ast.unparse() reformats the whole body to its own style even though
+        # only the signature changed - e.g. collapsing this multi-line call onto one line.
+        # Signature-only replacement leaves the body's original bytes untouched.
+        subject = create_type_var_check("""
+            from typing import TypeVar
+
+            def b(x: T) -> T:
+                return foo(
+                    x,
+                    extra=1,
+                )
+
+            T = TypeVar("T")
+        """)
+        result = subject.convert_declared_typevars()
+
+        assert_that(result, has_entry("T", "fixed"))
+        output = subject.apply_to_string()
+        assert_that(output, contains_string("def b[T](x: T) -> T:"))
+        assert_that(output, contains_string("return foo(\n        x,\n        extra=1,\n    )"))
+
+    def test_does_not_add_redundant_type_param_to_nested_closure(
+        self, create_type_var_check: Callable[[str], TypeVarCheck]
+    ) -> None:
+        # Regression test: found live against starlette/starlette/authentication.py's requires()
+        # and its nested websocket_wrapper/async_wrapper/sync_wrapper closures, which all
+        # reference the outer function's ParamSpec in their own signatures too.
+        # functions_using_nodes used to attribute that to the innermost enclosing function,
+        # queuing a redundant, shadowing type param on the nested closure as well - which,
+        # combined with the still-open rewrite dominance/suppression gap
+        # (python-ast-known-limitations.md item 5), corrupted the output outright instead of
+        # just being redundant.
+        subject = create_type_var_check("""
+            from typing import ParamSpec
+            from collections.abc import Callable
+
+            P = ParamSpec("P")
+
+            def requires(func: Callable[P, int]) -> Callable[P, int]:
+                def wrapper(*args: P.args, **kwargs: P.kwargs) -> int:
+                    return func(*args, **kwargs)
+
+                return wrapper
+        """)
+        result = subject.convert_declared_typevars()
+
+        assert_that(result, has_entry("P", "fixed"))
+        output = subject.apply_to_string()
+        ast.parse(output)  # raises SyntaxError if the nested closure's edit corrupted the output
+        assert_that(output, contains_string("def requires[**P](func: Callable[P, int]) -> Callable[P, int]:"))
+        assert_that(output, contains_string("def wrapper(*args: P.args, **kwargs: P.kwargs) -> int:"))
+        assert_that(output, not_(contains_string("wrapper[**P]")))
+
     def test_converts_two_type_params_sharing_one_import_without_corrupting_it(
         self, create_type_var_check: Callable[[str], TypeVarCheck]
     ) -> None:
