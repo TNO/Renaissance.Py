@@ -362,6 +362,9 @@ class _RewriteActions:
         new_content = TextUtils.shift_right(new_content, indent, start_line=1)
 
         if before:
+            # restore the node's original indent, consumed as new_content's first-line indent
+            if not white_space and new_content.endswith("\n"):
+                new_content += spaces
             self.__replace_bytes(rewriter, ext_start_offset, ext_start_offset, new_content + white_space)
         else:
             self.__replace_bytes(rewriter, ext_end_offset, ext_end_offset, white_space + new_content)
