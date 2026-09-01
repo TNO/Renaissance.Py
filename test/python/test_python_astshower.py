@@ -68,7 +68,7 @@ if x >y :
     call(x)
 else:
     y=1
-    call(y)    
+    call(y)
             """,
             "test.py",
         )

@@ -12,7 +12,7 @@ from renaissance.syntax_tree.match_finder import AstProtocol, is_match, match_pa
 class TestFindDescendantMatch:
     code_text: str = """
             int my_function();
-                                       
+
             void your_function(int count) {
                 int z = my_function();
                 if (count > my_function()) {

@@ -28,16 +28,16 @@ class TestRefactorWithRewrite:
             # with comments to remove
             with TAUT.TestDoubles(emrwxtl=FakeEMRWxTL(None)):
                 # comments to remove
-                log = TAUT.Logger()    
+                log = TAUT.Logger()
                 # comments to keep
                 test_log_id = DDXA.Object('a')
                 # comments in between
                 test_log = emrwxtl.create_test_log(test_log_id)
-                
+
                 file_id = DDXA.Object('b')
-                
+
                 # comments and space in between
-                
+
                 file_name = DDXA.Object('c')
                 test_log, version_mismatch = emrwxtl.retrieve_test_log(
         file_id, test_log_id, file_name)
@@ -59,7 +59,7 @@ class TestRefactorWithRewrite:
                 # comments to keep
                 test_log_id = DDXA.Object('a')
                 test_log = emrwxtl.create_test_log(test_log_id)
-                
+
                 file_id = DDXA.Object('b')
                 file_name = DDXA.Object('c')
                 test_log, version_mismatch = emrwxtl.retrieve_test_log(file_id, test_log_id, file_name)
