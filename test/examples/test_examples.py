@@ -119,8 +119,8 @@ class TestExamplesDifferentStyles:
                 [
                     ("kind", example_use_ast_kind_finder),
                     ("function", example_use_ast_function_finder),
-                ]
-            )
+                ],
+            ),
         ),
     )
     def test(
@@ -239,7 +239,7 @@ class TestExamplesDifferentStyles:
             result,
             is_(
                 "int a = 1;\n        int b = 2;\n        int c = 3;\n"
-                "        int d = 4;\n        void f(){\n            c++; b=(a==1) ? 2:3; d++;\n        }"
+                "        int d = 4;\n        void f(){\n            c++; b=(a==1) ? 2:3; d++;\n        }",
             ),
         )
 

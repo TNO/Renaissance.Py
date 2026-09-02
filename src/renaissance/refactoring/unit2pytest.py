@@ -37,7 +37,6 @@ class Unit2Pytest(PythonRefactoring):
         self.convert_parameterized_test()
         self.convert_test_setup()
         self.commit()
-        #
 
         # 3: function level changes
 
@@ -85,7 +84,7 @@ class Unit2Pytest(PythonRefactoring):
 
     def convert_test_class(self):
         test_main: Sequence[AstProtocol] = self.pattern_factory.create_statements(
-            "class $klass($test_class):\n    $$test_cases\n"
+            "class $klass($test_class):\n    $$test_cases\n",
         )  # type: ignore[assignment]
         for match in match_pattern(self.root.children, test_main):
             klass = match["$klass"]
@@ -127,12 +126,14 @@ class Unit2Pytest(PythonRefactoring):
         return match.expansions["$exp"][0].ast_type in [Literal, FormattedString, Number]
 
     def convert_parameterized_test(self):
-        unittest = self.pattern_factory.create_statements(textwrap.dedent("""
+        unittest = self.pattern_factory.create_statements(
+            textwrap.dedent("""
             @parameterized.expand($$parameters)
             @$$decorator
             def $fun($$args, *$$varg):
                 $$stmts
-            """))
+            """),
+        )
         for match in match_pattern(self.root.children, unittest):
             fun = match.nodes[0]
             args = ", ".join([arg.node.arg for arg in match.expansions["$$args"]])
@@ -160,7 +161,7 @@ class Unit2Pytest(PythonRefactoring):
 
     def convert_plain_assert_same_length(self):
         pattern: Sequence[AstProtocol] = self.pattern_factory.create_statements(
-            '$act: int = len($real)\nassert $exp == $act, "$act = " + str($act)'
+            '$act: int = len($real)\nassert $exp == $act, "$act = " + str($act)',
         )
         for match in match_pattern(self.body, pattern):
             repl = 'assert_that($real, has_length($exp), f"length of $real = {len($real)}")'

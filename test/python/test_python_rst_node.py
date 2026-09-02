@@ -4,6 +4,7 @@ from pathlib import Path
 import hypothesmith
 import libcst
 import pytest
+import targets
 from hamcrest import (
     assert_that,
     contains_string,
@@ -13,13 +14,12 @@ from hamcrest import (
     is_,
 )
 from hypothesis import HealthCheck, given, settings
+from utils_for_tests import reject_unsupported_code
 
-import targets
 from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
 from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.impl.types import *
 from renaissance.syntax_tree import ASTShower
-from utils_for_tests import reject_unsupported_code
 
 
 class TestPythonRstNode:
@@ -60,17 +60,23 @@ class TestPythonRstNode:
         assert_that(it.children[1].children[0].ast_type(), is_(Catch))
 
     def test_match_stmt(self):
-        sample_code = (
-            'match data:\n  case [first, *rest]: return f"List with first element {first} and {len(rest)} more items"\n  case _: pass'
-        )
+        sample_code = 'match data:\n  case [first, *rest]: return f"List with first element {first} and {len(rest)} more items"\n  case _: pass'
         stmt = self.pattern_factory.create_statement(sample_code)
         assert_that(stmt.ast_type(), is_(Match))
         assert_that(stmt.children[1].children[0].ast_type(), is_(MatchCase))
-        assert_that(stmt.children[1].children[0].children[0].children[1].ast_type(), is_(MatchStar))
-        assert_that(stmt.children[1].children[0].children[0].children[0].ast_type(), is_(MatchAs))
+        assert_that(
+            stmt.children[1].children[0].children[0].children[1].ast_type(),
+            is_(MatchStar),
+        )
+        assert_that(
+            stmt.children[1].children[0].children[0].children[0].ast_type(),
+            is_(MatchAs),
+        )
 
     def test_show_call(self):
-        atu = self.factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "apple.py")
+        atu = self.factory.create_from_text(
+            "ba(55)\nca(555)\nlo(4444)\nna=55", "apple.py"
+        )
         second_stmt = atu.children[1]
         assert_that(second_stmt.offset, is_(7))
         assert_that(second_stmt.length, is_(7))
@@ -84,7 +90,8 @@ class TestPythonRstNode:
         assert_that(attr.signature, is_("@TUAT"))
 
     def test_node_family(self):
-        src = PythonRstNode.load_from_text(textwrap.dedent("""
+        src = PythonRstNode.load_from_text(
+            textwrap.dedent("""
 import you
 from other import dog
 class Parent:
@@ -97,7 +104,8 @@ class Parent:
         l(a88)
     def next_me():
         pass
-    """))
+    """),
+        )
         #          module  class     body        fun memem
         me = src.children[-1].children[2].children[1]
         assert_that(me.name, is_("mememe"))
@@ -160,5 +168,5 @@ class Parent:
 
     def test_corner_case(self):
         factory = PythonFactory(PythonRstNode)
-        node = factory.create_from_text('class ŻP𭻊鲖ÉØ_ąň𣑗: pass\n')
+        node = factory.create_from_text("class ŻP𭻊鲖ÉØ_ąň𣑗: pass\n")
         assert_that(node.children[0].ast_type(), instance_of(Statement))

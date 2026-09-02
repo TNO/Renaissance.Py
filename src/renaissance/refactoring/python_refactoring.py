@@ -83,7 +83,7 @@ class PythonRefactoring(ASTProcessor):
     @property
     def body(self) -> Sequence[PythonRstNode]:
         """The direct child statement nodes of the file's root RST node."""
-        return cast(PythonRstNode, cast(object, self.root)).body
+        return cast("PythonRstNode", cast("object", self.root)).body
 
     def find_rst_node(self, target: ast.AST) -> Any:
         """Locate the PythonRstNode wrapping a raw ast node.

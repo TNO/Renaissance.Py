@@ -27,7 +27,7 @@ class ASTFactory:
         # self.extra_args: Sequence[str] = extra_args if extra_args else []             ?
         # As the logic is about providing a value when none is provided.
         # In other words, the type of the optional argument is not relevant for the logic.
-        self.working_dir = working_dir if working_dir else Path.cwd()
+        self.working_dir = working_dir or Path.cwd()
 
     def create(self, file_path: Path) -> ASTNode:
         atu = self.clazz.load(

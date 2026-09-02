@@ -27,7 +27,7 @@ def context():
     "refactor-python-file.feature",
     "python code",
     encoding="utf-8",
-    features_base_dir=str(FEATURES_BASE_DIR)
+    features_base_dir=str(FEATURES_BASE_DIR),
 )
 def test_refactor_python_file():
     pass

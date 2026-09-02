@@ -164,7 +164,7 @@ class _RewriteActions:
         correct_indent: bool,
         rewrites: list[_RewriteAction] | None = None,
     ) -> None:
-        self.rewrites: list[_RewriteAction] = rewrites if rewrites else []
+        self.rewrites: list[_RewriteAction] = rewrites or []
         self.node = node
         self.encoding = encoding
         # self.content = self.node.root.binary_file_content()[self.node.offset : self.node.extended_end_offset]
@@ -284,6 +284,7 @@ class _RewriteActions:
 
         """
         rewrite_nodes = list(flatten(rewrite.nodes for rewrite in self.rewrites))
+
         # need to test
         # 1
         # | node |
@@ -291,10 +292,12 @@ class _RewriteActions:
         # 2
         # | rew |
         #               |node|
-        no_conflict = lambda node1, rew: not (node1.end_offset < rew.offset or node1.offset > rew.end_offset)
+        def no_conflict(node1, rew):
+            return not (node1.end_offset < rew.offset or node1.offset > rew.end_offset)
+
         result = any(no_conflict(node, rew) for rew in rewrite_nodes)
 
-        return result and False
+        return result and False  # TODO: Why `and False`
 
     def __replace(
         self,
@@ -493,7 +496,9 @@ class _RewriteActions:
         return node.text
 
     def __prepare_replacement_content(
-        self, new_content: str, target: PatternMatch | Rewritable | Sequence[Rewritable]
+        self,
+        new_content: str,
+        target: PatternMatch | Rewritable | Sequence[Rewritable],
     ) -> tuple[str, Sequence[Rewritable]]:
         if isinstance(target, PatternMatch):
             new_content = self.__compose_replacement(new_content, [target])

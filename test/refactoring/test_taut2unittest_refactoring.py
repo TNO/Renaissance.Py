@@ -16,7 +16,6 @@ from renaissance.utils.ast_utils import traverse
 
 
 class TestTaut2Unittest:
-
     def test_init(self):
         subject = Taut2Pyunit(Path(targets.__file__).parent / "taut/taut_test.py")
         assert_that(subject.filename, ends_with("taut_test.py"))
@@ -71,7 +70,7 @@ class TestTaut2Unittest:
             (
                 "@TAUT.skip_test\ndef test(a, b):\n    pass\n",
                 "@unittest.skip\ndef test(a, b):\n    pass\n",
-            )
+            ),
         ],
     )
     def test_replace_skip(self, input_code, expected_code, mocker):
@@ -99,7 +98,7 @@ class TestTaut2Unittest:
             (
                 "import mock\nfrom TAUT import TestCase, TestDoubles",
                 "\ntry:\n    from unittest.mock import patch\nexcept ImportError:\n    from mock import patch\n",
-            )
+            ),
         ],
     )
     def test_replace_import(self, input_code, expected_code, mocker):
@@ -254,7 +253,8 @@ class TestTaut2Unittest:
     )
     def test_assert_doubles(self, input_code, expected_code, mocker):
         subject = self._create(mocker, input_code)
-        [subject.replace("self." + node.name, node, False, False)
+        [
+            subject.replace("self." + node.name, node, False, False)
             for node in traverse(subject.node)
             if isinstance(node.ast_type(), Name) and node.name == "assert_double_equal"
         ]

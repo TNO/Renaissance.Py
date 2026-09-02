@@ -157,13 +157,13 @@ test_taut_doubles_class = """class test_abcdxwid(unittest.TestCase):
             TAUT.TestDoubles(
                 module=ABCDxABxLib,
                 _create_marks=marks,
-            )
+            ),
         )
         self.doubles.append(
             TAUT.TestDoubles(
                 module=ABCDxEngine.ABCDxEngine,
                 measure=self.engine.measure,
-            )
+            ),
         )
         id = ABCDxBASIC.id
         ABCDxABxCommonFunctions.CLEAR_CALLED = False

@@ -22,7 +22,7 @@ class TestASTReference:
                 ("int a(); void f(){ int x = a();}", ...),
                 ("int a(); int a(){return 0;} void f(){ int x = a();}", ...),
                 ("int a(){return 0;} void f(){ int x = a();}", ...),
-            ]
+            ],
         ),
     )
     def test_definition_declaration_references(self, _, factory, code, args):
@@ -71,7 +71,7 @@ class TestASTReference:
                 ("int a = 3; void f() {int b = a;}", ...),
                 ("void f() {int a = 3; int b = a;}", ...),
                 ("void f(int a) {int b = a;}", ...),
-            ]
+            ],
         ),
     )
     def test_var_reference(self, _, factory, code, args):
@@ -96,7 +96,7 @@ class TestASTReference:
                 ("typedef struct A_Struct {int x; int y;} a; a b;", "cpp"),
                 # disable failing test
                 # ('class A {}; A a={};','cpp'),
-            ]
+            ],
         ),
     )
     def test_type_reference(self, _, factory, code, language):
@@ -127,7 +127,7 @@ class TestASTReference:
                 ("struct A {}; class B: public A {};", "cpp"),
                 ("struct A {}; struct B: private A {};", "cpp"),
                 ("namespace NS {struct A {}; class B: private A {};}", "cpp"),
-            ]
+            ],
         ),
     )
     def test_base_class_reference(self, _, factory, code, language):

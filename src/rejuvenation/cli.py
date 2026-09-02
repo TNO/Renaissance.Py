@@ -12,19 +12,19 @@ def refactor():
     if sys.argv[1] == "refactor":
         refactoring = sys.argv[2]
         files = [sys.argv[3]] if len(sys.argv) > 3 else PythonScanner().find_sources()
-        print(f'Refactor {Path(".").resolve()}')
+        print(f"Refactor {Path().resolve()}")
         for file in files:
             PythonRefactoring.process(refactoring, file)
 
     if sys.argv[1] == "extract":
-        print(f'Extracting {Path(".").resolve()}')
+        print(f"Extracting {Path().resolve()}")
         extractor = PythonExtractor()
         for file in PythonScanner().find_sources():
             filename = sys.argv[2]
             extractor.process(file)
         extractor.save_graph(filename)
     if sys.argv[1] == "inspect":
-        print(f"inspect {Path('.').resolve()}")
+        print(f"inspect {Path().resolve()}")
         file = sys.argv[2]
         ASTShower.focus = f"|{sys.argv[3]}"
         atu = PythonRstNode.load(Path(file))

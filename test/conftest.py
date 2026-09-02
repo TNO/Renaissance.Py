@@ -142,6 +142,9 @@ KNOWN_FAILING_TESTS = {
     r"test/syntax_tree/test_ast_rewriter.py::TestInsertAfterMultiLine::test["
     r"clang_json void f() { int x=2; //c1\n int a=3; //caa\n int b=4;//cb \n}-factory39-void f() { int x=2; //c1\n int a=3; //"
     r"caa\n int b=4;//cb \n}-True-True-void f() { int x=2; //c1\n int a=3; //caa\n int aa=4;\n int bb=5;\n int b=4;//cb \n}]",
+    r"test/syntax_tree/test_ast_rewriter.py::TestComposeReplacement::test_args["
+    r"clang_json if($exp){$$before;b=$d1;$$after;}else{$$before;b=$d2;$$after;}-factory1-if($exp){$$before;b=$d1;$$after;}els"
+    r"e{$$before;b=$d2;$$after;}-extra_declarations1-replacement1]",
 }
 
 

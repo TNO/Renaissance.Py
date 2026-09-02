@@ -1,4 +1,3 @@
-
 from hamcrest import assert_that, is_
 
 from renaissance.impl.clang import ClangASTNode

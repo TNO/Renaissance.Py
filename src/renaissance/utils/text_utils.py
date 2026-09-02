@@ -140,7 +140,7 @@ def fix_indent(code_string: str) -> str | None:
     try:
         if not os.path.isfile(file_path):
             print(f"Error: {file_path} does not exist.")
-            return
+            return None
 
         # Step 1: Run flake8 to show issues
         print("Running flake8...")
@@ -157,7 +157,7 @@ def fix_indent(code_string: str) -> str | None:
                 "--aggressive",
                 "--aggressive",
                 file_path,
-            ]
+            ],
         )
 
         # Step 3: Run flake8 again to verify
@@ -174,7 +174,6 @@ def fix_indent(code_string: str) -> str | None:
     except Exception as e:
         print(f"Error formatting code: {e}")
     finally:
-        pass
         # Clean up the temporary file
         if os.path.exists(file_path):
             os.remove(file_path)

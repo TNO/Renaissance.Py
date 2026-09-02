@@ -10,8 +10,6 @@ from renaissance.refactoring.python_refactoring import PythonRefactoring
 
 
 class TestPythonRefactoring:
-    """Covers __init__, replace_stmt, process(), body, find_rst_node, remove_import_alias."""
-
     def _patch_factory(self, mocker, text="pass", filename="test_foo.py"):
         code = textwrap.dedent(text)
         mocker.patch(

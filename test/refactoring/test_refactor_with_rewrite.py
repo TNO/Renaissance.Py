@@ -8,7 +8,6 @@ from renaissance.refactoring.python_refactoring import PythonRefactoring
 
 
 class TestRefactorWithRewrite:
-
     def _create(self, mocker, text) -> PythonRefactoring:
         code = textwrap.dedent(text)
         mocker.patch(
@@ -45,7 +44,7 @@ class TestRefactorWithRewrite:
                 # end comments to keep"""),
         )
         with_stmts = refactoring.pattern_factory.create_statements(
-            "with TAUT.TestDoubles(emrwxtl=FakeEMRWxTL(None)):\n  log = TAUT.Logger()\n  $$stmt"
+            "with TAUT.TestDoubles(emrwxtl=FakeEMRWxTL(None)):\n  log = TAUT.Logger()\n  $$stmt",
         )
         refactoring.in_memory = True
         for match in refactoring.find_match(with_stmts):

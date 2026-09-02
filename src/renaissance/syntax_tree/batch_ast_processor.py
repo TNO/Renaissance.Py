@@ -14,7 +14,6 @@ IterableProvider = Callable[[], Iterable[AST_FACTORY_AND_ATU]]
 
 
 class BatchASTProcessor:
-
     def __init__(self, in_memory: bool = False, max_processes: int = 4):
         """Initialize the BatchASTProcessor.
 

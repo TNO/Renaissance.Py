@@ -87,7 +87,6 @@ def remove_unused_variable_low_level(node_type1: type[ASTNode]):
 
 
 if __name__ == "__main__":
-
     for node_type in [ClangASTNode, ClangJsonASTNode]:
         remove_unused_variable_low_level(node_type)
         remove_unused_variable_using_refactor_method(node_type)

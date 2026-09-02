@@ -11,7 +11,6 @@ from renaissance.utils.ast_utils import traverse
 
 
 class TestMatchers:
-
     @pytest.fixture(autouse=True)
     def setUp(self):
         adapter = TreeSitterAdapter(tscpp)
@@ -56,7 +55,6 @@ class TestMatchers:
     def test_node_type_match(self):
         matches = [node for node in traverse(self.if_node) if node.ast_type == Call]
         assert_that(matches, has_length(1))
-
 
     def test_node_type_match_exact_type(self):
         matches = find_ast_type(self.if_node, Call)

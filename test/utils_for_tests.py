@@ -67,7 +67,8 @@ def debug_print(
         print("  Actual:" + actual.replace("\n", "\\n").replace("\r", "\\r"))
 
         code_test_input = f'("{code}", {include_whitespace}, {include_comments}, "{actual}"),'.replace(
-            "\n", "\\n"
+            "\n",
+            "\\n",
         ).replace("\r", "\\r")
         print("\nFull parameterized:" + code_test_input)
 

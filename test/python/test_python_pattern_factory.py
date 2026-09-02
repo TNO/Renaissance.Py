@@ -265,7 +265,7 @@ class TestPythonFactory:
         Factories.extend(
             [
                 ("a = 1", [Number, Assign, Literal, "Name", "AssignTarget"]),
-            ]
+            ],
         ),
     )
     def test_misalignment(self, _, factory, raw, expected) -> None:

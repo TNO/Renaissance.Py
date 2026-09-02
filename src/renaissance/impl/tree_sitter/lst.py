@@ -20,7 +20,7 @@ class LSTNode:
         root: Self | None = None,
     ):
 
-        self.root = root if root else self
+        self.root = root or self
         self.parent = parent
         self.children = [] if children is None else children
         self.properties = properties
@@ -82,7 +82,7 @@ class LSTNode:
         return self.properties.get("name", "")
 
     def binary_file_content(self):
-        src = cast(str, self.properties.get("source_code"))
+        src = cast("str", self.properties.get("source_code"))
         return src.encode(sys.getfilesystemencoding())
 
     @property

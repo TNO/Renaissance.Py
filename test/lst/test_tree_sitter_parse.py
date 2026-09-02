@@ -18,9 +18,9 @@ java_parser = Parser(JAVA_LANGUAGE)
 # Sample inputs
 py_code = b"def foo():\n    if bar:\n        baz()\n"
 
-cpp_code = b"public class Test {\n    public static void main(String[] args) {\n       " b" if (ready) start();\n    }\n}\n"
+cpp_code = b"public class Test {\n    public static void main(String[] args) {\n        if (ready) start();\n    }\n}\n"
 
-java_code = b"public class Test {\n    public static void main(String[] args) {\n       " b" if (ready) start();\n    }\n}\n"
+java_code = b"public class Test {\n    public static void main(String[] args) {\n        if (ready) start();\n    }\n}\n"
 
 
 class TestTreeSitterParse:

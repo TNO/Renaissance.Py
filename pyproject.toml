@@ -101,8 +101,12 @@ force-exclude = true
 
 [tool.ruff.lint]
 select = ["E", "W", "I", "UP"]
-#select = ["E", "F", "W", "I", "N", "B", "D", "UP", "TD"]
-ignore = ["E731"]
+#select = ["ALL"]  # goal of issue 
+ignore = [
+    "D203",  # conflicts with D211 (no blank line before class) — keep D211
+    "D213",  # conflicts with D212 (summary on the first line) — keep D212
+    "COM812", # conflicts when used with the formatter - use formatter
+]
 
 [tool.ruff.lint.per-file-ignores]
 "**/conftest.py" = ["F401"]

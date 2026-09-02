@@ -294,7 +294,7 @@ class PythonRstNode:
                 self.offset = convert(self.translation_unit.lines, node.lineno, node.col_offset)  # type: ignore[attr-defined]
             all_space = all(c == " " for c in self.translation_unit.content[self.offset - node.col_offset : self.offset])
             if all_space:
-                self.offset = self.offset - node.col_offset if self.offset - node.col_offset >= 0 else 0
+                self.offset = max(self.offset - node.col_offset, 0)
             self.length = convert(self.translation_unit.lines, node.end_lineno, node.end_col_offset) - self.offset  # type: ignore[attr-defined]
         elif isinstance(node, ast.Module) and translation_unit:
             self.offset = 0
@@ -360,9 +360,9 @@ class PythonRstNode:
             name = self.node.arg
         elif isinstance(self.node, ast.Match) and isinstance(self.node.subject, ast.Name):
             name = self.node.subject.id
-        elif isinstance(self.node, ast.Import) and len(self.node.names) == 1:
-            name = self.node.names[0].name
-        elif isinstance(self.node, ast.ImportFrom) and len(self.node.names) == 1:
+        elif (isinstance(self.node, ast.Import) and len(self.node.names) == 1) or (
+            isinstance(self.node, ast.ImportFrom) and len(self.node.names) == 1
+        ):
             name = self.node.names[0].name
         elif isinstance(self.node, (ast.Assert, ast.Break, ast.Pass, ast.Raise, ast.Continue)):
             name = ""
@@ -379,7 +379,7 @@ class PythonRstNode:
             name = self.translation_unit.file_name
         else:
             name = self.ast_type.__name__
-        return name if name else ""
+        return name or ""
 
     @property
     def type(self):
@@ -408,18 +408,15 @@ class PythonRstNode:
             )
             and hasattr(self.node, "value")
             and self.node.value is not None
-        ):
+        ) or (isinstance(self.node, ast.Expr) and hasattr(self.node, "value")):
             return PythonRstNode(self.node.value, self.translation_unit, self)
-        elif isinstance(self.node, ast.Expr) and hasattr(self.node, "value"):
-            return PythonRstNode(self.node.value, self.translation_unit, self)
-        elif isinstance(self.node, (ast.For, ast.AsyncFor, ast.comprehension)):
+        if isinstance(self.node, (ast.For, ast.AsyncFor, ast.comprehension)):
             return PythonRstNode(self.node.iter, self.translation_unit, self)
-        elif isinstance(self.node, (ast.If, ast.While, ast.Assert)):
+        if isinstance(self.node, (ast.If, ast.While, ast.Assert)):
             return PythonRstNode(self.node.test, self.translation_unit, self)
-        elif isinstance(self.node, (ast.Raise, ast.ExceptHandler)) and hasattr(self.node, "exc") and self.node.exc is not None:
+        if isinstance(self.node, (ast.Raise, ast.ExceptHandler)) and hasattr(self.node, "exc") and self.node.exc is not None:
             return PythonRstNode(self.node.exc, self.translation_unit, self)
-        else:
-            return None
+        return None
 
     @property
     def operator(self):
@@ -458,10 +455,8 @@ class PythonRstNode:
         if self.parent:
             if self.parent.ast_type.__name__ in ["FunctionDef", "ClassDef", "Module"]:
                 return self.parent
-            else:
-                return self.parent.get_container_parent()
-        else:
-            return self
+            return self.parent.get_container_parent()
+        return self
 
     @property
     def text(self) -> str:

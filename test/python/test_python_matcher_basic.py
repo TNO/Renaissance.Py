@@ -23,11 +23,11 @@ class TestPythonMatcherBasic:
             "x  =  1  ",  # with extra spaces
             "x\t=\t1\t",  # with tabs
             "# This is a comment\nx    =    1   \n# This is a comment   ",  # multi line - mixed
-        #    " x = 1",  # start with extra space
+            #    " x = 1",  # start with extra space
         ],
         # single if statement containing multiple statements
         [
-            "if c: pass;pass",      # with semicolon as statement separator
+            "if c: pass;pass",  # with semicolon as statement separator
             "if c:\n    pass\n    pass",
         ],
         # multiple statements, first statement is if statement
@@ -35,7 +35,7 @@ class TestPythonMatcherBasic:
             "if c: pass\npass",
             "if c:\n    pass\npass",
         ],
-        ]
+    ]
 
     # generate test cases from equivalence classes
     PATTERN_FACTORY = PythonPatternFactory(PythonFactory(PythonRstNode))
@@ -43,7 +43,8 @@ class TestPythonMatcherBasic:
     # a and b have the same type as the return type of PATTERN_FACTORY.create_statements,
     # which is Sequence[AstProtocol]
     @pytest.mark.parametrize(
-        "a, b, expected", make_parametersets_of_equivalence_classes("trivia", PATTERN_FACTORY.create_statements, TRIVIA_CLASSES)
+        "a, b, expected",
+        make_parametersets_of_equivalence_classes("trivia", PATTERN_FACTORY.create_statements, TRIVIA_CLASSES),
     )
     def test_pairs_of_equivalence_classes(self, a: Sequence[AstProtocol], b: Sequence[AstProtocol], expected: bool):
         assert_pair_equivalence(a, b, expected)

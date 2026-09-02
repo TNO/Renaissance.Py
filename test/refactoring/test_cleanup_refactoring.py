@@ -7,7 +7,6 @@ from renaissance.syntax_tree import ASTFactory, ASTProcessor, ASTShower
 
 
 class TestCleanupRefactoring:
-
     @pytest.mark.parametrize(
         "name, factory, input_code, expected_code",
         list(
@@ -25,8 +24,8 @@ class TestCleanupRefactoring:
                         "int baz() {\n    int a = 1;\n    int b = 2;\n    int c = a + b;\n    return c;\n}",
                         "int baz() {\n    int a = 1;\n    int b = 2;\n    int c = a + b;\n    return c;\n}",
                     ),
-                ]
-            )
+                ],
+            ),
         ),
     )
     def test_remove_unused_variables(self, name, factory: ASTFactory, input_code, expected_code):

@@ -19,17 +19,17 @@ class TestPythonicStyle:
     @pytest.mark.parametrize(
         "raw, kind, op, name, expr, body_length",
         [
-            ("try:\n  pass\nfinally:\n  pass",  Try,        "try", "Try", "expr", 1),
-            ("try:\n  x()\nexcept* e:\n  pass", Try,        "try", "Try", "expr", 1),
-            ("class name: pass",                ClassDef,   "class", "name", "expr", 1),
-            ("def name(): pass",                FunctionDef,"function", "name", "expr", 1),
-            ("for name in expr:\n  1\n  2\n  pass", For,    "for", "name", "expr", 3),
-            ("while expr: pass",                While,      "while", "While", "expr", 1),
-            ("if expr: pass\nelse: pass ",      If,         "if", "If", "expr", 1),
-            ("match x:\n  case _:    pass",     Match,      "match", "x", "expr", 1),
-            ("async for f in fs:  pass",        For,        "for", "f", "",1),
-            ('async with open("x"): pass',      With,       "with", "With","", 1),
-            ("async def fun(): pass",           FunctionDef,"function", "fun","", 1),
+            ("try:\n  pass\nfinally:\n  pass", Try, "try", "Try", "expr", 1),
+            ("try:\n  x()\nexcept* e:\n  pass", Try, "try", "Try", "expr", 1),
+            ("class name: pass", ClassDef, "class", "name", "expr", 1),
+            ("def name(): pass", FunctionDef, "function", "name", "expr", 1),
+            ("for name in expr:\n  1\n  2\n  pass", For, "for", "name", "expr", 3),
+            ("while expr: pass", While, "while", "While", "expr", 1),
+            ("if expr: pass\nelse: pass ", If, "if", "If", "expr", 1),
+            ("match x:\n  case _:    pass", Match, "match", "x", "expr", 1),
+            ("async for f in fs:  pass", For, "for", "f", "", 1),
+            ('async with open("x"): pass', With, "with", "With", "", 1),
+            ("async def fun(): pass", FunctionDef, "function", "fun", "", 1),
         ],
     )
     def test_consistent_name_stmt(self, raw, kind, op, name, expr, body_length):
@@ -51,7 +51,7 @@ class TestPythonicStyle:
             ("assert 0", Assert, None, "", "assert", 0),
             ("continue", Continue, None, "", "continue", None),
             ("import x", Import, None, "x", "import", None),
-            ("pass",Pass,  None,  "", "pass",None )
+            ("pass", Pass, None, "", "pass", None),
         ],
     )
     def test_stmt(self, raw, kind, typ, name, op, value):

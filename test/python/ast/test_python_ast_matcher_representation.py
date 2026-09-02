@@ -57,7 +57,7 @@ class TestPythonAstMatcherRepresentation:
         ],
         # Parsing from string (with int function)
         [
-            "int('1000')", # String representation, default base - decimal
+            "int('1000')",  # String representation, default base - decimal
         ],
         # Parsing from string (with int function and explicit base)
         [

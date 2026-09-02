@@ -5,7 +5,6 @@ from renaissance.common.rewriter import Rewriter
 
 
 class TestRewriter:
-
     @pytest.mark.parametrize(
         "initial_bytes, start, end, new_content, expected_bytes",
         [

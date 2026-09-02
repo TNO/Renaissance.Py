@@ -1,4 +1,3 @@
-
 from clang import cindex
 
 from renaissance.impl.tree_sitter.lst import LST, LSTNode

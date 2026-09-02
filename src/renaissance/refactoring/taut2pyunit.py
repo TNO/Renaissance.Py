@@ -147,7 +147,7 @@ class Taut2Pyunit(PythonRefactoring):
             self.replace(repl, match.nodes, False, False)
         self.commit()
         taut_test_doubles = self.pattern_factory.create_statements(
-            f"with TAUT.TestDoubles({comp}xtl=Fake{comp.upper()}xTL(None)):\n    log = TAUT.Logger()\n    $$aa"
+            f"with TAUT.TestDoubles({comp}xtl=Fake{comp.upper()}xTL(None)):\n    log = TAUT.Logger()\n    $$aa",
         )
         for match in match_pattern(self.root.children, taut_test_doubles):
             repl = f"fake_{comp}xtl = Fake{comp.upper()}xTL(None)\n{match['$$aa']}"
@@ -335,7 +335,7 @@ ImprovedStub.store_args = {}
         doubles_pattern = self.pattern_factory.create_statements(doubles)
         for match in match_pattern(self.root.children, doubles_pattern):
             keyword = match.expansions["$a"][0]
-            if match.expansions["$a"][0] in mappings.keys():
+            if match.expansions["$a"][0] in mappings:
                 keyword = mappings[match.expansions["$a"][0]]
             repl_pattern = f"self.patches.append(patch('{keyword}.{match.expansions['$a'][0]}', {match.expansions['$b'][0].name}))"
             repl_pattern = repl_pattern.replace("context_stub", "self.context_stub")
@@ -442,13 +442,13 @@ ImprovedStub.store_args = {}
         TAUT.TestDoubles(
             module={match["$mod1"]},
             {match["$e1"]}={match["$f1"]},
-        )
+        ),
     )
     self.doubles.append(
         TAUT.TestDoubles(
             module={match["$mod2"]},
             {match["$e2"]}={match["$f2"]},
-        )
+        ),
     )
 """
             func_header_index = match.signature.index("):\n")
@@ -527,7 +527,8 @@ ImprovedStub.store_args = {}
                         patch.object({match["$mod2"]}, '{match["$e2"]}', {match["$f2"]}):
             """
             replace_pattern = match.signature[: func_header_index + 3] + textwrap.indent(
-                repl + match.signature[func_header_index + 3 :], "    "
+                repl + match.signature[func_header_index + 3 :],
+                "    ",
             )
             replace_pattern = replace_pattern.replace(double_pattern, "")
             replace_pattern = replace_pattern.replace(textwrap.indent(double_pattern, "    "), "")
@@ -551,7 +552,8 @@ ImprovedStub.store_args = {}
             func_header_index = match.signature.index("):\n")
             repl = f"""with patch.object({match["$mod"]}, '{match["$e"]}', {match["$f"]}):\n"""
             replace_pattern = match.signature[: func_header_index + 3] + textwrap.indent(
-                repl + match.signature[func_header_index + 3 :], "    "
+                repl + match.signature[func_header_index + 3 :],
+                "    ",
             )
             replace_pattern = replace_pattern.replace(double_pattern, "")
             replace_pattern = replace_pattern.replace(textwrap.indent(double_pattern, "    "), "")

@@ -120,12 +120,11 @@ class ASTProcessor:
         if in_memory:
             atu = factory.create_from_text(rewriter.apply_to_string(), rewriter.get_filename())
             return atu, ASTRewriter(atu)
-        else:
-            # save file first then reload it
-            with open(rewriter.get_filename(), "wb") as f:
-                f.write(rewriter.apply())
-            atu = factory.create(Path(rewriter.get_filename()))
-            return atu, ASTRewriter(atu)
+        # save file first then reload it
+        with open(rewriter.get_filename(), "wb") as f:
+            f.write(rewriter.apply())
+        atu = factory.create(Path(rewriter.get_filename()))
+        return atu, ASTRewriter(atu)
 
 
 # main

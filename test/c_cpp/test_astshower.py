@@ -103,7 +103,7 @@ class TestCcppShower:
                 "  (VariableDef, na, test.c[84:96]): |int na = 55;|\n"
                 "    (DeclarationLoc, na, test.c[88:90]): |na|\n"
                 "    (TypeReference, na, test.c[84:87]): |int|\n"
-                "    (Number, , test.c[93:95]): |55|\n"
+                "    (Number, , test.c[93:95]): |55|\n",
             ),
         )
 
@@ -131,7 +131,6 @@ else
             "test.c",
         )
         real_children = list(filter(lambda n: n.ast_type != MacroDef, atu.children))[1]
-
 
         ifstmt = find_ast_type(real_children, If)[0]
         ASTShower.show_node(ifstmt)
@@ -181,9 +180,10 @@ else
                 "      (Expression, call, test.c[103:107]): |call|\n"
                 "        (DeclarationExpression, call, test.c[103:107]): |call|\n"
                 "      (Expression, y, test.c[108:109]): |y|\n"
-                "        (DeclarationExpression, y, test.c[108:109]): |y|\n"
+                "        (DeclarationExpression, y, test.c[108:109]): |y|\n",
             ),
         )
+
 
 if __name__ == "__main__":
     pytest.main()

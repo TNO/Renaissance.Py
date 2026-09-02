@@ -21,34 +21,33 @@ from .recipe_ast_processor import (
     recipe_step,
 )
 
-# ruff: noqa: I001
 # isort: split
 # This import must come after the ones above: renaissance.impl.clang (imported via
 # cpp_utils) imports back from renaissance.syntax_tree (ASTFinder, ASTNode,
 # ASTReference), so those names must already be bound in this module's namespace
 # before cpp_utils is loaded, or the circular import fails.
-from renaissance.impl.clang.cpp_utils import CPPUtils  # noqa: E402
+from renaissance.impl.clang.cpp_utils import CPPUtils
 
 __all__ = [
-    "ASTNode",
-    "ASTReference",
-    "VisitorResult",
-    "ASTFinder",
-    "ASTShower",
+    "AST_FACTORY_AND_ATU",
     "ASTFactory",
+    "ASTFinder",
+    "ASTNode",
+    "ASTProcessor",
+    "ASTRefactorActions",
+    "ASTReference",
+    "ASTRewriter",
+    "ASTShower",
+    "Action",
+    "BatchASTProcessor",
+    "CPPUtils",
+    "IterableProvider",
     "MatchFinder",
     "PatternMatch",
-    "ASTRewriter",
-    "CPPUtils",
-    "TextUtils",
-    "ASTProcessor",
-    "BatchASTProcessor",
-    "IterableProvider",
-    "AST_FACTORY_AND_ATU",
-    "Action",
-    "ASTRefactorActions",
     "RecipeASTProcessor",
+    "TextUtils",
+    "VisitorResult",
     "after_step",
-    "recipe_step",
     "final_action",
+    "recipe_step",
 ]

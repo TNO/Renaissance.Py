@@ -30,12 +30,14 @@ class ASTRefactorActions:
         kind: type[Type] = None,
         skip_kind: type[Type] = BogusType,
     ):
-        matches_name: Callable[[ASTNode | None], bool] = (
-            lambda n1: (not kind or ASTFinder.matches_kind(n1, kind))
-            and (not skip_kind or not ASTFinder.matches_kind(n1, skip_kind))
-            and n1
-            and n1.name == name
-        )
+        def matches_name(n1: ASTNode) -> bool:
+            return (
+                (not kind or ASTFinder.matches_kind(n1, kind))
+                and (not skip_kind or not ASTFinder.matches_kind(n1, skip_kind))
+                and n1
+                and n1.name == name
+            )
+
         found_nodes = self.processor.find_all(matches_name)
         [self.replaced.add(found.offset) for found in found_nodes if found.offset not in self.replaced]
         for n in found_nodes:
@@ -48,12 +50,13 @@ class ASTRefactorActions:
         kind: type[Type] = None,
         skip_kind: type[Type] = BogusType,
     ):
-        matches_text: Callable[[ASTNode | None], bool] = (
-            lambda n: (not kind or ASTFinder.matches_kind(n, kind))
-            and (not skip_kind or not ASTFinder.matches_kind(n, skip_kind))
-            and n is not None
-            and n.text == text
-        )
+        def matches_text(n: ASTNode) -> bool:
+            return (
+                (not kind or ASTFinder.matches_kind(n, kind))
+                and (not skip_kind or not ASTFinder.matches_kind(n, skip_kind))
+                and n is not None
+                and n.text == text
+            )
 
         found_nodes = self.processor.find_all(matches_text)
         [self.replaced.add(found.offset) for found in found_nodes if found.offset not in self.replaced]

@@ -21,13 +21,15 @@ from renaissance.syntax_tree.match_finder import match_pattern
 
 # ── Strategies ────────────────────────────────────────────────────────────────
 
-_SIMPLE_ASSIGNMENTS = st.sampled_from([
-    "a = 1",
-    "b = 2",
-    "x = 'hello'",
-    "result = True",
-    "n = 0",
-])
+_SIMPLE_ASSIGNMENTS = st.sampled_from(
+    [
+        "a = 1",
+        "b = 2",
+        "x = 'hello'",
+        "result = True",
+        "n = 0",
+    ],
+)
 
 _REPLACEMENT_TEXTS = st.one_of(
     st.sampled_from(["A", "B", "a = 99", "z = z", "pass", ""]),
@@ -36,6 +38,7 @@ _REPLACEMENT_TEXTS = st.one_of(
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
 
 def _parse_and_find(source: str):
     factory = PythonFactory(PythonRstNode)
@@ -48,10 +51,13 @@ def _parse_and_find(source: str):
 
 # ── Property tests ────────────────────────────────────────────────────────────
 
+
 @settings(max_examples=50)
 @given(source=_SIMPLE_ASSIGNMENTS, first=_REPLACEMENT_TEXTS, second=_REPLACEMENT_TEXTS)
 def test_replacing_same_node_twice_always_errors(
-    source: str, first: str, second: str
+    source: str,
+    first: str,
+    second: str,
 ) -> None:
     """Property: replacing the same AST node twice always raises, regardless of
     the replacement texts and regardless of whether they are equal.
