@@ -2,7 +2,7 @@ import sys
 from typing import Any
 
 import pytest
-from hamcrest import assert_that, is_
+from hamcrest import assert_that, has_length, is_
 
 from c_cpp.factories import Factories
 from renaissance.impl.clang import ClangASTNode, CPatternFactory
@@ -929,8 +929,9 @@ class TestComposeReplacement:
             """
         atu = factory.create_from_text(code, "test.cpp")
         stmt_nodes = CPatternFactory(factory).create_statements(statements, extra_declarations=extra_declarations)
-        matches = (match for match in match_pattern([atu], stmt_nodes) if match.nodes[0].is_part_of_translation_unit())
-
+        matches = list(match for match in match_pattern([atu], stmt_nodes) if match.nodes[0].is_part_of_translation_unit())
+        assert_that(matches, has_length(1), "Expected one match")
+        assert_that(replacement.items(), has_length(1), "Expected one replacement item")
         for match, exp in zip(matches, replacement.items(), strict=True):
             rewriter = ASTRewriter(match.nodes[0].root)
             org, expected = exp
