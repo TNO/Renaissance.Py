@@ -1,4 +1,4 @@
-from collections.abc import Callable, Sequence
+from collections.abc import Sequence
 from functools import cache
 
 from renaissance.impl.clang.c_pattern_factory import CPPPatternFactory

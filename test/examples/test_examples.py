@@ -1,7 +1,15 @@
 from collections.abc import Callable
 
 import pytest
-from hamcrest import *
+from hamcrest import (
+    assert_that,
+    calling,
+    contains_string,
+    is_,
+    is_not,
+    not_,
+    raises,
+)
 
 from c_cpp.factories import Factories
 from rejuvenation.batch_process_examples import (

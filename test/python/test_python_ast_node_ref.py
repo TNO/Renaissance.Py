@@ -1,7 +1,7 @@
 import tempfile
 
 import pytest
-from hamcrest import *
+from hamcrest import assert_that, greater_than, has_length, has_string, instance_of, is_, is_in
 from more_itertools.more import first
 
 from renaissance import syntax_tree

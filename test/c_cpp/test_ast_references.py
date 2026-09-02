@@ -1,7 +1,7 @@
 import tempfile
 
 import pytest
-from hamcrest import *
+from hamcrest import assert_that, contains_exactly, contains_string, greater_than, has_length, is_, is_in
 from more_itertools.more import first
 
 from renaissance.impl.clang import ClangASTNode

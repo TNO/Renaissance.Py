@@ -1,5 +1,5 @@
 import pytest
-from hamcrest import *
+from hamcrest import assert_that, empty, has_length, is_, is_not
 
 from renaissance.impl.clang.clang_adapter import ClangAdapter
 from renaissance.impl.tree_sitter.extractor import Extractor
