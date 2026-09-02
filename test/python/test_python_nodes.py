@@ -18,7 +18,6 @@ from renaissance.utils.ast_utils import traverse
 
 
 class TestPythonNodes:
-
     @pytest.mark.parametrize(
         "_, factory, raw, kind",
         Factories.extend(
@@ -135,7 +134,10 @@ def outer():
                 ("a != b", NotEqual),
                 ("a not in b", NotIn),
                 ("a > b", GreaterThan),
-                ("a >= b", GreaterThanEqual)         ] ) )
+                ("a >= b", GreaterThanEqual),
+            ],
+        ),
+    )
     def test_comperator_operator(self, _, factory, raw, kind):
         pattern_factory = PythonPatternFactory(factory)
         it = pattern_factory.create_expression(raw)
@@ -150,16 +152,18 @@ def outer():
             [
                 ('case None: return "No data"', MatchSingleton),
                 ('case True | False: return "Boolean value"', MatchOr),
-                ('case int(x) if x > 0:  return x', MatchClass ),
-                ('case str() as s if len(s) > 10: return s', MatchAs   ),
+                ("case int(x) if x > 0:  return x", MatchClass),
+                ("case str() as s if len(s) > 10: return s", MatchAs),
                 ('case "[]": return "Empty"', MatchValue),
                 ('case [first, *rest]: return f"Lis"', MatchSequence),
-                ('case {"n": n, "a": a}: return a', MatchMapping    ),
+                ('case {"n": n, "a": a}: return a', MatchMapping),
                 ('case Point(x=0, y=0): return "t"', MatchClass),
-                ('case Point(x=x, y=y): return y',MatchClass         ),
+                ("case Point(x=x, y=y): return y", MatchClass),
                 ('case "str":  return "U"', MatchValue),
                 ('case _:      return "_"', MatchAs),
-            ] ))
+            ],
+        ),
+    )
     def test_match_patterns(self, _, factory, raw, kind):
         pattern_factory = PythonPatternFactory(factory)
         sample_code = f"match data:\n  {raw}\n  case _: pass"

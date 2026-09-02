@@ -15,7 +15,6 @@ from utils_for_tests import compress, debug_print
 
 
 class TestCommentLocation:
-
     @pytest.mark.parametrize(
         "_, start_offset, stop_offset, content, expected",
         [
@@ -152,7 +151,6 @@ class TestRewrites:
 
 
 class TestRemove(TestRewrites):
-
     @pytest.mark.parametrize(
         "name, factory, code, include_whitespace, include_comments, expected",
         list(
@@ -165,8 +163,8 @@ class TestRemove(TestRewrites):
                         True,
                         "void f() { int x=2; //x cmt\n}",
                     ),
-                ]
-            )
+                ],
+            ),
         ),
     )
     def test(
@@ -192,7 +190,6 @@ class TestRemove(TestRewrites):
 
 
 class TestReplace(TestRewrites):
-
     @pytest.mark.parametrize(
         "name, factory, code, include_whitespace, include_comments, expected",
         list(
@@ -301,8 +298,8 @@ class TestReplace(TestRewrites):
                         True,
                         "void f() { int x=2; /*ca*/ int aa=4; int b=4; }",
                     ),
-                ]
-            )
+                ],
+            ),
         ),
     )
     def test(
@@ -326,7 +323,6 @@ class TestReplace(TestRewrites):
 
 
 class TestInsertBeforeSingleLine(TestRewrites):
-
     @pytest.mark.parametrize(
         "name, factory, code, include_whitespace, include_comments, expected",
         list(
@@ -434,8 +430,8 @@ class TestInsertBeforeSingleLine(TestRewrites):
                         True,
                         "void f() { int x=2; //c1\n int aa=4;\n int a=3; //caa\n int b=4;//cb \n}",
                     ),
-                ]
-            )
+                ],
+            ),
         ),
     )
     def test(
@@ -459,7 +455,6 @@ class TestInsertBeforeSingleLine(TestRewrites):
 
 
 class TestInsertBeforeMultiLine(TestRewrites):
-
     @pytest.mark.parametrize(
         "name, factory, code, include_whitespace, include_comments, expected",
         list(
@@ -585,8 +580,8 @@ class TestInsertBeforeMultiLine(TestRewrites):
                         True,
                         "void f() { int x=2; //c1\n int aa=4;\n int bb=5;\n int a=3; //caa\n int b=4;//cb \n}",
                     ),
-                ]
-            )
+                ],
+            ),
         ),
     )
     def test(
@@ -610,7 +605,6 @@ class TestInsertBeforeMultiLine(TestRewrites):
 
 
 class TestInsertAfterSingleLine(TestRewrites):
-
     @pytest.mark.parametrize(
         "name, factory, code, include_whitespace, include_comments, expected",
         list(
@@ -718,8 +712,8 @@ class TestInsertAfterSingleLine(TestRewrites):
                         True,
                         "void f() { int x=2; //c1\n int a=3; //caa\n int aa=4;\n int b=4;//cb \n}",
                     ),
-                ]
-            )
+                ],
+            ),
         ),
     )
     def test(
@@ -743,7 +737,6 @@ class TestInsertAfterSingleLine(TestRewrites):
 
 
 class TestInsertAfterMultiLine(TestRewrites):
-
     @pytest.mark.parametrize(
         "name, factory, code, include_whitespace, include_comments, expected",
         list(
@@ -869,8 +862,8 @@ class TestInsertAfterMultiLine(TestRewrites):
                         True,
                         "void f() { int x=2; //c1\n int a=3; //caa\n int aa=4;\n int bb=5;\n int b=4;//cb \n}",
                     ),
-                ]
-            )
+                ],
+            ),
         ),
     )
     def test(
@@ -894,7 +887,6 @@ class TestInsertAfterMultiLine(TestRewrites):
 
 
 class TestComposeReplacement:
-
     @pytest.mark.parametrize(
         "_, factory, statements, extra_declarations, replacement",
         Factories.extend(
@@ -904,7 +896,7 @@ class TestComposeReplacement:
                     [],
                     {"$$before; b = ($exp) ? $d1:$d2; $$after;": "int a=1;int b=2;int c=3;int d=4;void f(){c++;b=(a==1)?2:3;d++;}"},
                 ),
-            ]
+            ],
         ),
     )
     def test_args(
@@ -937,7 +929,7 @@ class TestComposeReplacement:
         stmt_nodes = CPatternFactory(factory).create_statements(statements, extra_declarations=extra_declarations)
         matches = (match for match in match_pattern([atu], stmt_nodes) if match.nodes[0].is_part_of_translation_unit())
 
-        for match, exp in zip(matches, replacement.items(), strict=False):
+        for match, exp in zip(matches, replacement.items(), strict=True):
             rewriter = ASTRewriter(match.nodes[0].root)
             org, expected = exp
             rewriter.replace(org, match)
@@ -976,7 +968,7 @@ class TestAroundComposition:
     """Test case to capture the requirements for `around` functionality that is composable."""
 
     @pytest.mark.skip(
-        "TODO: Test fails due to two issues\n  1. order of inserts ([  )]\n  2. insert around whole pattern, not placeholder."
+        "TODO: Test fails due to two issues\n  1. order of inserts ([  )]\n  2. insert around whole pattern, not placeholder.",
     )
     def test_around(self):
         # set up
@@ -986,7 +978,7 @@ class TestAroundComposition:
         matches = list(find_all([atu], [pattern]))  # Use list, since we want to access its content multiple times
         assert matches, "A match expected"
         nrof_matches = len(matches)
-        assert 1 == nrof_matches, f"One match expected, yet got {nrof_matches}"
+        assert nrof_matches == 1, f"One match expected, yet got {nrof_matches}"
         placeholder = matches[0].expansions["$a"]
 
         rewriter = ASTRewriter(atu)
@@ -1018,7 +1010,7 @@ class TestContainedOperations:
         matches = list(find_all([atu], [pattern]))  # Use list, since we want to access its content multiple times
         assert matches, "A match expected"
         nrof_matches = len(matches)
-        assert 1 == nrof_matches, f"One match expected, yet got {nrof_matches}"
+        assert nrof_matches == 1, f"One match expected, yet got {nrof_matches}"
         match = matches[0]
 
         rewriter = ASTRewriter(atu)
@@ -1029,56 +1021,56 @@ class TestContainedOperations:
         rewriter, match = self.setup()
         rewriter.replace("product", match.nodes)
         rewriter.replace("term", match.expansions["$a"])
-        assert "x = product" == rewriter.apply_to_string(), "Unexpected replacement"
+        assert rewriter.apply_to_string() == "x = product", "Unexpected replacement"
 
     @pytest.mark.skip("TODO: fix impl.")
     def test_contained_replace_replace(self):
         rewriter, match = self.setup()
         rewriter.replace("term", match.expansions["$a"])
         rewriter.replace("product", match.nodes)
-        assert "x = product" == rewriter.apply_to_string(), "Unexpected replacement"
+        assert rewriter.apply_to_string() == "x = product", "Unexpected replacement"
 
     @pytest.mark.skip("TODO: fix impl.")
     def test_replace_contained_remove(self):
         rewriter, match = self.setup()
         rewriter.replace("product", match.nodes)
         rewriter.remove(match.expansions["$a"])
-        assert "x = product" == rewriter.apply_to_string(), "Unexpected replacement"
+        assert rewriter.apply_to_string() == "x = product", "Unexpected replacement"
 
     @pytest.mark.skip("TODO: fix impl.")
     def test_contained_remove_replace(self):
         rewriter, match = self.setup()
         rewriter.remove(match.expansions["$a"])
         rewriter.replace("product", match.nodes)
-        assert "x = product" == rewriter.apply_to_string(), "Unexpected replacement"
+        assert rewriter.apply_to_string() == "x = product", "Unexpected replacement"
 
     @pytest.mark.skip("TODO: fix impl.")
     def test_replace_contained_prepend(self):
         rewriter, match = self.setup()
         rewriter.replace("product", match.nodes)
         rewriter.insert_before("term", match.expansions["$a"])
-        assert "x = product" == rewriter.apply_to_string(), "Unexpected replacement"
+        assert rewriter.apply_to_string() == "x = product", "Unexpected replacement"
 
     @pytest.mark.skip("TODO: fix impl.")
     def test_contained_prepend_replace(self):
         rewriter, match = self.setup()
         rewriter.insert_before("term", match.expansions["$a"])
         rewriter.replace("product", match.nodes)
-        assert "x = product" == rewriter.apply_to_string(), "Unexpected replacement"
+        assert rewriter.apply_to_string() == "x = product", "Unexpected replacement"
 
     @pytest.mark.skip("TODO: fix impl.")
     def test_replace_contained_append(self):
         rewriter, match = self.setup()
         rewriter.replace("product", match.nodes)
         rewriter.insert_after("term", match.expansions["$a"])
-        assert "x = product" == rewriter.apply_to_string(), "Unexpected replacement"
+        assert rewriter.apply_to_string() == "x = product", "Unexpected replacement"
 
     @pytest.mark.skip("TODO: fix impl.")
     def test_contained_append_replace(self):
         rewriter, match = self.setup()
         rewriter.insert_after("term", match.expansions["$a"])
         rewriter.replace("product", match.nodes)
-        assert "x = product" == rewriter.apply_to_string(), "Unexpected replacement"
+        assert rewriter.apply_to_string() == "x = product", "Unexpected replacement"
 
 
 class TestOverlappingOperations:
@@ -1105,14 +1097,14 @@ def f($a,$b,$c):
         matches = list(find_all([atu], [pattern]))  # Use list, since we want to access its content multiple times
         assert matches, "A match expected"
         nrof_matches = len(matches)
-        assert 1 == nrof_matches, f"One match expected, yet got {nrof_matches}"
+        assert nrof_matches == 1, f"One match expected, yet got {nrof_matches}"
         match = matches[0]
 
         rewriter = ASTRewriter(atu)
         return rewriter, match
 
     @pytest.mark.skip(
-        "it is not correctly implementing: https://github.com/TNO/Renaissance-Experiments/wiki/Transform-%E2%80%90-AST%E2%80%90aware-changes#scenario-contained-changes"
+        "it is not correctly implementing: https://github.com/TNO/Renaissance-Experiments/wiki/Transform-%E2%80%90-AST%E2%80%90aware-changes#scenario-contained-changes",
     )
     def test_overlapping_replaces(self):
         rewriter, match = self.setup()
@@ -1143,7 +1135,7 @@ class TestSyntaxAwareNestedComposition:
         matches = list(find_all([atu], [pattern]))  # Use list, since we want to access its content multiple times
         assert matches, "A match expected"
         nrof_matches = len(matches)
-        assert 1 == nrof_matches, f"One match expected, yet got {nrof_matches}"
+        assert nrof_matches == 1, f"One match expected, yet got {nrof_matches}"
         match = matches[0]
 
         rewriter = ASTRewriter(atu)
@@ -1154,7 +1146,7 @@ class TestSyntaxAwareNestedComposition:
         rewriter, match = self.setup()
         rewriter.insert_before("4 *", match.expansions["$a"])
         rewriter.insert_before("6 +", match.nodes)
-        assert "x = 6 + 4 * a * b" == rewriter.apply_to_string(), "Unexpected replacement"
+        assert rewriter.apply_to_string() == "x = 6 + 4 * a * b", "Unexpected replacement"
         # TODO: Test fails as prepend of child appears before prepend of parent
 
     @pytest.mark.skip("TODO: Test fails as prepend of child appears before prepend of parent")
@@ -1162,21 +1154,21 @@ class TestSyntaxAwareNestedComposition:
         rewriter, match = self.setup()
         rewriter.insert_before("6 +", match.nodes)
         rewriter.insert_before("4 *", match.expansions["$a"])
-        assert "x = 6 + 4 * a * b" == rewriter.apply_to_string(), "Unexpected replacement"
+        assert rewriter.apply_to_string() == "x = 6 + 4 * a * b", "Unexpected replacement"
 
     @pytest.mark.skip("TODO: Test fails as prepend of child appears before prepend of parent")
     def test_append_child_parent(self):
         rewriter, match = self.setup()
         rewriter.insert_after("* 4", match.expansions["$b"])
         rewriter.insert_after("+ 6", match.nodes)
-        assert "x = a * b * 4 + 6" == rewriter.apply_to_string(), "Unexpected replacement"
+        assert rewriter.apply_to_string() == "x = a * b * 4 + 6", "Unexpected replacement"
 
     @pytest.mark.skip("TODO: Test fails as prepend of child appears before prepend of parent")
     def test_append_parent_child(self):
         rewriter, match = self.setup()
         rewriter.insert_after("+ 6", match.nodes)
         rewriter.insert_after("* 4", match.expansions["$b"])
-        assert "x = a * b * 4 + 6" == rewriter.apply_to_string(), "Unexpected replacement"
+        assert rewriter.apply_to_string() == "x = a * b * 4 + 6", "Unexpected replacement"
         # TODO: Test fails as append of child appears after append of parent
 
 
@@ -1201,7 +1193,7 @@ class TestSyntaxAwareAdjacentComposition:
         assert matches, "A match expected"
         nrof_matches = len(matches)
 
-        assert 1 == nrof_matches, f"One match expected, yet got {nrof_matches}"
+        assert nrof_matches == 1, f"One match expected, yet got {nrof_matches}"
         match = matches[0]
 
         rewriter = ASTRewriter(atu)
@@ -1217,7 +1209,7 @@ class TestSyntaxAwareAdjacentComposition:
         rewriter.insert_before("++j;", match.expansions["$stmt2"])
 
         # verify
-        assert "void f(int i, int j) { i++;++i;++j;j++; }" == rewriter.apply_to_string(), "Unexpected replacement"
+        assert rewriter.apply_to_string() == "void f(int i, int j) { i++;++i;++j;j++; }", "Unexpected replacement"
 
     @pytest.mark.parametrize("name, factory", Factories.factories)
     @pytest.mark.skip("TODO: implement accordingly")
@@ -1230,4 +1222,4 @@ class TestSyntaxAwareAdjacentComposition:
         rewriter.insert_after("++i;", match.expansions["$stmt1"])
 
         # verify
-        assert "void f(int i, int j) { i++;++i;++j;j++; }" == rewriter.apply_to_string(), f"{name}: Unexpected replacement"
+        assert rewriter.apply_to_string() == "void f(int i, int j) { i++;++i;++j;j++; }", f"{name}: Unexpected replacement"

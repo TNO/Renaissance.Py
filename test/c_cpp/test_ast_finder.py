@@ -18,7 +18,6 @@ class TestFinder:
 
 
 class TestKindFinder(TestFinder):
-
     @pytest.mark.parametrize("_, factory", Factories.factories)
     def test_find_bogus(self, _, factory):
         model = self.load_model(factory)
@@ -33,13 +32,12 @@ class TestKindFinder(TestFinder):
 
 
 class TestAllFinder(TestFinder):
-
     @pytest.mark.parametrize("_, factory", Factories.factories)
     def test_find_all_bogus(self, _, factory):
         model = self.load_model(factory)
 
         def is_bogus(node: ASTNode):
-            if node.ast_type==BogusType:
+            if node.ast_type == BogusType:
                 yield node
 
         assert_that(ASTFinder.find_all(model, is_bogus), has_length(0))
@@ -53,9 +51,3 @@ class TestAllFinder(TestFinder):
                 yield node
 
         assert_that(ASTFinder.find_all(model, is_binary_operator), has_length(greater_than(0)))
-
-
-
-
-
-

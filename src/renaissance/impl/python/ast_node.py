@@ -9,7 +9,6 @@ from renaissance.impl.types import KIND_MAP, BogusType
 
 
 class ASTExtension:
-
     @staticmethod
     def load_from_ast(text, file):
         root = ast.parse(text, file)

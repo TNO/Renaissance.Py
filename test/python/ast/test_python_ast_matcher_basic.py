@@ -34,7 +34,8 @@ class TestPythonAstMatcherBasic:
     # a and b have the same type as the return type of PATTERN_FACTORY.create_statement,
     # which is AstProtocol
     @pytest.mark.parametrize(
-        "a, b, expected", make_parametersets_of_equivalence_classes("if statement", PATTERN_FACTORY.create_statement, IF_CLASSES)
+        "a, b, expected",
+        make_parametersets_of_equivalence_classes("if statement", PATTERN_FACTORY.create_statement, IF_CLASSES),
     )
     def test_pairs_of_equivalence_classes(self, a: AstProtocol, b: AstProtocol, expected: bool):
         assert_pair_equivalence(a, b, expected)

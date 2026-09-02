@@ -66,7 +66,6 @@ a_instance = A("Derived", "Extra")
 
 
 class TestPythonNode:
-
     @pytest.fixture(autouse=True)
     def setup(self):
         """Setup that runs before each test method."""
@@ -122,7 +121,7 @@ class TestPythonNode:
         with tempfile.TemporaryDirectory(delete=True) as temp_dir:
             syntax_tree.ASTShower.store_node(temp_dir + "/py2.txt", ast)
 
-        class_node = first(n for n in traverse(ast) if isinstance(n.ast_type(),ClassDef) and n.name == "A")
+        class_node = first(n for n in traverse(ast) if isinstance(n.ast_type(), ClassDef) and n.name == "A")
 
         assert_that(class_node, is_(PythonRstNode))
         ast.translation_unit.lazy_create_refers(ast)

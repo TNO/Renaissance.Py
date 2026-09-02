@@ -55,7 +55,6 @@ class TestFindDescendantMatch:
 
 
 class TestBasic:
-
     code_text: str = """
             int my_function();
             void your_function() {
@@ -76,8 +75,8 @@ class TestBasic:
                 [
                     (literal_text, extra_declarations_literal_text),
                     (placeholder_text, extra_declarations_placeholder_text),
-                ]
-            )
+                ],
+            ),
         ),
     )
     def test_snippet(self, _: str, factory: ASTFactory, snippet: str, extra_declarations: list[str]):

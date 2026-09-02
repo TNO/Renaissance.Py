@@ -91,8 +91,7 @@ class PythonCstNode:
     def name(self):
         if isinstance(self.node, (ClassDef, FunctionDef)):
             return self.node.name.value
-        else:
-            return ""
+        return ""
         self.name = ""  # self._derive_name()
 
     @property

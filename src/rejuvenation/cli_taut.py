@@ -35,7 +35,7 @@ def list_matching_files(root: str | Path, recursive: bool = True) -> list[Path]:
 
 if __name__ == "__main__":
     if sys.argv[1] == "refactor":
-        print(f'Refactor {Path(".").resolve()}')
+        print(f"Refactor {Path().resolve()}")
         for file in PythonScanner().find_sources():
             refactor = sys.argv[2]
             PythonRefactoring.process(refactor, file)

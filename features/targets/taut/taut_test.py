@@ -67,7 +67,7 @@ class Test_ABCDxTL(TAUT.TestCase):
             TAUT.TestDoubles(
                 module=ABCDxEngine.ABCDxEngine,
                 measure_wafer=self.engine_stub.measure_wafer_gw,
-            )
+            ),
         )
         self.doubles.append(TAUT.TestDoubles(module=VIPC, check_stopped=self.vipc_stub.check_stopped))
 
@@ -77,7 +77,6 @@ class Test_ABCDxTL(TAUT.TestCase):
 
 
 class test_log(VIPCxUNIT.TestCase):
-
     def test_ABCDxTL(self):
         with TAUT.TestDoubles(abcdxtl=FakeABCDxTL(None)):
             TAUT.Logger()
@@ -114,13 +113,13 @@ class test_abcdxwid(TAUT.TestCase):
             TAUT.TestDoubles(
                 module=ABCDxABxLib,
                 _create_marks=marks,
-            )
+            ),
         )
         self.doubles.append(
             TAUT.TestDoubles(
                 module=ABCDxEngine.ABCDxEngine,
                 measure=self.engine.measure,
-            )
+            ),
         )
         id = ABCDxBASIC.id
         ABCDxABxCommonFunctions.CLEAR_CALLED = False

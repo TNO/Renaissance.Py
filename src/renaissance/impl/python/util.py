@@ -8,8 +8,7 @@ def convert(lines, line_nr, col):
 def to_str(node) -> str:
     if hasattr(node, "signature"):
         return node.signature
-    else:
-        return str(node)
+    return str(node)
 
 
 def convert_function(fun):

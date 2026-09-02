@@ -116,7 +116,7 @@ def gen_union(draw: DrawFn, depth: int = DEFAULT_DEPTH) -> tuple[ast.expr, Searc
             gen_type(depth - 1),
             min_size=2,
             max_size=2 if depth <= 1 else max_len(depth),
-        )
+        ),
     )
 
     ts = [t for (t, _vg) in members]
@@ -209,10 +209,9 @@ def gen_arguments(
             if both:
                 anns[i] = t
             defaults.append(draw(vg))
-        else:
-            if draw(_bernoulli(p_annot)):
-                t, _vg = draw(tv)
-                anns[i] = t
+        elif draw(_bernoulli(p_annot)):
+            t, _vg = draw(tv)
+            anns[i] = t
 
     posonlyargs = [_build_arg(next(it), anns[i]) for i in range(n_pos)]
     args = [_build_arg(next(it), anns[n_pos + j]) for j in range(n_args)]

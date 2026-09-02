@@ -4,7 +4,6 @@ from renaissance.syntax_tree import BatchASTProcessor
 
 
 class TestBatchASTProcessor:
-
     def test_it(self):
         it = BatchASTProcessor(True, 8)
         assert_that(it.in_memory)

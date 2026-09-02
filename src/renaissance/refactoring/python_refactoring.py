@@ -14,7 +14,6 @@ from renaissance.utils.text_utils import snake_case
 
 
 class PythonRefactoring(ASTProcessor):
-
     def __init__(self, file):
         factory = PythonFactory(PythonRstNode)
         atu = factory.create(file)
@@ -50,7 +49,7 @@ class PythonRefactoring(ASTProcessor):
 
     @property
     def body(self) -> Sequence[PythonRstNode]:
-        return cast(PythonRstNode, cast(object, self.root)).body
+        return cast("PythonRstNode", cast("object", self.root)).body
 
     def run(self):
         pass

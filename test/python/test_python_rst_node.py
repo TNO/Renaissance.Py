@@ -84,7 +84,8 @@ class TestPythonRstNode:
         assert_that(attr.signature, is_("@TUAT"))
 
     def test_node_family(self):
-        src = PythonRstNode.load_from_text(textwrap.dedent("""
+        src = PythonRstNode.load_from_text(
+            textwrap.dedent("""
 import you
 from other import dog
 class Parent:
@@ -97,7 +98,8 @@ class Parent:
         l(a88)
     def next_me():
         pass
-    """))
+    """),
+        )
         #          module  class     body        fun memem
         me = src.children[-1].children[2].children[1]
         assert_that(me.name, is_("mememe"))
@@ -160,5 +162,5 @@ class Parent:
 
     def test_corner_case(self):
         factory = PythonFactory(PythonRstNode)
-        node = factory.create_from_text('class ŻP𭻊鲖ÉØ_ąň𣑗: pass\n')
+        node = factory.create_from_text("class ŻP𭻊鲖ÉØ_ąň𣑗: pass\n")
         assert_that(node.children[0].ast_type(), instance_of(Statement))

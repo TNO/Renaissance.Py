@@ -30,5 +30,3 @@ class TestPythonLstNode:
         node = factory.create_from_text(code)
         print(f"testing {code=} with LSTNode")
         assert_that(node.children[0].ast_type(), instance_of(Statement), f"{code=}")
-
-

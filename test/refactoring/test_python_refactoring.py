@@ -7,7 +7,6 @@ from renaissance.refactoring.python_refactoring import PythonRefactoring
 
 
 class TestPythonRefactoring:
-
     def _patch_factory(self, mocker, text="pass", filename="test_foo.py"):
         code = textwrap.dedent(text)
         mocker.patch(

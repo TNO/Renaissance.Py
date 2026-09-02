@@ -7,7 +7,6 @@ from renaissance.refactoring.simplify_renaissance import SimplifyRenaissance
 
 
 class TestSimplifyRenaissance:
-
     def _create(self, mocker, text) -> SimplifyRenaissance:
         code = textwrap.dedent(text)
         mocker.patch(

@@ -5,7 +5,6 @@ from renaissance.syntax_tree import ASTRefactorActions
 
 
 class TestASTRefactorActions:
-
     def test_it_can_be_created(self, mocker):
         proc = mocker.Mock()
         factory = mocker.Mock()

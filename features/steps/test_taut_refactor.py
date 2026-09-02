@@ -10,7 +10,7 @@ from steps.conftest import FEATURES_BASE_DIR
     "refactor-taut-test.feature",
     "migrate taut to unittest without syntax errors",
     encoding="utf-8",
-    features_base_dir=str(FEATURES_BASE_DIR)
+    features_base_dir=str(FEATURES_BASE_DIR),
 )
 def test_taut_test():
     pass

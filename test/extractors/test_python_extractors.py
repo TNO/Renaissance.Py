@@ -7,7 +7,6 @@ from renaissance.impl.python.extractor import PythonExtractor
 
 
 class TestPythonExtractor:
-
     def test_extractor(self):
 
         extractor = PythonExtractor()
@@ -36,7 +35,6 @@ class TestPythonExtractor:
         finally:
             if graphml.exists():
                 graphml.unlink()
-
 
 
 #     def test_adds_contains_edge_from_folder_to_file(self):

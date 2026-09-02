@@ -12,11 +12,11 @@ pytest.mark.skip("empty workdir should also work right?")
 
 class TestClangJsonAstNode:
     def test_load_from_text_empty_dir(self):
-        node = ClangJsonASTNode.load_from_text("int main(){return 0;}", "hello.c", [], Path(""))
+        node = ClangJsonASTNode.load_from_text("int main(){return 0;}", "hello.c", [], Path())
         assert_that(isinstance(node, ClangJsonASTNode))
 
     def test_load_from_text(self):
-        node = ClangJsonASTNode.load_from_text("int main(){return 0;}", "hello.c", [], Path("."))
+        node = ClangJsonASTNode.load_from_text("int main(){return 0;}", "hello.c", [], Path())
         assert_that(isinstance(node, ClangJsonASTNode))
 
     def test_name_in_props(self):

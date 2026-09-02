@@ -83,7 +83,7 @@ class TestClangAstNode:
             src.children[3],
             has_string(
                 "(StructDef, struct A_Struct, test.c[88:153]):\n    |struct A_Struct{|\n    |            int a;|\n"
-                "    |            int b;|\n    |        };|\n"
+                "    |            int b;|\n    |        };|\n",
             ),
         )
         assert_that(src.children[4], has_string("(TypedefDef, A, test.c[162:187]): |typedef struct A_Struct A|\n"))
@@ -103,6 +103,6 @@ class TestClangAstNode:
                 "    |            const char* same = SAME;|\n"
                 '    |            print("%s %s %s", foo, bar, same);|\n'
                 "    ||\n"
-                "    |        }|\n"
+                "    |        }|\n",
             ),
         )

@@ -164,7 +164,7 @@ class _RewriteActions:
         correct_indent: bool,
         rewrites: list[_RewriteAction] | None = None,
     ) -> None:
-        self.rewrites: list[_RewriteAction] = rewrites if rewrites else []
+        self.rewrites: list[_RewriteAction] = rewrites or []
         self.node = node
         self.encoding = encoding
         # self.content = self.node.root.binary_file_content()[self.node.offset : self.node.extended_end_offset]
@@ -452,7 +452,9 @@ class _RewriteActions:
         return node.text
 
     def __prepare_replacement_content(
-        self, new_content: str, target: PatternMatch | Rewritable | Sequence[Rewritable]
+        self,
+        new_content: str,
+        target: PatternMatch | Rewritable | Sequence[Rewritable],
     ) -> tuple[str, Sequence[Rewritable]]:
         if isinstance(target, PatternMatch):
             new_content = self.__compose_replacement(new_content, [target])

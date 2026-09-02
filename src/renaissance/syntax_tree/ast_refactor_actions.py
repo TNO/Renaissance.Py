@@ -30,8 +30,8 @@ class ASTRefactorActions:
         kind: type[Type] = None,
         skip_kind: type[Type] = BogusType,
     ):
-        matches_name: Callable[[ASTNode | None], bool] = (
-            lambda n1: (not kind or ASTFinder.matches_kind(n1, kind))
+        matches_name: Callable[[ASTNode | None], bool] = lambda n1: (
+            (not kind or ASTFinder.matches_kind(n1, kind))
             and (not skip_kind or not ASTFinder.matches_kind(n1, skip_kind))
             and n1
             and n1.name == name
@@ -48,8 +48,8 @@ class ASTRefactorActions:
         kind: type[Type] = None,
         skip_kind: type[Type] = BogusType,
     ):
-        matches_text: Callable[[ASTNode | None], bool] = (
-            lambda n: (not kind or ASTFinder.matches_kind(n, kind))
+        matches_text: Callable[[ASTNode | None], bool] = lambda n: (
+            (not kind or ASTFinder.matches_kind(n, kind))
             and (not skip_kind or not ASTFinder.matches_kind(n, skip_kind))
             and n is not None
             and n.text == text
