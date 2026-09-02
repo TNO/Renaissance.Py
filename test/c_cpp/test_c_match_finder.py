@@ -1,7 +1,7 @@
 import logging
 
 import pytest
-from hamcrest import *
+from hamcrest import assert_that, greater_than, greater_than_or_equal_to, has_length, is_, is_in
 from more_itertools.more import last
 
 from c_cpp.factories import Factories
@@ -497,7 +497,9 @@ class TestIndividualCases:
 
         variants = find_in_list(atu.children[-1].children[-1].children, stmt_nodes, {}, 1)
 
+        # TODO: out commented code can be removed?
         # assert_that(variants[0].exp['$$all'], has_length(1))
+        # TODO: why are next two expressions there? They are not used!
         ({"$f": ["two"], "$$all": ["a"], "$a": ["b"]},)
         ({"$f": ["three"], "$$all": ["a", "b"], "$a": ["c"]},)
         found = match_pattern(atu.children[-1].children[-1].children, stmt_nodes)
