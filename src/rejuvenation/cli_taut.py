@@ -1,4 +1,4 @@
-#! /usr/bin/python3
+#!/usr/bin/env python3
 import fnmatch
 import os
 import sys
@@ -33,9 +33,13 @@ def list_matching_files(root: str | Path, recursive: bool = True) -> list[Path]:
     return [p for p in candidates if any(fnmatch.fnmatch(p.name, pat) for pat in patterns)]
 
 
-if __name__ == "__main__":
+def refactor():
     if sys.argv[1] == "refactor":
         print(f"Refactor {Path().resolve()}")
         for file in PythonScanner().find_sources():
-            refactor = sys.argv[2]
-            PythonRefactoring.process(refactor, file)
+            refactoring = sys.argv[2]
+            PythonRefactoring.process(refactoring, file)
+
+
+if __name__ == "__main__":
+    refactor()
