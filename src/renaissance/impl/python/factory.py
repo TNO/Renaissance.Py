@@ -111,7 +111,6 @@ class PythonFactory:
         return atu
 
     def create_from_text(self, text: str, file_name: str = "snippet.py") -> PythonRstNode | PythonCstNode | LSTNode | ast.AST:
-
         atu = self.clazz.load_from_text(text, file_name)
         assert isinstance(atu, self.clazz)
         return atu
