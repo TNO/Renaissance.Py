@@ -2,7 +2,7 @@ from renaissance.syntax_tree.text_segment import TextSegment
 
 
 def offset_to_location(text: str, offset: int) -> tuple[int, int]:
-    """Convert a *cursor offset* (0 <= offset <= len(text)) to canonical (line, column),
+    r"""Convert a *cursor offset* (0 <= offset <= len(text)) to canonical (line, column),
     both 0-based.
 
     Canonical rule:
@@ -30,7 +30,7 @@ def offset_to_location(text: str, offset: int) -> tuple[int, int]:
 
 
 def location_to_offset(text: str, line: int, column: int) -> int:
-    """Convert canonical (line, column) back to a cursor offset, validating that the
+    r"""Convert canonical (line, column) back to a cursor offset, validating that the
     (line, column) is a valid cursor position under canonical rules.
 
     Valid cursor columns:
@@ -64,35 +64,37 @@ def location_to_offset(text: str, line: int, column: int) -> int:
 def assert_valid_text_segment(text_segment: TextSegment) -> None:
     assert isinstance(text_segment, TextSegment), f"Unexpected instance for text_segment '{type(text_segment)}'. Expected 'TextSegment'."
     assert isinstance(
-        text_segment.full_text, str
+        text_segment.full_text,
+        str,
     ), f"Unexpected instance for property full_text '{type(text_segment.full_text)}'. Expected 'str'."
     assert isinstance(
-        text_segment.text_segment, str
+        text_segment.text_segment,
+        str,
     ), f"Unexpected instance for property text_segment '{type(text_segment.text_segment)}'. Expected 'str'."
     # TODO: should we check the types of all properties?
 
     # offset
-    assert (
-        text_segment.start_offset <= text_segment.end_offset
-    ), f"Property end_offset before start_offset: {text_segment.end_offset} < {text_segment.start_offset}"
+    assert text_segment.start_offset <= text_segment.end_offset, (
+        f"Property end_offset before start_offset: {text_segment.end_offset} < {text_segment.start_offset}"
+    )
 
     ## allow pointing at end-of-text position
     length_full_text = len(text_segment.full_text)
-    assert (
-        0 <= text_segment.start_offset <= length_full_text
-    ), f"Property start_offset out of range: {text_segment.start_offset} not in [0, {length_full_text}]"
-    assert (
-        0 <= text_segment.end_offset <= length_full_text
-    ), f"Property end_offset out of range: {text_segment.end_offset} not in [0, {length_full_text}]"
+    assert 0 <= text_segment.start_offset <= length_full_text, (
+        f"Property start_offset out of range: {text_segment.start_offset} not in [0, {length_full_text}]"
+    )
+    assert 0 <= text_segment.end_offset <= length_full_text, (
+        f"Property end_offset out of range: {text_segment.end_offset} not in [0, {length_full_text}]"
+    )
 
     # line column pair
     ## TODO: Is this a better alternative than using tuple comparison (start_line, end_line) <= (end_line, end_column)?
-    assert (
-        text_segment.start_line <= text_segment.end_line
-    ), f"Property end_line before start_line: {text_segment.end_line} < {text_segment.start_line}"
+    assert text_segment.start_line <= text_segment.end_line, (
+        f"Property end_line before start_line: {text_segment.end_line} < {text_segment.start_line}"
+    )
     assert not (text_segment.start_line == text_segment.end_line) or text_segment.start_column <= text_segment.end_column, (
         "Property end_column before start_column, while start and end line are the same: "
-        + f"{text_segment.end_column} < {text_segment.start_column}"
+        f"{text_segment.end_column} < {text_segment.start_column}"
     )
 
     line_starts = _compute_line_starts(text_segment.full_text)
@@ -119,17 +121,17 @@ def assert_valid_text_segment(text_segment: TextSegment) -> None:
     )
 
     # consistency offset and line column pair
-    assert (
-        text_segment.start_offset == line_starts[text_segment.start_line] + text_segment.start_column
-    ), "Start offset and (line, column) are inconsistent"
-    assert (
-        text_segment.end_offset == line_starts[text_segment.end_line] + text_segment.end_column
-    ), "End offset and (line, column) are inconsistent"
+    assert text_segment.start_offset == line_starts[text_segment.start_line] + text_segment.start_column, (
+        "Start offset and (line, column) are inconsistent"
+    )
+    assert text_segment.end_offset == line_starts[text_segment.end_line] + text_segment.end_column, (
+        "End offset and (line, column) are inconsistent"
+    )
 
     # consistency full_text and text_segment
-    assert (
-        text_segment.text_segment == text_segment.full_text[text_segment.start_offset : text_segment.end_offset]
-    ), "text_segment and full_text[start_offset:end_offset] are inconsistent"
+    assert text_segment.text_segment == text_segment.full_text[text_segment.start_offset : text_segment.end_offset], (
+        "text_segment and full_text[start_offset:end_offset] are inconsistent"
+    )
 
 
 def _check_column_range(
@@ -150,7 +152,7 @@ def _check_column_range(
 
 
 def split_lines_with_newlines(text: str) -> list[str]:
-    """Reference 'lines' derived from split(text, '\n') with all but last extended by '\n'.
+    r"""Reference 'lines' derived from split(text, '\n') with all but last extended by '\n'.
     This yields a list where each element corresponds to the characters of that line span,
     and all '\n' characters belong to the line they terminate.
     """
@@ -159,8 +161,7 @@ def split_lines_with_newlines(text: str) -> list[str]:
 
 
 def line_starts_from_lines(lines: list[str]) -> list[int]:
-    """Compute the starting cursor offsets for each line from the line-span strings.
-    """
+    """Compute the starting cursor offsets for each line from the line-span strings."""
     starts = [0]
     acc = 0
     for s in lines[:-1]:

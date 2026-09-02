@@ -12,7 +12,7 @@ from renaissance.syntax_tree.match_finder import AstProtocol, is_match, match_pa
 class TestFindDescendantMatch:
     code_text: str = """
             int my_function();
-                                       
+
             void your_function(int count) {
                 int z = my_function();
                 if (count > my_function()) {
@@ -55,7 +55,6 @@ class TestFindDescendantMatch:
 
 
 class TestBasic:
-
     code_text: str = """
             int my_function();
             void your_function() {
@@ -76,8 +75,8 @@ class TestBasic:
                 [
                     (literal_text, extra_declarations_literal_text),
                     (placeholder_text, extra_declarations_placeholder_text),
-                ]
-            )
+                ],
+            ),
         ),
     )
     def test_snippet(self, _: str, factory: ASTFactory, snippet: str, extra_declarations: list[str]):

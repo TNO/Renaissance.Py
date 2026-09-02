@@ -1,7 +1,7 @@
 taut_code = """
 def test_functions(self):
     with TAUT.TestDoubles(abcdxtl=FakeABCDxTL(None)):
-        log = TAUT.Logger()    
+        log = TAUT.Logger()
         test_log_id = BBAA.Object('a')
         test_log = abcdxtl.create_test_log(test_log_id)
 

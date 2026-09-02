@@ -43,7 +43,7 @@ void f(){
     const int b = 2;
     int isAOne = a==1;
     int c = 0, d=0;
-    
+
     //changed if expr to const
     if(isAOne){
         d++;
@@ -62,11 +62,11 @@ f2(a,c);
             f2(a,c);
     if (a==2) {
         c++;
-        
+
         //changed function f1 to f2
         f2(a,c);
     }
-    
+
     //changed function f1 to f2
     f2(a,c);
 }"""
@@ -112,8 +112,8 @@ class TestExamplesDifferentStyles:
                 [
                     ("kind", example_use_ast_kind_finder),
                     ("function", example_use_ast_function_finder),
-                ]
-            )
+                ],
+            ),
         ),
     )
     def test(
@@ -207,7 +207,7 @@ class TestExamplesDifferentStyles:
             result,
             is_(
                 "int a = 1;\n        int b = 2;\n        int c = 3;\n"
-                "        int d = 4;\n        void f(){\n            c++; b=(a==1) ? 2:3; d++;\n        }"
+                "        int d = 4;\n        void f(){\n            c++; b=(a==1) ? 2:3; d++;\n        }",
             ),
         )
 
@@ -215,11 +215,11 @@ class TestExamplesDifferentStyles:
 """
 
 E       Expected: Expected a callable raising <class 'Exception'>
-E            but: Correct assertion type raised, but a string containing 
+E            but: Correct assertion type raised, but a string containing
 "Error parsing: ClangASTNode1.cpp \n       + errors: 4: 'stddef.h' file not found at
-<SourceLocation file '/../lib/gcc/x86_64-linux-gnu/13/../../../../include/c++/13/cstddef', line 50, column 10>\n       " not found. 
-Exception message was: 
-"Error parsing: ClangASTNode1.cpp errors: 4: 'stddef.h' file not found at 
+<SourceLocation file '/../lib/gcc/x86_64-linux-gnu/13/../../../../include/c++/13/cstddef', line 50, column 10>\n       " not found.
+Exception message was:
+"Error parsing: ClangASTNode1.cpp errors: 4: 'stddef.h' file not found at
 <SourceLocation file '/../lib/gcc/x86_64-linux-gnu/13/../../../../include/c++/13/cstddef', line 50, column 10>
 E       "
 """

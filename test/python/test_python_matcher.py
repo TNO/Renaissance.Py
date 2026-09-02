@@ -165,7 +165,7 @@ class TestPythonMatcher:
 
     def test_match_multi_fix_stmt_with_multi_different_result(self):
         atu = self.factory.create_from_text(
-            "ba(51)\nna(52)\nna(53)\npa(54)\npa(55)\nba(56)\nna(57)\nna(58)\nna=59\nba(51)\nna(52)\nna(53)\n"
+            "ba(51)\nna(52)\nna(53)\npa(54)\npa(55)\nba(56)\nna(57)\nna(58)\nna=59\nba(51)\nna(52)\nna(53)\n",
         )
         simple = self.pattern_factory.create_statements("ba($a)\nna($b)\nna($c)")
         results = MatchFinder.match_pattern(atu.children, simple)
@@ -176,7 +176,7 @@ class TestPythonMatcher:
 
     def test_match_stmts_in_children(self):
         atu = self.factory.create_from_text(
-            "ba(51)\nna(52)\nna(53)\npa(54)\nif pa(55):\n  ba(51)\n  na(52)\n  na(53)\n  na=59\nelse:\n  ba(51)\n  na(52)\n  na(53)\n"
+            "ba(51)\nna(52)\nna(53)\npa(54)\nif pa(55):\n  ba(51)\n  na(52)\n  na(53)\n  na=59\nelse:\n  ba(51)\n  na(52)\n  na(53)\n",
         )
         simple = self.pattern_factory.create_statements("ba($a)\nna($b)\nna($c)")
         results = MatchFinder.match_pattern(atu.children, simple)
@@ -194,24 +194,24 @@ class TestPythonMatcher:
         atu = self.factory.create_from_text(
             textwrap.dedent("""
             ba(51)
-            na(52)  
-            na(52)  
+            na(52)
+            na(52)
             na(53)
             ba(53)
             pa(54)
             if pa(55):
-                ba(51)  
-                na(52)  
+                ba(51)
+                na(52)
                 na(53)
                 ba(53)
-                na(53)  
+                na(53)
                 na=59
-            else:  
-                ba(51)  
-                na(52)  
+            else:
+                ba(51)
+                na(52)
                 ba(53)
-            
-            """)
+
+            """),
         )
 
         simple = self.pattern_factory.create_statements("ba($a)\n$$na\nba($c)")
@@ -223,23 +223,23 @@ class TestPythonMatcher:
         atu = self.factory.create_from_text(
             textwrap.dedent("""
             ba()
-            ca()  
-            lo()  
+            ca()
+            lo()
             na()
             ba()
             pa()
             if pa():
-                ba()  
-                ca()  
+                ba()
+                ca()
                 lo()
                 na()
-                na()  
+                na()
                 na=59
-            else:  
-                ba()  
-                na()  
+            else:
                 ba()
-            
+                na()
+                ba()
+
             """),
             "test.py",
         )
@@ -294,7 +294,7 @@ class TestPythonMatcher:
         pa(54)
         if pa():
           ba()
-        
+
         if pa(55):
           ba(51)
           na(52)
@@ -304,7 +304,7 @@ class TestPythonMatcher:
           ba(51)
           na(52)
           na(53)
-        
+
         """)
         atu = self.factory.create_from_text(example_code)
         assert_that(atu, is_not(None))

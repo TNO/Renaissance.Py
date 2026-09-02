@@ -43,8 +43,8 @@ class TestMatchFinderMultiAssignments:
             after_location = vatiant.locations[PLACEHOLDER_AFTER]
 
             assignment: dict[str, str] = {
-                PLACEHOLDER_BEFORE: atu.translation_unit.content[before_location.offset: before_location.end_offset],
-                PLACEHOLDER_AFTER: atu.translation_unit.content[after_location.offset: after_location.end_offset]
+                PLACEHOLDER_BEFORE: atu.translation_unit.content[before_location.offset : before_location.end_offset],
+                PLACEHOLDER_AFTER: atu.translation_unit.content[after_location.offset : after_location.end_offset],
             }
 
             actual.add(frozenset(assignment.items()))

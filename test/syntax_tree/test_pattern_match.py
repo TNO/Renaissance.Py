@@ -11,7 +11,6 @@ from renaissance.syntax_tree.match_finder import match_pattern
 
 
 class TestPatternMatch:
-
     @pytest.fixture(autouse=True)
     def setup(self):
         self.factory = PythonFactory(PythonRstNode)

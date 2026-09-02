@@ -1,5 +1,5 @@
 """implementation that patches the native ast using 'traits' mechanism,
-require minimum amount of code to make the matcher work
+require minimum amount of code to make the matcher work.
 
 """
 
@@ -9,7 +9,6 @@ from renaissance.impl.types import KIND_MAP, BogusType
 
 
 class ASTExtension:
-
     @staticmethod
     def load_from_ast(text, file):
         root = ast.parse(text, file)

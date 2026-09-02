@@ -77,7 +77,7 @@ class ClangTranslationUnit:
                         child.extent.start.file,
                         child.extent.start.offset,
                         child.extent.end.offset,
-                    )
+                    ),
                 )
         return result
 
@@ -312,9 +312,7 @@ class ClangASTNode(ASTNode):
             result["prefixOperator"] = prefix_operator
             # next statement works in C++ but not in Python (yet) will be released later
             # result['operator'] =  self.node.getOpCode()
-        elif isinstance(self.ast_type(), Literal):
-            self._add_tokens(result, "LITERAL")
-        elif self.ast_type == DeclarationExpression:
+        elif isinstance(self.ast_type(), Literal) or self.ast_type == DeclarationExpression:
             self._add_tokens(result, "LITERAL")
 
         is_all = {
@@ -328,7 +326,7 @@ class ClangASTNode(ASTNode):
     @override
     @property
     def is_statement(self) -> bool:
-        """Pretty good definition"""
+        """Pretty good definition."""
         return self.parent is not None and self.parent.ast_type in STMT_PARENTS
 
     @override
@@ -425,10 +423,10 @@ class ClangASTNode(ASTNode):
         try:
             if self.node.kind.name == "MACRO_DEFINITION":
                 return str(self.node.kind.name)
-            elif self.node.kind.name in ["UNEXPOSED_EXPR", "VAR_DECL", "DECL_REF_EXPR"]:
+            if self.node.kind.name in ["UNEXPOSED_EXPR", "VAR_DECL", "DECL_REF_EXPR"]:
                 if self.node.displayname.startswith("$$") and " " not in self.node.displayname:
                     return MatchAll.__name__
-                elif self.node.displayname.startswith("$") and " " not in self.node.displayname:
+                if self.node.displayname.startswith("$") and " " not in self.node.displayname:
                     return MatchOne.__name__
             return str(self.node.kind.name)
         except Exception:

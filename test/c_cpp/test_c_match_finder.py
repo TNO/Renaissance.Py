@@ -61,11 +61,11 @@ class TestCMatchFinder:
 
     @staticmethod
     def assert_matches(expected_dicts_per_match, actual_matches):
-        for actual, expected_dict in zip(actual_matches, expected_dicts_per_match):
+        assert_that(actual_matches, has_length(len(expected_dicts_per_match)))
+        for actual, expected_dict in zip(actual_matches, expected_dicts_per_match, strict=True):
             for k, v in actual.expansions.items():
                 for i, n in enumerate(v):
                     assert_that(n.text, is_(expected_dict[k][i]))
-        assert_that(actual_matches, has_length(len(expected_dicts_per_match)))
 
 
 class TestExpressions(TestCMatchFinder):
@@ -102,7 +102,7 @@ class TestExpressions(TestCMatchFinder):
                 ("$x++", [], []),
                 ("--$x", [], []),
                 ("++$x", [], []),
-            ]
+            ],
         ),
     )
     def test(
@@ -133,11 +133,11 @@ class TestStatements(TestCMatchFinder):
                         {"$x": ["int a = 3;"], "$y": ["int b = 4;"]},
                         {
                             "$x": [
-                                "if(a == 3){\n                b=5;\n            }\n            else{\n                b--;\n            }"
+                                "if(a == 3){\n                b=5;\n            }\n            else{\n                b--;\n            }",
                             ],
                             "$y": [
                                 "while(a != 3){\n                if  (a == 4 && b == 5){\n                    b = a;\n                }\n"
-                                "            }"
+                                "            }",
                             ],
                         },
                     ],
@@ -154,7 +154,7 @@ class TestStatements(TestCMatchFinder):
                             "$$stmts": ["b=5;"],
                             "$single": ["b--;"],
                             "$$multi": [],
-                        }
+                        },
                     ],
                 ),
                 (
@@ -165,7 +165,7 @@ class TestStatements(TestCMatchFinder):
                             "$$stmts": ["b=5;"],
                             "$single": ["b--;"],
                             "$$multi": [],
-                        }
+                        },
                     ],
                 ),
                 (
@@ -174,10 +174,10 @@ class TestStatements(TestCMatchFinder):
                         {
                             "$x": ["3"],
                             "$$stmts": ["if  (a == 4 && b == 5){\n                    b = a;\n                }"],
-                        }
+                        },
                     ],
                 ),
-            ]
+            ],
         ),
     )
     def test(
@@ -228,7 +228,7 @@ class TestFunctionCallStatements(TestCMatchFinder):
                         {"$f": ["three"], "$a": ["a"], "$$all": ["b"], "$b": ["c"]},
                     ],
                 ),
-            ]
+            ],
         ),
     )
     def test(
@@ -269,13 +269,13 @@ class TestMultiAssignments(TestCMatchFinder):
                             "$f": ["fc"],
                             "$$all1": ["1", "2", "3", "4", "5"],
                             "$$all2": ["1", "2", "6", "4", "5"],
-                        }
+                        },
                     ],
                 ),
                 # skip the advanced undeterministic all placeholder
                 # ('$f($$before, $a, $$after);$f($$before, $b, $$after);',['int $f(int,int,int);'],[{'$f': ['fc'],
                 #                      '$$before': ['1', '2'], '$a': ['3'], '$$after': ['4', '5'], '$b': ['6']}]),
-            ]
+            ],
         ),
     )
     def test_args(
@@ -292,7 +292,7 @@ class TestMultiAssignments(TestCMatchFinder):
             void f(){
                 fc(1,2,3,4,5);
                 fc(1,2,6,4,5);
-    
+
                 fc(1,2,3,4,5);
                 fc_else(1,2,6,4,5);
             }
@@ -316,10 +316,10 @@ class TestMultiAssignments(TestCMatchFinder):
                             "$true": ["c=3;"],
                             "$$after": ["d=4;", "e=5;"],
                             "$false": ["c=6;"],
-                        }
+                        },
                     ],
                 ),
-            ]
+            ],
         ),
     )
     def test_statements(
@@ -331,7 +331,7 @@ class TestMultiAssignments(TestCMatchFinder):
         expected_dicts_per_match: list[dict[str, list[str]]],
     ):
         code = """
-            
+
             void f(){
                 int a,b,c,d,e;
                 if(1){
@@ -405,7 +405,7 @@ class TestUseAtuToCreatePattern(TestCMatchFinder):
                     ['print("%s %s %s", foo, bar, same);'],
                     {"$$args": ['"%s %s %s"', "foo", "bar", "same"]},
                 ),
-            ]
+            ],
         ),
     )
     def test(self, name, factory, statements, pattern_type, expected, names):
@@ -417,8 +417,8 @@ class TestUseAtuToCreatePattern(TestCMatchFinder):
                 int a;
                 int b;
             } A;
-            int some_decl = 1; 
-    
+            int some_decl = 1;
+
             int print(const char*, ...);
             void f(){
                 A a = {};
@@ -426,7 +426,7 @@ class TestUseAtuToCreatePattern(TestCMatchFinder):
                 const char* bar = BAR;
                 const char* same = SAME;
                 print("%s %s %s", foo, bar, same);
-    
+
             }
             """
         atu = factory.create_from_text(code, "test.c")

@@ -19,7 +19,6 @@ def matches_kind(mine, other) -> bool:
 
 
 class CPPUtils:
-
     # a set of cpp reserved keywords in reverse alphabetical order:
     RESERVED_KEYWORDS = {
         "while",

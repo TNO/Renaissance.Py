@@ -164,7 +164,7 @@ class _RewriteActions:
         correct_indent: bool,
         rewrites: list[_RewriteAction] | None = None,
     ) -> None:
-        self.rewrites: list[_RewriteAction] = rewrites if rewrites else []
+        self.rewrites: list[_RewriteAction] = rewrites or []
         self.node = node
         self.encoding = encoding
         # self.content = self.node.root.binary_file_content()[self.node.offset : self.node.extended_end_offset]
@@ -243,6 +243,7 @@ class _RewriteActions:
 
         """
         rewrite_nodes = list(flatten(rewrite.nodes for rewrite in self.rewrites))
+
         # need to test
         # 1
         # | node |
@@ -250,10 +251,12 @@ class _RewriteActions:
         # 2
         # | rew |
         #               |node|
-        no_conflict = lambda node1, rew: not (node1.end_offset < rew.offset or node1.offset > rew.end_offset)
+        def no_conflict(node1, rew):
+            return not (node1.end_offset < rew.offset or node1.offset > rew.end_offset)
+
         result = any(no_conflict(node, rew) for rew in rewrite_nodes)
 
-        return result and False
+        return result and False  # TODO: Why `and False`
 
     def __replace(
         self,
@@ -283,6 +286,9 @@ class _RewriteActions:
         # end_offset =nodes[-1].get_start_offset()+nodes[-1].get_length()+1
         indent = self.derive_indent(start_offset)
         if self.correct_indent:
+            if new_content.startswith("\n"):
+                # a blank first line would otherwise strand the original indent as trailing whitespace
+                start_offset -= indent
             new_content = TextUtils.shift_right(new_content, indent, start_line=1)
         self.__replace_bytes(rewriter, start_offset, end_offset, new_content)
 
@@ -362,6 +368,9 @@ class _RewriteActions:
         new_content = TextUtils.shift_right(new_content, indent, start_line=1)
 
         if before:
+            # restore the node's original indent, consumed as new_content's first-line indent
+            if not white_space and new_content.endswith("\n"):
+                new_content += spaces
             self.__replace_bytes(rewriter, ext_start_offset, ext_start_offset, new_content + white_space)
         else:
             self.__replace_bytes(rewriter, ext_end_offset, ext_end_offset, white_space + new_content)
@@ -446,7 +455,9 @@ class _RewriteActions:
         return node.text
 
     def __prepare_replacement_content(
-        self, new_content: str, target: PatternMatch | Rewritable | Sequence[Rewritable]
+        self,
+        new_content: str,
+        target: PatternMatch | Rewritable | Sequence[Rewritable],
     ) -> tuple[str, Sequence[Rewritable]]:
         if isinstance(target, PatternMatch):
             new_content = self.__compose_replacement(new_content, [target])
@@ -458,7 +469,7 @@ class _RewriteActions:
         return new_content, node_list
 
     def _should_skip(self, node: Rewritable):
-        """If the node is not the first node of a pattern match it should be skipped"""
+        """If the node is not the first node of a pattern match it should be skipped."""
         return any(node in rewrite.nodes[1:] for rewrite in self.rewrites if isinstance(rewrite.target, PatternMatch))
 
     @staticmethod
@@ -510,7 +521,7 @@ class _RewriteActions:
     def get_comment_location(start_offset: int, stop_offset: int, content: bytes) -> tuple[int, int]:
         """Get the location of the comment before the location, but after the stop_location
         a comment is a line that starts with // or a block that starts with /* and ends with */
-        or a line that starts with #
+        or a line that starts with #.
         """
         # search last occurrence of //, /*, # in a byte array
         comment_start = content.rfind(b"//", start_offset, stop_offset)
@@ -542,7 +553,7 @@ class _RewriteActions:
     def __get_comment_after_location(start_offset: int, end_offset: int, content: bytes) -> tuple[int, int]:
         """Get the location of the comment before the location, but after the stop_location
         a comment is a line that starts with // or a block that starts with /* and ends with */
-        or a line that starts with #
+        or a line that starts with #.
         """
         line_end_offset = _RewriteActions.__get_end_of_line(content, start_offset)
         if line_end_offset == -1:

@@ -12,7 +12,7 @@ class TextUtils:
 
     @staticmethod
     def shift_left(text: str, shift: int, start_line: int = 0) -> str:
-        """Shifts each line of the given text to the left by the specified number of spaces. Only spaces are shifted"""
+        """Shifts each line of the given text to the left by the specified number of spaces. Only spaces are shifted."""
         if shift == 0:
             return text
         pattern = re.compile(r"\s{0," + str(shift) + "}(.*)")
@@ -23,11 +23,12 @@ class TextUtils:
 
     @staticmethod
     def correct_indent(text: str, indent: int, depth: int = 0) -> str:
-        """Shifts each line of the given text to the left by the specified number of spaces. Only spaces are shifted"""
+        """Shifts each line of the given text to the left by the specified number of spaces. Only spaces are shifted."""
         lines = text.split("\n")
         for idx, line in enumerate(lines):
             depth -= line.count("}")
-            lines[idx] = " " * depth * indent + re.sub(r"^\s*", "", line)
+            stripped = re.sub(r"^\s*", "", line)
+            lines[idx] = " " * depth * indent + stripped if stripped else stripped
             depth += line.count("{")
 
         return "\n".join(lines)
@@ -35,7 +36,8 @@ class TextUtils:
     @staticmethod
     def strip_indent(text: str, start_line: int = 0) -> str:
         """Shifts left the text such that the first line has no leading spaces and all other lines shifted left
-        with the first line spaces length."""
+        with the first line spaces length.
+        """
         matcher = TextUtils.__PRECEDING_SPACES_PATTERN.search(text)
         if matcher:
             spaces = matcher[1]
@@ -44,13 +46,13 @@ class TextUtils:
 
     @staticmethod
     def shift_right(text: str, shift: int, start_line: int = 0) -> str:
-        """Shifts each line of the given text to the left by the specified number of spaces. Only spaces are shifted"""
+        """Shifts each line of the given text to the left by the specified number of spaces. Only spaces are shifted."""
         if shift == 0:
             return text
         lines = text.split("\n")
         spaces = " " * shift
         for idx, line in enumerate(lines[start_line:]):
-            lines[idx + start_line] = spaces + line
+            lines[idx + start_line] = spaces + line if line else line
         return "\n".join(lines)
 
     @staticmethod
@@ -131,7 +133,7 @@ def fix_indent(code_string: str) -> str | None:
     try:
         if not os.path.isfile(file_path):
             print(f"Error: {file_path} does not exist.")
-            return
+            return None
 
         # Step 1: Run flake8 to show issues
         print("Running flake8...")
@@ -148,7 +150,7 @@ def fix_indent(code_string: str) -> str | None:
                 "--aggressive",
                 "--aggressive",
                 file_path,
-            ]
+            ],
         )
 
         # Step 3: Run flake8 again to verify
@@ -165,7 +167,6 @@ def fix_indent(code_string: str) -> str | None:
     except Exception as e:
         print(f"Error formatting code: {e}")
     finally:
-        pass
         # Clean up the temporary file
         if os.path.exists(file_path):
             os.remove(file_path)

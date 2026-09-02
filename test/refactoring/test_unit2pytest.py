@@ -28,7 +28,7 @@ class TestUnit2Pytest:
             """
             class TestClass1(TestCase):
                 pass
-            class Class2Test(unittest.TestCase):    
+            class Class2Test(unittest.TestCase):
                 pass
             """,
         )
@@ -90,7 +90,7 @@ class TestUnit2Pytest:
             """
         class TestClass:
             def test_fun(self):
-                with self.assertRaises(Eexception): 
+                with self.assertRaises(Eexception):
                     call()
         """,
         )

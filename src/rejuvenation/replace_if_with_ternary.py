@@ -68,6 +68,5 @@ def replace_if_with_ternary():
 
 
 if __name__ == "__main__":
-
     result = replace_if_with_ternary()
     print(result)

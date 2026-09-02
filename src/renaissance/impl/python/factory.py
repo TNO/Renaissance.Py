@@ -23,7 +23,6 @@ SHOW_NODE = False
 
 
 class PythonPattern(AstProtocol):
-
     def __init__(self, node):
         self.node: PythonRstNode = node
         if type(node) is str:
@@ -75,14 +74,13 @@ class PythonPattern(AstProtocol):
         if node.ast_type in [DeclarationExpression, ExpressionStatement, Name, Arg]:
             if _MATCH_ALL_RE.match(signature):
                 return MatchAll
-            elif _MATCH_ONE_RE.match(signature):
+            if _MATCH_ONE_RE.match(signature):
                 return MatchOne
 
         return node.ast_type
 
 
 class PythonFactory:
-
     def __init__(self, clazz: type[PythonRstNode | PythonCstNode | LSTNode | ast.AST]) -> None:
         self.clazz = clazz
         if clazz == LSTNode:
@@ -126,7 +124,6 @@ class PythonFactory:
 
 
 class PythonPatternFactory:
-
     def __init__(self, factory: PythonFactory):
         self.factory = factory
 
@@ -145,20 +142,16 @@ class PythonPatternFactory:
         stmt = self.create_statements(text)[-1]
         if isinstance(stmt.node.node, SimpleStatementLine):
             return stmt.children[0]
-        else:
-            return stmt
+        return stmt
         # return stmt
 
     def create_expression(self, text: str) -> PythonPattern:
         my_pattern = self.create_statement(text)
         if isinstance(my_pattern.node, PythonRstNode):
             return PythonPattern(my_pattern.node.expression)
-        elif isinstance(my_pattern.node, LSTNode):
+        if isinstance(my_pattern.node, LSTNode) or isinstance(my_pattern.node, PythonCstNode):
             return PythonPattern(my_pattern.node.children[-1])
-        elif isinstance(my_pattern.node, PythonCstNode):
-            return PythonPattern(my_pattern.node.children[-1])
-        else:
-            return PythonPattern(my_pattern.node.children[0])
+        return PythonPattern(my_pattern.node.children[0])
 
     def create_decorators(self, param):
         return self.create_statement(param + "\ndef test(): pass").children[2]

@@ -21,8 +21,7 @@ class Siblings[NodeType](TextSegment, Protocol):
 
     @property
     def syntax_nodes(self) -> Sequence[SyntaxNode[NodeType]]:
-        """The sequence of SyntaxNodes corresponding to these siblings.
-        """
+        """The sequence of SyntaxNodes corresponding to these siblings."""
         ...
 
     @property

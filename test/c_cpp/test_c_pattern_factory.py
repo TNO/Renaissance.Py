@@ -30,7 +30,7 @@ class TestCPatternFactory:
                     int a;
                     int b;
                 } A;
-                int some_decl = 1; 
+                int some_decl = 1;
 
                 void f(){
                     A a = {};
@@ -132,7 +132,7 @@ class TestExpression:
                     "(UnaryOperation, , test.c[111:113]): |!i|\n  (Expression, i, test.c[112:113]): |i|\n"
                     "    (DeclarationExpression, i, test.c[112:113]): |i|\n",
                 ),
-            ]
+            ],
         ),
     )
     def test(self, _, factory, expression, expected):
@@ -156,7 +156,7 @@ class TestDeclaration:
                 ("int a=2,b = 3;int c=4;", [], [], 3, 0),
                 ("$type a = $x;", ["$type"], ["$x"], 1, 1),
                 ("$type a,b = $x;", ["$type"], ["$x"], 2, 1),
-            ]
+            ],
         ),
     )
     def test(
@@ -194,8 +194,8 @@ class TestStatements:
                     ("a=2;b = 3;c=4;", [], 3, 3),
                     ("a = ($type)$x;", ["typedef int $type;"], 1, 2),
                     ("a = f($x);", ["int f(int);"], 1, 3),
-                ]
-            )
+                ],
+            ),
         ),
     )
     def test(
@@ -220,7 +220,7 @@ class TestStatements:
 
 
 class TestUseAtuToCreatePatterns:
-    """Test the creation of a complex pattern that includes a typedef, a struct, a define and a statement
+    """Test the creation of a complex pattern that includes a typedef, a struct, a define and a statement.
 
     Complex pattern take the includes, defines and typedefs from the translation unit
 
@@ -234,8 +234,8 @@ class TestUseAtuToCreatePatterns:
                     ("A a = {};", 1, 1),
                     ("const char* foo=FOO;", 1, 2),
                     ("const char* $x = BAR;", 1, 2),
-                ]
-            )
+                ],
+            ),
         ),
     )
     def test(self, _, factory, statementText, expected_stmts, expected_refs):
@@ -248,7 +248,7 @@ class TestUseAtuToCreatePatterns:
             int a;
             int b;
         } A;
-        int some_decl = 1; 
+        int some_decl = 1;
 
         void f(){
             A a = {};

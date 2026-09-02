@@ -9,8 +9,7 @@ class Rewrite:
 
 
 class Rewriter:
-    """A class that allows for modifications to a byte sequence.
-    """
+    """A class that allows for modifications to a byte sequence."""
 
     def __init__(self, content: bytes) -> None:
         self.__content = content

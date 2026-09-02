@@ -17,7 +17,7 @@ class cat:
         self.out_of_shadow =True
     def is_near(self):
         return not self.out_of_shadow
-# protagonist        
+# protagonist
 class mice:
     def be_high_alert_of(self):
         self.high_alert =True
@@ -58,7 +58,7 @@ class A(B):
         self.extra_value = extra_value
     def subclass_method(self):
         return "This method is only in subclass A"
-        
+
 # Create instances of both classes
 b_instance = B("Base")
 a_instance = A("Derived", "Extra")
@@ -66,10 +66,9 @@ a_instance = A("Derived", "Extra")
 
 
 class TestPythonNode:
-
     @pytest.fixture(autouse=True)
     def setup(self):
-        """Setup that runs before each test method"""
+        """Setup that runs before each test method."""
         self.factory = PythonFactory(PythonRstNode)
 
     def test_def_call_references(self):
@@ -122,7 +121,7 @@ class TestPythonNode:
         with tempfile.TemporaryDirectory(delete=True) as temp_dir:
             syntax_tree.ASTShower.store_node(temp_dir + "/py2.txt", ast)
 
-        class_node = first(n for n in traverse(ast) if isinstance(n.ast_type(),ClassDef) and n.name == "A")
+        class_node = first(n for n in traverse(ast) if isinstance(n.ast_type(), ClassDef) and n.name == "A")
 
         assert_that(class_node, is_(PythonRstNode))
         ast.translation_unit.lazy_create_refers(ast)

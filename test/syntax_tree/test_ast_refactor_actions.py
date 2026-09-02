@@ -5,7 +5,6 @@ from renaissance.syntax_tree import ASTRefactorActions
 
 
 class TestASTRefactorActions:
-
     def test_it_can_be_created(self, mocker):
         proc = mocker.Mock()
         factory = mocker.Mock()
@@ -78,5 +77,5 @@ class TestASTRefactorActions:
         proc.find_match.return_value = []
         factory = mocker.Mock()
         refactor_actions = ASTRefactorActions(proc, factory)
-        result = refactor_actions.collect("pattern", "pattern_kind")
+        refactor_actions.collect("pattern", "pattern_kind")
         assert_that(proc.find_match.called, is_(1))

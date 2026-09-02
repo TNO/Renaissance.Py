@@ -165,7 +165,8 @@ class TestPythonMatcherRepresentation:
         ]
 
         expressions_explicit_concatenated = map(
-            self.pattern_factory.create_expression, explicit_concatenated_representations
+            self.pattern_factory.create_expression,
+            explicit_concatenated_representations,
         )
         for expression1 in expressions_explicit_concatenated:
             for expression2 in expressions_explicit_concatenated:

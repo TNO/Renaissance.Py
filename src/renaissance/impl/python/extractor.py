@@ -33,7 +33,6 @@ class PythonExtractor:
                 case _:
                     pass
 
-        tu = root.translation_unit
         self.codebase[file] = root
         # # reconstruct dependencies inside module
         # tu.lazy_create_refers(root)

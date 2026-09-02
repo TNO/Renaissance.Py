@@ -14,7 +14,6 @@ from renaissance.syntax_tree.match_finder import (
 
 
 class FindMatchTest(unittest.TestCase):
-
     # def setUpClass(cls):
     #     cls.code_text: str = "int my_function();"
     def setUp(self):
@@ -45,19 +44,19 @@ class FindMatchTest(unittest.TestCase):
         self.assertEqual(self.a, 5)
         self.assertEqual(55, self.b)
         self.assertTrue(self.a == self.a, "A statement matches itself")
-        self.assertFalse("statement1_pattern" == self.a, "A statement doesn't match an expression")
+        self.assertFalse(self.a == "statement1_pattern", "A statement doesn't match an expression")
 
     @parameterized.expand(Factories.factories)
     def test_case(self, _: str, factory: ASTFactory):
         pattern_factory = CPatternFactory(factory)
         code_pattern = factory.create_from_text(self.code_text, "text.c")
         outer_pattern = pattern_factory.create_statement(self.outer_text)
-        inner_pattern = pattern_factory.create_expression(self.inner_text, self.extra_declarations_inner_text)
+        pattern_factory.create_expression(self.inner_text, self.extra_declarations_inner_text)
         results = match_pattern([code_pattern], [outer_pattern])
 
         # test length
         count: int = len(results)
-        assert 0 == count, "count = " + str(count)
+        assert count == 0, "count = " + str(count)
 
 
 # no namespace
@@ -82,9 +81,9 @@ class TestBasicNoNamespace(TestCase):
                 [
                     (literal_text, extra_declarations_literal_text),
                     (placeholder_text, extra_declarations_placeholder_text),
-                ]
-            )
-        )
+                ],
+            ),
+        ),
     )
     @unittest.skip("stmt and expr are the same")
     # unused param

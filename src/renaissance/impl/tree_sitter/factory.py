@@ -15,8 +15,7 @@ class TreeSitterPatternFactory:
         if isinstance(self.adapter, TreeSitterAdapter):
             tree = self.adapter.parse_code(text)
             return self.adapter.to_lst(text, tree).root
-        else:
-            return self.adapter.to_lst(text).root
+        return self.adapter.to_lst(text).root
 
     def create_statements(self, text: str) -> Sequence[LSTNode]:
         return self.create(text).children

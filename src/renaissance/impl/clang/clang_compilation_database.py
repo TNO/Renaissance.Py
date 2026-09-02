@@ -7,7 +7,6 @@ from renaissance.syntax_tree import ASTFactory, ASTNode
 
 
 class CompilationDatabase:
-
     @staticmethod
     def walk(typ: type[ASTNode], path: Path) -> Iterator[tuple[ASTFactory, ASTNode]]:
         """Load the Clang compilation database and yield factory and AST node type tuples.

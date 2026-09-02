@@ -68,7 +68,7 @@ if x >y :
     call(x)
 else:
     y=1
-    call(y)    
+    call(y)
             """,
             "test.py",
         )
@@ -100,7 +100,7 @@ else:
                 "    (ExpressionStatement, call(y), test.py[49:56]): |call(y)|\n"
                 "      (Call, call(y), test.py[49:56]): |call(y)|\n"
                 "        (Name, call, test.py[49:53]): |call|\n"
-                "          (Name, y, test.py[54:55]): |y|\n"
+                "          (Name, y, test.py[54:55]): |y|\n",
             ),
         )
 

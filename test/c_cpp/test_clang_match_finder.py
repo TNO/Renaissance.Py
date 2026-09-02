@@ -13,13 +13,12 @@ class ClangMatchFinderTest:
         void g(int,int);
         int h=0;
         struct S {};
-        
+
         void f(){
             const char* bar = BAR;
         }
         """
         fun = "void f() {const char* bar = BAR;  }"
-        pattern_type = "(?i)Decl_?Stmt"
         factory = ASTFactory(ClangASTNode, [])
         atu = factory.create_from_text(code, "test.c")
         pattern_factory = CPatternFactory(factory, ref_node=atu)

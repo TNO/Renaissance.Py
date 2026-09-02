@@ -30,6 +30,7 @@ _FEATURE = "../rewrite-semantics.feature"
 
 # ── Scenario functions ────────────────────────────────────────────────────────
 
+
 # Scenario 0 — Scenario Outline: three representative examples.
 # Universal property test: test/syntax_tree/test_rewrite_semantics_properties.py
 @pytest.mark.xfail(
@@ -89,12 +90,14 @@ def test_sibling_sib2_first():
 
 # ── Fixture ───────────────────────────────────────────────────────────────────
 
+
 @pytest.fixture
 def context() -> dict:
     return {}
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
 
 def _first_leaf(node: PythonRstNode) -> PythonRstNode:
     """Return the leftmost leaf descendant of *node*."""
@@ -120,6 +123,7 @@ def _find_statement(atu: PythonRstNode, factory: PythonFactory, text: str) -> Py
     assert matches, f"No statement matching {text!r} found in source"
     return matches[0].nodes[0]
 
+
 def _find_cpp_statement(atu, cpp_factory: CPPPatternFactory, text: str):
     """Return the first C++ statement in the ATU's compound body matching *text*."""
     pattern = list(cpp_factory.create_statements(text))
@@ -131,7 +135,9 @@ def _find_cpp_statement(atu, cpp_factory: CPPPatternFactory, text: str):
             return matches[0].nodes[0]
     raise AssertionError(f"No C++ statement matching {text!r} found")
 
+
 # ── Given steps ───────────────────────────────────────────────────────────────
+
 
 @given("a Python language factory")
 def given_python_factory(context: dict) -> None:
@@ -160,6 +166,7 @@ def given_source(context: dict, source: str) -> None:
 
 
 # ── Node-selection Given steps ────────────────────────────────────────────────
+
 
 @given(parsers.parse("the statement '{text}' is a node"))
 def given_statement_as_node(context: dict, text: str) -> None:
@@ -214,6 +221,7 @@ def given_third_sibling(context: dict, text: str) -> None:
 
 # ── When steps ────────────────────────────────────────────────────────────────
 
+
 @when(parsers.parse("the node is replaced with '{text}'"))
 def when_replace_node(context: dict, text: str) -> None:
     context["rewriter"].replace(text, [context["node"]])
@@ -243,12 +251,12 @@ def when_replace_second_third(context: dict, text: str) -> None:
 # The role ("ancestor" or "descendant") is looked up directly in the context
 # fixture, making it possible to parameterize the collection order in the
 # Examples table without duplicating step definitions.
-@when(parsers.re(r"the (?P<role>ancestor|descendant) is prepended with '(?P<text>[^']*)'" ))
+@when(parsers.re(r"the (?P<role>ancestor|descendant) is prepended with '(?P<text>[^']*)'"))
 def when_prepend_by_role(context: dict, role: str, text: str) -> None:
     context["rewriter"].insert_before(text, [context[role]], include_whitespace=False, include_comments=False)
 
 
-@when(parsers.re(r"the (?P<role>ancestor|descendant) is appended with '(?P<text>[^']*)'" ))
+@when(parsers.re(r"the (?P<role>ancestor|descendant) is appended with '(?P<text>[^']*)'"))
 def when_append_by_role(context: dict, role: str, text: str) -> None:
     context["rewriter"].insert_after(text, [context[role]], include_whitespace=False, include_comments=False)
 
@@ -262,6 +270,7 @@ def when_append_first_sibling(context: dict, text: str) -> None:
 def when_prepend_second_sibling(context: dict, text: str) -> None:
     context["rewriter"].insert_before(text, [context["sibling2"]], include_whitespace=False, include_comments=False)
 
+
 @when(parsers.re(r"the first sibling is surrounded with '(?P<before>[^']*)' and '(?P<after>[^']*)'"))
 def when_surround_first_sibling(context: dict, before: str, after: str) -> None:
     context["rewriter"].insert_before(before, [context["sibling1"]], include_whitespace=False, include_comments=False)
@@ -273,7 +282,9 @@ def when_surround_second_sibling(context: dict, before: str, after: str) -> None
     context["rewriter"].insert_before(before, [context["sibling2"]], include_whitespace=False, include_comments=False)
     context["rewriter"].insert_after(after, [context["sibling2"]], include_whitespace=False, include_comments=False)
 
+
 # ── Then steps ────────────────────────────────────────────────────────────────
+
 
 @then("applying the changes raises an error")
 def then_applying_raises_error(context: dict) -> None:
@@ -300,6 +311,4 @@ def then_a_before_b(context: dict, a: str, b: str) -> None:
     pos_b = result.find(b)
     assert pos_a != -1, f"Expected {a!r} in result, got: {result!r}"
     assert pos_b != -1, f"Expected {b!r} in result, got: {result!r}"
-    assert pos_a < pos_b, (
-        f"Expected {a!r} (at {pos_a}) to appear before {b!r} (at {pos_b}) in result: {result!r}"
-    )
+    assert pos_a < pos_b, f"Expected {a!r} (at {pos_a}) to appear before {b!r} (at {pos_b}) in result: {result!r}"

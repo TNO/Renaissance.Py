@@ -11,7 +11,6 @@ class CleanupRefactoring:
 
     @staticmethod
     def remove_unused_variables(ast_refactor: ASTProcessor) -> None:
-        """Removes all unused variables from a function
-        """
+        """Removes all unused variables from a function."""
         refs = flatten(find_ast_type(n, VariableDef) for n in find_ast_type(ast_refactor.node, CompoundStatement))
         [ast_refactor.remove(ref.parent, True, True) for ref in refs if len(ref.referenced_by) == 0]
