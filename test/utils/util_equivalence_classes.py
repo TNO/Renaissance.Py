@@ -71,7 +71,7 @@ def assert_pair_equivalence(
             assert isinstance(a, Sequence) and isinstance(b, Sequence)
             la = list(a)
             lb = list(b)
-            actual = (len(la) == len(lb)) and all(is_match(ea, eb) for ea, eb in zip(la, lb, strict=False))
+            actual = (len(la) == len(lb)) and all(is_match(ea, eb) for ea, eb in zip(la, lb, strict=True))
             assert_that(actual, equal_to(expected), f"matching {a} and {b} doesn't result in {expected}.")
         case (False, False):
             assert_that(is_match(a, b), equal_to(expected), f"matching {a} and {b} doesn't result in {expected}.")
