@@ -134,19 +134,27 @@ class ClangASTNode(ASTNode):
         # for example in the case of a base type.
         # without the fake child pattern matching on types will be difficult
         self.__inserted_children = []
+        # NOTE: clang.cindex.{TypeKind,CursorKind} assign their named members via
+        # runtime attribute assignment after the class body (e.g. `TypeKind.INVALID =
+        # TypeKind(0)`), so pyright cannot see them as declared class attributes from
+        # this module, hence the `pyright: ignore[reportAttributeAccessIssue]` below.
         if (
             insert_kind is None
             and not self.node.location.is_in_system_header
             and self.node.kind.is_declaration()
-            and self.node.type.kind != TypeKind.INVALID
-        ):  # type: ignore
+            and self.node.type.kind != TypeKind.INVALID  # pyright: ignore[reportAttributeAccessIssue]
+        ):
             loc_offset: int = self.node.location.offset
             length = len(self.node.spelling.encode(sys.getdefaultencoding()))
             insert_child = ClangASTNode(self.node, self.translation_unit, self, loc_offset, length, "DECL_LOC")
             insert_child._children = []
             self.__inserted_children.append(insert_child)
-            if self.node.type.get_declaration().kind is CursorKind.NO_DECL_FOUND:  # type: ignore
-                my_type = self.node.type if self.node.result_type.kind == TypeKind.INVALID else self.node.result_type  # type: ignore
+            if self.node.type.get_declaration().kind is CursorKind.NO_DECL_FOUND:  # pyright: ignore[reportAttributeAccessIssue]
+                my_type = (
+                    self.node.type
+                    if self.node.result_type.kind == TypeKind.INVALID  # pyright: ignore[reportAttributeAccessIssue]
+                    else self.node.result_type
+                )
                 length_ref = len(my_type.spelling.encode(sys.getdefaultencoding()))
                 insert_child = ClangASTNode(
                     self.node,
@@ -154,8 +162,8 @@ class ClangASTNode(ASTNode):
                     self,
                     self._offset,
                     length_ref,
-                    CursorKind.TYPE_REF.name,
-                )  # type: ignore
+                    CursorKind.TYPE_REF.name,  # pyright: ignore[reportAttributeAccessIssue]
+                )
                 insert_child._children = []
                 self.__inserted_children.append(insert_child)
 
@@ -236,7 +244,8 @@ class ClangASTNode(ASTNode):
 
     def _derive_name(self) -> str:
         try:
-            if self.node.type.kind == TypeKind.RECORD:  # type: ignore
+            # NOTE: see the clang.cindex enum note near __init__ above.
+            if self.node.type.kind == TypeKind.RECORD:  # pyright: ignore[reportAttributeAccessIssue]
                 return self.node.type.spelling
         except Exception as e:
             print(e)
@@ -353,18 +362,22 @@ class ClangASTNode(ASTNode):
         )
 
     def _get_function_definition(self):
-        if self.node.type.kind == TypeKind.FUNCTIONPROTO:  # type: ignore
+        # NOTE: see the clang.cindex enum note near __init__ above.
+        if self.node.type.kind == TypeKind.FUNCTIONPROTO:  # pyright: ignore[reportAttributeAccessIssue]
             signature = self.node.displayname
             semantic_parent = self.node.semantic_parent.hash
 
             def has_body(node):
-                return any(c.kind == CursorKind.COMPOUND_STMT for c in node.node.get_children())  # type: ignore
+                return any(
+                    c.kind == CursorKind.COMPOUND_STMT  # pyright: ignore[reportAttributeAccessIssue]
+                    for c in node.node.get_children()
+                )
 
             def is_match(node):
                 if node._kind != self._kind:
                     return False
-                if node.node.type.kind != TypeKind.FUNCTIONPROTO:
-                    return False  # type: ignore
+                if node.node.type.kind != TypeKind.FUNCTIONPROTO:  # pyright: ignore[reportAttributeAccessIssue]
+                    return False
                 if node.node.semantic_parent.hash != semantic_parent:
                     return False
                 if node.node.displayname != signature:
