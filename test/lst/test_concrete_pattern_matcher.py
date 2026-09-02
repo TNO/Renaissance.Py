@@ -1,6 +1,6 @@
 import pytest
 import tree_sitter_python
-from hamcrest import *
+from hamcrest import assert_that, empty, has_length, is_, is_not
 
 from renaissance.impl.tree_sitter.adapter import TreeSitterAdapter
 from renaissance.impl.tree_sitter.extractor import Extractor

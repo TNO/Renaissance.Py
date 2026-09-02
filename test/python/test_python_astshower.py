@@ -1,5 +1,5 @@
 import pytest
-from hamcrest import *
+from hamcrest import assert_that, contains_string, is_, not_
 
 from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
 from renaissance.impl.python.rst_node import PythonRstNode

@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import pytest
-from hamcrest import *
+from hamcrest import assert_that, greater_than, has_length, is_
 
 import targets
 from renaissance.impl.clang.clang_adapter import ClangAdapter

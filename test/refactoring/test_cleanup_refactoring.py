@@ -1,5 +1,5 @@
 import pytest
-from hamcrest import *
+from hamcrest import assert_that, calling, is_, raises
 
 from c_cpp.factories import Factories
 from renaissance.refactoring import CleanupRefactoring

@@ -1,5 +1,5 @@
 import pytest
-from hamcrest import *
+from hamcrest import assert_that, contains_string, greater_than_or_equal_to, has_length, is_, is_in, less_than, not_none, starts_with
 
 from renaissance.common.rewriter import Rewriter
 

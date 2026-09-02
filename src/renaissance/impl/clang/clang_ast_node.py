@@ -6,6 +6,7 @@ from typing import Any, override
 
 import clang.native
 from clang.cindex import Config, CursorKind, Index, TypeKind
+from clang.cindex import TranslationUnit as ClangCindexTranslationUnit
 
 from renaissance.impl.clang.cpp_utils import matches_kind
 from renaissance.impl.types import (
@@ -47,7 +48,7 @@ class Clangastreference:
 class ClangTranslationUnit:
     cache = []
 
-    def __init__(self, clang_atu: clang.cindex.TranslationUnit, file_name: str):
+    def __init__(self, clang_atu: ClangCindexTranslationUnit, file_name: str):
         self.clang_atu = clang_atu
         self.file_name = file_name
         self.references_initialized = False
@@ -67,7 +68,7 @@ class ClangTranslationUnit:
 
     @staticmethod
     def _collect_expansions(
-        translation_unit: clang.cindex.TranslationUnit,
+        translation_unit: ClangCindexTranslationUnit,
     ) -> set[tuple[str, int, int]]:
         result: set[tuple[str, int, int]] = set()
         for child in translation_unit.cursor.get_children():
@@ -185,7 +186,7 @@ class ClangASTNode(ASTNode):
     @staticmethod
     def load(file_path: Path, extra_args: Sequence[str], working_dir: Path) -> ClangASTNode:
         args = [*extra_args, *ClangASTNode.parse_args]
-        translation_unit: clang.cindex.TranslationUnit = ClangASTNode.index.parse(working_dir / file_path, args=args[3:])
+        translation_unit: ClangCindexTranslationUnit = ClangASTNode.index.parse(working_dir / file_path, args=args[3:])
         ClangASTNode.check_diagnostics(translation_unit, file_path.name)
         root_node = ClangASTNode(
             translation_unit.cursor,
@@ -207,7 +208,7 @@ class ClangASTNode(ASTNode):
         # add to cache to avoid reading the file again
         ASTNode.cache[file_name] = file_content_bytes
         args = [*ClangASTNode.parse_args, *extra_args] if extra_args is not None else [*ClangASTNode.parse_args]
-        translation_unit: clang.cindex.TranslationUnit = ClangASTNode.index.parse(file_name, unsaved_files=[(file_name, text)], args=args)
+        translation_unit: ClangCindexTranslationUnit = ClangASTNode.index.parse(file_name, unsaved_files=[(file_name, text)], args=args)
         ClangASTNode.check_diagnostics(translation_unit, file_name)
         try:
             root_node = ClangASTNode(
@@ -222,7 +223,7 @@ class ClangASTNode(ASTNode):
         return root_node
 
     @staticmethod
-    def check_diagnostics(translation_unit: clang.cindex.TranslationUnit, file_name: str) -> None:
+    def check_diagnostics(translation_unit: ClangCindexTranslationUnit, file_name: str) -> None:
         has_error = False
         errors = ""
         for d in translation_unit.diagnostics:

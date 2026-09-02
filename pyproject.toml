@@ -99,7 +99,11 @@ extend-exclude = ["features/targets/invalid.py"]
 force-exclude = true
 
 [tool.ruff.lint]
-select = ["E", "W", "I", "UP"]
+select = [
+    "AIR", "ASYNC", "COM", "DJ", "E", "EXE", "FA", "FAST",
+    "FLY", "G", "I", "INT", "ISC", "LOG", "NPY", "PD", "PIE", "PYI", "Q",
+    "RSE", "SLOT", "T10", "UP", "W", "YTT",
+]
 #select = ["ALL"]  # goal of issue 
 ignore = [
     "D203",  # conflicts with D211 (no blank line before class) — keep D211
@@ -116,6 +120,7 @@ typeCheckingMode = "off"
 #typeCheckingMode = "strict"
 include = ["src", "test", "tools"]
 exclude = ["features", "**/node_modules", "**/__pycache__", "**/.*", ".venv"]
+extraPaths = ["src", "test", "features"]
 
 [tool.pymarkdown]
 plugins.md013.line_length = 140

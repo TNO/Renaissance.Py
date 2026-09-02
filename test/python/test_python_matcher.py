@@ -2,8 +2,7 @@ import ast
 import textwrap
 
 import pytest
-from hamcrest import *
-from hamcrest import assert_that, is_not
+from hamcrest import assert_that, empty, greater_than, has_length, instance_of, is_, is_not
 
 from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
 from renaissance.impl.python.rst_node import PythonRstNode
