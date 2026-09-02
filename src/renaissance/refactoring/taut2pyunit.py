@@ -442,13 +442,13 @@ ImprovedStub.store_args = {}
         TAUT.TestDoubles(
             module={match["$mod1"]},
             {match["$e1"]}={match["$f1"]},
-        )
+        ),
     )
     self.doubles.append(
         TAUT.TestDoubles(
             module={match["$mod2"]},
             {match["$e2"]}={match["$f2"]},
-        )
+        ),
     )
 """
             func_header_index = match.signature.index("):\n")

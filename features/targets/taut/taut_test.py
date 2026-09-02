@@ -79,7 +79,7 @@ class Test_ABCDxTL(TAUT.TestCase):
 class test_log(VIPCxUNIT.TestCase):
     def test_ABCDxTL(self):
         with TAUT.TestDoubles(abcdxtl=FakeABCDxTL(None)):
-            TAUT.Logger()
+            log = TAUT.Logger()
 
             test_log_id = NNXA.Object("EMTLXT:DD_test_log_id")
             test_log = NNXA.Object("ABCDxTL:test_log_struct")
