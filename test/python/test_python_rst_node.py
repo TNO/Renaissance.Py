@@ -61,25 +61,16 @@ class TestPythonRstNode:
 
     def test_match_stmt(self):
         sample_code = (
-            'match data:\n  case [first, *rest]: return f"List with first element {first} and '
-            '{len(rest)} more items"\n  case _: pass'
+            'match data:\n  case [first, *rest]: return f"List with first element {first} and {len(rest)} more items"\n  case _: pass'
         )
         stmt = self.pattern_factory.create_statement(sample_code)
         assert_that(stmt.ast_type(), is_(Match))
         assert_that(stmt.children[1].children[0].ast_type(), is_(MatchCase))
-        assert_that(
-            stmt.children[1].children[0].children[0].children[1].ast_type(),
-            is_(MatchStar),
-        )
-        assert_that(
-            stmt.children[1].children[0].children[0].children[0].ast_type(),
-            is_(MatchAs),
-        )
+        assert_that(stmt.children[1].children[0].children[0].children[1].ast_type(), is_(MatchStar))
+        assert_that(stmt.children[1].children[0].children[0].children[0].ast_type(), is_(MatchAs))
 
     def test_show_call(self):
-        atu = self.factory.create_from_text(
-            "ba(55)\nca(555)\nlo(4444)\nna=55", "apple.py"
-        )
+        atu = self.factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "apple.py")
         second_stmt = atu.children[1]
         assert_that(second_stmt.offset, is_(7))
         assert_that(second_stmt.length, is_(7))
