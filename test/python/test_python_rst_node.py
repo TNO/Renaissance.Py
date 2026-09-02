@@ -69,6 +69,33 @@ class TestPythonRstNode:
         assert_that(stmt.children[1].children[0].children[0].children[1].ast_type(), is_(MatchStar))
         assert_that(stmt.children[1].children[0].children[0].children[0].ast_type(), is_(MatchAs))
 
+    def test_global_statement_does_not_lose_declared_names(self):
+        # `ast.Global._fields` is `("names",)`: a single list field, but of `str`, not AST
+        # nodes - the tree builder must not try to build a `PythonRstNode` from each name.
+        atu = self.factory.create_from_text("def f():\n    global x, y\n    return x + y\n", "g.py")
+        global_stmt = atu.children[0].body[0]
+        assert_that(global_stmt.ast_type(), is_(Global))
+        assert_that(global_stmt.properties.get("names"), is_(["x", "y"]))
+
+    def test_nonlocal_statement_does_not_lose_declared_names(self):
+        atu = self.factory.create_from_text(
+            "def outer():\n"
+            "    x = 1\n"
+            "    y = 2\n"
+            "    def inner():\n"
+            "        nonlocal x, y\n"
+            "        return x + y\n"
+            "    return inner\n",
+            "n.py",
+        )
+        nonlocal_stmt = atu.children[0].body[2].body[0]
+        assert_that(nonlocal_stmt.ast_type(), is_(Nonlocal))
+        assert_that(nonlocal_stmt.properties.get("names"), is_(["x", "y"]))
+
+    def test_global_statement_does_not_print_a_swallowed_crash(self, capsys):
+        self.factory.create_from_text("def f():\n    global x, y\n    return x + y\n", "g.py")
+        assert_that(capsys.readouterr().out, is_(""))
+
     def test_show_call(self):
         atu = self.factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "apple.py")
         second_stmt = atu.children[1]

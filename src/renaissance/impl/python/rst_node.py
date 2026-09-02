@@ -214,14 +214,14 @@ class PythonRstNode:
                 child = getattr(node, name)
                 match child:
                     case list():  # Matches any list
-                        if isinstance(node, Global) and name == "names":
-                            if len(child) == 1:
-                                self.name = child[0]
-                            if name == "body":
-                                self.body = self.children
-
-                        if isinstance(node, ImplicitNode) or isinstance(node, ast.Module) or len(node._fields) == 1:
-                            self.children.extend(PythonRstNode(n, translation_unit, self) for n in child)
+                        if isinstance(node, (ast.Global, ast.Nonlocal)) and name == "names":
+                            # `names` is `list[str]`, not a list of AST nodes - there's nothing
+                            # to build PythonRstNode children from, so it's kept as a property.
+                            self.properties["names"] = child
+                        elif isinstance(node, ImplicitNode) or isinstance(node, ast.Module) or len(node._fields) == 1:
+                            # A list field can hold a bare None at a position with no value
+                            # None isn't a real AST node, so it has nothing to build a child from.
+                            self.children.extend(PythonRstNode(n, translation_unit, self) for n in child if n is not None)
                             if name == "body":
                                 self.body = self.children
                         else:
