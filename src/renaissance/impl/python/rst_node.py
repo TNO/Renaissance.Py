@@ -108,6 +108,8 @@ class PythonRstTranslationUnit:
         assert isinstance(ast_node, PythonRstNode), f"Expected PythonASTNode but got {type(ast_node)}"
         match type(ast_node.node):
             case ast.arg:
+                # The reference tables are keyed by bare name, file-globally, so every method's
+                # `self` would collapse into one entry. Tracking it needs qualified node identity.
                 if ast_node.name != "self":
                     if isinstance(ast_node.node, ast.arg) and isinstance(ast_node.node.annotation, ast.Name):
                         node_id = ast_node.name
@@ -147,6 +149,12 @@ class PythonRstTranslationUnit:
                             self.add_reference(node_id, ref_id, ref_kind)
                 # add functions and attributes to class
 
+            case ast.FunctionDef | ast.AsyncFunctionDef:
+                if isinstance(ast_node.node, (ast.FunctionDef, ast.AsyncFunctionDef)) and isinstance(ast_node.node.returns, ast.Name):
+                    node_id = ast_node.node.name
+                    ref_id = ast_node.node.returns.id
+                    ref_kind = "TypeRef"
+                    self.add_reference(node_id, ref_id, ref_kind)
             case ast.Call:
                 if isinstance(ast_node.node, ast.Call):
                     # obj.function. then obj refers to function
@@ -178,13 +186,15 @@ class PythonRstTranslationUnit:
         else:
             self._referenced_by[ref_id] = [referenced_by]
 
-    def get_referenced_by(self, node_id):
+    def get_referenced_by(self, node_id: str) -> list[PythonRSTReference]:
+        """Return copies of the references pointing at node_id, so callers cannot mutate the table."""
         refs = self._referenced_by.get(node_id, [])
-        return [PythonRSTReference(self._nodes[ref.node_id].name, ref.ref_kind, ref.properties) for ref in refs]
+        return [PythonRSTReference(ref.node_id, ref.ref_kind, ref.properties) for ref in refs]
 
-    def get_references(self, node_id):
+    def get_references(self, node_id: str) -> list[PythonRSTReference]:
+        """Return copies of the references made by node_id, so callers cannot mutate the table."""
         refs = self._references.get(node_id, [])
-        return [PythonRSTReference(self._nodes[ref.node_id].name, ref.ref_kind, ref.properties) for ref in refs]
+        return [PythonRSTReference(ref.node_id, ref.ref_kind, ref.properties) for ref in refs]
 
 
 class PythonRstNode:
@@ -448,6 +458,15 @@ class PythonRstNode:
 
     def add_node(self):
         self.translation_unit.add(self)
+
+    def get_ancestor(self, kind: type[Type]) -> Self | None:
+        """Return the nearest ancestor whose ast_type is kind, or None if there isn't one."""
+        parent = self.parent
+        if not parent:
+            return None
+        if parent.ast_type == kind:
+            return parent
+        return parent.get_ancestor(kind)
 
     def get_container_parent(self):
         if self.parent:
