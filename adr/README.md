@@ -27,7 +27,7 @@ The goal of ADR is to give the developer of new language AST for Renaissance a g
 | [11](11_parser_with_space_and_comment.md) | Parser with Space and Comment                          | Proposal |
 | [12](12_patterns_as_not_nodes.md)         | Patterns Are Not Nodes                                 | Proposal |
 | [13](13_match_pattern.md)                 | Match Pattern                                          | Proposal |
-| [14](14_code_repositories.md)             | Code Repositories                                      | Proposal |
+| [14](14_code_repositories.md)             | Code Repositories: Core, Integrations, Rules, Examples | Proposal |
 ## ADR template
 Each ADR follows this structure:
 ```
@@ -52,3 +52,4 @@ Revision history:
 - 2026-03-27: Created index.
 - 2026-03-27: Added ADR 12 (Patterns Are Not Nodes).
 - 2026-03-27: Added ADR 13 (Match Pattern) and ADR 14 (Code Repositories).
+- 2026-09-02: Updated ADR 14 title to reflect the rules and refactoring-examples layers.
