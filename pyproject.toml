@@ -116,6 +116,7 @@ typeCheckingMode = "off"
 #typeCheckingMode = "strict"
 include = ["src", "test", "tools"]
 exclude = ["features", "**/node_modules", "**/__pycache__", "**/.*", ".venv"]
+extraPaths = ["src", "test", "features"]
 
 [tool.pymarkdown]
 plugins.md013.line_length = 140
