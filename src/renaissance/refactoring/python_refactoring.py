@@ -131,4 +131,3 @@ class PythonRefactoring(ASTProcessor):
         Overridden by every concrete subclass; the base no-op lets process() call it uniformly
         even for a recipe that hasn't overridden it.
         """
-        pass

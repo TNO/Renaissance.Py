@@ -246,5 +246,5 @@ class TestTypeVarCheck:
         assert_that(subject.result["cross_file"], has_entry("T", "fixed"))
         assert_that(subject.result["converted"], has_entry("T", "unsafe"))
         output = subject.apply_to_string()
-        assert_that(output, contains_string('T = TypeVar(\'T\')'))
+        assert_that(output, contains_string("T = TypeVar('T')"))
         assert_that(output, not_(contains_string("def b[T]")))

@@ -212,7 +212,7 @@ class TestTypeVarCheckConvert:
         result = subject.convert_declared_typevars()
 
         assert_that(result, has_entry("T", "unsafe"))
-        assert_that(subject.apply_to_string(), contains_string("T = TypeVar(\"T\")"))
+        assert_that(subject.apply_to_string(), contains_string('T = TypeVar("T")'))
 
     def test_does_not_convert_typevar_in_dunder_all(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
         subject = create_type_var_check("""
@@ -230,7 +230,7 @@ class TestTypeVarCheckConvert:
         result = subject.convert_declared_typevars()
 
         assert_that(result, has_entry("T", "unsafe"))
-        assert_that(subject.apply_to_string(), contains_string("T = TypeVar(\"T\")"))
+        assert_that(subject.apply_to_string(), contains_string('T = TypeVar("T")'))
 
     def test_removes_declaration_but_keeps_import_used_by_other_typevar(
         self, create_type_var_check: Callable[[str], TypeVarCheck]
@@ -257,7 +257,7 @@ class TestTypeVarCheckConvert:
         assert_that(result, has_entry("U", "unsafe"))
         output = subject.apply_to_string()
         assert_that(output, contains_string("from typing import TypeVar"))
-        assert_that(output, contains_string("U = TypeVar(\"U\")"))
+        assert_that(output, contains_string('U = TypeVar("U")'))
         assert_that(output, not_(contains_string("T = TypeVar")))
 
     def test_converts_single_scope_typevar_without_ruff(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
