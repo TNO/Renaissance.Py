@@ -187,10 +187,6 @@ class Multiply(BaseBinaryOp, _BaseOneTokenOp):
     pass
 
 
-class MatrixMultiply(BaseBinaryOp, _BaseOneTokenOp):
-    pass
-
-
 class Divide(BaseBinaryOp, _BaseOneTokenOp):
     pass
 
