@@ -177,7 +177,9 @@ class TestRemove(TestRewrites):
         expected: Any,
     ):
 
-        reemove = lambda s, _, n, ws, cm: ASTRewriter.remove(s, n, ws, cm)
+        def reemove(s, _, n, ws, cm):
+            return ASTRewriter.remove(s, n, ws, cm)
+
         self.do_test(
             reemove,
             factory,

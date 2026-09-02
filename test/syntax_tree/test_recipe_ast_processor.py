@@ -46,7 +46,9 @@ class TestRecipeASTProcessor:
         assert_that(recipe.ran, is_(["done"]))
 
     def test_annotate_decorator(self):
-        foreign = lambda f: f
+        def foreign(f):
+            return f
+
         decorator = annotate_decorator(foreign, "test_decorator")
         # the returned decorator keeps the foreign decorator's __name__
         assert_that(decorator.__name__, is_(foreign.__name__))

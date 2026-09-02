@@ -243,6 +243,7 @@ class _RewriteActions:
 
         """
         rewrite_nodes = list(flatten(rewrite.nodes for rewrite in self.rewrites))
+
         # need to test
         # 1
         # | node |
@@ -250,10 +251,12 @@ class _RewriteActions:
         # 2
         # | rew |
         #               |node|
-        no_conflict = lambda node1, rew: not (node1.end_offset < rew.offset or node1.offset > rew.end_offset)
+        def no_conflict(node1, rew):
+            return not (node1.end_offset < rew.offset or node1.offset > rew.end_offset)
+
         result = any(no_conflict(node, rew) for rew in rewrite_nodes)
 
-        return result and False
+        return result and False  # TODO: Why `and False`
 
     def __replace(
         self,
