@@ -5,11 +5,12 @@ Status: Accepted
 Date: 2026-02-25
 
 Authors:
- - jinmin.hu@capgemini.com
- - huub.joosten@capgemini.com
- - luna.li@capgemini.com
- - paul.nelissen@esi.nl
- - pierre.vandelaar@tno.nl
+
+- jinmin.hu@capgemini.com
+- huub.joosten@capgemini.com
+- luna.li@capgemini.com
+- paul.nelissen@esi.nl
+- pierre.vandelaar@tno.nl
 
 ## Table of contents
 
@@ -20,19 +21,18 @@ Authors:
 - [Alternatives considered](#alternatives-considered)
 - [Related decisions](#related-decisions)
 
-
 ## Context
 
-The goal of this ADR is to define a controlled way to update AST nodes, so that the resulting AST is still correct. 
+The goal of this ADR is to define a controlled way to update AST nodes, so that the resulting AST is still correct.
 
-The project models trees made of nodes. Currently, node data (properties and children) operations read the 
-tree and transformations create new trees instead of mutating in-place. Ensuring immutability helps reasoning 
+The project models trees made of nodes. Currently, node data (properties and children) operations read the
+tree and transformations create new trees instead of mutating in-place. Ensuring immutability helps reasoning
 about transformations, enables safer concurrency, and opens opportunities for caching and memoization.
 
 ## Decision
 
 Nodes can be implemented as immutable objects. Once a node is created, its properties and children cannot be
-modified. Any change to a tree (for example, updating a property or replacing a child) will be done through a rewriter 
+modified. Any change to a tree (for example, updating a property or replacing a child) will be done through a rewriter
 produce a new node valid rather than mutating the existing node in-place.
 
 Implementation notes and recommendations for contributors:
@@ -64,11 +64,13 @@ Implementation notes and recommendations for contributors:
 ## Consequences
 
 Positive:
+
 - Easier reasoning about code that manipulates trees.
 - Safer concurrent processing and simplified caching.
 - Fewer bugs due to unintended mutation.
 
 Negative / trade-offs:
+
 - Potential performance overhead due to allocation when creating modified copies.
   Mitigations include structural sharing (reusing unchanged children) and keeping node representations compact.
 - Some algorithms that expect in-place updates will need to be adapted or re-implemented in an immutable style.
@@ -95,4 +97,5 @@ Negative / trade-offs:
 ---
 
 Revision history:
+
 - 2026-02-25: Draft; adds ADR template and implementation guidance.

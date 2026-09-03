@@ -3,11 +3,12 @@
 This directory contains all Architecture Decision Records (ADRs) for the Renaissance project.
 Each ADR documents a significant design or technology choice, its context, rationale, and consequences.
 
-The goal of ADR is to give the developer of new language AST for Renaissance a guideline on: 
-* how to make correct design choice coherent to the ADR during the implementation and gives 
-  rationale on why each decision are made. 
+The goal of ADR is to give the developer of new language AST for Renaissance a guideline on:
+
+* how to make correct design choice coherent to the ADR during the implementation and gives
+  rationale on why each decision are made.
 * minimize the effort for the developer of the new language for renaissance.
-* provide  insight to the design and evolution of the project for developer of new language and 
+* provide  insight to the design and evolution of the project for developer of new language and
   future maintainers and contributors.
 
 ## Index
@@ -28,9 +29,12 @@ The goal of ADR is to give the developer of new language AST for Renaissance a g
 | [12](12_patterns_as_not_nodes.md)         | Patterns Are Not Nodes                                 | Proposal |
 | [13](13_match_pattern.md)                 | Match Pattern                                          | Proposal |
 | [14](14_code_repositories.md)             | Code Repository Structure: Core, Integrations, Recipes, Rejuvenations | Accepted |
+
 ## ADR template
+
 Each ADR follows this structure:
-```
+
+```text
 # <number> - <title>
 Status: Proposal | Accepted | Deprecated | Superseded
 Date: YYYY-MM-DD
@@ -47,11 +51,13 @@ Authors: ...
 ---
 Revision history:
 ```
+
 ---
 Revision history:
-- 2026-03-27: Created index.
-- 2026-03-27: Added ADR 12 (Patterns Are Not Nodes).
-- 2026-03-27: Added ADR 13 (Match Pattern) and ADR 14 (Code Repositories).
-- 2026-09-02: Updated ADR 14 title to reflect the rules and refactoring-examples layers.
-- 2026-09-03: Updated ADR 14 title to reflect the single-repository, extendable directory structure
+
+* 2026-03-27: Created index.
+* 2026-03-27: Added ADR 12 (Patterns Are Not Nodes).
+* 2026-03-27: Added ADR 13 (Match Pattern) and ADR 14 (Code Repositories).
+* 2026-09-02: Updated ADR 14 title to reflect the rules and refactoring-examples layers.
+* 2026-09-03: Updated ADR 14 title to reflect the single-repository, extendable directory structure
   decision (renamed "rules" to "recipes" and "refactoring examples" to "rejuvenations").

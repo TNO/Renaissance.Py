@@ -5,11 +5,12 @@ Status: Proposal
 Date: 2026-03-27
 
 Authors:
- - jinmin.hu@capgemini.com
- - huub.joosten@capgemini.com
- - luna.li@capgemini.com
- - paul.nelissen@esi.nl
- - pierre.vandelaar@tno.nl
+
+- jinmin.hu@capgemini.com
+- huub.joosten@capgemini.com
+- luna.li@capgemini.com
+- paul.nelissen@esi.nl
+- pierre.vandelaar@tno.nl
 
 ## Table of contents
 
@@ -90,12 +91,14 @@ uniform, self-contained way.
 ## Consequences
 
 Positive:
+
 - Lossless round-trip: raw → CST → raw produces identical output when no transformation is applied.
 - No separate trivia store; no glue code to reassemble source text.
 - Transformations can inspect and modify comments and whitespace uniformly.
 - libcst is actively maintained and widely used in the Python ecosystem.
 
 Negative:
+
 - libcst adds an external dependency.
 - libcst's node model is more verbose than a plain AST; developers must learn its API.
 - For non-Python languages a custom trivia-preserving strategy must still be implemented.
@@ -117,4 +120,5 @@ Negative:
 ---
 
 Revision history:
+
 - 2026-03-27: Converted to ADR template and clarified decision.

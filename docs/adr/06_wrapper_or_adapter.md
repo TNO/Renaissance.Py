@@ -5,11 +5,12 @@ Status: Proposal
 Date: 2026-02-25
 
 Authors:
- - jinmin.hu@capgemini.com
- - huub.joosten@capgemini.com
- - luna.li@capgemini.com
- - paul.nelissen@esi.nl
- - pierre.vandelaar@tno.nl
+
+- jinmin.hu@capgemini.com
+- huub.joosten@capgemini.com
+- luna.li@capgemini.com
+- paul.nelissen@esi.nl
+- pierre.vandelaar@tno.nl
 
 ## Table of contents
 
@@ -22,12 +23,10 @@ Authors:
 - [Alternatives considered](#alternatives-considered)
 - [Related decisions](#related-decisions)
 
-
 ## Context
 
-The goal of this ADR is to define a strategy for interoperating with external node-like objects that do not 
+The goal of this ADR is to define a strategy for interoperating with external node-like objects that do not
 match the project's canonical node shape while minimize the effort for the developer of the new language for renaissance.
-
 
 The project may receive nodes from different parsers or libraries that do not match the project's canonical node
 shape. We need a strategy to interoperate with foreign node-like objects while preserving the project's APIs
@@ -45,7 +44,8 @@ node make behavior explicit, allow normalization, and preserve access to the ori
 ## Implementation notes
 
 - Implement simple wrapper/adaptor classes that implement the project's node Protocol (see ADR 03).
-- Keep wrappers thin: delegate attribute and child access where possible and only normalize differences that matter.
+- Keep wrappers thin: delegate attribute and child access where possible and only normalize differences
+  that matter.
 
 ```Python
 
@@ -87,7 +87,6 @@ class PythonASTNode:
 
 ```
 
-
 ## Rationale
 
 - Wrappers preserve original semantics and make interop explicit.
@@ -96,10 +95,12 @@ class PythonASTNode:
 ## Consequences
 
 Positive:
+
 - Clear interoperability surface and testable adapters.
 - Avoids spreading compatibility code throughout the codebase.
 
 Negative:
+
 - Slight overhead of adapter objects and maintenance of adapter code.
 
 ## Alternatives considered
@@ -114,4 +115,5 @@ Negative:
 ---
 
 Revision history:
+
 - 2026-02-25: Converted to ADR template and clarified decision.

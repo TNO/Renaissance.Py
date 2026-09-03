@@ -5,11 +5,12 @@ Status: Accepted
 Date: 2026-03-27
 
 Authors:
- - jinmin.hu@capgemini.com
- - huub.joosten@capgemini.com
- - luna.li@capgemini.com
- - paul.nelissen@esi.nl
- - pierre.vandelaar@tno.nl
+
+- jinmin.hu@capgemini.com
+- huub.joosten@capgemini.com
+- luna.li@capgemini.com
+- paul.nelissen@esi.nl
+- pierre.vandelaar@tno.nl
 
 ## Table of contents
 
@@ -24,17 +25,19 @@ Authors:
 
 ## Context
 
-The goal of this ADR is to establish a coherent test architecture for the Renaissance project that supports 
-maintainability, extensibility, and comprehensive coverage. 
+The goal of this ADR is to establish a coherent test architecture for the Renaissance project that supports
+maintainability, extensibility, and comprehensive coverage.
 To ensure maintainability and extensibility a test architecture is crucial. The project needs a coherent set of
 testing frameworks covering behavior-driven tests, unit tests, performance benchmarks, and inline documentation
 examples. The choice of frameworks has implications for test discovery, fixture sharing, CI integration, and the
 ability to express the domain-specific requirements listed below.
 
 ## Requirements
+
 ### Functionalities that must be tested
 
-**Code matching**
+#### Code matching
+
 - Independent of layout (whitespace) and comments (presence, absence, content).
 - Support for placeholders; placeholders are AST nodes.
 - Support for explicit and implicit placeholders.
@@ -44,14 +47,16 @@ ability to express the domain-specific requirements listed below.
   (e.g., `$f; var = $f;`).
 - Multiple assignments of placeholders (e.g., `$f($$before, $arg, $$after)`).
 
-**Placeholder matching rules**
+#### Placeholder matching rules
+
 - A placeholder matches at the *highest* AST node whose concrete syntax reduces to a single name
   (function `getPlaceholderName` is applied recursively).
 - The same placeholder may be bound to nodes of different AST classes within one pattern
   (e.g., `$type` in `$type* ptr = new $type()` binds to `IASTNamedTypeSpecifier` then `IASTTypeId`).
   Comparison must therefore be structural, not class-based.
 
-**Equivalent code matching**
+#### Equivalent code matching
+
 - Readability variants: `1_000_000` ≡ `1000000`.
 - Numeric bases: `0xFF` ≡ `255`.
 - Scientific notation: `1E2` ≡ `100`.
@@ -60,7 +65,8 @@ ability to express the domain-specific requirements listed below.
 - Symmetric operators: `0 == x` matches `x == 0`.
 - Equivalent initialization forms (C++): `int x = 1;` matches `int x { 1 };`.
 
-**Find functionality**
+#### Find functionality
+
 - Find by kind (nested): e.g., find all `if` statements; a found match may contain another found match.
 - Language-agnostic kinds: definition, statement, expression, declaration, …
 - Parser-specific kinds: e.g., `IASTIfStatement`.
@@ -68,12 +74,14 @@ ability to express the domain-specific requirements listed below.
 - Find consecutive (non-overlapping): `find "aa" in "aaa"` → one match;
   `find "aa" in "aaaa"` → two non-overlapping matches.
 
-**Navigation functionality**
+#### Navigation functionality
+
 - AST structure: parent & ancestors, children & descendants, siblings.
 - Usage: definition / forward declaration → references (current file / analysis unit only).
 - Inheritance: base ↔ derived classes.
 
-**Transformation functionality**
+#### Transformation functionality
+
 - The encoding of a file must never change.
 - File/directory metadata may only change when an actual transformation occurred;
   analysis or a failing filter are not sufficient.
@@ -163,6 +171,7 @@ readable failure messages.
 ## Consequences
 
 Positive:
+
 - Single test runner (`pytest`) for all test kinds: BDD, unit, benchmark, doctest.
 - Shared fixtures across BDD steps and unit tests via `conftest.py`.
 - Rich plugin ecosystem (`pytest-cov`, `pytest-mock`, `pytest-bdd`, `pytest-benchmark`).
@@ -170,13 +179,14 @@ Positive:
 - Expressive, readable assertions via PyHamcrest.
 
 Negative:
+
 - pytest-bdd's Gherkin support is slightly less mature than Behave's.
 - Multiple frameworks must be kept in sync (versions, plugins).
 - Writing and maintaining BDD step definitions adds overhead over plain unit tests.
 
 ## Alternatives considered
 
-**BDD framework**
+### BDD framework
 
 | Framework        | Assessment                                                                                    |
 |------------------|-----------------------------------------------------------------------------------------------|
@@ -185,10 +195,12 @@ Negative:
 | Robot Framework  | Full automation framework; steep learning curve; overkill for BDD only.                       |
 | Lettuce          | Declining community; minimal updates. Rejected.                                               |
 
-**Unit testing**
+### Unit testing
+
 - `unittest` (stdlib) — rejected: more boilerplate, no plugin ecosystem, less expressive assertions.
 
-**Assertion style**
+### Assertion style
+
 - Plain `assert` — rejected in favor of PyHamcrest for richer failure messages and composable matchers.
 
 ## Related decisions
@@ -200,4 +212,5 @@ Negative:
 ---
 
 Revision history:
+
 - 2026-03-27: Converted GitHub issue #08 to ADR template; expanded all functionality requirements.

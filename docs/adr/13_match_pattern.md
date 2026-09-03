@@ -5,11 +5,12 @@ Status: Proposal
 Date: 2026-03-27
 
 Authors:
- - jinmin.hu@capgemini.com
- - huub.joosten@capgemini.com
- - luna.li@capgemini.com
- - paul.nelissen@esi.nl
- - pierre.vandelaar@tno.nl
+
+- jinmin.hu@capgemini.com
+- huub.joosten@capgemini.com
+- luna.li@capgemini.com
+- paul.nelissen@esi.nl
+- pierre.vandelaar@tno.nl
 
 ## Table of contents
 
@@ -107,11 +108,13 @@ comparisons and handles the known C++ cases where the same placeholder binds to 
 ## Consequences
 
 Positive:
+
 - Patterns are expressive: a single placeholder can match complex subtrees.
 - Repeated-placeholder equality is robust across AST class differences.
 - Equivalent-code matching reduces the number of patterns needed to cover syntactic variants.
 
 Negative:
+
 - `getPlaceholderName` must be implemented and maintained for each language frontend.
 - Structural equality via unparsing may be slower than direct node comparison; caching may be required.
 - Equivalent-code normalization tables must be kept in sync with language specifications.
@@ -137,4 +140,5 @@ Negative:
 ---
 
 Revision history:
+
 - 2026-03-27: Converted GitHub issue to ADR template.

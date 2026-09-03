@@ -4,16 +4,17 @@ Status: Accepted
 
 Date: 2026-02-25
 
-Authors: 
- - jinmin.hu@capgemini.com
- - huub.joosten@capgemini.com
- - luna.li@capgemini.com
- - paul.nelissen@esi.nl
- - pierre.vandelaar@tno.nl
+Authors:
+
+- jinmin.hu@capgemini.com
+- huub.joosten@capgemini.com
+- luna.li@capgemini.com
+- paul.nelissen@esi.nl
+- pierre.vandelaar@tno.nl
 
 ## Context
 
-The goal of this ADR is to minimize the implementation of ASTNode for a new language while still taking advantage 
+The goal of this ADR is to minimize the implementation of ASTNode for a new language while still taking advantage
 of the generic algorithms
 
 The project is implemented in Python and must remain flexible in how AST-like nodes are represented.
@@ -57,10 +58,12 @@ def is_match(src: NodeMatchProtocol, cmp: NodeMatchProtocol) -> bool:
 ## Consequences
 
 Positive:
+
 - Easier integration with third-party node representations.
 - Reduced boilerplate for small, local node-like objects used in tests.
 
 Negative:
+
 - Potential for runtime errors if an object only partially implements the expected shape;
   mitigated by runtime checks at boundaries and clear documentation.
 - Slightly looser guarantees than strict nominal typing.
@@ -80,8 +83,8 @@ is comment need to it own property without "comment sign"
 
 - See ADR 06 (Wrapper or adapter) and ADR 01 (Children and properties).
 
-
 ---
 
 Revision history:
+
 - 2026-02-25: Converted to ADR template and clarified decision.

@@ -5,11 +5,12 @@ Status: Accepted
 Date: 2026-02-25
 
 Authors:
- - jinmin.hu@capgemini.com
- - huub.joosten@capgemini.com
- - luna.li@capgemini.com
- - paul.nelissen@esi.nl
- - pierre.vandelaar@tno.nl
+
+- jinmin.hu@capgemini.com
+- huub.joosten@capgemini.com
+- luna.li@capgemini.com
+- paul.nelissen@esi.nl
+- pierre.vandelaar@tno.nl
 
 ## Table of contents
 
@@ -21,10 +22,9 @@ Authors:
 - [Alternatives considered](#alternatives-considered)
 - [Related decisions](#related-decisions)
 
-
 ## Context
 
-The goal of this ADR is to create an implementation of renaissance that feels native to the python world and reduce 
+The goal of this ADR is to create an implementation of renaissance that feels native to the python world and reduce
 the verbosity without misusing the original meanings.
 
 Nodes should integrate naturally with Python idioms and be easy to inspect, compare, iterate, and hash when
@@ -39,7 +39,7 @@ Not every node must implement every method — choose the methods that make sens
 
 ## Implementation notes
 
-- ``__repr__``: Provide an unambiguous, developer-oriented representation useful for debugging and display (ASTShower). 
+- ``__repr__``: Provide an unambiguous, developer-oriented representation useful for debugging and display (ASTShower).
 - ``__str__``: Provide a readable representation intended for users or logs.
 - ``__eq__`` and ``__hash__``: Implement equality of ASTNodes are logically value-like
   and immutable (see ADR 04). If nodes are mutable or identity matters, prefer identity-based equality and
@@ -72,10 +72,12 @@ __getitem__(self, index) -> Self:
 ## Consequences
 
 Positive:
+
 - More predictable developer experience and easier debugging.
 - Better interoperability with Python tools and libraries.
 
 Negative:
+
 - Risk of over-implementing dunder methods and creating surprising behavior;
   prefer conservative, well-documented choices.
 
@@ -90,9 +92,10 @@ Negative:
 ## note
 
 is_match is __not the same as __eq__
-also it avoids extra implementation 
+also it avoids extra implementation
 
 ---
 
 Revision history:
+
 - 2026-02-25: Converted to ADR template and clarified decision.

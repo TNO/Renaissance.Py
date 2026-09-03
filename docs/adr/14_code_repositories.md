@@ -5,11 +5,12 @@ Status: Accepted
 Date: 2026-03-27
 
 Authors:
- - jinmin.hu@capgemini.com
- - huub.joosten@capgemini.com
- - luna.li@capgemini.com
- - paul.nelissen@esi.nl
- - pierre.vandelaar@tno.nl
+
+- jinmin.hu@capgemini.com
+- huub.joosten@capgemini.com
+- luna.li@capgemini.com
+- paul.nelissen@esi.nl
+- pierre.vandelaar@tno.nl
 
 ## Table of contents
 
@@ -101,7 +102,7 @@ as a new subdirectory, alongside existing ones, without touching the core.
 
 Current directory layout, within the single `Renaissance.Py` repository:
 
-```
+```text
 Renaissance.Py/                       # one repository (archive)
   src/
     renaissance/                      # parser-agnostic core: unified AST, matcher, rewriter, …
@@ -146,6 +147,7 @@ customer, organizational, and environmental change — of which educational exam
 ## Consequences
 
 Positive:
+
 - A single clone, install, and version to reason about — simpler for users and new contributors than a
   multi-repository layout.
 - Third parties can still add an integration, a recipe library, or a rejuvenation collection as a new
@@ -155,6 +157,7 @@ Positive:
 - One CI pipeline covers the whole project; no cross-repository version alignment is needed.
 
 Negative:
+
 - The repository grows over time as more integrations, recipe libraries, and rejuvenation collections are
   added; it cannot be checked out or built "a la carte" the way separate repositories could.
 - Mixed licensing within one repository must be tracked carefully per subdirectory (via `LICENSE` files
@@ -196,6 +199,7 @@ Negative:
 ---
 
 Revision history:
+
 - 2026-03-27: Converted GitHub issue to ADR template.
 - 2026-03-28: Executed the rename to match this ADR: `src/renaissance/impl/` → `src/renaissance/integrations/`,
   `src/renaissance/refactoring/` → `src/renaissance/recipes/` (with matching renames under `test/`), and

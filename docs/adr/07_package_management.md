@@ -18,8 +18,8 @@ Authors: Project contributors
 
 ## Context
 
-The go of this ADR is to define a modern way to identify and manage dependencies, so that we can 
-recreate the artifact at any time. 
+The go of this ADR is to define a modern way to identify and manage dependencies, so that we can
+recreate the artifact at any time.
 
 The project uses Python and benefits from reproducible dependency management and straightforward virtual
 environment handling. UV provides a single-file project manifest (`pyproject.toml`) and an integrated
@@ -44,9 +44,11 @@ Poetry for creating virtual environments, adding/removing dependencies, and buil
 ## Consequences
 
 Positive:
+
 - Reproducible installs and simpler packaging workflows.
 
 Negative:
+
 - Contributors unfamiliar with Poetry need to learn its commands; mitigate with documentation.
 
 ## Alternatives considered
@@ -58,13 +60,13 @@ Negative:
 
 - This ADR explains our tooling preference; it does not block using other tools in special cases.
 
-
-## UV 
+## UV
 
 UV is the even more modern version, which unifies abstracts all build related tools.
-https://github.com/astral-sh/uv
+<https://github.com/astral-sh/uv>
 
 ---
 
 Revision history:
+
 - 2026-02-25: Converted to ADR template and clarified decision.

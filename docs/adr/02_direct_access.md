@@ -4,13 +4,13 @@ Status: Accepted
 
 Date: 2026-02-25
 
-
 Authors:
- - jinmin.hu@capgemini.com
- - huub.joosten@capgemini.com
- - luna.li@capgemini.com
- - paul.nelissen@esi.nl
- - pierre.vandelaar@tno.nl
+
+- jinmin.hu@capgemini.com
+- huub.joosten@capgemini.com
+- luna.li@capgemini.com
+- paul.nelissen@esi.nl
+- pierre.vandelaar@tno.nl
 
 ## Table of contents
 
@@ -22,10 +22,9 @@ Authors:
 - [Alternatives considered](#alternatives-considered)
 - [Related decisions](#related-decisions)
 
-
 ## Context
 
-The goal of this ADR is to allow the developer of a new language for Renaissance 
+The goal of this ADR is to allow the developer of a new language for Renaissance
 to create refactorings that is expressive and concise
 
 Direct access refers to exposing node fields and attributes using a Pythonic style (e.g., `function_definition.body`, `function_definition.name`)
@@ -35,15 +34,12 @@ This allows for natural attribute access, simpler metaprogramming, and compatibi
 
 ## Decision
 
-Adopt a Pythonic direct-access convention for node definitions. Nodes may declare a `_fields`(as in CPython's `ast` 
+Adopt a Pythonic direct-access convention for node definitions. Nodes may declare a `_fields`(as in CPython's `ast`
 module) that names structural fields. Consumers and tools should read these fields rather than
-relying on children and properties methods. Implementations should still provide stable, 
+relying on children and properties methods. Implementations should still provide stable,
 documented APIs for direct ast node manipulation.
 
-
 ## Implementation notes
-
-
 
 ```python
 class GoAstNode:
@@ -76,10 +72,12 @@ expectations in a Python project.
 ## Consequences
 
 Positive:
+
 - Lower boilerplate and clearer node definitions.
 - Easier integration with Python tooling.
 
 Negative:
+
 - Slight coupling to Python conventions; if we port the model to other languages some idioms will differ.
 
 ## Alternatives considered
@@ -93,4 +91,5 @@ Negative:
 ---
 
 Revision history:
+
 - 2026-02-25: Converted to ADR template and clarified decision.

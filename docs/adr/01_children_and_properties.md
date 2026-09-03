@@ -5,11 +5,12 @@ Status: Accepted
 Date: 2026-02-25
 
 Authors:
- - jinmin.hu@capgemini.com
- - huub.joosten@capgemini.com
- - luna.li@capgemini.com
- - paul.nelissen@esi.nl
- - pierre.vandelaar@tno.nl
+
+- jinmin.hu@capgemini.com
+- huub.joosten@capgemini.com
+- luna.li@capgemini.com
+- paul.nelissen@esi.nl
+- pierre.vandelaar@tno.nl
 
 ## Table of contents
 
@@ -24,8 +25,8 @@ Authors:
 
 ## Context
 
-The goal of this ADR is to define a design that minimize the implementation time of the matching 
-algorithm when creating renaissance for a new language 
+The goal of this ADR is to define a design that minimize the implementation time of the matching
+algorithm when creating renaissance for a new language
 
 This document explains the design decision to have all AST nodes contain both children and properties.
 Children represent nodes directly connected to a parent node; properties are attributes that describe the
@@ -35,7 +36,7 @@ separates structure (children) from node metadata (properties).
 ## Decision
 
 All AST nodes will expose both children and properties. Children will be represented as a sequence
-of child nodes. Properties will be stored in a map. Implementations should provide clear accessors 
+of child nodes. Properties will be stored in a map. Implementations should provide clear accessors
 for both concepts.
 
 ## Implementation notes
@@ -68,10 +69,12 @@ metadata), and supports sharing strategies.
 ## Consequences
 
 Positive:
+
 - Clearer APIs and traversal logic.
 - Easier targeted refactorings and transformations.
 
 Negative:
+
 - Slight overhead in defining and maintaining two parallel concepts.
 
 ## Alternatives considered
@@ -86,6 +89,7 @@ Negative:
 ---
 
 Revision history:
+
 - 2026-02-25: Converted to ADR template and clarified decision.
 - 2026-03-27: Added table of contents; moved ordering note into Implementation notes;
   renamed Example section to match template.

@@ -5,11 +5,12 @@ Status: Proposal
 Date: 2026-03-27
 
 Authors:
- - jinmin.hu@capgemini.com
- - huub.joosten@capgemini.com
- - luna.li@capgemini.com
- - paul.nelissen@esi.nl
- - pierre.vandelaar@tno.nl
+
+- jinmin.hu@capgemini.com
+- huub.joosten@capgemini.com
+- luna.li@capgemini.com
+- paul.nelissen@esi.nl
+- pierre.vandelaar@tno.nl
 
 ## Table of contents
 
@@ -24,7 +25,7 @@ Authors:
 
 ## Context
 
-The goal of this ADR is to clarify the distinction between code factories and pattern factories in the 
+The goal of this ADR is to clarify the distinction between code factories and pattern factories in the
 Renaissance project.
 
 In the current implementation a pattern is just an AST node. This is not desirable: while a pattern may be
@@ -103,12 +104,14 @@ self-documenting. The two factory families mirror this separation cleanly.
 ## Consequences
 
 Positive:
+
 - Matcher logic is simpler: the expected kind is available directly on the `Pattern`.
 - Pattern creation is explicit: callers state the intended kind at the call site.
 - AST nodes remain pure structural representations, uncontaminated by matching metadata.
 - The two factory families provide a clear, discoverable API surface.
 
 Negative:
+
 - Two factory families must be defined and maintained instead of one.
 - Existing code that treats patterns as plain AST nodes must be migrated.
 
@@ -128,4 +131,5 @@ Negative:
 ---
 
 Revision history:
+
 - 2026-03-27: Converted to ADR template and clarified decision.
