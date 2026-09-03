@@ -1,7 +1,7 @@
 from itertools import product
 
-from renaissance.impl.clang import ClangASTNode
-from renaissance.impl.clang.clang_json_ast_node import ClangJsonASTNode
+from renaissance.integrations.clang import ClangASTNode
+from renaissance.integrations.clang.clang_json_ast_node import ClangJsonASTNode
 from renaissance.syntax_tree import ASTFactory
 
 

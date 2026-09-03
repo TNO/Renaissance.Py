@@ -49,3 +49,20 @@
 1. For general purpose, we don't mandate that the final text should be parsable.
    When chaining changes, all intermediate texts must be parsable - in case of transpilation,
    different parsers can be involved.
+
+1. The project is kept as a **single repository (archive)**, rather than being split into separate
+   repositories per component, so that users and contributors have one place to clone, install, and
+   version, instead of having to discover and align several small repositories.
+
+    1. Layers that are meant to be extended by third parties (currently: parser integrations, under
+       `src/renaissance/integrations/`) use an **extendable directory structure**: one subdirectory per
+       contribution (e.g., one per parser), added alongside the existing ones without modifying the core
+       or other contributions.
+
+    1. A contribution subdirectory may carry its own license, distinct from the repository's overall
+       license (via a `LICENSE` file and/or SPDX headers scoped to that subdirectory) - e.g., for an
+       integration that wraps a GPL or proprietary parser.
+
+    1. See [ADR 14](../../../adr/14_code_repositories.md) for the full rationale and the directory
+       layout (`renaissance` core, `integrations/<parser>`, `recipes/<language>`,
+       `rejuvenation/<language>`).

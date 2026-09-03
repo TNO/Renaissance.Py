@@ -5,8 +5,8 @@ from unittest import TestCase
 from parameterized import parameterized
 
 from c_cpp.factories import Factories
-from renaissance.impl.clang import CPatternFactory
-from renaissance.impl.python import PythonRstNode
+from renaissance.integrations.clang import CPatternFactory
+from renaissance.integrations.python.ast import PythonRstNode
 from renaissance.syntax_tree import ASTFactory
 from renaissance.syntax_tree.match_finder import (
     match_pattern,

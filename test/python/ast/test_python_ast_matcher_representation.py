@@ -1,7 +1,7 @@
 import pytest
 
-from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
-from renaissance.impl.python.rst_node import PythonRstNode
+from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
+from renaissance.integrations.python.ast.rst_node import PythonRstNode
 from renaissance.syntax_tree.match_finder import AstProtocol
 from utils.util_equivalence_classes import assert_pair_equivalence, make_parametersets_of_equivalence_classes
 

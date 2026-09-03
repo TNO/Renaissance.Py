@@ -117,6 +117,13 @@ A [change](#change) that adds text at a location in the original source without 
 The supported insertion kinds are [prepend](#prepend), [append](#append), and [surround](#surround).
 See [Rewrite semantics](user/concepts/rewrite-semantics.md).
 
+### Integration
+
+A parser-specific bridge (e.g., tree-sitter, Clang, Python's `ast` module) that makes a parser's native
+nodes conform to the core [AST](#ast-abstract-syntax-tree) node's `Protocol`, implemented as a wrapper, an
+adapter, or via duck typing.
+See [ADR 14](../adr/14_code_repositories.md).
+
 ---
 
 ## M
@@ -174,10 +181,37 @@ Every AST [node](#node-ast-node) has a range; the range of a [replacement](#repl
 is derived from the range of the replaced node or sequence of nodes.
 See [Rewrite semantics](user/concepts/rewrite-semantics.md).
 
+### Recipe
+
+A combination of multiple standard analyses and transformations (rules) applied in a coordinated way to
+perform a non-trivial refactoring; more powerful than a single find / filter / modify rule.
+See [ADR 14](../adr/14_code_repositories.md).
+
+### Rejuvenation
+
+A concrete, runnable application of [Renaissance](#renaissance) that evolves a [code base](#code-base) in
+response to change, so that it keeps delivering value. That change originates from one of three sources:
+
+- the **customer** — e.g., additional or changed requirements;
+- the **organization** — e.g., business strategy, process, or structure (see the BAPO model: Business,
+  Architecture, Process, Organisation); or
+- the **environment** — e.g., the language, dependency, library, OS, or tooling versions a code base
+  relies on.
+
+Transpilation (translating from one programming language to another) and migration (moving to a new
+language, dependency, or tooling version) are approaches used to respond to such change.
+See [ADR 14](../adr/14_code_repositories.md).
+
 ### Removal
 
 A [replacement](#replacement) where the replacement text is the empty string, effectively deleting the text of a source [range](#range).
 See [Rewrite semantics](user/concepts/rewrite-semantics.md).
+
+### Renaissance
+
+The parser-agnostic core of the project: the unified AST model, match-pattern engine, rewriter, and other
+language- and parser-agnostic components.
+See [ADR 14](../adr/14_code_repositories.md).
 
 ### Replacement
 

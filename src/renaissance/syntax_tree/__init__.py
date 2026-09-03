@@ -22,11 +22,11 @@ from .recipe_ast_processor import (
 )
 
 # isort: split
-# This import must come after the ones above: renaissance.impl.clang (imported via
+# This import must come after the ones above: renaissance.integrations.clang (imported via
 # cpp_utils) imports back from renaissance.syntax_tree (ASTFinder, ASTNode,
 # ASTReference), so those names must already be bound in this module's namespace
 # before cpp_utils is loaded, or the circular import fails.
-from renaissance.impl.clang.cpp_utils import CPPUtils
+from renaissance.integrations.clang.cpp_utils import CPPUtils
 
 __all__ = [
     "AST_FACTORY_AND_ATU",

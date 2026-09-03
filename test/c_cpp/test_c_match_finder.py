@@ -5,9 +5,9 @@ from hamcrest import assert_that, greater_than, greater_than_or_equal_to, has_le
 from more_itertools.more import last
 
 from c_cpp.factories import Factories
-from renaissance.impl.clang import ClangASTNode, CPatternFactory
-from renaissance.impl.clang.clang_json_ast_node import ClangJsonASTNode
-from renaissance.impl.types import Call, Declaration
+from renaissance.integrations.clang import ClangASTNode, CPatternFactory
+from renaissance.integrations.clang.clang_json_ast_node import ClangJsonASTNode
+from renaissance.integrations.types import Call, Declaration
 from renaissance.syntax_tree import (
     ASTFactory,
     ASTNode,

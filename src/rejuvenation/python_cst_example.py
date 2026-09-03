@@ -1,9 +1,9 @@
 import textwrap
 
 from rejuvenation.python_lst_example import python_lst_smoke_test
-from renaissance.impl.python.cst_node import PythonCstNode
-from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
-from renaissance.impl.types import Call
+from renaissance.integrations.python.ast.cst_node import PythonCstNode
+from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
+from renaissance.integrations.types import Call
 from renaissance.syntax_tree import ASTRewriter, ASTShower
 from renaissance.syntax_tree.ast_finder import find_ast_type
 from renaissance.syntax_tree.match_finder import match_pattern

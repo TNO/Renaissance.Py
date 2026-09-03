@@ -1,6 +1,6 @@
 from hamcrest import assert_that, is_
 
-from renaissance.impl.types import Name
+from renaissance.integrations.types import Name
 from renaissance.syntax_tree import ASTRefactorActions
 
 

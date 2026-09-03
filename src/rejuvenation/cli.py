@@ -1,10 +1,10 @@
 import sys
 from pathlib import Path
 
-from renaissance.impl.python.extractor import PythonExtractor
-from renaissance.impl.python.rst_node import PythonRstNode
+from renaissance.integrations.python.ast.extractor import PythonExtractor
+from renaissance.integrations.python.ast.rst_node import PythonRstNode
 from renaissance.project.project_scanner import PythonScanner
-from renaissance.refactoring.python_refactoring import PythonRefactoring
+from renaissance.recipes.python_refactoring import PythonRefactoring
 from renaissance.syntax_tree import ASTShower
 
 

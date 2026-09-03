@@ -1,8 +1,8 @@
 import pytest
 from hamcrest import assert_that, is_, matches_regexp, not_none
 
-from renaissance.impl.clang import ClangASTNode, CPatternFactory
-from renaissance.impl.types import Call, If, MacroDef
+from renaissance.integrations.clang import ClangASTNode, CPatternFactory
+from renaissance.integrations.types import Call, If, MacroDef
 from renaissance.syntax_tree import ASTFactory, ASTShower
 from renaissance.syntax_tree.ast_finder import find_ast_type
 

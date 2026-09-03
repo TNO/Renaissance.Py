@@ -2,9 +2,9 @@ import pytest
 from hamcrest import *
 from more_itertools import last
 
-from renaissance.impl.clang import CPatternFactory
-from renaissance.impl.clang.clang_json_ast_node import ClangJsonASTNode
-from renaissance.impl.types import Declaration
+from renaissance.integrations.clang import CPatternFactory
+from renaissance.integrations.clang.clang_json_ast_node import ClangJsonASTNode
+from renaissance.integrations.types import Declaration
 from renaissance.syntax_tree import ASTFactory, MatchFinder
 from renaissance.syntax_tree.ast_finder import find_ast_type
 

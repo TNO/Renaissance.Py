@@ -1,7 +1,7 @@
 import pytest
 from hamcrest import assert_that, has_length, has_string, is_
 
-from renaissance.impl.clang import ClangASTNode, CPatternFactory
+from renaissance.integrations.clang import ClangASTNode, CPatternFactory
 from renaissance.syntax_tree import ASTFactory
 
 
