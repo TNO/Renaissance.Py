@@ -52,10 +52,6 @@ def _parse_and_find(source: str):
 # ── Property tests ────────────────────────────────────────────────────────────
 
 
-@pytest.mark.xfail(
-    reason="Replacing the same node twice is not yet rejected: ASTRewriter does not validate for duplicate replacements",
-    strict=True,
-)
 @settings(max_examples=50)
 @given(source=_SIMPLE_ASSIGNMENTS, first=_REPLACEMENT_TEXTS, second=_REPLACEMENT_TEXTS)
 def test_replacing_same_node_twice_always_errors(

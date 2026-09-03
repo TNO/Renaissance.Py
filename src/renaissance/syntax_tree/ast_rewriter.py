@@ -186,6 +186,7 @@ class _RewriteActions:
         self.rewrites.append(rewrite)
 
     def apply(self) -> bytes:
+        self.__check_for_conflicting_rewrites()
         rewriter = Rewriter(self.content[:])
 
         for rewrite in self.rewrites:
@@ -257,6 +258,46 @@ class _RewriteActions:
         result = any(no_conflict(node, rew) for rew in rewrite_nodes)
 
         return result and False  # TODO: Why `and False`
+
+    def __check_for_conflicting_rewrites(self) -> None:
+        """Raise if two different queued rewrites target overlapping source ranges.
+
+        Applying both would silently corrupt the output (concatenated/garbled text) instead of
+        erroring - __is_ancestor_in_nodes's nested-rewrite skip doesn't cover this case, since
+        it's for a rewrite nested *inside* another rewrite's node, not two rewrites on the same
+        or sibling-overlapping range. See python-ast-known-limitations.md item 5.
+
+        TODO: this only turns silent corruption into a clear error - it doesn't merge
+        conflicting rewrites into a correct result. Recipes must still avoid queuing more than
+        one rewrite per node/range before a commit (see PythonRefactoring.remove_import_alias's
+        batching, and TypeVarCheck.convert_declared_typevars's per-function batching, for the
+        pattern to follow).
+        """
+        all_nodes = [(rewrite, node) for rewrite in self.rewrites for node in rewrite.nodes if node != self.node]
+        for i, (rewrite_a, node_a) in enumerate(all_nodes):
+            for rewrite_b, node_b in all_nodes[i + 1 :]:
+                if rewrite_a is rewrite_b or self.__is_nested(node_a, node_b) or self.__is_nested(node_b, node_a):
+                    continue
+                if not (node_a.end_offset < node_b.offset or node_a.offset > node_b.end_offset):
+                    raise ValueError(
+                        f"Conflicting rewrites queued for overlapping source ranges "
+                        f"({node_a.offset}-{node_a.end_offset} and {node_b.offset}-{node_b.end_offset}) "
+                        "in the same file - applying both would corrupt the output. See "
+                        "python-ast-known-limitations.md item 5."
+                    )
+
+    @staticmethod
+    def __is_nested(node: Rewritable, maybe_ancestor: Rewritable) -> bool:
+        """Return True if maybe_ancestor is an ancestor of node, walking .parent.
+
+        Not node.is_ancestor_of() - not every Rewritable implements it (e.g. PythonRstNode).
+        """
+        parent = node.parent
+        while parent:
+            if parent is maybe_ancestor:
+                return True
+            parent = parent.parent
+        return False
 
     def __replace(
         self,

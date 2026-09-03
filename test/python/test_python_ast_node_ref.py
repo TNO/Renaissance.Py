@@ -1,7 +1,7 @@
 import tempfile
 
 import pytest
-from hamcrest import assert_that, greater_than, has_length, has_string, instance_of, is_, is_in
+from hamcrest import assert_that, empty, greater_than, has_length, has_string, instance_of, is_, is_in
 from more_itertools.more import first
 
 from renaissance import syntax_tree
@@ -63,6 +63,15 @@ class A(B):
 b_instance = B("Base")
 a_instance = A("Derived", "Extra")
 """
+
+
+returning_content = """
+class Cat:
+    pass
+
+def find() -> Cat:
+    return None
+""".strip()
 
 
 class TestPythonNode:
@@ -169,6 +178,41 @@ class TestPythonNode:
         referenced_by = ref_node.referenced_by
         assert_that(referenced_by, has_length(1))
         assert_that(call_node in [ast.translation_unit._nodes[r.node_id] for r in referenced_by])
+
+    def test_references_to_a_builtin_type_do_not_crash(self):
+        # `int` is not stored in `_nodes` (see the `types` exclusion list), so a reference to it
+        # must not be resolved through that table.
+        atu = self.factory.create_from_text("x: int = 0\n", "builtin.py")
+        ann_assign = atu.children[0]
+        assert_that([ref.node_id for ref in ann_assign.references], is_(["int"]))
+
+    def test_function_references_its_return_type_annotation(self):
+        # `Cat` is not called anywhere in the body, so only the annotation can produce this reference.
+        atu = self.factory.create_from_text(returning_content, "returning.py")
+        find_func = atu.children[1]
+        assert_that([(ref.node_id, ref.ref_kind) for ref in find_func.references], is_([("Cat", "TypeRef")]))
+
+    def test_class_is_referenced_by_a_function_returning_it(self):
+        atu = self.factory.create_from_text(returning_content, "returning.py")
+        cat_class = atu.children[0]
+        assert_that([(ref.node_id, ref.ref_kind) for ref in cat_class.referenced_by], is_([("find", "TypeRef")]))
+
+    def test_async_function_references_its_return_type_annotation(self):
+        atu = self.factory.create_from_text(returning_content.replace("def find", "async def find"), "returning.py")
+        find_func = atu.children[1]
+        assert_that([(ref.node_id, ref.ref_kind) for ref in find_func.references], is_([("Cat", "TypeRef")]))
+
+    def test_subscripted_return_annotation_is_not_recorded(self):
+        # Only a bare `ast.Name` annotation is tracked, as in the `arg` and `AnnAssign` branches.
+        atu = self.factory.create_from_text(returning_content.replace("-> Cat", "-> list[Cat]"), "returning.py")
+        find_func = atu.children[1]
+        assert_that(find_func.references, is_(empty()))
+
+    def test_none_return_annotation_is_not_recorded(self):
+        # `-> None` parses as an `ast.Constant`, not an `ast.Name`.
+        atu = self.factory.create_from_text(returning_content.replace("-> Cat", "-> None"), "returning.py")
+        find_func = atu.children[1]
+        assert_that(find_func.references, is_(empty()))
 
     def test_ref_node_to_str(self):
         it = PythonRSTReference("it is ", "kind", {})
