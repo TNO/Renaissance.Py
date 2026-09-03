@@ -155,6 +155,22 @@ nav:
           - Architecture images: developer/architecture/images/README.md
           - Test architecture: developer/architecture/test-architecture.md
           - Traceability model: developer/architecture/traceability-model.md
+          - Architecture Decision Records:
+              - Overview: developer/architecture/adr/README.md
+              - 01. Children and properties: developer/architecture/adr/01_children_and_properties.md
+              - 02. Direct access to fields: developer/architecture/adr/02_direct_access.md
+              - 03. Duck typing for nodes: developer/architecture/adr/03_duck_typing.md
+              - 04. Make nodes immutable: developer/architecture/adr/04_immutable_properties.md
+              - 05. Built-in dunder methods for node behavior: developer/architecture/adr/05_buildin_functions.md
+              - 06. Wrapper or adapter for external node shapes: developer/architecture/adr/06_wrapper_or_adapter.md
+              - 07. Package & environment management: developer/architecture/adr/07_package_management.md
+              - 08. Test architecture: developer/architecture/adr/08_pytest_suite.md
+              - 09. Property-based tests: developer/architecture/adr/09_property_based_tests.md
+              - 10. Type hierarchy: developer/architecture/adr/10_type_hierarchy.md
+              - 11. Parser with space and comment: developer/architecture/adr/11_parser_with_space_and_comment.md
+              - 12. Patterns are not nodes: developer/architecture/adr/12_patterns_as_not_nodes.md
+              - 13. Match pattern: developer/architecture/adr/13_match_pattern.md
+              - 14. Code repository structure: developer/architecture/adr/14_code_repositories.md
 
       - Traceability:
           - Overview: developer/feature-test-map/index.md

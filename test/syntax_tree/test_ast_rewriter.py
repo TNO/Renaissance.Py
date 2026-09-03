@@ -5,9 +5,9 @@ import pytest
 from hamcrest import assert_that, has_length, is_
 
 from c_cpp.factories import Factories
-from renaissance.impl.clang import ClangASTNode, CPatternFactory
-from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
-from renaissance.impl.python.rst_node import PythonRstNode
+from renaissance.integrations.clang import ClangASTNode, CPatternFactory
+from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
+from renaissance.integrations.python.ast.rst_node import PythonRstNode
 from renaissance.syntax_tree import ASTFactory, ASTRewriter, PatternMatch
 from renaissance.syntax_tree.ast_rewriter import _RewriteAction, _RewriteActions
 from renaissance.syntax_tree.match_finder import find_all, match_pattern

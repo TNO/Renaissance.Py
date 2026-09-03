@@ -1,9 +1,9 @@
 from collections.abc import Sequence
 from functools import cache
 
-from renaissance.impl.clang.c_pattern_factory import CPPPatternFactory
+from renaissance.integrations.clang.c_pattern_factory import CPPPatternFactory
 
-from ..impl.types import BogusType, Type
+from ..integrations.types import BogusType, Type
 from .ast_finder import ASTFinder, matches_kind
 from .ast_node import ASTNode
 from .ast_processor import ASTProcessor

@@ -1,6 +1,6 @@
 from hamcrest import assert_that, is_
 
-from renaissance.impl.clang import ClangASTNode
+from renaissance.integrations.clang import ClangASTNode
 from renaissance.syntax_tree import ASTFactory, ASTProcessor, PatternMatch
 
 

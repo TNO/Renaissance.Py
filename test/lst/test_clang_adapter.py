@@ -4,8 +4,8 @@ import pytest
 from hamcrest import assert_that, greater_than, has_length, is_
 
 import targets
-from renaissance.impl.clang.clang_adapter import ClangAdapter
-from renaissance.impl.tree_sitter.lst import LST
+from renaissance.integrations.clang.clang_adapter import ClangAdapter
+from renaissance.integrations.tree_sitter.lst import LST
 from renaissance.utils.ast_utils import traverse
 
 

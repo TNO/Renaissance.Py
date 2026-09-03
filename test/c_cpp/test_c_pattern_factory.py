@@ -3,9 +3,9 @@ from hamcrest import assert_that, contains_string, greater_than_or_equal_to, is_
 from more_itertools import last
 
 from c_cpp.factories import Factories
-from renaissance.impl.clang import ClangASTNode, CPatternFactory
-from renaissance.impl.clang.c_pattern_factory import derive_header_text
-from renaissance.impl.types import (
+from renaissance.integrations.clang import ClangASTNode, CPatternFactory
+from renaissance.integrations.clang.c_pattern_factory import derive_header_text
+from renaissance.integrations.types import (
     CompoundStatement,
     Declaration,
     DeclarationExpression,

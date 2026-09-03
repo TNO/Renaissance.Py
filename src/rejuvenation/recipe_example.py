@@ -4,9 +4,9 @@ from collections.abc import Iterable
 
 from more_itertools import last
 
-from renaissance.impl.clang import ClangASTNode, CPPPatternFactory
-from renaissance.impl.clang.clang_json_ast_node import ClangJsonASTNode
-from renaissance.impl.types import Constructor, Method, TypeReference
+from renaissance.integrations.clang import ClangASTNode, CPPPatternFactory
+from renaissance.integrations.clang.clang_json_ast_node import ClangJsonASTNode
+from renaissance.integrations.types import Constructor, Method, TypeReference
 from renaissance.syntax_tree import (
     ASTFactory,
     ASTNode,

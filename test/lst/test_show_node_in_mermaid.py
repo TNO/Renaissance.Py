@@ -6,8 +6,8 @@ import tree_sitter_java as tsjava
 import tree_sitter_python as tspython
 from hamcrest import assert_that, empty, is_not
 
-from renaissance.impl.tree_sitter.adapter import TreeSitterAdapter
-from renaissance.impl.tree_sitter.visualizer import LstVisualizer
+from renaissance.integrations.tree_sitter.adapter import TreeSitterAdapter
+from renaissance.integrations.tree_sitter.visualizer import LstVisualizer
 
 
 class TestShowNodeInMermaid:

@@ -33,8 +33,8 @@ from rejuvenation.remove_unused_variable import (
     remove_unused_variable_using_refactor_method,
 )
 from rejuvenation.replace_if_with_ternary import replace_if_with_ternary
-from renaissance.impl.clang import ClangASTNode, CPatternFactory
-from renaissance.impl.clang.clang_json_ast_node import ClangJsonASTNode
+from renaissance.integrations.clang import ClangASTNode, CPatternFactory
+from renaissance.integrations.clang.clang_json_ast_node import ClangJsonASTNode
 from renaissance.syntax_tree import ASTFactory
 from renaissance.syntax_tree.ast_node import ASTNode
 

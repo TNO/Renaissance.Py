@@ -2,10 +2,10 @@
 # It specifically showcases the replacement of if-else statements with ternary operators.
 from more_itertools import flatten
 
-from renaissance.impl.clang import ClangASTNode
-from renaissance.impl.clang.clang_json_ast_node import ClangJsonASTNode
-from renaissance.impl.types import CompoundStatement, VariableDef
-from renaissance.refactoring import CleanupRefactoring
+from renaissance.integrations.clang import ClangASTNode
+from renaissance.integrations.clang.clang_json_ast_node import ClangJsonASTNode
+from renaissance.integrations.types import CompoundStatement, VariableDef
+from renaissance.recipes import CleanupRefactoring
 from renaissance.syntax_tree import (
     ASTFactory,
     ASTNode,

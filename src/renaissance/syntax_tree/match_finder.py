@@ -1,7 +1,7 @@
 from collections.abc import Iterable, Sequence
 from typing import Protocol, Self, runtime_checkable
 
-from renaissance.impl.types import MatchAll, MatchOne, Type
+from renaissance.integrations.types import MatchAll, MatchOne, Type
 from renaissance.utils.ast_utils import use_dollar
 
 IRRELEVANT_PROPS = {"macro_expansion", "start_point", "end_point", "source_code", "location", "type"}

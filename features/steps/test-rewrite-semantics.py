@@ -17,10 +17,10 @@ from __future__ import annotations
 import pytest
 from pytest_bdd import given, parsers, scenario, then, when
 
-from renaissance.impl.clang import ClangASTNode, CPPPatternFactory
-from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
-from renaissance.impl.python.rst_node import PythonRstNode
-from renaissance.impl.types import CompoundStatement
+from renaissance.integrations.clang import ClangASTNode, CPPPatternFactory
+from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
+from renaissance.integrations.python.ast.rst_node import PythonRstNode
+from renaissance.integrations.types import CompoundStatement
 from renaissance.syntax_tree import ASTFactory, ASTRewriter
 from renaissance.syntax_tree.ast_finder import find_ast_type
 from renaissance.syntax_tree.match_finder import match_pattern

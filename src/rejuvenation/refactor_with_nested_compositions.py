@@ -2,8 +2,8 @@
 # It specifically showcases nested replacements and multiple patterns.
 import textwrap
 
-from renaissance.impl.clang import ClangASTNode, CPatternFactory
-from renaissance.impl.types import Call
+from renaissance.integrations.clang import ClangASTNode, CPatternFactory
+from renaissance.integrations.types import Call
 from renaissance.syntax_tree import ASTFactory, ASTRewriter, ASTShower
 from renaissance.syntax_tree.ast_finder import find_ast_type
 from renaissance.syntax_tree.match_finder import find_all

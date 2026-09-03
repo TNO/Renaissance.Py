@@ -9,7 +9,7 @@ from more_itertools import flatten
 from renaissance.common import Rewriter
 from renaissance.utils.text_utils import TextUtils
 
-from ..impl.types import CompoundStatement
+from ..integrations.types import CompoundStatement
 from .ast_finder import ASTFinder
 from .match_finder import PatternMatch
 
