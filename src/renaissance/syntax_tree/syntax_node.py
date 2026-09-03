@@ -1,3 +1,5 @@
+"""Protocol defining syntax nodes such as AST, CST, and parse tree nodes."""
+
 from typing import Any, Protocol, Self, runtime_checkable
 
 from renaissance.syntax_tree.text_segment import TextSegment
@@ -6,6 +8,7 @@ from renaissance.syntax_tree.text_segment import TextSegment
 @runtime_checkable
 class SyntaxNode[NodeType](TextSegment, Protocol):
     """Protocol for anything that represents syntax nodes.
+
     Syntax nodes include AST nodes, CST nodes, and parse tree nodes.
     A syntax node is a text segment.
 
@@ -40,6 +43,7 @@ class SyntaxNode[NodeType](TextSegment, Protocol):
     @property
     def parent(self) -> Self | None:
         """The parent of this node.
+
         The parent should only be None when the node represents the top of a tree,
         such as a compilation unit.
 

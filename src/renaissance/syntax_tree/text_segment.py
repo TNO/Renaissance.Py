@@ -1,9 +1,12 @@
+"""Protocol defining a text segment: a consecutive piece of text within a larger text."""
+
 from typing import Protocol, runtime_checkable
 
 
 @runtime_checkable
 class TextSegment(Protocol):
     """Protocol for anything that represents a text segment.
+
     A text segment is a consecutive piece, a.k.a. a slice, within a text.
     Instances include comments, whitespace (incl. empty lines), and syntax nodes.
 
@@ -19,6 +22,7 @@ class TextSegment(Protocol):
     @property
     def location(self) -> str:
         """The location of the full text that contains the text segment.
+
         For example, when text originates from disk the location is a file path.
         """
         ...
@@ -26,6 +30,7 @@ class TextSegment(Protocol):
     @property
     def start_offset(self) -> int:
         """Start offset of text segment.
+
         start_offset is an integer in [0, len(full_text)].
         """
         ...
@@ -43,6 +48,7 @@ class TextSegment(Protocol):
     @property
     def end_offset(self) -> int:
         """Exclusive end offset of text segment.
+
         end_offset is an integer in [0, len(full_text)].
         """
         ...
@@ -60,7 +66,9 @@ class TextSegment(Protocol):
     @property
     def text_segment(self) -> str:
         """The text segment is a slice of the full text.
-        The text segment is represented by the half-open interval [start_offset, end_offset).
-        The segment text is full_text[start_offset:end_offset].
+
+        The text segment is represented by the half-open interval [self.start_offset, self.end_offset).
+
+        The returned text segment is equal to self.full_text[self.start_offset:self.end_offset].
         """
         ...
