@@ -63,6 +63,6 @@
        license (via a `LICENSE` file and/or SPDX headers scoped to that subdirectory) - e.g., for an
        integration that wraps a GPL or proprietary parser.
 
-    1. See [ADR 14](../../adr/14_code_repositories.md) for
+    1. See [ADR 14](adr/14_code_repositories.md) for
        the full rationale and the directory layout (`renaissance` core, `integrations/<parser>`,
        `recipes/<language>`, `rejuvenation/<language>`).

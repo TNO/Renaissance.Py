@@ -122,7 +122,7 @@ See [Rewrite semantics](user/concepts/rewrite-semantics.md).
 A parser-specific bridge (e.g., tree-sitter, Clang, Python's `ast` module) that makes a parser's native
 nodes conform to the core [AST](#ast-abstract-syntax-tree) node's `Protocol`, implemented as a wrapper, an
 adapter, or via duck typing.
-See [ADR 14](adr/14_code_repositories.md).
+See [ADR 14](developer/architecture/adr/14_code_repositories.md).
 
 ---
 
@@ -185,7 +185,7 @@ See [Rewrite semantics](user/concepts/rewrite-semantics.md).
 
 A combination of multiple standard analyses and transformations (rules) applied in a coordinated way to
 perform a non-trivial refactoring; more powerful than a single find / filter / modify rule.
-See [ADR 14](adr/14_code_repositories.md).
+See [ADR 14](developer/architecture/adr/14_code_repositories.md).
 
 ### Rejuvenation
 
@@ -200,7 +200,7 @@ response to change, so that it keeps delivering value. That change originates fr
 
 Transpilation (translating from one programming language to another) and migration (moving to a new
 language, dependency, or tooling version) are approaches used to respond to such change.
-See [ADR 14](adr/14_code_repositories.md).
+See [ADR 14](developer/architecture/adr/14_code_repositories.md).
 
 ### Removal
 
@@ -211,7 +211,7 @@ See [Rewrite semantics](user/concepts/rewrite-semantics.md).
 
 The parser-agnostic core of the project: the unified AST model, match-pattern engine, rewriter, and other
 language- and parser-agnostic components.
-See [ADR 14](adr/14_code_repositories.md).
+See [ADR 14](developer/architecture/adr/14_code_repositories.md).
 
 ### Replacement
 
