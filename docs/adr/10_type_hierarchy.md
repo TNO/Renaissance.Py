@@ -21,8 +21,8 @@ Authors:
 - [Consequences](#consequences)
 - [Alternatives considered](#alternatives-considered)
 - [Related decisions](#related-decisions)
- 
- ## Context
+
+## Context
 
 the goal of this ADR is to establish a robust and maintainable type hierarchy for AST nodes use in the algorithms
 within the Renaissance project and across the languages.
