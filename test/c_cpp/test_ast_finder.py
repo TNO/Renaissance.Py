@@ -4,7 +4,7 @@ import pytest
 from hamcrest import assert_that, greater_than, has_length, is_
 
 import targets
-from renaissance.impl.types import BinaryOperation, BogusType, Expression
+from renaissance.integrations.types import BinaryOperation, BogusType, Expression
 from renaissance.syntax_tree import ASTFactory, ASTFinder, ASTNode, ASTShower
 from renaissance.syntax_tree.ast_finder import find_ast_type
 

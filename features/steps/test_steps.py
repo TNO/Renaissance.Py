@@ -4,8 +4,8 @@ import pytest
 from hamcrest import assert_that, calling, contains_string, is_not, not_, raises
 from pytest_bdd import given, parsers, then
 
-from renaissance.impl.python.factory import PythonFactory
-from renaissance.impl.python.rst_node import PythonRstNode
+from renaissance.integrations.python.ast.factory import PythonFactory
+from renaissance.integrations.python.ast.rst_node import PythonRstNode
 
 FEATURES_DIR = Path(__file__).parent.parent
 

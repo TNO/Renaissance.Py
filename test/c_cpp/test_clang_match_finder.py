@@ -1,7 +1,7 @@
 from hamcrest import assert_that, contains_string, greater_than_or_equal_to, has_length, is_, is_in, less_than, not_none, starts_with
 
-from renaissance.impl.clang import ClangASTNode, CPatternFactory
-from renaissance.impl.types import Declaration
+from renaissance.integrations.clang import ClangASTNode, CPatternFactory
+from renaissance.integrations.types import Declaration
 from renaissance.syntax_tree import ASTFactory, MatchFinder
 from renaissance.syntax_tree.ast_finder import find_ast_type
 

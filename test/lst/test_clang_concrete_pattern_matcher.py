@@ -1,9 +1,9 @@
 import pytest
 from hamcrest import assert_that, empty, has_length, is_, is_not
 
-from renaissance.impl.clang.clang_adapter import ClangAdapter
-from renaissance.impl.tree_sitter.extractor import Extractor
-from renaissance.impl.tree_sitter.factory import TreeSitterPatternFactory
+from renaissance.integrations.clang.clang_adapter import ClangAdapter
+from renaissance.integrations.tree_sitter.extractor import Extractor
+from renaissance.integrations.tree_sitter.factory import TreeSitterPatternFactory
 from renaissance.syntax_tree.match_finder import MIS_MATCH, MatchFinder, find_variants, is_match, is_match_tree, match_pattern
 
 

@@ -128,5 +128,6 @@ extraPaths = ["src", "test", "features"]
 [tool.pymarkdown]
 plugins.md013.line_length = 140
 plugins.md013.tables = false
+plugins.md013.code_blocks = false
 extensions.markdown-tables.enabled = true
 

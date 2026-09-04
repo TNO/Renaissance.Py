@@ -3,7 +3,7 @@ from pathlib import Path
 from hamcrest import assert_that, empty, is_not
 
 import targets
-from renaissance.impl.python.extractor import PythonExtractor
+from renaissance.integrations.python.ast.extractor import PythonExtractor
 
 
 class TestPythonExtractor:

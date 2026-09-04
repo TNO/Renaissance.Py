@@ -1,8 +1,8 @@
 import textwrap
 
-from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
-from renaissance.impl.tree_sitter.lst import LSTNode
-from renaissance.impl.types import Call
+from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
+from renaissance.integrations.tree_sitter.lst import LSTNode
+from renaissance.integrations.types import Call
 from renaissance.syntax_tree import ASTRewriter, ASTShower
 from renaissance.syntax_tree.ast_finder import find_ast_type
 from renaissance.syntax_tree.match_finder import match_pattern

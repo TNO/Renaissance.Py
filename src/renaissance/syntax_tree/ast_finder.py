@@ -1,7 +1,7 @@
 import re
 from collections.abc import Callable, Iterator, Sequence
 
-from renaissance.impl.types import Type
+from renaissance.integrations.types import Type
 from renaissance.utils.ast_utils import traverse
 
 from .ast_node import ASTNode

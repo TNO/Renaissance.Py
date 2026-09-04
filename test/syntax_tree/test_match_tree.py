@@ -13,9 +13,9 @@ from hamcrest import (
     raises,
 )
 
-from renaissance.impl.clang import ClangASTNode, CPatternFactory
-from renaissance.impl.python.factory import PythonFactory, PythonPatternFactory
-from renaissance.impl.python.rst_node import PythonRstNode
+from renaissance.integrations.clang import ClangASTNode, CPatternFactory
+from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
+from renaissance.integrations.python.ast.rst_node import PythonRstNode
 from renaissance.syntax_tree import ASTFactory, ASTShower
 from renaissance.syntax_tree.match_finder import (
     MatchFinder,

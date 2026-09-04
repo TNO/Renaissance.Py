@@ -4,8 +4,8 @@ import tree_sitter_java as tsjava
 import tree_sitter_python as tspython
 from hamcrest import assert_that, empty, greater_than, has_length, is_, is_not
 
-from renaissance.impl.tree_sitter.adapter import TreeSitterAdapter
-from renaissance.impl.tree_sitter.lst import LST
+from renaissance.integrations.tree_sitter.adapter import TreeSitterAdapter
+from renaissance.integrations.tree_sitter.lst import LST
 from renaissance.utils.ast_utils import traverse
 
 

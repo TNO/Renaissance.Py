@@ -3,10 +3,10 @@ import textwrap
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 
-from renaissance.impl.clang import ClangASTNode
-from renaissance.impl.clang.clang_json_ast_node import ClangJsonASTNode
-from renaissance.impl.types import Call
-from renaissance.refactoring import CleanupRefactoring
+from renaissance.integrations.clang import ClangASTNode
+from renaissance.integrations.clang.clang_json_ast_node import ClangJsonASTNode
+from renaissance.integrations.types import Call
+from renaissance.recipes import CleanupRefactoring
 from renaissance.syntax_tree import (
     ASTFactory,
     ASTNode,

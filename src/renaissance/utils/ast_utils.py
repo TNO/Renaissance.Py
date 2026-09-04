@@ -1,6 +1,6 @@
 from collections import deque
 
-from renaissance.impl import MATCH_ALL, MATCH_ONE
+from renaissance.integrations import MATCH_ALL, MATCH_ONE
 
 
 def replace_dollar(text: str) -> str:
