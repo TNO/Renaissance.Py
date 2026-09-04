@@ -23,9 +23,8 @@ def annotate_decorator(foreign_decorator: TFunc, name: str):
 
 def get_methods_with_decorator(cls: Any, decorator: TFunc):
     for maybeDecorated in cls.__dict__.values():
-        if hasattr(maybeDecorated, "recipe_action"):
-            if maybeDecorated.recipe_action == decorator.__name__:
-                yield maybeDecorated
+        if hasattr(maybeDecorated, "recipe_action") and maybeDecorated.recipe_action == decorator.__name__:
+            yield maybeDecorated
 
 
 # Decorators
@@ -46,16 +45,15 @@ def recipe_step(order: int = 0, repeat: bool = False) -> TFunc:
     def recipe_step_decorator(func: TFunc) -> TFunc:
         @functools.wraps(func)
         def recipe_step_wrapper(step: int, recipe: TFunc, ast_processor: ASTProcessor):
-            if step == order:
-                if repeat or ast_processor.repeat_step == 0:
-                    result = func(recipe, ast_processor)
+            if step == order and (repeat or ast_processor.repeat_step == 0):
+                result = func(recipe, ast_processor)
 
-                    def callable_result():
-                        if result:
-                            result()
-                        return func.__name__
+                def callable_result():
+                    if result:
+                        result()
+                    return func.__name__
 
-                    return callable_result()
+                return callable_result()
             return None
 
         return recipe_step_wrapper

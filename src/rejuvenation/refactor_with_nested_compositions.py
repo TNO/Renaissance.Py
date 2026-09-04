@@ -129,10 +129,7 @@ def refactor_with_nested_compositions(args):
 
             # print the rewritten code
         result1 = rewriter.apply_to_string()
-        if rewriter.has_changed():
-            atu = factory.create_from_text(result1, "example.c")
-        else:
-            atu = None
+        atu = factory.create_from_text(result1, "example.c") if rewriter.has_changed() else None
     return result1
 
 

@@ -99,20 +99,18 @@ class PythonRstTranslationUnit:
                 if node.name not in self._nodes:
                     self._nodes[node.name] = node
             case "arg":
-                if node.name != "self":
-                    if node.name not in self._nodes:
-                        self._nodes[node.name] = node
+                if node.name != "self" and node.name not in self._nodes:
+                    self._nodes[node.name] = node
 
     def create_references(self, ast_node) -> None:
         assert isinstance(ast_node, PythonRstNode), f"Expected PythonASTNode but got {type(ast_node)}"
         match type(ast_node.node):
             case ast.arg:
-                if ast_node.name != "self":
-                    if isinstance(ast_node.node, ast.arg) and isinstance(ast_node.node.annotation, ast.Name):
-                        node_id = ast_node.name
-                        ref_id = ast_node.node.annotation.id
-                        ref_kind = "TypeRef"
-                        self.add_reference(node_id, ref_id, ref_kind)
+                if ast_node.name != "self" and isinstance(ast_node.node, ast.arg) and isinstance(ast_node.node.annotation, ast.Name):
+                    node_id = ast_node.name
+                    ref_id = ast_node.node.annotation.id
+                    ref_kind = "TypeRef"
+                    self.add_reference(node_id, ref_id, ref_kind)
             case ast.Assign:
                 if isinstance(ast_node.node, ast.Assign):
                     for n in ast_node.node.targets:
@@ -124,16 +122,15 @@ class PythonRstTranslationUnit:
                                 ref_kind = "CallRef"
                                 self.add_reference(node_id, ref_id, ref_kind)
             case ast.AnnAssign:
-                if isinstance(ast_node.node, ast.AnnAssign):
-                    if (
-                        ast_node.node.annotation
-                        and isinstance(ast_node.node.target, ast.Name)
-                        and isinstance(ast_node.node.annotation, ast.Name)
-                    ):
-                        node_id = ast_node.node.target.id
-                        ref_id = ast_node.node.annotation.id
-                        ref_kind = "TypeRef"
-                        self.add_reference(node_id, ref_id, ref_kind)
+                if isinstance(ast_node.node, ast.AnnAssign) and (
+                    ast_node.node.annotation
+                    and isinstance(ast_node.node.target, ast.Name)
+                    and isinstance(ast_node.node.annotation, ast.Name)
+                ):
+                    node_id = ast_node.node.target.id
+                    ref_id = ast_node.node.annotation.id
+                    ref_kind = "TypeRef"
+                    self.add_reference(node_id, ref_id, ref_kind)
             case ast.ClassDef:
                 if isinstance(ast_node.node, ast.ClassDef):
                     node = ast_node.node
@@ -219,7 +216,7 @@ class PythonRstNode:
                             if name == "body":
                                 self.body = self.children
 
-                        if isinstance(node, ImplicitNode) or isinstance(node, ast.Module) or len(node._fields) == 1:
+                        if isinstance(node, (ImplicitNode, ast.Module)) or len(node._fields) == 1:
                             self.children.extend(PythonRstNode(n, translation_unit, self) for n in child)
                             if name == "body":
                                 self.body = self.children
@@ -347,10 +344,7 @@ class PythonRstNode:
             name = self.node.target.id
         elif isinstance(self.node, ast.Assign) and len(self.node.targets) == 1:
             target = self.node.targets[0]
-            if isinstance(target, ast.Name):
-                name = target.id
-            else:
-                name = self.ast_type.__name__
+            name = target.id if isinstance(target, ast.Name) else self.ast_type.__name__
         elif isinstance(self.node, ast.Name):
             name = self.node.id
         elif isinstance(self.node, ast.arg):

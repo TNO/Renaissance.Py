@@ -148,7 +148,7 @@ class PythonPatternFactory:
         my_pattern = self.create_statement(text)
         if isinstance(my_pattern.node, PythonRstNode):
             return PythonPattern(my_pattern.node.expression)
-        if isinstance(my_pattern.node, LSTNode) or isinstance(my_pattern.node, PythonCstNode):
+        if isinstance(my_pattern.node, (LSTNode, PythonCstNode)):
             return PythonPattern(my_pattern.node.children[-1])
         return PythonPattern(my_pattern.node.children[0])
 
