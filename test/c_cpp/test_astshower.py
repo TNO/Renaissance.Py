@@ -1,5 +1,5 @@
 import pytest
-from hamcrest import assert_that, is_, matches_regexp, not_none
+from hamcrest import assert_that, is_, matches_regexp
 
 from renaissance.integrations.clang import ClangASTNode, CPatternFactory
 from renaissance.integrations.types import Call, If, MacroDef
