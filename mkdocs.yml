@@ -115,7 +115,8 @@ nav:
           - 7. Analysis: user/concepts/analysis.md
           - 8. Transformation: user/concepts/transformation.md
           - 9. Composition: user/concepts/composition.md
-          - 10. Standard analyses and transformations: user/concepts/standard-libraries.md
+          - 10. Type parameter scope: user/concepts/type-parameter-scope.md
+          - 11. Standard analyses and transformations: user/concepts/standard-libraries.md
 
       - Features:
           - Overview: user/features/index.md
@@ -131,6 +132,7 @@ nav:
           - 9. Find: user/features/find.md
           - 10. Modify: user/features/modify.md
           - 11. Rewrite semantics: user/features/rewrite-semantics.md
+          - 12. TypeVar modernization: user/features/typevar-modernization.md
 
       - Workflows:
           - Overview: user/workflows/index.md
@@ -186,6 +188,8 @@ nav:
           - Observability modules: developer/modules/observability.md
           - Strategy modules: developer/modules/strategy.md
           - Rewrite semantics module: developer/modules/rewrite-semantics.md
+          - Refactoring recipes: developer/modules/recipes.md
+          - Python AST known limitations: developer/modules/python-ast-known-limitations.md
 
       - API reference:
           - Overview: developer/api/index.md
