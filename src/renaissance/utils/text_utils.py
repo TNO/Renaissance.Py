@@ -105,7 +105,7 @@ class TextUtils:
     @staticmethod
     def to_file(filename: str, text: str) -> None:
         """Write the given text to a file with the specified filename."""
-        with open(filename, "w") as f:
+        with Path(filename).open("w") as f:
             f.write(text)
 
 
@@ -158,7 +158,7 @@ def fix_indent(code_string: str) -> str | None:
         subprocess.run([sys.executable, "-m", "flake8", file_path])
 
         # Read the fixed code
-        with open(file_path) as file:
+        with Path(file_path).open() as file:
             fixed_code = file.read()
 
         # black format

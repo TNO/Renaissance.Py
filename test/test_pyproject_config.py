@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def _load_pyproject() -> dict:
-    with open(ROOT / "pyproject.toml", "rb") as f:
+    with Path(ROOT / "pyproject.toml").open("rb") as f:
         return tomllib.load(f)
 
 

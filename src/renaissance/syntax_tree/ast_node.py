@@ -93,7 +93,7 @@ class ASTNode(ABC):
         try:
             return ASTNode.cache[file_path]
         except KeyError:
-            with open(file_path, "rb") as f:
+            with Path(file_path).open("rb") as f:
                 content = f.read()
                 ASTNode.cache[file_path] = content
                 return content

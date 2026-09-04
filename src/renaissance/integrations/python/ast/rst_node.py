@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Self
 
 from renaissance.integrations.python.ast.util import convert
-from renaissance.integrations.types import *
+from renaissance.integrations.types import KIND_MAP, OPERATOR_MAP, Assert, FunctionDef, Global, ImplicitNode, Tuple, UnknownType
 from renaissance.syntax_tree.match_finder import find_in_list
 from renaissance.utils.ast_utils import (
     format_node,
@@ -306,7 +306,7 @@ class PythonRstNode:
         # Keep a uniform loader signature across AST node implementations.
         # Python's AST parser does not need extra arguments or a working dir.
         _ = extra_args, working_dir
-        with open(file_path) as file:
+        with Path(file_path).open() as file:
             content = file.read()
             return PythonRstNode.load_from_text(content, str(file_path))
 

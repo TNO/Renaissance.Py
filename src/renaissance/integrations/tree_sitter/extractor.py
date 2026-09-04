@@ -5,12 +5,12 @@ import networkx
 
 from renaissance.integrations.tree_sitter.adapter import TreeSitterAdapter
 from renaissance.integrations.tree_sitter.factory import TreeSitterPatternFactory
-from renaissance.integrations.types import *
+from renaissance.integrations.types import Call, FunctionDef
 from renaissance.syntax_tree import PatternMatch
 from renaissance.syntax_tree.match_finder import match_pattern
 
 GRAPHML_DIR = "out_graphml"
-os.makedirs(GRAPHML_DIR, exist_ok=True)
+Path(GRAPHML_DIR).mkdir(parents=True, exist_ok=True)
 
 
 class Extractor:
@@ -48,7 +48,7 @@ class BaseCodeGraphExtractor:
         raise NotImplementedError
 
     def save_graph(self, filename: str):
-        path = os.path.join(GRAPHML_DIR, filename)
+        path = Path(GRAPHML_DIR) / filename
         networkx.write_graphml(self.graph, path)
         print(f"Graph saved to: {path}")
 

@@ -64,7 +64,7 @@ class Taut2Pyunit(PythonRefactoring):
 
         try:
             # result = insert_doc(result, "01-22-2026")
-            with open(self.get_migrated_path(self.filename), "w") as f:
+            with self.get_migrated_path(self.filename).open("w") as f:
                 f.write(self.apply_to_string())
         except FileNotFoundError:
             print(f"Error: File '{self.filename}' not found.")
@@ -74,13 +74,8 @@ class Taut2Pyunit(PythonRefactoring):
 
         Example: 'taut.py' -> 'taut_migrated.py'
         """
-        # Split the path into filename and extension
-        base, ext = os.path.splitext(file_path)
-
-        # Create the new path with '_migrated' added
-        new_path = f"{base}_migrated{ext}"
-
-        return new_path
+        path = Path(file_path)
+        return path.with_stem(f"{path.stem}_migrated")
 
     def replace_taut(self):
         """Replace TAUT.TestCase by unittest.TestCase."""

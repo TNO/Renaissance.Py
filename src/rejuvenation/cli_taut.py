@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import fnmatch
-import os
 import sys
 from pathlib import Path
 
@@ -10,20 +9,6 @@ from renaissance.recipes.python_refactoring import PythonRefactoring
 from renaissance.syntax_tree import ASTFactory
 
 factory = ASTFactory(PythonRstNode, [])
-
-
-def get_migrated_path(file_path):
-    """Convert a file path to add '_migrated' before the extension.
-
-    Example: 'taut.py' -> 'taut_migrated.py'
-    """
-    # Split the path into filename and extension
-    base, ext = os.path.splitext(file_path)
-
-    # Create the new path with '_migrated' added
-    new_path = f"{base}_migrated{ext}"
-
-    return new_path
 
 
 def list_matching_files(root: str | Path, recursive: bool = True) -> list[Path]:
