@@ -25,7 +25,7 @@ class FakeABCDxTL(ABCDxTL):
         return test_log
 
 
-class test_interface(TAUT.TestCase):
+class TestInterface(TAUT.TestCase):
     def run(self):
         expected = self.read()
         self.assert_false(expected)
@@ -76,7 +76,7 @@ class Test_ABCDxTL(TAUT.TestCase):
             double.exit()
 
 
-class test_log(VIPCxUNIT.TestCase):
+class TestLog(VIPCxUNIT.TestCase):
     def test_ABCDxTL(self):
         with TAUT.TestDoubles(abcdxtl=FakeABCDxTL(None)):
             log = TAUT.Logger()

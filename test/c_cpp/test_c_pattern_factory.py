@@ -146,7 +146,7 @@ class TestExpression:
 
 class TestDeclaration:
     @pytest.mark.parametrize(
-        "_, factory, declarationText, types, parameters, expected_vars, expected_refs",
+        "_, factory, declaration_text, types, parameters, expected_vars, expected_refs",
         Factories.extend(
             [
                 ("int a=3;", [], [], 1, 0),
@@ -162,14 +162,14 @@ class TestDeclaration:
         self,
         _,
         factory,
-        declarationText,
+        declaration_text,
         types,
         parameters,
         expected_vars,
         expected_refs,
     ):
-        patternFactory = CPatternFactory(factory)
-        created_declarations = list(patternFactory.create_declarations(declarationText, parameters=parameters, types=types))
+        pattern_factory = CPatternFactory(factory)
+        created_declarations = list(pattern_factory.create_declarations(declaration_text, parameters=parameters, types=types))
 
         count_refs = 0
         count_vars = 0
@@ -183,7 +183,7 @@ class TestDeclaration:
 
 class TestStatements:
     @pytest.mark.parametrize(
-        "_, factory, statementText, extra_declarations, expected_stmts, expected_refs",
+        "_, factory, statement_text, extra_declarations, expected_stmts, expected_refs",
         list(
             Factories.extend(
                 [
@@ -201,13 +201,13 @@ class TestStatements:
         self,
         _,
         factory,
-        statementText,
+        statement_text,
         extra_declarations,
         expected_stmts,
         expected_refs,
     ):
-        patternFactory = CPatternFactory(factory)
-        created_statements = list(patternFactory.create_statements(statementText, extra_declarations=extra_declarations))
+        pattern_factory = CPatternFactory(factory)
+        created_statements = list(pattern_factory.create_statements(statement_text, extra_declarations=extra_declarations))
 
         count_refs = 0
         for decl in created_statements:
@@ -226,7 +226,7 @@ class TestUseAtuToCreatePatterns:
     """
 
     @pytest.mark.parametrize(
-        "_, factory, statementText, expected_stmts, expected_refs",
+        "_, factory, statement_text, expected_stmts, expected_refs",
         list(
             Factories.extend(
                 [
@@ -237,7 +237,7 @@ class TestUseAtuToCreatePatterns:
             ),
         ),
     )
-    def test(self, _, factory, statementText, expected_stmts, expected_refs):
+    def test(self, _, factory, statement_text, expected_stmts, expected_refs):
         code = """
         int print(const char*,const char*,const char*,const char*);
         #define FOO "foo"
@@ -263,14 +263,14 @@ class TestUseAtuToCreatePatterns:
 
         # ASTShower.show_node(atu, include_properties=True)
         # use the factory and the translation unit (for include, define and typedef reference) to create a pattern factory
-        patternFactory = CPatternFactory(factory, atu)
+        pattern_factory = CPatternFactory(factory, atu)
 
         # pick the last statement for match
-        pattern_root = patternFactory.create(statementText)
+        pattern_root = pattern_factory.create(statement_text)
 
         # the user must pick it's own pattern in this case the last statement
         assert_that(pattern_root.children[-1].is_statement)
         node = last(n for n in pattern_root.children if n.ast_type != Declaration)
         raw = node.signature
 
-        assert_that(statementText, starts_with(raw))
+        assert_that(statement_text, starts_with(raw))

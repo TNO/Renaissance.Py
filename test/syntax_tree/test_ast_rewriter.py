@@ -1084,19 +1084,19 @@ class TestOverlappingOperations:
     """
 
     def setup(self) -> tuple[ASTRewriter, PatternMatch]:
-        CODE: str = """
+        code: str = """
 def f(a,b,c):
     pass
 """
 
-        PATTERN: str = """
+        pattern: str = """
 def f($a,$b,$c):
     pass
 """
 
         factory = ASTFactory(PythonRstNode, [])
-        atu = factory.create_from_text(CODE, "temp.py")
-        pattern = PythonPatternFactory(factory).create(PATTERN)
+        atu = factory.create_from_text(code, "temp.py")
+        pattern = PythonPatternFactory(factory).create(pattern)
         matches = list(find_all([atu], [pattern]))  # Use list, since we want to access its content multiple times
         assert matches, "A match expected"
         nrof_matches = len(matches)
@@ -1186,10 +1186,10 @@ class TestSyntaxAwareAdjacentComposition:
     """
 
     def setup(self, factory: ASTFactory):
-        CODE: str = "void f(int i, int j) { i++;j++; }"
-        PATTERN: str = " $stmt1; $stmt2; "
+        code: str = "void f(int i, int j) { i++;j++; }"
+        pattern: str = " $stmt1; $stmt2; "
 
-        atu = factory.create_from_text(CODE, "test.c")
+        atu = factory.create_from_text(code, "test.c")
         pattern = CPatternFactory(factory).create_statements(PATTERN)
         matches = list(find_all([atu], [pattern]))
 

@@ -1,11 +1,18 @@
-"""Step implementations for features/rewrite-semantics.feature.
+"""Step implementations for features/rewrite_semantics.feature.
 
-Scenarios 1, 2, and 4 are marked xfail because the corresponding behaviour is
-not yet fully implemented:
+Scenarios 1 and 2 are marked xfail because the corresponding behaviour is not
+yet fully implemented:
   - Scenario 1: dominated-change filtering is disabled in _RewriteActions
     (``__is_ancestor_in_nodes`` always returns False).
   - Scenario 2: the Rewriter merges overlapping rewrites instead of raising.
-  - Scenario 4: append ordering (descendant before ancestor) is not yet enforced.
+
+The prepend/append ordering scenarios each fail for only ONE collection
+order (the Rewriter orders insertions by collection order, not AST
+structure, so the other order passes by coincidence). The failing Example
+row of each is tagged in the .feature file (``@xfail_prepend_descendant_first``,
+``@xfail_append_ancestor_first``) and converted to a strict xfail marker by
+the ``pytest_bdd_apply_tag`` hook in conftest.py, so the passing collection
+order stays a real, non-xfail test.
 
 Scenario 0 (Replacements of the same node produce an error) uses a Scenario
 Outline for representative examples. The universal property test is in:
@@ -65,10 +72,6 @@ def test_prepend_ordering():
     pass
 
 
-@pytest.mark.xfail(
-    reason="Append ordering (descendant before ancestor) not yet enforced: Rewriter appends in insertion order",
-    strict=True,
-)
 @scenario(_FEATURE, "Append of descendant precedes append of ancestor regardless of collection order")
 def test_append_ordering():
     pass
@@ -79,12 +82,194 @@ def test_sibling_sib1_first():
     pass
 
 
-@pytest.mark.xfail(
-    reason="Sibling boundary ordering not enforced: Rewriter concatenates at shared position in registration order",
-    strict=True,
-)
 @scenario(_FEATURE, "Operation on first sibling precedes operation on second sibling \u2014 second sibling collected first")
 def test_sibling_sib2_first():
+    pass
+
+
+@pytest.mark.xfail(
+    reason="Replacing the same sibling range twice is not yet rejected by ASTRewriter (same gap as the single-node case)",
+    strict=True,
+)
+@scenario(_FEATURE, "Replacements of the same sibling range produce an error")
+def test_replacements_of_same_sibling_range_produce_error():
+    pass
+
+
+@pytest.mark.xfail(
+    reason="Range dominance filtering not yet active: _RewriteActions has no logic to suppress a dominated sibling-range replacement",
+    strict=True,
+)
+@scenario(_FEATURE, "Sibling range dominates a proper subrange regardless of collection order")
+def test_sibling_range_dominates_proper_subrange():
+    pass
+
+
+@scenario(_FEATURE, "Sibling range dominates a single contained sibling regardless of collection order")
+def test_sibling_range_dominates_single_sibling():
+    pass
+
+
+@scenario(_FEATURE, "Prepends of same node are applied in order of collection.")
+def test_prepends_of_same_node_in_order():
+    pass
+
+
+@pytest.mark.xfail(
+    reason="Appends of the same node are applied in collection order, not reversed order as documented",
+    strict=True,
+)
+@scenario(_FEATURE, "Appends of same node are applied in reversed order of collection.")
+def test_appends_of_same_node_in_reversed_order():
+    pass
+
+
+@pytest.mark.xfail(
+    reason="Surround-after texts of the same node are applied in collection order, not reversed order as documented",
+    strict=True,
+)
+@scenario(_FEATURE, "Surrounds of same node: before texts in collection order, after texts in reversed collection order")
+def test_surrounds_of_same_node():
+    pass
+
+
+@scenario(_FEATURE, "Surround of ancestor precedes surround of descendant at shared start location regardless of collection order")
+def test_surround_ancestor_precedes_surround_descendant_start():
+    pass
+
+
+@scenario(_FEATURE, "Surround of descendant precedes surround of ancestor at shared end location regardless of collection order")
+def test_surround_descendant_precedes_surround_ancestor_end():
+    pass
+
+
+@scenario(_FEATURE, "Prepend is outside surround of the same node \u2014 prepend collected first")
+def test_prepend_outside_surround_prepend_first():
+    pass
+
+
+@pytest.mark.xfail(
+    reason="Insertion ordering not yet AST-aware: Rewriter orders by collection order, not AST structure, "
+    "so surround collected after prepend incorrectly ends up outside it",
+    strict=True,
+)
+@scenario(_FEATURE, "Prepend is outside surround of the same node \u2014 surround collected first")
+def test_prepend_outside_surround_surround_first():
+    pass
+
+
+@pytest.mark.xfail(
+    reason="Insertion ordering not yet AST-aware: Rewriter orders by collection order, not AST structure, "
+    "so append collected before surround incorrectly ends up outside it",
+    strict=True,
+)
+@scenario(_FEATURE, "Append is outside surround of the same node \u2014 append collected first")
+def test_append_outside_surround_append_first():
+    pass
+
+
+@scenario(_FEATURE, "Append is outside surround of the same node \u2014 surround collected first")
+def test_append_outside_surround_surround_first():
+    pass
+
+
+@scenario(_FEATURE, "Prepend appears before replacement of the same node \u2014 prepend collected first")
+def test_prepend_before_replacement_prepend_first():
+    pass
+
+
+@pytest.mark.xfail(
+    reason="Insertion ordering not yet AST-aware: Rewriter orders by collection order, not AST structure, "
+    "so a replace collected before prepend incorrectly ends up before it",
+    strict=True,
+)
+@scenario(_FEATURE, "Prepend appears before replacement of the same node \u2014 replace collected first")
+def test_prepend_before_replacement_replace_first():
+    pass
+
+
+@scenario(_FEATURE, "Replacement appears before append of the same node \u2014 replace collected first")
+def test_replacement_before_append_replace_first():
+    pass
+
+
+@scenario(_FEATURE, "Replacement appears before append of the same node \u2014 append collected first")
+def test_replacement_before_append_append_first():
+    pass
+
+
+@pytest.mark.xfail(
+    reason="Insertion ordering not yet AST-aware: Rewriter orders by collection order, not AST structure, "
+    "so a replace collected before surround incorrectly ends up before it",
+    strict=True,
+)
+@scenario(_FEATURE, "Surround wraps replacement of the same node \u2014 replace collected first")
+def test_surround_wraps_replacement_replace_first():
+    pass
+
+
+@scenario(_FEATURE, "Surround wraps replacement of the same node \u2014 surround collected first")
+def test_surround_wraps_replacement_surround_first():
+    pass
+
+
+@pytest.mark.xfail(
+    reason="Insertion ordering not yet AST-aware: Rewriter orders by collection order, not AST structure, "
+    "so a descendant prepend collected before the ancestor's surround incorrectly ends up outside it",
+    strict=True,
+)
+@scenario(_FEATURE, "Prepend of descendant is inside surround of ancestor at shared start location \u2014 prepend collected first")
+def test_prepend_descendant_inside_surround_ancestor_start_prepend_first():
+    pass
+
+
+@scenario(_FEATURE, "Prepend of descendant is inside surround of ancestor at shared start location \u2014 surround collected first")
+def test_prepend_descendant_inside_surround_ancestor_start_surround_first():
+    pass
+
+
+@scenario(_FEATURE, "Append of descendant is inside surround of ancestor at shared end location \u2014 append collected first")
+def test_append_descendant_inside_surround_ancestor_end_append_first():
+    pass
+
+
+@pytest.mark.xfail(
+    reason="Insertion ordering not yet AST-aware: Rewriter orders by collection order, not AST structure, "
+    "so the ancestor's surround collected after the descendant's append incorrectly ends up inside it",
+    strict=True,
+)
+@scenario(_FEATURE, "Append of descendant is inside surround of ancestor at shared end location \u2014 surround collected first")
+def test_append_descendant_inside_surround_ancestor_end_surround_first():
+    pass
+
+
+@scenario(_FEATURE, "Surround of descendant is inside prepend of ancestor at shared start location \u2014 prepend collected first")
+def test_surround_descendant_inside_prepend_ancestor_start_prepend_first():
+    pass
+
+
+@pytest.mark.xfail(
+    reason="Insertion ordering not yet AST-aware: Rewriter orders by collection order, not AST structure, "
+    "so the descendant's surround collected after the ancestor's prepend incorrectly ends up outside it",
+    strict=True,
+)
+@scenario(_FEATURE, "Surround of descendant is inside prepend of ancestor at shared start location \u2014 surround collected first")
+def test_surround_descendant_inside_prepend_ancestor_start_surround_first():
+    pass
+
+
+@pytest.mark.xfail(
+    reason="Insertion ordering not yet AST-aware: Rewriter orders by collection order, not AST structure, "
+    "so the ancestor's append collected before the descendant's surround incorrectly ends up inside it",
+    strict=True,
+)
+@scenario(_FEATURE, "Surround of descendant is inside append of ancestor at shared end location \u2014 append collected first")
+def test_surround_descendant_inside_append_ancestor_end_append_first():
+    pass
+
+
+@scenario(_FEATURE, "Surround of descendant is inside append of ancestor at shared end location \u2014 surround collected first")
+def test_surround_descendant_inside_append_ancestor_end_surround_first():
     pass
 
 
@@ -245,6 +430,38 @@ def when_replace_first_second(context: dict, text: str) -> None:
 @when(parsers.parse("the second and third siblings are replaced with '{text}'"))
 def when_replace_second_third(context: dict, text: str) -> None:
     context["rewriter"].replace(text, [context["sibling2"], context["sibling3"]])
+
+
+@when(parsers.parse("the first, second and third siblings are replaced with '{text}'"))
+def when_replace_first_second_third(context: dict, text: str) -> None:
+    context["rewriter"].replace(text, [context["sibling1"], context["sibling2"], context["sibling3"]])
+
+
+@when(parsers.parse("the second sibling is replaced with '{text}'"))
+def when_replace_second_sibling(context: dict, text: str) -> None:
+    context["rewriter"].replace(text, [context["sibling2"]])
+
+
+@when(parsers.parse("the node is prepended with '{text}'"))
+def when_prepend_node(context: dict, text: str) -> None:
+    context["rewriter"].insert_before(text, [context["node"]], include_whitespace=False, include_comments=False)
+
+
+@when(parsers.parse("the node is appended with '{text}'"))
+def when_append_node(context: dict, text: str) -> None:
+    context["rewriter"].insert_after(text, [context["node"]], include_whitespace=False, include_comments=False)
+
+
+@when(parsers.re(r"the node is surrounded with '(?P<before>[^']*)' and '(?P<after>[^']*)'"))
+def when_surround_node(context: dict, before: str, after: str) -> None:
+    context["rewriter"].insert_before(before, [context["node"]], include_whitespace=False, include_comments=False)
+    context["rewriter"].insert_after(after, [context["node"]], include_whitespace=False, include_comments=False)
+
+
+@when(parsers.re(r"the (?P<role>ancestor|descendant) is surrounded with '(?P<before>[^']*)' and '(?P<after>[^']*)'"))
+def when_surround_by_role(context: dict, role: str, before: str, after: str) -> None:
+    context["rewriter"].insert_before(before, [context[role]], include_whitespace=False, include_comments=False)
+    context["rewriter"].insert_after(after, [context[role]], include_whitespace=False, include_comments=False)
 
 
 # Role-dispatching steps used by the Scenario Outlines for scenarios 4 and 5.
