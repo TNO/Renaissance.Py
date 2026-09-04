@@ -1,8 +1,8 @@
-import os
 import re
 import subprocess
 import sys
 import tempfile
+from pathlib import Path
 
 import pyperclip
 
@@ -131,7 +131,7 @@ def fix_indent(code_string: str) -> str | None:
         temp_file.write(code_string)
 
     try:
-        if not os.path.isfile(file_path):
+        if not Path(file_path).is_file():
             print(f"Error: {file_path} does not exist.")
             return None
 
@@ -168,5 +168,5 @@ def fix_indent(code_string: str) -> str | None:
         print(f"Error formatting code: {e}")
     finally:
         # Clean up the temporary file
-        if os.path.exists(file_path):
-            os.remove(file_path)
+        if Path(file_path).exists():
+            Path(file_path).unlink()
