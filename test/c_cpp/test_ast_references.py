@@ -147,10 +147,7 @@ class TestASTReference:
         assert_that(isinstance(ref_node.ast_type(), (RecordDef, ClassDef, StructDef)))
         referenced_by = ref_node.referenced_by
         assert_that(referenced_by, has_length(greater_than(0)))  # clang python return 2 references, clang json 1
-        if len(referenced_by[0].node.children):
-            name = referenced_by[0].node.children[0].name
-        else:
-            name = referenced_by[0].node.name
+        name = referenced_by[0].node.children[0].name if len(referenced_by[0].node.children) else referenced_by[0].node.name
         if isinstance(using, ClangASTNode):
             assert_that(name, is_in(using.name))
             for r in referenced_by:

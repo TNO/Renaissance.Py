@@ -92,7 +92,7 @@ def assert_valid_text_segment(text_segment: TextSegment) -> None:
     assert text_segment.start_line <= text_segment.end_line, (
         f"Property end_line before start_line: {text_segment.end_line} < {text_segment.start_line}"
     )
-    assert not (text_segment.start_line == text_segment.end_line) or text_segment.start_column <= text_segment.end_column, (
+    assert text_segment.start_line != text_segment.end_line or text_segment.start_column <= text_segment.end_column, (
         "Property end_column before start_column, while start and end line are the same: "
         f"{text_segment.end_column} < {text_segment.start_column}"
     )

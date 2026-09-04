@@ -102,7 +102,7 @@ force-exclude = true
 select = [
     "AIR", "ASYNC", "COM", "DJ", "E", "EXE", "FA", "FAST",
     "FLY", "G", "I", "INT", "ISC", "LOG", "NPY", "PD", "PIE", "PYI", "Q",
-    "RSE", "SLOT", "T10", "UP", "W", "YTT",
+    "RSE", "SIM", "SLOT", "T10", "UP", "W", "YTT",
 ]
 #select = ["ALL"]  # goal of issue 
 ignore = [

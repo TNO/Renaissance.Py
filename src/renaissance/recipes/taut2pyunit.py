@@ -394,10 +394,9 @@ ImprovedStub.store_args = {}
     def replace_unittest_with_asserter(self):
         pattern = self.pattern_factory.create_statements("class $a(TAUT.TestCase):\n    $$bb")
         for match in match_pattern(self.root.children, pattern):
-            if not match["$a"] == "Asserter":
-                if "assert_raises" in match["$$bb"] or "assert_double_equal" in match["$$bb"]:
-                    repl = f"{match.signature.replace('TAUT.TestCase', 'Asserter')}"
-                    self.replace(repl, match.nodes, False, False)
+            if match["$a"] != "Asserter" and ("assert_raises" in match["$$bb"] or "assert_double_equal" in match["$$bb"]):
+                repl = f"{match.signature.replace('TAUT.TestCase', 'Asserter')}"
+                self.replace(repl, match.nodes, False, False)
         self.commit()
 
     def assert_func(self):
@@ -649,9 +648,8 @@ def get_change_comment(date=None):
     """
     change_id = "SWCHGxxxxxxxx"
     description = "Add assert_raises method to Asserter class."
-    if date is None:
-        # No date provided, use today
-        formatted_date = datetime.now()
-    else:
-        formatted_date = datetime.strptime(date, "%m-%d-%Y")
+
+    # When no date provided, use today
+    formatted_date = datetime.now() if date is None else datetime.strptime(date, "%m-%d-%Y")
+
     return f"# {formatted_date.strftime('%m-%d-%Y')} : {change_id} SBYN {description}"

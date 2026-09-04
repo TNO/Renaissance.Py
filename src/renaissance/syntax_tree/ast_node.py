@@ -99,17 +99,12 @@ class ASTNode(ABC):
                 return content
 
     @property
-    def end_offset(self) -> int:
-        return self.offset + self.length
-
-    @property
-    @abstractmethod
-    def extended_end_offset(self) -> int:
-        pass
-
-    @property
     def preceding_sibling(self) -> Self | None:
         return preceding_sibling(self)
+
+    @property
+    def next_sibling(self) -> Self | None:
+        return next_sibling(self)
 
     @property
     @abstractmethod
@@ -120,10 +115,6 @@ class ASTNode(ABC):
     @abstractmethod
     def referenced_by(self) -> list[ASTReference]:
         pass
-
-    @property
-    def next_sibling(self) -> Self | None:
-        return next_sibling(self)
 
     def get_ancestor(self, kind: str | re.Pattern[str]) -> Self | None:
         pattern = re.compile(kind, re.IGNORECASE) if isinstance(kind, str) else kind
@@ -163,9 +154,22 @@ class ASTNode(ABC):
     def filename(self) -> str:
         return self._filename
 
+    # TODO: Is this the best name: offset, start_offset, begin_offset, ...?
+    # TODO: Should offset return a slice object, https://docs.python.org/3/library/functions.html#slice, instead of an int?
+    #       That would make it easier to get the text segment.
     @property
     def offset(self) -> int:
         return self._offset
+
+    @property
+    def end_offset(self) -> int:
+        return self.offset + self.length
+
+    # TODO: Is this the really best solution to ensure that the modified code has the proper layout?
+    @property
+    @abstractmethod
+    def extended_end_offset(self) -> int:
+        pass
 
     @property
     def length(self) -> int:
@@ -179,8 +183,9 @@ class ASTNode(ABC):
     def matches_kind(self, node: Self) -> bool:
         pass
 
+    # TODO: What is the best name: properties, attributes, syntax_attributes, ...?
     @property
-    def properties(self) -> dict[str, int | str]:
+    def properties(self) -> dict[str, int | str]:  # TODO: Is int | str really sufficient? Shouldn't it be Any?
         return self._properties
 
     @property

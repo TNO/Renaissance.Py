@@ -2,7 +2,7 @@ import pytest
 import tree_sitter_cpp as tscpp
 import tree_sitter_java as tsjava
 import tree_sitter_python as tspython
-from hamcrest import assert_that, empty, greater_than, has_length, is_, is_not
+from hamcrest import assert_that, greater_than, has_length, is_
 
 from renaissance.integrations.tree_sitter.adapter import TreeSitterAdapter
 from renaissance.integrations.tree_sitter.lst import LST

@@ -1,7 +1,7 @@
 import logging
 
 import pytest
-from hamcrest import assert_that, greater_than, greater_than_or_equal_to, has_length, is_, is_in
+from hamcrest import assert_that, greater_than_or_equal_to, has_length, is_
 from more_itertools.more import last
 
 from c_cpp.factories import Factories

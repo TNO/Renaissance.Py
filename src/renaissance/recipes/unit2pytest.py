@@ -166,10 +166,7 @@ class Unit2Pytest(PythonRefactoring):
         for match in match_pattern(self.body, pattern):
             repl = 'assert_that($real, has_length($exp), f"length of $real = {len($real)}")'
             real = match["$real"]
-            if self.is_swapped(match):
-                exp = match["$exp"]
-            else:  # original is wrong
-                exp = match["$act"]
+            exp = match["$exp" if self.is_swapped(match) else "$act"]  # use "$act" when original is wrong
             repl = repl.replace("$exp", exp).replace("$real", real)
             self.replace(repl, match.nodes, False, False)
 

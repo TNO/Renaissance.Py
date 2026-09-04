@@ -485,7 +485,7 @@ class ReferenceHelper:
         node_id = ast_node.node["id"]
         ast_node.translation_unit._references[node_id] = references
         refs = {k: v for k, v in ast_node.node.items() if not ReferenceHelper._is_child_node(k) and ClangJsonASTNode._is_reference(v)}
-        for k in [k for k in ast_node.node.keys() if k in ON_NODE_ID_TAGS]:
+        for k in [k for k in ast_node.node if k in ON_NODE_ID_TAGS]:
             refs[k] = ast_node.node
             # add the node if it contains a reference for example in case of previousDecl
 
