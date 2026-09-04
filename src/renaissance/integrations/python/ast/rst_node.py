@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Self
 
 from renaissance.integrations.python.ast.util import convert
-from renaissance.integrations.types import *
+from renaissance.integrations.types import KIND_MAP, OPERATOR_MAP, Assert, FunctionDef, Global, ImplicitNode, Tuple, UnknownType
 from renaissance.syntax_tree.match_finder import find_in_list
 from renaissance.utils.ast_utils import (
     format_node,

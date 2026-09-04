@@ -5,7 +5,7 @@ import networkx
 
 from renaissance.integrations.tree_sitter.adapter import TreeSitterAdapter
 from renaissance.integrations.tree_sitter.factory import TreeSitterPatternFactory
-from renaissance.integrations.types import *
+from renaissance.integrations.types import Call, FunctionDef
 from renaissance.syntax_tree import PatternMatch
 from renaissance.syntax_tree.match_finder import match_pattern
 

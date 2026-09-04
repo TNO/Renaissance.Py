@@ -17,7 +17,19 @@ from hypothesis import HealthCheck, given, settings
 import targets
 from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
-from renaissance.integrations.types import *
+from renaissance.integrations.types import (
+    Catch,
+    FormattedString,
+    Match,
+    MatchAs,
+    MatchCase,
+    MatchStar,
+    NamedExpr,
+    Slice,
+    Starred,
+    Statement,
+    TypeAlias,
+)
 from renaissance.syntax_tree import ASTShower
 from utils_for_tests import reject_unsupported_code
 
