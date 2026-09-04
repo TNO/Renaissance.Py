@@ -229,15 +229,15 @@ class ClangJsonASTNode(ASTNode):
                     text=True,
                     cwd=working_dir,
                 )
-                length = os.path.getsize(working_dir / file_path)
+                length = Path(working_dir / file_path).stat().st_size
             json_dump = result.stdout.replace("<stdin>", str(file_path))
             error = result.stderr
 
             if VERBOSE:
                 temp_dir = tempfile.gettempdir()
-                temp_file_name = os.path.join(temp_dir, file_path.name + ".ast.json")
-                with open(temp_file_name, "w") as std_out_file:
-                    print("result stored in " + temp_file_name)
+                temp_file_name = Path(temp_dir) / (file_path.name + ".ast.json")
+                with temp_file_name.open("w") as std_out_file:
+                    print("result stored in " + str(temp_file_name))
                     std_out_file.write(json_dump)
             print(error, file=sys.stderr)
             json_atu = json.loads(json_dump)
@@ -249,7 +249,7 @@ class ClangJsonASTNode(ASTNode):
             if code:
                 atu.cache[str(file_path)] = code.encode(sys.getfilesystemencoding())
             else:
-                with open(working_dir / file_path, "rb") as f:
+                with Path(working_dir / file_path).open("rb") as f:
                     atu.cache[str(file_path)] = f.read()
             # cache the result of the temp file before deleting it
             atu.content(0, 0)

@@ -1,4 +1,3 @@
-import glob
 import json
 from os import path, system
 from pathlib import Path
@@ -14,9 +13,9 @@ class CppScanner(ProjectScanner):
         self.compile_commands_path = compile_commands_path
 
     def find_sources(self) -> list[str]:
-        if not path.exists(self.compile_commands_path):
+        if not Path(self.compile_commands_path).exists():
             raise FileNotFoundError("compile_commands.json not found")
-        with open(self.compile_commands_path) as f:
+        with Path(self.compile_commands_path).open() as f:
             commands = json.load(f)
         return sorted(set(entry["file"] for entry in commands if "file" in entry))
 
@@ -26,8 +25,8 @@ class JavaScanner(ProjectScanner):
         self.root_dir = root_dir
 
     def find_sources(self) -> list[str]:
-        java_files = glob.glob(f"{self.root_dir}/**/*.java", recursive=True)
-        return sorted(java_files)
+        java_files = Path(self.root_dir).rglob("*.java")
+        return sorted(str(f) for f in java_files)
 
 
 class PythonScanner(ProjectScanner):
@@ -37,6 +36,8 @@ class PythonScanner(ProjectScanner):
 
         self.root_dir = root_dir
         self.package_dirs = package_dirs or ["src", "lib", "test"]
+        # TODO: Why this hardcoded default heuristic?
+        #       Why not what Python by default enforces or what is derived from the project config?
 
     def find_sources(self) -> list[str]:
         files = []
@@ -60,6 +61,6 @@ class BearCppScanner(CppScanner):
             raise RuntimeError("Bear failed to run or make failed.")
 
     def find_sources(self) -> list[str]:
-        if not path.exists(self.compile_commands_path):
+        if not Path(self.compile_commands_path).exists():
             self.run_bear()
         return super().find_sources()

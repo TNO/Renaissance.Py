@@ -1,6 +1,7 @@
 import io
 from collections.abc import Sequence
 from io import StringIO
+from pathlib import Path
 from typing import Protocol, Self, runtime_checkable
 
 from termcolor import colored
@@ -36,7 +37,7 @@ class ASTShower:
 
     @staticmethod
     def store_node(filename: str, ast_node: Displayable, include_properties: bool = False) -> None:
-        with open(filename, "w") as f:
+        with Path(filename).open("w") as f:
             f.write(ASTShower.get_node(ast_node, include_properties))
 
     @staticmethod

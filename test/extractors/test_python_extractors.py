@@ -29,7 +29,7 @@ class TestPythonExtractor:
         graphml = Path(targets.__file__).parent / "demo.graphml"
         extractor.save_graph(graphml)
         try:
-            with open(graphml) as f:
+            with graphml.open() as f:
                 content = f.readlines()
                 assert_that(content, "demo.graphml")
         finally:

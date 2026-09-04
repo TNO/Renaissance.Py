@@ -1,6 +1,7 @@
 import os
 import textwrap
 from collections.abc import Sequence
+from pathlib import Path
 
 from renaissance.integrations.python.ast.util import convert_function
 from renaissance.integrations.types import Attribute, ClassDef, FormattedString, FunctionDef, Literal, Number
@@ -215,7 +216,8 @@ class Unit2Pytest(PythonRefactoring):
         self.commit()
 
     def convert_file_to_test_class(self):
-        stem = os.path.splitext(os.path.basename(self.filename))[0]
+        path = Path(self.filename)
+        stem = path.stem
         parts = stem.split("_")
         if parts[-1].lower() == "test":
             parts = parts[:-1]

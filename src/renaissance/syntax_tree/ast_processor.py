@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from collections.abc import Callable, Iterator, Sequence
 from pathlib import Path
 
@@ -121,7 +119,7 @@ class ASTProcessor:
             atu = factory.create_from_text(rewriter.apply_to_string(), rewriter.get_filename())
             return atu, ASTRewriter(atu)
         # save file first then reload it
-        with open(rewriter.get_filename(), "wb") as f:
+        with Path(rewriter.get_filename()).open("wb") as f:
             f.write(rewriter.apply())
         atu = factory.create(Path(rewriter.get_filename()))
         return atu, ASTRewriter(atu)

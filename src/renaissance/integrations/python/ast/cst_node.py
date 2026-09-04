@@ -104,7 +104,7 @@ class PythonCstNode:
 
     @staticmethod
     def load(file_path: Path) -> PythonCstNode:
-        with open(file_path) as file:
+        with Path(file_path).open() as file:
             content = file.read()
             return PythonCstNode.load_from_text(content, str(file_path))
 
