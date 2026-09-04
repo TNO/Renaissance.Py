@@ -269,8 +269,8 @@ class TestPythonFactory:
         ),
     )
     def test_misalignment(self, _, factory, raw, expected) -> None:
-        patternFactory = PythonPatternFactory(factory)
-        expression = patternFactory.create_expression(raw)
+        pattern_factory = PythonPatternFactory(factory)
+        expression = pattern_factory.create_expression(raw)
         assert_that(expression.ast_type, is_in(expected))
 
     def test_function_with_multi_patterns(self):

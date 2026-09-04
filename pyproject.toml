@@ -83,6 +83,13 @@ taut2test = "rejuvenation.cli:refactor"
 testpaths = ["test", "features"]
 pythonpath = ["src", "test", "features"]
 norecursedirs = ["features/targets", "*.egg", ".*", "_darcs", "build", "CVS", "dist", "node_modules", "venv", "{arch}"]
+markers = [
+    "xfail_prepend_descendant_first: known-failing rewrite-semantics.feature Examples row (see features/steps/conftest.py)",
+    "xfail_append_ancestor_first: known-failing rewrite-semantics.feature Examples row (see features/steps/conftest.py)",
+    "xfail_sibling_range_dominance_range_first: known-failing rewrite-semantics.feature Examples row (see features/steps/conftest.py)",
+    "xfail_surround_descendant_first_shared_start: known-failing rewrite-semantics.feature Examples row (see features/steps/conftest.py)",
+    "xfail_surround_ancestor_first_shared_end: known-failing rewrite-semantics.feature Examples row (see features/steps/conftest.py)",
+]
 
 [tool.coverage.run]
 source = ["src"]

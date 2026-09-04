@@ -19,14 +19,14 @@ class TestPythonMatcherRepresentation:
         """
         normal = "1000"
         readable = "1_000"
-        scientific_power_0 = "1000e0"
-        scientific_POWER_0 = "1000E0"
-        scientific_power_plus0 = "1000e+0"
-        scientific_power_minus0 = "1000e-0"
-        scientific_power_3 = "1e3"
-        scientific3_POWER_3 = "1E3"
-        scientific3_POWER_plus3 = "1E+3"
-        scientific3_POWER_minus3 = "1000000E-3"
+        scientific_power_lower_0 = "1000e0"
+        scientific_power_upper_0 = "1000E0"
+        scientific_power_lower_plus0 = "1000e+0"
+        scientific_power_lower_minus0 = "1000e-0"
+        scientific_power_lower_3 = "1e3"
+        scientific_power_upper_3 = "1E3"
+        scientific_power_upper_plus3 = "1E+3"
+        scientific_power_upper_minus3 = "1000000E-3"
         binary_lower = "0b1111101000"
         binary_upper = "0B1111101000"
         octal_lower = "0o1750"
@@ -38,14 +38,14 @@ class TestPythonMatcherRepresentation:
         representations = [
             normal,
             readable,
-            scientific_power_0,
-            scientific_POWER_0,
-            scientific_power_plus0,
-            scientific_power_minus0,
-            scientific_power_3,
-            scientific3_POWER_3,
-            scientific3_POWER_plus3,
-            scientific3_POWER_minus3,
+            scientific_power_lower_0,
+            scientific_power_upper_0,
+            scientific_power_lower_plus0,
+            scientific_power_lower_minus0,
+            scientific_power_lower_3,
+            scientific_power_upper_3,
+            scientific_power_upper_plus3,
+            scientific_power_upper_minus3,
             binary_lower,
             binary_upper,
             octal_lower,
