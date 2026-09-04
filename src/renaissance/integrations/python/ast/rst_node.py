@@ -35,8 +35,7 @@ class ImplicitNode(ast.Name):
     }
 
     def __init__(self, name, children=None):
-        super().__init__(name)
-        self.body = children or []
+        super().__init__(name, children or [])
         self.lineno = 0
         self.col_offset = 0
         self.end_lineno = 0
