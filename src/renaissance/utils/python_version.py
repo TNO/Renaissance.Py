@@ -32,7 +32,7 @@ def minimum_python_version(file_path: str) -> tuple[int, int] | None:
         return None
 
     try:
-        with open(pyproject_path, "rb") as f:
+        with pyproject_path.open("rb") as f:
             data = tomllib.load(f)
     except (OSError, tomllib.TOMLDecodeError):
         return None
