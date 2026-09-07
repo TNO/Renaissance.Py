@@ -49,13 +49,16 @@ def type_param_constructor_name(decl_stmt: ast.Assign) -> str:
 def _find_dunder_all(tree: ast.Module) -> set[str] | None:
     """Return the names listed in this module's `__all__`, or None if it doesn't declare one."""
     for stmt in tree.body:
-        if isinstance(stmt, ast.Assign) and any(isinstance(t, ast.Name) and t.id == "__all__" for t in stmt.targets):
-            if isinstance(stmt.value, ast.List | ast.Tuple | ast.Set):
-                return {
-                    elt.value
-                    for elt in stmt.value.elts
-                    if isinstance(elt, ast.Constant) and isinstance(elt.value, str)
-                }
+        if (
+            isinstance(stmt, ast.Assign)
+            and any(isinstance(t, ast.Name) and t.id == "__all__" for t in stmt.targets)
+            and isinstance(stmt.value, ast.List | ast.Tuple | ast.Set)
+        ):
+            return {
+                elt.value
+                for elt in stmt.value.elts
+                if isinstance(elt, ast.Constant) and isinstance(elt.value, str)
+            }
     return None
 
 

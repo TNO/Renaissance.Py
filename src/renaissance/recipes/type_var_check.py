@@ -256,9 +256,12 @@ class TypeVarCheck(PythonRefactoring):
 
         for import_node in self.body:
             raw = import_node.node
-            if isinstance(raw, ast.ImportFrom) and raw.module == ctor_module:
-                if any((alias.asname or alias.name) == ctor_name for alias in raw.names):
-                    return None
+            if (
+                isinstance(raw, ast.ImportFrom)
+                and raw.module == ctor_module
+                and any((alias.asname or alias.name) == ctor_name for alias in raw.names)
+            ):
+                return None
 
         return f"from {ctor_module} import {ctor_name}"
 

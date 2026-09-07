@@ -28,13 +28,12 @@ class TypeVarTupleCheck(PythonRefactoring):
 
         found: list[str] = []
         for node in ast.walk(tree):
-            if isinstance(node, ast.Subscript):
-                if (
-                    isinstance(node.value, ast.Name)
-                    and node.value.id == "Unpack"
-                    and isinstance(node.slice, ast.Name)
-                    and node.slice.id in typevartuple_names
-                ):
-                    found.append(node.slice.id)
+            if isinstance(node, ast.Subscript) and (
+                isinstance(node.value, ast.Name)
+                and node.value.id == "Unpack"
+                and isinstance(node.slice, ast.Name)
+                and node.slice.id in typevartuple_names
+            ):
+                found.append(node.slice.id)
 
         return found
