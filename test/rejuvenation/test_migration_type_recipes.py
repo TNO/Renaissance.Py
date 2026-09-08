@@ -51,6 +51,16 @@ UNSAFE_TYPEVAR_SOURCE = textwrap.dedent("""\
         return x
     """)
 
+TYPEVARTUPLE_SOURCE = textwrap.dedent("""\
+    from typing import TypeVarTuple, Unpack
+
+    Ts = TypeVarTuple("Ts")
+
+
+    def foo(*args: Unpack[Ts]) -> None:
+        pass
+    """)
+
 
 class TestDiscoverFiles:
     """discover_files: recursive .py discovery with noise-directory exclusion."""
@@ -169,6 +179,29 @@ class TestProcessFile:
 
         assert_that(report.error, is_not(None))
         assert_that(report.result, is_(None))
+
+    def test_apply_composes_typevarcheck_and_typevartuplecheck(self, tmp_path: Path) -> None:
+        """TypeVarCheck's [*Ts] bracket and TypeVarTupleCheck's Unpack[Ts]->*Ts compose in one pass."""
+        target = tmp_path / "mod.py"
+        target.write_text(TYPEVARTUPLE_SOURCE, encoding="utf-8")
+
+        report = migration.process_file(target, apply=True, min_python=(3, 12))
+
+        assert_that(migration.has_fixed(report), is_(True))
+        output = target.read_text(encoding="utf-8")
+        assert_that(output, contains_string("def foo[*Ts](*args: *Ts) -> None:"))
+        assert_that(output, is_not(contains_string("Unpack")))
+
+    def test_dry_run_diff_previews_both_recipes_changes(self, tmp_path: Path) -> None:
+        """Dry-run's diff for a combined file previews both the [*Ts] bracket and the Unpack rewrite."""
+        target = tmp_path / "mod.py"
+        target.write_text(TYPEVARTUPLE_SOURCE, encoding="utf-8")
+
+        report = migration.process_file(target, apply=False, min_python=(3, 12))
+
+        assert_that(migration.has_fixed(report), is_(True))
+        assert_that(report.diff, contains_string("def foo[*Ts]"))
+        assert_that(report.diff, contains_string("*args: *Ts"))
 
 
 class TestMainBatchErrorIsolation:
