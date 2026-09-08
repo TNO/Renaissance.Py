@@ -24,6 +24,15 @@ clean up at all:
    `UP047`, by its own documentation, never removes the module-level `T = TypeVar("T")` it makes redundant, in
    any case. Once every remaining reference to a declared name is shadowed by a same-named PEP 695 type parameter
    (or there's no reference left at all), the recipe removes the declaration and, if now unused, its import.
+4. **Legacy `Unpack[T]` → `*T` rewrite (`TypeVarTupleCheck`).** A separate recipe, not a phase of the above:
+   `Unpack[T]` and native `*T` unpacking are fully equivalent wherever `T` is a declared `TypeVarTuple` -
+   `Unpack[T]` exists only because it's parseable on Pythons before the native syntax landed
+   ([PEP 646](https://peps.python.org/pep-0646/), 3.11+). Every occurrence is rewritten with no per-occurrence
+   safety analysis needed (unlike the PEP 695 conversion above, swapping syntax at one call site never changes
+   semantics or visibility) - the only gate is the file-wide Python-version check, see
+   [Python version gates](../concepts/python-version-gates.md). The now-unused `Unpack` import is dropped
+   afterward, unless the file separately uses `Unpack[...]` for something unrelated (e.g. PEP 692
+   `**kwargs: Unpack[SomeTypedDict]`), which is left alone.
 
 ## Inputs
 
@@ -32,8 +41,9 @@ A single Python source file, passed by path.
 ## Outputs / effects
 
 - The file is rewritten in place for every change classified as safe.
-- A result summary is returned: `{"cross_file": {...}, "converted": {...}, "orphaned": {...}}`, each mapping
-  `name -> "fixed" | "unsafe"`.
+- `TypeVarCheck` returns `{"cross_file": {...}, "converted": {...}, "orphaned": {...}}`, each mapping
+  `name -> "fixed" | "unsafe"`. `TypeVarTupleCheck` returns a single flat `{name -> "fixed" | "unsafe"}` (one
+  phase, not three) - the CLI below merges it into the same result shape under an `"unpack_syntax"` key.
 - A `from typing import ...` (or equivalent) name is dropped once a conversion makes it redundant, as long as no
   other declaration in the file still needs it.
 
@@ -52,6 +62,19 @@ A single Python source file, passed by path.
   function body — for example as a `Generic[...]` base — see
   [Type parameter scope](../concepts/type-parameter-scope.md).
 - Supports `TypeVar` (including `bound=` and constraint forms), `ParamSpec`, and `TypeVarTuple`.
+- **`TypeVarTupleCheck`'s `Unpack[T]` → `*T` rewrite only applies when the target declares Python 3.11+** (PEP
+  646's true minimum - one version below `TypeVarCheck`'s own 3.12+ gate for PEP 695, deliberately not raised
+  to match it, see [Python version gates](../concepts/python-version-gates.md)). Same conservative treatment as
+  above: an unknown or too-low minimum reports every candidate `"unsafe"` and leaves the file untouched.
+- `TypeVarTupleCheck` only recognizes a **module-level** `T = TypeVarTuple(...)` declaration in the same file -
+  not one imported from a sibling module. When both recipes run together (the CLI below), `TypeVarTupleCheck`
+  runs first specifically so the common case (a TypeVarTuple declared and used via `Unpack[T]` in the same file)
+  composes correctly - `TypeVarCheck` removes a converted declaration once it PEP-695-converts it, and
+  `TypeVarTupleCheck` needs that declaration to still be present to find the usage. One narrower case doesn't
+  fully resolve in a single pass either way: a *cross-file-imported* `TypeVarTuple` used via `Unpack[T]` -
+  `TypeVarCheck`'s own cross-file localization phase only runs after `TypeVarTupleCheck` has already looked (and
+  found nothing, since the declaration wasn't local yet). Re-running the CLI a second time picks it up, since
+  every phase is idempotent.
 
 ## Related concepts
 
@@ -73,13 +96,16 @@ A single Python source file, passed by path.
 
 ```shell
 rejuvenate refactor TypeVarCheck <file>
+rejuvenate refactor TypeVarTupleCheck <file>
 ```
 
-Equivalently, `PythonRefactoring.process("TypeVarCheck", file)`.
+Equivalently, `PythonRefactoring.process("TypeVarCheck", file)` /
+`PythonRefactoring.process("TypeVarTupleCheck", file)`.
 
-A friendlier standalone CLI also wraps this recipe: `--help`, a dry-run-by-default safety net (nothing is
-written to disk unless `--apply` is passed), `--min-python` to override the detected minimum target version,
-and a report distinguishing modified files from files with TypeVars it found but couldn't safely convert.
+A friendlier standalone CLI wraps both recipes together: `--help`, a dry-run-by-default safety net (nothing is
+written to disk unless `--apply` is passed), `--min-python` to override the detected minimum target version
+(compared against each recipe's own true minimum - 3.12 for `TypeVarCheck`, 3.11 for `TypeVarTupleCheck`), and
+a report distinguishing modified files from files with TypeVars it found but couldn't safely convert.
 
 ```shell
 python src/rejuvenation/migration-type-recipes.py <path> [--apply] [--min-python MAJOR.MINOR] [--report PATH] [--diff]
@@ -100,6 +126,12 @@ excluded). Run with `--help` for the full flag reference.
 - **Resolved: no CLI flag to override the detected minimum version.** `TypeVarCheck.min_python_override` existed
   only for tests until `migration-type-recipes.py`'s `--min-python MAJOR.MINOR` flag exposed it - see API entry
   points above.
+- **Resolved: `TypeVarTupleCheck` used to only detect, never rewrite.** `find_legacy_unpack_usage()` still
+  exists and still only detects (returns `list[str]`, unchanged, for any caller that just wants the names); the
+  new `fix_legacy_unpack_usage()` is what `run()` now calls, and actually rewrites `Unpack[T]` to `*T` - see the
+  User-facing summary and Constraints above. Consequence worth knowing: `rejuvenate refactor TypeVarTupleCheck
+  <file>` (`PythonRefactoring.process()`) previously never wrote anything and now does - this is the intended
+  effect of making the recipe actually fix code, not a bug, but it changes that entry point's existing behavior.
 - **Resolved: whole-function replacement used to reformat more than the signature, and delete comments.**
   `convert_declared_typevars` only ever *adds* a `type_params` entry, but used to replace the *entire* function via
   `self.replace(unparse_node(function), ...)`, so `ast.unparse()` regenerated every line of the body in its own

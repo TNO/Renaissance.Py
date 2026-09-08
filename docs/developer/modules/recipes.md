@@ -31,8 +31,12 @@ page covers `TypeVarCheck` and `TypeVarTupleCheck`, the recipes built for
 - `TypeVarCheck.localize_imported_typevars()`, `TypeVarCheck.convert_declared_typevars()`, and
   `TypeVarCheck.remove_orphaned_declarations()` — the three phases individually, each returning
   `{name: "fixed" | "unsafe"}`.
-- `TypeVarTupleCheck.run()` — detects legacy `Unpack[Ts]` usage for a `TypeVarTuple` declared in the same file
-  (report-only, no fix yet).
+- `TypeVarTupleCheck.run()` / `TypeVarTupleCheck.fix_legacy_unpack_usage()` — rewrites every legacy `Unpack[T]`
+  usage of a module-level `TypeVarTuple` to native `*T` syntax, dropping the now-unused `Unpack` import unless
+  the file separately needs it (e.g. PEP 692 `**kwargs: Unpack[SomeTypedDict]`); gated by its own
+  `target_supports_pep646` version check. `find_legacy_unpack_usage()` still exists, detection-only, for any
+  caller that just wants the names without touching the file - it's what `fix_legacy_unpack_usage()` is built on
+  top of, not a separate code path.
 - Dispatched from the CLI via `PythonRefactoring.process(class_name, file)`, which resolves `"TypeVarCheck"` to
   `renaissance.refactoring.type_var_check` using `snake_case()`.
 
@@ -94,6 +98,11 @@ version needs the same detection, not just this one. `TypeVarCheck.min_python_ov
 can set after construction to bypass the filesystem lookup entirely - the same pattern `in_memory` already uses on
 the base class.
 
+`fix_legacy_unpack_usage` follows the identical pattern with its own threshold: `_target_supports_pep646()` /
+`target_supports_pep646(file_path)` / `PEP_646_MINIMUM = (3, 11)`, `min_python_override` set the same way - see
+[Python version gates](../../user/concepts/python-version-gates.md) for why this recipe's minimum is one version
+below `TypeVarCheck`'s (PEP 646 landed a release before PEP 695), not raised to match it for consistency.
+
 ## Related features
 
 - [TypeVar modernization](../../user/features/typevar-modernization.md)
@@ -101,6 +110,7 @@ the base class.
 ## Related concepts
 
 - [Type parameter scope](../../user/concepts/type-parameter-scope.md)
+- [Python version gates](../../user/concepts/python-version-gates.md)
 
 ## Validated by test modules
 
@@ -111,9 +121,11 @@ the base class.
 - `test/refactoring/test_type_var_check_orphaned.py`
 - `test/refactoring/test_type_var_check_properties.py`
 - `test/refactoring/test_type_var_tuple_check.py`
+- `test/recipes/test_type_var_tuple_check_fix.py` - `fix_legacy_unpack_usage()`: the rewrite itself, its version
+  gate, and the `Unpack` import cleanup (including the PEP 692 `**kwargs` case it must leave alone).
 - `test/refactoring/test_type_var_tuple_check_properties.py`
-- `test/refactoring/conftest.py` - shared fixtures (`make_recipe`, `create_type_var_check`) used across the files
-  above and by other recipes' tests.
+- `test/refactoring/conftest.py` - shared fixtures (`make_recipe`, `create_type_var_check`,
+  `create_type_var_tuple_check`) used across the files above and by other recipes' tests.
 - `test/utils/test_unparse_utils.py` - the bracket-splice mechanism itself (`unparse_signature_only` and its
   helpers), independent of the recipe.
 
@@ -133,6 +145,13 @@ the base class.
   decide safety or apply a fix; both single- and multi-scope names are converted the same way by
   `convert_declared_typevars()`, which decides safety via `is_safe_to_convert`.
 - Neither recipe resolves package-qualified or dotted-module imports for the cross-file phase.
-- The Python-version gate (`target_supports_pep695`, backed by `renaissance.utils.python_version`) only recognises
-  `requires-python` specifiers matching a known, hardcoded list of versions (3.8-3.14) - an exotic specifier that
-  matches none of them is treated as unknown, the same as a missing one, and blocks the PEP 695 rewrite.
+- The Python-version gates (`target_supports_pep695` and `target_supports_pep646`, both backed by
+  `renaissance.utils.python_version`) only recognise `requires-python` specifiers matching a known, hardcoded
+  list of versions (3.8-3.14) - an exotic specifier that matches none of them is treated as unknown, the same as
+  a missing one, and blocks the rewrite.
+- `TypeVarTupleCheck` only finds a **module-level** `TypeVarTuple` declaration in the same file, never one
+  imported from a sibling module - unlike `TypeVarCheck`, it has no cross-file localization phase of its own.
+  When both recipes run together (`migration-type-recipes.py`), running `TypeVarTupleCheck` first lets it catch
+  the common case before `TypeVarCheck` converts and removes the declaration out from under it, but a
+  cross-file-imported `TypeVarTuple` used via `Unpack[T]` still needs a second CLI run to localize first, then
+  fix - see [TypeVar modernization](../../user/features/typevar-modernization.md)'s Constraints section.
