@@ -117,6 +117,7 @@ nav:
           - 9. Composition: user/concepts/composition.md
           - 10. Type parameter scope: user/concepts/type-parameter-scope.md
           - 11. Standard analyses and transformations: user/concepts/standard-libraries.md
+          - 12. Python version gates: user/concepts/python-version-gates.md
 
       - Features:
           - Overview: user/features/index.md
