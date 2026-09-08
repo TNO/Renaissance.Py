@@ -1,4 +1,4 @@
-"""Friendly CLI to run TypeVarCheck (PEP 695 TypeVar/ParamSpec/TypeVarTuple modernization).
+"""Friendly CLI to run TypeVarCheck and TypeVarTupleCheck (TypeVar/ParamSpec/TypeVarTuple modernization).
 
 Replaces the raw `python cli.py refactor TypeVarCheck <file>` positional-argv dispatch with a
 real CLI: `--help`, named flags, a dry-run-by-default safety net, and a report distinguishing
@@ -24,6 +24,7 @@ from pathlib import Path
 from termcolor import colored
 
 from renaissance.recipes.type_var_check import TypeVarCheck
+from renaissance.recipes.type_var_tuple_check import TypeVarTupleCheck
 
 _MAJOR_MINOR_PART_COUNT = 2
 
@@ -105,22 +106,65 @@ def _unified_diff(before: str, after: str, path: Path) -> str | None:
 
 
 def process_file(path: Path, *, apply: bool, min_python: tuple[int, int] | None) -> FileReport:
-    """Run TypeVarCheck against a single file and return its outcome as a FileReport.
+    """Run TypeVarTupleCheck then TypeVarCheck against a single file, returning one FileReport.
 
-    Any failure is caught and reported on FileReport.error instead of propagating, since one bad
-    file must never abort a batch run.
+    TypeVarTupleCheck runs first deliberately: TypeVarCheck's own PEP 695 conversion removes a
+    TypeVarTuple's module-level declaration once it converts it, and TypeVarTupleCheck can only
+    find an `Unpack[T]` usage while that declaration still exists - running TypeVarCheck first
+    would make TypeVarTupleCheck blind to exactly the case that most needs it. Any failure is
+    caught and reported on FileReport.error instead of propagating, since one bad file must never
+    abort a batch run.
     """
     try:
-        before = path.read_text(encoding="utf-8")  # read before constructing the recipe, so this is guaranteed untouched
-        recipe = TypeVarCheck(path)
-        recipe.in_memory = not apply  # dry run: commit() rebuilds in memory instead of writing to disk
+        before = path.read_text(encoding="utf-8")  # read before constructing either recipe, so this is guaranteed untouched
+
+        tvt_recipe = TypeVarTupleCheck(path)
+        tvt_recipe.in_memory = not apply  # dry run: commit() rebuilds in memory instead of writing to disk
         if min_python is not None:
-            recipe.min_python_override = min_python
-        recipe.run()
-        after = recipe.apply_to_string()
+            tvt_recipe.min_python_override = min_python
+        tvt_recipe.run()
+
+        tv_recipe = TypeVarCheck(path)
+        tv_recipe.in_memory = not apply
+        if min_python is not None:
+            tv_recipe.min_python_override = min_python
+        tv_recipe.run()
+
+        result = dict(tv_recipe.result)
+        result["unpack_syntax"] = tvt_recipe.result
+        diff = _combined_diff(before, path, apply=apply, tvt_recipe=tvt_recipe, tv_recipe=tv_recipe)
     except Exception as exc:  # noqa: BLE001 - isolate one bad file, never abort the whole batch
         return FileReport(path=path, result=None, error=f"{type(exc).__name__}: {exc}", diff=None)
-    return FileReport(path=path, result=recipe.result, error=None, diff=_unified_diff(before, after, path))
+    return FileReport(path=path, result=result, error=None, diff=diff)
+
+
+def _combined_diff(
+    before: str,
+    path: Path,
+    *,
+    apply: bool,
+    tvt_recipe: TypeVarTupleCheck,
+    tv_recipe: TypeVarCheck,
+) -> str | None:
+    """Build the diff for a file processed by both recipes.
+
+    In --apply mode both recipes already wrote for real, chained through the filesystem (
+    TypeVarCheck reads the file TypeVarTupleCheck already updated), so re-reading `path` once gives
+    one accurate, unified diff. In dry-run mode neither recipe's in-memory preview can be fed into
+    the other's constructor (PythonRefactoring only reads from a real file path), so each recipe's
+    own preview is diffed independently against the same original `before` and concatenated, each
+    labeled with which recipe produced it so the two previews aren't visually ambiguous together.
+    """
+    if apply:
+        after = path.read_text(encoding="utf-8")
+        return _unified_diff(before, after, path)
+
+    labeled_diffs = (
+        (label, _unified_diff(before, recipe.apply_to_string(), path))
+        for label, recipe in (("TypeVarTupleCheck", tvt_recipe), ("TypeVarCheck", tv_recipe))
+    )
+    parts = [f"[{label}]\n{diff}" for label, diff in labeled_diffs if diff]
+    return "\n".join(parts) or None
 
 
 def _format_commit_summary(reports: list[FileReport], *, apply: bool) -> str:
