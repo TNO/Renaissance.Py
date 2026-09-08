@@ -6,10 +6,14 @@ from typing import cast
 
 import pytest
 from pytest_mock import MockerFixture
-
 from renaissance.impl.python.rst_node import PythonRstNode
 from renaissance.refactoring.python_refactoring import PythonRefactoring
 from renaissance.refactoring.type_var_check import PEP_695_MINIMUM, TypeVarCheck
+
+from renaissance.integrations.python.ast.rst_node import PythonRstNode
+from renaissance.recipes.python_refactoring import PythonRefactoring
+from renaissance.recipes.type_var_check import PEP_695_MINIMUM, TypeVarCheck
+from renaissance.recipes.type_var_tuple_check import PEP_646_MINIMUM, TypeVarTupleCheck
 
 
 @pytest.fixture
@@ -43,8 +47,26 @@ def create_type_var_check(make_recipe: Callable[[type[PythonRefactoring], str], 
     """
 
     def _create(text: str) -> TypeVarCheck:
-        subject = cast(TypeVarCheck, make_recipe(TypeVarCheck, text))
+        subject = cast("TypeVarCheck", make_recipe(TypeVarCheck, text))
         subject.min_python_override = PEP_695_MINIMUM
+        return subject
+
+    return _create
+
+
+@pytest.fixture
+def create_type_var_tuple_check(
+    make_recipe: Callable[[type[PythonRefactoring], str], PythonRefactoring],
+) -> Callable[[str], TypeVarTupleCheck]:
+    """Like `make_recipe`, but pinned to Python 3.11+.
+
+    So PEP 646 `Unpack[T]` -> `*T` fix tests don't depend on whatever pyproject.toml happens to be
+    found from the ambient cwd.
+    """
+
+    def _create(text: str) -> TypeVarTupleCheck:
+        subject = cast("TypeVarTupleCheck", make_recipe(TypeVarTupleCheck, text))
+        subject.min_python_override = PEP_646_MINIMUM
         return subject
 
     return _create
