@@ -63,6 +63,7 @@ A single Python source file, passed by path.
 - `test/refactoring/test_type_var_check_properties.py`
 - `test/refactoring/test_type_var_tuple_check.py`
 - `test/refactoring/test_type_var_tuple_check_properties.py`
+- `test/rejuvenation/test_migration_type_recipes.py` (the CLI wrapper above)
 
 ## Implemented by code modules
 
@@ -76,6 +77,17 @@ rejuvenate refactor TypeVarCheck <file>
 
 Equivalently, `PythonRefactoring.process("TypeVarCheck", file)`.
 
+A friendlier standalone CLI also wraps this recipe: `--help`, a dry-run-by-default safety net (nothing is
+written to disk unless `--apply` is passed), `--min-python` to override the detected minimum target version,
+and a report distinguishing modified files from files with TypeVars it found but couldn't safely convert.
+
+```shell
+python src/rejuvenation/migration-type-recipes.py <path> [--apply] [--min-python MAJOR.MINOR] [--report PATH] [--diff]
+```
+
+`<path>` may be a single `.py` file or a directory, scanned recursively (`.git`/`__pycache__`/`.venv`/`venv`
+excluded). Run with `--help` for the full flag reference.
+
 ## Change considerations
 
 - Supporting a future type-parameter-declaring construct means extending `_is_type_param_call` and
@@ -85,8 +97,9 @@ Equivalently, `PythonRefactoring.process("TypeVarCheck", file)`.
 - The version gate (see Constraints above) only recognises versions in a known list (3.8 through 3.14, see
   `KNOWN_PYTHON_VERSIONS` in `renaissance/utils/python_version.py`); extending it to a new Python release means
   adding that release to the list.
-- There's no CLI flag to override the detected minimum version; `TypeVarCheck.min_python_override` exists for
-  tests but isn't exposed on the command line.
+- **Resolved: no CLI flag to override the detected minimum version.** `TypeVarCheck.min_python_override` existed
+  only for tests until `migration-type-recipes.py`'s `--min-python MAJOR.MINOR` flag exposed it - see API entry
+  points above.
 - **Resolved: whole-function replacement used to reformat more than the signature, and delete comments.**
   `convert_declared_typevars` only ever *adds* a `type_params` entry, but used to replace the *entire* function via
   `self.replace(unparse_node(function), ...)`, so `ast.unparse()` regenerated every line of the body in its own
