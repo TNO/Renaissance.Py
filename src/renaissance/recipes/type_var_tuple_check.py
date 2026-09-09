@@ -36,6 +36,8 @@ class TypeVarTupleCheck(PythonRefactoring):
     def run(self) -> None:
         """Entry point called by PythonRefactoring.process(); stores fix_legacy_unpack_usage()'s result."""
         self.result = self.fix_legacy_unpack_usage()
+        if "fixed" in self.result.values():
+            self.commit()
 
     def _target_supports_pep646(self) -> bool:
         """Return True if native `*T` unpacking syntax is safe on this recipe's target file.
@@ -62,9 +64,7 @@ class TypeVarTupleCheck(PythonRefactoring):
         because it's parseable on Pythons before the native syntax landed (PEP 646, 3.11+), so
         there's no per-occurrence safety analysis needed beyond the file-wide version gate: if the
         target doesn't declare 3.11+, every candidate is reported "unsafe" and the file is left
-        untouched. Drops the now-unused `Unpack` import afterward, unless the file separately uses
-        `Unpack[...]` for something else (e.g. a PEP 692 `**kwargs: Unpack[SomeTypedDict]`), which
-        must survive. Returns {name: "fixed" | "unsafe"}.
+        untouched. Returns {name: "fixed" | "unsafe"}.
         """
         tree = cast("ast.Module", self.root.node)
         occurrences = self._find_unpack_occurrences(tree)
@@ -79,15 +79,6 @@ class TypeVarTupleCheck(PythonRefactoring):
             rst_node = self.find_rst_node(node)
             self.replace(f"*{name}", rst_node, include_whitespace=False, include_comments=False)
 
-        # self.replace() only queues a text edit - `tree` itself is never mutated, so every node in
-        # `occurrences` still shows up as "Unpack[...]" below. Excluding those by identity is what
-        # tells a leftover, unrelated Unpack[...] (e.g. PEP 692 **kwargs typing) apart from the ones
-        # this call just fixed.
-        fixed_nodes = {node for _, node in occurrences}
-        if not self._has_other_unpack_subscript(tree, fixed_nodes):
-            self.remove_import_alias("Unpack")
-
-        self.commit()
         return dict.fromkeys(names, "fixed")
 
     def _find_unpack_occurrences(self, tree: ast.Module) -> list[tuple[str, ast.Subscript]]:
@@ -109,16 +100,3 @@ class TypeVarTupleCheck(PythonRefactoring):
                 and node.slice.id in typevartuple_names
             )
         ]
-
-    @staticmethod
-    def _has_other_unpack_subscript(tree: ast.Module, exclude: set[ast.Subscript]) -> bool:
-        """Return True if an `Unpack[...]` subscript other than those in `exclude` remains in the file.
-
-        Deliberately not filtered to declared TypeVarTuple names - a file can legitimately use
-        `Unpack[SomeTypedDict]` for PEP 692 `**kwargs` typing, an unrelated use of the same import
-        that must not be removed just because every TypeVarTuple occurrence got fixed.
-        """
-        return any(
-            isinstance(node, ast.Subscript) and isinstance(node.value, ast.Name) and node.value.id == "Unpack" and node not in exclude
-            for node in ast.walk(tree)
-        )
