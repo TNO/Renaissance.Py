@@ -115,6 +115,7 @@ select = [
     "ANN002", "ANN003", "ANN204", "ANN205", "ANN401",
 ]
 #select = ["ALL"]  # goal of issue 
+
 ignore = [
     "D203",  # conflicts with D211 (no blank line before class) — keep D211
     "D213",  # conflicts with D212 (summary on the first line) — keep D212
