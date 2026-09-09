@@ -3,8 +3,9 @@
 import ast
 from typing import Any, cast
 
-from renaissance.refactoring.python_refactoring import PythonRefactoring, narrowed_import_text
-from renaissance.refactoring.type_var_domain import (
+from renaissance.recipes.python_refactoring import PythonRefactoring, narrowed_import_text
+from renaissance.recipes.step_runner import Step, run_steps
+from renaissance.recipes.type_var_domain import (
     all_refs_shadowed_by_pep695,
     build_type_param,
     find_import_source,
@@ -57,7 +58,7 @@ class TypeVarCheck(PythonRefactoring):
             return self.min_python_override >= PEP_695_MINIMUM
         return target_supports_pep695(self.filename)
 
-    def check(self) -> dict[str, dict[str, Any]]:
+    def check(self) -> dict[str, dict[str, str]]:
         """Check this file's TypeVar/ParamSpec/TypeVarTuple usage end to end.
 
         Runs three phases in order - localize_imported_typevars, then convert_declared_typevars,
@@ -65,23 +66,13 @@ class TypeVarCheck(PythonRefactoring):
         why). Returns {"cross_file": {...}, "converted": {...}, "orphaned": {...}}, each mapping
         name -> "fixed" | "unsafe".
         """
-        cross_file = self.localize_imported_typevars()
-        if "fixed" in cross_file.values():
-            self.commit()
-
-        converted = self.convert_declared_typevars()
-        if "fixed" in converted.values():
-            self.commit()
-
-        orphaned = self.remove_orphaned_declarations()
-        if "fixed" in orphaned.values():
-            self.commit()
-
-        return {
-            "cross_file": cross_file,
-            "converted": converted,
-            "orphaned": orphaned,
-        }
+        return run_steps(
+            [
+                Step("cross_file", self, self.localize_imported_typevars),
+                Step("converted", self, self.convert_declared_typevars),
+                Step("orphaned", self, self.remove_orphaned_declarations),
+            ],
+        )
 
     def find_multi_scope_typevars(self) -> dict[str, set[str]]:
         """Map each declared name to the functions sharing it, for names used by 2+ functions.
@@ -197,10 +188,7 @@ class TypeVarCheck(PythonRefactoring):
         for decl_stmt in removed:
             ctor_name = type_param_constructor_name(decl_stmt)
             still_used = any(
-                isinstance(node, ast.Call)
-                and isinstance(node.func, ast.Name)
-                and node.func.id == ctor_name
-                and node not in removed_values
+                isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == ctor_name and node not in removed_values
                 for node in ast.walk(tree)
             )
             if not still_used:
@@ -265,9 +253,7 @@ class TypeVarCheck(PythonRefactoring):
 
         return f"from {ctor_module} import {ctor_name}"
 
-    def _localize_import(
-        self, import_node: Any, raw: ast.ImportFrom, name: str, decl_stmt: ast.Assign, needed_import: str | None
-    ) -> None:
+    def _localize_import(self, import_node: Any, raw: ast.ImportFrom, name: str, decl_stmt: ast.Assign, needed_import: str | None) -> None:
         """Replace import_node with decl_stmt's text as a local declaration.
 
         Narrows or removes the original import for name, and prepends needed_import if the
