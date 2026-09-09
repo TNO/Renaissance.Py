@@ -52,9 +52,7 @@ class TestTypeVarCheckConvert:
     def test_converts_function_with_multiline_docstring_without_double_indenting(
         self, create_type_var_check: Callable[[str], TypeVarCheck]
     ) -> None:
-        # Regression test for python-ast-known-limitations.md item 4: ast.unparse() plus
-        # the rewrite pipeline's indentation correction used to double-indent a multi-line
-        # docstring's continuation lines.
+        # A multi-line docstring's continuation lines must not get double-indented.
         subject = create_type_var_check("""
             from typing import TypeVar
 
@@ -232,9 +230,7 @@ class TestTypeVarCheckConvert:
         assert_that(result, has_entry("T", "unsafe"))
         assert_that(subject.apply_to_string(), contains_string('T = TypeVar("T")'))
 
-    def test_removes_declaration_but_keeps_import_used_by_other_typevar(
-        self, create_type_var_check: Callable[[str], TypeVarCheck]
-    ) -> None:
+    def test_removes_declaration_but_keeps_import_used_by_other_typevar(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
         # T is multi-scope and safe to convert; U is left alone (used in a Generic[...] base),
         # so the shared "from typing import TypeVar" import must survive for U's sake.
         subject = create_type_var_check("""
@@ -276,10 +272,7 @@ class TestTypeVarCheckConvert:
         assert_that(output, contains_string("def b[T](x: T) -> T:"))
 
     def test_converts_function_preserving_internal_comments(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
-        # Regression test: ast.unparse() can't represent comments at all (Python's ast module
-        # never records them), so a whole-body replacement used to silently delete them - found
-        # live against starlette/starlette/concurrency.py's _next(). Signature-only replacement
-        # never regenerates the body, so this comment must survive untouched.
+        # Converting a function's signature must never touch or drop a comment in its body.
         subject = create_type_var_check("""
             from typing import TypeVar
 
@@ -296,12 +289,8 @@ class TestTypeVarCheckConvert:
         assert_that(output, contains_string("def b[T](x: T) -> T:"))
         assert_that(output, contains_string("# this explains something non-obvious"))
 
-    def test_converts_function_preserving_unusual_body_formatting(
-        self, create_type_var_check: Callable[[str], TypeVarCheck]
-    ) -> None:
-        # Regression test: ast.unparse() reformats the whole body to its own style even though
-        # only the signature changed - e.g. collapsing this multi-line call onto one line.
-        # Signature-only replacement leaves the body's original bytes untouched.
+    def test_converts_function_preserving_unusual_body_formatting(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
+        # Converting a function's signature must never reformat or collapse its body.
         subject = create_type_var_check("""
             from typing import TypeVar
 
@@ -320,17 +309,9 @@ class TestTypeVarCheckConvert:
         assert_that(output, contains_string("def b[T](x: T) -> T:"))
         assert_that(output, contains_string("return foo(\n        x,\n        extra=1,\n    )"))
 
-    def test_does_not_add_redundant_type_param_to_nested_closure(
-        self, create_type_var_check: Callable[[str], TypeVarCheck]
-    ) -> None:
-        # Regression test: found live against starlette/starlette/authentication.py's requires()
-        # and its nested websocket_wrapper/async_wrapper/sync_wrapper closures, which all
-        # reference the outer function's ParamSpec in their own signatures too.
-        # functions_using_nodes used to attribute that to the innermost enclosing function,
-        # queuing a redundant, shadowing type param on the nested closure as well - which,
-        # combined with the still-open rewrite dominance/suppression gap
-        # (python-ast-known-limitations.md item 5), corrupted the output outright instead of
-        # just being redundant.
+    def test_does_not_add_redundant_type_param_to_nested_closure(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
+        # A nested closure merely referencing an enclosing function's type param must not get
+        # its own shadowing type param - PEP 695 params are already visible in nested scopes.
         subject = create_type_var_check("""
             from typing import ParamSpec
             from collections.abc import Callable
@@ -353,9 +334,7 @@ class TestTypeVarCheckConvert:
         assert_that(output, not_(contains_string("wrapper[**P]")))
 
     def test_preserves_multiline_signature_formatting(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
-        # Regression test: unparse_signature_only used to regenerate the whole signature via
-        # ast.unparse(), which collapses a multi-line parameter list onto one line regardless of
-        # the original formatting - found live against a real multi-line __init__ signature.
+        # Converting a multi-line signature must not collapse it onto one line.
         subject = create_type_var_check("""
             from typing import TypeVar
 
@@ -399,10 +378,8 @@ class TestTypeVarCheckConvert:
         assert_that(output, contains_string("def f[U, T](x: U, y: T) -> T:"))
 
     def test_converts_a_decorated_overload(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
-        # Regression test: found live against starlette/starlette/config.py's __call__ overloads.
-        # A decorated function's captured source includes the decorator on line 1, so the "def"
-        # line itself is a continuation line carrying its own real indentation - not flush at
-        # column 0 like an undecorated function's "def" line always is.
+        # A decorated function's "def" line isn't flush at column 0 like an undecorated one's -
+        # it's a continuation line carrying its own real indentation.
         subject = create_type_var_check("""
             from typing import TypeVar, overload
 
@@ -424,9 +401,8 @@ class TestTypeVarCheckConvert:
     def test_converts_two_type_params_sharing_one_import_without_corrupting_it(
         self, create_type_var_check: Callable[[str], TypeVarCheck]
     ) -> None:
-        # Regression test for python-ast-known-limitations.md item 5: converting both T and P
-        # used to queue two conflicting edits against their shared "from typing import ..." line,
-        # corrupting it into "from typing import ParamSpecfrom typing import TypeVar".
+        # Converting two names sharing one import must leave that import line untouched - the
+        # recipe never edits it itself (ruff's F401 owns that).
         subject = create_type_var_check("""
             from typing import ParamSpec, TypeVar
             from collections.abc import Callable
