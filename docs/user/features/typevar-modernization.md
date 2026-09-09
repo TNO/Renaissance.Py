@@ -23,16 +23,18 @@ clean up at all:
    signature already converted to PEP 695 syntax by hand, or by running `ruff` before this recipe. `ruff`'s
    `UP047`, by its own documentation, never removes the module-level `T = TypeVar("T")` it makes redundant, in
    any case. Once every remaining reference to a declared name is shadowed by a same-named PEP 695 type parameter
-   (or there's no reference left at all), the recipe removes the declaration and, if now unused, its import.
+   (or there's no reference left at all), the recipe removes the declaration.
 4. **Legacy `Unpack[T]` → `*T` rewrite (`TypeVarTupleCheck`).** A separate recipe, not a phase of the above:
    `Unpack[T]` and native `*T` unpacking are fully equivalent wherever `T` is a declared `TypeVarTuple` -
    `Unpack[T]` exists only because it's parseable on Pythons before the native syntax landed
    ([PEP 646](https://peps.python.org/pep-0646/), 3.11+). Every occurrence is rewritten with no per-occurrence
    safety analysis needed (unlike the PEP 695 conversion above, swapping syntax at one call site never changes
    semantics or visibility) - the only gate is the file-wide Python-version check, see
-   [Python version gates](../concepts/python-version-gates.md). The now-unused `Unpack` import is dropped
-   afterward, unless the file separately uses `Unpack[...]` for something unrelated (e.g. PEP 692
-   `**kwargs: Unpack[SomeTypedDict]`), which is left alone.
+   [Python version gates](../concepts/python-version-gates.md).
+
+Neither recipe drops the import it just made redundant (`TypeVar`, `Unpack`, ...) itself - that's `ruff`'s
+`F401` rule's job, already solved there rather than duplicated; see API entry points below for where that
+cleanup actually runs.
 
 ## Inputs
 
@@ -44,8 +46,8 @@ A single Python source file, passed by path.
 - `TypeVarCheck` returns `{"cross_file": {...}, "converted": {...}, "orphaned": {...}}`, each mapping
   `name -> "fixed" | "unsafe"`. `TypeVarTupleCheck` returns a single flat `{name -> "fixed" | "unsafe"}` (one
   phase, not three) - the CLI below merges it into the same result shape under an `"unpack_syntax"` key.
-- A `from typing import ...` (or equivalent) name is dropped once a conversion makes it redundant, as long as no
-  other declaration in the file still needs it.
+- Neither recipe removes the `from typing import ...` (or equivalent) name it makes redundant - see the
+  User-facing summary above and the CLI's own `ruff check --fix --select F401` pass in API entry points below.
 
 ## Constraints
 
@@ -102,13 +104,17 @@ rejuvenate refactor TypeVarTupleCheck <file>
 Equivalently, `PythonRefactoring.process("TypeVarCheck", file)` /
 `PythonRefactoring.process("TypeVarTupleCheck", file)`.
 
-A friendlier standalone CLI wraps both recipes together: `--help`, a dry-run-by-default safety net (nothing is
-written to disk unless `--apply` is passed), `--min-python` to override the detected minimum target version
-(compared against each recipe's own true minimum - 3.12 for `TypeVarCheck`, 3.11 for `TypeVarTupleCheck`), and
-a report distinguishing modified files from files with TypeVars it found but couldn't safely convert.
+A friendlier standalone CLI wraps both recipes together: `--help`, `--min-python` to override the detected
+minimum target version (compared against each recipe's own true minimum - 3.12 for `TypeVarCheck`, 3.11 for
+`TypeVarTupleCheck`), and a report distinguishing modified files from files with TypeVars it found but
+couldn't safely convert. It writes changes for real - the target is always expected to be a git-tracked
+checkout, so `git diff`/`git checkout` (or an editor's diff view) is the review-and-revert mechanism, not a
+custom preview built into this tool. After processing every file, it runs `ruff check --fix --select F401`
+once over every file it modified, dropping whichever imports either recipe's own rewrite made redundant -
+see the User-facing summary above for why neither recipe drops that import itself.
 
 ```shell
-python src/rejuvenation/migration-type-recipes.py <path> [--apply] [--min-python MAJOR.MINOR] [--report PATH] [--diff]
+python src/rejuvenation/migration-type-recipes.py <path> [--min-python MAJOR.MINOR] [--report PATH]
 ```
 
 `<path>` may be a single `.py` file or a directory, scanned recursively (`.git`/`__pycache__`/`.venv`/`venv`
@@ -132,6 +138,16 @@ excluded). Run with `--help` for the full flag reference.
   User-facing summary and Constraints above. Consequence worth knowing: `rejuvenate refactor TypeVarTupleCheck
   <file>` (`PythonRefactoring.process()`) previously never wrote anything and now does - this is the intended
   effect of making the recipe actually fix code, not a bug, but it changes that entry point's existing behavior.
+- **Resolved: both recipes used to remove their own now-unused import.** `TypeVarCheck` and `TypeVarTupleCheck`
+  each had hand-rolled "is this import still used anywhere" logic, duplicating exactly what `ruff`'s `F401`
+  already solves. Removed from both recipes; `migration-type-recipes.py` now runs `ruff check --fix --select
+  F401` once over every file it modified instead - see API entry points above. A bare recipe invocation outside
+  that CLI no longer gets this cleanup on its own.
+- **Resolved: the CLI used to default to a dry-run preview, with `--apply` needed to write for real.** Dropped
+  entirely, along with the `--diff` flag and the diff text the CLI used to print - the target is always a
+  git-tracked checkout in practice, and `git diff`/`git checkout` (or an editor's diff view) review and revert
+  changes better than a custom text diff this tool would otherwise have to build and maintain. The CLI now
+  always writes for real; see API entry points above.
 - **Resolved: whole-function replacement used to reformat more than the signature, and delete comments.**
   `convert_declared_typevars` only ever *adds* a `type_params` entry, but used to replace the *entire* function via
   `self.replace(unparse_node(function), ...)`, so `ast.unparse()` regenerated every line of the body in its own
