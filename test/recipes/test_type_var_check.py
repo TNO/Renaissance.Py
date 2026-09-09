@@ -33,11 +33,12 @@ class TestTypeVarCheck:
         assert_that(subject.result["orphaned"], is_({}))
         output = subject.apply_to_string()
         assert_that(output, contains_string("def b[T](x: T) -> T:"))
-        assert_that(output, not_(contains_string("TypeVar")))
+        assert_that(output, not_(contains_string("T = TypeVar")))
+        # The now-redundant `TypeVar` import itself is left for ruff's F401 to clean up - the
+        # recipe only owns removing the declaration, not general unused-import detection.
+        assert_that(output, contains_string("from typing import TypeVar"))
 
-    def _create_versioned(
-        self, mocker: MockerFixture, tmp_path: Path, requires_python: str | None, code: str
-    ) -> TypeVarCheck:
+    def _create_versioned(self, mocker: MockerFixture, tmp_path: Path, requires_python: str | None, code: str) -> TypeVarCheck:
         if requires_python is not None:
             (tmp_path / "pyproject.toml").write_text(f'[project]\nrequires-python = "{requires_python}"\n')
         file_path = str(tmp_path / "subject.py")

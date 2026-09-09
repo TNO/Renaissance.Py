@@ -25,7 +25,8 @@ class TestTypeVarCheckOrphaned:
         assert_that(result, has_entry("T", "fixed"))
         output = subject.apply_to_string()
         assert_that(output, contains_string("def b[T](x: T) -> T:"))
-        assert_that(output, not_(contains_string("TypeVar")))
+        assert_that(output, not_(contains_string("T = TypeVar")))
+        assert_that(output, contains_string("from typing import TypeVar"))
 
     def test_removes_fully_unused_declaration(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
         subject = create_type_var_check("""
@@ -38,7 +39,9 @@ class TestTypeVarCheckOrphaned:
         result = subject.remove_orphaned_declarations()
 
         assert_that(result, has_entry("T", "fixed"))
-        assert_that(subject.apply_to_string(), not_(contains_string("TypeVar")))
+        output = subject.apply_to_string()
+        assert_that(output, not_(contains_string("T = TypeVar")))
+        assert_that(output, contains_string("from typing import TypeVar"))
 
     def test_does_not_touch_declaration_still_live_outside_shadow(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
         subject = create_type_var_check("""

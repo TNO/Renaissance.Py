@@ -28,7 +28,8 @@ class TestTypeVarCheckConvert:
         output = subject.apply_to_string()
         assert_that(output, contains_string("def a[T](x: T) -> T:"))
         assert_that(output, contains_string("def b[T](y: T) -> T:"))
-        assert_that(output, not_(contains_string("TypeVar")))
+        assert_that(output, not_(contains_string("T = TypeVar")))
+        assert_that(output, contains_string("from typing import TypeVar"))
 
     def test_converts_typevar_shared_across_methods_to_pep695(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
         subject = create_type_var_check("""
@@ -422,5 +423,6 @@ class TestTypeVarCheckConvert:
         assert_that(result, has_entry("T", "fixed"))
         output = subject.apply_to_string()
         ast.parse(output)  # raises SyntaxError if the shared import got corrupted
-        assert_that(output, not_(contains_string("typing import")))
-        assert_that(output, not_(contains_string("TypeVar")))
+        assert_that(output, contains_string("from typing import ParamSpec, TypeVar"))
+        assert_that(output, not_(contains_string("P = ParamSpec")))
+        assert_that(output, not_(contains_string("T = TypeVar")))

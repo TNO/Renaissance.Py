@@ -179,7 +179,7 @@ class TestTypeVarCheckLocalize:
 
         assert_that(result, is_({}))
 
-    def test_check_localizes_converts_and_removes_import_in_one_pass(self, mocker: MockerFixture, tmp_path: Path) -> None:
+    def test_check_localizes_and_converts_in_one_pass(self, mocker: MockerFixture, tmp_path: Path) -> None:
         # Whole-pipeline integration, grouped here since cross-file localization is what
         # sets this case apart from the plain-conversion tests in test_type_var_check_convert.py.
         subject = self._create_cross_file(
@@ -203,5 +203,5 @@ class TestTypeVarCheckLocalize:
         assert_that(subject.result["converted"], has_entry("T", "fixed"))
         output = subject.apply_to_string()
         assert_that(output, contains_string("def b[T](x: T) -> T:"))
-        assert_that(output, not_(contains_string("TypeVar")))
-        assert_that(output, not_(contains_string("import")))
+        assert_that(output, not_(contains_string("T = TypeVar")))
+        assert_that(output, contains_string("from typing import TypeVar"))

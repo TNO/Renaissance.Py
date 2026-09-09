@@ -3,7 +3,7 @@
 import ast
 import textwrap
 
-from hamcrest import assert_that, contains_string, is_, is_not
+from hamcrest import assert_that, contains_string, is_
 
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
 from renaissance.recipes.python_refactoring import PythonRefactoring
@@ -140,57 +140,3 @@ class TestPythonRefactoring:
         found = subject.find_rst_node(target)
 
         assert_that(found.node, is_(target))
-
-    # ------------------------------------------------------------------
-    # remove_import_alias
-    # ------------------------------------------------------------------
-
-    def test_remove_import_alias_narrows_import_with_multiple_names(self, mocker):
-        self._patch_factory(
-            mocker,
-            """
-            from typing import Generic, TypeVar
-            """,
-            "test_foo.py",
-        )
-        from renaissance.refactoring.unit2pytest import Unit2Pytest
-
-        subject = Unit2Pytest("test_foo.py")
-        subject.in_memory = True
-        subject.remove_import_alias("TypeVar")
-
-        assert_that(subject.apply_to_string(), contains_string("from typing import Generic"))
-        assert_that(subject.apply_to_string(), is_not(contains_string("TypeVar")))
-
-    def test_remove_import_alias_removes_import_when_only_name(self, mocker):
-        self._patch_factory(
-            mocker,
-            """
-            from typing import TypeVar
-            x = 1
-            """,
-            "test_foo.py",
-        )
-        from renaissance.refactoring.unit2pytest import Unit2Pytest
-
-        subject = Unit2Pytest("test_foo.py")
-        subject.in_memory = True
-        subject.remove_import_alias("TypeVar")
-
-        assert_that(subject.apply_to_string(), is_not(contains_string("import")))
-
-    def test_remove_import_alias_does_nothing_when_name_not_imported(self, mocker):
-        self._patch_factory(
-            mocker,
-            """
-            from typing import Generic
-            """,
-            "test_foo.py",
-        )
-        from renaissance.refactoring.unit2pytest import Unit2Pytest
-
-        subject = Unit2Pytest("test_foo.py")
-        subject.in_memory = True
-        subject.remove_import_alias("TypeVar")
-
-        assert_that(subject.apply_to_string(), contains_string("from typing import Generic"))

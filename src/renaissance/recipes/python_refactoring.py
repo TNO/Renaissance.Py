@@ -88,31 +88,6 @@ class PythonRefactoring(ASTProcessor):
         self.root.process(visit)
         return found[0]
 
-    def remove_import_alias(self, names: str | set[str]) -> None:
-        """Narrow or remove every ast.ImportFrom in self.body whose aliases include any of `names`.
-
-        E.g. once nothing in the file still calls the "TypeVar" it imported. Does nothing to an
-        import with none of `names`; deciding whether a name is still needed is the caller's
-        responsibility.
-
-        TODO: this narrows/removes one import statement per call, folding every one of `names`
-        into a single edit, specifically so that removing several names sharing one import never
-        queues two separate edits against the same node - that corrupts the output instead of
-        merging, a bug in ast_rewriter.py tracked in python-ast-known-limitations.md item 5. If
-        that's ever fixed, callers could go back to one name per call without this batching.
-        """
-        targets = {names} if isinstance(names, str) else names
-        for import_node in self.body:
-            raw = cast(ast.AST, import_node.node)
-            if not isinstance(raw, ast.ImportFrom) or not any((alias.asname or alias.name) in targets for alias in raw.names):
-                continue
-
-            new_import = narrowed_import_text(raw, targets)
-            if new_import is not None:
-                self.replace(new_import, import_node, False, False)
-            else:
-                self.remove(import_node)
-
     def run(self):
         """Perform this recipe's refactoring.
 
