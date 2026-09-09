@@ -6,8 +6,8 @@
 
 Concrete limitations found in the Python AST/RST layer (`renaissance.impl.python`) and the rewrite mechanism it
 feeds (`renaissance.syntax_tree.ast_rewriter`, `renaissance.utils.text_utils`) while building recipes
-(`TypeVarCheck`, `TypeVarTupleCheck`). None of these are patched here; they are documented so a recipe author knows
-what to work around, and so a maintainer has a starting list for a proper fix.
+(`TypeVarCheck`, `TypeVarTupleCheck`). Most of these are not patched here - a recipe has to work around them, and
+a maintainer has a starting list for a proper fix - except where a fix is noted below.
 
 ## 1. `referenced_by` / `references` miss `self` and return annotations
 
@@ -52,19 +52,9 @@ body**; there is nothing for `ast.unparse()` to reproduce, and no future fix to 
 without Python itself changing. Both are real for any recipe that regenerates a whole node's source via
 `ast.unparse()` and replaces the original text with it wholesale.
 
-**`TypeVarCheck` avoids this, it doesn't fix it.** `renaissance.utils.unparse_utils.unparse_signature_only` never
-regenerates a signature line via `ast.unparse()` at all any more - it only splices the new `[T]`/`[**P]`/`[*Ts]`
-bracket into the function's *original* text, right after its name, and leaves every other byte (parameter list,
-defaults, line breaks, return type, docstring, body, comments) exactly as it was. This was tightened a second time
-after the first version still regenerated the whole signature line via `ast.unparse()` - which fixed comment loss
-and docstring double-indenting, but still collapsed a multi-line parameter list onto one line, since `ast.unparse()`
-reformats whatever it touches regardless of the original layout. Since lines after the first are still passed
-through `shift_right`, they're renormalized to a column-0-`def` baseline before splicing (both the signature's own
-continuation lines and the body, each anchored independently - see the function's docstring for the detail).
-`TypeVarCheck.convert_declared_typevars` uses it in place of the old `unparse_node`/`normalize_docstring_indent`
-pair, which are retired. Verified against a method's body indentation, an inline single-line body
-(`def f(x): ...`), a multi-line signature, a function merging into an *existing* type-params bracket, and the
-`starlette` cases that surfaced this (see [Refactoring recipes](../../developer/modules/recipes.md)).
+**`TypeVarCheck` avoids this, it doesn't fix it** - see [Refactoring recipes](../../developer/modules/recipes.md)
+for how `unparse_signature_only` splices only the new `[T]`/`[**P]`/`[*Ts]` bracket into the function's original
+text instead of regenerating anything via `ast.unparse()`.
 
 A future recipe that genuinely needs to regenerate a whole body from the AST - not just a signature - still hits
 both issues above and has to work around them itself; neither `ast.unparse()`'s comment blindness nor
@@ -80,12 +70,14 @@ applied back to back, with no merging, ordering, or error - just concatenated/ga
 
 **Consequence (before the fix below):** any recipe or base-class helper that edits the same node - e.g. the same
 `from ... import ...` statement, or the same function - more than once within one uncommitted batch produced
-invalid output instead of a clean result or a clear failure. Confirmed live in two places: `TypeVarCheck.
-convert_declared_typevars`, run against a file with `from typing import ParamSpec, TypeVar` where both names get
-converted in the same pass, called `PythonRefactoring.remove_import_alias()` twice against that same import
-statement, producing `from typing import TypeVarfrom typing import ParamSpec`; and the same recipe, run against a
-function using two different type params, replacing that function twice, producing its body duplicated back to
-back. Both are `SyntaxError` on the next parse.
+invalid output instead of a clean result or a clear failure: two edits against one import statement can produce
+`from typing import TypeVarfrom typing import ParamSpec`, and a function replaced twice can end up with its body
+duplicated back to back. Both are `SyntaxError` on the next parse.
+
+Underlying mechanism: `renaissance/common/rewriter.py`'s low-level `Rewriter.replace()` doesn't reject or merge an
+edit whose `start` offset falls inside an already-queued edit's range - it appends the new edit's replacement
+bytes onto the end of the existing one (`r.replacement += new_content`), with no separator, which is why the
+result is concatenated/garbled rather than merged or overwritten.
 
 **Fixed: `apply()` now raises instead of corrupting.** `_RewriteActions.apply()` calls a new
 `__check_for_conflicting_rewrites()` that detects two queued rewrites on overlapping source ranges (excluding
@@ -99,40 +91,22 @@ more than one rewrite per node/range before a commit.
 
 **Still broken, not touched by the fix above:** the same feature file's "Dominance and suppression" group (an
 ancestor replacement should silently suppress a nested descendant edit, not error and not apply both) is a
-separate, pre-existing gap - confirmed live that a queued descendant edit still leaks into the output instead of
-being suppressed. `__is_ancestor_in_nodes` itself (the `return result and False` line) is untouched.
+separate, pre-existing gap - a queued descendant edit still leaks into the output instead of being suppressed.
+`__is_ancestor_in_nodes` itself (the `return result and False` line) is untouched.
 
-Confirmed live a second time, and with a previously-undocumented mechanical detail: `renaissance/common/rewriter.py`'s
-low-level `Rewriter.replace()` doesn't reject or merge an edit whose `start` offset falls inside an
-*already-queued* edit's range - it just appends the new edit's replacement bytes onto the end of the existing one
-(`r.replacement += new_content`), with no separator. So when a nested edit isn't suppressed, its text doesn't
-overwrite or nest cleanly inside the ancestor edit's output - it gets tacked directly onto the end of it, producing
-concatenated/garbled text (e.g. `return decoratorapper@functools.wraps(func)`). This was hit for real via a
-`TypeVarCheck` domain bug (`functions_using_nodes` wrongly attributing a type parameter's usage to a nested
-closure instead of its outermost owning function, queuing a redundant nested edit) - that domain bug is now fixed
-(see [Refactoring recipes](../../developer/modules/recipes.md)), so this dominance/suppression gap and the
-`Rewriter.replace()` wrinkle are no longer reachable through `TypeVarCheck`, but remain open for any future recipe
-that queues genuinely nested edits.
+`TypeVarCheck` avoids triggering either gap by construction - see [Refactoring recipes](../../developer/modules/recipes.md)
+for how `convert_declared_typevars` collects every touched function and queues exactly one edit per node, never a
+second rewrite on the same node.
 
-**Workarounds applied in `TypeVarCheck`/`PythonRefactoring` (both `# TODO`-marked, pointing back here):**
-`PythonRefactoring.remove_import_alias()` now accepts a set of names and narrows/removes each shared import in one
-edit instead of one call per name; `TypeVarCheck.convert_declared_typevars` collects every function touched by
-any converted type param and does exactly one `unparse_signature_only()`+`replace()` per function (see item 4),
-after the whole pass, instead of one per name. Neither ever queues a second rewrite on the same node, so neither
-ever reaches the new check.
-
-**Other, unrelated occurrences found once the check went live**, all previously passing on silently corrupted
-output that happened to still satisfy their assertion, now correctly rejected - none fixed here, out of scope for
-this session's work on `TypeVarCheck`:
+**Tests marked `xfail` because they used to pass on silently corrupted output** that happened to still satisfy
+their assertion, now correctly rejected by the fix above:
 
 - `Taut2Pyunit.convert_setup()` and `insert_asserter()`/`remove_assert_func()`
-  (`renaissance/refactoring/taut2pyunit.py`). Tests `test_setup`, `test_insert_asserter`
-  (`test/refactoring/test_taut2unittest_refactoring.py`) marked `xfail(strict=True)`.
+  (`renaissance/refactoring/taut2pyunit.py`): `test_setup`, `test_insert_asserter`
+  (`test/refactoring/test_taut2unittest_refactoring.py`), `xfail(strict=True)`.
 - `example_add_comment_and_commit` and `remove_unused_variable_using_refactor_method`
   (`src/rejuvenation/refactor_examples_different_styles.py` and its neighbouring example module) - demo/example
-  code shipped with the framework, not a recipe. Six affected test variants in
-  `test/examples/test_examples.py` marked `xfail` (two of them conditionally, via `pytest.xfail()` inside the
-  test body, since only some of their parametrizations are affected).
+  code shipped with the framework, not a recipe: six variants in `test/examples/test_examples.py`, `xfail`.
 
 ## 6. `Global`/`Nonlocal`'s `names` list crashes the tree builder (silently swallowed)
 

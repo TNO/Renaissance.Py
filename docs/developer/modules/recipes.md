@@ -17,8 +17,10 @@ page covers `TypeVarCheck` and `TypeVarTupleCheck`, the recipes built for
 - `src/renaissance/refactoring/type_var_tuple_check.py`
 - `src/renaissance/refactoring/type_var_domain.py` - TypeVar/ParamSpec/TypeVarTuple domain model and safety
   analysis, shared between the two recipes above.
-- Base class: `src/renaissance/refactoring/python_refactoring.py` - also owns two generic, cross-recipe
-  primitives that `TypeVarCheck` uses: `find_rst_node` and `remove_import_alias`.
+- `src/renaissance/recipes/step_runner.py` - `Step`/`run_steps`, the generic "run these independent fix actions
+  in order, committing each one's owning recipe only if it fixed something" primitive both recipes use.
+- Base class: `src/renaissance/refactoring/python_refactoring.py` - also owns a generic, cross-recipe
+  primitive that `TypeVarCheck` uses: `find_rst_node`.
 - Shared utilities: `src/renaissance/utils/python_version.py` (minimum-supported-Python-version detection),
   `src/renaissance/utils/unparse_utils.py` (the `ast.unparse()` docstring-indent workaround).
 
@@ -27,7 +29,7 @@ page covers `TypeVarCheck` and `TypeVarTupleCheck`, the recipes built for
 - `TypeVarCheck.run()` / `TypeVarCheck.check()` — localizes cross-file type parameter imports, converts every
   declared type parameter (single- or multi-scope) to PEP 695 syntax, then removes any declaration left orphaned
   by outside means (e.g. a signature converted by hand or by `ruff`'s own `UP047` fix beforehand); commits changes
-  to disk between phases. One CLI invocation runs all three - no separate `ruff` step needed.
+  to disk between phases (via `renaissance.recipes.step_runner.run_steps`, see below).
 - `TypeVarCheck.localize_imported_typevars()`, `TypeVarCheck.convert_declared_typevars()`, and
   `TypeVarCheck.remove_orphaned_declarations()` — the three phases individually, each returning
   `{name: "fixed" | "unsafe"}`.
@@ -39,6 +41,10 @@ page covers `TypeVarCheck` and `TypeVarTupleCheck`, the recipes built for
   top of, not a separate code path.
 - Dispatched from the CLI via `PythonRefactoring.process(class_name, file)`, which resolves `"TypeVarCheck"` to
   `renaissance.refactoring.type_var_check` using `snake_case()`.
+- `step_runner.run_steps(steps)` - `TypeVarCheck.check()` calls this internally with its own three phases;
+  `migration-type-recipes.py` calls it twice per file (once for `TypeVarTupleCheck`'s single action, once for
+  `TypeVarCheck`'s three phases - a fresh `TypeVarCheck` has to be constructed *after* the first call returns,
+  since each recipe reads its file from disk only once, at construction). See the CLI's own docs.
 
 ## Internal structure
 
@@ -76,11 +82,15 @@ combined with the rewrite dominance/suppression gap in python-ast-known-limitati
 output outright. Confirmed live against `starlette/starlette/authentication.py`'s `requires()` and its nested
 `*_wrapper` closures.
 
-Removing a now-unused import (e.g. `from typing import TypeVar` once nothing calls it) uses
-`self.remove_import_alias(name)`, another generic `PythonRefactoring` base-class method - it only edits the import
-statement; deciding *whether* a name is still needed stays each recipe's own responsibility
-(`TypeVarCheck._remove_constructor_import_if_unused` walks the tree for remaining `Call` references,
-`_localize_import` reuses the same alias-filtering primitive via `narrowed_import_text`).
+Neither recipe removes a now-unused import itself (e.g. `from typing import TypeVar` once nothing calls it) -
+that used to be hand-rolled per recipe (`TypeVarCheck._remove_unused_constructor_imports`,
+`TypeVarTupleCheck._has_other_unpack_subscript`), duplicating exactly what `ruff`'s `F401` rule already detects
+generically. `migration-type-recipes.py` now runs `ruff check --fix --select F401` over every file it modified,
+once, after both recipes have finished - see its own docs. A bare recipe invocation
+(`PythonRefactoring.process("TypeVarCheck", file)`, outside that CLI) does not get this cleanup on its own.
+`_localize_import` is a separate, still-hand-rolled concern that survives this: narrowing an import because a
+name moved from *imported* to *locally declared* isn't "is this unused," so it isn't something `ruff` can do -
+it still uses `narrowed_import_text` directly.
 
 `remove_orphaned_declarations` detects a dead declaration without counting references: `_all_refs_shadowed_by_pep695`
 (in `type_var_domain.py`) walks the tree tracking whether the current position is "shadowed" (inside a function
@@ -114,12 +124,12 @@ below `TypeVarCheck`'s (PEP 646 landed a release before PEP 695), not raised to 
 
 ## Validated by test modules
 
-- `test/refactoring/test_type_var_check.py` - multi-scope detection, the end-to-end `run()`/`check()` path, and
-  the Python-version gate.
+- `test/refactoring/test_type_var_check.py` - the end-to-end `run()`/`check()` path and the Python-version gate.
 - `test/refactoring/test_type_var_check_localize.py`
 - `test/refactoring/test_type_var_check_convert.py`
 - `test/refactoring/test_type_var_check_orphaned.py`
-- `test/refactoring/test_type_var_check_properties.py`
+- `test/refactoring/test_type_var_check_properties.py` - Hypothesis/hypothesmith crash-safety fuzzing of `check()`
+  against arbitrary generated source (see [ADR 09](../architecture/adr/09_property_based_tests.md)).
 - `test/refactoring/test_type_var_tuple_check.py`
 - `test/recipes/test_type_var_tuple_check_fix.py` - `fix_legacy_unpack_usage()`: the rewrite itself, its version
   gate, and the `Unpack` import cleanup (including the PEP 692 `**kwargs` case it must leave alone).
@@ -135,15 +145,14 @@ below `TypeVarCheck`'s (PEP 646 landed a release before PEP 695), not raised to 
   `src/renaissance/refactoring/`; the CLI dispatch requires no separate registration.
 - `_build_type_param` (in `type_var_domain.py`) is the place to extend if a future PEP adds a new kind of
   type-parameter declaration.
-- `PythonRefactoring.find_rst_node`/`remove_import_alias` and `renaissance.utils.unparse_utils.unparse_signature_only`
-  are available to any new recipe that needs the same lookups - a future recipe doing signature-only
-  `ast.unparse()` replacement or import cleanup doesn't need to reimplement them.
+- `PythonRefactoring.find_rst_node` and `renaissance.utils.unparse_utils.unparse_signature_only` are available to
+  any new recipe that needs the same lookups - a future recipe doing signature-only `ast.unparse()` replacement
+  doesn't need to reimplement it.
+- `step_runner.Step`/`run_steps` are available to any new recipe (or CLI) that needs to sequence more than one
+  independently-committable fix action.
 
 ## Non-goals
 
-- `find_multi_scope_typevars()` is purely informational (reports names shared across 2+ functions) - it does not
-  decide safety or apply a fix; both single- and multi-scope names are converted the same way by
-  `convert_declared_typevars()`, which decides safety via `is_safe_to_convert`.
 - Neither recipe resolves package-qualified or dotted-module imports for the cross-file phase.
 - The Python-version gates (`target_supports_pep695` and `target_supports_pep646`, both backed by
   `renaissance.utils.python_version`) only recognise `requires-python` specifiers matching a known, hardcoded
