@@ -74,17 +74,6 @@ class TypeVarCheck(PythonRefactoring):
             ],
         )
 
-    def find_multi_scope_typevars(self) -> dict[str, set[str]]:
-        """Map each declared name to the functions sharing it, for names used by 2+ functions.
-
-        Purely informational, since convert_declared_typevars() converts and cleans up every
-        scope regardless of how many functions use it.
-        """
-        tree = cast(ast.Module, self.root.node)
-        declared_names = set(find_type_param_declarations(tree).keys())
-        usage = functions_using_nodes(tree, declared_names)
-        return {name: {fn.name for fn in funcs} for name, funcs in usage.items() if len(funcs) > 1}
-
     def convert_declared_typevars(self) -> dict[str, str]:
         """Rewrite every function using a module-level TypeVar/ParamSpec/TypeVarTuple to PEP 695 syntax.
 
