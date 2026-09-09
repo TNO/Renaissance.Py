@@ -119,7 +119,7 @@ class TestClassification:
     ) -> None:
         """Each predicate matches the expected (fixed, unsafe, clean) reading of `result`."""
         expected_fixed, expected_unsafe, expected_clean = expected
-        report = migration.FileReport(path=Path("x.py"), result=result, error=None, diff=None)
+        report = migration.FileReport(path=Path("x.py"), result=result, error=None)
 
         assert_that(migration.has_fixed(report), is_(expected_fixed))
         assert_that(migration.has_unsafe(report), is_(expected_unsafe))
@@ -127,7 +127,7 @@ class TestClassification:
 
     def test_error_report_is_neither_fixed_unsafe_nor_clean(self) -> None:
         """A report with no result (an error occurred) is False for every predicate."""
-        report = migration.FileReport(path=Path("x.py"), result=None, error="boom", diff=None)
+        report = migration.FileReport(path=Path("x.py"), result=None, error="boom")
 
         assert_that(migration.has_fixed(report), is_(False))
         assert_that(migration.has_unsafe(report), is_(False))
@@ -135,26 +135,14 @@ class TestClassification:
 
 
 class TestProcessFile:
-    """process_file: the dry-run/apply mechanics and per-file error isolation."""
+    """process_file: writes changes for real, and isolates per-file errors."""
 
-    def test_dry_run_leaves_file_byte_identical(self, tmp_path: Path) -> None:
-        """Dry run (apply=False) never touches the file on disk, even when it would fix a name."""
-        target = tmp_path / "mod.py"
-        target.write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
-        original_bytes = target.read_bytes()
-
-        report = migration.process_file(target, apply=False, min_python=(3, 12))
-
-        assert_that(target.read_bytes(), equal_to(original_bytes))
-        assert_that(migration.has_fixed(report), is_(True))
-        assert_that(report.diff, is_not(None))
-
-    def test_apply_writes_migrated_content(self, tmp_path: Path) -> None:
-        """apply=True actually writes the PEP 695-converted content to disk."""
+    def test_writes_migrated_content_to_disk(self, tmp_path: Path) -> None:
+        """process_file() actually writes the PEP 695-converted content to disk."""
         target = tmp_path / "mod.py"
         target.write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
 
-        report = migration.process_file(target, apply=True, min_python=(3, 12))
+        report = migration.process_file(target, min_python=(3, 12))
 
         assert_that(migration.has_fixed(report), is_(True))
         assert_that(target.read_text(encoding="utf-8"), contains_string("def identity[T]"))
@@ -165,7 +153,7 @@ class TestProcessFile:
         target.write_text(UNSAFE_TYPEVAR_SOURCE, encoding="utf-8")
         original = target.read_text(encoding="utf-8")
 
-        report = migration.process_file(target, apply=True, min_python=(3, 12))
+        report = migration.process_file(target, min_python=(3, 12))
 
         assert_that(migration.has_unsafe(report), is_(True))
         assert_that(target.read_text(encoding="utf-8"), equal_to(original))
@@ -175,33 +163,85 @@ class TestProcessFile:
         target = tmp_path / "broken.py"
         target.write_text("def broken(:\n", encoding="utf-8")
 
-        report = migration.process_file(target, apply=False, min_python=(3, 12))
+        report = migration.process_file(target, min_python=(3, 12))
 
         assert_that(report.error, is_not(None))
         assert_that(report.result, is_(None))
 
-    def test_apply_composes_typevarcheck_and_typevartuplecheck(self, tmp_path: Path) -> None:
+    def test_composes_typevarcheck_and_typevartuplecheck(self, tmp_path: Path) -> None:
         """TypeVarCheck's [*Ts] bracket and TypeVarTupleCheck's Unpack[Ts]->*Ts compose in one pass."""
         target = tmp_path / "mod.py"
         target.write_text(TYPEVARTUPLE_SOURCE, encoding="utf-8")
 
-        report = migration.process_file(target, apply=True, min_python=(3, 12))
+        report = migration.process_file(target, min_python=(3, 12))
 
         assert_that(migration.has_fixed(report), is_(True))
         output = target.read_text(encoding="utf-8")
         assert_that(output, contains_string("def foo[*Ts](*args: *Ts) -> None:"))
-        assert_that(output, is_not(contains_string("Unpack")))
+        assert_that(output, is_not(contains_string("Unpack[Ts]")))
+        # process_file() alone doesn't run the ruff import-cleanup pass (that's main()'s job) -
+        # both now-unused names are still present in the import at this layer.
+        assert_that(output, contains_string("from typing import TypeVarTuple, Unpack"))
 
-    def test_dry_run_diff_previews_both_recipes_changes(self, tmp_path: Path) -> None:
-        """Dry-run's diff for a combined file previews both the [*Ts] bracket and the Unpack rewrite."""
+
+class TestRuffImportCleanup:
+    """main(): the ruff F401 batch step actually drops now-unused imports end to end."""
+
+    def test_unused_typevar_import_is_dropped(self, tmp_path: Path) -> None:
+        """A TypeVar import made redundant by conversion is gone from disk after main() runs."""
         target = tmp_path / "mod.py"
-        target.write_text(TYPEVARTUPLE_SOURCE, encoding="utf-8")
+        target.write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
 
-        report = migration.process_file(target, apply=False, min_python=(3, 12))
+        exit_code = migration.main([str(target), "--min-python", "3.12"])
 
-        assert_that(migration.has_fixed(report), is_(True))
-        assert_that(report.diff, contains_string("def foo[*Ts]"))
-        assert_that(report.diff, contains_string("*args: *Ts"))
+        assert_that(exit_code, equal_to(0))
+        written = target.read_text(encoding="utf-8")
+        assert_that(written, contains_string("def identity[T]"))
+        assert_that(written, is_not(contains_string("TypeVar")))
+
+    def test_unrelated_import_survives_cleanup(self, tmp_path: Path) -> None:
+        """An Unpack import still needed for an unrelated PEP 692 usage survives the ruff pass."""
+        target = tmp_path / "mod.py"
+        target.write_text(
+            textwrap.dedent("""\
+                from typing import TypeVarTuple, Unpack
+                from mymodule import Kwargs
+
+                Ts = TypeVarTuple("Ts")
+
+
+                def foo(*args: Unpack[Ts], **kwargs: Unpack[Kwargs]) -> None:
+                    pass
+                """),
+            encoding="utf-8",
+        )
+
+        exit_code = migration.main([str(target), "--min-python", "3.12"])
+
+        assert_that(exit_code, equal_to(0))
+        written = target.read_text(encoding="utf-8")
+        assert_that(written, contains_string("*args: *Ts"))
+        assert_that(written, contains_string("from typing import Unpack"))
+        assert_that(written, is_not(contains_string("TypeVarTuple")))
+        assert_that(written, contains_string("**kwargs: Unpack[Kwargs]"))
+
+    def test_unmodified_sibling_file_is_left_untouched(self, tmp_path: Path) -> None:
+        """A sibling file with no TypeVar usage - and its own genuinely-unused import - survives main() byte-for-byte."""
+        (tmp_path / "mod.py").write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
+        sibling = tmp_path / "sibling.py"
+        sibling_source = textwrap.dedent("""\
+            import os
+
+
+            def greet() -> str:
+                return "hi"
+            """)
+        sibling.write_text(sibling_source, encoding="utf-8")
+
+        exit_code = migration.main([str(tmp_path), "--min-python", "3.12"])
+
+        assert_that(exit_code, equal_to(0))
+        assert_that(sibling.read_text(encoding="utf-8"), equal_to(sibling_source))
 
 
 class TestMainBatchErrorIsolation:
