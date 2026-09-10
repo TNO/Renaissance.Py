@@ -107,6 +107,13 @@ their assertion, now correctly rejected by the fix above:
 - `example_add_comment_and_commit` and `remove_unused_variable_using_refactor_method`
   (`src/rejuvenation/refactor_examples_different_styles.py` and its neighbouring example module) - demo/example
   code shipped with the framework, not a recipe: six variants in `test/examples/test_examples.py`, `xfail`.
+- `CleanupRefactoring.remove_unused_variables` (`src/renaissance/recipes/cleanup_refactoring.py`): a
+  `VariableDef` nested inside a block is discovered twice - once via its own enclosing `CompoundStatement`'s
+  recursive scan, once via every ancestor `CompoundStatement`'s scan - so a shadowed unused variable (e.g.
+  `int unused = 0;` declared in both a function body and a nested `if` block) gets queued for removal twice.
+  Exercised via `batch_remove_unused_variable_once_example`/`batch_repeat_example`
+  (`src/rejuvenation/batch_process_examples.py`): `test_make_sure_that_batch_remove_proc_still_run`,
+  `test_make_sure_that_batch_repeat_proc_still_run` (`test/examples/test_examples.py`), `xfail(strict=True)`.
 
 ## 6. `Global`/`Nonlocal`'s `names` list crashes the tree builder (silently swallowed)
 
