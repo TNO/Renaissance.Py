@@ -27,7 +27,11 @@ def _kind_predicate(kind):
 class ASTRefactorActions:
     """AI: Higher-level refactoring actions (replace, insert, remove) built on top of pattern matching and rewriting."""
 
-    def __init__(self, processor: ASTProcessor, pattern_factory: CPPPatternFactory) -> None:
+    def __init__(
+        self,
+        processor: ASTProcessor,
+        pattern_factory: "CPPPatternFactory",  # noqa: UP037 RECHECK when ruff is updated (see astral-sh/ruff#20782)
+    ) -> None:
         """AI: Provide pattern-based refactoring actions (replace, insert, remove) over an AST."""
         self.processor = processor
         self.pattern_factory = pattern_factory
