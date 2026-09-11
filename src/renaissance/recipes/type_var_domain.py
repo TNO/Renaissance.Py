@@ -5,8 +5,61 @@ pipeline logic.
 """
 
 import ast
+from dataclasses import dataclass
+from enum import StrEnum
 from pathlib import Path
 from typing import cast
+
+DOCS_BASE_URL = "https://tno.github.io/Renaissance.Py/user/features/typevar-modernization/"
+
+
+class UnsafeReason(StrEnum):
+    """Every distinct, permanent reason a TypeVar/ParamSpec/TypeVarTuple candidate is left unconverted.
+
+    Each member has a matching documented rule under DOCS_BASE_URL - see UNSAFE_RULES and doc_link().
+    """
+
+    PEP695_VERSION_GATE = "pep695_version_gate"
+    PEP646_VERSION_GATE = "pep646_version_gate"
+    DECLARED_TYPEVAR_EXPORTED = "declared_typevar_exported"
+    USED_OUTSIDE_FUNCTION = "used_outside_function"
+    ORIGIN_MODULE_EXPORTS_NAME = "origin_module_exports_name"
+    USED_IN_EXPORTED_GENERIC_BASE = "used_in_exported_generic_base"
+
+
+@dataclass(frozen=True)
+class UnsafeRule:
+    """A short human-readable explanation plus the docs anchor slug for one UnsafeReason."""
+
+    message: str
+    doc_anchor: str
+
+
+UNSAFE_RULES: dict[UnsafeReason, UnsafeRule] = {
+    UnsafeReason.PEP695_VERSION_GATE: UnsafeRule(
+        "target codebase doesn't declare Python 3.12+", "feature-typevar-modernization-pep695-version-gate",
+    ),
+    UnsafeReason.PEP646_VERSION_GATE: UnsafeRule(
+        "target codebase doesn't declare Python 3.11+", "feature-typevar-modernization-pep646-version-gate",
+    ),
+    UnsafeReason.DECLARED_TYPEVAR_EXPORTED: UnsafeRule(
+        "exported via __all__", "feature-typevar-modernization-declared-typevar-exported",
+    ),
+    UnsafeReason.USED_OUTSIDE_FUNCTION: UnsafeRule(
+        "used outside a function body, e.g. a Generic[...] base", "feature-typevar-modernization-used-outside-function",
+    ),
+    UnsafeReason.ORIGIN_MODULE_EXPORTS_NAME: UnsafeRule(
+        "origin module exports it via __all__", "feature-typevar-modernization-origin-module-exports-name",
+    ),
+    UnsafeReason.USED_IN_EXPORTED_GENERIC_BASE: UnsafeRule(
+        "used in a Generic[...] base at its origin module", "feature-typevar-modernization-used-in-exported-generic-base",
+    ),
+}
+
+
+def doc_link(reason: UnsafeReason) -> str:
+    """Return the full URL to the documented rule explaining why `reason` makes a candidate unsafe."""
+    return f"{DOCS_BASE_URL}#{UNSAFE_RULES[reason].doc_anchor}"
 
 
 def _is_type_param_call(value: ast.expr) -> bool:
@@ -78,17 +131,19 @@ def _used_in_exported_generic_base(tree: ast.Module, name: str) -> bool:
     return False
 
 
-def is_safe_to_localize(origin_tree: ast.Module, name: str) -> bool:
-    """Return True if `name` is safe to duplicate as a local declaration.
+def is_safe_to_localize(origin_tree: ast.Module, name: str) -> UnsafeReason | None:
+    """Return None if `name` is safe to duplicate as a local declaration, else the reason it isn't.
 
-    The origin module doesn't advertise it as public API, whether via `__all__` or as a
-    class-level `Generic[...]` parameter (where identity crossing files can matter for
-    subclassing).
+    The origin module must not advertise it as public API, whether via `__all__`
+    (ORIGIN_MODULE_EXPORTS_NAME) or as a class-level `Generic[...]` parameter
+    (USED_IN_EXPORTED_GENERIC_BASE, where identity crossing files can matter for subclassing).
     """
     dunder_all = _find_dunder_all(origin_tree)
     if dunder_all is not None and name in dunder_all:
-        return False
-    return not _used_in_exported_generic_base(origin_tree, name)
+        return UnsafeReason.ORIGIN_MODULE_EXPORTS_NAME
+    if _used_in_exported_generic_base(origin_tree, name):
+        return UnsafeReason.USED_IN_EXPORTED_GENERIC_BASE
+    return None
 
 
 def find_import_source(tree: ast.Module, name: str) -> str | None:
@@ -160,15 +215,18 @@ def _used_outside_functions(tree: ast.Module, name: str, decl_stmt: ast.Assign) 
     return visit(tree, False)
 
 
-def is_safe_to_convert(tree: ast.Module, name: str, decl_stmt: ast.Assign) -> bool:
-    """Return True if `name` is safe to convert to PEP 695 syntax and its declaration removed.
+def is_safe_to_convert(tree: ast.Module, name: str, decl_stmt: ast.Assign) -> UnsafeReason | None:
+    """Return None if `name` is safe to convert to PEP 695 syntax and its declaration removed.
 
-    Not exported via `__all__`, and not referenced anywhere outside the functions using it.
+    Otherwise returns the reason it isn't: DECLARED_TYPEVAR_EXPORTED if exported via `__all__`,
+    USED_OUTSIDE_FUNCTION if referenced anywhere outside the functions using it.
     """
     dunder_all = _find_dunder_all(tree)
     if dunder_all is not None and name in dunder_all:
-        return False
-    return not _used_outside_functions(tree, name, decl_stmt)
+        return UnsafeReason.DECLARED_TYPEVAR_EXPORTED
+    if _used_outside_functions(tree, name, decl_stmt):
+        return UnsafeReason.USED_OUTSIDE_FUNCTION
+    return None
 
 
 def all_refs_shadowed_by_pep695(tree: ast.Module, name: str, decl_stmt: ast.Assign) -> bool:

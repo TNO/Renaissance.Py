@@ -4,7 +4,7 @@ import ast
 from typing import cast
 
 from renaissance.recipes.python_refactoring import PythonRefactoring
-from renaissance.recipes.type_var_domain import find_type_param_declarations, type_param_constructor_name
+from renaissance.recipes.type_var_domain import UnsafeReason, find_type_param_declarations, type_param_constructor_name
 from renaissance.utils.python_version import minimum_python_version
 
 PEP_646_MINIMUM = (3, 11)
@@ -64,15 +64,19 @@ class TypeVarTupleCheck(PythonRefactoring):
         because it's parseable on Pythons before the native syntax landed (PEP 646, 3.11+), so
         there's no per-occurrence safety analysis needed beyond the file-wide version gate: if the
         target doesn't declare 3.11+, every candidate is reported "unsafe" and the file is left
-        untouched. Returns {name: "fixed" | "unsafe"}.
+        untouched. Returns {name: "fixed" | "unsafe"}; every "unsafe" entry's reason (always
+        PEP646_VERSION_GATE, the only unsafe case this recipe has) is recorded on
+        self.unsafe_reasons.
         """
         tree = cast("ast.Module", self.root.node)
+        self.unsafe_reasons: dict[str, UnsafeReason] = {}
         occurrences = self._find_unpack_occurrences(tree)
         if not occurrences:
             return {}
 
         names = {name for name, _ in occurrences}
         if not self._target_supports_pep646():
+            self.unsafe_reasons = dict.fromkeys(names, UnsafeReason.PEP646_VERSION_GATE)
             return dict.fromkeys(names, "unsafe")
 
         for name, node in occurrences:
