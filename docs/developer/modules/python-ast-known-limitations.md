@@ -100,8 +100,8 @@ second rewrite on the same node.
 their assertion, now correctly rejected by the fix above:
 
 - `Taut2Pyunit.convert_setup()` and `insert_asserter()`/`remove_assert_func()`
-  (`renaissance/refactoring/taut2pyunit.py`): `test_setup`, `test_insert_asserter`
-  (`test/refactoring/test_taut2unittest_refactoring.py`), `xfail(strict=True)`.
+  (`renaissance/recipes/taut2pyunit.py`): `test_setup`, `test_insert_asserter`
+  (`test/recipes/test_taut2unittest_refactoring.py`), `xfail(strict=True)`.
 - `example_add_comment_and_commit` and `remove_unused_variable_using_refactor_method`
   (`src/rejuvenation/refactor_examples_different_styles.py` and its neighbouring example module) - demo/example
   code shipped with the framework, not a recipe: six variants in `test/examples/test_examples.py`, `xfail`.
