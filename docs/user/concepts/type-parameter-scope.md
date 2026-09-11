@@ -48,11 +48,11 @@ only changes *why* the declaration can't simply be deleted once every use site i
 
 ## Related tests
 
-- `test/refactoring/test_type_var_check.py`
+- `test/recipes/test_type_var_check.py`
 
 ## Related code
 
-- `src/renaissance/refactoring/type_var_check.py`
+- `src/renaissance/recipes/type_var_check.py`
 
 ## Notes
 

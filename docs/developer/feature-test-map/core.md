@@ -20,8 +20,14 @@
 - **Concepts:** [Type parameter scope](../../user/concepts/type-parameter-scope.md)
 - **Code modules:** [Refactoring recipes](../../developer/modules/recipes.md)
 - **Test file(s):**
-  - `test/refactoring/test_type_var_check.py`
-  - `test/refactoring/test_type_var_check_properties.py`
-  - `test/refactoring/test_type_var_tuple_check.py`
-  - `test/refactoring/test_type_var_tuple_check_properties.py`
-- **Code file(s):** `src/renaissance/refactoring/type_var_check.py`, `src/renaissance/refactoring/type_var_tuple_check.py`
+  - `test/recipes/test_type_var_check.py`
+  - `test/recipes/test_type_var_check_convert.py`
+  - `test/recipes/test_type_var_check_localize.py`
+  - `test/recipes/test_type_var_check_orphaned.py`
+  - `test/recipes/test_type_var_check_properties.py`
+  - `test/recipes/test_type_var_tuple_check.py`
+  - `test/recipes/test_type_var_tuple_check_fix.py`
+  - `test/recipes/test_type_var_tuple_check_properties.py`
+  - `test/recipes/test_type_var_domain.py`
+- **Code file(s):** `src/renaissance/recipes/type_var_check.py`, `src/renaissance/recipes/type_var_tuple_check.py`,
+  `src/renaissance/recipes/type_var_domain.py`

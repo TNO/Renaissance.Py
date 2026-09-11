@@ -13,13 +13,13 @@ page covers `TypeVarCheck` and `TypeVarTupleCheck`, the recipes built for
 
 ## Location
 
-- `src/renaissance/refactoring/type_var_check.py` - the `TypeVarCheck` pipeline itself (orchestration only).
-- `src/renaissance/refactoring/type_var_tuple_check.py`
-- `src/renaissance/refactoring/type_var_domain.py` - TypeVar/ParamSpec/TypeVarTuple domain model and safety
+- `src/renaissance/recipes/type_var_check.py` - the `TypeVarCheck` pipeline itself (orchestration only).
+- `src/renaissance/recipes/type_var_tuple_check.py`
+- `src/renaissance/recipes/type_var_domain.py` - TypeVar/ParamSpec/TypeVarTuple domain model and safety
   analysis, shared between the two recipes above.
 - `src/renaissance/recipes/step_runner.py` - `Step`/`run_steps`, the generic "run these independent fix actions
   in order, committing each one's owning recipe only if it fixed something" primitive both recipes use.
-- Base class: `src/renaissance/refactoring/python_refactoring.py` - also owns a generic, cross-recipe
+- Base class: `src/renaissance/recipes/python_refactoring.py` - also owns a generic, cross-recipe
   primitive that `TypeVarCheck` uses: `find_rst_node`.
 - Shared utilities: `src/renaissance/utils/python_version.py` (minimum-supported-Python-version detection),
   `src/renaissance/utils/unparse_utils.py` (the `ast.unparse()` docstring-indent workaround).
@@ -40,7 +40,7 @@ page covers `TypeVarCheck` and `TypeVarTupleCheck`, the recipes built for
   caller that just wants the names without touching the file - it's what `fix_legacy_unpack_usage()` is built on
   top of, not a separate code path.
 - Dispatched from the CLI via `PythonRefactoring.process(class_name, file)`, which resolves `"TypeVarCheck"` to
-  `renaissance.refactoring.type_var_check` using `snake_case()`.
+  `renaissance.recipes.type_var_check` using `snake_case()`.
 - `step_runner.run_steps(steps)` - `TypeVarCheck.check()` calls this internally with its own three phases;
   `migration-type-recipes.py` calls it twice per file (once for `TypeVarTupleCheck`'s single action, once for
   `TypeVarCheck`'s three phases - a fresh `TypeVarCheck` has to be constructed *after* the first call returns,
@@ -54,6 +54,16 @@ disk with `ast.parse()`. Shared domain helpers (`find_type_param_declarations`, 
 plus the safety-analysis functions `is_safe_to_convert`/`is_safe_to_localize`) live in `type_var_domain.py`,
 imported by both `type_var_check.py` and `type_var_tuple_check.py` - kept out of either recipe's own file so
 domain modelling doesn't mix with pipeline orchestration.
+
+`is_safe_to_convert`/`is_safe_to_localize` return `UnsafeReason | None` (`None` meaning safe), not a bare
+`bool` - each of the six `UnsafeReason` members (the two Python-version gates plus the four `__all__`/scope
+conditions across both functions) has a matching `UnsafeRule` (a short message plus a docs anchor slug) in
+`UNSAFE_RULES`, and `doc_link(reason)` resolves one to the full URL under
+[TypeVar modernization](../../user/features/typevar-modernization.md)'s Constraints section. Both `TypeVarCheck`
+and `TypeVarTupleCheck` record the reason behind each `"unsafe"` name on their own instance attributes (see their
+own docs), and `migration-type-recipes.py`'s `--report` prints `UNSAFE_RULES[reason].message` and `doc_link(reason)`
+next to each one - this is what makes a specific "unsafe" occurrence traceable to the exact documented rule that
+caused it, rather than a generic status string.
 
 `self.body` (top-level statements only) is not enough to rewrite a method nested in a class; `convert_declared_typevars`
 locates the owning `PythonRstNode` for a nested function via `self.find_rst_node(function)` - a generic
@@ -92,7 +102,7 @@ once, after both recipes have finished - see its own docs. A bare recipe invocat
 name moved from *imported* to *locally declared* isn't "is this unused," so it isn't something `ruff` can do -
 it still uses `narrowed_import_text` directly.
 
-`remove_orphaned_declarations` detects a dead declaration without counting references: `_all_refs_shadowed_by_pep695`
+`remove_orphaned_declarations` detects a dead declaration without counting references: `all_refs_shadowed_by_pep695`
 (in `type_var_domain.py`) walks the tree tracking whether the current position is "shadowed" (inside a function
 whose `type_params` already declares the same name) and only reports a live use for a `Name` node reached while
 *not* shadowed. This is what lets it recognize the state `ruff`'s `UP047` leaves behind — a signature already
@@ -124,17 +134,19 @@ below `TypeVarCheck`'s (PEP 646 landed a release before PEP 695), not raised to 
 
 ## Validated by test modules
 
-- `test/refactoring/test_type_var_check.py` - the end-to-end `run()`/`check()` path and the Python-version gate.
-- `test/refactoring/test_type_var_check_localize.py`
-- `test/refactoring/test_type_var_check_convert.py`
-- `test/refactoring/test_type_var_check_orphaned.py`
-- `test/refactoring/test_type_var_check_properties.py` - Hypothesis/hypothesmith crash-safety fuzzing of `check()`
+- `test/recipes/test_type_var_check.py` - the end-to-end `run()`/`check()` path and the Python-version gate.
+- `test/recipes/test_type_var_check_localize.py`
+- `test/recipes/test_type_var_check_convert.py`
+- `test/recipes/test_type_var_check_orphaned.py`
+- `test/recipes/test_type_var_check_properties.py` - Hypothesis/hypothesmith crash-safety fuzzing of `check()`
   against arbitrary generated source (see [ADR 09](../architecture/adr/09_property_based_tests.md)).
-- `test/refactoring/test_type_var_tuple_check.py`
+- `test/recipes/test_type_var_tuple_check.py`
 - `test/recipes/test_type_var_tuple_check_fix.py` - `fix_legacy_unpack_usage()`: the rewrite itself, its version
   gate, and the `Unpack` import cleanup (including the PEP 692 `**kwargs` case it must leave alone).
-- `test/refactoring/test_type_var_tuple_check_properties.py`
-- `test/refactoring/conftest.py` - shared fixtures (`make_recipe`, `create_type_var_check`,
+- `test/recipes/test_type_var_tuple_check_properties.py`
+- `test/recipes/test_type_var_domain.py` - `is_safe_to_convert`/`is_safe_to_localize` in isolation, confirming
+  each `UnsafeReason` member is returned by its specific unsafe condition.
+- `test/recipes/conftest.py` - shared fixtures (`make_recipe`, `create_type_var_check`,
   `create_type_var_tuple_check`) used across the files above and by other recipes' tests.
 - `test/utils/test_unparse_utils.py` - the bracket-splice mechanism itself (`unparse_signature_only` and its
   helpers), independent of the recipe.
@@ -142,8 +154,8 @@ below `TypeVarCheck`'s (PEP 646 landed a release before PEP 695), not raised to 
 ## Extension points
 
 - A new recipe is added as a new `PythonRefactoring` subclass in its own `snake_case`-named module under
-  `src/renaissance/refactoring/`; the CLI dispatch requires no separate registration.
-- `_build_type_param` (in `type_var_domain.py`) is the place to extend if a future PEP adds a new kind of
+  `src/renaissance/recipes/`; the CLI dispatch requires no separate registration.
+- `build_type_param` (in `type_var_domain.py`) is the place to extend if a future PEP adds a new kind of
   type-parameter declaration.
 - `PythonRefactoring.find_rst_node` and `renaissance.utils.unparse_utils.unparse_signature_only` are available to
   any new recipe that needs the same lookups - a future recipe doing signature-only `ast.unparse()` replacement
