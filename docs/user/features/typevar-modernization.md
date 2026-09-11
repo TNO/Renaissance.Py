@@ -51,24 +51,75 @@ A single Python source file, passed by path.
 
 ## Constraints
 
-- **PEP 695 conversion only applies when the target codebase declares Python 3.12+.**
-  [PEP 695](https://peps.python.org/pep-0695/) generic syntax (`def f[T](...)`) did not exist before Python 3.12
-  (released October 2023). Before rewriting, the recipe finds the nearest `pyproject.toml` above the file being
-  refactored and checks its `requires-python`; if the lowest version that specifier allows is below 3.12 - or no
-  `pyproject.toml` is found, or `requires-python` is missing or unparsable - every candidate is reported
-  `"unsafe"` and left untouched, the same conservative treatment as any other unsafe candidate. Cross-file
-  localization (phase 1) is unaffected by this check and always runs, since it never introduces PEP 695 syntax.
-- The cross-file phase only resolves simple, same-directory sibling imports (`from module_name import T`);
-  dotted/package imports are out of scope.
-- A candidate is left unconverted (`"unsafe"`) if the name is re-exported via `__all__`, or referenced outside a
-  function body — for example as a `Generic[...]` base — see
-  [Type parameter scope](../concepts/type-parameter-scope.md).
-- Supports `TypeVar` (including `bound=` and constraint forms), `ParamSpec`, and `TypeVarTuple`.
-- **`TypeVarTupleCheck`'s `Unpack[T]` → `*T` rewrite only applies when the target declares Python 3.11+** (PEP
-  646's true minimum - one version below `TypeVarCheck`'s own 3.12+ gate for PEP 695, deliberately not raised
-  to match it, see [Python version gates](../concepts/python-version-gates.md)). Same conservative treatment as
-  above: an unknown or too-low minimum reports every candidate `"unsafe"` and leaves the file untouched.
-- `TypeVarTupleCheck` only recognizes a **module-level** `T = TypeVarTuple(...)` declaration in the same file -
+Every case below is a distinct, permanent reason a candidate is reported `"unsafe"` and left untouched - each has
+its own anchor so `migration-type-recipes.py --report` can link a specific occurrence straight to the rule that
+explains it, rather than a generic "couldn't convert" message.
+
+### PEP 695 version gate
+
+{ #feature-typevar-modernization-pep695-version-gate }
+
+[PEP 695](https://peps.python.org/pep-0695/) generic syntax (`def f[T](...)`) did not exist before Python 3.12
+(released October 2023). Before rewriting, the recipe finds the nearest `pyproject.toml` above the file being
+refactored and checks its `requires-python`; if the lowest version that specifier allows is below 3.12 - or no
+`pyproject.toml` is found, or `requires-python` is missing or unparsable - every candidate is reported
+`"unsafe"` and left untouched, the same conservative treatment as any other unsafe candidate. Cross-file
+localization (phase 1) is unaffected by this check and always runs, since it never introduces PEP 695 syntax.
+
+The cross-file phase only resolves simple, same-directory sibling imports (`from module_name import T`);
+dotted/package imports are silently out of scope, not reported unsafe.
+
+### A declared TypeVar is exported via `__all__`
+
+{ #feature-typevar-modernization-declared-typevar-exported }
+
+A module-level `T = TypeVar(...)` (or `ParamSpec`/`TypeVarTuple`) listed in its own file's `__all__` is public
+API - removing its declaration to convert it to PEP 695 syntax would break any importer still doing
+`from this_module import T`. Left unconverted, `"unsafe"`. See
+[Type parameter scope](../concepts/type-parameter-scope.md).
+
+### A declared TypeVar is used outside a function body
+
+{ #feature-typevar-modernization-used-outside-function }
+
+A module-level declaration referenced anywhere other than inside the function(s) being converted - for example
+as a class's `Generic[T]` base, or in a module-level type alias - can't have its declaration removed: a PEP 695
+type parameter only exists inside the function signature it's declared on, so that other use site would be left
+referencing a name that no longer exists. Left unconverted, `"unsafe"`. See
+[Type parameter scope](../concepts/type-parameter-scope.md).
+
+### An imported TypeVar's origin module exports it via `__all__`
+
+{ #feature-typevar-modernization-origin-module-exports-name }
+
+Cross-file localization (phase 1) turns `from other_module import T` into a local `T = TypeVar(...)`
+declaration. If `other_module` lists `T` in its own `__all__`, it's advertised as that module's public API -
+localizing the import would leave two independent declarations of the same logical type parameter (the
+original, still-exported one, and the new local copy), which silently breaks identity-based uses (e.g.
+`isinstance` checks or generic subclassing across the two copies). Left as an import, `"unsafe"`.
+
+### An imported TypeVar is used in an exported `Generic[...]` base at its origin
+
+{ #feature-typevar-modernization-used-in-exported-generic-base }
+
+If the origin module uses the imported name as a class's `Generic[T]` base, that class's own generic identity is
+tied to this specific `T` object - localizing the import would create a second, unrelated `T`, breaking
+subclassing or type-checking that depends on the two modules sharing the same type parameter. Left as an
+import, `"unsafe"`.
+
+Supports `TypeVar` (including `bound=` and constraint forms), `ParamSpec`, and `TypeVarTuple`.
+
+### PEP 646 version gate
+
+{ #feature-typevar-modernization-pep646-version-gate }
+
+`TypeVarTupleCheck`'s `Unpack[T]` → `*T` rewrite only applies when the target declares Python 3.11+ (PEP
+646's true minimum - one version below `TypeVarCheck`'s own 3.12+ gate for PEP 695, deliberately not raised
+to match it, see [Python version gates](../concepts/python-version-gates.md)). Same conservative treatment as
+the PEP 695 gate above: an unknown or too-low minimum reports every candidate `"unsafe"` and leaves the file
+untouched.
+
+`TypeVarTupleCheck` only recognizes a **module-level** `T = TypeVarTuple(...)` declaration in the same file -
   not one imported from a sibling module. When both recipes run together (the CLI below), `TypeVarTupleCheck`
   runs first specifically so the common case (a TypeVarTuple declared and used via `Unpack[T]` in the same file)
   composes correctly - `TypeVarCheck` removes a converted declaration once it PEP-695-converts it, and
@@ -129,41 +180,3 @@ excluded). Run with `--help` for the full flag reference.
 - The version gate (see Constraints above) only recognises versions in a known list (3.8 through 3.14, see
   `KNOWN_PYTHON_VERSIONS` in `renaissance/utils/python_version.py`); extending it to a new Python release means
   adding that release to the list.
-- **Resolved: no CLI flag to override the detected minimum version.** `TypeVarCheck.min_python_override` existed
-  only for tests until `migration-type-recipes.py`'s `--min-python MAJOR.MINOR` flag exposed it - see API entry
-  points above.
-- **Resolved: `TypeVarTupleCheck` used to only detect, never rewrite.** `find_legacy_unpack_usage()` still
-  exists and still only detects (returns `list[str]`, unchanged, for any caller that just wants the names); the
-  new `fix_legacy_unpack_usage()` is what `run()` now calls, and actually rewrites `Unpack[T]` to `*T` - see the
-  User-facing summary and Constraints above. Consequence worth knowing: `rejuvenate refactor TypeVarTupleCheck
-  <file>` (`PythonRefactoring.process()`) previously never wrote anything and now does - this is the intended
-  effect of making the recipe actually fix code, not a bug, but it changes that entry point's existing behavior.
-- **Resolved: both recipes used to remove their own now-unused import.** `TypeVarCheck` and `TypeVarTupleCheck`
-  each had hand-rolled "is this import still used anywhere" logic, duplicating exactly what `ruff`'s `F401`
-  already solves. Removed from both recipes; `migration-type-recipes.py` now runs `ruff check --fix --select
-  F401` once over every file it modified instead - see API entry points above. A bare recipe invocation outside
-  that CLI no longer gets this cleanup on its own.
-- **Resolved: the CLI used to default to a dry-run preview, with `--apply` needed to write for real.** Dropped
-  entirely, along with the `--diff` flag and the diff text the CLI used to print - the target is always a
-  git-tracked checkout in practice, and `git diff`/`git checkout` (or an editor's diff view) review and revert
-  changes better than a custom text diff this tool would otherwise have to build and maintain. The CLI now
-  always writes for real; see API entry points above.
-- **Resolved: whole-function replacement used to reformat more than the signature, and delete comments.**
-  `convert_declared_typevars` only ever *adds* a `type_params` entry, but used to replace the *entire* function via
-  `self.replace(unparse_node(function), ...)`, so `ast.unparse()` regenerated every line of the body in its own
-  style - confirmed live against `sqlalchemy/lib/sqlalchemy/sql/elements.py` (reformatting) and
-  `starlette/starlette/concurrency.py` (a body comment deleted outright, since Python's `ast` module never records
-  comments at all). Also confirmed live that a multi-line parameter list got collapsed onto one line, since
-  `ast.unparse()` reformats whatever it touches regardless of the original layout. Fixed by splicing only the new
-  `[T]`/`[**P]`/`[*Ts]` bracket into the function's original source right after its name, leaving every other byte
-  - parameter list, defaults, line breaks, return type, docstring, body, comments - untouched:
-  `renaissance.utils.unparse_utils.unparse_signature_only`, which also retired the docstring-indent workaround
-  from python-ast-known-limitations.md item 4, since nothing but the bracket is ever regenerated via
-  `ast.unparse()` any more.
-- **Resolved: a nested closure referencing an enclosing function's type parameter used to be treated as an
-  independent user, getting its own redundant (shadowing) type parameter added too** - which could corrupt the
-  file outright when combined with the rewrite engine's dominance/suppression gap. Confirmed live against
-  `starlette/starlette/authentication.py`'s `requires()` and its nested `websocket_wrapper`/`async_wrapper`/
-  `sync_wrapper` closures. Fixed by attributing a type parameter's usage to the outermost function in its nesting
-  chain (`type_var_domain.py`'s `functions_using_nodes`), since PEP 695 type parameters are already visible in
-  nested closures via the same lexical scoping as any other enclosing-scope name.
