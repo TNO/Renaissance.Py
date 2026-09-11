@@ -4,7 +4,8 @@ from collections.abc import Callable
 
 from hamcrest import assert_that, contains_string, has_entry, has_key, is_not, not_
 
-from renaissance.refactoring.type_var_check import TypeVarCheck
+from renaissance.recipes.type_var_check import TypeVarCheck
+from renaissance.recipes.type_var_domain import UnsafeReason
 
 
 class TestTypeVarCheckOrphaned:
@@ -92,4 +93,5 @@ class TestTypeVarCheckOrphaned:
         result = subject.remove_orphaned_declarations()
 
         assert_that(result, has_entry("T", "unsafe"))
+        assert_that(subject.orphaned_unsafe_reasons, has_entry("T", UnsafeReason.DECLARED_TYPEVAR_EXPORTED))
         assert_that(subject.apply_to_string(), contains_string("T = TypeVar('T')"))
