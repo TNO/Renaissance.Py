@@ -4,14 +4,14 @@
 
 **Stable ID:** `CODEMOD-PYTHON_AST_KNOWN_LIMITATIONS`
 
-Concrete limitations found in the Python AST/RST layer (`renaissance.impl.python`) and the rewrite mechanism it
+Concrete limitations found in the Python AST/RST layer (`renaissance.integrations.python.ast`) and the rewrite mechanism it
 feeds (`renaissance.syntax_tree.ast_rewriter`, `renaissance.utils.text_utils`) while building recipes
 (`TypeVarCheck`, `TypeVarTupleCheck`). Most of these are not patched here - a recipe has to work around them, and
 a maintainer has a starting list for a proper fix - except where a fix is noted below.
 
 ## 1. `referenced_by` / `references` miss `self` and return annotations
 
-`create_references` (`renaissance/impl/python/rst_node.py`) explicitly excludes parameters named `self`, and never
+`create_references` (`renaissance/integrations/python/ast/rst_node.py`) explicitly excludes parameters named `self`, and never
 tracks a function's return-type annotation at all. A recipe that needs to know where a `self`-typed parameter or a
 return annotation is used cannot rely on this reference tracking; it has to walk the tree directly instead.
 
@@ -20,24 +20,22 @@ return annotation is used cannot rely on this reference tracking; it has to walk
 `get_ancestor` is declared on the abstract `ASTNode` class, but the concrete Python class `PythonRstNode` does not
 actually inherit from `ASTNode`, despite the structural similarity. Calling `get_ancestor` on a `PythonRstNode`
 instance raises `AttributeError` at runtime. A recipe needing ancestor lookups has to write its own walk using
-`.parent` and `.ast_type`, which are real attributes on `PythonRstNode`.
+`.parent` and `.parser_kind`, which are real attributes on `PythonRstNode`.
 
-## 3. Unmapped `KIND_MAP` node types fail silently
+## 3. Unmapped `PYTHON_KIND_MAP` node types degrade to a generic kind
 
-`KIND_MAP` (`renaissance/impl/types.py`, over 2000 entries shared across every parser the framework supports) maps
-every raw `ast` node type name to Renaissance's own `Type` class hierarchy. Two concrete gaps here -
-`ast.Or` (the `or` operator) and `ast.MatMult` (the `@` operator) - have been fixed (both are now mapped, `Or` to
-the `Or` class that already existed but was never wired in, `MatMult` to a new `MatrixMultiply` class), but the
-underlying mechanism that let them go unnoticed is still there for any future unmapped node type.
+`PYTHON_KIND_MAP` (`renaissance/integrations/python/ast/kinds.py`, ~48 entries, Python-specific - every parser
+integration now keeps its own `kinds.py`) maps a raw `ast` node type's class name to a `SemanticKind` enum member.
+`PythonRstNode.__init__` (`renaissance/integrations/python/ast/rst_node.py`) looks this up with
+`PYTHON_KIND_MAP.get(self.parser_kind, SemanticKind.NODE)`: a node type absent from the map simply becomes generic
+`SemanticKind.NODE` - no debug print, no exception, and the node is still built and kept in the tree. `ast.Or`
+(the `or` operator) and `ast.MatMult` (the `@` operator) are two concrete examples currently unmapped.
 
-When `PythonRstNode.__init__` (`renaissance/impl/python/rst_node.py`) meets an unmapped node type, it prints a debug
-line intended to help someone add the missing entry, then carries on processing the node's children anyway. If that
-then hits an `AttributeError`, the error is caught, printed, and **the node is silently dropped from the tree**
-rather than raised or logged as a real failure.
-
-**Consequence:** a future unmapped node type can leave parts of a file's AST missing, with no clear signal that this
-happened beyond a printed line easy to miss in a large batch run. A recipe scanning for a pattern that happens to
-sit inside an unmapped construct will silently miss it: a false negative, not a crash.
+**Consequence:** a recipe that matches nodes by exact `semantic_kind` (e.g. looking for a specific operator kind)
+will simply never match an unmapped node type - it falls through as generic `SemanticKind.NODE` instead, with no
+error. This is a false negative in matching, not a missing node in the tree: the node itself is present and
+traversable, just under a less specific kind than expected. Matching on `.parser_kind` directly (the raw `ast`
+class name, e.g. `"BoolOp"`) or on `isinstance(node.node, ast.Or)` sidesteps this entirely.
 
 ## 4. `ast.unparse()`/`shift_right` lose comments and indentation
 
@@ -117,7 +115,7 @@ their assertion, now correctly rejected by the fix above:
 
 ## 6. `Global`/`Nonlocal`'s `names` list crashes the tree builder (silently swallowed)
 
-`PythonRstNode.__init__` (`renaissance/impl/python/rst_node.py:212-232`) assumes any AST node whose `_fields`
+`PythonRstNode.__init__` (`renaissance/integrations/python/ast/rst_node.py:208-222`) assumes any AST node whose `_fields`
 tuple has exactly one entry, and whose value there is a list, holds a list of *child AST nodes* - that branch
 recurses into `PythonRstNode(n, translation_unit, self)` for each list element. `ast.Global`/`ast.Nonlocal` don't
 fit that assumption: their sole field (`names`) is `list[str]` - plain Python strings, not AST nodes. Constructing
@@ -128,8 +126,9 @@ the very top of `__init__`, outside any try/except.
 continue` already wrapping this loop (there to catch other, unrelated per-field failures) - so parsing a file
 with a `global`/`nonlocal` statement doesn't hard-fail; it prints `'str' object has no attribute '_fields'` (once
 per name-list) and moves on. But that means the `Global`/`Nonlocal` node's name list never becomes RST children at
-all - silently dropped, similar in spirit to item 3's silent-drop behaviour but a different mechanism (a genuine
-construction bug, not an unmapped `KIND_MAP` entry). Confirmed live parsing `starlette/starlette/testclient.py`,
+all - silently dropped. This is a genuine construction bug, unrelated to item 3's generic-kind fallback for
+unmapped `PYTHON_KIND_MAP` entries (that one keeps the node, just under a less specific kind; this one loses the
+node entirely). Confirmed live parsing `starlette/starlette/testclient.py`,
 which has two `nonlocal` statements - one printed warning per statement, tree still builds and the recipe
 otherwise completes normally.
 
