@@ -108,8 +108,7 @@ class TypeVarCheck(PythonRefactoring):
             decl_stmt = declarations[name]
             reason = is_safe_to_convert(tree, name, decl_stmt)
             if reason is not None:
-                results[name] = "unsafe"
-                self.converted_unsafe_reasons[name] = reason
+                self._mark_unsafe(results, self.converted_unsafe_reasons, name, reason)
                 continue
 
             type_param = build_type_param(decl_stmt)
@@ -149,14 +148,18 @@ class TypeVarCheck(PythonRefactoring):
 
             reason = is_safe_to_convert(tree, name, decl_stmt)
             if reason is not None:
-                results[name] = "unsafe"
-                self.orphaned_unsafe_reasons[name] = reason
+                self._mark_unsafe(results, self.orphaned_unsafe_reasons, name, reason)
                 continue
 
             self._remove_declaration(decl_stmt)
             results[name] = "fixed"
 
         return results
+
+    def _mark_unsafe(self, results: dict[str, str], reasons: dict[str, UnsafeReason], name: str, reason: UnsafeReason) -> None:
+        """Record `name` as unsafe with `reason` in both `results` (status) and `reasons` (why)."""
+        results[name] = "unsafe"
+        reasons[name] = reason
 
     def _remove_declaration(self, decl_stmt: ast.Assign) -> None:
         """Remove decl_stmt's statement from the file."""
@@ -193,8 +196,7 @@ class TypeVarCheck(PythonRefactoring):
 
                 reason = is_safe_to_localize(origin_tree, alias.name)
                 if reason is not None:
-                    results[alias.name] = "unsafe"
-                    self.cross_file_unsafe_reasons[alias.name] = reason
+                    self._mark_unsafe(results, self.cross_file_unsafe_reasons, alias.name, reason)
                     continue
 
                 decl_stmt = declarations[alias.name]
