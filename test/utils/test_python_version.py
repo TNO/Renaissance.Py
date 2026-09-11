@@ -51,3 +51,15 @@ class TestMinimumPythonVersion:
     def test_none_when_specifier_excludes_every_known_version(self, tmp_path: Path) -> None:
         (tmp_path / "pyproject.toml").write_text('[project]\nrequires-python = "<3.8"\n')
         assert_that(minimum_python_version(str(tmp_path / "file.py")), is_(None))
+
+    def test_reads_patch_pinned_lower_bound_on_highest_known_minor(self, tmp_path: Path) -> None:
+        (tmp_path / "pyproject.toml").write_text('[project]\nrequires-python = ">=3.14.2"\n')
+        assert_that(minimum_python_version(str(tmp_path / "file.py")), is_((3, 14)))
+
+    def test_none_when_patch_pin_targets_minor_beyond_known_versions(self, tmp_path: Path) -> None:
+        (tmp_path / "pyproject.toml").write_text('[project]\nrequires-python = ">=3.15.1"\n')
+        assert_that(minimum_python_version(str(tmp_path / "file.py")), is_(None))
+
+    def test_reads_low_patch_pinned_bound_below_pep_thresholds(self, tmp_path: Path) -> None:
+        (tmp_path / "pyproject.toml").write_text('[project]\nrequires-python = ">=3.9.5,<3.10"\n')
+        assert_that(minimum_python_version(str(tmp_path / "file.py")), is_((3, 9)))
