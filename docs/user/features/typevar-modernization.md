@@ -48,6 +48,11 @@ A single Python source file, passed by path.
   phase, not three) - the CLI below merges it into the same result shape under an `"unpack_syntax"` key.
 - Neither recipe removes the `from typing import ...` (or equivalent) name it makes redundant - see the
   User-facing summary above and the CLI's own `ruff check --fix --select F401` pass in API entry points below.
+- Alongside each phase's `"unsafe"` status, `TypeVarCheck` also records *why* on a matching instance attribute -
+  `cross_file_unsafe_reasons`, `converted_unsafe_reasons`, `orphaned_unsafe_reasons` - and `TypeVarTupleCheck`
+  records its own on `unsafe_reasons`; each maps `name -> UnsafeReason` (see Constraints below for the specific
+  reasons). The CLI collects these into `FileReport.reasons` and prints the matching documented rule and link
+  next to each unsafe name - see API entry points below.
 
 ## Constraints
 
@@ -135,10 +140,15 @@ untouched.
 
 ## Verified by test modules
 
-- `test/refactoring/test_type_var_check.py`
-- `test/refactoring/test_type_var_check_properties.py`
-- `test/refactoring/test_type_var_tuple_check.py`
-- `test/refactoring/test_type_var_tuple_check_properties.py`
+- `test/recipes/test_type_var_check.py`
+- `test/recipes/test_type_var_check_convert.py`
+- `test/recipes/test_type_var_check_localize.py`
+- `test/recipes/test_type_var_check_orphaned.py`
+- `test/recipes/test_type_var_check_properties.py`
+- `test/recipes/test_type_var_tuple_check.py`
+- `test/recipes/test_type_var_tuple_check_fix.py`
+- `test/recipes/test_type_var_tuple_check_properties.py`
+- `test/recipes/test_type_var_domain.py`
 - `test/rejuvenation/test_migration_type_recipes.py` (the CLI wrapper above)
 
 ## Implemented by code modules
@@ -174,9 +184,9 @@ excluded). Run with `--help` for the full flag reference.
 ## Change considerations
 
 - Supporting a future type-parameter-declaring construct means extending `_is_type_param_call` and
-  `_build_type_param` in `type_var_domain.py` together.
+  `build_type_param` in `type_var_domain.py` together.
 - The cross-file phase only resolves same-directory imports; supporting package-qualified imports would need
-  `_resolve_sibling_module` (also in `type_var_domain.py`) to handle dotted module names.
+  `resolve_sibling_module` (also in `type_var_domain.py`) to handle dotted module names.
 - The version gate (see Constraints above) only recognises versions in a known list (3.8 through 3.14, see
   `KNOWN_PYTHON_VERSIONS` in `renaissance/utils/python_version.py`); extending it to a new Python release means
   adding that release to the list.
