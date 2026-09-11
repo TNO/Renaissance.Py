@@ -131,9 +131,9 @@ class TestPythonRefactoring:
             """,
             "test_foo.py",
         )
-        from renaissance.refactoring.unit2pytest import Unit2Pytest
+        from renaissance.recipes.unit_to_pytest import UnitToPytest
 
-        subject = Unit2Pytest("test_foo.py")
+        subject = UnitToPytest("test_foo.py")
         module = subject.root.node
         target = next(node for node in ast.walk(module) if isinstance(node, ast.FunctionDef))
 
