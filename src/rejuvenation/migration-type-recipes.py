@@ -171,8 +171,8 @@ def _format_console_report(reports: list[FileReport]) -> str:
 
     lines = [
         "Renaissance TypeVarCheck migration report",
-        f"Processed {len(reports)} files: {len(modified)} modified, {len(needs_review)} need "
-        f"manual review, {clean_count} clean, {len(errors)} errors",
+        (f"Processed {len(reports)} files: {len(modified)} modified, {len(needs_review)} need "
+        f"manual review, {clean_count} clean, {len(errors)} errors"),
     ]
     if modified:
         lines.append(
