@@ -6,7 +6,8 @@ on a minimum language version (e.g. PEP 695 syntax needs 3.12+).
 import tomllib
 from pathlib import Path
 
-from packaging.specifiers import InvalidSpecifier, SpecifierSet
+from packaging.specifiers import InvalidSpecifier, Specifier, SpecifierSet
+from packaging.version import InvalidVersion, Version
 
 KNOWN_PYTHON_VERSIONS = ("3.8", "3.9", "3.10", "3.11", "3.12", "3.13", "3.14")
 
@@ -18,6 +19,32 @@ def find_nearest_pyproject(start: Path) -> Path | None:
         if candidate.is_file():
             return candidate
     return None
+
+
+def _pinned_version(specifier: Specifier) -> Version | None:
+    """Return the version pinned by `specifier`'s lower bound (>=, >, ==, ~=).
+
+    Returns None if the operator isn't a lower bound or the version string doesn't parse.
+    """
+    if specifier.operator not in (">=", ">", "==", "~="):
+        return None
+    try:
+        return Version(specifier.version)
+    except InvalidVersion:
+        return None
+
+
+def _lower_bound_candidates(spec: SpecifierSet) -> list[str]:
+    """Return version strings pinned by `spec`'s lower-bound specifiers.
+
+    Only includes specifiers whose (major, minor) matches an entry in KNOWN_PYTHON_VERSIONS.
+    """
+    pinned = (_pinned_version(specifier) for specifier in spec)
+    return [
+        str(version)
+        for version in pinned
+        if version is not None and f"{version.major}.{version.minor}" in KNOWN_PYTHON_VERSIONS
+    ]
 
 
 def minimum_python_version(file_path: str) -> tuple[int, int] | None:
@@ -46,8 +73,9 @@ def minimum_python_version(file_path: str) -> tuple[int, int] | None:
     except InvalidSpecifier:
         return None
 
-    for version in KNOWN_PYTHON_VERSIONS:
-        if spec.contains(version, prereleases=True):
-            major, minor = version.split(".")
-            return (int(major), int(minor))
+    candidates = sorted({*KNOWN_PYTHON_VERSIONS, *_lower_bound_candidates(spec)}, key=Version)
+    for candidate in candidates:
+        if spec.contains(candidate, prereleases=True):
+            version = Version(candidate)
+            return (version.major, version.minor)
     return None
