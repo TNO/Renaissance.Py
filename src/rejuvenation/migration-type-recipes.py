@@ -26,6 +26,7 @@ from termcolor import colored
 
 from renaissance.recipes.step_runner import Step, run_steps
 from renaissance.recipes.type_var_check import TypeVarCheck
+from renaissance.recipes.type_var_domain import UNSAFE_RULES, UnsafeReason, doc_link
 from renaissance.recipes.type_var_tuple_check import TypeVarTupleCheck
 
 _MAJOR_MINOR_PART_COUNT = 2
@@ -41,6 +42,7 @@ class FileReport:
     path: Path
     result: dict[str, dict[str, str]] | None
     error: str | None
+    reasons: dict[str, dict[str, UnsafeReason]] | None = None
 
 
 def discover_files(target: Path) -> list[Path]:
@@ -122,9 +124,15 @@ def process_file(path: Path, *, min_python: tuple[int, int] | None) -> FileRepor
         )
 
         result = {**unpack_result, **typevar_result}
+        reasons = {
+            "unpack_syntax": tvt_recipe.unsafe_reasons,
+            "cross_file": tv_recipe.cross_file_unsafe_reasons,
+            "converted": tv_recipe.converted_unsafe_reasons,
+            "orphaned": tv_recipe.orphaned_unsafe_reasons,
+        }
     except Exception as exc:  # noqa: BLE001 - isolate one bad file, never abort the whole batch
         return FileReport(path=path, result=None, error=f"{type(exc).__name__}: {exc}")
-    return FileReport(path=path, result=result, error=None)
+    return FileReport(path=path, result=result, error=None, reasons=reasons)
 
 
 def _run_ruff_unused_import_cleanup(paths: list[Path]) -> None:
@@ -190,9 +198,14 @@ def _format_console_report(reports: list[FileReport]) -> str:
     for report in needs_review:
         lines.append(f"  {report.path}")
         for phase, names in (report.result or {}).items():
+            phase_reasons = (report.reasons or {}).get(phase, {})
             unsafe = [name for name, status in names.items() if status == "unsafe"]
             if unsafe:
                 lines.append(f"    {phase}: {', '.join(unsafe)}")
+            for name in unsafe:
+                reason = phase_reasons.get(name)
+                if reason is not None:
+                    lines.append(f"      {name}: {UNSAFE_RULES[reason].message} -> {doc_link(reason)}")
 
     lines.extend(["", f"ERRORS ({len(errors)})"])
     lines.extend(f"  {report.path}: {report.error}" for report in errors)

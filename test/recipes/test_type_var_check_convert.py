@@ -5,7 +5,9 @@ from collections.abc import Callable
 
 from hamcrest import assert_that, contains_string, has_entry, not_
 
-from renaissance.refactoring.type_var_check import TypeVarCheck
+from renaissance.recipes.python_refactoring import PythonRefactoring  # noqa: TC001
+from renaissance.recipes.type_var_check import TypeVarCheck
+from renaissance.recipes.type_var_domain import UnsafeReason
 
 
 class TestTypeVarCheckConvert:
@@ -211,6 +213,7 @@ class TestTypeVarCheckConvert:
         result = subject.convert_declared_typevars()
 
         assert_that(result, has_entry("T", "unsafe"))
+        assert_that(subject.converted_unsafe_reasons, has_entry("T", UnsafeReason.USED_OUTSIDE_FUNCTION))
         assert_that(subject.apply_to_string(), contains_string('T = TypeVar("T")'))
 
     def test_does_not_convert_typevar_in_dunder_all(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
@@ -229,6 +232,7 @@ class TestTypeVarCheckConvert:
         result = subject.convert_declared_typevars()
 
         assert_that(result, has_entry("T", "unsafe"))
+        assert_that(subject.converted_unsafe_reasons, has_entry("T", UnsafeReason.DECLARED_TYPEVAR_EXPORTED))
         assert_that(subject.apply_to_string(), contains_string('T = TypeVar("T")'))
 
     def test_removes_declaration_but_keeps_import_used_by_other_typevar(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
@@ -426,3 +430,23 @@ class TestTypeVarCheckConvert:
         assert_that(output, contains_string("from typing import ParamSpec, TypeVar"))
         assert_that(output, not_(contains_string("P = ParamSpec")))
         assert_that(output, not_(contains_string("T = TypeVar")))
+
+    def test_version_gate_below_pep695_reports_unsafe_with_reason(
+        self, make_recipe: Callable[[type[PythonRefactoring], str], PythonRefactoring]
+    ) -> None:
+        code = """
+            from typing import TypeVar
+
+            def a(x: T) -> T:
+                return x
+
+            T = TypeVar("T")
+        """
+        subject = make_recipe(TypeVarCheck, code)
+        subject.min_python_override = (3, 10)
+
+        result = subject.convert_declared_typevars()
+
+        assert_that(result, has_entry("T", "unsafe"))
+        assert_that(subject.converted_unsafe_reasons, has_entry("T", UnsafeReason.PEP695_VERSION_GATE))
+        assert_that(subject.apply_to_string(), contains_string('T = TypeVar("T")'))
