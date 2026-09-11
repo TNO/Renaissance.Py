@@ -6,6 +6,7 @@ from typing import Any, cast
 from renaissance.recipes.python_refactoring import PythonRefactoring, narrowed_import_text
 from renaissance.recipes.step_runner import Step, run_steps
 from renaissance.recipes.type_var_domain import (
+    UnsafeReason,
     all_refs_shadowed_by_pep695,
     build_type_param,
     find_import_source,
@@ -85,16 +86,19 @@ class TypeVarCheck(PythonRefactoring):
         target_supports_pep695); if the nearest pyproject.toml's `requires-python` doesn't
         guarantee that, every candidate is reported "unsafe" and the file is left untouched
         by this phase - localize_imported_typevars still runs regardless, since it never
-        introduces PEP 695 syntax.
+        introduces PEP 695 syntax. The specific UnsafeReason behind each "unsafe" entry is
+        recorded on self.converted_unsafe_reasons.
         """
         tree = cast(ast.Module, self.root.node)
         declarations = find_type_param_declarations(tree)
         usage = functions_using_nodes(tree, set(declarations.keys()))
 
         if not self._target_supports_pep695():
+            self.converted_unsafe_reasons = dict.fromkeys(usage, UnsafeReason.PEP695_VERSION_GATE)
             return dict.fromkeys(usage, "unsafe")
 
         results: dict[str, str] = {}
+        self.converted_unsafe_reasons = {}
         # Collected here instead of replaced immediately: a function using 2+ converted type
         # params (e.g. TypeVar and ParamSpec) must get exactly one self.replace() covering all
         # of them - queuing one per name would target the same function node twice before a
@@ -102,8 +106,10 @@ class TypeVarCheck(PythonRefactoring):
         touched_functions: dict[int, ast.FunctionDef | ast.AsyncFunctionDef] = {}
         for name, functions in usage.items():
             decl_stmt = declarations[name]
-            if not is_safe_to_convert(tree, name, decl_stmt):
+            reason = is_safe_to_convert(tree, name, decl_stmt)
+            if reason is not None:
                 results[name] = "unsafe"
+                self.converted_unsafe_reasons[name] = reason
                 continue
 
             type_param = build_type_param(decl_stmt)
@@ -128,18 +134,23 @@ class TypeVarCheck(PythonRefactoring):
         Every remaining reference to it is shadowed by a same-named PEP 695 type parameter on
         the function(s) using it (see all_refs_shadowed_by_pep695) - the state ruff's UP047
         leaves behind after converting a signature, since that rule documents that it never
-        removes the declaration it makes redundant. Returns {name: "fixed" | "unsafe"}.
+        removes the declaration it makes redundant. Returns {name: "fixed" | "unsafe"}; the
+        specific UnsafeReason behind each "unsafe" entry is recorded on
+        self.orphaned_unsafe_reasons.
         """
         tree = cast(ast.Module, self.root.node)
         declarations = find_type_param_declarations(tree)
 
         results: dict[str, str] = {}
+        self.orphaned_unsafe_reasons: dict[str, UnsafeReason] = {}
         for name, decl_stmt in declarations.items():
             if not all_refs_shadowed_by_pep695(tree, name, decl_stmt):
                 continue
 
-            if not is_safe_to_convert(tree, name, decl_stmt):
+            reason = is_safe_to_convert(tree, name, decl_stmt)
+            if reason is not None:
                 results[name] = "unsafe"
+                self.orphaned_unsafe_reasons[name] = reason
                 continue
 
             self._remove_declaration(decl_stmt)
@@ -158,9 +169,11 @@ class TypeVarCheck(PythonRefactoring):
         """Find TypeVar/ParamSpec/TypeVarTuple names imported from a sibling module.
 
         Where safe (see is_safe_to_localize), rewrites the import into an equivalent local
-        declaration. Returns {name: "fixed" | "unsafe"} for every candidate found.
+        declaration. Returns {name: "fixed" | "unsafe"} for every candidate found; the specific
+        UnsafeReason behind each "unsafe" entry is recorded on self.cross_file_unsafe_reasons.
         """
         results: dict[str, str] = {}
+        self.cross_file_unsafe_reasons: dict[str, UnsafeReason] = {}
 
         for import_node in self.body:
             raw = import_node.node
@@ -178,8 +191,10 @@ class TypeVarCheck(PythonRefactoring):
                 if alias.asname is not None or alias.name not in declarations:
                     continue
 
-                if not is_safe_to_localize(origin_tree, alias.name):
+                reason = is_safe_to_localize(origin_tree, alias.name)
+                if reason is not None:
                     results[alias.name] = "unsafe"
+                    self.cross_file_unsafe_reasons[alias.name] = reason
                     continue
 
                 decl_stmt = declarations[alias.name]

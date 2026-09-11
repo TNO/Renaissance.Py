@@ -10,7 +10,9 @@ from pathlib import Path
 from types import ModuleType  # noqa: TC003
 
 import pytest
-from hamcrest import assert_that, contains_string, equal_to, is_, is_not
+from hamcrest import assert_that, contains_string, equal_to, has_entry, is_, is_not
+
+from renaissance.recipes.type_var_domain import UnsafeReason, doc_link
 
 _SCRIPT_PATH = Path(__file__).resolve().parents[2] / "src" / "rejuvenation" / "migration-type-recipes.py"
 
@@ -158,6 +160,16 @@ class TestProcessFile:
         assert_that(migration.has_unsafe(report), is_(True))
         assert_that(target.read_text(encoding="utf-8"), equal_to(original))
 
+    def test_unsafe_typevar_reason_is_recorded(self, tmp_path: Path) -> None:
+        """The specific UnsafeReason (not just the "unsafe" status) is recorded per name."""
+        target = tmp_path / "mod.py"
+        target.write_text(UNSAFE_TYPEVAR_SOURCE, encoding="utf-8")
+
+        report = migration.process_file(target, min_python=(3, 12))
+
+        assert_that(report.reasons, is_not(None))
+        assert_that(report.reasons["converted"], has_entry("T", UnsafeReason.DECLARED_TYPEVAR_EXPORTED))
+
     def test_syntax_error_reported_as_error_not_raised(self, tmp_path: Path) -> None:
         """A file that fails to parse is reported on FileReport.error, not raised."""
         target = tmp_path / "broken.py"
@@ -242,6 +254,32 @@ class TestRuffImportCleanup:
 
         assert_that(exit_code, equal_to(0))
         assert_that(sibling.read_text(encoding="utf-8"), equal_to(sibling_source))
+
+
+class TestConsoleReportDocLinks:
+    """main(): each unsafe name printed under NEEDS MANUAL REVIEW links to its documented rule."""
+
+    def test_needs_manual_review_includes_doc_link_for_the_specific_reason(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        """The report links a __all__-exported TypeVar to the DECLARED_TYPEVAR_EXPORTED rule."""
+        target = tmp_path / "mod.py"
+        target.write_text(UNSAFE_TYPEVAR_SOURCE, encoding="utf-8")
+
+        migration.main([str(target), "--min-python", "3.12"])
+
+        output = capsys.readouterr().out
+        assert_that(output, contains_string(doc_link(UnsafeReason.DECLARED_TYPEVAR_EXPORTED)))
+
+    def test_no_link_printed_for_modified_files_section(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+        """A fixed name (no reason attached) never gets a doc link line."""
+        target = tmp_path / "mod.py"
+        target.write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
+
+        migration.main([str(target), "--min-python", "3.12"])
+
+        output = capsys.readouterr().out
+        assert_that(output, is_not(contains_string("tno.github.io")))
 
 
 class TestMainBatchErrorIsolation:
