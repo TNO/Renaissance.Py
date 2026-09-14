@@ -174,7 +174,7 @@ class TestTautToPythonUnittest:
     @pytest.mark.xfail(
         reason="convert_setup() queues two rewrites on the same node before a commit - "
         "previously silently corrupted output that happened to still satisfy this assertion; "
-        "now correctly rejected. See python-ast-known-limitations.md item 5.",
+        "now correctly rejected. See python-ast-known-limitations.md item 4.",
         strict=True,
     )
     @pytest.mark.parametrize("input_code, expected_code", [(tst_class.set_up, tst_class.new_set_up)])
@@ -271,7 +271,7 @@ class TestTautToPythonUnittest:
     @pytest.mark.xfail(
         reason="insert_asserter() + remove_assert_func() queue two rewrites on the same node "
         "before a commit - previously silently corrupted output that happened to still satisfy "
-        "this assertion; now correctly rejected. See python-ast-known-limitations.md item 5.",
+        "this assertion; now correctly rejected. See python-ast-known-limitations.md item 4.",
         strict=True,
     )
     def test_insert_asserter(self, mocker):

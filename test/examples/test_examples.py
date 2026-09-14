@@ -108,7 +108,7 @@ class TestRemoveUnusedVariable:
                 "remove_unused_variable_using_refactor_method queues two rewrites on the same "
                 "node before a commit - previously silently corrupted output that happened to "
                 "still satisfy this assertion; now correctly rejected. See "
-                "python-ast-known-limitations.md item 5."
+                "python-ast-known-limitations.md item 4."
             )
         result, expected = remove_unused_variable_using_refactor_method(node_type)
         assert_that(result, is_(expected))
@@ -146,7 +146,7 @@ class TestExamplesDifferentStyles:
     @pytest.mark.xfail(
         reason="example_add_comment_and_commit queues two rewrites on the same node before a "
         "commit - previously silently corrupted output that happened to still satisfy this "
-        "assertion; now correctly rejected. See python-ast-known-limitations.md item 5.",
+        "assertion; now correctly rejected. See python-ast-known-limitations.md item 4.",
         strict=True,
     )
     def test_example_add_comment_and_commit(self):
@@ -166,7 +166,7 @@ class TestExamplesDifferentStyles:
     @pytest.mark.xfail(
         reason="example_add_comment_and_commit queues two rewrites on the same node before a "
         "commit - previously silently corrupted output that happened to still satisfy this "
-        "assertion; now correctly rejected. See python-ast-known-limitations.md item 5.",
+        "assertion; now correctly rejected. See python-ast-known-limitations.md item 4.",
         strict=True,
     )
     def test_example_replace_old_by_fancy_new(self):
@@ -182,7 +182,7 @@ class TestExamplesDifferentStyles:
     @pytest.mark.xfail(
         reason="CleanupRefactoring.remove_unused_variables queues two rewrites on the same node "
         "before a commit - previously silently corrupted output that happened to still satisfy "
-        "this assertion; now correctly rejected. See python-ast-known-limitations.md item 5.",
+        "this assertion; now correctly rejected. See python-ast-known-limitations.md item 4.",
         strict=True,
     )
     def test_make_sure_that_batch_remove_proc_still_run(self):
@@ -191,7 +191,7 @@ class TestExamplesDifferentStyles:
     @pytest.mark.xfail(
         reason="CleanupRefactoring.remove_unused_variables queues two rewrites on the same node "
         "before a commit - previously silently corrupted output that happened to still satisfy "
-        "this assertion; now correctly rejected. See python-ast-known-limitations.md item 5.",
+        "this assertion; now correctly rejected. See python-ast-known-limitations.md item 4.",
         strict=True,
     )
     def test_make_sure_that_batch_repeat_proc_still_run(self):
@@ -206,7 +206,7 @@ class TestExamplesDifferentStyles:
     @pytest.mark.xfail(
         reason="example_add_comment_and_commit queues two rewrites on the same node before a "
         "commit - previously silently corrupted output that happened to still satisfy this "
-        "assertion; now correctly rejected. See python-ast-known-limitations.md item 5.",
+        "assertion; now correctly rejected. See python-ast-known-limitations.md item 4.",
         strict=True,
     )
     def test_make_sure_different_style_still_run(self):
@@ -238,7 +238,7 @@ class TestExamplesDifferentStyles:
         reason="remove_unused_variable_using_refactor_method queues two rewrites on the same "
         "node before a commit - previously silently corrupted output that happened to still "
         "satisfy this assertion; now correctly rejected. See python-ast-known-limitations.md "
-        "item 5.",
+        "item 4.",
         strict=True,
     )
     @pytest.mark.parametrize("node_type", [ClangASTNode, ClangJsonASTNode])

@@ -238,7 +238,7 @@ class _RewriteActions:
         Applying both would silently corrupt the output (concatenated/garbled text) instead of
         erroring - __is_ancestor_in_nodes's nested-rewrite skip doesn't cover this case, since
         it's for a rewrite nested *inside* another rewrite's node, not two rewrites on the same
-        or sibling-overlapping range. See python-ast-known-limitations.md item 5.
+        or sibling-overlapping range. See python-ast-known-limitations.md item 4.
 
         TODO: this only turns silent corruption into a clear error - it doesn't merge
         conflicting rewrites into a correct result. Recipes must still avoid queuing more than
@@ -256,7 +256,7 @@ class _RewriteActions:
                         f"Conflicting rewrites queued for overlapping source ranges "
                         f"({node_a.offset}-{node_a.end_offset} and {node_b.offset}-{node_b.end_offset}) "
                         "in the same file - applying both would corrupt the output. See "
-                        "python-ast-known-limitations.md item 5."
+                        "python-ast-known-limitations.md item 4."
                     )
 
     @staticmethod
