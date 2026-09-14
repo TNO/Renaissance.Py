@@ -113,7 +113,34 @@ with a `global`/`nonlocal` statement doesn't hard-fail; it prints `'str' object 
 per name-list) and moves on. But that means the `Global`/`Nonlocal` node's name list never becomes RST children at
 all - silently dropped. Confirmed live parsing `starlette/starlette/testclient.py`,
 which has two `nonlocal` statements - one printed warning per statement, tree still builds and the recipe
-otherwise completes normally.
+otherwise completes normally. Confirmed a second time running `TypeVarCheck` against `homeassistant/helpers`: six
+occurrences of the same printed warning, one per `global`/`nonlocal` statement in that codebase, tree still builds.
 
 Not fixed here - found via a `TypeVarCheck` run whose target file happened to contain `nonlocal`, but the bug
 itself lives entirely in the generic parsing layer (`rst_node.py`), unrelated to any recipe.
+
+## 6. `_derive_name()` crashes on nested tuple-unpacking `for` targets
+
+`PythonRstNode._derive_name()` (`renaissance/integrations/python/ast/rst_node.py:366-368`) handles a `for`/`async for`
+loop whose target is a tuple-unpacking assignment (`for a, b in ...:`) by checking `isinstance(self.node.target,
+ast.Tuple)`, then reading `self.node.target.elts[1].id` - assuming the *second* unpacked element is itself an
+`ast.Name`. A nested unpacking there (`for a, (b, c) in ...:`) makes `elts[1]` an `ast.Tuple` instead, which has no
+`.id`, crashing with `AttributeError: 'Tuple' object has no attribute 'id'`.
+
+Reached via `PythonRefactoring.__init__` building the whole-file RST tree (`factory.create(file)` -> recursive
+`PythonRstNode` construction) before any recipe-specific logic runs, so it fires for any file containing this
+pattern regardless of whether TypeVars are involved. Confirmed live running `TypeVarCheck` against
+`homeassistant/helpers`. Minimal repro:
+
+```python
+PythonRstNode.load_from_text("def f():\n    for a, (b, c) in something():\n        pass\n", "x.py")
+```
+
+**Consequence:** same silent-drop shape as item 5 - the crash is caught by the same generic
+`except AttributeError as e: print(e); continue` in `__init__`, so the run doesn't hard-fail, but the `For` node
+never becomes part of the RST tree. A recipe inspecting `for` loops in code using this pattern gets an incomplete
+tree with no error raised.
+
+Not fixed here - the other similarly-shaped accesses in `rst_node.py`, `type_var_domain.py`,
+`type_var_tuple_check.py`, and `factory.py` already guard with `isinstance(..., ast.Name)` first; this is the one
+unguarded site.
