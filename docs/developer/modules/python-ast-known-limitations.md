@@ -9,6 +9,32 @@ feeds (`renaissance.syntax_tree.ast_rewriter`, `renaissance.utils.text_utils`) w
 (`TypeVarCheck`, `TypeVarTupleCheck`). Most of these are not patched here - a recipe has to work around them, and
 a maintainer has a starting list for a proper fix - except where a fix is noted below.
 
+## Fix status across branches
+
+Check here before re-investigating whether an item is already fixed somewhere else. Update this list whenever a
+fix lands on a branch.
+
+- [ ] **Item 1** - `referenced_by`/`references` miss `self`/return annotations.
+- [ ] **Item 2** - `get_ancestor()` missing on `PythonRstNode`.
+- [ ] **Item 3** - `ast.unparse()`/`shift_right` lose comments/indentation (comment loss is unfixable in general,
+      see item text).
+- [x] **Item 4** - overlapping rewrites corrupt output (raise-instead-of-corrupt). Fixed, but this is generic
+      `ast_rewriter.py` code, not typing-recipes-specific - still sitting in `typing-recipes` pending extraction to
+      its own branch (see branch-cleanup goal). An independent duplicate of the same fix already exists on
+      `fix-cleanup-refactoring-dupe`.
+- [ ] **Item 4b** - "Dominance and suppression" sub-gap (`__is_ancestor_in_nodes`'s `return result and False`).
+      Not fixed anywhere.
+- [x] **Item 4c** - `CleanupRefactoring.remove_unused_variables` double-queueing (xfail bullet under item 4).
+      Fixed on `fix-cleanup-refactoring-dupe`.
+- [x] **Item 5** - `Global`/`Nonlocal`'s `names` list crashes the tree builder. Fixed on `rst-node-fixes`.
+- [x] **Item 6** - `_derive_name()` crashes on nested tuple/attribute unpacking `for` targets. Fixed on
+      `rst-node-fixes`.
+
+Not tracked as a numbered item here (out of this doc's scope - generic `ASTNode` base class typing, not a
+Python-AST-specific limitation), but related: pyright-strict `None`-inference fixes for `ASTNode.__init__`'s
+unannotated attributes (`.node`, `._children`, `.show_props`, `.translation_unit`, `._kind`, `._length`,
+`._offset`, `._filename`) and `match_finder.py`'s `Variant.greedy` are on `pyright-fixes`.
+
 ## 1. `referenced_by` / `references` miss `self` and return annotations
 
 `create_references` (`renaissance/integrations/python/ast/rst_node.py`) explicitly excludes parameters named `self`, and never
