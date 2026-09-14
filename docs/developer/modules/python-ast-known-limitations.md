@@ -22,22 +22,7 @@ actually inherit from `ASTNode`, despite the structural similarity. Calling `get
 instance raises `AttributeError` at runtime. A recipe needing ancestor lookups has to write its own walk using
 `.parent` and `.parser_kind`, which are real attributes on `PythonRstNode`.
 
-## 3. Unmapped `PYTHON_KIND_MAP` node types degrade to a generic kind
-
-`PYTHON_KIND_MAP` (`renaissance/integrations/python/ast/kinds.py`, ~48 entries, Python-specific - every parser
-integration now keeps its own `kinds.py`) maps a raw `ast` node type's class name to a `SemanticKind` enum member.
-`PythonRstNode.__init__` (`renaissance/integrations/python/ast/rst_node.py`) looks this up with
-`PYTHON_KIND_MAP.get(self.parser_kind, SemanticKind.NODE)`: a node type absent from the map simply becomes generic
-`SemanticKind.NODE` - no debug print, no exception, and the node is still built and kept in the tree. `ast.Or`
-(the `or` operator) and `ast.MatMult` (the `@` operator) are two concrete examples currently unmapped.
-
-**Consequence:** a recipe that matches nodes by exact `semantic_kind` (e.g. looking for a specific operator kind)
-will simply never match an unmapped node type - it falls through as generic `SemanticKind.NODE` instead, with no
-error. This is a false negative in matching, not a missing node in the tree: the node itself is present and
-traversable, just under a less specific kind than expected. Matching on `.parser_kind` directly (the raw `ast`
-class name, e.g. `"BoolOp"`) or on `isinstance(node.node, ast.Or)` sidesteps this entirely.
-
-## 4. `ast.unparse()`/`shift_right` lose comments and indentation
+## 3. `ast.unparse()`/`shift_right` lose comments and indentation
 
 `TextUtils.shift_right`/`shift_left` (`renaissance/utils/text_utils.py`) are pure text operations with no notion of
 Python syntax - they shift every line in a range unconditionally, blind to whether a line sits inside a string
@@ -58,7 +43,7 @@ A future recipe that genuinely needs to regenerate a whole body from the AST - n
 both issues above and has to work around them itself; neither `ast.unparse()`'s comment blindness nor
 `shift_right`/`shift_left`'s string-literal blindness was touched here.
 
-## 5. Overlapping rewrites in one batch corrupt output instead of merging
+## 4. Overlapping rewrites in one batch corrupt output instead of merging
 
 `_RewriteActions.__is_ancestor_in_nodes` (`renaissance/syntax_tree/ast_rewriter.py`) is meant to detect when two
 pending edits target overlapping source ranges, so `apply()` can skip the redundant one - but it ends with
@@ -113,7 +98,7 @@ their assertion, now correctly rejected by the fix above:
   (`src/rejuvenation/batch_process_examples.py`): `test_make_sure_that_batch_remove_proc_still_run`,
   `test_make_sure_that_batch_repeat_proc_still_run` (`test/examples/test_examples.py`), `xfail(strict=True)`.
 
-## 6. `Global`/`Nonlocal`'s `names` list crashes the tree builder (silently swallowed)
+## 5. `Global`/`Nonlocal`'s `names` list crashes the tree builder (silently swallowed)
 
 `PythonRstNode.__init__` (`renaissance/integrations/python/ast/rst_node.py:208-222`) assumes any AST node whose `_fields`
 tuple has exactly one entry, and whose value there is a list, holds a list of *child AST nodes* - that branch
@@ -126,9 +111,7 @@ the very top of `__init__`, outside any try/except.
 continue` already wrapping this loop (there to catch other, unrelated per-field failures) - so parsing a file
 with a `global`/`nonlocal` statement doesn't hard-fail; it prints `'str' object has no attribute '_fields'` (once
 per name-list) and moves on. But that means the `Global`/`Nonlocal` node's name list never becomes RST children at
-all - silently dropped. This is a genuine construction bug, unrelated to item 3's generic-kind fallback for
-unmapped `PYTHON_KIND_MAP` entries (that one keeps the node, just under a less specific kind; this one loses the
-node entirely). Confirmed live parsing `starlette/starlette/testclient.py`,
+all - silently dropped. Confirmed live parsing `starlette/starlette/testclient.py`,
 which has two `nonlocal` statements - one printed warning per statement, tree still builds and the recipe
 otherwise completes normally.
 
