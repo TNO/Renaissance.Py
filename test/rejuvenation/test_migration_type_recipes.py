@@ -282,6 +282,23 @@ class TestConsoleReportDocLinks:
         assert_that(output, is_not(contains_string("tno.github.io")))
 
 
+class TestPerFileProgressFeedback:
+    """main(): prints a per-file progress line as each file is checked."""
+
+    def test_each_file_gets_a_checked_line(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+        """Every discovered file - modified, clean, or errored - gets its own 'checked' line."""
+        good = tmp_path / "good.py"
+        good.write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
+        broken = tmp_path / "broken.py"
+        broken.write_text("def broken(:\n", encoding="utf-8")
+
+        migration.main([str(tmp_path), "--min-python", "3.12"])
+
+        output = capsys.readouterr().out
+        assert_that(output, contains_string(f"File {good} checked."))
+        assert_that(output, contains_string(f"File {broken} checked."))
+
+
 class TestMainBatchErrorIsolation:
     """main(): one bad file in a batch must not abort processing of the rest."""
 
