@@ -180,7 +180,7 @@ def functions_using_nodes(
     semantically pointless shadowing declarations, and - combined with the still-open rewrite
     dominance/suppression gap - genuinely corrupted output, confirmed live against
     `starlette/starlette/authentication.py`'s `requires()` and its nested `*_wrapper` closures.
-    See python-ast-known-limitations.md item 5.
+    See python-ast-known-limitations.md item 4.
     """
     usage: dict[str, list[ast.FunctionDef | ast.AsyncFunctionDef]] = {name: [] for name in names}
 
