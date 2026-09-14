@@ -179,8 +179,10 @@ def _format_console_report(reports: list[FileReport]) -> str:
 
     lines = [
         "Renaissance TypeVarCheck migration report",
-        (f"Processed {len(reports)} files: {len(modified)} modified, {len(needs_review)} need "
-        f"manual review, {clean_count} clean, {len(errors)} errors"),
+        (
+            f"Processed {len(reports)} files: {len(modified)} modified, {len(needs_review)} need "
+            f"manual review, {clean_count} clean, {len(errors)} errors"
+        ),
     ]
     if modified:
         lines.append(
@@ -253,7 +255,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         parser.error(f"not a Python file: {target}")
 
     files = discover_files(target)
-    reports = [process_file(path, min_python=args.min_python) for path in files]
+    reports = []
+    for path in files:
+        report = process_file(path, min_python=args.min_python)
+        reports.append(report)
+        print(f"{path} reviewed.")
 
     modified_paths = [report.path for report in reports if has_fixed(report)]
     if modified_paths:
