@@ -14,7 +14,8 @@ a maintainer has a starting list for a proper fix - except where a fix is noted 
 Check here before re-investigating whether an item is already fixed somewhere else. Update this list whenever a
 fix lands on a branch.
 
-- [ ] **Item 1** - `referenced_by`/`references` miss `self`/return annotations.
+- [ ] **Item 1** - `referenced_by`/`references` miss `self`/return annotations. Return-type gap fixed on
+      `rst-node-fixes`; `self` left as a `# TODO` in the code (`create_references`), not fixed.
 - [ ] **Item 2** - `get_ancestor()` missing on `PythonRstNode`.
 - [ ] **Item 3** - `ast.unparse()`/`shift_right` lose comments/indentation (comment loss is unfixable in general,
       see item text).
@@ -37,9 +38,12 @@ unannotated attributes (`.node`, `._children`, `.show_props`, `.translation_unit
 
 ## 1. `referenced_by` / `references` miss `self` and return annotations
 
-`create_references` (`renaissance/integrations/python/ast/rst_node.py`) explicitly excludes parameters named `self`, and never
-tracks a function's return-type annotation at all. A recipe that needs to know where a `self`-typed parameter or a
-return annotation is used cannot rely on this reference tracking; it has to walk the tree directly instead.
+`create_references` (`renaissance/integrations/python/ast/rst_node.py`) had two gaps: it excluded `self`
+parameters from reference tracking, and never tracked a function's return-type annotation at all.
+
+**The return-type gap is fixed on `rst-node-fixes`** (new `case ast.FunctionDef | ast.AsyncFunctionDef:`, tested
+in `test/python/ast/test_python_ast_node_ref.py`). The `self` exclusion is left as-is, with a `# TODO` at the site
+itself (`create_references`, `case ast.arg:`) explaining why it wasn't just deleted.
 
 ## 2. `get_ancestor()` is declared but not available on `PythonRstNode`
 
