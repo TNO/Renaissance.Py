@@ -79,7 +79,7 @@ new `[T]`/`[**P]`/`[*Ts]` bracket into `function`'s *original* source text, righ
 everything else - parameter list, defaults, line breaks, return type, docstring, body, comments - byte-for-byte
 untouched, rather than regenerating anything from the AST, which used to reformat whatever it touched (including
 collapsing a multi-line parameter list onto one line) and, since Python's `ast` module never records comments at
-all, silently delete any comments inside the body. See python-ast-known-limitations.md item 4 for the full
+all, silently delete any comments inside the body. See python-ast-known-limitations.md item 3 for the full
 mechanism. It lives in a shared utils module rather than in `type_var_check.py` itself, since any future recipe
 adding a type-params bracket the same way needs it too.
 
@@ -88,7 +88,7 @@ chain, never a nested closure that merely references it - a PEP 695 type paramet
 function is already visible inside its nested closures the same way any other name in an enclosing scope is, so a
 nested closure must never be treated as an independent user needing its own (shadowing) type parameter. Getting
 this wrong used to queue a redundant edit for the nested closure alongside the outer function's edit - which,
-combined with the rewrite dominance/suppression gap in python-ast-known-limitations.md item 5, corrupted the
+combined with the rewrite dominance/suppression gap in python-ast-known-limitations.md item 4, corrupted the
 output outright. Confirmed live against `starlette/starlette/authentication.py`'s `requires()` and its nested
 `*_wrapper` closures.
 
