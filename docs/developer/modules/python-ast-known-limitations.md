@@ -14,22 +14,25 @@ a maintainer has a starting list for a proper fix - except where a fix is noted 
 Check here before re-investigating whether an item is already fixed somewhere else. Update this list whenever a
 fix lands on a branch.
 
-- [ ] **Item 1** - `referenced_by`/`references` miss `self`/return annotations. Return-type gap fixed on
-      `rst-node-fixes`; `self` left as a `# TODO` in the code (`create_references`), not fixed.
-- [ ] **Item 2** - `get_ancestor()` missing on `PythonRstNode`.
-- [ ] **Item 3** - `ast.unparse()`/`shift_right` lose comments/indentation (comment loss is unfixable in general,
-      see item text).
-- [x] **Item 4** - overlapping rewrites corrupt output (raise-instead-of-corrupt). Fixed, but this is generic
-      `ast_rewriter.py` code, not typing-recipes-specific - still sitting in `typing-recipes` pending extraction to
-      its own branch (see branch-cleanup goal). An independent duplicate of the same fix already exists on
-      `fix-cleanup-refactoring-dupe`.
-- [ ] **Item 4b** - "Dominance and suppression" sub-gap (`__is_ancestor_in_nodes`'s `return result and False`).
-      Not fixed anywhere.
-- [x] **Item 4c** - `CleanupRefactoring.remove_unused_variables` double-queueing (xfail bullet under item 4).
-      Fixed on `fix-cleanup-refactoring-dupe`.
-- [x] **Item 5** - `Global`/`Nonlocal`'s `names` list crashes the tree builder. Fixed on `rst-node-fixes`.
-- [x] **Item 6** - `_derive_name()` crashes on nested tuple/attribute unpacking `for` targets. Fixed on
+- [ ] **Item 1** - `referenced_by`/`references` miss `self`/return annotations. The return-type gap has been
+      fixed on `rst-node-fixes`. The `self` exclusion remains unresolved, marked with a `# TODO` in
+      `create_references`.
+- [ ] **Item 2** - `get_ancestor()` is missing on `PythonRstNode`. This is documented by an `xfail(strict=True)`
+      test on `rst-node-fixes`; the underlying issue has not been fixed.
+- [ ] **Item 3** - `ast.unparse()`/`shift_right` lose comments and indentation. Not fixed; the comment loss is
+      unfixable in general (see the item text below).
+- [x] **Item 4** - Overlapping rewrites corrupt output (raise-instead-of-corrupt). This has been fixed, but the
+      fix lives in generic `ast_rewriter.py` code rather than typing-recipes-specific code, and is still sitting
+      in `typing-recipes` pending extraction to its own branch (see the branch-cleanup goal). An independent
+      duplicate of the same fix already exists on `fix-cleanup-refactoring-dupe`.
+- [ ] **Item 4b** - The "Dominance and suppression" sub-gap (`__is_ancestor_in_nodes`'s `return result and False`)
+      has not been fixed on any branch.
+- [x] **Item 4c** - The `CleanupRefactoring.remove_unused_variables` double-queueing bug (an xfail bullet under
+      item 4) has been fixed on `fix-cleanup-refactoring-dupe`.
+- [x] **Item 5** - `Global`/`Nonlocal`'s `names` list crashes the tree builder. This has been fixed on
       `rst-node-fixes`.
+- [x] **Item 6** - `_derive_name()` crashes on nested tuple/attribute unpacking `for` targets. This has been
+      fixed on `rst-node-fixes`.
 
 Not tracked as a numbered item here (out of this doc's scope - generic `ASTNode` base class typing, not a
 Python-AST-specific limitation), but related: pyright-strict `None`-inference fixes for `ASTNode.__init__`'s
@@ -51,6 +54,9 @@ itself (`create_references`, `case ast.arg:`) explaining why it wasn't just dele
 actually inherit from `ASTNode`, despite the structural similarity. Calling `get_ancestor` on a `PythonRstNode`
 instance raises `AttributeError` at runtime. A recipe needing ancestor lookups has to write its own walk using
 `.parent` and `.parser_kind`, which are real attributes on `PythonRstNode`.
+
+This gap is documented by `test_get_ancestor_finds_enclosing_function` (marked `xfail(strict=True)`) on
+`rst-node-fixes`; the underlying issue has not been fixed.
 
 ## 3. `ast.unparse()`/`shift_right` lose comments and indentation
 
@@ -146,8 +152,9 @@ which has two `nonlocal` statements - one printed warning per statement, tree st
 otherwise completes normally. Confirmed a second time running `TypeVarCheck` against `homeassistant/helpers`: six
 occurrences of the same printed warning, one per `global`/`nonlocal` statement in that codebase, tree still builds.
 
-Not fixed here - found via a `TypeVarCheck` run whose target file happened to contain `nonlocal`, but the bug
-itself lives entirely in the generic parsing layer (`rst_node.py`), unrelated to any recipe.
+This has not been fixed here. It was found via a `TypeVarCheck` run whose target file happened to contain
+`nonlocal`, but the bug itself lives entirely in the generic parsing layer (`rst_node.py`) and is unrelated to
+any recipe.
 
 ## 6. `_derive_name()` crashes on nested tuple-unpacking `for` targets
 
@@ -171,6 +178,6 @@ PythonRstNode.load_from_text("def f():\n    for a, (b, c) in something():\n     
 never becomes part of the RST tree. A recipe inspecting `for` loops in code using this pattern gets an incomplete
 tree with no error raised.
 
-Not fixed here - the other similarly-shaped accesses in `rst_node.py`, `type_var_domain.py`,
+This has not been fixed here. The other similarly shaped accesses in `rst_node.py`, `type_var_domain.py`,
 `type_var_tuple_check.py`, and `factory.py` already guard with `isinstance(..., ast.Name)` first; this is the one
 unguarded site.
