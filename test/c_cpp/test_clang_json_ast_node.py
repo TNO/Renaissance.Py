@@ -25,6 +25,16 @@ class TestClangJsonAstNode:
         ASTShower.show_node(src, True)
         assert_that(src.children[0].properties["name"], is_("a"))
 
+    @pytest.mark.xfail(
+        reason="ClangJsonASTNode defines __eq__ but not __hash__, so Python implicitly sets "
+        "__hash__ = None - instances are unhashable, unlike the sibling ClangASTNode class, "
+        "which defines both.",
+        strict=True,
+    )
+    def test_is_hashable(self):
+        node = ClangJsonASTNode.load_from_text("int main(){return 0;}", "hello.c", [], Path())
+        hash(node)
+
 
 if __name__ == "__main__":
     pytest.main()
