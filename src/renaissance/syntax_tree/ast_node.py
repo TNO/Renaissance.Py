@@ -19,14 +19,14 @@ class VisitorResult(Enum):
     SKIP = 2
 
 
-class ASTReference:
-    def __init__(self, ast_node: ASTNode, ref_kind: str, properties: dict[str, Any]) -> None:
+class ASTReference[NodeT, TranslationUnitT]:
+    def __init__(self, ast_node: ASTNode[NodeT, TranslationUnitT], ref_kind: str, properties: dict[str, Any]) -> None:
         self._node = ast_node
         self._ref_kind = ref_kind
         self._properties = properties
 
     @property
-    def node(self) -> ASTNode:
+    def node(self) -> ASTNode[NodeT, TranslationUnitT]:
         return self._node
 
     @property
@@ -39,7 +39,7 @@ class ASTReference:
 
 
 # To make usage of the concrete class methods easier, ASTNode MUST NOT have ABSTRACT public classes!!
-class ASTNode(ABC):
+class ASTNode[NodeT, TranslationUnitT](ABC):
     cache: dict[str, bytes] = {}
     """
     The base class to represent an AST node.
@@ -49,17 +49,17 @@ class ASTNode(ABC):
     def __init__(self, root: Self) -> None:
         super().__init__()
         self._parent = None
-        self._children = None
-        self.show_props = None
-        self.translation_unit = None
-        self._kind = None
-        self._length = None
-        self._offset = None
-        self._filename = None
+        self._children: list[Self] = []
+        self.show_props: bool = False
+        self.translation_unit: TranslationUnitT | None = None
+        self._kind: str = ""
+        self._length: int = 0
+        self._offset: int = 0
+        self._filename: str = ""
         self.root: Self = root
         self._properties = {}
         self._name = ""
-        self.node: object | None = None
+        self.node: NodeT | None = None
         self.indent = ""
 
     def __repr__(self):
@@ -108,12 +108,12 @@ class ASTNode(ABC):
 
     @property
     @abstractmethod
-    def references(self) -> list[ASTReference]:
+    def references(self) -> list[ASTReference[NodeT, TranslationUnitT]]:
         pass
 
     @property
     @abstractmethod
-    def referenced_by(self) -> list[ASTReference]:
+    def referenced_by(self) -> list[ASTReference[NodeT, TranslationUnitT]]:
         pass
 
     def get_ancestor(self, kind: str | re.Pattern[str]) -> Self | None:
@@ -138,12 +138,12 @@ class ASTNode(ABC):
 
     @staticmethod
     @abstractmethod
-    def load(file_path: Path, extra_args: Sequence[str], working_dir: Path) -> ASTNode:
+    def load(file_path: Path, extra_args: Sequence[str], working_dir: Path) -> ASTNode[NodeT, TranslationUnitT]:
         pass
 
     @staticmethod
     @abstractmethod
-    def load_from_text(text: str, file_name: str, extra_args: Sequence[str], working_dir: Path) -> ASTNode:
+    def load_from_text(text: str, file_name: str, extra_args: Sequence[str], working_dir: Path) -> ASTNode[NodeT, TranslationUnitT]:
         pass
 
     @property

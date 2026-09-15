@@ -37,12 +37,19 @@ def node_kinds_match(source: NodeProtocol, pattern: NodeProtocol) -> bool:
 
 
 class Variant:
-    def __init__(self, index, exp, greedy, expansion_start, end_index=INCOMPLETE_MATCH):
-        self.exp: dict = exp
+    def __init__(
+        self,
+        index: int,
+        exp: dict[str, Sequence[NodeProtocol]],
+        greedy: str | None,
+        expansion_start: int,
+        end_index: int = INCOMPLETE_MATCH,
+    ):
+        self.exp: dict[str, Sequence[NodeProtocol]] = exp
         self.index: int = index
-        self.greedy: str = greedy
-        self.end_index = end_index
-        self.expansion_start = expansion_start
+        self.greedy: str | None = greedy
+        self.end_index: int = end_index
+        self.expansion_start: int = expansion_start
 
     def reset_greedy(self):
         self.greedy = None

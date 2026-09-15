@@ -67,7 +67,7 @@ class ClangJsonTranslationUnit:
         self.references_initialized = True
 
 
-class ClangJsonASTNode(ASTNode):
+class ClangJsonASTNode(ASTNode[dict[str, Any], ClangJsonTranslationUnit]):
     parse_args = [
         "-fparse-all-comments",
         "-ferror-limit=0",
@@ -87,7 +87,7 @@ class ClangJsonASTNode(ASTNode):
         insert_name: str | None = None,
     ) -> None:
         super().__init__(self if parent is None else parent.root)
-        self.node: dict[str, Any] = node
+        self.node = node
         self._children: Sequence[ClangJsonASTNode] | None = None
         self._parent = parent
         self.translation_unit = translation_unit
@@ -301,9 +301,10 @@ class ClangJsonASTNode(ASTNode):
         return re.match("(?i).*(Stmt|Decl)", self.kind)
         return self.semantic_kind in {SemanticKind.STATEMENT, SemanticKind.DECLARATION, SemanticKind.DEFINITION}
 
+    # TODO: can @property work here given matches_kind takes a required node argument?
     @override
     @property
-    def matches_kind(self, node: ASTNode) -> bool:
+    def matches_kind(self, node: ASTNode[dict[str, Any], ClangJsonTranslationUnit]) -> bool:
         return matches_node_kind(self, node)
 
     @override
@@ -326,7 +327,7 @@ class ClangJsonASTNode(ASTNode):
 
     @override
     @property
-    def referenced_by(self) -> Sequence[ASTReference]:
+    def referenced_by(self) -> Sequence[ASTReference[dict[str, Any], ClangJsonTranslationUnit]]:
         if self.inserted:
             return []
         self.translation_unit.lazy_create_references(self)
@@ -350,7 +351,7 @@ class ClangJsonASTNode(ASTNode):
 
     @override
     @property
-    def references(self) -> list[ASTReference]:
+    def references(self) -> list[ASTReference[dict[str, Any], ClangJsonTranslationUnit]]:
         if self.inserted:
             return []
         self.translation_unit.lazy_create_references(self)

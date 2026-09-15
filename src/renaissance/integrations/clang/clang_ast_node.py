@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, override
 
 import clang.native
-from clang.cindex import Config, CursorKind, Index, TypeKind
+from clang.cindex import Config, Cursor, CursorKind, Index, TypeKind
 from clang.cindex import TranslationUnit as ClangCindexTranslationUnit
 
 from renaissance.integrations.clang.cpp_utils import matches_node_kind
@@ -71,7 +71,7 @@ class ClangTranslationUnit:
         return result
 
 
-class ClangASTNode(ASTNode):
+class ClangASTNode(ASTNode[Cursor, ClangTranslationUnit]):
     @staticmethod
     def set_library_path() -> None:
         try:
@@ -91,7 +91,7 @@ class ClangASTNode(ASTNode):
 
     def __init__(
         self,
-        node,
+        node: Cursor,
         translation_unit: ClangTranslationUnit,
         parent=None,
         start_offset: int | None = None,
@@ -294,7 +294,7 @@ class ClangASTNode(ASTNode):
         }
 
     @override
-    def matches_kind(self, node: ASTNode) -> bool:
+    def matches_kind(self, node: ASTNode[Cursor, ClangTranslationUnit]) -> bool:
         return matches_node_kind(self, node)
 
     def _derive_properties(self) -> dict[str, int | str]:
@@ -352,7 +352,7 @@ class ClangASTNode(ASTNode):
 
     @override
     @property
-    def referenced_by(self) -> Sequence[ASTReference]:
+    def referenced_by(self) -> Sequence[ASTReference[Cursor, ClangTranslationUnit]]:
         self.translation_unit.lazy_create_references(self)
         node_id = self.node.hash
         ref_by = self.translation_unit._referenced_by.get(node_id, EMPTY_LIST)
@@ -404,7 +404,7 @@ class ClangASTNode(ASTNode):
 
     @override
     @property
-    def references(self) -> Sequence[ASTReference]:
+    def references(self) -> Sequence[ASTReference[Cursor, ClangTranslationUnit]]:
         self.translation_unit.lazy_create_references(self)
         return list(
             ASTReference(
