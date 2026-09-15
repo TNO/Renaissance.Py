@@ -15,5 +15,6 @@ class CleanupRefactoring:
         refs = flatten(
             find_semantic_kind(n, SemanticKind.DECLARATION) for n in find_semantic_kind(ast_refactor.node, SemanticKind.STATEMENT)
         )
-        unused_parents = {id(ref.parent): ref.parent for ref in refs if len(ref.referenced_by) == 0}
-        [ast_refactor.remove(parent, True, True) for parent in unused_parents.values()]
+        unused_parents = {id(ref.parent): ref.parent for ref in refs if not ref.referenced_by}
+        for parent in unused_parents.values():
+            ast_refactor.remove(parent, True, True)
