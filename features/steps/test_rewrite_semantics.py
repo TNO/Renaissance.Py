@@ -40,10 +40,6 @@ _FEATURE = "../rewrite-semantics.feature"
 
 # Scenario 0 — Scenario Outline: three representative examples.
 # Universal property test: test/syntax_tree/test_rewrite_semantics_properties.py
-@pytest.mark.xfail(
-    reason="Replacing the same node twice is not yet rejected by ASTRewriter",
-    strict=True,
-)
 @scenario(_FEATURE, "Replacements of the same node produce an error")
 def test_replacements_of_same_node_produce_error():
     pass
