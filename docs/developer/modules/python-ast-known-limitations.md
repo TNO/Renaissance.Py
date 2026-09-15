@@ -6,59 +6,11 @@
 
 Concrete limitations found in the Python AST/RST layer (`renaissance.integrations.python.ast`) and the rewrite mechanism it
 feeds (`renaissance.syntax_tree.ast_rewriter`, `renaissance.utils.text_utils`) while building recipes
-(`TypeVarCheck`, `TypeVarTupleCheck`). Most of these are not patched here - a recipe has to work around them, and
-a maintainer has a starting list for a proper fix - except where a fix is noted below.
+(`TypeVarCheck`, `TypeVarTupleCheck`), that have no other tracker (no fix, no TODO, no test) anywhere in the
+codebase. Anything already tracked by a code comment, an `xfail` test, or a fix already merged/sitting on a branch
+lives there instead of being duplicated here - a recipe still has to work around both items below.
 
-## Fix status across branches
-
-Check here before re-investigating whether an item is already fixed somewhere else. Update this list whenever a
-fix lands on a branch.
-
-- [ ] **Item 1** - `referenced_by`/`references` miss `self`/return annotations. The return-type gap has been
-      fixed on `rst-node-fixes`. The `self` exclusion remains unresolved, marked with a `# TODO` in
-      `create_references`.
-- [ ] **Item 2** - `get_ancestor()` is missing on `PythonRstNode`. This is documented by an `xfail(strict=True)`
-      test on `rst-node-fixes`; the underlying issue has not been fixed.
-- [ ] **Item 3** - `ast.unparse()`/`shift_right` lose comments and indentation. Not fixed; the comment loss is
-      unfixable in general (see the item text below).
-- [x] **Item 4** - Overlapping rewrites corrupt output (raise-instead-of-corrupt). This has been fixed, but the
-      fix lives in generic `ast_rewriter.py` code rather than typing-recipes-specific code, and is still sitting
-      in `typing-recipes` pending extraction to its own branch (see the branch-cleanup goal). An independent
-      duplicate of the same fix already exists on `fix-cleanup-refactoring-dupe`.
-- [ ] **Item 4b** - The "Dominance and suppression" sub-gap (`__is_ancestor_in_nodes`'s `return result and False`)
-      has not been fixed on any branch.
-- [x] **Item 4c** - The `CleanupRefactoring.remove_unused_variables` double-queueing bug (an xfail bullet under
-      item 4) has been fixed on `fix-cleanup-refactoring-dupe`.
-- [x] **Item 5** - `Global`/`Nonlocal`'s `names` list crashes the tree builder. This has been fixed on
-      `rst-node-fixes`.
-- [x] **Item 6** - `_derive_name()` crashes on nested tuple/attribute unpacking `for` targets. This has been
-      fixed on `rst-node-fixes`.
-
-Not tracked as a numbered item here (out of this doc's scope - generic `ASTNode` base class typing, not a
-Python-AST-specific limitation), but related: pyright-strict `None`-inference fixes for `ASTNode.__init__`'s
-unannotated attributes (`.node`, `._children`, `.show_props`, `.translation_unit`, `._kind`, `._length`,
-`._offset`, `._filename`) and `match_finder.py`'s `Variant.greedy` are on `pyright-fixes`.
-
-## 1. `referenced_by` / `references` miss `self` and return annotations
-
-`create_references` (`renaissance/integrations/python/ast/rst_node.py`) had two gaps: it excluded `self`
-parameters from reference tracking, and never tracked a function's return-type annotation at all.
-
-**The return-type gap is fixed on `rst-node-fixes`** (new `case ast.FunctionDef | ast.AsyncFunctionDef:`, tested
-in `test/python/ast/test_python_ast_node_ref.py`). The `self` exclusion is left as-is, with a `# TODO` at the site
-itself (`create_references`, `case ast.arg:`) explaining why it wasn't just deleted.
-
-## 2. `get_ancestor()` is declared but not available on `PythonRstNode`
-
-`get_ancestor` is declared on the abstract `ASTNode` class, but the concrete Python class `PythonRstNode` does not
-actually inherit from `ASTNode`, despite the structural similarity. Calling `get_ancestor` on a `PythonRstNode`
-instance raises `AttributeError` at runtime. A recipe needing ancestor lookups has to write its own walk using
-`.parent` and `.parser_kind`, which are real attributes on `PythonRstNode`.
-
-This gap is documented by `test_get_ancestor_finds_enclosing_function` (marked `xfail(strict=True)`) on
-`rst-node-fixes`; the underlying issue has not been fixed.
-
-## 3. `ast.unparse()`/`shift_right` lose comments and indentation
+## 1. `ast.unparse()`/`shift_right` lose comments and indentation
 
 `TextUtils.shift_right`/`shift_left` (`renaissance/utils/text_utils.py`) are pure text operations with no notion of
 Python syntax - they shift every line in a range unconditionally, blind to whether a line sits inside a string
@@ -79,105 +31,29 @@ A future recipe that genuinely needs to regenerate a whole body from the AST - n
 both issues above and has to work around them itself; neither `ast.unparse()`'s comment blindness nor
 `shift_right`/`shift_left`'s string-literal blindness was touched here.
 
-## 4. Overlapping rewrites in one batch corrupt output instead of merging
+## 2. `__is_ancestor_in_nodes` can't just drop its `and False`
 
-`_RewriteActions.__is_ancestor_in_nodes` (`renaissance/syntax_tree/ast_rewriter.py`) is meant to detect when two
-pending edits target overlapping source ranges, so `apply()` can skip the redundant one - but it ends with
-`return result and False`, which is always `False` regardless of `result`. The overlap check never fires. Two
-`replace()`/`remove()` calls queued against the same (or overlapping) node before the next `commit()` both get
-applied back to back, with no merging, ordering, or error - just concatenated/garbled text.
+`_RewriteActions.__is_ancestor_in_nodes` (`renaissance/syntax_tree/ast_rewriter.py`) is meant to detect when a
+queued rewrite is nested inside another queued rewrite's node, so `apply()` can skip the redundant nested one and
+let the outer (ancestor) rewrite silently dominate it - but it ends with `return result and False`, which is
+always `False` regardless of `result`. The dominance/suppression check never fires: an ancestor replacement and a
+nested descendant edit queued in the same batch both get applied instead of the descendant being suppressed. The
+one-line in-code `# TODO` at that `return` doesn't capture why this isn't a one-line fix, so it's spelled out here
+instead.
 
-**Consequence (before the fix below):** any recipe or base-class helper that edits the same node - e.g. the same
-`from ... import ...` statement, or the same function - more than once within one uncommitted batch produced
-invalid output instead of a clean result or a clear failure: two edits against one import statement can produce
-`from typing import TypeVarfrom typing import ParamSpec`, and a function replaced twice can end up with its body
-duplicated back to back. Both are `SyntaxError` on the next parse.
+**Why the obvious one-line fix doesn't work:** simply changing `return result and False` to `return result`
+does not enable the suppression correctly. `no_conflict(node, rew)` returns `True` for `node is rew` (a node
+trivially "overlaps" itself), and `rewrite_nodes` is built by flattening every rewrite in `self.rewrites` - the
+same collection `apply()` draws `n` from when it calls `__is_ancestor_in_nodes(n)`. So `result` is a near-total
+tautology: `True` for almost any node, since it always includes a self-comparison. Dropping `and False` would
+make `__is_ancestor_in_nodes` return `True` for nearly every queued node - including nodes that have no real
+ancestor/descendant relationship to anything else - so `apply()`'s `continue` would skip most rewrites, not
+just the dominated ones, breaking the majority of currently-passing scenarios rather than fixing the handful that
+are `xfail`. A real fix needs to exclude a node's own rewrite from the comparison set and use a genuine
+ancestor/descendant check - e.g. reusing `__is_nested` (already used by `__check_for_conflicting_rewrites`, the
+sibling check that turns a *different* kind of overlapping-rewrite bug into a clear `ValueError` instead of
+corrupting output) - instead of repairing `no_conflict`'s offset-overlap test.
 
-Underlying mechanism: `renaissance/common/rewriter.py`'s low-level `Rewriter.replace()` doesn't reject or merge an
-edit whose `start` offset falls inside an already-queued edit's range - it appends the new edit's replacement
-bytes onto the end of the existing one (`r.replacement += new_content`), with no separator, which is why the
-result is concatenated/garbled rather than merged or overwritten.
-
-**Fixed: `apply()` now raises instead of corrupting.** `_RewriteActions.apply()` calls a new
-`__check_for_conflicting_rewrites()` that detects two queued rewrites on overlapping source ranges (excluding
-genuine ancestor/descendant nesting, walked via `.parent` rather than `.is_ancestor_of()` since not every
-`Rewritable` implements it - e.g. `PythonRstNode`) and raises `ValueError` instead of applying both. This matches
-the pre-existing "Error cases" group already specified in `features/rewrite-semantics.feature` and its Hypothesis
-counterpart `test_replacing_same_node_twice_always_errors` (`test/syntax_tree/test_rewrite_semantics_properties.py`),
-previously `xfail(strict=True)` and now passing, so the marker was removed. This only turns silent corruption into
-a clear error; it does not merge conflicting rewrites into a correct result, so callers must still avoid queuing
-more than one rewrite per node/range before a commit.
-
-**Still broken, not touched by the fix above:** the same feature file's "Dominance and suppression" group (an
-ancestor replacement should silently suppress a nested descendant edit, not error and not apply both) is a
-separate, pre-existing gap - a queued descendant edit still leaks into the output instead of being suppressed.
-`__is_ancestor_in_nodes` itself (the `return result and False` line) is untouched.
-
-`TypeVarCheck` avoids triggering either gap by construction - see [Refactoring recipes](../../developer/modules/recipes.md)
+`TypeVarCheck` avoids triggering this gap by construction - see [Refactoring recipes](../../developer/modules/recipes.md)
 for how `convert_declared_typevars` collects every touched function and queues exactly one edit per node, never a
 second rewrite on the same node.
-
-**Tests marked `xfail` because they used to pass on silently corrupted output** that happened to still satisfy
-their assertion, now correctly rejected by the fix above:
-
-- `Taut2Pyunit.convert_setup()` and `insert_asserter()`/`remove_assert_func()`
-  (`renaissance/recipes/taut2pyunit.py`): `test_setup`, `test_insert_asserter`
-  (`test/recipes/test_taut2unittest_refactoring.py`), `xfail(strict=True)`.
-- `example_add_comment_and_commit` and `remove_unused_variable_using_refactor_method`
-  (`src/rejuvenation/refactor_examples_different_styles.py` and its neighbouring example module) - demo/example
-  code shipped with the framework, not a recipe: six variants in `test/examples/test_examples.py`, `xfail`.
-- `CleanupRefactoring.remove_unused_variables` (`src/renaissance/recipes/cleanup_refactoring.py`): a
-  `VariableDef` nested inside a block is discovered twice - once via its own enclosing `CompoundStatement`'s
-  recursive scan, once via every ancestor `CompoundStatement`'s scan - so a shadowed unused variable (e.g.
-  `int unused = 0;` declared in both a function body and a nested `if` block) gets queued for removal twice.
-  Exercised via `batch_remove_unused_variable_once_example`/`batch_repeat_example`
-  (`src/rejuvenation/batch_process_examples.py`): `test_make_sure_that_batch_remove_proc_still_run`,
-  `test_make_sure_that_batch_repeat_proc_still_run` (`test/examples/test_examples.py`), `xfail(strict=True)`.
-
-## 5. `Global`/`Nonlocal`'s `names` list crashes the tree builder (silently swallowed)
-
-`PythonRstNode.__init__` (`renaissance/integrations/python/ast/rst_node.py:208-222`) assumes any AST node whose `_fields`
-tuple has exactly one entry, and whose value there is a list, holds a list of *child AST nodes* - that branch
-recurses into `PythonRstNode(n, translation_unit, self)` for each list element. `ast.Global`/`ast.Nonlocal` don't
-fit that assumption: their sole field (`names`) is `list[str]` - plain Python strings, not AST nodes. Constructing
-a `PythonRstNode` from a bare string crashes immediately (`node._fields` on a `str`), since that access sits at
-the very top of `__init__`, outside any try/except.
-
-**Consequence:** the crash *is* caught, one level up, by the broad `except AttributeError as e: print(e);
-continue` already wrapping this loop (there to catch other, unrelated per-field failures) - so parsing a file
-with a `global`/`nonlocal` statement doesn't hard-fail; it prints `'str' object has no attribute '_fields'` (once
-per name-list) and moves on. But that means the `Global`/`Nonlocal` node's name list never becomes RST children at
-all - silently dropped. Confirmed live parsing `starlette/starlette/testclient.py`,
-which has two `nonlocal` statements - one printed warning per statement, tree still builds and the recipe
-otherwise completes normally. Confirmed a second time running `TypeVarCheck` against `homeassistant/helpers`: six
-occurrences of the same printed warning, one per `global`/`nonlocal` statement in that codebase, tree still builds.
-
-This has not been fixed here. It was found via a `TypeVarCheck` run whose target file happened to contain
-`nonlocal`, but the bug itself lives entirely in the generic parsing layer (`rst_node.py`) and is unrelated to
-any recipe.
-
-## 6. `_derive_name()` crashes on nested tuple-unpacking `for` targets
-
-`PythonRstNode._derive_name()` (`renaissance/integrations/python/ast/rst_node.py:366-368`) handles a `for`/`async for`
-loop whose target is a tuple-unpacking assignment (`for a, b in ...:`) by checking `isinstance(self.node.target,
-ast.Tuple)`, then reading `self.node.target.elts[1].id` - assuming the *second* unpacked element is itself an
-`ast.Name`. A nested unpacking there (`for a, (b, c) in ...:`) makes `elts[1]` an `ast.Tuple` instead, which has no
-`.id`, crashing with `AttributeError: 'Tuple' object has no attribute 'id'`.
-
-Reached via `PythonRefactoring.__init__` building the whole-file RST tree (`factory.create(file)` -> recursive
-`PythonRstNode` construction) before any recipe-specific logic runs, so it fires for any file containing this
-pattern regardless of whether TypeVars are involved. Confirmed live running `TypeVarCheck` against
-`homeassistant/helpers`. Minimal repro:
-
-```python
-PythonRstNode.load_from_text("def f():\n    for a, (b, c) in something():\n        pass\n", "x.py")
-```
-
-**Consequence:** same silent-drop shape as item 5 - the crash is caught by the same generic
-`except AttributeError as e: print(e); continue` in `__init__`, so the run doesn't hard-fail, but the `For` node
-never becomes part of the RST tree. A recipe inspecting `for` loops in code using this pattern gets an incomplete
-tree with no error raised.
-
-This has not been fixed here. The other similarly shaped accesses in `rst_node.py`, `type_var_domain.py`,
-`type_var_tuple_check.py`, and `factory.py` already guard with `isinstance(..., ast.Name)` first; this is the one
-unguarded site.
