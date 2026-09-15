@@ -131,7 +131,6 @@ class TestPythonRefactoring:
             """,
             "test_foo.py",
         )
-        from renaissance.recipes.unit_to_pytest import UnitToPytest
 
         subject = UnitToPytest("test_foo.py")
         module = subject.root.node
