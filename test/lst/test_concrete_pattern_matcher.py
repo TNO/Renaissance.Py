@@ -47,10 +47,10 @@ class TestConcretePatternMatcher:
         interface = TreeSitterPatternFactory(adapter)
         c = interface.create_statement("try: pass\nexcept Exception: pass")
         p = interface.create_statement("try: $b\nexcept Exception: $b")
-        assert_that(is_match(c.children[0], p.children[0], {}), is_(True))  # type: ignore
-        assert_that(is_match(c.children[1], p.children[1], {}), is_(True))  # type: ignore
-        assert_that(is_match(c.children[2], p.children[2], {}), is_(True))  # type: ignore
-        assert_that(is_match(c.children[3], p.children[3], {}), is_(True))  # type: ignore
+        assert_that(is_match(c.children[0], p.children[0], {}), is_(True))
+        assert_that(is_match(c.children[1], p.children[1], {}), is_(True))
+        assert_that(is_match(c.children[2], p.children[2], {}), is_(True))
+        assert_that(is_match(c.children[3], p.children[3], {}), is_(True))
 
     def test_is_match_python_patterns_tree(self):
         adapter = TreeSitterAdapter(tree_sitter_python)
@@ -65,7 +65,7 @@ class TestConcretePatternMatcher:
         c = interface.create_statement("if x:  print(x)")
         p = interface.create_statement("if x:  $body")
         assert_that(is_match(c, p), is_(True))
-        assert_that(match_pattern([c], [p]), is_not(empty()))  # type: ignore
+        assert_that(match_pattern([c], [p]), is_not(empty()))
 
     def test_is_match(self):
         adapter = TreeSitterAdapter(tree_sitter_python)

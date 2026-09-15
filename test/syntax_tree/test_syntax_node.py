@@ -26,7 +26,7 @@ class DummyNode:
 
     # ---- syntax node aspects ----
     kind: str = "Dummy"
-    _children: list[Self] = field(default_factory=list)  # type: ignore
+    _children: list[Self] = field(default_factory=list)
     _parent: Self | None = None
 
     # ---- TextSegment derived properties ----
@@ -189,7 +189,7 @@ def test_child_must_point_back_to_parent(segment_validator_counter: _SegmentCall
     child = DummyNode(text, loc, 0, 1, kind="Child")
 
     # Intentionally wrong: do not use set_children; parent stays None
-    root._children = [child]  # type: ignore
+    root._children = [child]
 
     with pytest.raises(AssertionError, match=r"parent must be the node itself"):
         test.syntax_tree.infra_syntax_node.assert_valid_syntax_node(root)

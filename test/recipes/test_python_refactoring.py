@@ -7,6 +7,7 @@ from hamcrest import assert_that, contains_string, is_
 
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
 from renaissance.recipes.python_refactoring import PythonRefactoring
+from renaissance.recipes.unit_to_pytest import UnitToPytest
 
 
 class TestPythonRefactoring:
@@ -23,8 +24,6 @@ class TestPythonRefactoring:
 
     def test_init_sets_default_list_patterns(self, mocker):
         self._patch_factory(mocker)
-        from renaissance.recipes.unit_to_pytest import UnitToPytest
-
         subject = UnitToPytest("test_foo.py")
         # base class defaults are overridden by subclass, but they are set in __init__
         assert_that(subject.black_list_pattern, is_("utils_for_test"))
@@ -38,8 +37,6 @@ class TestPythonRefactoring:
             """,
             "test_foo.py",
         )
-        from renaissance.recipes.unit_to_pytest import UnitToPytest
-
         subject = UnitToPytest("test_foo.py")
         subject.in_memory = True
         subject.replace_stmt("import unittest", "import pytest\nfrom hamcrest import *")
@@ -54,8 +51,6 @@ class TestPythonRefactoring:
             """,
             "test_foo.py",
         )
-        from renaissance.recipes.unit_to_pytest import UnitToPytest
-
         subject = UnitToPytest("test_foo.py")
         subject.in_memory = True
         subject.replace_stmt(
@@ -109,8 +104,6 @@ class TestPythonRefactoring:
             """,
             "test_foo.py",
         )
-        from renaissance.recipes.unit_to_pytest import UnitToPytest
-
         subject = UnitToPytest("test_foo.py")
         assert_that(len(subject.body), is_(2))
 

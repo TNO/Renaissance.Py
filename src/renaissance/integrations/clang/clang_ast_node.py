@@ -397,7 +397,7 @@ class ClangASTNode(ASTNode):
 
             if has_body(self):
                 return None
-            body = ASTFinder.find_all(self.root, is_match).find_first().or_else(None)  # type: ignore
+            body = ASTFinder.find_all(self.root, is_match).find_first().or_else(None)
             if isinstance(body, ClangASTNode):
                 return body
         return None

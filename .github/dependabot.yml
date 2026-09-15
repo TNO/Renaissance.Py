@@ -21,7 +21,7 @@ updates:
     schedule:
       interval: "weekly"
       day: "sunday"
-    labels: ["dependencies", "github-actions"]
+    labels: ["dependencies"]
     groups:
       actions-minor-patch:
         update-types: ["minor", "patch"]

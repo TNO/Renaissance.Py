@@ -1,5 +1,6 @@
 from unittest.mock import MagicMock, patch
 
+import networkx as nx
 import pytest
 import tree_sitter_python
 from hamcrest import assert_that, has_item, instance_of, is_, not_
@@ -71,8 +72,6 @@ class TestBaseCodeGraphExtractor:
             mock_write.assert_called_once()
 
     def test_constructor_creates_directed_graph(self):
-        import networkx as nx
-
         with patch("renaissance.integrations.tree_sitter.adapter.TreeSitterAdapter"):
             extractor = PythonCodeGraphExtractor("python", tree_sitter_python)
             assert_that(extractor.graph, instance_of(nx.DiGraph))

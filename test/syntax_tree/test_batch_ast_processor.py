@@ -1,6 +1,7 @@
 from hamcrest import assert_that, has_length, is_
 
 from renaissance.syntax_tree import BatchASTProcessor
+from renaissance.syntax_tree import batch_ast_processor as bap
 
 
 class TestBatchASTProcessor:
@@ -58,8 +59,6 @@ class TestBatchASTProcessor:
         fake_factory.create_from_text.assert_called_with(in_memory_content, fake_node.filename)
 
     def test_process_atu(self, mocker):
-        from renaissance.syntax_tree import batch_ast_processor as bap
-
         processor = BatchASTProcessor(True, 8)
 
         dummy_factory = mocker.Mock()

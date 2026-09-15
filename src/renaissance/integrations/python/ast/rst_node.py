@@ -107,9 +107,16 @@ class PythonRstTranslationUnit:
         assert isinstance(ast_node, PythonRstNode), f"Expected PythonASTNode but got {type(ast_node)}"
         match type(ast_node.node):
             case ast.arg:
+                # TODO: is excluding self here intentional..?
                 if ast_node.name != "self" and isinstance(ast_node.node, ast.arg) and isinstance(ast_node.node.annotation, ast.Name):
                     node_id = ast_node.name
                     ref_id = ast_node.node.annotation.id
+                    ref_kind = "TypeRef"
+                    self.add_reference(node_id, ref_id, ref_kind)
+            case ast.FunctionDef | ast.AsyncFunctionDef:
+                if isinstance(ast_node.node, (ast.FunctionDef, ast.AsyncFunctionDef)) and isinstance(ast_node.node.returns, ast.Name):
+                    node_id = ast_node.name
+                    ref_id = ast_node.node.returns.id
                     ref_kind = "TypeRef"
                     self.add_reference(node_id, ref_id, ref_kind)
             case ast.Assign:
@@ -210,13 +217,12 @@ class PythonRstNode:
                 child = getattr(node, name)
                 match child:
                     case list():  # Matches any list
-                        if isinstance(node, ast.Global) and name == "names":
-                            if len(child) == 1:
-                                self.name = child[0]
-                            if name == "body":
-                                self.body = self.children
+                        if isinstance(node, ast.Global) and name == "names" and len(child) == 1:
+                            self.name = child[0]
 
-                        if isinstance(node, (ImplicitNode, ast.Module)) or len(node._fields) == 1:
+                        if isinstance(node, (ast.Global, ast.Nonlocal)):
+                            pass  # names is list[str], not AST nodes - nothing to build children from
+                        elif isinstance(node, (ImplicitNode, ast.Module)) or len(node._fields) == 1:
                             # A list field can hold a bare None at a position with no value
                             # None isn't a real AST node, so it has nothing to build a child from.
                             self.children.extend(PythonRstNode(n, translation_unit, self) for n in child if n is not None)
@@ -364,7 +370,11 @@ class PythonRstNode:
         elif isinstance(self.node, (ast.Assert, ast.Break, ast.Pass, ast.Raise, ast.Continue)):
             name = ""
         elif isinstance(self.node, (ast.For, ast.AsyncFor)):
-            if isinstance(self.node.target, ast.Tuple) and len(self.node.target.elts) > 1:
+            if (
+                isinstance(self.node.target, ast.Tuple)
+                and len(self.node.target.elts) > 1
+                and isinstance(self.node.target.elts[1], ast.Name)
+            ):
                 name = self.node.target.elts[1].id
             elif isinstance(self.node.target, ast.Name):
                 name = self.node.target.id

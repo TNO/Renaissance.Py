@@ -174,6 +174,24 @@ class TestPythonNode:
         it = PythonRSTReference("it is ", "kind", {})
         assert_that(it, has_string("it is :kind"))
 
+    @pytest.mark.parametrize("def_keyword", ["def", "async def"])
+    def test_return_type_reference(self, def_keyword):
+        # Function make_config()'s return annotation refers to Class Config.
+        code = f"class Config:\n    pass\n\n{def_keyword} make_config() -> Config:\n    pass\n"
+        ast = self.factory.create_from_text(code, "content.py")
+        func_node = first(n for n in traverse(ast) if n.name == "make_config")
+        ast.translation_unit.lazy_create_refers(ast)
+        refs = func_node.references
+        assert_that(refs, has_length(1))
+        ref_node = ast.translation_unit._nodes[refs[0].node_id]
+        assert_that(ref_node.semantic_kind is SemanticKind.CLASS, is_(True))
+
+    def test_function_without_return_annotation_has_no_type_reference(self):
+        ast = self.factory.create_from_text("def f():\n    pass\n", "content.py")
+        func_node = first(n for n in traverse(ast) if n.name == "f")
+        ast.translation_unit.lazy_create_refers(ast)
+        assert_that(func_node.references, has_length(0))
+
 
 if __name__ == "__main__":
     pytest.main()
