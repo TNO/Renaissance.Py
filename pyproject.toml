@@ -37,6 +37,7 @@ dependencies = [
     "hypothesmith>=0.3.3",
     "autopep8>=2.0",
     "flake8>=7.0",
+    "packaging>=24.0",
 ]
 
 [dependency-groups]
@@ -117,6 +118,7 @@ select = [
     "Q", "RSE", "SIM", "SLOT", "T10", "TID", "UP", "W", "YTT",
 ]
 #select = ["ALL"]  # goal of issue 
+
 ignore = [
     "D203",  # conflicts with D211 (no blank line before class) — keep D211
     "D213",  # conflicts with D212 (summary on the first line) — keep D212
