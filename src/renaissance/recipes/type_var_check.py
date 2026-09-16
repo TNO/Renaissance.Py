@@ -187,7 +187,7 @@ class TypeVarCheck(PythonRefactoring):
             if origin_path is None:
                 continue
 
-            origin_tree = ast.parse(origin_path.read_text())
+            origin_tree = ast.parse(origin_path.read_text(encoding="utf-8"))
             declarations = find_type_param_declarations(origin_tree)
 
             for alias in raw.names:
