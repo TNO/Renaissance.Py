@@ -5,6 +5,7 @@ from hamcrest import assert_that, contains_string, is_
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
 from renaissance.recipes.python_refactoring import PythonRefactoring
 from renaissance.recipes.unit_to_pytest import UnitToPytest
+from renaissance.syntax_tree.semantic_kind import SemanticKind
 
 
 class TestPythonRefactoring:
@@ -55,6 +56,51 @@ class TestPythonRefactoring:
             "import pytest\nfrom hamcrest import *",
         )
         assert_that(subject.apply_to_string(), contains_string("import pytest"))
+
+    # ------------------------------------------------------------------
+    # extract_call_arguments()
+    # ------------------------------------------------------------------
+
+    def test_extract_call_arguments_positional_only(self, mocker):
+        self._patch_factory(mocker, "fun(1, 'x')")
+        subject = UnitToPytest("test_foo.py")
+        call_node = subject.find_semantic_kind(SemanticKind.CALL)[0]
+
+        positional, keyword = subject.extract_call_arguments(call_node)
+
+        assert_that(positional, is_(["1", "'x'"]))
+        assert_that(keyword, is_({}))
+
+    def test_extract_call_arguments_keyword_only(self, mocker):
+        self._patch_factory(mocker, "fun(a=1, b='x')")
+        subject = UnitToPytest("test_foo.py")
+        call_node = subject.find_semantic_kind(SemanticKind.CALL)[0]
+
+        positional, keyword = subject.extract_call_arguments(call_node)
+
+        assert_that(positional, is_([]))
+        assert_that(keyword, is_({"a": "1", "b": "'x'"}))
+
+    def test_extract_call_arguments_mixed(self, mocker):
+        self._patch_factory(mocker, "fun(1, 2, b='x', c=other)")
+        subject = UnitToPytest("test_foo.py")
+        call_node = subject.find_semantic_kind(SemanticKind.CALL)[0]
+
+        positional, keyword = subject.extract_call_arguments(call_node)
+
+        assert_that(positional, is_(["1", "2"]))
+        assert_that(keyword, is_({"b": "'x'", "c": "other"}))
+
+    def test_extract_call_arguments_accepts_node_inside_call(self, mocker):
+        self._patch_factory(mocker, "fun(1, k='v')")
+        subject = UnitToPytest("test_foo.py")
+        call_node = subject.find_semantic_kind(SemanticKind.CALL)[0]
+        node_inside_call = call_node.children[0]
+
+        positional, keyword = subject.extract_call_arguments(node_inside_call)
+
+        assert_that(positional, is_(["1"]))
+        assert_that(keyword, is_({"k": "'v'"}))
 
     # ------------------------------------------------------------------
     # process() — skip branch
