@@ -11,6 +11,7 @@ from renaissance.recipes.type_var_domain import (
     find_type_param_declarations,
     is_safe_to_convert,
     is_safe_to_localize,
+    resolve_sibling_module,
 )
 
 
@@ -91,6 +92,22 @@ class TestIsSafeToLocalize:
 
         assert_that(is_safe_to_localize(tree, "T"), is_(None))
 
+    def test_ignores_non_generic_subscripted_base_and_plain_base(self) -> None:
+        tree = _parse("""
+            from typing import TypeVar
+            from collections.abc import Mapping
+
+            T = TypeVar("T")
+
+            class Plain(object):
+                pass
+
+            class Box(Mapping[T]):
+                pass
+        """)
+
+        assert_that(is_safe_to_localize(tree, "T"), is_(None))
+
     @pytest.mark.parametrize(
         ("source", "expected_reason"),
         [
@@ -122,3 +139,10 @@ class TestIsSafeToLocalize:
         tree = _parse(source)
 
         assert_that(is_safe_to_localize(tree, "T"), is_(expected_reason))
+
+
+class TestResolveSiblingModule:
+    """resolve_sibling_module: same-directory imports only, dotted/package imports out of scope."""
+
+    def test_returns_none_for_dotted_module_name(self) -> None:
+        assert_that(resolve_sibling_module("some/dir/file.py", "pkg.mod"), is_(None))
