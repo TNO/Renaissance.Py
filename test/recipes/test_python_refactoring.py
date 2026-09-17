@@ -102,6 +102,46 @@ class TestPythonRefactoring:
         assert_that(positional, is_(["1"]))
         assert_that(keyword, is_({"k": "'v'"}))
 
+    def test_extract_call_arguments_returns_empty_for_non_call_node(self, mocker):
+        self._patch_factory(mocker, "x = 1")
+        subject = UnitToPytest("test_foo.py")
+        assign_node = subject.find_semantic_kind(SemanticKind.ASSIGNMENT)[0]
+
+        positional, keyword = subject.extract_call_arguments(assign_node)
+
+        assert_that(positional, is_([]))
+        assert_that(keyword, is_({}))
+
+    # ------------------------------------------------------------------
+    # class_inherits_from() / class_base_arguments()
+    # ------------------------------------------------------------------
+
+    def test_class_base_arguments_returns_declared_bases(self, mocker):
+        self._patch_factory(mocker, "class Child(Base1, Base2):\n    pass")
+        subject = UnitToPytest("test_foo.py")
+        class_node = subject.find_semantic_kind(SemanticKind.CLASS)[0]
+
+        bases = subject.class_base_arguments(class_node)
+
+        assert_that(bases, is_(["Base1", "Base2"]))
+
+    def test_class_base_arguments_returns_empty_without_bases(self, mocker):
+        self._patch_factory(mocker, "class Child:\n    pass")
+        subject = UnitToPytest("test_foo.py")
+        class_node = subject.find_semantic_kind(SemanticKind.CLASS)[0]
+
+        bases = subject.class_base_arguments(class_node)
+
+        assert_that(bases, is_([]))
+
+    def test_class_inherits_from_checks_base_membership(self, mocker):
+        self._patch_factory(mocker, "class Child(Base):\n    pass")
+        subject = UnitToPytest("test_foo.py")
+        class_node = subject.find_semantic_kind(SemanticKind.CLASS)[0]
+
+        assert_that(subject.class_inherits_from(class_node, "Base"), is_(True))
+        assert_that(subject.class_inherits_from(class_node, "Other"), is_(False))
+
     # ------------------------------------------------------------------
     # process() — skip branch
     # ------------------------------------------------------------------
