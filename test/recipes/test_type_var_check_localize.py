@@ -164,6 +164,33 @@ class TestTypeVarCheckLocalize:
         output = subject.apply_to_string()
         assert_that(output.count("from typing import TypeVar"), is_(1))
 
+    def test_localizes_when_origin_brings_typevar_into_scope_via_wildcard_import(
+        self, mocker: MockerFixture, tmp_path: Path,
+    ) -> None:
+        # find_import_source can't locate "TypeVar" here - safe only because the importing file
+        # already imports it itself.
+        subject = self._create_cross_file(
+            mocker,
+            tmp_path,
+            """
+            from typing import *
+            T = TypeVar("T")
+            def a(x: T) -> T:
+                return x
+            """,
+            """
+            from typing import TypeVar
+            from file_1 import T
+            def b(x: T) -> T:
+                return x
+            """,
+        )
+        result = subject.localize_imported_typevars()
+
+        assert_that(result, has_entry("T", "fixed"))
+        output = subject.apply_to_string()
+        assert_that(output.count("from typing import TypeVar"), is_(1))
+
     def test_no_typevar_import_found(self, mocker: MockerFixture, tmp_path: Path) -> None:
         subject = self._create_cross_file(
             mocker,
