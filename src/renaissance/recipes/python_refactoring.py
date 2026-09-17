@@ -56,17 +56,17 @@ class PythonRefactoring(ASTProcessor):
         Returned keyword arguments preserve Python call semantics where keyword arguments
         appear after positional arguments.
         """
-        call_node = node if node is not None and node.semantic_kind == SemanticKind.CALL else getattr(node, "parent", None)
+        call_node = node if node is not None and node.semantic_kind == SemanticKind.CALL else node.parent
         if call_node is None or call_node.semantic_kind != SemanticKind.CALL:
             return [], {}
 
-        args_implicit = next((c for c in call_node.children if getattr(c, "name", None) == "args"), None)
-        keywords_implicit = next((c for c in call_node.children if getattr(c, "name", None) == "keywords"), None)
+        args_implicit = next((c for c in call_node.children if c.name == "args"), None)
+        keywords_implicit = next((c for c in call_node.children if c.name == "keywords"), None)
 
         positional_args = [arg_node.signature for arg_node in (args_implicit.children if args_implicit else [])]
         keyword_args: dict[str, str] = {}
         for kw_node in (keywords_implicit.children if keywords_implicit else []):
-            kw_name = kw_node.properties.get("arg")
+            kw_name = kw_node.node.arg
             if kw_name:
                 value_node = kw_node.children[0] if kw_node.children else kw_node
                 keyword_args[str(kw_name)] = value_node.signature
@@ -77,7 +77,7 @@ class PythonRefactoring(ASTProcessor):
         return base_name in self.class_base_arguments(class_node)
 
     def class_base_arguments(self, class_node: PythonRstNode) -> list[str]:
-        bases_implicit = next((c for c in class_node.children if getattr(c, "name", None) == "bases"), None)
+        bases_implicit = next((c for c in class_node.children if c.name == "bases"), None)
         if bases_implicit is None:
             return []
         return [child.signature for child in bases_implicit.children]
