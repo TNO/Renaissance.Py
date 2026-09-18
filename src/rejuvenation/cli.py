@@ -9,6 +9,9 @@ from renaissance.project.project_scanner import PythonScanner
 from renaissance.recipes.python_refactoring import PythonRefactoring
 from renaissance.syntax_tree import ASTShower
 
+# TODO: is this file working as intended?
+# See https://github.com/TNO/Renaissance.Py/issues/196
+
 
 def refactor():
     """AI: Run the `refactor`/`extract`/`inspect` CLI subcommands based on `sys.argv`."""

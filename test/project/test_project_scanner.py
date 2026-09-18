@@ -1,6 +1,7 @@
 """Tests for the project source-file scanners."""
 
 import json
+from unittest.mock import Mock
 
 import pytest
 from hamcrest import assert_that, calling, contains_inanyorder, empty, equal_to, is_, raises
@@ -198,12 +199,52 @@ class TestPythonScanner:
     def test_default_package_dirs(self):
         """AI: Assert PythonScanner defaults package_dirs to ["src", "lib", "test"]."""
         scanner = PythonScanner()
-        assert_that(scanner.package_dirs, equal_to(["src", "lib", "test"]))
+        assert_that(scanner.package_dirs, is_(None))
 
     def test_default_root_dir(self):
         """AI: Assert PythonScanner defaults root_dir to "."."""
         scanner = PythonScanner()
         assert_that(scanner.root_dir, is_("."))
+
+    @pytest.mark.parametrize("excluded_dir", sorted(PythonScanner.EXCLUDED_DIRS))
+    def test_excludes_known_noise_dirs_in_default_whole_tree_scan(self, tmp_path, excluded_dir):
+        """Assert PythonScanner.find_sources excludes known noise directories during a default whole-tree scan."""
+        noise_dir = tmp_path / excluded_dir
+        noise_dir.mkdir()
+        (noise_dir / "ignored.py").write_text("")
+        (tmp_path / "kept.py").write_text("")
+
+        scanner = PythonScanner(str(tmp_path))
+        result = [p.name for p in scanner.find_sources()]
+
+        assert_that(result, equal_to(["kept.py"]))
+
+    @pytest.mark.parametrize("excluded_dir", sorted(PythonScanner.EXCLUDED_DIRS))
+    def test_excludes_known_noise_dirs_within_explicit_package_dirs(self, tmp_path, excluded_dir):
+        """Assert PythonScanner.find_sources excludes known noise directories within an explicit package_dirs."""
+        src = tmp_path / "src"
+        src.mkdir()
+        noise_dir = src / excluded_dir
+        noise_dir.mkdir()
+        (noise_dir / "ignored.py").write_text("")
+        (src / "kept.py").write_text("")
+
+        scanner = PythonScanner(str(tmp_path), package_dirs=["src"])
+        result = [p.name for p in scanner.find_sources()]
+
+        assert_that(result, equal_to(["kept.py"]))
+
+    def test_default_package_dirs_scans_whole_root_dir(self, tmp_path):
+        """Assert PythonScanner scans the whole root_dir by default when package_dirs is not given."""
+        # Motivating case: source living outside src/lib/test (e.g. redis-py's redis/ layout).
+        redis_like = tmp_path / "redis"
+        redis_like.mkdir()
+        (redis_like / "client.py").write_text("")
+
+        scanner = PythonScanner(str(tmp_path))
+        result = [str(p) for p in scanner.find_sources()]
+
+        assert_that(result, equal_to([str(redis_like / "client.py")]))
 
 
 # ---------------------------------------------------------------------------
@@ -249,14 +290,14 @@ class TestBearCppScanner:
     def test_run_bear_raises_on_nonzero_exit(self, mocker):
         """AI: Assert BearCppScanner.run_bear raises RuntimeError when the Bear subprocess exits non-zero."""
         scanner = BearCppScanner()
-        mocker.patch("renaissance.project.project_scanner.system", return_value=1)
+        mocker.patch("renaissance.project.project_scanner.subprocess.run", return_value=Mock(returncode=1))
 
         assert_that(calling(scanner.run_bear), raises(RuntimeError))
 
     def test_run_bear_succeeds_on_zero_exit(self, mocker):
         """AI: Assert BearCppScanner.run_bear does not raise when the Bear subprocess exits zero."""
         scanner = BearCppScanner()
-        mocker.patch("renaissance.project.project_scanner.system", return_value=0)
+        mocker.patch("renaissance.project.project_scanner.subprocess.run", return_value=Mock(returncode=0))
 
         # Should not raise
         scanner.run_bear()

@@ -12,6 +12,9 @@ from renaissance.syntax_tree import ASTFactory
 
 factory = ASTFactory(PythonRstNode, [])
 
+# TODO: is this file working as intended?
+# See https://github.com/TNO/Renaissance.Py/issues/196
+
 
 def list_matching_files(root: str | Path, recursive: bool = True) -> list[Path]:
     """AI: Return files under `root` whose names match known taut/unittest/stub naming patterns."""
