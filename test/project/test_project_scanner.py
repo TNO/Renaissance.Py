@@ -173,11 +173,48 @@ class TestPythonScanner:
 
     def test_default_package_dirs(self):
         scanner = PythonScanner()
-        assert_that(scanner.package_dirs, equal_to(["src", "lib", "test"]))
+        assert_that(scanner.package_dirs, is_(None))
 
     def test_default_root_dir(self):
         scanner = PythonScanner()
         assert_that(scanner.root_dir, is_("."))
+
+    @pytest.mark.parametrize("excluded_dir", sorted(PythonScanner.EXCLUDED_DIRS))
+    def test_excludes_known_noise_dirs_in_default_whole_tree_scan(self, tmp_path, excluded_dir):
+        noise_dir = tmp_path / excluded_dir
+        noise_dir.mkdir()
+        (noise_dir / "ignored.py").write_text("")
+        (tmp_path / "kept.py").write_text("")
+
+        scanner = PythonScanner(str(tmp_path))
+        result = [p.name for p in scanner.find_sources()]
+
+        assert_that(result, equal_to(["kept.py"]))
+
+    @pytest.mark.parametrize("excluded_dir", sorted(PythonScanner.EXCLUDED_DIRS))
+    def test_excludes_known_noise_dirs_within_explicit_package_dirs(self, tmp_path, excluded_dir):
+        src = tmp_path / "src"
+        src.mkdir()
+        noise_dir = src / excluded_dir
+        noise_dir.mkdir()
+        (noise_dir / "ignored.py").write_text("")
+        (src / "kept.py").write_text("")
+
+        scanner = PythonScanner(str(tmp_path), package_dirs=["src"])
+        result = [p.name for p in scanner.find_sources()]
+
+        assert_that(result, equal_to(["kept.py"]))
+
+    def test_default_package_dirs_scans_whole_root_dir(self, tmp_path):
+        # Motivating case: source living outside src/lib/test (e.g. redis-py's redis/ layout).
+        redis_like = tmp_path / "redis"
+        redis_like.mkdir()
+        (redis_like / "client.py").write_text("")
+
+        scanner = PythonScanner(str(tmp_path))
+        result = [str(p) for p in scanner.find_sources()]
+
+        assert_that(result, equal_to([str(redis_like / "client.py")]))
 
 
 # ---------------------------------------------------------------------------

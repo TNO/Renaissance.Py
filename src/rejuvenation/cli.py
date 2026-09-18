@@ -7,6 +7,9 @@ from renaissance.project.project_scanner import PythonScanner
 from renaissance.recipes.python_refactoring import PythonRefactoring
 from renaissance.syntax_tree import ASTShower
 
+# TODO: is this file working as intended?
+# refer to #196
+
 
 def refactor():
     if sys.argv[1] == "refactor":
