@@ -30,3 +30,16 @@ class TestPythonLstNode:
         node = factory.create_from_text(code)
         print(f"testing {code=} with LSTNode")
         assert_that(node.children[0].semantic_kind is not SemanticKind.NODE, is_(True), f"{code=}")
+
+    @pytest.mark.xfail(
+        reason="LSTNode.__hash__ is derived from self.children, which add_child() mutates after "
+        "construction - mutating a node already stored in a set corrupts its hash bucket, so "
+        "membership checks silently fail even though the object is still the set's only member.",
+        strict=True,
+    )
+    def test_hash_stays_stable_after_add_child(self):
+        parent = LSTNode("block", {}, "block text")
+        child = LSTNode("stmt", {"name": "a"}, "a;")
+        nodes = {parent}
+        parent.add_child(child)
+        assert_that(parent in nodes, is_(True))

@@ -15,25 +15,18 @@ authors = [
 license = { text = "EPL-2.0" }
 requires-python = "==3.14.*"
 dependencies = [
-    "textx==4.4.0",
-    "dataclasses-json==0.6.7",
+    "arpeggio>=2.0",
     "pyperclip>=1.8",
-    "clang==18.1.8",
-    "libclang==18.1.1",
+    "libclang-ng==22.1.4.2",
     "more-itertools>=10.0",
     "networkx>=3.0",
     "pyhamcrest>=2.1",
-    "pyecore>=0.14",
-    "pyyaml>=6.0",
     "termcolor>=2.0",
-    "typing-extensions>=4.0",
     "tree-sitter>=0.25",
     "tree-sitter-python==0.25.0",
     "tree-sitter-cpp==0.23.4",
     "tree-sitter-java==0.23.5",
-    "ast-comments>=1.0",
     "libcst>=1.8.6",
-    "antlr4-python3-runtime>=4.13.2",
     "hypothesmith>=0.3.3",
     "autopep8>=2.0",
     "flake8>=7.0",
@@ -51,7 +44,6 @@ test = [
     "pytest-mock>=3.15",
     "pytest-profiling>=1.8",
     "coverage>=7.0",
-    "behave"
 ]
 lint = [
     "ruff>=0.5",
@@ -113,7 +105,7 @@ force-exclude = true
 [tool.ruff.lint]
 select = [
     "A","AIR", "ASYNC", "COM", "DJ", "DTZ", "E", "EXE",
-    "F", "FA", "FAST", "FLY", "G", "I", "ICN", "INT", "ISC",
+    "F", "FA", "FAST", "FLY", "FURB", "G", "I", "ICN", "INT", "ISC",
     "LOG", "NPY", "PTH", "PD", "PERF", "PGH", "PIE", "PLC", "PYI",
     "Q", "RSE", "SIM", "SLOT", "T10", "TID", "UP", "W", "YTT",
 ]

@@ -104,7 +104,7 @@ class PythonFactory:
         return atu
 
     @staticmethod
-    def load_from_lst(text, file):
+    def load_from_lst(text: str, _file_name: str) -> LSTNode:
         adapter = TreeSitterAdapter(tree_sitter_python)
         tree = adapter.parse_code(text)
         return adapter.to_lst(text, tree).root

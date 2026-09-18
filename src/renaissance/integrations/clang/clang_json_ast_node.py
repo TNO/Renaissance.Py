@@ -613,4 +613,4 @@ class ReferenceHelper:
     @staticmethod
     @cache
     def _is_child_node(key):
-        return key in ["inner"]
+        return key == "inner"

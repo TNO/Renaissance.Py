@@ -20,7 +20,7 @@ def list_matching_files(root: str | Path, recursive: bool = True) -> list[Path]:
 
 def refactor():
     if sys.argv[1] == "refactor":
-        print(f"Refactor {Path().resolve()}")
+        print(f"Refactor {Path().cwd()}")
         for file in PythonScanner().find_sources():
             refactoring = sys.argv[2]
             PythonRefactoring.process(refactoring, file)

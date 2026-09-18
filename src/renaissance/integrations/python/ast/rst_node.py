@@ -234,12 +234,12 @@ class PythonRstNode:
                                 self.body = self.children[-1].children
 
                     case ast.AST():
-                        if name not in ["ctx"]:
+                        if name != "ctx":
                             self.children.append(PythonRstNode(child, translation_unit, self))
                             if isinstance(child, ast.expr):
                                 self.expression = self.children[-1]
                     case _:
-                        if name not in ["None"]:
+                        if name != "None":
                             self.properties[name] = child
             except AttributeError as e:
                 print(e)

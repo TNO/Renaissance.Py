@@ -63,7 +63,7 @@ class ClangTranslationUnit:
             if child.kind.name == "MACRO_INSTANTIATION":
                 result.add(
                     (
-                        child.extent.start.file,
+                        child.extent.start.file.name,
                         child.extent.start.offset,
                         child.extent.end.offset,
                     ),
@@ -436,7 +436,7 @@ class ClangASTNode(ASTNode[Cursor, ClangTranslationUnit]):
         try:
             if self.node.kind.name in ["VAR_DECL", "STRUCT_DECL"]:
                 end_offset = self.node.extent.end.offset + 1
-            elif self.node.kind.name in ["MACRO_DEFINITION"]:
+            elif self.node.kind.name == "MACRO_DEFINITION":
                 end_offset = self.node.extent.end.offset
             else:
                 end_offset = self.node.extent.end.offset
@@ -505,6 +505,7 @@ SYSTEM_MACROS = {
     "_WIN64",
     "_ISO_VOLATILE",
     "_INTEGRAL_MAX_BITS",
+    "_CRT_USE_BUILTIN_OFFSETOF",
 }
 
 

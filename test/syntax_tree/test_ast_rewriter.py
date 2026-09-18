@@ -61,6 +61,29 @@ class TestCommentLocation:
                 b"Some code // first comment\nMore code /* second comment */",
                 (10, 26),
             ),
+            pytest.param(
+                "multiline_hash_comment",
+                0,
+                50,
+                b"Some code\n# first\n# second\nMore code",
+                (10, 26),
+                marks=pytest.mark.xfail(
+                    reason="get_comment_location only finds the single closest # line via rfind - "
+                    "a multi-line contiguous comment block is truncated to its last line.",
+                    strict=True,
+                ),
+            ),
+            pytest.param(
+                "multiline_slash_comment",
+                0,
+                50,
+                b"Some code\n// first\n// second\nMore code",
+                (10, 28),
+                marks=pytest.mark.xfail(
+                    reason="Same single-line limitation as multiline_hash_comment, for the // branch.",
+                    strict=True,
+                ),
+            ),
         ],
     )
     def test(
