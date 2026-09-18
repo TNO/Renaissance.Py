@@ -114,7 +114,7 @@ The same regular-expression pattern also yields two matches within the following
 
 ```python
 MyPrint(name, "is", age, "years (old).")
-MyPrint((a+12) * matrix[0][1])
+MyPrint((a + 12) * matrix[0][1])
 ```
 
 However, the matches — `MyPrint(name, "is", age, "years (old)` and `MyPrint((a+12)` — do not correspond to function calls.
@@ -158,7 +158,7 @@ and two matches within:
 
 ```python
 MyPrint("Hello Word")
-MyPrint((a+12) * matrix[0][1])
+MyPrint((a + 12) * matrix[0][1])
 ```
 
 AST-based patterns respect the grammar of the language and distinguish syntactic constructs precisely.

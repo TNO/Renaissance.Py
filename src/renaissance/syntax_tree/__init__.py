@@ -1,4 +1,5 @@
-# __init__.py
+"""AI: Language-agnostic AST abstraction layer (finder, rewriter, processor) used by all parser integrations."""
+
 from renaissance.utils.text_utils import TextUtils
 
 from .ast_factory import ASTFactory

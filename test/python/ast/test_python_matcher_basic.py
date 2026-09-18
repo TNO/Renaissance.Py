@@ -1,3 +1,5 @@
+"""Tests documenting basic code-to-code matching for the Python pattern matcher."""
+
 from collections.abc import Sequence
 
 import pytest
@@ -47,6 +49,7 @@ class TestPythonMatcherBasic:
         make_parametersets_of_equivalence_classes("trivia", PATTERN_FACTORY.create_statements, TRIVIA_CLASSES),
     )
     def test_pairs_of_equivalence_classes(self, a: Sequence[NodeProtocol], b: Sequence[NodeProtocol], expected: bool):
+        """AI: Verify code snippet pairs differing only in comments/whitespace match as expected."""
         assert_pair_equivalence(a, b, expected)
 
 

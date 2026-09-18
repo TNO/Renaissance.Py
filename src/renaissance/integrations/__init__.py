@@ -1,3 +1,5 @@
+"""AI: Parser integrations for each supported language (clang, python, tree_sitter)."""
+
 MATCH_ONE = "_MatchOne__"
 MATCH_ALL = "_MatchAll__"
 # __all__ = [

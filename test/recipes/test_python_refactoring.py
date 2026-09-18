@@ -1,3 +1,5 @@
+"""Tests for the PythonRefactoring recipe base class."""
+
 import textwrap
 
 from hamcrest import assert_that, contains_string, is_
@@ -8,6 +10,8 @@ from renaissance.recipes.unit_to_pytest import UnitToPytest
 
 
 class TestPythonRefactoring:
+    """AI: Tests for the PythonRefactoring recipe base class."""
+
     def _patch_factory(self, mocker, text="pass", filename="test_foo.py"):
         code = textwrap.dedent(text)
         mocker.patch(
@@ -20,6 +24,7 @@ class TestPythonRefactoring:
     # ------------------------------------------------------------------
 
     def test_init_sets_default_list_patterns(self, mocker):
+        """AI: Verify a subclass's __init__ sets its black/white list patterns from subclass defaults."""
         self._patch_factory(mocker)
         subject = UnitToPytest("test_foo.py")
         # base class defaults are overridden by subclass, but they are set in __init__
@@ -27,6 +32,7 @@ class TestPythonRefactoring:
         assert_that(subject.white_list_pattern, is_("test"))
 
     def test_replace_stmt_rewrites_matching_pattern(self, mocker):
+        """AI: Verify replace_stmt rewrites a statement matching an exact pattern."""
         self._patch_factory(
             mocker,
             """
@@ -41,6 +47,7 @@ class TestPythonRefactoring:
         assert_that(subject.apply_to_string(), contains_string("from hamcrest import *"))
 
     def test_replace_stmt_expands_variadic_captures(self, mocker):
+        """AI: Verify replace_stmt rewrites a statement matched via a variadic ($$symbols) capture."""
         self._patch_factory(
             mocker,
             """
@@ -61,6 +68,7 @@ class TestPythonRefactoring:
     # ------------------------------------------------------------------
 
     def test_process_skips_file_matching_black_list(self, mocker, capsys):
+        """AI: Verify process() skips and does not run the refactor when the filename matches the black list."""
         self._patch_factory(mocker, "pass", "utils_for_test_foo.py")
         run_spy = mocker.patch("renaissance.recipes.unit_to_pytest.UnitToPytest.run")
         PythonRefactoring.process("UnitToPytest", "utils_for_test_foo.py")
@@ -69,6 +77,7 @@ class TestPythonRefactoring:
         assert_that(run_spy.call_count, is_(0))
 
     def test_process_skips_file_not_matching_white_list(self, mocker, capsys):
+        """AI: Verify process() skips and does not run the refactor when the filename doesn't match the white list."""
         self._patch_factory(mocker, "pass", "my_module.py")
         run_spy = mocker.patch("renaissance.recipes.unit_to_pytest.UnitToPytest.run")
         PythonRefactoring.process("UnitToPytest", "my_module.py")
@@ -81,6 +90,7 @@ class TestPythonRefactoring:
     # ------------------------------------------------------------------
 
     def test_process_runs_refactor_on_matching_file(self, mocker, capsys):
+        """AI: Verify process() runs the refactor when the filename matches both white and black list patterns."""
         self._patch_factory(mocker, "pass", "test_foo.py")
         run_spy = mocker.patch("renaissance.recipes.unit_to_pytest.UnitToPytest.run")
         PythonRefactoring.process("UnitToPytest", "test_foo.py")
@@ -93,6 +103,7 @@ class TestPythonRefactoring:
     # ------------------------------------------------------------------
 
     def test_body_returns_module_level_statements(self, mocker):
+        """AI: Verify the body property returns the module's top-level statements."""
         self._patch_factory(
             mocker,
             """

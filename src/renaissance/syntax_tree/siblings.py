@@ -1,3 +1,5 @@
+"""AI: Protocol for a contiguous range of sibling syntax nodes."""
+
 from collections.abc import Sequence
 from typing import Protocol, Self, runtime_checkable
 
@@ -11,6 +13,7 @@ from renaissance.syntax_tree.text_segment import TextSegment
 @runtime_checkable
 class Siblings[NodeType](TextSegment, Protocol):
     """Protocol for contiguous siblings, i.e., a range of syntax nodes.
+
     Siblings is a text segment.
     When the range of siblings is empty, the start and end offset of the text segment are the same.
     Yet, an offset within the text is available.

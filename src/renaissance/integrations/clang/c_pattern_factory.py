@@ -1,3 +1,5 @@
+"""AI: Factory for building C/C++ AST patterns from Clang-parsed source."""
+
 import re
 from collections.abc import Sequence
 
@@ -24,6 +26,7 @@ def _matches_kind(node, kind) -> bool:
 
 
 def derive_header_text(language: str, ref_node: ASTNode | None):
+    """AI: Build the header text (includes, defines, declarations) needed to compile a standalone pattern snippet."""
     # collect includes #defines  and var decl from the refNode
     header = "\n"
     if ref_node:
@@ -54,6 +57,8 @@ def derive_header_text(language: str, ref_node: ASTNode | None):
 
 
 class CPatternFactory:
+    """AI: Factory for building C-family AST patterns from text, with reserved placeholder names."""
+
     reserved_function_name = "__rejuvenation__reserved__function__name__"
     reserved_variable_name = "__rejuvenation__reserved__variable__name__"
 
@@ -63,16 +68,19 @@ class CPatternFactory:
         ref_node: ASTNode | None = None,
         language: str = "c",
     ):
+        """AI: Prepare a pattern factory for creating C-family AST patterns from text."""
         self.factory = factory
         self.header, self.language = derive_header_text(language, ref_node)
 
     @staticmethod
     def remove_indent(text: str) -> str:
+        """AI: Strip the common leading indentation shared by every non-blank line of text."""
         split = [len(line) - len(line.lstrip()) for line in text.splitlines() if line.strip()]
         indent = split[0] if split else 0
         return "\n".join([line[indent:] for line in text.splitlines()])
 
     def create_expression(self, text: str, extra_declarations=None) -> ASTNode:
+        """AI: Create an AST node for the given C/C++ expression text."""
         if extra_declarations is None:
             extra_declarations = []
         keywords = CPatternFactory._get_keywords_from_text(text)
@@ -100,6 +108,7 @@ class CPatternFactory:
         extra_declarations=None,
         declarations=None,
     ):
+        """AI: Create the AST declaration nodes found in the given C/C++ text."""
         if declarations is None:
             declarations = []
         if extra_declarations is None:
@@ -133,6 +142,7 @@ class CPatternFactory:
         extra_declarations=None,
         declarations=None,
     ) -> ASTNode:
+        """AI: Create the single AST declaration node found in the given C/C++ text."""
         if declarations is None:
             declarations = []
         if extra_declarations is None:
@@ -152,6 +162,7 @@ class CPatternFactory:
         extra_declarations=None,
         kind=None,
     ) -> Sequence[ASTNode]:
+        """AI: Create the AST statement nodes found in the given C/C++ text."""
         # create a reference for all used variables excluding the specified types
         if extra_declarations is None:
             extra_declarations = []
@@ -165,7 +176,8 @@ class CPatternFactory:
         return self._create_body(text, types, parameters, extra_declarations, kind)
 
     def create(self, text: str, kind=None) -> ASTNode:
-        """Creates an object using the factory from the provided text.
+        """Create an object using the factory from the provided text.
+
         The object is created by the factory using the provided text and the header of the provided reference node.
         It is up to the user to pick the right node for pattern matching.
 
@@ -190,6 +202,7 @@ class CPatternFactory:
         extra_declarations=None,
         kind=None,
     ) -> ASTNode:
+        """AI: Create the single AST statement node found in the given C/C++ text."""
         if extra_declarations is None:
             extra_declarations = []
         if types is None:
@@ -255,10 +268,14 @@ class CPatternFactory:
 
 
 class CPPPatternFactory(CPatternFactory):
+    """AI: Factory for building C++-specific AST patterns, extending CPatternFactory with constructor-call support."""
+
     def __init__(self, factory: ASTFactory, ref_node: ASTNode | None = None):
+        """AI: Prepare a pattern factory for creating C++-specific AST patterns from text."""
         super().__init__(factory, ref_node, "cpp")
 
     def create_constructor_call(self, pattern: str):
+        """AI: Create an AST node for a C++ constructor call matching the given pattern."""
         class_and_args = re.match(R"([$\w]+)\(([^)]+)\)", pattern.replace(" ", ""))
         if class_and_args:
             class_name = class_and_args.group(1)

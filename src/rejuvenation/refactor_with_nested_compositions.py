@@ -1,3 +1,5 @@
+"""AI: Example script demonstrating nested pattern replacements when rewriting C source."""
+
 # This script demonstrates the use of the syntax_tree library to parse and rewrite C code.
 # It specifically showcases nested replacements and multiple patterns.
 import textwrap
@@ -63,6 +65,7 @@ void f(){
 
 
 def refactor_with_nested_compositions(args):
+    """AI: Demonstrate nested pattern composition by rewriting calls inside matched if-statement bodies."""
     # the first argument is the code to be parsed
     code = args[1] if len(args) > 1 else ""
 

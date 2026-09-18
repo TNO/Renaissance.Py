@@ -1,3 +1,5 @@
+"""AI: Shared syntax-node invariant assertion helpers used across the syntax_tree test suite."""
+
 from typing import Any
 
 from renaissance.syntax_tree.syntax_node import SyntaxNode

@@ -93,6 +93,7 @@ def get_placeholder_name(node: AstNode) -> str | None:
         return get_placeholder_name(children[0])
     return None
 
+
 # Structural equality for repeated placeholders
 def placeholders_equal(a: AstNode, b: AstNode) -> bool:
     return unparse(a) == unparse(b)

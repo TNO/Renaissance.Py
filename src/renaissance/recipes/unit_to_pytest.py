@@ -1,3 +1,5 @@
+"""AI: Recipe that converts unittest-style test files to pytest style."""
+
 import textwrap
 from collections.abc import Sequence
 from pathlib import Path
@@ -12,6 +14,8 @@ from renaissance.syntax_tree.semantic_kind import SemanticKind
 
 
 class UnitToPytest(PythonRefactoring):
+    """AI: Recipe that converts unittest-style test files to pytest style."""
+
     def __init__(self, file):
         """Hide internal administration in the parent class so that this class you only deals with specific refactors."""
         super().__init__(file)
@@ -25,6 +29,7 @@ class UnitToPytest(PythonRefactoring):
         self.post_processing()
 
     def refactor(self):
+        """AI: Apply file-, class-, and function-level unittest-to-pytest conversions."""
         # 1: file level changes
         self.convert_test_class()
         self.restructure_module()
@@ -61,6 +66,7 @@ class UnitToPytest(PythonRefactoring):
         self.replace_stmt("with self.assertRaises($exc): $call()", "assert_that(calling($call), raises($exc))")
 
     def post_processing(self):
+        """AI: Repeatedly simplify assert_that(...) expressions until no further changes occur."""
         # 4: improve to more concise asserts
         while self.has_changed():
             self.commit()
@@ -84,6 +90,7 @@ class UnitToPytest(PythonRefactoring):
         self.commit()
 
     def convert_test_class(self):
+        """AI: Rewrite TestCase-derived class headers to drop the unittest base class."""
         test_main: Sequence[NodeProtocol] = self.pattern_factory.create_statements(
             "class $klass($test_class):\n    $$test_cases\n",
         )  # type: ignore[assignment]
@@ -104,6 +111,7 @@ class UnitToPytest(PythonRefactoring):
                 self.replace(repl, match.nodes, False, False)
 
     def convert_test_setup(self):
+        """AI: Convert a setUp method into a pytest autouse fixture named setup."""
         setup_function = self.pattern_factory.create_statements("def setUp(self): $$stmts")
         for match in match_pattern(self.body, setup_function):
             # add decorator to the setup dunction and convert to snake case
@@ -111,6 +119,7 @@ class UnitToPytest(PythonRefactoring):
             self.replace(repl, match.nodes, False, False)
 
     def convert_assert(self, pattern, replacement):
+        """AI: Replace calls matching pattern with replacement, swapping expected/actual arguments as needed."""
         pat = self.pattern_factory.create_statements(pattern)
         for match in match_pattern(self.root.children, pat):
             repl = replacement
@@ -124,9 +133,11 @@ class UnitToPytest(PythonRefactoring):
             self.replace(repl, match.nodes, False, False)
 
     def is_swapped(self, match: PatternMatch) -> bool:
+        """AI: Return whether $exp and $act appear swapped in the match (i.e. $exp is a literal)."""
         return match.expansions["$exp"][0].semantic_kind is SemanticKind.LITERAL
 
     def convert_parameterized_test(self):
+        """AI: Convert @parameterized.expand-decorated test functions into @pytest.mark.parametrize."""
         unittest = self.pattern_factory.create_statements(
             textwrap.dedent("""
             @parameterized.expand($$parameters)
@@ -153,6 +164,7 @@ class UnitToPytest(PythonRefactoring):
             self.replace(repl, fun, False, False)
 
     def remove_print(self):
+        """AI: Remove print(...) statements, or their containing block if it's the only statement."""
         print_msg = self.pattern_factory.create_statements("print($$msg)")  # type: ignore[assignment]
         for match in match_pattern(self.root.children, print_msg):
             if len(match.nodes[0].parent.parent.body) == 1:
@@ -161,6 +173,7 @@ class UnitToPytest(PythonRefactoring):
                 self.remove(match.nodes, False, False)
 
     def convert_plain_assert_same_length(self):
+        """AI: Replace a manual length-check assert with an assert_that(...) has_length assertion."""
         pattern: Sequence[NodeProtocol] = self.pattern_factory.create_statements(
             '$act: int = len($real)\nassert $exp == $act, "$act = " + str($act)',
         )
@@ -172,12 +185,14 @@ class UnitToPytest(PythonRefactoring):
             self.replace(repl, match.nodes, False, False)
 
     def convert_skip_test(self):
+        """AI: Replace unittest.skip attribute references with pytest.mark.skip."""
         nodes = find_semantic_kind(self.root, SemanticKind.ATTRIBUTE)
         for node in nodes:
             if node.signature == "unittest.skip":
                 self.replace("pytest.mark.skip", node, False, False)
 
     def swap_expected_and_actual(self):
+        """AI: Swap the $exp and $act arguments of assert_that(...) calls when they appear reversed."""
         pattern: Sequence[NodeProtocol] = self.pattern_factory.create_statements("assert_that($exp, is_($act))")  # type: ignore[assignment]
         for match in match_pattern(self.root.children, pattern):
             if self.is_swapped(match):
@@ -188,6 +203,7 @@ class UnitToPytest(PythonRefactoring):
                 self.replace(repl, match.nodes, False, False)
 
     def restructure_module(self):
+        """AI: Move module-level functions into a test class, creating one if none exists."""
         funs = [stmt for stmt in self.body if stmt.semantic_kind is SemanticKind.FUNCTION]
         test_classes = [stmt for stmt in self.body if stmt.semantic_kind is SemanticKind.CLASS and stmt.name.startswith("Test")]
         if len(funs) == 0:
@@ -216,6 +232,7 @@ class UnitToPytest(PythonRefactoring):
         self.commit()
 
     def convert_file_to_test_class(self):
+        """AI: Derive a PascalCase Test-prefixed class name from the file's stem."""
         path = Path(self.filename)
         stem = path.stem
         parts = stem.split("_")
@@ -225,6 +242,7 @@ class UnitToPytest(PythonRefactoring):
         return name if name.startswith("Test") else f"Test{name}"
 
     def remove_duplicate_import(self, import_str):
+        """AI: Remove duplicate occurrences of the given import statement, keeping the first and last."""
         import_stmt: Sequence[NodeProtocol] = self.pattern_factory.create_statements(import_str)  # type: ignore[assignment]
         # type: ignore[assignment]
         duplicate_imports = match_pattern(self.body, import_stmt)

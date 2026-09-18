@@ -1,5 +1,5 @@
-# This script demonstrates the use of the syntax_tree library to parse and rewrite C code.
-# It specifically showcases the replacement of if-else statements with ternary operators.
+"""AI: Example script demonstrating removal of unused variables from C source via the cleanup refactoring recipe."""
+
 from more_itertools import flatten
 
 from renaissance.integrations.clang import ClangASTNode
@@ -51,6 +51,7 @@ expected_result_refactor = """
 
 
 def remove_unused_variable_using_refactor_method(node_type1: type[ASTNode]):
+    """AI: Remove unused variables from the example code via `CleanupRefactoring.remove_unused_variables`."""
     factory = ASTFactory(node_type1, [])
     # create translation unit
     atu = factory.create_from_text(example_code, "test.c")
@@ -67,6 +68,7 @@ def remove_unused_variable_using_refactor_method(node_type1: type[ASTNode]):
 
 
 def remove_unused_variable_low_level(node_type1: type[ASTNode]):
+    """AI: Remove unused variables from the example code using low-level pattern matching directly."""
     factory = ASTFactory(ClangJsonASTNode, [])
     # Create a pattern factory (using the factory (hence also its args)
     # create translation unit

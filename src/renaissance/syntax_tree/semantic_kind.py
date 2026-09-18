@@ -1,7 +1,11 @@
+"""AI: Enumeration of language-agnostic semantic kinds used to classify AST nodes."""
+
 from enum import StrEnum
 
 
 class SemanticKind(StrEnum):
+    """AI: Enumerate the language-agnostic semantic kinds used to classify AST nodes."""
+
     NODE = "node"
     TRANSLATION_UNIT = "translation_unit"
     STATEMENT = "statement"

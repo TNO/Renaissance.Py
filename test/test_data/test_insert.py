@@ -1,3 +1,5 @@
+"""AI: Sample source and inserted-code fixtures used as test fixture data."""
+
 input_code = """
 import LLXA
 def a():

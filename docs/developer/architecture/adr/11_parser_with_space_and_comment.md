@@ -75,12 +75,14 @@ tree = cst.parse_module(source)
 # Round-trip: produces exactly the same source
 assert tree.code == source
 
+
 # Transformation using libcst
 class RenameX(cst.CSTTransformer):
     def leave_Name(self, original_node, updated_node):
         if updated_node.value == "x":
             return updated_node.with_changes(value="y")
         return updated_node
+
 
 new_tree = tree.visit(RenameX())
 # Whitespace and comments are preserved; only "x" is renamed to "y"

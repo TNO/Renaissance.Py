@@ -1,3 +1,5 @@
+"""Tests for the MatchFinder pattern matching."""
+
 from __future__ import annotations
 
 from hamcrest import assert_that, has_length, is_
@@ -30,7 +32,10 @@ result = [
 
 
 class TestMatchFinder:
+    """AI: Tests for the MatchFinder pattern matching."""
+
     def test_find_in_tree_one_and_all_params(self):
+        """AI: Verify find_in_list finds the pattern at position 0 in the full statement list."""
         factory = ASTFactory(ClangASTNode, [])
         patterns = [CPatternFactory(factory).create_statements(statements, extra_declarations=extra_declarations)]
 
@@ -40,6 +45,7 @@ class TestMatchFinder:
         assert_that(found_position, is_(0))
 
     def test_find_in_tree_one_and_all_params_2(self):
+        """AI: Verify find_in_list finds the pattern at position 0 when the list starts one statement later."""
         factory = ASTFactory(ClangASTNode, [])
         patterns = [CPatternFactory(factory).create_statements(statements, extra_declarations=extra_declarations)]
 
@@ -49,6 +55,7 @@ class TestMatchFinder:
         assert_that(found_position, is_(0))
 
     def test_find_in_tree_one_and_all_params_3(self):
+        """AI: Verify find_in_list finds the pattern at position 0 when the list starts two statements later."""
         factory = ASTFactory(ClangASTNode, [])
         patterns = [CPatternFactory(factory).create_statements(statements, extra_declarations=extra_declarations)]
 
@@ -58,6 +65,7 @@ class TestMatchFinder:
         assert_that(found_position, is_(0))
 
     def test_match_one_and_all_params(self):
+        """AI: Verify a single-placeholder-plus-variadic pattern matches all call statements in the sample code."""
         factory = ASTFactory(ClangASTNode, [])
         patterns = [CPatternFactory(factory).create_statements(statements, extra_declarations=extra_declarations)]
 

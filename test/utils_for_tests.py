@@ -1,3 +1,5 @@
+"""AI: Shared debug-printing and dict-compression helpers used across the test suite."""
+
 import re
 from collections.abc import Sequence
 
@@ -10,10 +12,12 @@ AST_SHOWER = False
 
 
 def to_string(d: dict[str, Sequence[ASTNode]]):
+    """AI: Convert a dict of ASTNode/string sequences into a dict of compressed text strings."""
     return {k: [compress(v.text if isinstance(v, ASTNode) else v) for v in vs] for k, vs in d.items()}
 
 
 def compress(s: str):
+    """AI: Collapse whitespace and trim spaces adjacent to non-word characters in a string."""
     skip_whitespace = re.sub(r"\s+", " ", s.replace("\n", ""))
     skip_whitespace = re.sub(r"(\W)\s", r"\1", skip_whitespace)
     skip_whitespace = re.sub(r"\s(\W)", r"\1", skip_whitespace)
@@ -21,6 +25,7 @@ def compress(s: str):
 
 
 def show_node(node: ASTNode, title: str = ""):
+    """AI: Print an ASTNode's structure via ASTShower when VERBOSE mode is enabled."""
     if VERBOSE:
         if title:
             print(f"\n{'=' * 10} {title} {'=' * 10}")
@@ -28,6 +33,7 @@ def show_node(node: ASTNode, title: str = ""):
 
 
 def debug_mismatch(debug_mismatches, atu, patterns: list[ASTNode], matches: list[PatternMatch]):
+    """AI: Print details of mismatched pattern matches for debugging when debug_mismatches is enabled."""
     if debug_mismatches:
         for idx, pattern in enumerate(patterns):
             show_node(pattern, f"Pattern[{idx}]")
@@ -54,6 +60,7 @@ def debug_print(
     include_comments: bool,
     include_whitespace: bool,
 ):
+    """AI: Print original, expected, and actual AST/text output for debugging test comparisons."""
     if AST_SHOWER:
         print("Original:")
         ASTShower.show_node(atu)
@@ -74,6 +81,7 @@ def debug_print(
 
 
 def reject_unsupported_code(source_code: str) -> None:
+    """AI: Reject hypothesis-generated source code that contains form feeds or fails to compile."""
     if "\f" in source_code:
         hypothesis.reject()
 

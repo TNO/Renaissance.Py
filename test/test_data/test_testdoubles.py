@@ -1,3 +1,5 @@
+"""AI: Sample test-double refactoring source/target code pairs used as test fixture data."""
+
 test_indent = """class test(b, c):
     def test_bw(self):
         self.doubles.append(TAUT.TestDoubles(a, b, c))

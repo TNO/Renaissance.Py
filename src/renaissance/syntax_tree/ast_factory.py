@@ -1,3 +1,5 @@
+"""AI: Factory for creating instances of ASTNode."""
+
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -20,6 +22,7 @@ class ASTFactory:
         extra_args: Sequence[str] | None = None,
         working_dir: Path | None = None,
     ) -> None:
+        """AI: Configure a factory that creates AST nodes of the given node-implementation type."""
         self.clazz = clazz
         self.extra_args: Sequence[str] = extra_args if isinstance(extra_args, Sequence) else []
         # TODO: Why not
@@ -30,6 +33,7 @@ class ASTFactory:
         self.working_dir = working_dir or Path.cwd()
 
     def create(self, file_path: Path) -> ASTNode:
+        """AI: Parse the source file at file_path into an ASTNode using the configured node type."""
         atu = self.clazz.load(
             file_path=file_path,
             extra_args=self.extra_args,
@@ -39,6 +43,7 @@ class ASTFactory:
         return atu
 
     def create_from_text(self, text: str, file_name: str) -> ASTNode:
+        """AI: Parse source text (attributed to file_name) into an ASTNode using the configured node type."""
         atu = self.clazz.load_from_text(text, file_name, extra_args=self.extra_args, working_dir=self.working_dir)
         assert isinstance(atu, self.clazz), "The loaded AST node is not an instance of the expected type"
         return atu

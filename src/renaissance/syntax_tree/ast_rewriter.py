@@ -1,3 +1,5 @@
+"""AI: Rewriter that translates AST-level replace/remove/insert actions into byte-level edits."""
+
 import re
 import sys
 from collections.abc import Sequence
@@ -15,6 +17,8 @@ from .semantic_kind import SemanticKind
 
 @runtime_checkable
 class Rewritable(Protocol):
+    """AI: Structural protocol describing the offset/text shape required for byte-level rewriting."""
+
     offset: int
     end_offset: int
     extended_end_offset: int
@@ -34,16 +38,20 @@ DEFAULT_INDENT = 4
 
 
 class ASTRewriter:
+    """AI: Rewriter that translates AST-level replace/remove/insert actions into byte-level edits."""
+
     def __init__(
         self,
         node,
         encoding: str = sys.getfilesystemencoding(),
         correct_indent: bool = True,
     ) -> None:
+        """AI: Accumulate and apply text rewrites (replace/insert/remove) to an AST node's source."""
         self.__rewrites = _RewriteActions(node, encoding, correct_indent=correct_indent)
         self.__filename = node.filename
 
     def get_filename(self) -> str:
+        """AI: Return the filename of the AST node this rewriter operates on."""
         return self.__filename
 
     def replace(
@@ -53,6 +61,7 @@ class ASTRewriter:
         include_whitespace: bool = True,
         include_comments: bool = True,
     ):
+        """AI: Queue a rewrite replacing target's source text with new_content."""
         self.__rewrites.add(
             _RewriteActionType.REPLACE,
             target,
@@ -67,6 +76,7 @@ class ASTRewriter:
         include_whitespace: bool = True,
         include_comments: bool = True,
     ):
+        """AI: Queue a rewrite removing target's source text."""
         self.__rewrites.add(_RewriteActionType.REMOVE, target, "", include_whitespace, include_comments)
 
     def insert_before(
@@ -76,6 +86,7 @@ class ASTRewriter:
         include_whitespace: bool = True,
         include_comments: bool = True,
     ):
+        """AI: Queue a rewrite inserting new_content immediately before target's source text."""
         self.__rewrites.add(
             _RewriteActionType.INSERT_BEFORE,
             target,
@@ -91,6 +102,7 @@ class ASTRewriter:
         include_whitespace: bool = True,
         include_comments: bool = True,
     ):
+        """AI: Queue a rewrite inserting new_content immediately after target's source text."""
         self.__rewrites.add(
             _RewriteActionType.INSERT_AFTER,
             target,
@@ -100,14 +112,17 @@ class ASTRewriter:
         )
 
     def apply_to_string(self) -> str:
+        """AI: Return the rewritten source as a string, applying all queued rewrites."""
         return self.__rewrites.apply_to_string()
 
     def apply(self) -> bytes:
+        """AI: Return the rewritten source as bytes, applying all queued rewrites (or the original content if none are queued)."""
         if len(self.__rewrites.rewrites) == 0:
             return self.__rewrites.content
         return self.__rewrites.apply()
 
     def has_changed(self) -> bool:
+        """AI: Return whether any rewrites have been queued."""
         return len(self.__rewrites.rewrites) > 0
 
     @staticmethod
@@ -265,11 +280,14 @@ class _RewriteActions:
         include_whitespace: bool,
         include_comments: bool,
     ):
-        """Replaces the content of the given node(s) with new content.
+        """Replace the content of the given node(s) with new content.
 
         Args:
-            nodes (Sequence[Rewritable]): The nodes whose content is to be replaced.
+            rewriter (Rewriter): The rewriter used to apply the content replacement.
             new_content (str): The new content to insert in the specified range.
+            nodes (Sequence[Rewritable]): The nodes whose content is to be replaced.
+            include_whitespace (bool): Whether to include surrounding whitespace when determining the replacement range.
+            include_comments (bool): Whether to include surrounding comments when determining the replacement range.
 
         """
         if not nodes:
@@ -298,9 +316,10 @@ class _RewriteActions:
         include_whitespace: bool = False,
         include_comments: bool = False,
     ):
-        """Removes a list of AST nodes from the content, optionally including surrounding whitespace and comments.
+        """Remove a list of AST nodes from the content, optionally including surrounding whitespace and comments.
 
         Args:
+            rewriter (Rewriter): The rewriter used to apply the removal.
             nodes (Sequence[Rewritable]): The list of AST nodes to remove.
             include_whitespace (bool, optional): Whether to include surrounding whitespace in the removal. Defaults to False.
             include_comments (bool, optional): Whether to include surrounding comments in the removal. Defaults to False.
@@ -375,9 +394,10 @@ class _RewriteActions:
             self.__replace_bytes(rewriter, ext_end_offset, ext_end_offset, white_space + new_content)
 
     def __replace_bytes(self, rewriter: Rewriter, start: int, end: int, new_content: str) -> None:
-        """Replaces the content in the specified range with new content.
+        """Replace the content in the specified range with new content.
 
         Args:
+            rewriter (Rewriter): The rewriter used to apply the byte replacement.
             start (int): The starting index of the range to be replaced.
             end (int): The ending index of the range to be replaced.
             new_content (str): The new content to insert in the specified range.
@@ -518,8 +538,9 @@ class _RewriteActions:
 
     @staticmethod
     def get_comment_location(start_offset: int, stop_offset: int, content: bytes) -> tuple[int, int]:
-        """Get the location of the comment before the location, but after the stop_location
-        a comment is a line that starts with // or a block that starts with /* and ends with */
+        """Get the location of the comment before the location, but after the stop_location.
+
+        A comment is a line that starts with // or a block that starts with /* and ends with */
         or a line that starts with #.
         """
         # TODO: the // and # branches below only find the single closest comment line
@@ -551,8 +572,9 @@ class _RewriteActions:
 
     @staticmethod
     def __get_comment_after_location(start_offset: int, end_offset: int, content: bytes) -> tuple[int, int]:
-        """Get the location of the comment before the location, but after the stop_location
-        a comment is a line that starts with // or a block that starts with /* and ends with */
+        """Get the location of the comment before the location, but after the stop_location.
+
+        A comment is a line that starts with // or a block that starts with /* and ends with */
         or a line that starts with #.
         """
         # TODO: same single-line limitation as get_comment_location - a multi-line trailing

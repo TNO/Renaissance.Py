@@ -1,3 +1,5 @@
+"""AI: Text manipulation utilities for shifting, indenting, and clipboard operations on source text."""
+
 import re
 import subprocess
 import sys
@@ -8,6 +10,8 @@ import pyperclip
 
 
 class TextUtils:
+    """AI: Text manipulation utilities for shifting, indenting, and clipboard operations on source text."""
+
     __PRECEDING_SPACES_PATTERN = re.compile(r"([\t\s]*)")
 
     @staticmethod
@@ -35,8 +39,9 @@ class TextUtils:
 
     @staticmethod
     def strip_indent(text: str, start_line: int = 0) -> str:
-        """Shifts left the text such that the first line has no leading spaces and all other lines shifted left
-        with the first line spaces length.
+        """Shift the text left so the first line has no leading spaces.
+
+        All other lines are shifted left by the same amount.
         """
         matcher = TextUtils.__PRECEDING_SPACES_PATTERN.search(text)
         if matcher:
@@ -100,6 +105,7 @@ class TextUtils:
 
     @staticmethod
     def to_clipboard(text: str) -> None:
+        """AI: Copy the given text to the system clipboard."""
         pyperclip.copy(text)
 
     @staticmethod
@@ -110,12 +116,13 @@ class TextUtils:
 
 
 def signature_to_id(signature: str) -> str:
+    """AI: Derive a short, filesystem/identifier-safe id from a node signature."""
     text = signature.replace("\n", " ")
     return re.sub(r"[^\w\s]", "", text)[:30]  # Remove punctuation, limit length
 
 
 def snake_case(snippet: str) -> str:
-    """Converts a camelCase or PascalCase string to snake_case, preserving acronyms as single words.
+    """Convert a camelCase or PascalCase string to snake_case, preserving acronyms as single words.
 
     Leaves a string already in snake_case unchanged.
     """
@@ -125,6 +132,7 @@ def snake_case(snippet: str) -> str:
 
 
 def fix_indent(code_string: str) -> str | None:
+    """AI: Reformat code_string's indentation by round-tripping it through a temporary file and an external formatter."""
     with tempfile.NamedTemporaryFile(suffix=".py", mode="w+", delete=False) as temp_file:
         file_path = temp_file.name
         temp_file.write(code_string)

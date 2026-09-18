@@ -1,4 +1,8 @@
+"""AI: Sample target module used by BDD feature scenarios exercising Python refactoring."""
+
+
 def some_old_fun():
+    """AI: Assign and return a local variable, used as a simple AST rewrite target."""
     a = 1
     b = a
     return b
@@ -14,7 +18,7 @@ long_expression = component_one + component_two + component_three + component_fo
 
 
 def xyzzy(a1, a2, long_parameter_1, a3, a4, long_parameter_2):
-    pass
+    """AI: No-op function with many parameters, used to exercise long-signature formatting."""
 
 
 xyzzy(1, 2, "long_string_constant1", 3, 4, "long_string_constant2")

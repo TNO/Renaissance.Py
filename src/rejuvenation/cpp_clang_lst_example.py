@@ -1,3 +1,5 @@
+"""AI: Example script demonstrating parsing and visualizing C++ source with the Clang LST adapter."""
+
 import clang
 
 from renaissance.integrations.clang.clang_adapter import ClangAdapter

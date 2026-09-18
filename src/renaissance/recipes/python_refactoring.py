@@ -1,3 +1,5 @@
+"""AI: Base processor for Python-specific source refactoring recipes."""
+
 import importlib
 from collections.abc import Sequence
 from pathlib import Path
@@ -14,7 +16,10 @@ from renaissance.utils.text_utils import snake_case
 
 
 class PythonRefactoring(ASTProcessor):
+    """AI: Base processor for Python-specific source refactoring recipes."""
+
     def __init__(self, file):
+        """AI: Prepare a Python-specific refactoring processor for the given source file."""
         factory = PythonFactory(PythonRstNode)
         atu = factory.create(file)
         super().__init__(atu, factory, False)
@@ -23,6 +28,7 @@ class PythonRefactoring(ASTProcessor):
         self.white_list_pattern = ""
 
     def replace_stmt(self, find, repl):
+        """AI: Replace all statements matching the find pattern with the repl template, expanding captures."""
         pattern = self.pattern_factory.create_statements(find)
         for match in match_pattern(self.root.children, pattern):
             replacement = repl
@@ -49,7 +55,8 @@ class PythonRefactoring(ASTProcessor):
 
     @property
     def body(self) -> Sequence[PythonRstNode]:
+        """AI: Return the root node's body statements."""
         return cast("PythonRstNode", cast("object", self.root)).body
 
     def run(self):
-        pass
+        """AI: Run this refactoring recipe. Subclasses override this to perform the refactoring."""

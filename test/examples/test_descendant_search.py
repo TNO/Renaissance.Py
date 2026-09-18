@@ -1,3 +1,5 @@
+"""Tests for the descendant AST pattern matching example helper."""
+
 import pytest
 from hamcrest import assert_that, has_length, is_
 
@@ -11,6 +13,8 @@ from renaissance.syntax_tree.node_protocol import NodeProtocol
 
 
 class TestFindDescendantMatch:
+    """AI: Tests finding a descendant expression match nested inside an outer statement pattern."""
+
     code_text: str = """
             int my_function();
 
@@ -35,6 +39,7 @@ class TestFindDescendantMatch:
     extra_declarations_inner_text: list[str] = ["int my_function();"]
 
     def test_descendant_search_with_clang(self):
+        """AI: Verify find_descendant_match locates nested call expressions inside outer if-statements using Clang."""
         factory = ASTFactory(ClangASTNode)
         pattern_factory = CPatternFactory(factory)
         code_pattern = factory.create_from_text(self.code_text, "text.c")
@@ -45,6 +50,7 @@ class TestFindDescendantMatch:
         assert_that(results, has_length(3), f"length of results = {len(results)}")
 
     def test_descendant_search_with_json(self):
+        """AI: Verify find_descendant_match locates nested call expressions inside outer if-statements using Clang JSON."""
         factory = ASTFactory(ClangJsonASTNode)
         pattern_factory = CPatternFactory(factory)
         code_pattern = factory.create_from_text(self.code_text, "text.c")
@@ -56,6 +62,8 @@ class TestFindDescendantMatch:
 
 
 class TestBasic:
+    """AI: Tests basic literal/placeholder expression matching via CPatternFactory."""
+
     code_text: str = """
             int my_function();
             void your_function() {
@@ -81,6 +89,7 @@ class TestBasic:
         ),
     )
     def test_snippet(self, _: str, factory: ASTFactory, snippet: str, extra_declarations: list[str]):
+        """AI: Verify a literal or placeholder call expression pattern matches its single occurrence in source."""
         pattern_factory = CPatternFactory(factory)
         code_pattern = factory.create_from_text(self.code_text, "text.c")  # file extension consistent with C Pattern Factory
         snippet_pattern = pattern_factory.create_expression(snippet, extra_declarations)
@@ -89,6 +98,7 @@ class TestBasic:
 
     @pytest.mark.parametrize("_, factory", Factories.factories)
     def test_is_match_assignment_expression(self, _: str, factory: ASTFactory):
+        """AI: Verify identical assignment expressions match themselves and each other."""
         pattern_factory = CPatternFactory(factory)
         expression1_pattern: NodeProtocol = pattern_factory.create_expression("x=3", ["int x;"])
         assert_that(
@@ -106,6 +116,7 @@ class TestBasic:
 
     @pytest.mark.parametrize("_, factory", Factories.factories)
     def test_is_match_call_expression(self, _: str, factory: ASTFactory):
+        """AI: Verify identical call expressions match themselves and each other."""
         pattern_factory = CPatternFactory(factory)
         expression1_pattern = pattern_factory.create_expression("f()", ["int f();"])
         assert_that(
@@ -123,6 +134,7 @@ class TestBasic:
 
     @pytest.mark.parametrize("_, factory", Factories.factories)
     def test_is_match_statement(self, _: str, factory: ASTFactory):
+        """AI: Verify identical call statements match themselves and each other despite whitespace differences."""
         pattern_factory = CPatternFactory(factory)
         statement1_pattern = pattern_factory.create_statement("f();", extra_declarations=["int f();"])
         assert_that(

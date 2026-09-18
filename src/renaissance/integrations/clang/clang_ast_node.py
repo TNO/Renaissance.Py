@@ -1,3 +1,5 @@
+"""AI: ASTNode implementation backed by libclang's Python bindings."""
+
 import sys
 from collections.abc import Sequence
 from functools import cache
@@ -27,16 +29,22 @@ PRINT_ALL_NODES = False
 
 
 class Clangastreference:
+    """AI: Represent a reference from one clang AST node to another by id."""
+
     def __init__(self, node_id: str, ref_kind: str, properties: dict[str, Any]) -> None:
+        """AI: Represent a reference from one clang AST node to another by id."""
         self.node_id = node_id
         self.ref_kind = ref_kind
         self.properties = properties
 
 
 class ClangTranslationUnit:
+    """AI: Wrap a parsed clang translation unit with lazily-built reference and macro-expansion caches."""
+
     cache = []
 
     def __init__(self, clang_atu: ClangCindexTranslationUnit, file_name: str):
+        """AI: Wrap a parsed clang translation unit with lazily-built reference and macro-expansion caches."""
         self.clang_atu = clang_atu
         self.file_name = file_name
         self.references_initialized = False
@@ -49,6 +57,7 @@ class ClangTranslationUnit:
         self._nodes: dict[str, ClangASTNode] = {}
 
     def lazy_create_references(self, node: ClangASTNode) -> None:
+        """AI: Build the translation unit's reference cache on first use, then no-op on subsequent calls."""
         if self.references_initialized:
             return
         node.root.process(ReferenceHelper.create_references)
@@ -72,8 +81,11 @@ class ClangTranslationUnit:
 
 
 class ClangASTNode(ASTNode[Cursor, ClangTranslationUnit]):
+    """AI: ASTNode implementation backed by libclang cursors."""
+
     @staticmethod
     def set_library_path() -> None:
+        """AI: Configure libclang's native library path from the bundled clang.native package."""
         try:
             Config.set_library_path(Path(clang.native.__file__).parent)
         except Exception as e:
@@ -98,6 +110,7 @@ class ClangASTNode(ASTNode[Cursor, ClangTranslationUnit]):
         length: int | None = None,
         insert_kind: str | None = None,
     ):
+        """AI: Wrap a clang cursor as an AST node within the given translation unit."""
         super().__init__(self if parent is None else parent.root)
         self.node = node
         self._children = None
@@ -173,9 +186,11 @@ class ClangASTNode(ASTNode[Cursor, ClangTranslationUnit]):
 
     @property
     def kind_key(self) -> SemanticKind | str:
+        """AI: Return the semantic kind, or the raw parser kind when no semantic kind applies."""
         return self.semantic_kind if self.semantic_kind is not SemanticKind.NODE else self.parser_kind
 
     def __eq__(self, other):
+        """AI: Return whether this node is structurally equal to `other`, ignoring irrelevant properties/children."""
         return (
             other
             and isinstance(other, type(self))
@@ -185,6 +200,7 @@ class ClangASTNode(ASTNode[Cursor, ClangTranslationUnit]):
         )
 
     def __hash__(self):
+        """AI: Return a hash based on the node's kind key and properties."""
         return hash((self.kind_key, frozenset(self.properties.items())))
 
     @override
@@ -229,6 +245,7 @@ class ClangASTNode(ASTNode[Cursor, ClangTranslationUnit]):
 
     @staticmethod
     def check_diagnostics(translation_unit: ClangCindexTranslationUnit, file_name: str) -> None:
+        """AI: Raise an Exception if the translation unit's diagnostics contain any errors."""
         has_error = False
         errors = ""
         for d in translation_unit.diagnostics:
@@ -459,6 +476,7 @@ class ClangASTNode(ASTNode[Cursor, ClangTranslationUnit]):
 
     @staticmethod
     def remove_wrapper(cursor):
+        """AI: Unwrap a cursor through single-child unexposed wrapper nodes to reach the real node."""
         try:
             if ClangASTNode._is_wrapped(cursor):
                 return ClangASTNode.remove_wrapper(list(cursor.children)[0])
@@ -490,6 +508,7 @@ class ClangASTNode(ASTNode[Cursor, ClangTranslationUnit]):
 
     @property
     def is_implicit(self):
+        """AI: Return whether this node is implicitly generated (part of the translation unit)."""
         return self.is_part_of_translation_unit()
 
 
@@ -510,6 +529,7 @@ SYSTEM_MACROS = {
 
 
 def is_system_macro(n):
+    """AI: Return True if n is a predefined/builtin compiler or system macro that should be filtered from output."""
     return n.kind.name == "MACRO_DEFINITION" and (
         n.displayname.startswith("__")
         or n.displayname.startswith("_MS")
@@ -519,8 +539,11 @@ def is_system_macro(n):
 
 
 class ReferenceHelper:
+    """AI: Static helpers that populate reference caches between clang AST nodes."""
+
     @staticmethod
     def create_references(ast_node: ClangASTNode) -> None:
+        """AI: Populate the reference and referenced-by caches for ast_node's translation unit."""
         assert isinstance(ast_node, ClangASTNode), f"Expected ClangASTNode but got {type(ast_node)}"
         references = []
         node_id: str = ast_node.node.hash

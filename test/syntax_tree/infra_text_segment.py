@@ -1,9 +1,10 @@
+"""AI: Shared text-segment/offset conversion helpers used across the syntax_tree test suite."""
+
 from renaissance.syntax_tree.text_segment import TextSegment
 
 
 def offset_to_location(text: str, offset: int) -> tuple[int, int]:
-    r"""Convert a *cursor offset* (0 <= offset <= len(text)) to canonical (line, column),
-    both 0-based.
+    r"""Convert a *cursor offset* (0 <= offset <= len(text)) to canonical (line, column), both 0-based.
 
     Canonical rule:
     - The position immediately after a '\n' belongs to the next line at column 0.
@@ -30,8 +31,9 @@ def offset_to_location(text: str, offset: int) -> tuple[int, int]:
 
 
 def location_to_offset(text: str, line: int, column: int) -> int:
-    r"""Convert canonical (line, column) back to a cursor offset, validating that the
-    (line, column) is a valid cursor position under canonical rules.
+    r"""Convert canonical (line, column) back to a cursor offset.
+
+    Validates that the (line, column) is a valid cursor position under canonical rules.
 
     Valid cursor columns:
     - For an empty line (span_len==0): only column==0.
@@ -62,6 +64,7 @@ def location_to_offset(text: str, line: int, column: int) -> int:
 
 
 def assert_valid_text_segment(text_segment: TextSegment) -> None:
+    """AI: Assert a TextSegment's full_text, offsets, and line/column properties are internally consistent."""
     assert isinstance(text_segment, TextSegment), f"Unexpected instance for text_segment '{type(text_segment)}'. Expected 'TextSegment'."
     assert isinstance(
         text_segment.full_text,
@@ -152,7 +155,8 @@ def _check_column_range(
 
 
 def split_lines_with_newlines(text: str) -> list[str]:
-    r"""Reference 'lines' derived from split(text, '\n') with all but last extended by '\n'.
+    r"""Derive reference 'lines' from split(text, '\n') with all but last extended by '\n'.
+
     This yields a list where each element corresponds to the characters of that line span,
     and all '\n' characters belong to the line they terminate.
     """
@@ -172,6 +176,7 @@ def line_starts_from_lines(lines: list[str]) -> list[int]:
 
 def _compute_line_starts(text: str) -> tuple[int, ...]:
     """Return a tuple with the offset of the first character of that line.
+
     The offset is 0 based. The first line will always starts at offset 0.
     """
     line_starts: list[int] = [0]

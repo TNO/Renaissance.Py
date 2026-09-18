@@ -1,3 +1,5 @@
+"""AI: Example script demonstrating multiple C AST refactoring styles: adding comments, replacing types, and finding nodes."""
+
 # This script demonstrates various techniques for refactoring C code using an abstract syntax tree (AST) approach.
 # It showcases how to add comments, replace types, and find specific nodes in the AST using different methods.
 from renaissance.integrations.clang import ClangASTNode, CPatternFactory
@@ -51,6 +53,7 @@ expected_result_old_with_comment = """
 
 
 def example_add_comment_and_commit(factory, pattern_factory):
+    """AI: Insert a comment before each obsolete 'old' declaration, commit, and return the rewritten source."""
     # create a pattern that matches the declaration of old
     # please note that we need to help by telling the old is a type and $value is a variable
     pattern1 = pattern_factory.create_declarations(
@@ -94,6 +97,7 @@ def example_add_comment_and_commit(factory, pattern_factory):
 
 
 def example_replace_old_by_fancy_new(factory, pattern_factory):
+    """AI: Replace 'old' declarations with 'fancy_new' using pattern matching and filtering."""
     # using some different techniques to show the possibilities of map and filter
     pattern1 = pattern_factory.create_declarations("$old $name = $value;", types=["$old"], parameters=["$value"])
     pattern2 = pattern_factory.create_declarations("$old $name;", types=["$old"], parameters=["$value"])
@@ -116,6 +120,7 @@ def example_replace_old_by_fancy_new(factory, pattern_factory):
 
 
 def example_use_ast_kind_finder(factory, _):
+    """AI: Replace 'old' type references with 'fancy_new' using a Clang node-kind predicate."""
     # Create the translation unit from the provided code or example code
     atu = factory.create_from_text(example_code, "test.c")
     # Create an ASTRewriter for the translation unit
@@ -132,6 +137,7 @@ def example_use_ast_kind_finder(factory, _):
 
 
 def example_use_ast_function_finder(factory, _):
+    """AI: Replace 'old' type references with 'fancy_new' using `ASTFinder.find_all`."""
     # Create the translation unit from the provided code or example code
     atu = factory.create_from_text(example_code, "test.c")
     # Create an ASTRewriter for the translation unit
@@ -155,6 +161,7 @@ def example_use_ast_function_finder(factory, _):
 
 
 def main(args):
+    """AI: Run all four 'old'-to-'fancy_new' refactoring style examples against the parsed args."""
     # the first argument is the code to be parsed
     code = args[1] if len(args) > 1 else ""
 

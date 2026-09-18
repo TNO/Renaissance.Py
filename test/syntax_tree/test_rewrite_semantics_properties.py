@@ -63,8 +63,9 @@ def test_replacing_same_node_twice_always_errors(
     first: str,
     second: str,
 ) -> None:
-    """Property: replacing the same AST node twice always raises, regardless of
-    the replacement texts and regardless of whether they are equal.
+    """Property: replacing the same AST node twice always raises.
+
+    This holds regardless of the replacement texts, and regardless of whether they are equal.
 
     BDD counterpart : Scenario 0 in features/rewrite-semantics.feature
                       ("Replacements of the same node produce an error")

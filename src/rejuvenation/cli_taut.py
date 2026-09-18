@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+"""AI: Command-line entry point for locating and refactoring taut-style unit test files."""
+
 import fnmatch
 import sys
 from pathlib import Path
@@ -15,6 +17,7 @@ factory = ASTFactory(PythonRstNode, [])
 
 
 def list_matching_files(root: str | Path, recursive: bool = True) -> list[Path]:
+    """AI: Return files under `root` whose names match known taut/unittest/stub naming patterns."""
     patterns = ["*_unittest.py", "*_test.py", "*_stubs.py"]
     root = Path(root)
     candidates = root.rglob("*.py") if recursive else root.glob("*.py")
@@ -22,6 +25,7 @@ def list_matching_files(root: str | Path, recursive: bool = True) -> list[Path]:
 
 
 def refactor():
+    """AI: Run the `refactor` CLI subcommand over source files found by `PythonScanner`."""
     if sys.argv[1] == "refactor":
         print(f"Refactor {Path().cwd()}")
         for file in PythonScanner().find_sources():

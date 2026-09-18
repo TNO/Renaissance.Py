@@ -1,3 +1,5 @@
+"""Tests for structural (placeholder) pattern matching against tree-sitter-parsed code."""
+
 import pytest
 import tree_sitter_cpp as tscpp
 import tree_sitter_python as tspython
@@ -8,6 +10,8 @@ from renaissance.syntax_tree.match_finder import match_pattern
 
 
 class TestTreeSitterStructuralMatcher:
+    """AI: Tests structural (placeholder) pattern matching against tree-sitter-parsed code."""
+
     @pytest.mark.parametrize(
         "code, pattern",
         [
@@ -34,6 +38,7 @@ class TestTreeSitterStructuralMatcher:
         ],
     )
     def test_python_patterns(self, code, pattern):
+        """AI: Assert a placeholder Python pattern matches its corresponding concrete code snippet."""
         adapter = TreeSitterAdapter(tspython)
         ast = adapter.parse_code(code)
         lst = adapter.to_lst(code, ast)
@@ -77,6 +82,7 @@ class TestTreeSitterStructuralMatcher:
         ],
     )
     def test_cpp_patterns(self, code, pattern):
+        """AI: Assert a placeholder C++ pattern matches its corresponding concrete code snippet."""
         adapter = TreeSitterAdapter(tscpp)
         ast = adapter.parse_code(code)
         lst = adapter.to_lst(code, ast)

@@ -1,3 +1,5 @@
+"""AI: Mapping of tree-sitter node kinds to the library's semantic kinds."""
+
 from renaissance.syntax_tree.semantic_kind import SemanticKind
 
 TREE_SITTER_KIND_MAP = {

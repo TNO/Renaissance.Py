@@ -1,3 +1,5 @@
+"""AI: ASTNode implementation backed by Clang's JSON AST dump output."""
+
 # create a class that inherits syntax tree ASTNode
 
 import json
@@ -41,14 +43,20 @@ VERBOSE = False
 
 
 class ClangJsonASTReference:
+    """AI: Represent a reference from one clang-json AST node to another by id."""
+
     def __init__(self, node_id: str, ref_kind: str, properties: dict[str, Any]) -> None:
+        """AI: Represent a reference from one clang-json AST node to another by id."""
         self.node_id = node_id
         self.ref_kind = ref_kind
         self.properties = properties
 
 
 class ClangJsonTranslationUnit:
+    """AI: Wrap a parsed clang JSON AST dump with lazily-built reference caches."""
+
     def __init__(self, json_root: dict[str, Any], file_name: str):
+        """AI: Wrap a parsed clang JSON AST dump with lazily-built reference caches."""
         self.json_root = json_root
         self.filename = file_name
         self.references_initialized = False
@@ -59,6 +67,7 @@ class ClangJsonTranslationUnit:
         self._nodes: dict[str, ClangJsonASTNode] = {}
 
     def lazy_create_references(self, node: ClangJsonASTNode) -> None:
+        """AI: Build the translation unit's reference and record-reference caches on first use."""
         # TODO: Do I correctly assume that the usage of this function must be synchronized?
         if self.references_initialized:
             return
@@ -68,6 +77,8 @@ class ClangJsonTranslationUnit:
 
 
 class ClangJsonASTNode(ASTNode[dict[str, Any], ClangJsonTranslationUnit]):
+    """AI: ASTNode implementation backed by clang's JSON AST dump format."""
+
     parse_args = [
         "-fparse-all-comments",
         "-ferror-limit=0",
@@ -86,6 +97,7 @@ class ClangJsonASTNode(ASTNode[dict[str, Any], ClangJsonTranslationUnit]):
         insert_kind: str | None = None,
         insert_name: str | None = None,
     ) -> None:
+        """AI: Wrap a clang JSON AST dict node as an AST node within the given translation unit."""
         super().__init__(self if parent is None else parent.root)
         self.node = node
         self._children: Sequence[ClangJsonASTNode] | None = None
@@ -169,6 +181,7 @@ class ClangJsonASTNode(ASTNode[dict[str, Any], ClangJsonTranslationUnit]):
         self._children = [n for n in self._children if n.parser_kind not in IRRELEVANT_NODE_KINDS]
 
     def __eq__(self, other):
+        """AI: Return whether this node is structurally equal to `other`, ignoring irrelevant properties/children."""
         return (
             isinstance(other, type(self))
             and self.kind == other.kind
@@ -480,12 +493,16 @@ class ClangJsonASTNode(ASTNode[dict[str, Any], ClangJsonTranslationUnit]):
 
     @property
     def is_implicit(self):
+        """AI: Return whether this node is implicitly generated (part of the translation unit)."""
         self.is_part_of_translation_unit()
 
 
 class ReferenceHelper:
+    """AI: Static helpers that populate reference caches between clang-json AST nodes."""
+
     @staticmethod
     def create_references(ast_node: ClangJsonASTNode) -> None:
+        """AI: Populate the reference and referenced-by caches for ast_node's translation unit."""
         assert isinstance(ast_node, ClangJsonASTNode), (
             f"Expected ClangJsonASTNode but got {type(ast_node)}"
         )  # TODO: still needed when using type hints?

@@ -1,3 +1,5 @@
+"""Tests for the TautToPythonUnittest recipe."""
+
 import textwrap
 from pathlib import Path
 
@@ -16,7 +18,10 @@ from renaissance.utils.ast_utils import traverse
 
 
 class TestTautToPythonUnittest:
+    """AI: Tests for the TautToPythonUnittest recipe."""
+
     def test_init(self):
+        """AI: Verify the recipe's filename attribute reflects the constructed path."""
         subject = TautToPythonUnittest(Path(targets.__file__).parent / "taut/taut_test.py")
         assert_that(subject.filename, ends_with("taut_test.py"))
 
@@ -40,6 +45,7 @@ class TestTautToPythonUnittest:
         ],
     )
     def test_remove_import(self, input_code, expected_code, mocker):
+        """AI: Verify remove_taut_import removes the TAUT import while keeping other imports."""
         subject = self._create(mocker, input_code)
         subject.remove_taut_import()
         result = subject.apply_to_string()
@@ -59,6 +65,7 @@ class TestTautToPythonUnittest:
         ],
     )
     def test_replace_taut(self, input_code, expected_code, mocker):
+        """AI: Verify replace_taut rewrites TAUT.TestCase base classes to unittest.TestCase."""
         subject = self._create(mocker, input_code)
         subject.replace_taut()
         result = subject.apply_to_string()
@@ -74,6 +81,7 @@ class TestTautToPythonUnittest:
         ],
     )
     def test_replace_skip(self, input_code, expected_code, mocker):
+        """AI: Verify replace_taut_skip rewrites @TAUT.skip_test to @unittest.skip."""
         subject = self._create(mocker, input_code)
         subject.replace_taut_skip()
         result = subject.apply_to_string()
@@ -87,6 +95,7 @@ class TestTautToPythonUnittest:
         ],
     )
     def test_indentation(self, input_code, expected_code, indent, mocker):
+        """AI: Verify move_indent adjusts a statement's indentation to the given prefix."""
         subject = self._create(mocker, input_code)
         subject.move_indent(indent)
         result = subject.apply_to_string()
@@ -102,6 +111,7 @@ class TestTautToPythonUnittest:
         ],
     )
     def test_replace_import(self, input_code, expected_code, mocker):
+        """AI: Verify replace_taut_import rewrites a mock/TAUT import to the unittest.mock/mock fallback try-import."""
         subject = self._create(mocker, input_code)
         subject.replace_taut_import()
         result = subject.apply_to_string()
@@ -122,6 +132,7 @@ class TestTautToPythonUnittest:
         ],
     )
     def test_add_self(self, input_code, expected_code, mocker):
+        """AI: Verify add_self prefixes bare test-double variable names with self."""
         subject = self._create(mocker, input_code)
         subject.add_self()
         result = subject.apply_to_string()
@@ -137,6 +148,7 @@ class TestTautToPythonUnittest:
         ],
     )
     def test_remove_decorator(self, input_code, expected_code, mocker):
+        """AI: Verify remove_decorator strips the @TAUT.log_stub decorator from a function."""
         subject = self._create(mocker, input_code)
         subject.remove_decorator()
         result = subject.apply_to_string()
@@ -151,6 +163,7 @@ class TestTautToPythonUnittest:
         ],
     )
     def test_convert_assert(self, input_code, expected_code, mocker):
+        """AI: Verify convert_assert rewrites snake_case assert_* calls to unittest's assertEqual/assertFalse/assertTrue."""
         subject = self._create(mocker, input_code)
         subject.convert_assert()
         result = subject.apply_to_string()
@@ -158,6 +171,7 @@ class TestTautToPythonUnittest:
 
     @pytest.mark.parametrize("input_code, expected_code", [(tst_code.taut_code, tst_code.result_code)])
     def test_log_abcdxtl(self, input_code, expected_code, mocker):
+        """AI: Verify replace_log_compxtl rewrites the ABCDxTL log-component call in the sample TAUT code."""
         subject = self._create(mocker, input_code)
         subject.in_memory = True
         subject.replace_log_compxtl("abcd")
@@ -166,6 +180,7 @@ class TestTautToPythonUnittest:
 
     @pytest.mark.parametrize("input_code, insert_code", [(tst_insert.input_code, tst_insert.insert_code)])
     def test_insert_class(self, input_code, insert_code, mocker):
+        """AI: Verify insert_class appends the generated class boilerplate after the existing code."""
         subject = self._create(mocker, input_code)
         subject.insert_class()
         result = subject.apply_to_string()
@@ -173,12 +188,14 @@ class TestTautToPythonUnittest:
 
     @pytest.mark.parametrize("input_code, expected_code", [(tst_class.set_up, tst_class.new_set_up)])
     def test_setup(self, input_code, expected_code, mocker):
+        """AI: Verify convert_setup rewrites the sample set_up method to unittest's setUp form."""
         subject = self._create(mocker, input_code)
         subject.convert_setup()
         result = subject.apply_to_string()
         assert result == expected_code
 
     def test_teardown(self, mocker):
+        """AI: Verify convert_teardown rewrites a simple tear_down method to unittest's tearDown form."""
         subject = self._create(mocker, tst_class.tear_down_simple)
         subject.convert_teardown()
         result = subject.apply_to_string()
@@ -186,6 +203,7 @@ class TestTautToPythonUnittest:
 
     @pytest.mark.parametrize("input_code, expected_code", [(tst_class.tear_down, tst_class.new_tear_down)])
     def test_teardown_refactor(self, input_code, expected_code, mocker):
+        """AI: Verify refactor_teardown rewrites the sample tear_down method body into its expected form."""
         subject = self._create(mocker, input_code)
         subject.refactor_teardown()
         result = subject.apply_to_string()
@@ -193,6 +211,7 @@ class TestTautToPythonUnittest:
 
     @pytest.mark.parametrize("input_code, expected_code", [(tst_testdoubles.test_doubles_fun, tst_testdoubles.test_doubles_fun_new)])
     def test_testdoubles_fun(self, input_code, expected_code, mocker):
+        """AI: Verify refactor_testdoubles_fun rewrites the sample test-doubles function-level usage."""
         subject = self._create(mocker, input_code)
         subject.refactor_testdoubles_fun()
         result = subject.apply_to_string()
@@ -200,6 +219,7 @@ class TestTautToPythonUnittest:
 
     @pytest.mark.parametrize("input_code, expected_code", [(tst_testdoubles.test_doubles_class, tst_testdoubles.test_doubles_class_new)])
     def test_testdoubles_class(self, input_code, expected_code, mocker):
+        """AI: Verify refactor_testdoubles_class rewrites the sample test-doubles class-level usage."""
         subject = self._create(mocker, input_code)
         subject.refactor_testdoubles_class()
         result = subject.apply_to_string()
@@ -213,12 +233,14 @@ class TestTautToPythonUnittest:
         ],
     )
     def test_remove_mock(self, input_code, expected_code, mocker):
+        """AI: Verify replace_mock strips the mock. prefix from mock.patch calls/decorators."""
         subject = self._create(mocker, input_code)
         subject.replace_mock()
         result = subject.apply_to_string()
         assert_that(result, is_(expected_code))
 
     def test_remove_stubserver(self, mocker):
+        """AI: Verify remove_stubserver strips the @TAUT.StubServer decorator from a function."""
         subject = self._create(mocker, "@TAUT.StubServer\ndef test():\n    pass\n")
         expected_code = "\ndef test():\n    pass\n"
         subject.remove_stubserver()
@@ -233,6 +255,7 @@ class TestTautToPythonUnittest:
         ],
     )
     def test_convert_tds(self, input_code, expected_code, mocker):
+        """AI: Verify convert_tds rewrites TestDoubles/ImprovedStub append calls into add_patcher/attribute assignment."""
         subject = self._create(mocker, input_code)
         subject.convert_tds()
         result = subject.apply_to_string()
@@ -246,6 +269,7 @@ class TestTautToPythonUnittest:
         ],
     )
     def test_assert_doubles(self, input_code, expected_code, mocker):
+        """AI: Verify manually replacing assert_double_equal name references prefixes them with self."""
         subject = self._create(mocker, input_code)
         [
             subject.replace("self." + node.name, node, False, False)
@@ -256,6 +280,7 @@ class TestTautToPythonUnittest:
         assert_that(result, is_(expected_code))
 
     def test_import_verify(self, mocker):
+        """AI: Verify convert_import_verify rewrites import_and_verify_module calls into an import plus assertIsNotNone."""
         subject = self._create(mocker, "def test_import(self):\n    self.import_and_verify_module('ABCDxTL')")
         expected_code = "def test_import(self):\n    import ABCDxTL\n    self.assertIsNotNone(ABCDxTL)"
         subject.convert_import_verify()
@@ -263,6 +288,7 @@ class TestTautToPythonUnittest:
         assert_that(result, is_(expected_code))
 
     def test_insert_asserter(self, mocker):
+        """AI: Verify insert_asserter plus remove_assert_func inserts the asserter helper and removes the original function."""
         subject = self._create(mocker, "def assert_double_equal(a, br=c):\n    pass")
         expected_code = tst_insert.insert_code
         subject.insert_asserter()
@@ -271,6 +297,7 @@ class TestTautToPythonUnittest:
         assert_that(result, is_(expected_code))
 
     def test_replace_unittest_asserter(self, mocker):
+        """AI: Verify replace_unittest_with_asserter rewrites TAUT.TestCase base class to Asserter."""
         subject = self._create(mocker, "class A(TAUT.TestCase):\n    def b(self):\n        self.assert_raises(a, b=c)")
         expected_code = "class A(Asserter):\n    def b(self):\n        self.assert_raises(a, b=c)"
         subject.replace_unittest_with_asserter()
@@ -285,42 +312,49 @@ class TestTautToPythonUnittest:
         ],
     )
     def test_assert_func(self, mocker, input_code, expected_code):
+        """AI: Verify assert_func prefixes bare assert_raises/assert_double_equal calls with self."""
         subject = self._create(mocker, input_code)
         subject.assert_func()
         result = subject.apply_to_string()
         assert_that(result, is_(expected_code))
 
     def test_convert_testdoubles_func(self, mocker):
+        """AI: Verify convert_testdoubles_fun rewrites the multi-line sample test-doubles class usage."""
         subject = self._create(mocker, tst_testdoubles.test_taut_doubles_class)
         subject.convert_testdoubles_fun()
         result = subject.apply_to_string()
         assert_that(result, is_(tst_testdoubles.test_taut_doubles_class_new))
 
     def test_convert_testdoubles_func_single_line(self, mocker):
+        """AI: Verify convert_testdoubles_fun rewrites the single-line sample test-doubles class usage."""
         subject = self._create(mocker, tst_testdoubles.test_taut_doubles_class_single_line)
         subject.convert_testdoubles_fun()
         result = subject.apply_to_string()
         assert_that(result, is_(tst_testdoubles.test_taut_doubles_class_single_line_new))
 
     def test_setup_common(self, mocker):
+        """AI: Verify convert_setup_common rewrites the shared set_up_common method into its expected form."""
         subject = self._create(mocker, tst_class.set_up_common)
         subject.convert_setup_common()
         result = subject.apply_to_string()
         assert_that(result, is_(tst_class.set_up_common_new))
 
     def test_teardown_common(self, mocker):
+        """AI: Verify convert_teardown_common rewrites the shared tear_down_common method into its expected form."""
         subject = self._create(mocker, tst_class.tear_down_common)
         subject.convert_teardown_common()
         result = subject.apply_to_string()
         assert_that(result, is_(tst_class.tear_down_common_new))
 
     def test_add_patcher(self, mocker):
+        """AI: Verify convert_add_patcher appends the add_patcher helper method to the class."""
         subject = self._create(mocker, tst_class.tear_down_common_new)
         subject.convert_add_patcher()
         result = subject.apply_to_string()
         assert_that(result, is_(tst_class.tear_down_common_new + tst_class.insert_add_patcher + "\n"))
 
     def test_shared_setup(self, mocker):
+        """AI: Verify shared_setup renames sharedSetUp to setUp."""
         subject = self._create(mocker, "class A():\n    def sharedSetUp(self):\n        pass")
         expected_code = "class A():\n    def setUp(self):\n        pass"
         subject.shared_setup()
@@ -328,6 +362,7 @@ class TestTautToPythonUnittest:
         assert_that(result, is_(expected_code))
 
     def test_with_testdoubles(self, mocker):
+        """AI: Verify with_testdoubles rewrites a TAUT.TestDoubles with-statement into patch.object usage."""
         subject = self._create(mocker, "with TAUT.TestDoubles(module=mod, b=c):\n    pass")
         expected_code = "with patch.object(mod, 'b', new=c):\n    pass"
         subject.with_testdoubles()
@@ -335,6 +370,7 @@ class TestTautToPythonUnittest:
         assert_that(result, is_(expected_code))
 
     def test_insert_patch_import(self, mocker):
+        """AI: Verify insert_patch_import inserts the unittest.mock/mock fallback try-import after the unittest import."""
         subject = self._create(mocker, "import unittest\nself.patches = []")
         expected_code = (
             "import unittest\ntry:\n    from unittest.mock import patch\nexcept ImportError:\n    from mock import patch\nself.patches = []"

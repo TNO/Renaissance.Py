@@ -14,11 +14,13 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def _load_pyproject() -> dict:
+    """AI: Load and parse the repository's pyproject.toml file."""
     with Path(ROOT / "pyproject.toml").open("rb") as f:
         return tomllib.load(f)
 
 
 def test_source_roots_are_consistent_across_tool_configs():
+    """AI: Assert the source-root list is identical across pytest, ruff, and pyright tool configs."""
     config = _load_pyproject()
     pytest_pythonpath = config["tool"]["pytest"]["ini_options"]["pythonpath"]
     ruff_src = config["tool"]["ruff"]["src"]

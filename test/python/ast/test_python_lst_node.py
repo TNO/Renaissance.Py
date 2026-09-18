@@ -1,3 +1,5 @@
+"""Tests for the LST-based Python AST node implementation."""
+
 import hypothesmith
 import libcst
 import pytest
@@ -11,12 +13,16 @@ from utils_for_tests import reject_unsupported_code
 
 
 class TestPythonLstNode:
+    """AI: Tests for the LST-based Python AST node implementation."""
+
     @pytest.fixture(autouse=True)
     def setup(self):
+        """AI: Build the LST-backed Python factory and pattern factory used by the LST node tests."""
         self.factory = PythonFactory(LSTNode)
         self.pattern_factory = PythonPatternFactory(self.factory)
 
     def test_stmt_kind(self):
+        """AI: Verify two equivalent statements differing only in whitespace produce equal LST nodes."""
         src = self.factory.create_from_text("x =1")
         target = self.factory.create_from_text("x   =  1")
         assert_that(src, is_(target))
@@ -25,6 +31,7 @@ class TestPythonLstNode:
     @given(code=hypothesmith.from_node(libcst.BaseStatement))
     @settings(max_examples=500, suppress_health_check=list(HealthCheck))
     def test_from_cst_returns_statement(self, code):
+        """AI: Verify creating a node from arbitrary hypothesis-generated CST code yields a non-NODE-kind child."""
         reject_unsupported_code(code)
         factory = PythonFactory(LSTNode)
         node = factory.create_from_text(code)
@@ -38,6 +45,7 @@ class TestPythonLstNode:
         strict=True,
     )
     def test_hash_stays_stable_after_add_child(self):
+        """AI: Document that LSTNode.__hash__ becomes unstable after add_child mutates the node's children."""
         parent = LSTNode("block", {}, "block text")
         child = LSTNode("stmt", {"name": "a"}, "a;")
         nodes = {parent}

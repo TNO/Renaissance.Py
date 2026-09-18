@@ -1,3 +1,5 @@
+"""AI: ASTNode implementation backed by Python's built-in `ast` module (the "RST" representation)."""
+
 import ast
 import sys
 import textwrap
@@ -25,6 +27,8 @@ IMPLICIT = {"ImplicitNode"}
 
 
 class ImplicitNode(ast.Name):
+    """AI: Represent a synthetic AST node inserted where the real source has none."""
+
     _fields = (
         "id",
         "body",
@@ -36,6 +40,7 @@ class ImplicitNode(ast.Name):
     }
 
     def __init__(self, name, children=None):
+        """AI: Represent a synthetic AST node inserted where the real source has none."""
         super().__init__(name, children or [])
         self.lineno = 0
         self.col_offset = 0
@@ -44,19 +49,26 @@ class ImplicitNode(ast.Name):
 
 
 class PythonRSTReference:
+    """AI: Represent a reference from one Python RST AST node to another by id."""
+
     def __repr__(self):
+        """AI: Return a string identifying the referenced node id and reference kind."""
         return f"{self.node_id}:{self.ref_kind}"
 
     def __init__(self, node_id: str, ref_kind: str, properties: dict[str, Any]) -> None:
+        """AI: Represent a reference from one Python RST AST node to another by id."""
         self.node_id = node_id
         self.ref_kind = ref_kind
         self.properties = properties
 
 
 class PythonRstTranslationUnit:
+    """AI: Parse Python source into a stdlib ast tree with lazily-built reference caches."""
+
     cache = {}
 
     def __init__(self, content, file_name: str):
+        """AI: Parse Python source into a stdlib ast tree with lazily-built reference caches."""
         self.content = content.encode(sys.getfilesystemencoding())
         self.atu = ast.parse(content, file_name)
         self.file_name = file_name
@@ -69,6 +81,7 @@ class PythonRstTranslationUnit:
         self._nodes: dict[str, PythonRstNode] = {}
 
     def check_diagnostics(self, continue_with_warning=True) -> None:
+        """AI: Report ast type-ignore comments, raising an Exception unless continue_with_warning is True."""
         msg = None
         errors = ""
         for d in self.atu.type_ignores:
@@ -79,6 +92,7 @@ class PythonRstTranslationUnit:
             raise Exception(f"Error parsing: {self.file_name} \n+ errors: {errors}")
 
     def lazy_create_refers(self, node: PythonRstNode) -> None:
+        """AI: Build the translation unit's reference cache on first use, then no-op on subsequent calls."""
         if self.references_initialized:
             return
         for n in traverse(node.root):
@@ -86,6 +100,7 @@ class PythonRstTranslationUnit:
         self.references_initialized = True
 
     def add(self, node):
+        """AI: Register node in the node-name lookup table, keyed by its parser-kind-specific name."""
         match node.parser_kind:
             case "Name":
                 if node.node.id not in self._nodes and node.node.id not in types:
@@ -104,6 +119,7 @@ class PythonRstTranslationUnit:
                     self._nodes[node.name] = node
 
     def create_references(self, ast_node) -> None:
+        """AI: Derive and record type, call, and inheritance references for ast_node based on its ast type."""
         assert isinstance(ast_node, PythonRstNode), f"Expected PythonASTNode but got {type(ast_node)}"
         match type(ast_node.node):
             case ast.arg:
@@ -168,6 +184,7 @@ class PythonRstTranslationUnit:
                         self.add_reference(node_id, ref_id, ref_kind)
 
     def add_reference(self, node_id: str, ref_id: str, ref_kind: str) -> None:
+        """AI: Record a reference from node_id to ref_id (and the corresponding referenced-by entry)."""
         properties = {}
         if node_id == ref_id:
             return
@@ -183,16 +200,21 @@ class PythonRstTranslationUnit:
             self._referenced_by[ref_id] = [referenced_by]
 
     def get_referenced_by(self, node_id):
+        """AI: Return the references pointing to node_id, resolved to their referring nodes' names."""
         refs = self._referenced_by.get(node_id, [])
         return [PythonRSTReference(self._nodes[ref.node_id].name, ref.ref_kind, ref.properties) for ref in refs]
 
     def get_references(self, node_id):
+        """AI: Return the references that node_id points to, resolved to their target nodes' names."""
         refs = self._references.get(node_id, [])
         return [PythonRSTReference(self._nodes[ref.node_id].name, ref.ref_kind, ref.properties) for ref in refs]
 
 
 class PythonRstNode:
+    """AI: ASTNode implementation backed by the stdlib ast module."""
+
     def __init__(self, node: ast.AST, translation_unit: PythonRstTranslationUnit = None, parent=None):
+        """AI: Wrap a stdlib ast node as an AST node within the given translation unit."""
         self.root = parent.root if parent and parent.root else self
         self.node = node
         self.parent = parent
@@ -251,9 +273,11 @@ class PythonRstNode:
 
     @property
     def kind_key(self) -> SemanticKind | str:
+        """AI: Return the semantic kind, or the raw parser kind when no semantic kind applies."""
         return self.semantic_kind if self.semantic_kind is not SemanticKind.NODE else self.parser_kind
 
     def __eq__(self, other):
+        """AI: Return whether this node is structurally equal to `other`, ignoring irrelevant properties/children."""
         return (
             isinstance(other, type(self))
             and self.kind_key == other.kind_key
@@ -262,6 +286,7 @@ class PythonRstNode:
         )
 
     def __contains__(self, item):
+        """AI: Return whether item(s) are found among this node's children."""
         if not isinstance(item, list):
             item = [item]
         return find_in_list(self.children, item)
@@ -274,22 +299,27 @@ class PythonRstNode:
         return self.children[key]
 
     def __repr__(self):
+        """AI: Return the formatted node representation."""
         return format_node(self)
 
     @property
     def next_sibling(self) -> Self | None:
+        """AI: Return the sibling node immediately following this one, or None."""
         return next_sibling(self)
 
     @property
     def preceding_sibling(self) -> Self | None:
+        """AI: Return the sibling node immediately preceding this one, or None."""
         return preceding_sibling(self)
 
     def process(self, function: Callable[[Self], None]) -> None:
+        """AI: Apply function to this node and recursively to all of its descendants."""
         function(self)
         for child in self.children:
             child.process(function)
 
     def derive_position(self, node: ast.AST, translation_unit: PythonRstTranslationUnit, parent):
+        """AI: Compute and set this node's offset and length in the source text from its ast position attributes."""
         if node._attributes:
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)) and node.decorator_list:
                 self.offset = convert(self.translation_unit.lines, node.decorator_list[0].lineno, node.decorator_list[0].col_offset) - 1
@@ -315,6 +345,7 @@ class PythonRstNode:
         extra_args: Sequence[str] | None = None,
         working_dir: Path | None = None,
     ) -> PythonRstNode:
+        """AI: Parse the Python source file at file_path into a PythonRstNode tree."""
         # Keep a uniform loader signature across AST node implementations.
         # Python's AST parser does not need extra arguments or a working dir.
         _ = extra_args, working_dir
@@ -329,6 +360,7 @@ class PythonRstNode:
         extra_args: Sequence[str] | None = None,
         working_dir: Path | None = None,
     ) -> PythonRstNode:
+        """AI: Parse Python source text into a PythonRstNode tree, attributed to file_name."""
         _ = extra_args, working_dir
         translation_unit = PythonRstTranslationUnit(text, file_name=str(file_name))
         translation_unit.check_diagnostics()
@@ -390,16 +422,19 @@ class PythonRstNode:
 
     @property
     def type(self):
+        """AI: Return the annotation name for an annotated assignment node, or None otherwise."""
         return self.node.annotation.id if isinstance(self.node, ast.AnnAssign) and isinstance(self.node.annotation, ast.Name) else None
 
     @property
     def value(self):
+        """AI: Return the literal value of this node, or None if it has none."""
         if self.parser_kind == "Assert":
             return 0
         return self.node.value.value if hasattr(self.node, "value") else None
 
     @property
     def expr(self):
+        """AI: Return the wrapped inner expression node relevant to this statement's kind, or None."""
         if (
             isinstance(
                 self.node,
@@ -427,18 +462,21 @@ class PythonRstNode:
 
     @property
     def operator(self):
+        """AI: Return this node's operator symbol, or an empty string if it has none."""
         node_type = type(self.node).__name__
         op = type(self.node.op).__name__ if isinstance(self.node, (ast.BinOp, ast.UnaryOp, ast.BoolOp, ast.AugAssign)) else ""
         return PYTHON_OPERATOR_MAP.get(node_type + op, "")
 
     @property
     def signature(self) -> str:
+        """AI: Return the source code text of this node, prefixed with '@' for decorators."""
         sig = self.binary_file_content().decode(sys.getfilesystemencoding())
         if self.parent and self.parent.name == "decorator_list" and not sig.startswith("@"):
             sig = "@" + sig
         return sig
 
     def binary_file_content(self) -> bytes:
+        """AI: Return this node's source text as encoded bytes."""
         return (
             self.translation_unit.content[self.offset : self.offset + self.length]
             if self.translation_unit
@@ -447,18 +485,22 @@ class PythonRstNode:
 
     @property
     def referenced_by(self) -> Sequence[PythonRSTReference]:
+        """AI: Return the references that point to this node, building the reference cache if needed."""
         self.translation_unit.lazy_create_refers(self)
         return self.translation_unit.get_referenced_by(self.name)
 
     @property
     def references(self) -> list[PythonRSTReference]:
+        """AI: Return the references that this node points to, building the reference cache if needed."""
         self.translation_unit.lazy_create_refers(self)
         return self.translation_unit.get_references(self.name)
 
     def add_node(self):
+        """AI: Register this node in its translation unit's node-name lookup table."""
         self.translation_unit.add(self)
 
     def get_container_parent(self):
+        """AI: Return the nearest ancestor node that is a function, class, or module."""
         if self.parent:
             if self.parent.parser_kind in {"FunctionDef", "AsyncFunctionDef", "ClassDef", "Module"}:
                 return self.parent
@@ -467,4 +509,5 @@ class PythonRstNode:
 
     @property
     def text(self) -> str:
+        """AI: Return this node's signature text with common leading whitespace removed."""
         return textwrap.dedent(self.signature)
