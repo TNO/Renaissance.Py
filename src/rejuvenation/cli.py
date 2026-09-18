@@ -8,7 +8,7 @@ from renaissance.recipes.python_refactoring import PythonRefactoring
 from renaissance.syntax_tree import ASTShower
 
 # TODO: is this file working as intended?
-# refer to #196
+# See https://github.com/TNO/Renaissance.Py/issues/196
 
 
 def refactor():

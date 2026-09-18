@@ -11,7 +11,7 @@ from renaissance.syntax_tree import ASTFactory
 factory = ASTFactory(PythonRstNode, [])
 
 # TODO: is this file working as intended?
-# refer to #196
+# See https://github.com/TNO/Renaissance.Py/issues/196
 
 
 def list_matching_files(root: str | Path, recursive: bool = True) -> list[Path]:
