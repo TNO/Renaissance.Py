@@ -208,6 +208,7 @@ class TestPythonScanner:
 
     @pytest.mark.parametrize("excluded_dir", sorted(PythonScanner.EXCLUDED_DIRS))
     def test_excludes_known_noise_dirs_in_default_whole_tree_scan(self, tmp_path, excluded_dir):
+        """Assert PythonScanner.find_sources excludes known noise directories during a default whole-tree scan."""
         noise_dir = tmp_path / excluded_dir
         noise_dir.mkdir()
         (noise_dir / "ignored.py").write_text("")
@@ -220,6 +221,7 @@ class TestPythonScanner:
 
     @pytest.mark.parametrize("excluded_dir", sorted(PythonScanner.EXCLUDED_DIRS))
     def test_excludes_known_noise_dirs_within_explicit_package_dirs(self, tmp_path, excluded_dir):
+        """Assert PythonScanner.find_sources excludes known noise directories within an explicit package_dirs."""
         src = tmp_path / "src"
         src.mkdir()
         noise_dir = src / excluded_dir
@@ -233,6 +235,7 @@ class TestPythonScanner:
         assert_that(result, equal_to(["kept.py"]))
 
     def test_default_package_dirs_scans_whole_root_dir(self, tmp_path):
+        """Assert PythonScanner scans the whole root_dir by default when package_dirs is not given."""
         # Motivating case: source living outside src/lib/test (e.g. redis-py's redis/ layout).
         redis_like = tmp_path / "redis"
         redis_like.mkdir()
