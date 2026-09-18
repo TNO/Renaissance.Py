@@ -74,6 +74,11 @@ localization (phase 1) is unaffected by this check and always runs, since it nev
 The cross-file phase only resolves simple, same-directory sibling imports (`from module_name import T`);
 dotted/package imports are silently out of scope, not reported unsafe.
 
+**To fix this yourself:** if the project actually supports 3.12+, fix `requires-python` in `pyproject.toml` (or
+pass `--min-python 3.12` to override detection for a one-off run), then re-run - the recipe picks these
+candidates up automatically on the next pass. If the project has to keep supporting older Pythons, there's no
+manual PEP 695 rewrite available either, since the syntax itself doesn't exist before 3.12.
+
 ### A declared TypeVar is exported via `__all__`
 
 { #feature-typevar-modernization-declared-typevar-exported }
@@ -82,6 +87,11 @@ A module-level `T = TypeVar(...)` (or `ParamSpec`/`TypeVarTuple`) listed in its 
 API - removing its declaration to convert it to PEP 695 syntax would break any importer still doing
 `from this_module import T`. Left unconverted, `"unsafe"`. See
 [Type parameter scope](../concepts/type-parameter-scope.md).
+
+**To convert this yourself:** you have to accept the same trade-off the tool won't make automatically - remove
+`T` from `__all__` (usually a breaking change for anything still importing it), move it into a PEP 695 signature
+at every function that uses it, and delete the old `T = TypeVar(...)` line once every use site is converted. If
+`T` can't be dropped from `__all__`, the declaration has to stay as it is.
 
 ### A declared TypeVar is used outside a function body
 
@@ -93,6 +103,11 @@ type parameter only exists inside the function signature it's declared on, so th
 referencing a name that no longer exists. Left unconverted, `"unsafe"`. See
 [Type parameter scope](../concepts/type-parameter-scope.md).
 
+**To convert this yourself:** check every other reference first (a `Generic[T]` base, a module-level type alias,
+and so on) - a PEP 695 type parameter only exists inside the function signature that declares it, so it can't
+back those other uses. If those other use sites can be rewritten or removed, the function signatures can then be
+converted by hand and the module-level declaration deleted; otherwise it has to stay module-level.
+
 ### An imported TypeVar's origin module exports it via `__all__`
 
 { #feature-typevar-modernization-origin-module-exports-name }
@@ -103,6 +118,10 @@ localizing the import would leave two independent declarations of the same logic
 original, still-exported one, and the new local copy), which silently breaks identity-based uses (e.g.
 `isinstance` checks or generic subclassing across the two copies). Left as an import, `"unsafe"`.
 
+**To fix this yourself:** localizing the import means also removing `T` from the *origin* module's `__all__`
+(same public-API trade-off as the previous case, on the other file) - otherwise the two files end up with two
+independent `T` objects, silently breaking anything relying on both referring to the same one.
+
 ### An imported TypeVar is used in an exported `Generic[...]` base at its origin
 
 { #feature-typevar-modernization-used-in-exported-generic-base }
@@ -111,6 +130,10 @@ If the origin module uses the imported name as a class's `Generic[T]` base, that
 tied to this specific `T` object - localizing the import would create a second, unrelated `T`, breaking
 subclassing or type-checking that depends on the two modules sharing the same type parameter. Left as an
 import, `"unsafe"`.
+
+**To fix this yourself:** the origin module's class is generic over this exact `T` object, so localizing the
+import safely means converting that class - and anything downstream that depends on it - in the same
+coordinated change, or the two modules end up with different, incompatible `T`s.
 
 Supports `TypeVar` (including `bound=` and constraint forms), `ParamSpec`, and `TypeVarTuple`.
 
@@ -123,6 +146,9 @@ Supports `TypeVar` (including `bound=` and constraint forms), `ParamSpec`, and `
 to match it, see [Python version gates](../concepts/python-version-gates.md)). Same conservative treatment as
 the PEP 695 gate above: an unknown or too-low minimum reports every candidate `"unsafe"` and leaves the file
 untouched.
+
+**To fix this yourself:** if the project actually supports 3.11+, fix `requires-python` (or pass `--min-python
+3.11` for a one-off run) and re-run - same fix as the PEP 695 gate above, just at the lower threshold.
 
 `TypeVarTupleCheck` only recognizes a **module-level** `T = TypeVarTuple(...)` declaration in the same file -
   not one imported from a sibling module. When both recipes run together (the CLI below), `TypeVarTupleCheck`
