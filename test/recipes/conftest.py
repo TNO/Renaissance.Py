@@ -6,9 +6,6 @@ from typing import cast
 
 import pytest
 from pytest_mock import MockerFixture
-from renaissance.impl.python.rst_node import PythonRstNode
-from renaissance.refactoring.python_refactoring import PythonRefactoring
-from renaissance.refactoring.type_var_check import PEP_695_MINIMUM, TypeVarCheck
 
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
 from renaissance.recipes.python_refactoring import PythonRefactoring
@@ -28,7 +25,7 @@ def make_recipe(mocker: MockerFixture) -> Callable[[type[PythonRefactoring], str
     def _make(recipe_cls: type[PythonRefactoring], text: str, filename: str = "x.py") -> PythonRefactoring:
         code = textwrap.dedent(text)
         mocker.patch(
-            "renaissance.impl.python.factory.PythonFactory.create",
+            "renaissance.integrations.python.ast.factory.PythonFactory.create",
             return_value=PythonRstNode.load_from_text(code),
         )
         subject = recipe_cls(filename)

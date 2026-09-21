@@ -3,8 +3,9 @@ from unittest.mock import patch
 
 import hypothesmith
 from hypothesis import assume, given, settings
-from renaissance.impl.python.rst_node import PythonRstNode
-from renaissance.refactoring.type_var_check import TypeVarCheck
+
+from renaissance.integrations.python.ast.rst_node import PythonRstNode
+from renaissance.recipes.type_var_check import TypeVarCheck
 
 
 class TestTypeVarCheckProperties:
@@ -17,7 +18,7 @@ class TestTypeVarCheckProperties:
             assume(False)
 
         with patch(
-            "renaissance.impl.python.factory.PythonFactory.create",
+            "renaissance.integrations.python.ast.factory.PythonFactory.create",
             return_value=PythonRstNode.load_from_text(source),
         ):
             subject = TypeVarCheck("x.py")

@@ -4,7 +4,7 @@
 # of this repository, also available at:
 # https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
-"""Tests for the PythonRefactoring base class."""
+"""Tests for the PythonRefactoring recipe base class."""
 
 import keyword
 import textwrap
