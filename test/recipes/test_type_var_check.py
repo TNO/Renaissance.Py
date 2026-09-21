@@ -10,8 +10,8 @@ from pathlib import Path
 from hamcrest import assert_that, contains_string, has_entry, is_, not_
 from pytest_mock import MockerFixture
 
-from renaissance.impl.python.rst_node import PythonRstNode
-from renaissance.refactoring.type_var_check import TypeVarCheck, target_supports_pep695
+from renaissance.integrations.python.ast.rst_node import PythonRstNode
+from renaissance.recipes.type_var_check import TypeVarCheck, target_supports_pep695
 
 
 class TestTypeVarCheck:
@@ -43,7 +43,7 @@ class TestTypeVarCheck:
             (tmp_path / "pyproject.toml").write_text(f'[project]\nrequires-python = "{requires_python}"\n')
         file_path = str(tmp_path / "subject.py")
         mocker.patch(
-            "renaissance.impl.python.factory.PythonFactory.create",
+            "renaissance.integrations.python.ast.factory.PythonFactory.create",
             return_value=PythonRstNode.load_from_text(textwrap.dedent(code), file_path),
         )
         subject = TypeVarCheck(file_path)
@@ -112,7 +112,7 @@ class TestTypeVarCheck:
         )
         importing_file = str(tmp_path / "file_2.py")
         mocker.patch(
-            "renaissance.impl.python.factory.PythonFactory.create",
+            "renaissance.integrations.python.ast.factory.PythonFactory.create",
             return_value=PythonRstNode.load_from_text(
                 textwrap.dedent("""
                     from file_1 import T

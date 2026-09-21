@@ -4,12 +4,11 @@ from unittest.mock import patch
 import hypothesmith
 from hypothesis import assume, given, settings
 
-from renaissance.impl.python.rst_node import PythonRstNode
-from renaissance.refactoring.type_var_tuple_check import TypeVarTupleCheck
+from renaissance.integrations.python.ast.rst_node import PythonRstNode
+from renaissance.recipes.type_var_tuple_check import TypeVarTupleCheck
 
 
 class TestTypeVarTupleCheckProperties:
-
     @given(source=hypothesmith.from_grammar())
     @settings(max_examples=50, deadline=None)
     def test_never_crashes(self, source: str) -> None:
@@ -19,7 +18,7 @@ class TestTypeVarTupleCheckProperties:
             assume(False)
 
         with patch(
-            "renaissance.impl.python.factory.PythonFactory.create",
+            "renaissance.integrations.python.ast.factory.PythonFactory.create",
             return_value=PythonRstNode.load_from_text(source),
         ):
             subject = TypeVarTupleCheck("x.py")
