@@ -18,6 +18,7 @@ class TestTypeVarCheck:
     """See module docstring."""
 
     def test_check_cleans_up_ruff_style_leftover_end_to_end(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
+        """AI: Verify check() converts a PEP-695-ready TypeVar and leaves its ruff-style leftover for F401."""
         # "orphaned" (phase 3) stays empty here: phase 2 already drops the redundant declaration
         # once it sees the function is pre-converted.
         subject = create_type_var_check("""
@@ -53,14 +54,17 @@ class TestTypeVarCheck:
     # Deep coverage of pyproject.toml lookup/requires-python parsing lives in
     # test/utils/test_python_version.py; these two only confirm the >=(3, 12) threshold.
     def test_target_supports_pep695_true_for_3_12_plus(self, tmp_path: Path) -> None:
+        """AI: Verify target_supports_pep695 is True when requires-python's floor is >= 3.12."""
         (tmp_path / "pyproject.toml").write_text('[project]\nrequires-python = ">=3.12"\n')
         assert_that(target_supports_pep695(str(tmp_path / "file.py")), is_(True))
 
     def test_target_supports_pep695_false_for_3_10(self, tmp_path: Path) -> None:
+        """AI: Verify target_supports_pep695 is False when requires-python's floor is below 3.12."""
         (tmp_path / "pyproject.toml").write_text('[project]\nrequires-python = ">=3.10"\n')
         assert_that(target_supports_pep695(str(tmp_path / "file.py")), is_(False))
 
     def test_convert_declared_typevars_reports_unsafe_when_target_too_old(self, mocker: MockerFixture, tmp_path: Path) -> None:
+        """AI: Verify convert_declared_typevars reports "unsafe" and leaves the TypeVar untouched below 3.12."""
         subject = self._create_versioned(
             mocker,
             tmp_path,
@@ -82,6 +86,7 @@ class TestTypeVarCheck:
         assert_that(subject.apply_to_string(), contains_string('T = TypeVar("T")'))
 
     def test_convert_declared_typevars_still_fixes_when_target_new_enough(self, mocker: MockerFixture, tmp_path: Path) -> None:
+        """AI: Verify convert_declared_typevars still converts the TypeVar when the target is 3.12+."""
         subject = self._create_versioned(
             mocker,
             tmp_path,
@@ -101,6 +106,7 @@ class TestTypeVarCheck:
         assert_that(subject.apply_to_string(), contains_string("def a[T](x: T) -> T:"))
 
     def test_check_still_localizes_when_target_too_old(self, mocker: MockerFixture, tmp_path: Path) -> None:
+        """AI: Verify cross-file localization still runs when the target is too old for the PEP 695 conversion."""
         (tmp_path / "pyproject.toml").write_text('[project]\nrequires-python = ">=3.10"\n')
         (tmp_path / "file_1.py").write_text(
             textwrap.dedent("""
