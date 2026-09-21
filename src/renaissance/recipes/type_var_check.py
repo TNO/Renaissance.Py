@@ -3,6 +3,7 @@
 import ast
 from typing import Any, cast
 
+from renaissance.integrations.python.ast.rst_node import PythonRstNode
 from renaissance.recipes.python_refactoring import PythonRefactoring, narrowed_import_text
 from renaissance.recipes.step_runner import Step, run_steps
 from renaissance.recipes.type_var_domain import (
@@ -89,7 +90,8 @@ class TypeVarCheck(PythonRefactoring):
         introduces PEP 695 syntax. The specific UnsafeReason behind each "unsafe" entry is
         recorded on self.converted_unsafe_reasons.
         """
-        tree = cast(ast.Module, self.root.node)
+        root = cast("PythonRstNode", cast("object", self.root))
+        tree = cast(ast.Module, root.node)
         declarations = find_type_param_declarations(tree)
         usage = functions_using_nodes(tree, set(declarations.keys()))
 
@@ -98,7 +100,7 @@ class TypeVarCheck(PythonRefactoring):
             return dict.fromkeys(usage, "unsafe")
 
         results: dict[str, str] = {}
-        self.converted_unsafe_reasons = {}
+        self.converted_unsafe_reasons: dict[str, UnsafeReason] = {}
         # Collected here instead of replaced immediately: a function using 2+ converted type
         # params (e.g. TypeVar and ParamSpec) must get exactly one self.replace() covering all
         # of them - queuing one per name would target the same function node twice before a
@@ -137,7 +139,8 @@ class TypeVarCheck(PythonRefactoring):
         specific UnsafeReason behind each "unsafe" entry is recorded on
         self.orphaned_unsafe_reasons.
         """
-        tree = cast(ast.Module, self.root.node)
+        root = cast("PythonRstNode", cast("object", self.root))
+        tree = cast(ast.Module, root.node)
         declarations = find_type_param_declarations(tree)
 
         results: dict[str, str] = {}
