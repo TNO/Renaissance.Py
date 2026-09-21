@@ -1,3 +1,5 @@
+"""AI: Mapping of Python `ast` node kinds and operators to the library's semantic kinds."""
+
 from renaissance.syntax_tree.semantic_kind import SemanticKind
 
 PYTHON_OPERATOR_MAP = {

@@ -1,3 +1,5 @@
+"""Tests for building Python AST patterns via PythonPatternFactory."""
+
 import pytest
 from hamcrest import assert_that, has_length, is_, is_in
 
@@ -9,8 +11,11 @@ from renaissance.syntax_tree.pattern_kind import PatternKind
 
 
 class TestPythonFactory:
+    """AI: Tests for building Python AST patterns via PythonPatternFactory."""
+
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
+        """AI: Build the shared Python factory and pattern factory used by the pattern-factory tests."""
         self.factory = PythonFactory(PythonRstNode)
         self.pattern_factory = PythonPatternFactory(self.factory)
 
@@ -32,11 +37,13 @@ class TestPythonFactory:
         ],
     )
     def test_if_else(self, statement) -> None:
+        """AI: Verify if/elif/else statement variants parse with kind 'If' and preserve their signature."""
         node = PythonRstNode.load_from_text(statement).body[-1]
         assert_that(node.parser_kind, is_("If"))
         assert_that(node.signature, is_(statement))
 
     def test_import(self) -> None:
+        """AI: Verify a from-import statement parses with kind 'ImportFrom' and exposes its module property."""
         statement = "from module import foo, bar"
 
         node = PythonRstNode.load_from_text(statement).body[-1]
@@ -55,6 +62,7 @@ class TestPythonFactory:
         ],
     )
     def test_try_statement(self, statement) -> None:
+        """AI: Verify try/except statement patterns parse with kind 'Try' and preserve their signature."""
         pattern_factory = PythonPatternFactory(self.factory)
         node = pattern_factory.create_statement(statement)
         assert_that(node.parser_kind, is_("Try"))
@@ -69,6 +77,7 @@ class TestPythonFactory:
         ],
     )
     def test_for_loop(self, statement) -> None:
+        """AI: Verify for-loop statement patterns parse with kind 'For' and preserve their signature."""
         pattern_factory = PythonPatternFactory(self.factory)
         node = pattern_factory.create_statement(statement)
         assert_that(node.parser_kind, is_("For"))
@@ -82,6 +91,7 @@ class TestPythonFactory:
         ],
     )
     def test_while_loop(self, statement) -> None:
+        """AI: Verify while-loop statement patterns (with and without else) parse with kind 'While' and preserve their signature."""
         pattern_factory = PythonPatternFactory(self.factory)
         node = pattern_factory.create_statement(statement)
         assert_that(node.parser_kind, is_("While"))
@@ -95,6 +105,7 @@ class TestPythonFactory:
         ],
     )
     def test_with_statement(self, statement) -> None:
+        """AI: Verify with-statement patterns parse with kind 'With' and preserve their signature."""
         pattern_factory = PythonPatternFactory(self.factory)
         node = pattern_factory.create_statement(statement)
         assert_that(node.parser_kind, is_("With"))
@@ -109,6 +120,7 @@ class TestPythonFactory:
         ],
     )
     def test_func_def(self, code) -> None:
+        """AI: Verify function definition patterns parse with kind 'FunctionDef' and preserve their signature."""
         pattern_factory = PythonPatternFactory(self.factory)
         node = pattern_factory.create_statement(code)
         assert_that(node.parser_kind, is_("FunctionDef"))
@@ -123,6 +135,7 @@ class TestPythonFactory:
         ],
     )
     def test_class_def(self, code) -> None:
+        """AI: Verify class definition patterns parse with kind 'ClassDef' and preserve their signature."""
         pattern_factory = PythonPatternFactory(self.factory)
         node = pattern_factory.create_statement(code)
         assert_that(node.parser_kind, is_("ClassDef"))
@@ -137,6 +150,7 @@ class TestPythonFactory:
         ],
     )
     def test_return_statement(self, code) -> None:
+        """AI: Verify return statement patterns parse with kind 'Return' and preserve their signature."""
         pattern_factory = PythonPatternFactory(self.factory)
         node = pattern_factory.create_statement(code)
         assert_that(node.parser_kind, is_("Return"))
@@ -152,6 +166,7 @@ class TestPythonFactory:
     )
     def test_assert_statement(self, code) -> None:
         """Test for an assert statement.
+
         An assert statement has optionally a message.
         """
         pattern_factory = PythonPatternFactory(self.factory)
@@ -167,12 +182,14 @@ class TestPythonFactory:
         ],
     )
     def test_delete_statement(self, code) -> None:
+        """AI: Verify delete statement patterns parse with kind 'Delete' and preserve their signature."""
         pattern_factory = PythonPatternFactory(self.factory)
         node = pattern_factory.create_statement(code)
         assert_that(node.parser_kind, is_("Delete"))
         assert_that(node.signature, is_(code))
 
     def test_pass(self) -> None:
+        """AI: Verify a pass statement pattern parses with kind 'Pass' and preserves its signature."""
         code = "pass"
         pattern_factory = PythonPatternFactory(self.factory)
         node = pattern_factory.create_statement(code)
@@ -180,6 +197,7 @@ class TestPythonFactory:
         assert_that(node.signature, is_(code))
 
     def test_break_statement(self) -> None:
+        """AI: Verify a break statement pattern parses with kind 'Break' and preserves its signature."""
         code = "break"
         pattern_factory = PythonPatternFactory(self.factory)
         node = pattern_factory.create_statement(code)
@@ -187,6 +205,7 @@ class TestPythonFactory:
         assert_that(node.signature, is_(code))
 
     def test_cont_statement(self) -> None:
+        """AI: Verify a continue statement pattern parses with kind 'Continue' and preserves its signature."""
         code = "continue"
         pattern_factory = PythonPatternFactory(self.factory)
         node = pattern_factory.create_statement(code)
@@ -202,6 +221,7 @@ class TestPythonFactory:
         ],
     )
     def test_variable(self, code) -> None:
+        """AI: Verify a bare variable name statement parses with kind 'Expr' and preserves its signature."""
         pattern_factory = PythonPatternFactory(self.factory)
         node = pattern_factory.create_statement(code)
         assert_that(node.parser_kind, is_("Expr"))
@@ -225,6 +245,7 @@ class TestPythonFactory:
         ],
     )
     def test_expr(self, code) -> None:
+        """AI: Verify a variety of expression statements parse with kind 'Expr' and preserve their signature."""
         pattern_factory = PythonPatternFactory(self.factory)
         node = pattern_factory.create_statement(code)
         assert_that(node.parser_kind, is_("Expr"))
@@ -232,13 +253,14 @@ class TestPythonFactory:
 
     @pytest.mark.parametrize("code", ["\"hello = 'hello' # comment to hello\""])
     def test_comments(self, code) -> None:
-        """TODO: what is tested?"""
+        """Document that a `#` inside a string literal is not mistaken for a comment by the pattern factory."""
         pattern_factory = PythonPatternFactory(self.factory)
         node = pattern_factory.create_statement(code)
         assert_that(node.parser_kind, is_("Expr"))
         assert_that(node.signature, is_(code))
 
     def test_decorators(self) -> None:
+        """AI: Verify creating a decorator pattern produces an ImplicitNode named 'decorator_list'."""
         pattern_factory = PythonPatternFactory(self.factory)
         node = pattern_factory.create_decorators("@parameterized.expand($exp)").node
         assert_that(node.parser_kind, is_("ImplicitNode"))
@@ -246,6 +268,7 @@ class TestPythonFactory:
 
     @pytest.mark.skip
     def test_match_decorators(self) -> None:
+        """AI: Verify a decorator pattern matches an actual decorator on a parsed function (skipped test)."""
         node = self.factory.create_from_text(
             '@parameterized.expand("sasas")\ndef fun():\n    parameterized.expand("sasas")\n',
             "decorator_pattern.py",
@@ -255,6 +278,7 @@ class TestPythonFactory:
         assert_that(result, has_length(1))
 
     def test_create_kwargs(self) -> None:
+        """AI: Verify creating keyword-argument patterns matches the corresponding keywords of a real call."""
         pattern = self.pattern_factory.create_statement("fun($c=0, $d=2312)")
         kwargs = [PythonRstNode(kwarg) for kwarg in pattern.node.node.value.keywords]
         it = self.pattern_factory.create_kwargs("$c=0, $d=2312")
@@ -269,11 +293,13 @@ class TestPythonFactory:
         ),
     )
     def test_misalignment(self, _, factory, raw, expected) -> None:
+        """AI: Verify a numeric assignment expression's parser kind is one of several acceptable, backend-dependent kinds."""
         pattern_factory = PythonPatternFactory(factory)
         expression = pattern_factory.create_expression(raw)
         assert_that(expression.parser_kind, is_in(expected))
 
     def test_function_with_multi_patterns(self):
+        """AI: Verify a call pattern mixing MATCH_ONE and MATCH_ALL placeholders assigns the expected pattern kinds to each child."""
         pattern = self.pattern_factory.create_expression("$f($$before, $a, $$after)")
         assert_that(pattern.parser_kind, is_("Call"))
         assert_that(pattern.children[0].pattern_kind, is_(PatternKind.MATCH_ONE))

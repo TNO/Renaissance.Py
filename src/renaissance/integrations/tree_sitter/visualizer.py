@@ -1,9 +1,14 @@
+"""AI: Render a tree-sitter LST as a Mermaid graph for visualization."""
+
 from renaissance.integrations.tree_sitter.lst import LST
 from renaissance.utils.text_utils import signature_to_id
 
 
 class LstVisualizer:
+    """AI: Render a tree-sitter LST as a Mermaid graph for visualization."""
+
     def __init__(self):
+        """AI: Prepare a visualizer that renders an LST as a Mermaid graph."""
         self.lines = ["graph TD"]
         self.counter = 0
         self.node_ids = {}
@@ -29,5 +34,6 @@ class LstVisualizer:
             self.lines.append(f"{node_id} --> {child_id}")
 
     def render(self, lst: LST):
+        """AI: Render the given LST as a Mermaid graph diagram string."""
         self._render_node(lst.root)
         return "\n".join(self.lines)

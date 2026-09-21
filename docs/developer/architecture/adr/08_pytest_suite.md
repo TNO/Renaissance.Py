@@ -132,9 +132,11 @@ pytest-bdd is chosen over Behave and Robot Framework (see [Alternatives consider
 import pytest
 from hamcrest import assert_that, is_, contains_inanyorder
 
+
 @pytest.fixture
 def sut():
     return Matcher()
+
 
 class TestMatcherPlaceholder:
     def test_placeholder_matches_highest_ast_node(self, sut):
@@ -142,11 +144,14 @@ class TestMatcherPlaceholder:
         result = sut.find(parse("a = f(1, 2+3);"), pattern)
         assert_that(result, is_(non_empty()))
 
-    @pytest.mark.parametrize("source,expected", [
-        ("1_000_000", "1000000"),
-        ("0xFF",      "255"),
-        ('"ape"',     "'ape'"),
-    ])
+    @pytest.mark.parametrize(
+        "source,expected",
+        [
+            ("1_000_000", "1000000"),
+            ("0xFF", "255"),
+            ('"ape"', "'ape'"),
+        ],
+    )
     def test_equivalent_literals(self, sut, source, expected):
         assert_that(sut.are_equivalent(source, expected), is_(True))
 ```

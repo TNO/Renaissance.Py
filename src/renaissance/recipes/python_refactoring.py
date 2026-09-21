@@ -1,6 +1,5 @@
-"""Base class every Python recipe (TypeVarCheck, TypeVarTupleCheck, etc.) extends."""
+"""AI: Base processor for Python-specific source refactoring recipes."""
 
-import ast
 import importlib
 from collections.abc import Sequence
 from pathlib import Path
@@ -32,17 +31,10 @@ def narrowed_import_text(raw: ast.ImportFrom, names: str | set[str]) -> str | No
 
 
 class PythonRefactoring(ASTProcessor):
-    """Base class for a Python-source-rewriting recipe.
-
-    Parses a file, exposes helpers to find and rewrite nodes, and dispatches by name via
-    process().
-    """
+    """AI: Base processor for Python-specific source refactoring recipes."""
 
     def __init__(self, file):
-        """Parse file into an RST tree via PythonFactory.
-
-        Sets up the base ASTProcessor plus the pattern factory replace_stmt() uses.
-        """
+        """AI: Prepare a Python-specific refactoring processor for the given source file."""
         factory = PythonFactory(PythonRstNode)
         atu = factory.create(file)
         super().__init__(atu, factory, False)
@@ -51,11 +43,7 @@ class PythonRefactoring(ASTProcessor):
         self.white_list_pattern = ""
 
     def replace_stmt(self, find, repl):
-        """Replace every statement matching the find pattern with repl.
-
-        Substitutes each of the pattern's expansion placeholders (e.g. `$args`) into repl's text
-        before replacing.
-        """
+        """AI: Replace all statements matching the find pattern with the repl template, expanding captures."""
         pattern = self.pattern_factory.create_statements(find)
         for match in match_pattern(self.root.children, pattern):
             replacement = repl
@@ -82,7 +70,7 @@ class PythonRefactoring(ASTProcessor):
 
     @property
     def body(self) -> Sequence[PythonRstNode]:
-        """The direct child statement nodes of the file's root RST node."""
+        """AI: Return the root node's body statements."""
         return cast("PythonRstNode", cast("object", self.root)).body
 
     def find_rst_node(self, target: ast.AST) -> Any:

@@ -1,3 +1,5 @@
+"""AI: Enforce naming and location policy for documentation image assets."""
+
 import re
 from pathlib import Path
 

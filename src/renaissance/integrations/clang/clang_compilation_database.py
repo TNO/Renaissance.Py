@@ -1,3 +1,5 @@
+"""AI: Load a Clang compilation database and iterate its translation units as AST nodes."""
+
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -7,6 +9,8 @@ from renaissance.syntax_tree import ASTFactory, ASTNode
 
 
 class CompilationDatabase:
+    """AI: Load a Clang compilation database and iterate its translation units as AST nodes."""
+
     @staticmethod
     def walk(typ: type[ASTNode], path: Path) -> Iterator[tuple[ASTFactory, ASTNode]]:
         """Load the Clang compilation database and yield factory and AST node type tuples.

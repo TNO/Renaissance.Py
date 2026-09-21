@@ -123,6 +123,7 @@ Each integration subdirectory depends on `renaissance` and implements the `Integ
 # In renaissance
 from typing import Protocol
 
+
 class IntegrationProtocol(Protocol):
     def parse(self, source: str) -> AstNode: ...
     def unparse(self, node: AstNode) -> str: ...

@@ -1,3 +1,5 @@
+"""AI: Example script demonstrating loading and walking a Clang compilation database."""
+
 # use clang to load and walk a compilation database
 
 from pathlib import Path
@@ -10,6 +12,7 @@ from renaissance.syntax_tree.semantic_kind import SemanticKind
 
 
 def main(args):
+    """AI: Walk the compilation database given in `args` for each Clang integration and show its AST."""
     # the first argument is the code to be parsed
     database = args[0] if len(args) > 0 else ""
     for impl_type in [ClangASTNode, ClangJsonASTNode]:

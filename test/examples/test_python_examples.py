@@ -1,3 +1,5 @@
+"""Tests for the Python CST/LST/RST rewriting example scripts."""
+
 from hamcrest import assert_that, is_
 
 from rejuvenation.python_cst_example import python_cst_smoke_test
@@ -11,18 +13,23 @@ result = (
 
 
 class TestPythonExamples:
+    """AI: Tests the Python CST/LST/RST rewriting example scripts still run and produce output."""
+
     # def test_python_ast_still_works(self):
     #     result = python_ast_smoke_test()
     #     assert_that(result, is_(result))
 
     def test_python_cst_still_works(self):
+        """AI: Verify the Python CST rewriting example script still runs and produces output."""
         result = python_cst_smoke_test()
         assert_that(result, is_(result))
 
     def test_python_lst_still_works(self):
+        """AI: Verify the Python LST rewriting example script still runs and produces output."""
         result = python_lst_smoke_test()
         assert_that(result, is_(result))
 
     def test_python_rst_still_works(self):
+        """AI: Verify the Python RST rewriting example script still runs and produces output."""
         result = python_rst_smoke_test()
         assert_that(result, is_(result))

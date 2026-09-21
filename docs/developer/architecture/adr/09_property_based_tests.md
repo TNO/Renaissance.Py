@@ -59,10 +59,12 @@ way to check generated output against formal specifications.
 from hypothesis import given, strategies as st
 from renaissance.lst import LSTNode
 
+
 @given(st.from_type(LSTNode))
 def test_round_trip(node: LSTNode) -> None:
     """Parsing and unparsing an LSTNode must yield the original source."""
     assert unparse(parse(str(node))) == str(node)
+
 
 @given(st.text(alphabet=st.characters(whitelist_categories=("Lu", "Ll"))))
 def test_snake_case_no_spaces(name: str) -> None:

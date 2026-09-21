@@ -70,7 +70,6 @@ node make behavior explicit, allow normalization, and preserve access to the ori
   that matter.
 
 ```Python
-
 # monkey patching the ast node to have properties and children, so that it can be used directly in the matcher and rewriter without needing to write an adapter for it.
 @property
 def properties(self: AST) -> dict[str, Any]:
@@ -92,21 +91,24 @@ AST.children = children
 
 # wrapper example for a foreign node type (e.g., from a third-party parser)
 
+
 class PythonASTNode:
     def __init__(self, node: ast):
         self._node = node
+
     @property
     def properties(self):
-      return {'name':self._node.name, 'value':self._node.value}
+        return {"name": self._node.name, "value": self._node.value}
+
     @property
     def children(self):
         return [PythonASTNode(n) for n in self._node.body]
- 
-# adapter example    
-class PythonASTNode:
-  def __init__(self, node):
-    self.properties["name"] = self.derive_name_from(node)
 
+
+# adapter example
+class PythonASTNode:
+    def __init__(self, node):
+        self.properties["name"] = self.derive_name_from(node)
 ```
 
 ## Rationale

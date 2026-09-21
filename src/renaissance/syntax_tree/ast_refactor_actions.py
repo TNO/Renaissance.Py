@@ -1,3 +1,5 @@
+"""AI: Higher-level refactoring actions built on top of pattern matching and rewriting."""
+
 from collections.abc import Callable, Sequence
 from functools import cache
 from typing import TYPE_CHECKING
@@ -23,16 +25,20 @@ def _kind_predicate(kind):
 
 
 class ASTRefactorActions:
+    """AI: Higher-level refactoring actions (replace, insert, remove) built on top of pattern matching and rewriting."""
+
     def __init__(
         self,
         processor: ASTProcessor,
         pattern_factory: "CPPPatternFactory",  # noqa: UP037 RECHECK when ruff is updated (see astral-sh/ruff#20782)
     ) -> None:
+        """AI: Provide pattern-based refactoring actions (replace, insert, remove) over an AST."""
         self.processor = processor
         self.pattern_factory = pattern_factory
         self.replaced: set[int] = set()
 
     def replace_expr(self, name: str, replacement: str, kind: SemanticKind | Callable[[ASTNode], bool]):
+        """AI: Replace occurrences of the named expression matching kind with replacement."""
         kind_predicate = _kind_predicate(kind)
 
         def test(n: ASTNode):
@@ -48,6 +54,7 @@ class ASTRefactorActions:
         kind: SemanticKind | Callable[[ASTNode], bool] | None = None,
         skip_kind: SemanticKind | Callable[[ASTNode], bool] | None = None,
     ):
+        """AI: Replace occurrences of the named node (matching kind, excluding skip_kind) with replacement."""
         kind_predicate = _kind_predicate(kind)
         skip_kind_predicate = _kind_predicate(skip_kind)
 
@@ -71,6 +78,7 @@ class ASTRefactorActions:
         kind: SemanticKind | Callable[[ASTNode], bool] | None = None,
         skip_kind: SemanticKind | Callable[[ASTNode], bool] | None = None,
     ):
+        """AI: Replace nodes whose text equals text (matching kind, excluding skip_kind) with replacement."""
         kind_predicate = _kind_predicate(kind)
         skip_kind_predicate = _kind_predicate(skip_kind)
 
@@ -88,6 +96,7 @@ class ASTRefactorActions:
         [self.processor.replace(n.text.replace(n.name, replacement, 1), n) for n in found_nodes]
 
     def replace_declaration(self, declaration: str, replacement: str):
+        """AI: Replace every match of declaration with replacement."""
         for match in self.find_declaration(declaration):
             self.processor.replace(replacement, match)
 
@@ -108,11 +117,13 @@ class ASTRefactorActions:
 
     @cache
     def find_declaration(self, decl_pattern: str):
+        """AI: Return the matches of decl_pattern parsed as a declaration pattern."""
         pattern = self.pattern_factory.create_declaration(decl_pattern)
         return self.processor.find_match(pattern)
 
     @cache
     def collect(self, pattern: str, pattern_kind: str):
+        """AI: Return the matches of pattern parsed as the given pattern_kind."""
         root = self.pattern_factory.create(pattern, pattern_kind)
 
         return self.processor.find_match(root)

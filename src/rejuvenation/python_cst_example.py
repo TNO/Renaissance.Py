@@ -1,3 +1,5 @@
+"""AI: Example script demonstrating CST-based rewriting of Python source."""
+
 import textwrap
 
 from rejuvenation.python_lst_example import python_lst_smoke_test
@@ -21,7 +23,7 @@ pa(54)
 
 
 def python_cst_smoke_test():
-
+    """AI: Demonstrate matching and rewriting `example_code` using the CST integration."""
     # adapter = TreeSitterAdapter(tree_sitter_python)
     # tree = adapter.parse_code(code)
     # lst = adapter.to_lst(code, tree)
@@ -67,6 +69,7 @@ def python_cst_smoke_test():
 
 
 def refactor(match, replacement_text, rewriter):
+    """AI: Expand placeholders in `replacement_text` from `match` and queue the rewrite."""
     for placeholder in match.expansions:
         replacement_text = replacement_text.replace(placeholder, match[placeholder])
     return rewriter.replace(replacement_text, match.nodes)

@@ -68,13 +68,15 @@ with matching metadata.
 from dataclasses import dataclass
 from renaissance.common import AstNode, SyntacticKind
 
+
 @dataclass(frozen=True)
 class Pattern:
     node: AstNode
     kind: SyntacticKind
 
-def code_factory(snippet: str, kind: SyntacticKind) -> AstNode:
-    ...
+
+def code_factory(snippet: str, kind: SyntacticKind) -> AstNode: ...
+
 
 def pattern_factory(snippet: str, kind: SyntacticKind) -> Pattern:
     node = code_factory(snippet, kind)

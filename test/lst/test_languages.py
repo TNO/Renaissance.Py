@@ -1,3 +1,5 @@
+"""Tests that the tree-sitter LST adapter works across multiple languages."""
+
 import pytest
 import tree_sitter_cpp as tscpp
 import tree_sitter_java as tsjava
@@ -10,6 +12,8 @@ from renaissance.utils.ast_utils import traverse
 
 
 class TestLanguages:
+    """AI: Tests that the tree-sitter LST adapter works across multiple languages."""
+
     @pytest.mark.parametrize(
         "lang, code",
         [
@@ -78,6 +82,7 @@ class TestLanguages:
         ],
     )
     def test_language_parsing(self, lang, code):
+        """AI: Verify parsing a code snippet with the given tree-sitter language grammar produces a non-empty LST."""
         adapter = TreeSitterAdapter(lang)
         tree = adapter.parse_code(code)
         lst = adapter.to_lst(code, tree)

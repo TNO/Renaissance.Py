@@ -1,3 +1,5 @@
+"""AI: Sample TAUT-to-pytest source/target code pairs used as test fixture data."""
+
 taut_code = """
 def test_functions(self):
     with TAUT.TestDoubles(abcdxtl=FakeABCDxTL(None)):

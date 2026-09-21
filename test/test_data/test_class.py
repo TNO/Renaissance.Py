@@ -1,3 +1,5 @@
+"""AI: Sample legacy Python source used as test fixture data for refactoring recipe tests."""
+
 change_comment = """#!/usr/bin/env python
 # -----------------------------------------------------------------------------#
 #                                                                             #

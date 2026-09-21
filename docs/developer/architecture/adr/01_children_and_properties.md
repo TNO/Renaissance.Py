@@ -53,12 +53,10 @@ for both concepts.
 ```python
 class GoAstNode:
     @property
-    def properties(self) -> dict[str, Any]:
-        ...
+    def properties(self) -> dict[str, Any]: ...
 
     @property
-    def children(self) -> list[Self]:
-        ...
+    def children(self) -> list[Self]: ...
 ```
 
 ## Rationale

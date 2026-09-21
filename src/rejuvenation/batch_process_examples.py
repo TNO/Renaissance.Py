@@ -1,4 +1,6 @@
 # use clang to load and walk a compilation database
+"""AI: Example script demonstrating batch AST processing across a Clang compilation database."""
+
 import textwrap
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
@@ -57,6 +59,7 @@ example_2 = textwrap.dedent("""
 
 # generate a simple code base provider in real life use a compilation database
 def simple_codebase_provider() -> Iterable[tuple[ASTFactory, ASTNode]]:
+    """AI: Yield (factory, ATU) pairs for the two example C snippets, once per Clang integration."""
     for impl_type in [ClangASTNode, ClangJsonASTNode]:
         factory = ASTFactory(impl_type)
         atu1 = factory.create_from_text(example_1, impl_type.__name__ + "1.c")
@@ -66,6 +69,7 @@ def simple_codebase_provider() -> Iterable[tuple[ASTFactory, ASTNode]]:
 
 
 def print_results(title, batch_processor):
+    """AI: Print the given title followed by each in-memory file's path and rewritten content."""
     print(title + ":")
     for file, code in batch_processor.in_memory_files.items():
         print(TextUtils.shift_right(file, 4) + "\n")
@@ -73,7 +77,8 @@ def print_results(title, batch_processor):
 
 
 def batch_remove_unused_variable_once_example():
-    """This function demonstrates a batch processing example using different AST node implementations.
+    """Demonstrate a batch processing example using different AST node implementations.
+
     It iterates over a list of AST node implementations (`ClangASTNode` and `ClangJsonASTNode`),
     and for each implementation, it generates a codebase provider that yields tuples of
     `ASTFactory` and `ASTNode` created from example source texts (`example_1` and `example_2`).
@@ -90,6 +95,7 @@ def batch_remove_unused_variable_once_example():
 
 def batch_repeat_example():
     """Demonstrates the use of a batch processor to perform multiple refactoring operations on a codebase.
+
     This example creates an in-memory batch processor and applies two refactoring operations:
     1. CleanupRefactoring.remove_unused_variables: Removes unused variables from the codebase.
     2. remove_function: Removes all function calls from the codebase.
@@ -122,16 +128,22 @@ def batch_repeat_example():
 
 @dataclass
 class CallInfo:
+    """AI: Record the callee name and call-site text for one collected function call."""
+
     callee: str
     calls: str
 
 
 class AnalysisRecipe:
+    """AI: Recipe that collects function-call analysis results across the processed AST."""
+
     def __init__(self):
+        """AI: Initialize an empty recipe for collecting function-call analysis results."""
         self._calls = []
 
     @recipe_step(order=0)
     def store_function_call(self, ast_processor: ASTProcessor) -> Callable[[], None] | None:
+        """AI: Collect all function-call nodes found by the processor and queue them for single-threaded storage."""
         # find all function calls and store them, this routing is invoked in parallel!
         calls: list[CallInfo] = []
         [AnalysisRecipe._add_function_call(node, calls) for node in ast_processor.find_semantic_kind(SemanticKind.CALL)]
@@ -144,10 +156,12 @@ class AnalysisRecipe:
 
     @after_step("store_function_call")
     def just_show_the_method(self):
+        """AI: Print a marker showing this hook ran after store_function_call."""
         print("called after store_function_call")
 
     @final_action()
     def final_action(self):
+        """AI: Print all collected function calls after the recipe finishes."""
         print("Calls:")
         for call in self._calls:
             print("    " + call.callee + " --  calls --> " + call.calls)
@@ -160,6 +174,7 @@ class AnalysisRecipe:
 
 
 def batch_recipe_example():
+    """AI: Run the analysis recipe over the example codebase and print discovered calls."""
     print("example batch analysis using recipe:\n")
     recipe_ast_processor = RecipeASTProcessor(AnalysisRecipe(), simple_codebase_provider, r".*", in_memory=True)
     recipe_ast_processor.run()

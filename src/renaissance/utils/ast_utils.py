@@ -1,3 +1,5 @@
+"""AI: Low-level AST utility helpers: sibling lookup, placeholder handling, and node matching."""
+
 from collections import deque
 from contextlib import contextmanager
 from contextvars import ContextVar
@@ -9,6 +11,7 @@ DISPLAY_PARSER_KIND: ContextVar[bool] = ContextVar("display_parser_kind", defaul
 
 @contextmanager
 def display_context(display_parser_kind: bool):
+    """AI: Temporarily set whether node display uses parser kind instead of semantic kind."""
     token = DISPLAY_PARSER_KIND.set(display_parser_kind)
     try:
         yield
@@ -53,6 +56,7 @@ def detect_placeholder(signature: str, original_node_type: str) -> tuple[bool, s
 
 # duplicate of ast node process
 def traverse(node):
+    """AI: Yield node and all its descendants in breadth-first order."""
     todo = deque([node])
     while todo:
         node = todo.popleft()
@@ -62,6 +66,7 @@ def traverse(node):
 
 
 def process_node(node, action) -> None:
+    """AI: Recursively apply action to node and all its descendants."""
     action(node)
     if node.children:
         for child in node.children:
@@ -69,6 +74,7 @@ def process_node(node, action) -> None:
 
 
 def preceding_sibling(node):
+    """AI: Return the sibling immediately before node in its parent's children, or None."""
     parent = node.parent
     if not parent:
         return None
@@ -78,6 +84,7 @@ def preceding_sibling(node):
 
 
 def next_sibling(self):
+    """AI: Return the sibling immediately after self in its parent's children, or None."""
     parent = self.parent
     if not parent:
         return None
@@ -87,17 +94,20 @@ def next_sibling(self):
 
 
 def match_props(mine, other, irrelevant_props) -> bool:
+    """AI: Return True if mine and other agree on all properties except the irrelevant ones."""
     all_keys = (mine.keys() | other.keys()) - irrelevant_props
     return all(mine.get(n) == other.get(n) for n in all_keys)
 
 
 def match_children(mine, other, irrelevant_kinds) -> bool:
+    """AI: Return True if every child in other matches the corresponding child in mine (or has an irrelevant kind)."""
     if mine is None or other is None:
         return mine == other
     return all((i < len(mine) and mine[i] == child) or child.parser_kind in irrelevant_kinds for i, child in enumerate(other))
 
 
 def format_node(node) -> str:
+    """AI: Return a human-readable, indented display string for a single AST node."""
     raw_lines = node.signature.splitlines()
     properties_text = "" if not node.show_props else node.properties
     prefix = " " if len(raw_lines) < 2 else f"\n    {node.indent}"

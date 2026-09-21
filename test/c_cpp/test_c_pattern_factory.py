@@ -1,3 +1,5 @@
+"""Tests for building C AST patterns via CPatternFactory."""
+
 import pytest
 from hamcrest import assert_that, contains_string, greater_than_or_equal_to, is_, less_than_or_equal_to, not_, not_none
 
@@ -11,7 +13,10 @@ from renaissance.syntax_tree.semantic_kind import SemanticKind
 
 
 class TestCPatternFactory:
+    """AI: Tests deriving header text from a C/C++ translation unit."""
+
     def test_derive_header(self):
+        """AI: Verify derive_header_text extracts includes, defines, and typedefs from a translation unit."""
         code = """
                 #include <stdint.h>
                 int print(const char*,...);
@@ -61,6 +66,8 @@ class TestCPatternFactory:
 
 
 class TestExpression:
+    """AI: Tests building C/C++ expression patterns via CPatternFactory."""
+
     @pytest.mark.parametrize(
         "_, factory, expression, expected",
         Factories.extend(
@@ -147,6 +154,7 @@ class TestExpression:
         ),
     )
     def test(self, _, factory, expression, expected):
+        """AI: Verify create_expression builds a pattern node matching the expected rendered signature."""
         pattern_factory = CPatternFactory(factory)
         node = pattern_factory.create_expression(expression)
         text = ASTShower.get_node(node)
@@ -157,6 +165,8 @@ class TestExpression:
 
 
 class TestDeclaration:
+    """AI: Tests building C/C++ declaration patterns via CPatternFactory."""
+
     @pytest.mark.parametrize(
         "_, factory, declaration_text, types, parameters, expected_vars, expected_refs",
         Factories.extend(
@@ -180,6 +190,7 @@ class TestDeclaration:
         expected_vars,
         expected_refs,
     ):
+        """AI: Verify create_declarations builds the expected number of declaration and reference nodes."""
         pattern_factory = CPatternFactory(factory)
         created_declarations = list(pattern_factory.create_declarations(declaration_text, parameters=parameters, types=types))
 
@@ -194,6 +205,8 @@ class TestDeclaration:
 
 
 class TestStatements:
+    """AI: Tests building C/C++ statement patterns via CPatternFactory."""
+
     @pytest.mark.parametrize(
         "_, factory, statement_text, extra_declarations, expected_stmts, expected_refs",
         list(
@@ -218,6 +231,7 @@ class TestStatements:
         expected_stmts,
         expected_refs,
     ):
+        """AI: Verify create_statements builds the expected number of statement and reference nodes."""
         pattern_factory = CPatternFactory(factory)
         created_statements = list(pattern_factory.create_statements(statement_text, extra_declarations=extra_declarations))
 
@@ -250,6 +264,7 @@ class TestUseAtuToCreatePatterns:
         ),
     )
     def test(self, _, factory, statement_text, expected_stmts, expected_refs):
+        """AI: Verify a complex pattern built from a translation unit's typedef/struct/define/statement matches the source."""
         code = """
         int print(const char*,const char*,const char*,const char*);
         #define FOO "foo"

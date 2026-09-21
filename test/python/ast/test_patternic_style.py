@@ -1,3 +1,5 @@
+"""Tests for the Pythonic-style (RST) AST pattern matching."""
+
 import pytest
 from hamcrest import assert_that, empty, has_length, is_, is_in, is_not
 
@@ -8,8 +10,11 @@ from renaissance.syntax_tree.pattern_kind import PatternKind
 
 
 class TestPythonicStyle:
+    """AI: Tests for the Pythonic-style (RST) AST pattern matching."""
+
     @pytest.fixture(autouse=True)
     def setup(self):
+        """AI: Build the shared Python factory and pattern factory used by the Pythonic-style tests."""
         self.factory = PythonFactory(PythonRstNode)
         self.pattern_factory = PythonPatternFactory(self.factory)
 
@@ -30,6 +35,7 @@ class TestPythonicStyle:
         ],
     )
     def test_consistent_name_stmt(self, raw, kind, op, name, expr, body_length):
+        """AI: Verify compound statements (try, class, def, for, while, if, match, async) expose consistent kind/operator/name/body."""
         it = PythonRstNode.load_from_text(raw).body[-1]
         assert_that(it.parser_kind, is_(kind))
         assert_that(it.operator, is_(op))
@@ -52,6 +58,7 @@ class TestPythonicStyle:
         ],
     )
     def test_stmt(self, raw, kind, typ, name, op, value):
+        """AI: Verify simple statements (AnnAssign, Assign, break, assert, etc.) expose consistent kind/name/operator/type/value."""
         it = PythonRstNode.load_from_text(raw).body[-1]
         assert_that(it.parser_kind, is_(kind))
         assert_that(it.name, is_(name))
@@ -69,11 +76,13 @@ class TestPythonicStyle:
     )
     # ('from x import y', 'ImportFrom', None, 'x', 'import', 'y'),
     def test_expr(self, raw, kind, expr):
+        """AI: Verify expression statements (call, return, raise) expose the expected kind and inner expression name."""
         it = PythonRstNode.load_from_text(raw).body[-1]
         assert_that(it.parser_kind, is_(kind))
         assert_that(it.expr.name, is_(expr))
 
     def test_ann_assign_node(self):
+        """AI: Verify an annotated assignment exposes its name, type annotation, operator, and value."""
         it = PythonRstNode.load_from_text('name:str = "value"').body[-1]
 
         assert_that(it.name, is_("name"))
@@ -82,6 +91,7 @@ class TestPythonicStyle:
         assert_that(it.value, is_("value"))
 
     def test_assign_node(self):
+        """AI: Verify a plain assignment exposes its name, no type, operator, and value."""
         it = PythonRstNode.load_from_text('name = "value"').body[-1]
         assert_that(it.name, is_("name"))
         assert_that(it.type, is_(None))
@@ -89,6 +99,7 @@ class TestPythonicStyle:
         assert_that(it.value, is_("value"))
 
     def test_assign_node_2(self):
+        """AI: Verify an augmented assignment exposes its name, no type, operator, and numeric value."""
         it = PythonRstNode.load_from_text("name += 5").body[-1]
         assert_that(it.name, is_("name"))
         assert_that(it.type, is_(None))
@@ -96,45 +107,54 @@ class TestPythonicStyle:
         assert_that(it.value, is_(5))
 
     def python_does_not_parse_dollar(self):
+        """AI: Document that a bare '$pa' text is treated as a MATCH_ONE pattern rather than plain Python code."""
         it = PythonRstNode.load_from_text("$pa")
         assert_that(it.pattern_kind, is_(PatternKind.MATCH_ONE))
 
     def python_does_not_parse_dollar_dollar(self):
+        """AI: Document that a bare '$$pa' text is treated as a MATCH_ALL pattern rather than plain Python code."""
         it = PythonRstNode.load_from_text("$$pa")
         assert_that(it.pattern_kind, is_(PatternKind.MATCH_ALL))
 
     def test_kind_is_match_all(self):
+        """AI: Verify a '$$pa' statement pattern has MATCH_ALL pattern kind."""
         PythonPatternFactory(PythonFactory(PythonRstNode))
         simple = self.pattern_factory.create_statement("$$pa")
         assert_that(simple.pattern_kind, is_(PatternKind.MATCH_ALL))
 
     def test_kind_is_match_one(self):
+        """AI: Verify a '$pa' statement pattern has MATCH_ONE pattern kind."""
         simple = self.pattern_factory.create_statement("$pa")
         assert_that(simple.pattern_kind, is_(PatternKind.MATCH_ONE))
 
     def test_match_one_is_not_equal(self):
+        """AI: Verify a MATCH_ONE placeholder pattern is not equal to a concrete node it wasn't matched against."""
         atu = self.factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "test.py")
         PythonPatternFactory(self.factory)
         match_one = self.pattern_factory.create("$pa")
         assert_that(atu.children[0], is_not(match_one))
 
     def test_is_match_all_stmt(self):
+        """AI: Verify a MATCH_ALL placeholder pattern's node is contained within the parsed module."""
         atu = self.factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "test.py")
         match_all = self.pattern_factory.create("$$pa")
         assert_that(match_all.node, is_in(atu))
 
     def test_is_exact_match(self):
+        """AI: Verify the first statement in the module equals an independently parsed identical statement."""
         atu = self.factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "test.py")
         stmt = PythonRstNode.load_from_text("ba(55)")[0]
         assert_that(atu.children[0], is_(stmt))
 
     def test_match_exact_pattern(self):
+        """AI: Verify exactly one node in the module equals an exact (non-placeholder) statement pattern."""
         atu = self.factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "test.py")
         stmt = self.pattern_factory.create_statement("ba(55)").node
         result = [node for node in atu if node == stmt]
         assert_that(result, has_length(1))
 
     def test_match_single_pattern(self):
+        """AI: Verify a single-statement placeholder pattern matches none via equality but matches all statements via is_match."""
         atu = self.factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "test.py")
         match_any = self.pattern_factory.create_statement("$stmt")
         result = [node for node in atu if node == match_any]
@@ -143,12 +163,14 @@ class TestPythonicStyle:
         assert_that(result, has_length(4))
 
     def test_match_single_call_pattern(self):
+        """AI: Verify a call pattern with a placeholder argument matches no node via plain equality."""
         atu = self.factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "test.py")
         match_call = self.pattern_factory.create("$call($arg)")
         result = [node for node in atu if node == match_call]
         assert_that(result, has_length(0))
 
     def test_find_all_using_generic_matcher(self):
+        """AI: Verify an exact statement pattern equals only the matching node among the module's siblings."""
         atu = self.factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "test.py")
         simple = self.pattern_factory.create_statement("ca(555)").node
         assert_that(atu[0], is_not(simple))
@@ -159,6 +181,7 @@ class TestPythonicStyle:
         assert_that(result, has_length(1))
 
     def test_slice_call(self):
+        """AI: Verify slicing the module's statement sequence returns the expected number of nodes."""
         atu = self.factory.create_from_text(
             "ba(55)\nna(55)\nna(55)\npa(55)\npa(55)\nba(55)\nna(55)\nna(55)\nna=55",
             "test.py",
@@ -167,6 +190,7 @@ class TestPythonicStyle:
         assert_that(node_slice, has_length(3))
 
     def test_property_kind_call(self):
+        """AI: Verify the module node's parser kind is 'Module'."""
         atu = self.factory.create_from_text(
             "ba(55)\nna(55)\nna(55)\npa(55)\npa(55)\nba(55)\nna(55)\nna(55)\nna=55",
             "test.py",
@@ -174,6 +198,7 @@ class TestPythonicStyle:
         assert_that(atu.parser_kind, is_("Module"))
 
     def test_property_name_call(self):
+        """AI: Verify the module node's name matches the source file name it was created from."""
         atu = self.factory.create_from_text(
             "ba(55)\nna(55)\nna(55)\npa(55)\npa(55)\nba(55)\nna(55)\nna(55)\nna=55",
             "test.py",

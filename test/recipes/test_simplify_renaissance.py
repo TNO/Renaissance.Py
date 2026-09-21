@@ -1,3 +1,5 @@
+"""Tests for the SimplifyRenaissance recipe."""
+
 import textwrap
 
 from hamcrest import assert_that, contains_string, is_, not_
@@ -7,6 +9,8 @@ from renaissance.recipes.simplify_renaissance import SimplifyRenaissance
 
 
 class TestSimplifyRenaissance:
+    """AI: Tests for the SimplifyRenaissance recipe."""
+
     def _create(self, mocker, text) -> SimplifyRenaissance:
         code = textwrap.dedent(text)
         mocker.patch(
@@ -18,11 +22,13 @@ class TestSimplifyRenaissance:
         return subject
 
     def test_init_sets_white_and_black_list(self, mocker):
+        """AI: Verify __init__ sets the white and black list patterns from the recipe's own defaults."""
         subject = self._create(mocker, "pass")
         assert_that(subject.white_list_pattern, is_("unit_to_pytest"))
         assert_that(subject.black_list_pattern, is_("SimplifyRenaissance"))
 
     def test_run_skips_file_matching_black_list(self, mocker, capsys):
+        """AI: Verify run() skips a file whose name matches the black list pattern."""
         mocker.patch(
             "renaissance.integrations.python.ast.factory.PythonFactory.create",
             return_value=PythonRstNode.load_from_text("pass"),
@@ -34,6 +40,7 @@ class TestSimplifyRenaissance:
         assert_that(captured.out, contains_string("skipping"))
 
     def test_run_skips_file_not_matching_white_list(self, mocker, capsys):
+        """AI: Verify run() skips a file whose name doesn't match the white list pattern."""
         mocker.patch(
             "renaissance.integrations.python.ast.factory.PythonFactory.create",
             return_value=PythonRstNode.load_from_text("pass"),
@@ -45,6 +52,7 @@ class TestSimplifyRenaissance:
         assert_that(captured.out, contains_string("skipping"))
 
     def test_run_rewrites_expansion_signature_access(self, mocker):
+        """AI: Verify a manual replace_stmt call rewrites .expansions[...] signature access to bracket indexing."""
         subject = self._create(
             mocker,
             """
@@ -57,6 +65,7 @@ class TestSimplifyRenaissance:
         assert_that(subject.apply_to_string(), not_(contains_string(".expansions")))
 
     def test_run_rewrites_factory_create_from_text(self, mocker):
+        """AI: Verify run() rewrites ASTFactory.create_from_text calls to the simplified load_from_text form."""
         subject = self._create(
             mocker,
             """
@@ -70,6 +79,7 @@ class TestSimplifyRenaissance:
         assert_that(subject.apply_to_string(), not_(contains_string("ASTFactory")))
 
     def test_run_processes_matching_file(self, mocker, capsys):
+        """AI: Verify run() processes a matching file and reports it via stdout."""
         subject = self._create(mocker, "pass")
         subject.run()
         captured = capsys.readouterr()

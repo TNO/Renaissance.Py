@@ -74,13 +74,15 @@ The remainder of this section describes the superseded approach.
 def is_statement(node: AstNode) -> bool:
     return isinstance(node.kind, Statement)
 
+
 def is_expression(node: AstNode) -> bool:
     return isinstance(node.kind, Expression)
 
+
 # Usage
-node.kind =Assignment(...)
-assert is_statement(node)        # True — no string comparison needed
-assert not is_expression(node)   # False
+node.kind = Assignment(...)
+assert is_statement(node)  # True — no string comparison needed
+assert not is_expression(node)  # False
 ```
 
 ## Example

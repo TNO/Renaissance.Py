@@ -1,3 +1,5 @@
+"""Tests for PythonRefactoring's rewrite-based refactoring support."""
+
 import textwrap
 
 import pytest
@@ -8,6 +10,8 @@ from renaissance.recipes.python_refactoring import PythonRefactoring
 
 
 class TestRefactorWithRewrite:
+    """AI: Tests for PythonRefactoring's rewrite-based refactoring support."""
+
     def _create(self, mocker, text) -> PythonRefactoring:
         code = textwrap.dedent(text)
         mocker.patch(
@@ -20,6 +24,7 @@ class TestRefactorWithRewrite:
 
     @pytest.mark.skip("comment are not correctly calculated")
     def test_refactor_with_comment_and_spaces(self, mocker):
+        """AI: Verify rewrite-based refactoring preserves kept comments while removing others (comment placement TBD)."""
         refactoring = self._create(
             mocker,
             textwrap.dedent("""
@@ -67,9 +72,7 @@ class TestRefactorWithRewrite:
         )
 
     def test_refactor_replace_multi_placeholder(self, mocker):
-        """Test case showing a replacement of a multi placeholder
-        that matches a non-empty list of AST nodes in the code.
-        """
+        """Test case showing a replacement of a multi placeholder that matches a non-empty list of AST nodes in the code."""
         refactoring = self._create(mocker, "def f(a):\n    f(2, 0)")
         function_call = refactoring.pattern_factory.create_expression("f($$params, 0)")
         refactoring.in_memory = True
@@ -80,9 +83,7 @@ class TestRefactorWithRewrite:
 
     @pytest.mark.skip("empty array can't be detected")
     def test_refactor_replace_multi_placeholder_empty(self, mocker):
-        """Test case showing a replacement of a multi placeholder
-        that matches an empty list of AST nodes in the code.
-        """
+        """Test case showing a replacement of a multi placeholder that matches an empty list of AST nodes in the code."""
         # TODO: is this the behaviour we want?
         # Can $$params be empty and a comma absent, while present in the pattern.
         refactoring = self._create(mocker, "def f(a):\n    f(0)")

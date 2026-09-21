@@ -43,25 +43,19 @@ documented APIs for direct ast node manipulation.
 
 ```python
 class GoAstNode:
-    #direct access protocol
-    expr:Self
-    body:Sequence[Self]
-    other:Sequence[self]
-    
-    #rewrite protocol
-    length:int
-    offset:int
-    name:str
+    # direct access protocol
+    expr: Self
+    body: Sequence[Self]
+    other: Sequence[self]
 
-    #matcher
-    properties:dict[str, int | str] ={
-        "length": length,
-        "offset": offset,
-        "name": name
-    }
-    children:list[Self] = [expr, body, other]
+    # rewrite protocol
+    length: int
+    offset: int
+    name: str
 
-
+    # matcher
+    properties: dict[str, int | str] = {"length": length, "offset": offset, "name": name}
+    children: list[Self] = [expr, body, other]
 ```
 
 ## Rationale

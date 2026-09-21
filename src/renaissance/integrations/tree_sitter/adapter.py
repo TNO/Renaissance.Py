@@ -1,18 +1,25 @@
+"""AI: Adapter that parses source code with tree-sitter into the internal LST representation."""
+
 from renaissance.integrations.tree_sitter.lst import LST, LSTNode
 from renaissance.utils.ast_utils import detect_placeholder, replace_dollar
 from tree_sitter import Language, Parser
 
 
 class TreeSitterAdapter:
+    """AI: Adapter that parses source code with tree-sitter into the internal LST representation."""
+
     def __init__(self, grammar_module):
+        """AI: Configure a tree-sitter parser for the given language grammar."""
         language = Language(grammar_module.language())
         self.language = language
         self.parser = Parser(language)
 
     def parse_code(self, source_code: str):
+        """AI: Parse source_code with tree-sitter and return the resulting parse tree."""
         return self.parser.parse(bytes(source_code, "utf8"))
 
     def to_lst(self, source_code: str, tree) -> LST:
+        """AI: Convert a tree-sitter parse tree of source_code into an LST."""
         root_node = tree.root_node
         source_code = replace_dollar(source_code)
         return LST(self._convert_node(root_node, source_code, None))

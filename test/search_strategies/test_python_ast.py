@@ -1,3 +1,5 @@
+"""Tests for the generated Python type-union AST search strategies."""
+
 import ast
 import re
 
@@ -8,6 +10,7 @@ from python_type_and_value import gen_dict, gen_list, gen_tuple, gen_union
 
 @given(gen_union())
 def test_gen_union(pair: tuple[ast.expr, st.SearchStrategy[ast.expr]]) -> None:
+    """AI: Assert gen_union produces a BinOp/BitOr type expression matching the '|' union syntax."""
     type_expr, _value_gen = pair
     assert isinstance(type_expr, ast.BinOp), f"Unexpected type '{type(type_expr)}', expected ast.BinOp"
     assert isinstance(type_expr.op, ast.BitOr), f"Unexpected operator '{type_expr.op}', expected ast.BitOr"
@@ -17,6 +20,7 @@ def test_gen_union(pair: tuple[ast.expr, st.SearchStrategy[ast.expr]]) -> None:
 
 @given(gen_list(), st.data())
 def test_gen_list(pair: tuple[ast.expr, st.SearchStrategy[ast.expr]], data: st.DataObject) -> None:
+    """AI: Assert gen_list produces a list[...] type expression and a matching list-literal value."""
     type_expr, value_gen = pair
     assert isinstance(type_expr, ast.Subscript), f"Unexpected type '{type(type_expr)}', expected ast.Subscript"
     assert isinstance(type_expr.value, ast.Name), f"Unexpected type '{type(type_expr)}', expected ast.Name"
@@ -29,6 +33,7 @@ def test_gen_list(pair: tuple[ast.expr, st.SearchStrategy[ast.expr]], data: st.D
 
 @given(gen_tuple(), st.data())
 def test_gen_tuple(pair: tuple[ast.expr, st.SearchStrategy[ast.expr]], data: st.DataObject) -> None:
+    """AI: Assert gen_tuple produces a tuple[...] type expression and a matching tuple-literal value."""
     type_expr, value_gen = pair
     assert isinstance(type_expr, ast.Subscript), f"Unexpected type '{type(type_expr)}', expected ast.Subscript"
     assert isinstance(type_expr.value, ast.Name), f"Unexpected type '{type(type_expr)}', expected ast.Name"
@@ -41,6 +46,7 @@ def test_gen_tuple(pair: tuple[ast.expr, st.SearchStrategy[ast.expr]], data: st.
 
 @given(gen_dict(), st.data())
 def test_gen_dict(pair: tuple[ast.expr, st.SearchStrategy[ast.expr]], data: st.DataObject) -> None:
+    """AI: Assert gen_dict produces a dict[...] type expression and a matching dict-literal value."""
     type_expr, value_gen = pair
     assert isinstance(type_expr, ast.Subscript), f"Unexpected type '{type(type_expr)}', expected ast.Subscript"
     assert isinstance(type_expr.value, ast.Name), f"Unexpected type '{type(type_expr)}', expected ast.Name"

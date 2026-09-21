@@ -1,3 +1,5 @@
+"""AI: Example unittest-style module used as a parsing target combining C and Python AST matching."""
+
 import ast
 import unittest
 from unittest import TestCase
@@ -14,9 +16,12 @@ from renaissance.syntax_tree.match_finder import (
 
 
 class FindMatchTest(unittest.TestCase):
+    """AI: Example unittest case demonstrating C AST pattern matching via CPatternFactory."""
+
     # def setUpClass(cls):
     #     cls.code_text: str = "int my_function();"
     def setUp(self):
+        """AI: Initialize test fixture strings used by the C AST pattern-matching tests."""
         self.b = 55
         print(f"{self.b=}")
         self.a = 5
@@ -29,6 +34,7 @@ class FindMatchTest(unittest.TestCase):
             print(f"{self.extra_declarations_inner_text[0]}")
 
     def tearDown(self):
+        """AI: Clear the fixture strings set up in setUp."""
         self.outer_text: str = None
         self.inner_text: str = None
         self.extra_declarations_inner_text = None
@@ -37,19 +43,23 @@ class FindMatchTest(unittest.TestCase):
     #     cls.code_text: str = None
 
     def test_is_match(self):
+        """AI: Assert basic equality/identity semantics used to sanity-check the test fixtures."""
         self.assertIn(self.a, [self.a], "An expression matches itself")
 
         self.assertEqual(self.a, 5)
         self.assertEqual(55, self.b)
         self.assertTrue(
-            self.a == self.a, "A statement matches itself"
+            self.a == self.a,
+            "A statement matches itself",
         )  # TODO: self.a is an expression (see first assert of this test case), so msg is incorrect
         self.assertFalse(
-            self.a == "statement1_pattern", "A statement doesn't match an expression"
+            self.a == "statement1_pattern",
+            "A statement doesn't match an expression",
         )  # TODO: self.a and a string are both expression, so msg is incorrect
 
     @parameterized.expand(Factories.factories)
     def test_case(self, _: str, factory: ASTFactory):
+        """AI: Assert an inner expression pattern doesn't spuriously match an unrelated outer statement pattern."""
         pattern_factory = CPatternFactory(factory)
         code_pattern = factory.create_from_text(self.code_text, "text.c")
         outer_pattern = pattern_factory.create_statement(self.outer_text)
@@ -63,6 +73,8 @@ class FindMatchTest(unittest.TestCase):
 
 # no namespace
 class TestBasicNoNamespace(TestCase):
+    """AI: Example unittest case demonstrating C AST literal/placeholder matching without a namespace."""
+
     code_text: str = """
             int my_function();
             void your_function() {
@@ -90,6 +102,7 @@ class TestBasicNoNamespace(TestCase):
     @unittest.skip("stmt and expr are the same")
     # unused param
     def test_snippet(self, _: str, factory: ASTFactory, snippet: str, extra_declarations: list[str]):
+        """AI: Assert a literal or placeholder snippet matches exactly one node among the code's children."""
         pattern_factory = CPatternFactory(factory)
         code_pattern = factory.create_from_text(self.code_text, "text.c")  # file extension consistent with C Pattern Factory
         snippet_pattern = pattern_factory.create_expression(snippet, extra_declarations)
@@ -100,10 +113,12 @@ class TestBasicNoNamespace(TestCase):
 
 
 def test_it_can_be_created():
+    """AI: Assert a PythonRstNode wrapping an ast.Pass node can be constructed."""
     it = PythonRstNode(ast.Pass())
     assert it
 
 
 def test_it_has_elements():
+    """AI: Assert a PythonRstNode's item access matches its children list."""
     it = PythonRstNode(ast.parse("def fun():  pass"))
     assert it[0] == it.children[0]

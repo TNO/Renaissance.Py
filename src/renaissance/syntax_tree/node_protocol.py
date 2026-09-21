@@ -1,3 +1,5 @@
+"""AI: Structural protocol describing the interface consumed by generic syntax-tree algorithms."""
+
 from collections.abc import Mapping, Sequence
 from typing import Any, Protocol, Self, runtime_checkable
 

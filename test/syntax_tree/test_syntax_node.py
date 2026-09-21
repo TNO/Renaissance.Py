@@ -1,3 +1,5 @@
+"""Tests for the SyntaxNode invariants."""
+
 from dataclasses import dataclass, field
 from typing import Any, Self
 
@@ -18,6 +20,8 @@ def _offset_to_line_col(text: str, offset: int) -> tuple[int, int]:
 
 @dataclass(slots=True)
 class DummyNode:
+    """AI: Minimal SyntaxNode-shaped test double backed by a full-text slice."""
+
     # ---- backing text segment ----
     full_text: str
     location: str
@@ -32,48 +36,59 @@ class DummyNode:
     # ---- TextSegment derived properties ----
     @property
     def start_line(self) -> int:
+        """AI: Return the 0-based start line derived from start_offset."""
         return _offset_to_line_col(self.full_text, self.start_offset)[0]
 
     @property
     def start_column(self) -> int:
+        """AI: Return the 0-based start column derived from start_offset."""
         return _offset_to_line_col(self.full_text, self.start_offset)[1]
 
     @property
     def end_line(self) -> int:
+        """AI: Return the 0-based end line derived from end_offset."""
         return _offset_to_line_col(self.full_text, self.end_offset)[0]
 
     @property
     def end_column(self) -> int:
+        """AI: Return the 0-based end column derived from end_offset."""
         return _offset_to_line_col(self.full_text, self.end_offset)[1]
 
     @property
     def text_segment(self) -> str:
+        """AI: Return the slice of full_text between start_offset and end_offset."""
         return self.full_text[self.start_offset : self.end_offset]
 
     # ---- SyntaxNode protocol properties ----
     @property
     def children(self) -> list[Self]:
+        """AI: Return this node's child nodes."""
         return self._children
 
     @property
     def syntax_attributes(self) -> dict[str, Any]:
+        """AI: Return an empty syntax-attributes dict (not exercised by these tests)."""
         return {}
 
     @property
     def parent(self) -> Self | None:
+        """AI: Return this node's parent, or None if it has none."""
         return self._parent
 
     @property
     def original_node(self) -> Self:
+        """AI: Return this node itself, satisfying the SyntaxNode original_node protocol."""
         return self
 
     # ---- safe mutator for tests (avoids "protected access" warnings) ----
     def set_children(self, children: list[Self]) -> None:
+        """AI: Set this node's children and link each child's parent back to this node."""
         self._children = children
         for c in children:
             c._parent = self
 
     def __hash__(self):
+        """AI: Return an identity-based hash for the node."""
         return id(self)
 
 
@@ -92,6 +107,7 @@ class _SegmentCallCounter:
 
 @pytest.fixture
 def segment_validator_counter(monkeypatch: pytest.MonkeyPatch) -> _SegmentCallCounter:
+    """AI: Monkeypatch assert_valid_text_segment with a counter fixture to record its call arguments."""
     counter = _SegmentCallCounter()
     monkeypatch.setattr(test.syntax_tree.infra_text_segment, "assert_valid_text_segment", counter)
     return counter
@@ -102,6 +118,7 @@ def segment_validator_counter(monkeypatch: pytest.MonkeyPatch) -> _SegmentCallCo
 # ----------------------------
 @pytest.mark.skip("result is empty")
 def test_assert_valid_syntax_node_ok(segment_validator_counter: _SegmentCallCounter) -> None:
+    """AI: Assert assert_valid_syntax_node validates a well-formed node and its direct children."""
     text = "ab\ncd\nef"
     loc = "mem://t"
 
@@ -119,6 +136,7 @@ def test_assert_valid_syntax_node_ok(segment_validator_counter: _SegmentCallCoun
 
 @pytest.mark.skip("result is empty")
 def test_assert_valid_syntax_tree_ok(segment_validator_counter: _SegmentCallCounter) -> None:
+    """AI: Assert assert_valid_syntax_tree validates a well-formed multi-level tree."""
     text = "ab\ncd\nef"
     loc = "mem://t"
 
@@ -141,6 +159,7 @@ def test_assert_valid_syntax_tree_ok(segment_validator_counter: _SegmentCallCoun
 
 
 def test_children_must_be_ordered_by_start_offset(segment_validator_counter: _SegmentCallCounter) -> None:
+    """AI: Assert assert_valid_syntax_node rejects children not ordered by non-decreasing start_offset."""
     text = "abcdef"
     loc = "mem://t"
 
@@ -155,6 +174,7 @@ def test_children_must_be_ordered_by_start_offset(segment_validator_counter: _Se
 
 
 def test_children_must_not_overlap(segment_validator_counter: _SegmentCallCounter) -> None:
+    """AI: Assert assert_valid_syntax_node rejects overlapping sibling children."""
     text = "abcdef"
     loc = "mem://t"
 
@@ -169,6 +189,7 @@ def test_children_must_not_overlap(segment_validator_counter: _SegmentCallCounte
 
 
 def test_child_must_be_within_parent_span(segment_validator_counter: _SegmentCallCounter) -> None:
+    """AI: Assert assert_valid_syntax_node rejects a child whose span lies outside its parent's span."""
     text = "abcdef"
     loc = "mem://t"
 
@@ -182,6 +203,7 @@ def test_child_must_be_within_parent_span(segment_validator_counter: _SegmentCal
 
 
 def test_child_must_point_back_to_parent(segment_validator_counter: _SegmentCallCounter) -> None:
+    """AI: Assert assert_valid_syntax_node rejects a child whose parent reference doesn't point back to it."""
     text = "abcdef"
     loc = "mem://t"
 
@@ -196,6 +218,7 @@ def test_child_must_point_back_to_parent(segment_validator_counter: _SegmentCall
 
 
 def test_child_must_share_text_and_location(segment_validator_counter: _SegmentCallCounter) -> None:
+    """AI: Assert assert_valid_syntax_node rejects a child whose full_text differs from its parent's."""
     text = "abcdef"
     loc = "mem://t"
 
@@ -214,6 +237,7 @@ def test_child_must_share_text_and_location(segment_validator_counter: _SegmentC
 
 
 def test_assert_valid_syntax_tree_detects_cycle(segment_validator_counter: _SegmentCallCounter) -> None:
+    """AI: Assert assert_valid_syntax_tree detects a cycle formed by a node being its own descendant."""
     text = "abc"
     loc = "mem://t"
 

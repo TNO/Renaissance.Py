@@ -1,8 +1,13 @@
+"""AI: Byte-level content rewriter that accumulates and applies pending replacements."""
+
 import sys
 
 
 class Rewrite:
+    """AI: Represent one pending replacement of a byte range with new content."""
+
     def __init__(self, start: int, end: int, replacement: bytes) -> None:
+        """AI: Record a pending replacement of a byte range with new content."""
         self.start = start
         self.end = end
         self.replacement = replacement
@@ -12,11 +17,12 @@ class Rewriter:
     """A class that allows for modifications to a byte sequence."""
 
     def __init__(self, content: bytes) -> None:
+        """AI: Prepare a rewriter that accumulates edits to apply to the given content."""
         self.__content = content
         self.__rewrites: list[Rewrite] = []
 
     def replace(self, start: int, end: int, new_content: bytes) -> None:
-        """Replaces a portion of the content with new content.
+        """Replace a portion of the content with new content.
 
         This method will replace the content between the specified start and end
         indices with the provided new_content. If there is an existing rewrite
@@ -46,7 +52,7 @@ class Rewriter:
         self.__rewrites.append(Rewrite(real_start, real_end, new_content))
 
     def apply(self) -> bytes:
-        """Applies the rewrites to a copied byte sequence.
+        """Apply the rewrites to a copied byte sequence.
 
         This method reverses the order of the rewrites to ensure that insertions
         are performed correctly. It then sorts the rewrites by their start position
@@ -63,6 +69,7 @@ class Rewriter:
 
     @property
     def content(self) -> bytes:
+        """AI: Return the original, unmodified content this rewriter was constructed with."""
         return self.__content
 
 

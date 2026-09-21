@@ -1,3 +1,5 @@
+"""AI: Process multiple ASTs in parallel by applying a shared action to each."""
+
 import concurrent.futures
 import re
 from collections.abc import Callable, Iterable, Sequence
@@ -14,6 +16,8 @@ IterableProvider = Callable[[], Iterable[AST_FACTORY_AND_ATU]]
 
 
 class BatchASTProcessor:
+    """AI: Process multiple ASTs in parallel by applying a shared action to each."""
+
     def __init__(self, in_memory: bool = False, max_processes: int = 4):
         """Initialize the BatchASTProcessor.
 
@@ -32,7 +36,7 @@ class BatchASTProcessor:
         actions: Action | Sequence[Action],
         file_filter: str | re.Pattern[str] | None = None,
     ) -> None:
-        """Processes a given iterable of ATU objects or an IterableProvider with specified actions.
+        """Process a given iterable of ATU objects or an IterableProvider with specified actions.
 
         Args:
             iterable (Iterable[ATU] | IterableProvider): The iterable or provider of ATU objects to process.
@@ -54,6 +58,7 @@ class BatchASTProcessor:
         max_repeat: int = 5,
     ) -> None:
         """Repeats the processing of items provided by the iterableProvider until no changes left.
+
         Up to a maximum number of times.
 
         Args:
@@ -118,6 +123,7 @@ def process_atu(
     in_memory: bool,
     max_repeat: int,
 ) -> Sequence[Callable[[], None]]:
+    """AI: Run the given actions against one ATU, repeating up to max_repeat times, and return deferred result callables."""
     atu = self._replace_if_in_memory(atu)
     ast_processor = ASTProcessor(atu[1], atu[0], in_memory)
     results: list[Callable[[], None]] = []

@@ -135,6 +135,7 @@ adapter concept, or when the condition combines multiple node fields:
 ```python
 TYPE_REFERENCE_KINDS = frozenset({"TypeRef", "TYPE_REF"})
 
+
 def is_parser_type_reference(node: NodeProtocol) -> bool:
     return node.parser_kind in TYPE_REFERENCE_KINDS
 ```

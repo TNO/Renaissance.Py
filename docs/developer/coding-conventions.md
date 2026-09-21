@@ -15,6 +15,7 @@ Do not use digits as abbreviations for words (e.g. `2` for "to", `4` for "for").
 # Good
 def convert_ast_to_cst(node): ...
 
+
 # Bad
 def convert_ast2cst(node): ...
 ```

@@ -1,3 +1,5 @@
+"""AI: Example script demonstrating replacement of if-else statements with ternary operators in C source."""
+
 # This script demonstrates the use of the syntax_tree library to parse and rewrite C code.
 # It specifically showcases the replacement of if-else statements with ternary operators.
 from renaissance.integrations.clang import ClangASTNode, CPatternFactory
@@ -35,7 +37,8 @@ expected_result = """
 
 
 def replace_if_with_ternary():
-    """Replaces if-else statements in the given C code with ternary operator expressions.
+    """Replace if-else statements in the given C code with ternary operator expressions.
+
     This function performs the following steps:
     1. Creates an AST factory with the specified arguments.
     2. Creates a pattern factory using the AST factory.

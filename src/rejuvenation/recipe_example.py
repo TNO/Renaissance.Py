@@ -1,3 +1,5 @@
+"""AI: Example script demonstrating a C++ refactoring recipe applied across a Clang compilation database."""
+
 # use clang to load and walk a compilation database
 import textwrap
 from collections.abc import Iterable
@@ -211,6 +213,7 @@ void main(){
 
 # generate a simple code base provider in real life use a compilation database
 def simple_codebase_provider() -> Iterable[tuple[ASTFactory, ASTNode]]:
+    """AI: Yield a (factory, ATU) pair for the example C++ snippet using the Clang integration."""
     for impl_type in [ClangASTNode, ClangJsonASTNode][0:1]:
         factory = ASTFactory(impl_type)
         atu1 = factory.create_from_text(example_1, impl_type.__name__ + "1.cpp")
@@ -218,11 +221,15 @@ def simple_codebase_provider() -> Iterable[tuple[ASTFactory, ASTNode]]:
 
 
 class MyRefactor:
+    """AI: Example recipe demonstrating text/name/declaration replacement via ASTRefactorActions."""
+
     def __init__(self):
+        """AI: Initialize an empty recipe for collecting refactoring actions."""
         self._calls = []
 
     @recipe_step(order=0)
     def recipe(self, ast_processor: ASTProcessor):
+        """AI: Apply the example text, name, and declaration replacements to the processed AST."""
         pattern = CPPPatternFactory(ast_processor.factory)
         actions = ASTRefactorActions(ast_processor, pattern)
         actions.replace_text("ListView_LEGACY", "ListViewCustom", skip_kind=is_clang_type_reference)
@@ -284,6 +291,7 @@ class MyRefactor:
 
 
 def batch_recipe_example():
+    """AI: Run `MyRefactor` over the example codebase and copy the rewritten source to the clipboard."""
     print("example batch analysis using recipe:\n")
     recipe_ast_processor = RecipeASTProcessor(MyRefactor(), simple_codebase_provider, r".*", in_memory=True)
     recipe_ast_processor.run()

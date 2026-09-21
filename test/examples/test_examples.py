@@ -1,3 +1,5 @@
+"""Tests for the batch AST processing example script."""
+
 from collections.abc import Callable
 
 import pytest
@@ -40,7 +42,10 @@ from renaissance.syntax_tree.ast_node import ASTNode
 
 
 class TestRefactorWithNestedCompositions:
+    """AI: Tests the nested-compositions refactor example produces the expected rewritten code."""
+
     def test_refactor_with_nested_compositions(self):
+        """AI: Verify the nested-compositions refactor example produces the expected rewritten C source."""
         result = refactor_with_nested_compositions(["", ""])
         assert_that(result, is_not(None))
         expected_result_nested = """\
@@ -83,8 +88,11 @@ f2(a,c);
 
 
 class TestReplaceIfWithTernaryOperator:
+    """AI: Tests the replace-if-with-ternary refactor example produces the expected rewritten code."""
+
     # didn't check expected result
     def test_refactor_with_nested_compositions(self):
+        """AI: Verify the replace-if-with-ternary refactor example produces the expected rewritten C source."""
         result = replace_if_with_ternary()
 
         expected_result_ternary = (
@@ -101,6 +109,8 @@ class TestReplaceIfWithTernaryOperator:
 
 # add a testcase for remove unused variable
 class TestRemoveUnusedVariable:
+    """AI: Tests the remove-unused-variable refactor examples produce the expected rewritten code."""
+
     @pytest.mark.parametrize("_, node_type", Factories.node_types)
     def test_remove_unused_variable_using_refactor_method(self, _: str, node_type: type[ASTNode]):
         if node_type is ClangASTNode:
@@ -110,16 +120,20 @@ class TestRemoveUnusedVariable:
                 "still satisfy this assertion; now correctly rejected. See "
                 "python-ast-known-limitations.md item 4."
             )
+        """AI: Verify remove_unused_variable_using_refactor_method produces the expected rewritten result."""
         result, expected = remove_unused_variable_using_refactor_method(node_type)
         assert_that(result, is_(expected))
 
     @pytest.mark.parametrize("_, node_type", Factories.node_types)
     def test_remove_unused_variable_low_level(self, _: str, node_type: type[ASTNode]):
+        """AI: Verify remove_unused_variable_low_level produces the expected rewritten result."""
         result, expected_result = remove_unused_variable_low_level(node_type)
         assert_that(result, is_(expected_result))
 
 
 class TestExamplesDifferentStyles:
+    """AI: Tests the same refactor produces identical results across different AST-finder styles."""
+
     @pytest.mark.parametrize(
         "_, factory, _node_type, method",
         list(
@@ -138,6 +152,7 @@ class TestExamplesDifferentStyles:
         _node_type: type[ASTNode],
         method: Callable[[ASTFactory, CPatternFactory], tuple[str, str]],
     ):
+        """AI: Verify the given AST-finder-style example method produces the expected refactor result."""
         pattern_factory = CPatternFactory(factory)
         result, expected = method(factory, pattern_factory)
 
@@ -150,6 +165,7 @@ class TestExamplesDifferentStyles:
         strict=True,
     )
     def test_example_add_comment_and_commit(self):
+        """AI: Verify example_add_comment_and_commit inserts the expected obsolete-comment text using Clang."""
         factory = ASTFactory(ClangASTNode)
         pattern_factory = CPatternFactory(factory)
         result, expected = example_add_comment_and_commit(factory, pattern_factory)
@@ -157,6 +173,7 @@ class TestExamplesDifferentStyles:
         assert_that(result, contains_string("// old has become obsolete\n        // old has become obsolete\n "))
 
     def test_example_add_comment_and_commit_json(self):
+        """AI: Verify example_add_comment_and_commit inserts the expected obsolete-comment text using Clang JSON."""
         factory = ASTFactory(ClangJsonASTNode)
         pattern_factory = CPatternFactory(factory)
         assert_that(calling(lambda: example_add_comment_and_commit(factory, pattern_factory)), not_(raises(Exception)))
@@ -170,6 +187,7 @@ class TestExamplesDifferentStyles:
         strict=True,
     )
     def test_example_replace_old_by_fancy_new(self):
+        """AI: Verify example_replace_old_by_fancy_new runs without raising an exception."""
         factory = ASTFactory(ClangASTNode)
         pattern_factory = CPatternFactory(factory)
 
@@ -186,6 +204,7 @@ class TestExamplesDifferentStyles:
         strict=True,
     )
     def test_make_sure_that_batch_remove_proc_still_run(self):
+        """AI: Verify batch_remove_unused_variable_once_example runs without raising an exception."""
         assert_that(calling(batch_remove_unused_variable_once_example), not_(raises(Exception)))
 
     @pytest.mark.xfail(
@@ -195,12 +214,15 @@ class TestExamplesDifferentStyles:
         strict=True,
     )
     def test_make_sure_that_batch_repeat_proc_still_run(self):
+        """AI: Verify batch_repeat_example runs without raising an exception."""
         assert_that(calling(batch_repeat_example), not_(raises(Exception)))
 
     def test_make_sure_that_batch_recipe_proc_still_run(self):
+        """AI: Verify batch_recipe_example runs without raising an exception."""
         assert_that(calling(batch_recipe_example), not_(raises(Exception)))
 
     def test_make_sure_that_recipe_still_run(self):
+        """AI: Verify the recipe example raises the expected 'stddef.h not found' exception."""
         assert_that(calling(receipe_example), raises(Exception, pattern="'stddef.h' file not found"))
 
     @pytest.mark.xfail(
@@ -210,6 +232,7 @@ class TestExamplesDifferentStyles:
         strict=True,
     )
     def test_make_sure_different_style_still_run(self):
+        """AI: Verify all example refactor/finder functions run without raising an exception."""
         factory = ASTFactory(ClangASTNode)
         pattern_factory = CPatternFactory(factory)
 
@@ -232,6 +255,7 @@ class TestExamplesDifferentStyles:
         assert_that(calling(lambda: main([])), not_(raises(Exception)))
 
     def test_make_sure_that_nested_compositions_still_run(self):
+        """AI: Verify refactor_with_nested_compositions runs without raising an exception."""
         assert_that(calling(lambda: refactor_with_nested_compositions([])), not_(raises(Exception)))
 
     @pytest.mark.xfail(
@@ -243,6 +267,7 @@ class TestExamplesDifferentStyles:
     )
     @pytest.mark.parametrize("node_type", [ClangASTNode, ClangJsonASTNode])
     def test_make_sure_unused_var_still_run(self, node_type):
+        """AI: Verify remove_unused_variable_low_level and remove_unused_variable_using_refactor_method run without raising."""
         assert_that(
             calling(lambda: remove_unused_variable_low_level(node_type)),
             not_(raises(Exception)),
@@ -253,6 +278,7 @@ class TestExamplesDifferentStyles:
         )
 
     def test_make_sure_replace_if_with_ternary_still_run(self):
+        """AI: Verify replace_if_with_ternary produces the expected rewritten C source."""
         result = replace_if_with_ternary()
 
         assert_that(

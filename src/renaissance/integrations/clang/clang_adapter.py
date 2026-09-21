@@ -1,3 +1,5 @@
+"""AI: Adapter that parses C/C++ source with libclang into the internal LST representation."""
+
 from clang import cindex
 
 from renaissance.integrations.tree_sitter.lst import LST, LSTNode
@@ -5,22 +7,28 @@ from renaissance.utils.ast_utils import detect_placeholder
 
 
 class ClangAdapter:
+    """AI: Adapter that parses C/C++ source with libclang into the internal LST representation."""
+
     def __init__(self, clang_path: str | None = None, args: list | None = None):
+        """AI: Configure the libclang native library location and default parse arguments."""
         if clang_path and cindex.Config.library_path is None:
             cindex.Config.set_library_path(clang_path)
         self.args = args or ["-std=c++17"]
 
     def parse(self, file_path: str) -> LST:
+        """AI: Parse the C/C++ source file at file_path into an LST."""
         index = cindex.Index.create()
         translation_unit = index.parse(file_path, args=self.args)
         return LST(self._convert_node(translation_unit.cursor))
 
     def load_from_text(self, text: str, file_name: str):
+        """AI: Parse in-memory C/C++ source text as the given file_name into an LST."""
         index = cindex.Index.create()
         translation_unit = index.parse(file_name, unsaved_files=[(file_name, text)], args=[])
         return LST(self._convert_node(translation_unit.cursor))
 
     def to_lst(self, source_code: str) -> LST:
+        """AI: Parse a C/C++ source code string into an LST."""
         # source_code= replace_dollar(source_code)
         return self.load_from_text(source_code, "no_src.cpp")
 

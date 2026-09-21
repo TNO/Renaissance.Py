@@ -84,7 +84,8 @@ when the AST node corresponding to the function call `f()` must be correctly rem
 Original code
 
 ```python
-f() ; g()
+f()
+g()
 ```
 
 correct removal includes separator `;`

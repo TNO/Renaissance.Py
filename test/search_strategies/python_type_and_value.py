@@ -1,3 +1,5 @@
+"""AI: Hypothesis search strategies for generating Python type and value AST expressions."""
+
 import ast
 import keyword
 import string
@@ -12,6 +14,7 @@ DEFAULT_DEPTH: int = 3
 
 
 def max_len(depth: int) -> int:
+    """AI: Compute the maximum collection length to generate for the given recursion depth."""
     return 3 * depth
 
 
@@ -78,12 +81,14 @@ BASE_TYPE: SearchStrategy[str] = st.sampled_from(list(BASE_VALUES))
 
 @composite
 def gen_base(draw: DrawFn) -> tuple[ast.expr, SearchStrategy[ast.expr]]:
+    """AI: Generate a base-type name expression and its matching value strategy."""
     tname = draw(BASE_TYPE)
     return _build_name(tname), BASE_VALUES[tname]
 
 
 @composite
 def gen_list(draw: DrawFn, depth: int = DEFAULT_DEPTH) -> tuple[ast.expr, SearchStrategy[ast.expr]]:
+    """AI: Generate a list[...] type expression and its matching value strategy."""
     elem_t, elem_vg = draw(gen_type(depth - 1))
     return (
         _build_subscript(_build_name("list"), elem_t),
@@ -93,6 +98,7 @@ def gen_list(draw: DrawFn, depth: int = DEFAULT_DEPTH) -> tuple[ast.expr, Search
 
 @composite
 def gen_dict(draw: DrawFn, depth: int = DEFAULT_DEPTH) -> tuple[ast.expr, SearchStrategy[ast.expr]]:
+    """AI: Generate a dict[...] type expression and its matching value strategy."""
     # keys restricted to base types for runtime hashability
     kname = draw(BASE_TYPE)
     kt, kvg = _build_name(kname), BASE_VALUES[kname]
@@ -111,6 +117,7 @@ def gen_dict(draw: DrawFn, depth: int = DEFAULT_DEPTH) -> tuple[ast.expr, Search
 
 @composite
 def gen_union(draw: DrawFn, depth: int = DEFAULT_DEPTH) -> tuple[ast.expr, SearchStrategy[ast.expr]]:
+    """AI: Generate an 'X | Y' union type expression and its matching value strategy."""
     members = draw(
         st.lists(
             gen_type(depth - 1),
@@ -126,6 +133,7 @@ def gen_union(draw: DrawFn, depth: int = DEFAULT_DEPTH) -> tuple[ast.expr, Searc
 
 @composite
 def gen_tuple(draw: DrawFn, depth: int = DEFAULT_DEPTH) -> tuple[ast.expr, SearchStrategy[ast.expr]]:
+    """AI: Generate a tuple[...] type expression and its matching value strategy."""
     members = draw(st.lists(gen_type(depth - 1), min_size=0, max_size=max_len(depth)))
     if not members:
         t = _build_subscript(_build_name("tuple"), _build_tuple_type_slice([]))  # tuple[()]
@@ -183,6 +191,7 @@ def gen_arguments(
     p_annot: float = 0.5,
     p_kwonly_default: float = 0.5,
 ) -> ast.arguments:
+    """AI: Generate a random ast.arguments node with positional, keyword-only, vararg, and kwarg parameters."""
     tv = gen_type(depth)
 
     n_pos = draw(st.integers(0, max_posonly))

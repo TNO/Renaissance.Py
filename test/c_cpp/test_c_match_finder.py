@@ -1,3 +1,5 @@
+"""Tests for matching C AST patterns via MatchFinder."""
+
 import logging
 
 import pytest
@@ -21,6 +23,8 @@ logger = logging.getLogger(__name__)
 
 
 class TestCMatchFinder:
+    """AI: Shared base for C/C++ pattern-matching tests, providing sample source and match helpers."""
+
     SIMPLE_CPP = """
         void f(){
             int a = 3;
@@ -40,7 +44,7 @@ class TestCMatchFinder:
         """
 
     def test_simple_pattern(self):
-
+        """AI: Verify a single-statement pattern matches its occurrence in parsed source."""
         factory = ASTFactory(ClangASTNode, [])
         patterns = CPatternFactory(factory).create_statements("b--;")
 
@@ -50,6 +54,7 @@ class TestCMatchFinder:
 
     @staticmethod
     def do_test(factory: ASTFactory, cpp_code, patterns: list[ASTNode], recursive: bool):
+        """AI: Parse cpp_code and return the pattern matches that are part of the translation unit."""
         atu = factory.create_from_text(cpp_code, "test.c")
         # find all if and while statements
         matches = [
@@ -61,6 +66,7 @@ class TestCMatchFinder:
 
     @staticmethod
     def assert_matches(expected_dicts_per_match, actual_matches):
+        """AI: Assert that actual_matches' expansion text matches expected_dicts_per_match element-wise."""
         assert_that(actual_matches, has_length(len(expected_dicts_per_match)))
         for actual, expected_dict in zip(actual_matches, expected_dicts_per_match, strict=True):
             for k, v in actual.expansions.items():
@@ -69,7 +75,10 @@ class TestCMatchFinder:
 
 
 class TestExpressions(TestCMatchFinder):
+    """AI: Tests matching C/C++ expression patterns."""
+
     def test_match_expr(self):
+        """AI: Verify an expression pattern with a placeholder matches multiple occurrences in parsed source."""
         factory = ASTFactory(ClangJsonASTNode, [])
         expr_node = CPatternFactory(factory).create_expression("a == $x")
         ASTShower.show_node(expr_node)
@@ -113,6 +122,7 @@ class TestExpressions(TestCMatchFinder):
         expected_full_matches: list[str],
         expected_dicts_per_match: list[dict[str, list[str]]],
     ):
+        """AI: Verify an expression pattern matches the expected occurrences and placeholder bindings."""
         expr_node = CPatternFactory(factory).create_expression(expression)
         found_matches = self.do_test(factory, TestStatements.SIMPLE_CPP, [expr_node], recursive=True)
         assert_that(
@@ -123,6 +133,8 @@ class TestExpressions(TestCMatchFinder):
 
 
 class TestStatements(TestCMatchFinder):
+    """AI: Tests matching C/C++ statement patterns, including placeholder expansions."""
+
     @pytest.mark.parametrize(
         "_, factory, statements, expected_dicts_per_match",
         Factories.extend(
@@ -192,6 +204,7 @@ class TestStatements(TestCMatchFinder):
         statements,
         expected_dicts_per_match: list[dict[str, list[str]]],
     ):
+        """AI: Verify a statement pattern with expansions matches the expected placeholder bindings."""
         patterns = CPatternFactory(factory).create_statements(statements)
 
         atu = factory.create_from_text(TestStatements.SIMPLE_CPP, "test.c")
@@ -202,6 +215,8 @@ class TestStatements(TestCMatchFinder):
 
 
 class TestFunctionCallStatements(TestCMatchFinder):
+    """AI: Tests matching C/C++ function-call statement patterns with variadic argument placeholders."""
+
     @pytest.mark.parametrize(
         "_, factory, statements, extra_declarations, expected_dicts_per_match",
         Factories.extend(
@@ -244,6 +259,7 @@ class TestFunctionCallStatements(TestCMatchFinder):
         extra_declarations,
         expected_dicts_per_match: list[dict[str, list[str]]],
     ):
+        """AI: Verify a function-call statement pattern with variadic placeholders matches the expected bindings."""
         code = """
             int one(int a);
             int two(int a, int b);
@@ -262,6 +278,8 @@ class TestFunctionCallStatements(TestCMatchFinder):
 
 
 class TestMultiAssignments(TestCMatchFinder):
+    """AI: Tests matching statement patterns that repeat the same placeholder across multiple call sites."""
+
     @pytest.mark.parametrize(
         "_, factory, statements, extra_declarations, expected_dicts_per_match",
         Factories.extend(
@@ -291,6 +309,7 @@ class TestMultiAssignments(TestCMatchFinder):
         extra_declarations,
         expected_dicts_per_match: list[dict[str, list[str]]],
     ):
+        """AI: Verify a statement pattern repeating the same placeholder across two call sites matches consistently."""
         code = """
             int fc(int a, int b, int c, int d, int e);
             int fc_else(int a, int b, int c, int d, int e);
@@ -335,6 +354,7 @@ class TestMultiAssignments(TestCMatchFinder):
         extra_declarations,
         expected_dicts_per_match: list[dict[str, list[str]]],
     ):
+        """AI: Verify an if/else statement pattern matches the true and false branches with consistent placeholders."""
         code = """
 
             void f(){
@@ -364,6 +384,8 @@ class TestMultiAssignments(TestCMatchFinder):
 
 
 class TestUseAtuToCreatePattern(TestCMatchFinder):
+    """AI: Tests building a pattern directly from a parsed translation unit's own nodes."""
+
     @pytest.mark.parametrize(
         "name, factory, statements, pattern_type, expected, names",
         Factories.extend(
@@ -414,6 +436,7 @@ class TestUseAtuToCreatePattern(TestCMatchFinder):
         ),
     )
     def test(self, name, factory, statements, pattern_type, expected, names):
+        """AI: Verify a pattern built from the parsed translation unit's own nodes matches occurrences of that pattern."""
         code = """
             #define FOO "foo"
             #define BAR "bar"
@@ -462,6 +485,7 @@ class TestUseAtuToCreatePattern(TestCMatchFinder):
     @pytest.mark.parametrize("_, factory", Factories.factories)
     @pytest.mark.skip("stmt and expr are the same")
     def test_is_match_expression_differs_from_stmt(self, _: str, factory: ASTFactory):
+        """AI: Verify an expression pattern does not match an equivalent statement pattern."""
         pattern_factory = CPatternFactory(factory)
         expression_pattern = pattern_factory.create_expression("x=3", ["int x;"])
         statement_pattern = pattern_factory.create_statement("x=3;", extra_declarations=["int x;"])
@@ -481,7 +505,10 @@ class TestUseAtuToCreatePattern(TestCMatchFinder):
 
 
 class TestIndividualCases:
+    """AI: Ad-hoc regression tests for specific C/C++ pattern-matching cases."""
+
     def test_multi_single(self):
+        """AI: Verify a variadic-placeholder statement pattern matches exactly one variant across multiple call sites."""
         factory = ASTFactory(ClangASTNode)
         atu = factory.create_from_text(
             """

@@ -1,3 +1,5 @@
+"""Tests for MatchFinder matching multiple assignment variants."""
+
 import pytest
 from hamcrest import has_length
 from hamcrest.core import assert_that
@@ -16,8 +18,11 @@ PATTERN_CALL: str = "f(" + PLACEHOLDER_BEFORE + ", 0, " + PLACEHOLDER_AFTER + ")
 
 
 class TestMatchFinderMultiAssignments:
+    """AI: Tests for MatchFinder matching multiple assignment variants."""
+
     @pytest.mark.skip("not impl. yet")
     def test_find_multi_assignments(self):
+        """AI: Verify find_variants produces two distinct assignment variants for a placeholder call pattern (not yet implemented)."""
         # set up
         factory = PythonFactory(PythonRstNode)
         atu = factory.create_from_text(code)

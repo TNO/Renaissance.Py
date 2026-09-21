@@ -1,3 +1,5 @@
+"""Tests for the ASTProcessor pattern-match/find functionality."""
+
 from hamcrest import assert_that, is_
 
 from renaissance.integrations.clang import ClangASTNode
@@ -5,7 +7,10 @@ from renaissance.syntax_tree import ASTFactory, ASTProcessor, PatternMatch
 
 
 class TestAstProcessor:
+    """AI: Tests for the ASTProcessor pattern-match/find functionality."""
+
     def test_find_match(self, mocker):
+        """AI: Verify find_match delegates to the match_finder.find_all function."""
         node = mocker.Mock()
         pattern_match = PatternMatch([node, node, node], {}, [])
         mock_matcher = mocker.patch(
