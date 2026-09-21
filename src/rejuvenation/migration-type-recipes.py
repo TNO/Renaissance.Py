@@ -255,7 +255,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         parser.error(f"not a Python file: {target}")
 
     files = discover_files(target)
-    reports = []
+    reports: list[FileReport] = []
     for path in files:
         report = process_file(path, min_python=args.min_python)
         reports.append(report)

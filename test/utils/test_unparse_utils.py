@@ -2,14 +2,15 @@
 
 import ast
 import textwrap
+from typing import cast
 
 from hamcrest import assert_that, contains_string, is_
 
 from renaissance.utils.unparse_utils import (
-    _bracket_end_offset,
-    _header_end_line,
-    _name_end_offset,
-    _type_params_bracket,
+    _bracket_end_offset,  # pyright: ignore[reportPrivateUsage]
+    _header_end_line,  # pyright: ignore[reportPrivateUsage]
+    _name_end_offset,  # pyright: ignore[reportPrivateUsage]
+    _type_params_bracket,  # pyright: ignore[reportPrivateUsage]
     unparse_signature_only,
 )
 
@@ -61,18 +62,18 @@ class TestTypeParamsBracket:
 
     def test_no_type_params_returns_empty(self) -> None:
         """AI: Verify a function with no type params produces an empty bracket string."""
-        node = ast.parse("def f(x): pass").body[0]
+        node = cast(ast.FunctionDef, ast.parse("def f(x): pass").body[0])
         assert_that(_type_params_bracket(node), is_(""))
 
     def test_one_type_param(self) -> None:
         """AI: Verify a function with one type param produces a single-name bracket."""
-        node = ast.parse("def f(x): pass").body[0]
+        node = cast(ast.FunctionDef, ast.parse("def f(x): pass").body[0])
         node.type_params = [ast.TypeVar(name="T")]
         assert_that(_type_params_bracket(node), is_("[T]"))
 
     def test_two_type_params(self) -> None:
         """AI: Verify a function with two type params produces a comma-separated bracket, in order."""
-        node = ast.parse("def f(x): pass").body[0]
+        node = cast(ast.FunctionDef, ast.parse("def f(x): pass").body[0])
         node.type_params = [ast.TypeVar(name="U"), ast.TypeVar(name="T")]
         assert_that(_type_params_bracket(node), is_("[U, T]"))
 
@@ -118,7 +119,7 @@ class TestUnparseSignatureOnly:
                 # explains something
                 return x
         """)
-        node = ast.parse(original).body[0]
+        node = cast(ast.FunctionDef, ast.parse(original).body[0])
         node.type_params = [ast.TypeVar(name="T")]
 
         result = unparse_signature_only(node, original)
@@ -132,7 +133,7 @@ class TestUnparseSignatureOnly:
         # level of class plus one level of method body - not the 4-space-relative-to-zero
         # baseline the rewrite pipeline's shift expects.
         original = "def f(x):\n        return x"
-        node = ast.parse(original).body[0]
+        node = cast(ast.FunctionDef, ast.parse(original).body[0])
         node.type_params = [ast.TypeVar(name="T")]
 
         result = unparse_signature_only(node, original)
@@ -144,7 +145,7 @@ class TestUnparseSignatureOnly:
         # "def f(x): ..." keeps its body on the header's own line - there's no separate block
         # to renormalize, and the original inline style should survive as-is.
         original = "def f(x): ...\n"
-        node = ast.parse(original).body[0]
+        node = cast(ast.FunctionDef, ast.parse(original).body[0])
         node.type_params = [ast.TypeVar(name="T")]
 
         result = unparse_signature_only(node, original)
@@ -156,7 +157,7 @@ class TestUnparseSignatureOnly:
         # Regression test: unparse_signature_only used to regenerate the whole header via
         # ast.unparse(), collapsing a multi-line parameter list onto one line.
         original = "def f(\n    x: int,\n    y: int = 1,\n) -> int:\n    return x\n"
-        node = ast.parse(original).body[0]
+        node = cast(ast.FunctionDef, ast.parse(original).body[0])
         node.type_params = [ast.TypeVar(name="T")]
 
         result = unparse_signature_only(node, original)
@@ -166,7 +167,7 @@ class TestUnparseSignatureOnly:
     def test_merges_into_an_existing_bracket(self) -> None:
         """AI: Verify splicing a new type param into a header that already has one merges into the same bracket."""
         original = "def f[U](x: U, y):\n    return x\n"
-        node = ast.parse(original).body[0]
+        node = cast(ast.FunctionDef, ast.parse(original).body[0])
         node.type_params = [*node.type_params, ast.TypeVar(name="T")]
 
         result = unparse_signature_only(node, original)

@@ -3,6 +3,7 @@
 import ast
 from typing import cast
 
+from renaissance.integrations.python.ast.rst_node import PythonRstNode
 from renaissance.recipes.python_refactoring import PythonRefactoring
 from renaissance.recipes.type_var_domain import UnsafeReason, find_type_param_declarations, type_param_constructor_name
 from renaissance.utils.python_version import minimum_python_version
@@ -54,7 +55,8 @@ class TypeVarTupleCheck(PythonRefactoring):
         The newer syntax is `*T` unpacking instead. Detection only - see fix_legacy_unpack_usage()
         to actually rewrite these.
         """
-        tree = cast("ast.Module", self.root.node)
+        root = cast("PythonRstNode", cast("object", self.root))
+        tree = cast("ast.Module", root.node)
         return [name for name, _ in self._find_unpack_occurrences(tree)]
 
     def fix_legacy_unpack_usage(self) -> dict[str, str]:
@@ -68,7 +70,8 @@ class TypeVarTupleCheck(PythonRefactoring):
         PEP646_VERSION_GATE, the only unsafe case this recipe has) is recorded on
         self.unsafe_reasons.
         """
-        tree = cast("ast.Module", self.root.node)
+        root = cast("PythonRstNode", cast("object", self.root))
+        tree = cast("ast.Module", root.node)
         self.unsafe_reasons: dict[str, UnsafeReason] = {}
         occurrences = self._find_unpack_occurrences(tree)
         if not occurrences:
