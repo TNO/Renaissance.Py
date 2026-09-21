@@ -122,6 +122,7 @@ class TestPythonRefactoring:
     # ------------------------------------------------------------------
 
     def test_find_rst_node_returns_wrapper_for_raw_ast_node(self, mocker):
+        """AI: Verify find_rst_node locates the PythonRstNode wrapping a given raw ast.FunctionDef."""
         self._patch_factory(
             mocker,
             """

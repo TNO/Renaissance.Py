@@ -93,6 +93,7 @@ class TestIsSafeToLocalize:
         assert_that(is_safe_to_localize(tree, "T"), is_(None))
 
     def test_ignores_non_generic_subscripted_base_and_plain_base(self) -> None:
+        """AI: Verify a TypeVar used only as a subscript of a non-Generic base stays safe to localize."""
         tree = _parse("""
             from typing import TypeVar
             from collections.abc import Mapping
@@ -145,4 +146,5 @@ class TestResolveSiblingModule:
     """resolve_sibling_module: same-directory imports only, dotted/package imports out of scope."""
 
     def test_returns_none_for_dotted_module_name(self) -> None:
+        """AI: Verify a dotted/package import name is rejected as out of scope for sibling resolution."""
         assert_that(resolve_sibling_module("some/dir/file.py", "pkg.mod"), is_(None))
