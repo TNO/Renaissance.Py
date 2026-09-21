@@ -1,4 +1,4 @@
-"""Tests for the PythonRefactoring base class."""
+"""Tests for the PythonRefactoring recipe base class."""
 
 import keyword
 import textwrap
