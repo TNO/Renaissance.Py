@@ -229,7 +229,6 @@ class TypeVarCheck(PythonRefactoring):
         return f"from {ctor_module} import {ctor_name}"
 
     def _localize_import(self, import_node: Any, raw: ast.ImportFrom, name: str, decl_stmt: ast.Assign, needed_import: str | None) -> None:
-    def _localize_import(self, import_node: Any, raw: ast.ImportFrom, name: str, decl_stmt: ast.Assign, needed_import: str | None) -> None:
         """Replace import_node with decl_stmt's text as a local declaration.
 
         Narrows or removes the original import for name, and prepends needed_import if the
