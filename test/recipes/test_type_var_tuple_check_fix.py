@@ -18,6 +18,7 @@ class TestFixLegacyUnpackUsage:
         self,
         create_type_var_tuple_check: Callable[[str], TypeVarTupleCheck],
     ) -> None:
+        """AI: Verify a class's Generic[Unpack[Ts]] base rewrites to the PEP 646 Generic[*Ts] star syntax."""
         subject = create_type_var_tuple_check("""
             from typing import TypeVarTuple, Generic, Unpack
             Ts = TypeVarTuple("Ts")
@@ -37,6 +38,7 @@ class TestFixLegacyUnpackUsage:
         self,
         create_type_var_tuple_check: Callable[[str], TypeVarTupleCheck],
     ) -> None:
+        """AI: Verify a function signature's Unpack[Ts] rewrites to the PEP 646 *Ts star syntax."""
         subject = create_type_var_tuple_check("""
             from typing import TypeVarTuple, Unpack
             Ts = TypeVarTuple("Ts")
@@ -55,6 +57,7 @@ class TestFixLegacyUnpackUsage:
         self,
         create_type_var_tuple_check: Callable[[str], TypeVarTupleCheck],
     ) -> None:
+        """AI: Verify every occurrence of the same Unpack[Ts] name in one signature gets rewritten."""
         subject = create_type_var_tuple_check("""
             from typing import TypeVarTuple, Unpack
             Ts = TypeVarTuple("Ts")
@@ -70,6 +73,7 @@ class TestFixLegacyUnpackUsage:
         assert_that(output, contains_string("from typing import TypeVarTuple, Unpack"))
 
     def test_no_legacy_usage_returns_empty(self, create_type_var_tuple_check: Callable[[str], TypeVarTupleCheck]) -> None:
+        """AI: Verify fix_legacy_unpack_usage reports nothing when the source already uses star syntax."""
         subject = create_type_var_tuple_check("""
             from typing import TypeVarTuple
             Ts = TypeVarTuple("Ts")
@@ -84,6 +88,7 @@ class TestFixLegacyUnpackUsage:
         self,
         make_recipe: Callable[[type[PythonRefactoring], str], PythonRefactoring],
     ) -> None:
+        """AI: Verify a target below the PEP 646 floor reports unsafe and leaves Unpack[Ts] untouched."""
         code = """
             from typing import TypeVarTuple, Unpack
             Ts = TypeVarTuple("Ts")

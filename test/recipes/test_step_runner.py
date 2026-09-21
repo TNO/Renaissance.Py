@@ -14,6 +14,7 @@ class TestRunSteps:
     """See module docstring."""
 
     def test_collects_each_steps_result_under_its_own_label_in_order(self, mocker: MockerFixture) -> None:
+        """AI: Verify run_steps returns each step's result keyed by its label, preserving step order."""
         recipe = mocker.Mock(spec=PythonRefactoring)
         steps = [
             Step("first", recipe, lambda: {"A": "fixed"}),
@@ -40,6 +41,7 @@ class TestRunSteps:
         action_result: dict[str, str],
         expect_commit: bool,  # noqa: FBT001
     ) -> None:
+        """AI: Verify a step's recipe is committed only when its action reports at least one "fixed" result."""
         recipe = mocker.Mock(spec=PythonRefactoring)
         action: Callable[[], dict[str, str]] = lambda: action_result  # noqa: E731
 
@@ -48,6 +50,7 @@ class TestRunSteps:
         assert_that(recipe.commit.called, is_(expect_commit))
 
     def test_each_steps_recipe_commits_independently(self, mocker: MockerFixture) -> None:
+        """AI: Verify each step commits its own recipe independently, based only on its own result."""
         fixing_recipe = mocker.Mock(spec=PythonRefactoring)
         unsafe_recipe = mocker.Mock(spec=PythonRefactoring)
 

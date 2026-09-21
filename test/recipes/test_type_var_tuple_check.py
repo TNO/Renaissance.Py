@@ -47,6 +47,7 @@ class TestTypeVarTupleCheck:
     def test_legacy_unpack_usage(
         self, make_recipe: Callable[[type[PythonRefactoring], str], PythonRefactoring], code: str, expected: list[str]
     ) -> None:
+        """AI: Verify find_legacy_unpack_usage finds only TypeVarTuples used via the legacy Unpack[] form."""
         subject = cast(TypeVarTupleCheck, make_recipe(TypeVarTupleCheck, code))
         result = subject.find_legacy_unpack_usage()
         if expected:
@@ -57,9 +58,11 @@ class TestTypeVarTupleCheck:
     # Deep coverage of pyproject.toml lookup/requires-python parsing lives in
     # test/utils/test_python_version.py; these two only confirm the >=(3, 11) threshold.
     def test_target_supports_pep646_true_for_3_11_plus(self, tmp_path: Path) -> None:
+        """AI: Verify target_supports_pep646 is True when requires-python's floor is >= 3.11."""
         (tmp_path / "pyproject.toml").write_text('[project]\nrequires-python = ">=3.11"\n')
         assert_that(target_supports_pep646(str(tmp_path / "file.py")), is_(True))
 
     def test_target_supports_pep646_false_for_3_10(self, tmp_path: Path) -> None:
+        """AI: Verify target_supports_pep646 is False when requires-python's floor is below 3.11."""
         (tmp_path / "pyproject.toml").write_text('[project]\nrequires-python = ">=3.10"\n')
         assert_that(target_supports_pep646(str(tmp_path / "file.py")), is_(False))
