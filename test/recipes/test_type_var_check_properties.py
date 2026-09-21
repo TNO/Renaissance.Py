@@ -1,3 +1,5 @@
+"""Property-based tests for TypeVarCheck.check."""
+
 import ast
 from unittest.mock import patch
 
@@ -9,9 +11,12 @@ from renaissance.recipes.type_var_check import TypeVarCheck
 
 
 class TestTypeVarCheckProperties:
+    """See module docstring."""
+
     @given(source=hypothesmith.from_grammar())
     @settings(max_examples=50, deadline=None)
     def test_check_never_crashes(self, source: str) -> None:
+        """AI: Verify check() never raises on arbitrary hypothesmith-generated valid Python source."""
         try:
             ast.parse(source)
         except SyntaxError:
