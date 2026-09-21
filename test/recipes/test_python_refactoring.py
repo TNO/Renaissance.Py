@@ -1,4 +1,4 @@
-"""Tests for the PythonRefactoring base class."""
+"""Tests for the PythonRefactoring recipe base class."""
 
 import ast
 import keyword
@@ -289,9 +289,8 @@ class TestPythonRefactoring:
             """,
             "test_foo.py",
         )
-        from renaissance.refactoring.unit2pytest import Unit2Pytest
 
-        subject = Unit2Pytest("test_foo.py")
+        subject = UnitToPytest("test_foo.py")
         assert_that(len(subject.body), is_(2))
 
     # ------------------------------------------------------------------
