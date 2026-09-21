@@ -18,19 +18,23 @@ class TestNameEndOffset:
     """See module docstring."""
 
     def test_finds_a_plain_def(self) -> None:
+        """AI: Verify the offset right after the function name in an undecorated "def" line."""
         assert_that(_name_end_offset("def f(x: int) -> int:\n    return x\n", "f"), is_(5))
 
     def test_finds_an_async_def(self) -> None:
+        """AI: Verify the offset right after the function name in an "async def" line."""
         source = "async def g(x: int) -> int:\n    return x\n"
         assert_that(_name_end_offset(source, "g"), is_(11))
 
     def test_finds_a_def_indented_after_a_decorator(self) -> None:
+        """AI: Verify the offset is found correctly when the "def" line is indented after a decorator."""
         # A decorated method's .text includes the decorator on line 1 - the "def" line itself
         # is a continuation line carrying its own real indentation, not flush at column 0.
         source = "@overload\n    def __call__(self, x: int) -> int: ...\n"
         assert_that(_name_end_offset(source, "__call__"), is_(26))
 
     def test_raises_when_name_not_found(self) -> None:
+        """AI: Verify a ValueError is raised when the function name doesn't appear in the source."""
         try:
             _name_end_offset("x = 1\n", "f")
         except ValueError:
@@ -42,10 +46,12 @@ class TestBracketEndOffset:
     """See module docstring."""
 
     def test_finds_a_simple_bracket(self) -> None:
+        """AI: Verify the closing bracket offset for a simple, unnested type-param bracket."""
         source = "def f[T](x: T) -> T:\n    return x\n"
         assert_that(_bracket_end_offset(source, 5), is_(8))
 
     def test_tracks_a_nested_bracket_in_a_bound(self) -> None:
+        """AI: Verify the closing bracket offset tracks nesting depth correctly across a bound's own brackets."""
         source = "def f[T: list[int]](x: T) -> T:\n    return x\n"
         assert_that(_bracket_end_offset(source, 5), is_(19))
 
@@ -54,15 +60,18 @@ class TestTypeParamsBracket:
     """See module docstring."""
 
     def test_no_type_params_returns_empty(self) -> None:
+        """AI: Verify a function with no type params produces an empty bracket string."""
         node = ast.parse("def f(x): pass").body[0]
         assert_that(_type_params_bracket(node), is_(""))
 
     def test_one_type_param(self) -> None:
+        """AI: Verify a function with one type param produces a single-name bracket."""
         node = ast.parse("def f(x): pass").body[0]
         node.type_params = [ast.TypeVar(name="T")]
         assert_that(_type_params_bracket(node), is_("[T]"))
 
     def test_two_type_params(self) -> None:
+        """AI: Verify a function with two type params produces a comma-separated bracket, in order."""
         node = ast.parse("def f(x): pass").body[0]
         node.type_params = [ast.TypeVar(name="U"), ast.TypeVar(name="T")]
         assert_that(_type_params_bracket(node), is_("[U, T]"))
@@ -72,21 +81,26 @@ class TestHeaderEndLine:
     """See module docstring."""
 
     def test_one_line_signature(self) -> None:
+        """AI: Verify a one-line signature's header ends on line 1."""
         assert_that(_header_end_line("def f(x: int) -> int:\n    return x\n"), is_(1))
 
     def test_multi_line_signature(self) -> None:
+        """AI: Verify a multi-line signature's header ends on the line with the terminating colon."""
         source = "def f(\n    a: int,\n    b: str,\n) -> None:\n    pass\n"
         assert_that(_header_end_line(source), is_(4))
 
     def test_ignores_colon_inside_a_string_default(self) -> None:
+        """AI: Verify a colon inside a string default value isn't mistaken for the header-terminating colon."""
         source = 'def f(\n    b: str = "x:y",\n) -> None:\n    pass\n'
         assert_that(_header_end_line(source), is_(3))
 
     def test_ignores_colon_inside_a_lambda_default(self) -> None:
+        """AI: Verify a lambda default value's colon isn't mistaken for the header-terminating colon."""
         source = "def f(cb=lambda: 1) -> int:\n    return cb()\n"
         assert_that(_header_end_line(source), is_(1))
 
     def test_raises_when_no_header_terminating_colon(self) -> None:
+        """AI: Verify a ValueError is raised when the source has no header-terminating colon at all."""
         try:
             _header_end_line("x = 1\n")
         except ValueError:
@@ -98,6 +112,7 @@ class TestUnparseSignatureOnly:
     """See module docstring."""
 
     def test_preserves_a_body_comment(self) -> None:
+        """AI: Verify splicing a new type-param bracket into the header preserves a comment in the body."""
         original = textwrap.dedent("""\
             def f(x):
                 # explains something
@@ -112,6 +127,7 @@ class TestUnparseSignatureOnly:
         assert_that(result, contains_string("# explains something"))
 
     def test_renormalizes_a_method_bodys_absolute_indent_to_four_spaces(self) -> None:
+        """AI: Verify a method's real 8-space absolute body indent is renormalized to the 4-space baseline."""
         # A method's .text carries the file's real (absolute) indentation - here 8 spaces, one
         # level of class plus one level of method body - not the 4-space-relative-to-zero
         # baseline the rewrite pipeline's shift expects.
@@ -124,6 +140,7 @@ class TestUnparseSignatureOnly:
         assert_that(result, is_("def f[T](x):\n    return x"))
 
     def test_preserves_an_inline_single_line_body(self) -> None:
+        """AI: Verify an inline "def f(x): ..." body stays on the header's own line after splicing."""
         # "def f(x): ..." keeps its body on the header's own line - there's no separate block
         # to renormalize, and the original inline style should survive as-is.
         original = "def f(x): ...\n"
@@ -135,6 +152,7 @@ class TestUnparseSignatureOnly:
         assert_that(result, is_("def f[T](x): ...\n"))
 
     def test_preserves_a_multiline_signature(self) -> None:
+        """AI: Verify splicing a type-param bracket doesn't collapse a multi-line parameter list onto one line."""
         # Regression test: unparse_signature_only used to regenerate the whole header via
         # ast.unparse(), collapsing a multi-line parameter list onto one line.
         original = "def f(\n    x: int,\n    y: int = 1,\n) -> int:\n    return x\n"
@@ -146,6 +164,7 @@ class TestUnparseSignatureOnly:
         assert_that(result, is_("def f[T](\n    x: int,\n    y: int = 1,\n) -> int:\n    return x\n"))
 
     def test_merges_into_an_existing_bracket(self) -> None:
+        """AI: Verify splicing a new type param into a header that already has one merges into the same bracket."""
         original = "def f[U](x: U, y):\n    return x\n"
         node = ast.parse(original).body[0]
         node.type_params = [*node.type_params, ast.TypeVar(name="T")]
