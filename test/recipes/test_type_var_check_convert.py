@@ -2,6 +2,7 @@
 
 import ast
 from collections.abc import Callable
+from typing import cast
 
 from hamcrest import assert_that, contains_string, has_entry, not_
 
@@ -463,7 +464,7 @@ class TestTypeVarCheckConvert:
 
             T = TypeVar("T")
         """
-        subject = make_recipe(TypeVarCheck, code)
+        subject = cast(TypeVarCheck, make_recipe(TypeVarCheck, code))
         subject.min_python_override = (3, 10)
 
         result = subject.convert_declared_typevars()
