@@ -20,7 +20,7 @@ class TestTypeVarCheckLocalize:
         importing_code = textwrap.dedent(importing_text)
         importing_file = str(tmp_path / "file_2.py")
         mocker.patch(
-            "renaissance.impl.python.factory.PythonFactory.create",
+            "renaissance.integrations.python.ast.factory.PythonFactory.create",
             return_value=PythonRstNode.load_from_text(importing_code, importing_file),
         )
         subject = TypeVarCheck(importing_file)
@@ -165,7 +165,9 @@ class TestTypeVarCheckLocalize:
         assert_that(output.count("from typing import TypeVar"), is_(1))
 
     def test_localizes_when_origin_brings_typevar_into_scope_via_wildcard_import(
-        self, mocker: MockerFixture, tmp_path: Path,
+        self,
+        mocker: MockerFixture,
+        tmp_path: Path,
     ) -> None:
         # find_import_source can't locate "TypeVar" here - safe only because the importing file
         # already imports it itself.
