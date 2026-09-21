@@ -86,7 +86,7 @@ class PythonRefactoring(ASTProcessor):
             if node.node is target:
                 found.append(node)
 
-        self.root.process(visit)
+        cast("PythonRstNode", cast("object", self.root)).process(visit)
         return found[0]
 
     def run(self):
