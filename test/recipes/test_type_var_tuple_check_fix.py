@@ -3,6 +3,7 @@
 import textwrap
 from collections.abc import Callable  # noqa: TC003
 from pathlib import Path  # noqa: TC003
+from typing import cast
 
 from hamcrest import assert_that, contains_string, equal_to, has_entry, is_not
 
@@ -95,7 +96,7 @@ class TestFixLegacyUnpackUsage:
             def foo(*args: Unpack[Ts]) -> None:
                 pass
         """
-        subject = make_recipe(TypeVarTupleCheck, code)
+        subject = cast(TypeVarTupleCheck, make_recipe(TypeVarTupleCheck, code))
         subject.min_python_override = (3, 10)
 
         result = subject.fix_legacy_unpack_usage()
