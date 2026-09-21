@@ -14,6 +14,7 @@ class TestTypeVarCheckOrphaned:
     def test_removes_orphaned_declaration_after_manual_or_ruff_pep695_conversion(
         self, create_type_var_check: Callable[[str], TypeVarCheck]
     ) -> None:
+        """AI: Verify a TypeVar declaration left orphaned by a manual/ruff PEP 695 conversion is removed."""
         subject = create_type_var_check("""
             from typing import TypeVar
             T = TypeVar('T')
@@ -30,6 +31,7 @@ class TestTypeVarCheckOrphaned:
         assert_that(output, contains_string("from typing import TypeVar"))
 
     def test_removes_fully_unused_declaration(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
+        """AI: Verify a TypeVar declaration with no references anywhere is removed."""
         subject = create_type_var_check("""
             from typing import TypeVar
             T = TypeVar('T')
@@ -45,6 +47,7 @@ class TestTypeVarCheckOrphaned:
         assert_that(output, contains_string("from typing import TypeVar"))
 
     def test_does_not_touch_declaration_still_live_outside_shadow(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
+        """AI: Verify a TypeVar declaration still live in an un-shadowed function is left untouched, unflagged."""
         subject = create_type_var_check("""
             from typing import TypeVar
             T = TypeVar('T')
@@ -60,6 +63,7 @@ class TestTypeVarCheckOrphaned:
         assert_that(subject.apply_to_string(), contains_string("T = TypeVar('T')"))
 
     def test_does_not_remove_declaration_used_in_generic_base(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
+        """AI: Verify a TypeVar declaration also used in a Generic[...] base is left untouched, unflagged."""
         # The Generic[T] base is a real, non-shadowed use, so this is never even flagged -
         # same as any other still-live declaration.
         subject = create_type_var_check("""
@@ -78,6 +82,7 @@ class TestTypeVarCheckOrphaned:
         assert_that(subject.apply_to_string(), contains_string("T = TypeVar('T')"))
 
     def test_does_not_remove_orphaned_declaration_in_dunder_all(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
+        """AI: Verify an orphaned but __all__-exported TypeVar declaration is reported unsafe, not removed."""
         # Every reference is shadowed, but T is still exported public API via __all__, so
         # removing the declaration would break importers - flagged "unsafe", not silently fixed.
         subject = create_type_var_check("""
