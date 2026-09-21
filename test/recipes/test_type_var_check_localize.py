@@ -29,6 +29,7 @@ class TestTypeVarCheckLocalize:
         return subject
 
     def test_localizes_plain_function_generic_typevar(self, mocker: MockerFixture, tmp_path: Path) -> None:
+        """AI: Verify an imported TypeVar used only inside a plain function localizes into the importing file."""
         subject = self._create_cross_file(
             mocker,
             tmp_path,
@@ -51,6 +52,7 @@ class TestTypeVarCheckLocalize:
         assert_that(subject.apply_to_string(), not_(contains_string("from file_1 import T")))
 
     def test_does_not_localize_typevar_in_dunder_all(self, mocker: MockerFixture, tmp_path: Path) -> None:
+        """AI: Verify an origin-file TypeVar exported via __all__ is left cross-file unlocalized, marked unsafe."""
         subject = self._create_cross_file(
             mocker,
             tmp_path,
@@ -74,6 +76,7 @@ class TestTypeVarCheckLocalize:
         assert_that(subject.apply_to_string(), contains_string("from file_1 import T"))
 
     def test_does_not_localize_typevar_used_in_exported_generic_base(self, mocker: MockerFixture, tmp_path: Path) -> None:
+        """AI: Verify an origin-file TypeVar used in an exported Generic[...] base is left cross-file unlocalized."""
         subject = self._create_cross_file(
             mocker,
             tmp_path,
@@ -96,6 +99,7 @@ class TestTypeVarCheckLocalize:
         assert_that(subject.apply_to_string(), contains_string("from file_1 import T"))
 
     def test_keeps_other_names_when_localizing_one_of_several_imports(self, mocker: MockerFixture, tmp_path: Path) -> None:
+        """AI: Verify localizing one imported name from a multi-name import statement keeps the other names imported."""
         subject = self._create_cross_file(
             mocker,
             tmp_path,
@@ -120,6 +124,7 @@ class TestTypeVarCheckLocalize:
         assert_that(output, contains_string("T = TypeVar('T')"))
 
     def test_adds_missing_typevar_import_when_localizing(self, mocker: MockerFixture, tmp_path: Path) -> None:
+        """AI: Verify localizing a TypeVar adds the "from typing import TypeVar" import if missing."""
         subject = self._create_cross_file(
             mocker,
             tmp_path,
@@ -141,6 +146,7 @@ class TestTypeVarCheckLocalize:
         assert_that(subject.apply_to_string(), contains_string("from typing import TypeVar"))
 
     def test_does_not_duplicate_already_present_typevar_import(self, mocker: MockerFixture, tmp_path: Path) -> None:
+        """AI: Verify localizing a TypeVar doesn't add a duplicate "from typing import TypeVar" when one already exists."""
         subject = self._create_cross_file(
             mocker,
             tmp_path,
@@ -169,6 +175,7 @@ class TestTypeVarCheckLocalize:
         mocker: MockerFixture,
         tmp_path: Path,
     ) -> None:
+        """AI: Verify localizing still succeeds when the origin brings TypeVar into scope via a wildcard import."""
         # find_import_source can't locate "TypeVar" here - safe only because the importing file
         # already imports it itself.
         subject = self._create_cross_file(
@@ -194,6 +201,7 @@ class TestTypeVarCheckLocalize:
         assert_that(output.count("from typing import TypeVar"), is_(1))
 
     def test_no_typevar_import_found(self, mocker: MockerFixture, tmp_path: Path) -> None:
+        """AI: Verify localize_imported_typevars reports nothing when the importing file has no cross-file TypeVar."""
         subject = self._create_cross_file(
             mocker,
             tmp_path,
@@ -212,6 +220,7 @@ class TestTypeVarCheckLocalize:
         assert_that(result, is_({}))
 
     def test_check_localizes_and_converts_in_one_pass(self, mocker: MockerFixture, tmp_path: Path) -> None:
+        """AI: Verify check() localizes a cross-file TypeVar and converts it to PEP 695 in the same run."""
         # Whole-pipeline integration, grouped here since cross-file localization is what
         # sets this case apart from the plain-conversion tests in test_type_var_check_convert.py.
         subject = self._create_cross_file(
