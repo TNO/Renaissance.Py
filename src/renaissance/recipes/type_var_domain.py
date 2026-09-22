@@ -7,7 +7,6 @@ pipeline logic.
 import ast
 from dataclasses import dataclass
 from enum import StrEnum
-from pathlib import Path
 from typing import cast
 
 DOCS_BASE_URL = "https://tno.github.io/Renaissance.Py/user/features/typevar-modernization/"
@@ -25,6 +24,7 @@ class UnsafeReason(StrEnum):
     USED_OUTSIDE_FUNCTION = "used_outside_function"
     ORIGIN_MODULE_EXPORTS_NAME = "origin_module_exports_name"
     USED_IN_EXPORTED_GENERIC_BASE = "used_in_exported_generic_base"
+    IMPORTED_ELSEWHERE_IN_PROJECT = "imported_elsewhere_in_project"
 
 
 @dataclass(frozen=True)
@@ -53,6 +53,9 @@ UNSAFE_RULES: dict[UnsafeReason, UnsafeRule] = {
     ),
     UnsafeReason.USED_IN_EXPORTED_GENERIC_BASE: UnsafeRule(
         "used in a Generic[...] base at its origin module", "feature-typevar-modernization-used-in-exported-generic-base",
+    ),
+    UnsafeReason.IMPORTED_ELSEWHERE_IN_PROJECT: UnsafeRule(
+        "imported directly by another file in the target project", "feature-typevar-modernization-imported-elsewhere-in-project",
     ),
 }
 
@@ -156,17 +159,6 @@ def find_import_source(tree: ast.Module, name: str) -> str | None:
     return None
 
 
-def resolve_sibling_module(importing_file: str, module_name: str) -> Path | None:
-    """Resolve a simple "from module_name import ..." to a sibling .py file in the same directory.
-
-    Dotted/package imports are out of scope for this recipe and always resolve to None.
-    """
-    if "." in module_name:
-        return None
-    candidate = Path(importing_file).parent / f"{module_name}.py"
-    return candidate if candidate.is_file() else None
-
-
 def functions_using_nodes(
     tree: ast.Module, names: set[str]
 ) -> dict[str, list[ast.FunctionDef | ast.AsyncFunctionDef]]:
@@ -215,15 +207,25 @@ def _used_outside_functions(tree: ast.Module, name: str, decl_stmt: ast.Assign) 
     return visit(tree, False)
 
 
-def is_safe_to_convert(tree: ast.Module, name: str, decl_stmt: ast.Assign) -> UnsafeReason | None:
+def is_safe_to_convert(
+    tree: ast.Module,
+    name: str,
+    decl_stmt: ast.Assign,
+    project_wide_imported_names: frozenset[str] = frozenset(),
+) -> UnsafeReason | None:
     """Return None if `name` is safe to convert to PEP 695 syntax and its declaration removed.
 
     Otherwise returns the reason it isn't: DECLARED_TYPEVAR_EXPORTED if exported via `__all__`,
+    IMPORTED_ELSEWHERE_IN_PROJECT if `name` is in `project_wide_imported_names` (another file in
+    the target project imports it directly, regardless of `__all__` - see
+    renaissance.utils.import_resolution.collect_project_imported_names), or
     USED_OUTSIDE_FUNCTION if referenced anywhere outside the functions using it.
     """
     dunder_all = _find_dunder_all(tree)
     if dunder_all is not None and name in dunder_all:
         return UnsafeReason.DECLARED_TYPEVAR_EXPORTED
+    if name in project_wide_imported_names:
+        return UnsafeReason.IMPORTED_ELSEWHERE_IN_PROJECT
     if _used_outside_functions(tree, name, decl_stmt):
         return UnsafeReason.USED_OUTSIDE_FUNCTION
     return None
