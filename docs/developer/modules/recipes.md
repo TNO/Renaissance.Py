@@ -22,7 +22,9 @@ page covers `TypeVarCheck` and `TypeVarTupleCheck`, the recipes built for
 - Base class: `src/renaissance/recipes/python_refactoring.py` - also owns a generic, cross-recipe
   primitive that `TypeVarCheck` uses: `find_rst_node`.
 - Shared utilities: `src/renaissance/utils/python_version.py` (minimum-supported-Python-version detection),
-  `src/renaissance/utils/unparse_utils.py` (the `ast.unparse()` docstring-indent workaround).
+  `src/renaissance/utils/unparse_utils.py` (the `ast.unparse()` docstring-indent workaround),
+  `src/renaissance/utils/import_resolution.py` (resolves `from X import Y` project-wide to the file it
+  imports from - not TypeVar-specific, kept out of `type_var_domain.py` on purpose).
 
 ## Public entry points
 
@@ -56,12 +58,16 @@ imported by both `type_var_check.py` and `type_var_tuple_check.py` - kept out of
 domain modelling doesn't mix with pipeline orchestration.
 
 `is_safe_to_convert`/`is_safe_to_localize` return `UnsafeReason | None` (`None` meaning safe), not a bare
-`bool` - each of the six `UnsafeReason` members (the two Python-version gates plus the four `__all__`/scope
-conditions across both functions) has a matching `UnsafeRule` (a short message plus a docs anchor slug) in
-`UNSAFE_RULES`, and `doc_link(reason)` resolves one to the full URL under
-[TypeVar modernization](../../user/features/typevar-modernization.md)'s Constraints section. Both `TypeVarCheck`
-and `TypeVarTupleCheck` record the reason behind each `"unsafe"` name on their own instance attributes (see their
-own docs), and `migration-type-recipes.py`'s `--report` prints `UNSAFE_RULES[reason].message` and `doc_link(reason)`
+`bool` - each of the seven `UnsafeReason` members (the two Python-version gates plus the five `__all__`/scope/
+cross-project conditions across both functions) has a matching `UnsafeRule` (a short message plus a docs anchor
+slug) in `UNSAFE_RULES`, and `doc_link(reason)` resolves one to the full URL under
+[TypeVar modernization](../../user/features/typevar-modernization.md)'s Constraints section. `is_safe_to_convert`
+additionally takes `project_wide_imported_names` (a `frozenset[str]`, defaulting to empty) - set on
+`TypeVarCheck.project_wide_imported_names` by the CLI, via `renaissance.utils.import_resolution.
+collect_project_imported_names` over every file it was given, before either `TypeVarCheck` phase that can
+remove a declaration runs. Both `TypeVarCheck` and `TypeVarTupleCheck` record the reason behind each
+`"unsafe"` name on their own instance attributes (see their own docs), and `migration-type-recipes.py`'s
+`--report` prints `UNSAFE_RULES[reason].message` and `doc_link(reason)`
 next to each one - this is what makes a specific "unsafe" occurrence traceable to the exact documented rule that
 caused it, rather than a generic status string.
 
@@ -150,6 +156,9 @@ below `TypeVarCheck`'s (PEP 646 landed a release before PEP 695), not raised to 
   `create_type_var_tuple_check`) used across the files above and by other recipes' tests.
 - `test/utils/test_unparse_utils.py` - the bracket-splice mechanism itself (`unparse_signature_only` and its
   helpers), independent of the recipe.
+- `test/utils/test_import_resolution.py` - `resolve_project_module`/`collect_project_imported_names` in
+  isolation (absolute/relative import resolution, package `__init__.py` fallback, stdlib imports correctly
+  excluded).
 
 ## Extension points
 
@@ -165,7 +174,10 @@ below `TypeVarCheck`'s (PEP 646 landed a release before PEP 695), not raised to 
 
 ## Non-goals
 
-- Neither recipe resolves package-qualified or dotted-module imports for the cross-file phase.
+- Neither recipe resolves package-qualified or dotted-module imports for the cross-file *localization* phase
+  (`resolve_sibling_module`, same-directory only) - this is unrelated to, and unchanged by,
+  `resolve_project_module`'s project-wide resolution used for the removal-safety check above, which does
+  handle absolute and relative dotted imports.
 - The Python-version gates (`target_supports_pep695` and `target_supports_pep646`, both backed by
   `renaissance.utils.python_version`) only recognise `requires-python` specifiers matching a known, hardcoded
   list of versions (3.8-3.14) - an exotic specifier that matches none of them is treated as unknown, the same as

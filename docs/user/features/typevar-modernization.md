@@ -137,6 +137,26 @@ coordinated change, or the two modules end up with different, incompatible `T`s.
 
 Supports `TypeVar` (including `bound=` and constraint forms), `ParamSpec`, and `TypeVarTuple`.
 
+### A declared TypeVar is imported directly by another file in the target project
+
+{ #feature-typevar-modernization-imported-elsewhere-in-project }
+
+A module without `__all__` is still Python-legal to import any of its top-level names from directly -
+`__all__` only governs `from module import *`, never `from module import specific_name`. So a declaration with
+no `__all__` isn't automatically "unused elsewhere": before converting or removing it, the CLI (see API entry
+points below) scans every file it was given for `from this_module import this_name`-shaped imports (absolute
+or relative, resolved to the actual file - see `renaissance.utils.import_resolution`) and treats any hit as
+`"unsafe"`, `IMPORTED_ELSEWHERE_IN_PROJECT`, regardless of `__all__`. Running the recipe on a single file in
+isolation (not via the CLI, or via the CLI on a lone file with no other files passed) has nothing to check
+against, so this constraint can only fire when the target is a directory scanned alongside the files that
+import from it.
+
+**To convert this yourself:** the report only names the candidate, not the importing file - grep the project
+for `from <this_module> import <name>` (absolute or relative) to find it. Once found, either update that
+importer in the same change to get `name` from wherever it ends up after conversion, or leave the module-level
+declaration as it is if the importer can't be updated alongside it - the same public-API trade-off as the
+`__all__` case above, just surfaced by a direct import instead of an explicit `__all__` entry.
+
 ### PEP 646 version gate
 
 { #feature-typevar-modernization-pep646-version-gate }
@@ -175,6 +195,8 @@ untouched.
 - `test/recipes/test_type_var_tuple_check_fix.py`
 - `test/recipes/test_type_var_tuple_check_properties.py`
 - `test/recipes/test_type_var_domain.py`
+- `test/utils/test_import_resolution.py` - the project-wide import resolution the CLI uses for the
+  `IMPORTED_ELSEWHERE_IN_PROJECT` constraint above
 - `test/rejuvenation/test_migration_type_recipes.py` (the CLI wrapper above)
 
 ## Implemented by code modules
@@ -196,9 +218,12 @@ minimum target version (compared against each recipe's own true minimum - 3.12 f
 `TypeVarTupleCheck`), and a report distinguishing modified files from files with TypeVars it found but
 couldn't safely convert. It writes changes for real - the target is always expected to be a git-tracked
 checkout, so `git diff`/`git checkout` (or an editor's diff view) is the review-and-revert mechanism, not a
-custom preview built into this tool. After processing every file, it runs `ruff check --fix --select F401`
-once over every file it modified, dropping whichever imports either recipe's own rewrite made redundant -
-see the User-facing summary above for why neither recipe drops that import itself.
+custom preview built into this tool. Before processing any file, it scans every discovered file once for
+project-wide imports (see the `IMPORTED_ELSEWHERE_IN_PROJECT` constraint above) so a later file's removal
+decision can account for an earlier or later file importing the name directly. After processing every file,
+it runs `ruff check --fix --select F401` once over every file it modified, dropping whichever imports either
+recipe's own rewrite made redundant - see the User-facing summary above for why neither recipe drops that
+import itself.
 
 ```shell
 python src/rejuvenation/migration-type-recipes.py <path> [--min-python MAJOR.MINOR] [--report PATH]
