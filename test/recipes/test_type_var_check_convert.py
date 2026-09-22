@@ -247,6 +247,26 @@ class TestTypeVarCheckConvert:
         assert_that(subject.converted_unsafe_reasons, has_entry("T", UnsafeReason.DECLARED_TYPEVAR_EXPORTED))
         assert_that(subject.apply_to_string(), contains_string('T = TypeVar("T")'))
 
+    def test_does_not_convert_typevar_imported_elsewhere_in_project(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
+        # No __all__ - but another project file imports T directly, so removing the
+        # declaration would still break that import even though it's not "exported" by name.
+        subject = create_type_var_check("""
+            from typing import TypeVar
+
+            def a(x: T) -> T:
+                return x
+            def b(y: T) -> T:
+                return y
+
+            T = TypeVar("T")
+        """)
+        subject.project_wide_imported_names = frozenset({"T"})
+        result = subject.convert_declared_typevars()
+
+        assert_that(result, has_entry("T", "unsafe"))
+        assert_that(subject.converted_unsafe_reasons, has_entry("T", UnsafeReason.IMPORTED_ELSEWHERE_IN_PROJECT))
+        assert_that(subject.apply_to_string(), contains_string('T = TypeVar("T")'))
+
     def test_removes_declaration_but_keeps_import_used_by_other_typevar(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
         """AI: Verify removing one converted TypeVar's declaration keeps the shared import alive for an unsafe sibling."""
         # T is multi-scope and safe to convert; U is left alone (used in a Generic[...] base),
