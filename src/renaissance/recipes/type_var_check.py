@@ -1,6 +1,7 @@
 """Recipe that modernizes legacy TypeVar/ParamSpec/TypeVarTuple usage to PEP 695 syntax."""
 
 import ast
+from pathlib import Path
 from typing import Any, cast
 
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
@@ -15,10 +16,10 @@ from renaissance.recipes.type_var_domain import (
     functions_using_nodes,
     is_safe_to_convert,
     is_safe_to_localize,
-    resolve_sibling_module,
     type_param_constructor_name,
     type_param_name,
 )
+from renaissance.utils.import_resolution import resolve_project_module
 from renaissance.utils.python_version import minimum_python_version
 from renaissance.utils.unparse_utils import unparse_signature_only
 
@@ -46,6 +47,17 @@ class TypeVarCheck(PythonRefactoring):
     # Set directly (e.g. in a test) to skip the pyproject.toml lookup and use this value
     # instead - mirrors how `in_memory` is set on the base class after construction.
     min_python_override: tuple[int, int] | None = None
+
+    # Set directly (e.g. in a test, or by the CLI after scanning the whole target project) -
+    # names another file in the target project imports directly from this file, even without
+    # __all__. See renaissance.utils.import_resolution.collect_project_imported_names.
+    project_wide_imported_names: frozenset[str] = frozenset()
+
+    # The target project's root directory, for resolving absolute/relative imports project-wide
+    # in localize_imported_typevars (see renaissance.utils.import_resolution.resolve_project_module).
+    # Defaults to this file's own directory when unset, which limits resolution to same-directory
+    # siblings - matches this recipe's behaviour before project-wide resolution existed.
+    project_root: Path | None = None
 
     def run(self) -> None:
         """Entry point called by PythonRefactoring.process(); stores check()'s result."""
@@ -108,7 +120,7 @@ class TypeVarCheck(PythonRefactoring):
         touched_functions: dict[int, ast.FunctionDef | ast.AsyncFunctionDef] = {}
         for name, functions in usage.items():
             decl_stmt = declarations[name]
-            reason = is_safe_to_convert(tree, name, decl_stmt)
+            reason = is_safe_to_convert(tree, name, decl_stmt, self.project_wide_imported_names)
             if reason is not None:
                 self._mark_unsafe(results, self.converted_unsafe_reasons, name, reason)
                 continue
@@ -149,7 +161,7 @@ class TypeVarCheck(PythonRefactoring):
             if not all_refs_shadowed_by_pep695(tree, name, decl_stmt):
                 continue
 
-            reason = is_safe_to_convert(tree, name, decl_stmt)
+            reason = is_safe_to_convert(tree, name, decl_stmt, self.project_wide_imported_names)
             if reason is not None:
                 self._mark_unsafe(results, self.orphaned_unsafe_reasons, name, reason)
                 continue
@@ -168,12 +180,15 @@ class TypeVarCheck(PythonRefactoring):
         """Remove decl_stmt's statement from the file."""
         for stmt_node in self.body:
             if stmt_node.node is decl_stmt:
-                self.remove(stmt_node)
+                # TODO - enable once comment blocks get correctly deleted
+                self.remove(stmt_node, include_comments=False)
                 break
 
     def localize_imported_typevars(self) -> dict[str, str]:
-        """Find TypeVar/ParamSpec/TypeVarTuple names imported from a sibling module.
+        """Find TypeVar/ParamSpec/TypeVarTuple names imported from anywhere in the target project.
 
+        Resolved via resolve_project_module (absolute or relative, any directory under
+        project_root - see that field's own docstring for the same-directory fallback when unset).
         Where safe (see is_safe_to_localize), rewrites the import into an equivalent local
         declaration. Returns {name: "fixed" | "unsafe"} for every candidate found; the specific
         UnsafeReason behind each "unsafe" entry is recorded on self.cross_file_unsafe_reasons.
@@ -181,12 +196,13 @@ class TypeVarCheck(PythonRefactoring):
         results: dict[str, str] = {}
         self.cross_file_unsafe_reasons: dict[str, UnsafeReason] = {}
 
+        project_root = self.project_root if self.project_root is not None else Path(self.filename).parent
         for import_node in self.body:
             raw = import_node.node
-            if not isinstance(raw, ast.ImportFrom) or raw.module is None or raw.level != 0:
+            if not isinstance(raw, ast.ImportFrom):
                 continue
 
-            origin_path = resolve_sibling_module(self.filename, raw.module)
+            origin_path = resolve_project_module(Path(self.filename), project_root, raw.module, raw.level)
             if origin_path is None:
                 continue
 

@@ -200,6 +200,40 @@ class TestTypeVarCheckLocalize:
         output = subject.apply_to_string()
         assert_that(output.count("from typing import TypeVar"), is_(1))
 
+    def test_localizes_project_wide_import_from_different_directory(self, mocker: MockerFixture, tmp_path: Path) -> None:
+        # file_1.py lives at the project root; the importing file lives one directory down -
+        # resolve_sibling_module (same-directory only) could never find this, resolve_project_module can.
+        (tmp_path / "file_1.py").write_text(
+            textwrap.dedent("""
+            from typing import TypeVar
+            T = TypeVar("T")
+            def a(x: T) -> T:
+                return x
+            """),
+        )
+        sub = tmp_path / "sub"
+        sub.mkdir()
+        importing_code = textwrap.dedent("""
+            from file_1 import T
+            def b(x: T) -> T:
+                return x
+            """)
+        importing_file = str(sub / "file_2.py")
+        mocker.patch(
+            "renaissance.integrations.python.ast.factory.PythonFactory.create",
+            return_value=PythonRstNode.load_from_text(importing_code, importing_file),
+        )
+        subject = TypeVarCheck(importing_file)
+        subject.in_memory = True
+        subject.min_python_override = PEP_695_MINIMUM
+        subject.project_root = tmp_path
+
+        result = subject.localize_imported_typevars()
+
+        assert_that(result, has_entry("T", "fixed"))
+        assert_that(subject.apply_to_string(), contains_string("T = TypeVar('T')"))
+        assert_that(subject.apply_to_string(), not_(contains_string("from file_1 import T")))
+
     def test_no_typevar_import_found(self, mocker: MockerFixture, tmp_path: Path) -> None:
         """AI: Verify localize_imported_typevars reports nothing when the importing file has no cross-file TypeVar."""
         subject = self._create_cross_file(
