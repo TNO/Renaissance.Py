@@ -12,6 +12,7 @@ from types import ModuleType  # noqa: TC003
 import pytest
 from hamcrest import assert_that, contains_string, equal_to, has_entry, is_, is_not
 
+from renaissance.project.project_scanner import PythonScanner
 from renaissance.recipes.type_var_domain import UnsafeReason, doc_link
 
 _SCRIPT_PATH = Path(__file__).resolve().parents[2] / "src" / "rejuvenation" / "migration-type-recipes.py"
@@ -64,39 +65,28 @@ TYPEVARTUPLE_SOURCE = textwrap.dedent("""\
     """)
 
 
-class TestDiscoverFiles:
-    """discover_files: recursive .py discovery with noise-directory exclusion."""
-
-    def test_finds_nested_py_files(self, tmp_path: Path) -> None:
-        """Nested .py files under ordinary directories are all found."""
-        (tmp_path / "pkg").mkdir()
-        (tmp_path / "pkg" / "a.py").write_text("x = 1\n")
-        (tmp_path / "pkg" / "b.py").write_text("y = 2\n")
-
-        result = migration.discover_files(tmp_path)
-
-        assert_that([p.name for p in result], equal_to(["a.py", "b.py"]))
-
-    @pytest.mark.parametrize("excluded_dir", [".git", "__pycache__", ".venv", "venv"])
-    def test_excludes_known_noise_dirs(self, tmp_path: Path, excluded_dir: str) -> None:
-        """A .py file under a known noise directory (.git, __pycache__, venvs) is skipped."""
-        noise_dir = tmp_path / excluded_dir
-        noise_dir.mkdir()
-        (noise_dir / "ignored.py").write_text("x = 1\n")
-        (tmp_path / "kept.py").write_text("y = 2\n")
-
-        result = migration.discover_files(tmp_path)
-
-        assert_that([p.name for p in result], equal_to(["kept.py"]))
+class TestResolveTargetFiles:
+    """resolve_target_files: single-file shortcut, otherwise delegates to PythonScanner."""
 
     def test_single_file_returned_as_is(self, tmp_path: Path) -> None:
         """A single .py file path (not a directory) is returned as a one-item list."""
         target = tmp_path / "solo.py"
         target.write_text("x = 1\n")
 
-        result = migration.discover_files(target)
+        result = migration.resolve_target_files(target)
 
         assert_that(result, equal_to([target]))
+
+    def test_directory_target_delegates_to_python_scanner(self, tmp_path: Path) -> None:
+        """A directory target is scanned via PythonScanner, wrapping each result back into a Path."""
+        (tmp_path / "pkg").mkdir()
+        (tmp_path / "pkg" / "a.py").write_text("x = 1\n")
+        (tmp_path / "pkg" / "b.py").write_text("y = 2\n")
+
+        result = migration.resolve_target_files(tmp_path)
+
+        assert_that(result, equal_to([Path(p) for p in PythonScanner(str(tmp_path)).find_sources()]))
+        assert_that(all(isinstance(path, Path) for path in result), is_(True))
 
 
 class TestClassification:
@@ -144,7 +134,7 @@ class TestProcessFile:
         target = tmp_path / "mod.py"
         target.write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
 
-        report = migration.process_file(target, min_python=(3, 12))
+        report = migration.process_file(target, min_python=(3, 12), project_wide_imported_names=frozenset())
 
         assert_that(migration.has_fixed(report), is_(True))
         assert_that(target.read_text(encoding="utf-8"), contains_string("def identity[T]"))
@@ -155,7 +145,7 @@ class TestProcessFile:
         target.write_text(UNSAFE_TYPEVAR_SOURCE, encoding="utf-8")
         original = target.read_text(encoding="utf-8")
 
-        report = migration.process_file(target, min_python=(3, 12))
+        report = migration.process_file(target, min_python=(3, 12), project_wide_imported_names=frozenset())
 
         assert_that(migration.has_unsafe(report), is_(True))
         assert_that(target.read_text(encoding="utf-8"), equal_to(original))
@@ -165,17 +155,28 @@ class TestProcessFile:
         target = tmp_path / "mod.py"
         target.write_text(UNSAFE_TYPEVAR_SOURCE, encoding="utf-8")
 
-        report = migration.process_file(target, min_python=(3, 12))
+        report = migration.process_file(target, min_python=(3, 12), project_wide_imported_names=frozenset())
 
         assert_that(report.reasons, is_not(None))
         assert_that(report.reasons["converted"], has_entry("T", UnsafeReason.DECLARED_TYPEVAR_EXPORTED))
+
+    def test_project_wide_imported_name_is_reported_unsafe_even_without_dunder_all(self, tmp_path: Path) -> None:
+        """A name imported directly by another passed-in file is left alone, __all__ or not."""
+        target = tmp_path / "mod.py"
+        target.write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
+
+        report = migration.process_file(target, min_python=(3, 12), project_wide_imported_names=frozenset({"T"}))
+
+        assert_that(migration.has_unsafe(report), is_(True))
+        assert_that(report.reasons["converted"], has_entry("T", UnsafeReason.IMPORTED_ELSEWHERE_IN_PROJECT))
+        assert_that(target.read_text(encoding="utf-8"), contains_string('T = TypeVar("T")'))
 
     def test_syntax_error_reported_as_error_not_raised(self, tmp_path: Path) -> None:
         """A file that fails to parse is reported on FileReport.error, not raised."""
         target = tmp_path / "broken.py"
         target.write_text("def broken(:\n", encoding="utf-8")
 
-        report = migration.process_file(target, min_python=(3, 12))
+        report = migration.process_file(target, min_python=(3, 12), project_wide_imported_names=frozenset())
 
         assert_that(report.error, is_not(None))
         assert_that(report.result, is_(None))
@@ -185,7 +186,7 @@ class TestProcessFile:
         target = tmp_path / "mod.py"
         target.write_text(TYPEVARTUPLE_SOURCE, encoding="utf-8")
 
-        report = migration.process_file(target, min_python=(3, 12))
+        report = migration.process_file(target, min_python=(3, 12), project_wide_imported_names=frozenset())
 
         assert_that(migration.has_fixed(report), is_(True))
         output = target.read_text(encoding="utf-8")
@@ -317,3 +318,28 @@ class TestMainBatchErrorIsolation:
         output = capsys.readouterr().out
         assert_that(output, contains_string("good.py"))
         assert_that(output, contains_string("broken.py"))
+
+
+class TestMainProjectWideImportSafety:
+    """main(): a declaration imported by another file in the batch is never removed.
+
+    Regression test for the real redis-py case (issue: AnyKeyT removed from typing.py while
+    commands/core.py, commands/cluster.py, and asyncio/cluster.py still imported it directly -
+    none of those files declare __all__, so the old __all__-only check missed it).
+    """
+
+    def test_declaration_survives_when_another_file_imports_it(self, tmp_path: Path) -> None:
+        # consumer.py lives in a different directory than typing_mod.py deliberately - phase 1's
+        # own cross-file localization (resolve_sibling_module) only resolves same-directory
+        # imports, so it leaves this import alone, isolating this test to the project-wide
+        # removal-safety check under test (an absolute import, resolved from project_root).
+        (tmp_path / "typing_mod.py").write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
+        sub = tmp_path / "sub"
+        sub.mkdir()
+        (sub / "consumer.py").write_text("from typing_mod import T\n\ndef use(x: T) -> T:\n    return x\n", encoding="utf-8")
+
+        exit_code = migration.main([str(tmp_path), "--min-python", "3.12"])
+
+        assert_that(exit_code, equal_to(0))
+        assert_that((tmp_path / "typing_mod.py").read_text(encoding="utf-8"), contains_string('T = TypeVar("T")'))
+        assert_that((sub / "consumer.py").read_text(encoding="utf-8"), contains_string("from typing_mod import T"))
