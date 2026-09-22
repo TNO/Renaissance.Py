@@ -5,7 +5,7 @@ real CLI: `--help`, named flags, and a report distinguishing files it modified f
 TypeVars it found but couldn't safely convert.
 
 Examples:
-    python src/rejuvenation/migration-type-recipes.py ./some_repo --report review.md
+    python src/rejuvenation/migration-type-recipes.py ./some_repo --report review.md --min-python 3.12
     python src/rejuvenation/migration-type-recipes.py ./some_repo/file.py
 
 """
@@ -24,15 +24,14 @@ from pathlib import Path
 
 from termcolor import colored
 
+from renaissance.project.project_scanner import PythonScanner
 from renaissance.recipes.step_runner import Step, run_steps
 from renaissance.recipes.type_var_check import TypeVarCheck
 from renaissance.recipes.type_var_domain import UNSAFE_RULES, UnsafeReason, doc_link
 from renaissance.recipes.type_var_tuple_check import TypeVarTupleCheck
+from renaissance.utils.import_resolution import collect_project_imported_names
 
 _MAJOR_MINOR_PART_COUNT = 2
-
-# TODO: incomplete list, extend this list with more files/directories that should always be ignored
-EXCLUDED_DIRS = frozenset({".git", "__pycache__", ".venv", "venv"})
 
 
 @dataclass
@@ -45,19 +44,15 @@ class FileReport:
     reasons: dict[str, dict[str, UnsafeReason]] | None = None
 
 
-def discover_files(target: Path) -> list[Path]:
-    """Return every .py file under `target`, sorted, excluding EXCLUDED_DIRS.
+def resolve_target_files(target: Path) -> list[Path]:
+    """Return the .py files to process for `target`.
 
-    Deliberately not using renaissance.project.project_scanner.PythonScanner: its package_dirs
-    allowlist (["src", "lib", "test"]) assumes Renaissance.Py's own layout and would silently
-    skip real third-party layouts, e.g. redis-py's source living in redis/ rather than src/. A
-    migration target here is an arbitrary external codebase, not this repo.
+    A single .py file is returned as-is; a directory is scanned recursively via PythonScanner
+    (whole-tree, no package_dirs allowlist, so arbitrary third-party layouts are supported).
     """
     if target.is_file():
         return [target]
-    candidates = target.rglob("*.py")
-    files = [path for path in candidates if not any(part in EXCLUDED_DIRS for part in path.parts)]
-    return sorted(files)
+    return [Path(path) for path in PythonScanner(str(target)).find_sources()]
 
 
 def _parse_min_python(text: str) -> tuple[int, int]:
@@ -94,7 +89,12 @@ def is_clean(report: FileReport) -> bool:
     return not any(phase for phase in report.result.values())
 
 
-def process_file(path: Path, *, min_python: tuple[int, int] | None) -> FileReport:
+def process_file(
+    path: Path,
+    *,
+    min_python: tuple[int, int] | None,
+    project_wide_imported_names: frozenset[str],
+) -> FileReport:
     """Run TypeVarTupleCheck then TypeVarCheck's phases against a single file, returning one FileReport.
 
     TypeVarTupleCheck runs first: TypeVarCheck's own PEP 695 conversion removes a TypeVarTuple's
@@ -112,9 +112,12 @@ def process_file(path: Path, *, min_python: tuple[int, int] | None) -> FileRepor
         # `path` from disk once, at construction, and never again - constructing it earlier would
         # give it a stale in-memory copy from before TypeVarTupleCheck's step wrote to disk, and its
         # own commit() would then overwrite that fix with its own reconstruction of the old content.
+        # TODO: a 3rd chained recipe would need this same hand-ordering trick repeated - worth a
+        # generic chain runner, or a PythonRefactoring.from_processor() avoiding the disk round-trip?
         tv_recipe = TypeVarCheck(path)
         if min_python is not None:
             tv_recipe.min_python_override = min_python
+        tv_recipe.project_wide_imported_names = project_wide_imported_names
         typevar_result = run_steps(
             [
                 Step("cross_file", tv_recipe, tv_recipe.localize_imported_typevars),
@@ -254,10 +257,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     if target.is_file() and target.suffix != ".py":
         parser.error(f"not a Python file: {target}")
 
-    files = discover_files(target)
-    reports: list[FileReport] = []
+    files = resolve_target_files(target)
+    project_root = target if target.is_dir() else target.parent
+    imported_names_by_file = collect_project_imported_names(files, project_root)
+
+    reports = []
     for path in files:
-        report = process_file(path, min_python=args.min_python)
+        project_wide_imported_names = imported_names_by_file.get(path, frozenset())
+        report = process_file(path, min_python=args.min_python, project_wide_imported_names=project_wide_imported_names)
         reports.append(report)
         print(f"{path} reviewed.")
 
