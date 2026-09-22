@@ -66,11 +66,11 @@ Requirements:
 
 The glossary provides a **concise summary**; it does not replace the concept page.
 
-| Glossary | Concept page |
-|---|---|
+| Glossary                        | Concept page                                   |
+| ------------------------------- | ---------------------------------------------- |
 | One- or two-sentence definition | Full explanation, rationale, examples, figures |
-| Alphabetical index entry | Authoritative source |
-| Links to the concept page | May link back to the glossary anchor |
+| Alphabetical index entry        | Authoritative source                           |
+| Links to the concept page       | May link back to the glossary anchor           |
 
 The concept page is the authoritative source. If the definition on the concept page and the glossary entry conflict,
 the concept page takes precedence and the glossary entry must be updated.

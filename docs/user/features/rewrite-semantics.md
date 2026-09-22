@@ -35,16 +35,16 @@ See [Figure 1.3 in the concept page](../concepts/rewrite-semantics.md#rewrite-se
 
 **Description**: Replacements hide dominated changes
 
-BDD keyword | step description
--- | --
-Given | a programming language
-and | a source file written in that programming language
-and | an AST extracted from that source file without errors
-and | a node of that AST
-and | a sequence of descendant nodes of that node
-When | that node is replaced by a text
-and | Rewrites, i.e., append, prepend, surround, and replace, are performed on that sequence of descendant nodes
-Then | in the modified source file that node is replaced by the given text and all rewrites on that sequence of descendant nodes are not performed / hidden
+| BDD keyword | step description                                                                                                                                     |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Given       | a programming language                                                                                                                               |
+| and         | a source file written in that programming language                                                                                                   |
+| and         | an AST extracted from that source file without errors                                                                                                |
+| and         | a node of that AST                                                                                                                                   |
+| and         | a sequence of descendant nodes of that node                                                                                                          |
+| When        | that node is replaced by a text                                                                                                                      |
+| and         | Rewrites, i.e., append, prepend, surround, and replace, are performed on that sequence of descendant nodes                                           |
+| Then        | in the modified source file that node is replaced by the given text and all rewrites on that sequence of descendant nodes are not performed / hidden |
 
 TODO: This description is only valid when a node is NOT considered a descendant of itself.
 Check our definition (and implementation)!
@@ -55,14 +55,14 @@ See [Figure 1.2 in the concept page](../concepts/rewrite-semantics.md#rewrite-se
 
 **Description**: Replacements (including removal) cannot overlap
 
-BDD keyword | step description
--- | --
-Given     | a programming language
-and    | a source file written in that programming language
-and    | an AST extracted from that source file without errors
-and    | two sequences of nodes of that AST that partly overlap
-When     | both sequences are replaced with a string
-Then     | an error with the text "overlapping changes are forbidden" is produced
+| BDD keyword | step description                                                       |
+| ----------- | ---------------------------------------------------------------------- |
+| Given       | a programming language                                                 |
+| and         | a source file written in that programming language                     |
+| and         | an AST extracted from that source file without errors                  |
+| and         | two sequences of nodes of that AST that partly overlap                 |
+| When        | both sequences are replaced with a string                              |
+| Then        | an error with the text "overlapping changes are forbidden" is produced |
 
 ## Scenario: Combination of prepend and surround
 
@@ -105,17 +105,17 @@ Each of the three combinations holds regardless of collection order.
    See the concept page for an illustration of
    [prepends at the same text location](../concepts/rewrite-semantics.md#rewrite-semantics-prepends).
 
-   BDD keyword | step description
-   -- | --
-   Given     | a programming language
-   and    | a source file written in that programming language
-   and    | a string not contained in that source file
-   and    | an AST extracted from that source file without errors
-   and    | a node of that AST
-   and    | a descendant of that node
-   When     | that node is prepended by a concatenation of that string with "node"
-   and    | that descendant is prepended by a concatenation of that string with "descendant"
-   Then     | in the modified source file the concatenation of that string with "node" occurs before the concatenation of that string with "descendant"
+   | BDD keyword | step description                                                                                                                          |
+   | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+   | Given       | a programming language                                                                                                                    |
+   | and         | a source file written in that programming language                                                                                        |
+   | and         | a string not contained in that source file                                                                                                |
+   | and         | an AST extracted from that source file without errors                                                                                     |
+   | and         | a node of that AST                                                                                                                        |
+   | and         | a descendant of that node                                                                                                                 |
+   | When        | that node is prepended by a concatenation of that string with "node"                                                                      |
+   | and         | that descendant is prepended by a concatenation of that string with "descendant"                                                          |
+   | Then        | in the modified source file the concatenation of that string with "node" occurs before the concatenation of that string with "descendant" |
 1. on unrelated nodes: No interaction possible, so nothing to specify
 
 ## Scenario: Combination of multiple appends
@@ -125,17 +125,17 @@ Each of the three combinations holds regardless of collection order.
    in the concept page for the ordering rule and example.
 1. on a node and a descendant of that node
 
-   BDD keyword | step description
-   -- | --
-   Given     | a programming language
-   and    | a source file written in that programming language
-   and    | a string not contained in that source file
-   and    | an AST extracted from that source file without errors
-   and    | a node of that AST
-   and    | a descendant of that node
-   When     | that node is append by a concatenation of that string with "node"
-   and    | that descendant is appended by a concatenation of that string with "descendant"
-   Then     | in the modified source file the concatenation of that string with "node" occurs after the concatenation of that string with "descendant"
+   | BDD keyword | step description                                                                                                                         |
+   | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+   | Given       | a programming language                                                                                                                   |
+   | and         | a source file written in that programming language                                                                                       |
+   | and         | a string not contained in that source file                                                                                               |
+   | and         | an AST extracted from that source file without errors                                                                                    |
+   | and         | a node of that AST                                                                                                                       |
+   | and         | a descendant of that node                                                                                                                |
+   | When        | that node is append by a concatenation of that string with "node"                                                                        |
+   | and         | that descendant is appended by a concatenation of that string with "descendant"                                                          |
+   | Then        | in the modified source file the concatenation of that string with "node" occurs after the concatenation of that string with "descendant" |
 
 1. on unrelated nodes: No interaction possible, so nothing to specify
 
@@ -149,17 +149,17 @@ Surround has before- and after-text.
 1. on a node and a descendant of that node: see the concept page rule linked above for the general
    rule; the table below gives the testable scenario.
 
-   BDD keyword | step description
-   -- | --
-   Given     | a programming language
-   and    | a source file written in that programming language
-   and    | an AST extracted from that source file without errors
-   and    | a node of that AST
-   and    | a descendant of that node
-   When     | that node is surrounded with a before-text and an after-text
-   and    | that descendant is surrounded with a before-text and an after-text
-   Then     | in the modified source file the node's before-text occurs before the descendant's before-text
-   and      | the descendant's after-text occurs before the node's after-text
+   | BDD keyword | step description                                                                              |
+   | ----------- | --------------------------------------------------------------------------------------------- |
+   | Given       | a programming language                                                                        |
+   | and         | a source file written in that programming language                                            |
+   | and         | an AST extracted from that source file without errors                                         |
+   | and         | a node of that AST                                                                            |
+   | and         | a descendant of that node                                                                     |
+   | When        | that node is surrounded with a before-text and an after-text                                  |
+   | and         | that descendant is surrounded with a before-text and an after-text                            |
+   | Then        | in the modified source file the node's before-text occurs before the descendant's before-text |
+   | and         | the descendant's after-text occurs before the node's after-text                               |
 1. on unrelated nodes: No interaction possible, so nothing to specify
 
 For example, given the addition `a + b` and two changes
@@ -183,16 +183,16 @@ See the concept page for the general rule and an illustration of
    for all four combinations of the two operators — append/prepend, append/surround, surround/prepend,
    and surround/surround — and regardless of collection order.
 
-BDD keyword | step description
--- | --
- Given     | a programming language
-and    | a source file written in that programming language
-and    | a string not contained in that source file
-and    | an AST extracted from that source file without errors
-and    | two consecutive nodes of that AST
-When     | the first node is appended (or surrounded, using its after-text) with a concatenation of that string with "node"
-and    | the second node is prepended (or surrounded, using its before-text) with a concatenation of that string with "descendant"
-Then     | in the modified source file the concatenation of that string with "node" occurs before the concatenation of that string with "descendant"
+| BDD keyword | step description                                                                                                                          |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Given       | a programming language                                                                                                                    |
+| and         | a source file written in that programming language                                                                                        |
+| and         | a string not contained in that source file                                                                                                |
+| and         | an AST extracted from that source file without errors                                                                                     |
+| and         | two consecutive nodes of that AST                                                                                                         |
+| When        | the first node is appended (or surrounded, using its after-text) with a concatenation of that string with "node"                          |
+| and         | the second node is prepended (or surrounded, using its before-text) with a concatenation of that string with "descendant"                 |
+| Then        | in the modified source file the concatenation of that string with "node" occurs before the concatenation of that string with "descendant" |
 
 ## Example
 

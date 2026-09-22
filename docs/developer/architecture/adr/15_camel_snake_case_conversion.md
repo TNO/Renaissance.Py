@@ -67,11 +67,11 @@ for s in ['HTMLParser', 'HTML5Parser', 'Base64Encode']:
 "
 ```
 
-| Input | `camel-converter` | `snake_case()` |
-|---|---|---|
-| `HTMLParser` | `h_t_m_l_parser` | `html_parser` |
-| `HTML5Parser` | `h_t_m_l5_parser` | `html5_parser` |
-| `Base64Encode` | `base64_encode` | `base64_encode` |
+| Input          | `camel-converter` | `snake_case()`  |
+| -------------- | ----------------- | --------------- |
+| `HTMLParser`   | `h_t_m_l_parser`  | `html_parser`   |
+| `HTML5Parser`  | `h_t_m_l5_parser` | `html5_parser`  |
+| `Base64Encode` | `base64_encode`   | `base64_encode` |
 
 ## Rationale
 
