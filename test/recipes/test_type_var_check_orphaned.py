@@ -84,8 +84,7 @@ class TestTypeVarCheckOrphaned:
     def test_removing_orphaned_declaration_keeps_comment_shared_with_next_declaration(
         self, create_type_var_check: Callable[[str], TypeVarCheck],
     ) -> None:
-        # T's leading comment also documents U, declared right after it with no comment of its
-        # own - it must not be treated as belonging solely to the removed T declaration.
+        """Removing an orphaned declaration keeps a leading comment that also documents the next declaration."""
         subject = create_type_var_check("""
             from typing import TypeVar
 
@@ -106,8 +105,7 @@ class TestTypeVarCheckOrphaned:
     def test_does_not_remove_orphaned_declaration_imported_elsewhere_in_project(
         self, create_type_var_check: Callable[[str], TypeVarCheck],
     ) -> None:
-        # T is shadowed here (orphaned locally), but another project file imports it directly
-        # from this module - removing it would break that import, __all__ or not.
+        """An orphaned declaration imported directly by another project file is reported unsafe and kept."""
         subject = create_type_var_check("""
             from typing import TypeVar
             T = TypeVar('T')
