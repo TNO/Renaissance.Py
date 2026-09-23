@@ -259,8 +259,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     if target.is_file() and target.suffix != ".py":
         parser.error(f"not a Python file: {target}")
 
-    # Absolute, so file paths match the keys collect_project_imported_names returns.
-    target = target.absolute()
+    # Absolute and normalized, so file paths match the keys collect_project_imported_names returns.
+    target = target.resolve()
     files = resolve_target_files(target)
     project_root = target if target.is_dir() else target.parent
     # TODO: computed once upfront, so an origin whose importers all get localized this run is only converted on a second run.
@@ -276,7 +276,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             project_wide_imported_names=project_wide_imported_names,
         )
         reports.append(report)
-        print(f"{path} reviewed.")
+        print(f"File {path} checked.")
 
     modified_paths = [report.path for report in reports if has_fixed(report)]
     if modified_paths:
