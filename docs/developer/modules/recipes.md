@@ -157,8 +157,8 @@ below `TypeVarCheck`'s (PEP 646 landed a release before PEP 695), not raised to 
 - `test/utils/test_unparse_utils.py` - the bracket-splice mechanism itself (`unparse_signature_only` and its
   helpers), independent of the recipe.
 - `test/utils/test_import_resolution.py` - `resolve_project_module`/`collect_project_imported_names` in
-  isolation (absolute/relative import resolution, package `__init__.py` fallback, stdlib imports correctly
-  excluded).
+  isolation (absolute/relative import resolution, package `__init__.py` fallback, names read as attributes of
+  an imported project module, stdlib imports correctly excluded).
 
 ## Extension points
 
