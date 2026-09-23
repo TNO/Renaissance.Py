@@ -10,8 +10,9 @@ Modernizes legacy `TypeVar`/`ParamSpec`/`TypeVarTuple` usage in a Python file en
 covering both what `ruff`'s `UP047` rule only offers as a separate, unsafe fix and a gap it doesn't detect or
 clean up at all:
 
-1. **Cross-file import localization.** A type parameter imported from a sibling module
-   (`from other_module import T`) is invisible to `ruff`'s `UP047` rule, which only looks at declarations in the
+1. **Cross-file import localization.** A type parameter imported from another module in the target project
+   (`from pkg.other_module import T`, `from .other_module import T`) is invisible to `ruff`'s `UP047` rule, which
+   only looks at declarations in the
    same file. Where safe, the recipe rewrites the import into an equivalent local declaration.
 2. **Conversion to PEP 695 syntax.** Every declared `TypeVar`/`ParamSpec`/`TypeVarTuple` is rewritten to
    [PEP 695](https://peps.python.org/pep-0695/) generic syntax (`def f[T](...)`) across every function that uses
@@ -71,8 +72,9 @@ refactored and checks its `requires-python`; if the lowest version that specifie
 `"unsafe"` and left untouched, the same conservative treatment as any other unsafe candidate. Cross-file
 localization (phase 1) is unaffected by this check and always runs, since it never introduces PEP 695 syntax.
 
-The cross-file phase only resolves simple, same-directory sibling imports (`from module_name import T`);
-dotted/package imports are silently out of scope, not reported unsafe.
+The cross-file phase resolves absolute and relative imports against the target directory passed to the CLI.
+Imports that don't resolve to a file inside it (stdlib, third-party, re-exports through an intermediate
+`__init__.py`, namespace packages) are silently out of scope, not reported unsafe.
 
 **To fix this yourself:** if the project actually supports 3.12+, fix `requires-python` in `pyproject.toml` (or
 pass `--min-python 3.12` to override detection for a one-off run), then re-run - the recipe picks these
@@ -171,7 +173,7 @@ untouched.
 3.11` for a one-off run) and re-run - same fix as the PEP 695 gate above, just at the lower threshold.
 
 `TypeVarTupleCheck` only recognizes a **module-level** `T = TypeVarTuple(...)` declaration in the same file -
-  not one imported from a sibling module. When both recipes run together (the CLI below), `TypeVarTupleCheck`
+  not one imported from another module. When both recipes run together (the CLI below), `TypeVarTupleCheck`
   runs first specifically so the common case (a TypeVarTuple declared and used via `Unpack[T]` in the same file)
   composes correctly - `TypeVarCheck` removes a converted declaration once it PEP-695-converts it, and
   `TypeVarTupleCheck` needs that declaration to still be present to find the usage. One narrower case doesn't
@@ -236,8 +238,8 @@ excluded). Run with `--help` for the full flag reference.
 
 - Supporting a future type-parameter-declaring construct means extending `_is_type_param_call` and
   `build_type_param` in `type_var_domain.py` together.
-- The cross-file phase only resolves same-directory imports; supporting package-qualified imports would need
-  `resolve_sibling_module` (also in `type_var_domain.py`) to handle dotted module names.
+- Following re-exports through an intermediate `__init__.py`, or supporting namespace packages (PEP 420), means
+  extending `resolve_project_module` in `renaissance/utils/import_resolution.py`.
 - The version gate (see Constraints above) only recognises versions in a known list (3.8 through 3.14, see
   `KNOWN_PYTHON_VERSIONS` in `renaissance/utils/python_version.py`); extending it to a new Python release means
   adding that release to the list.
