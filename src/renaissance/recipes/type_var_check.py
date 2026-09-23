@@ -48,15 +48,10 @@ class TypeVarCheck(PythonRefactoring):
     # instead - mirrors how `in_memory` is set on the base class after construction.
     min_python_override: tuple[int, int] | None = None
 
-    # Set directly (e.g. in a test, or by the CLI after scanning the whole target project) -
-    # names another file in the target project imports directly from this file, even without
-    # __all__. See renaissance.utils.import_resolution.collect_project_imported_names.
+    # Names other files in the target project import directly from this file; never removed.
     project_wide_imported_names: frozenset[str] = frozenset()
 
-    # The target project's root directory, for resolving absolute/relative imports project-wide
-    # in localize_imported_typevars (see renaissance.utils.import_resolution.resolve_project_module).
-    # Defaults to this file's own directory when unset, which limits resolution to same-directory
-    # siblings - matches this recipe's behaviour before project-wide resolution existed.
+    # Root that absolute imports resolve from; None falls back to this file's own directory.
     project_root: Path | None = None
 
     def run(self) -> None:
@@ -187,9 +182,8 @@ class TypeVarCheck(PythonRefactoring):
     def localize_imported_typevars(self) -> dict[str, str]:
         """Find TypeVar/ParamSpec/TypeVarTuple names imported from anywhere in the target project.
 
-        Resolved via resolve_project_module (absolute or relative, any directory under
-        project_root - see that field's own docstring for the same-directory fallback when unset).
-        Where safe (see is_safe_to_localize), rewrites the import into an equivalent local
+        Absolute and relative imports are resolved against project_root. Where safe (see
+        is_safe_to_localize), rewrites the import into an equivalent local
         declaration. Returns {name: "fixed" | "unsafe"} for every candidate found; the specific
         UnsafeReason behind each "unsafe" entry is recorded on self.cross_file_unsafe_reasons.
         """
