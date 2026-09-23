@@ -15,6 +15,7 @@ class TestTypeVarCheckLocalize:
     """See module docstring."""
 
     def _create_cross_file(self, mocker: MockerFixture, tmp_path: Path, origin_text: str, importing_text: str) -> TypeVarCheck:
+        """Write origin_text to file_1.py and return an in-memory TypeVarCheck on file_2.py holding importing_text."""
         (tmp_path / "file_1.py").write_text(textwrap.dedent(origin_text))
 
         importing_code = textwrap.dedent(importing_text)
@@ -201,8 +202,7 @@ class TestTypeVarCheckLocalize:
         assert_that(output.count("from typing import TypeVar"), is_(1))
 
     def test_localizes_project_wide_import_from_different_directory(self, mocker: MockerFixture, tmp_path: Path) -> None:
-        # file_1.py lives at the project root; the importing file lives one directory down -
-        # resolve_sibling_module (same-directory only) could never find this, resolve_project_module can.
+        """A TypeVar imported from a module in a parent directory is localized when project_root is set."""
         (tmp_path / "file_1.py").write_text(
             textwrap.dedent("""
             from typing import TypeVar

@@ -42,7 +42,8 @@ class TestResolveProjectModule:
         level: int,
         expected_rel: str | None,
     ) -> None:
-        importing_file = project_tree / importing_file_rel
+        """Absolute, relative and package imports resolve to their project file, or None outside the project."""
+        importing_file =project_tree / importing_file_rel
         expected = project_tree / expected_rel if expected_rel is not None else None
         assert_that(resolve_project_module(importing_file, project_tree, module, level), is_(expected))
 
@@ -51,11 +52,13 @@ class TestCollectProjectImportedNames:
     """See module docstring."""
 
     def test_maps_absolute_import_to_origin_file(self, project_tree: Path) -> None:
+        """A name imported by one file is recorded against the file it is imported from."""
         files = [project_tree / "redis" / "typing.py", project_tree / "redis" / "commands" / "core.py"]
         result = collect_project_imported_names(files, project_tree)
         assert_that(result, has_entry(project_tree / "redis" / "typing.py", frozenset({"AnyKeyT"})))
 
     def test_records_original_name_not_alias(self, tmp_path: Path) -> None:
+        """An aliased import is recorded under the name declared in the origin module."""
         (tmp_path / "origin.py").write_text("X = 1\n")
         (tmp_path / "consumer.py").write_text("from origin import X as Z\n")
         files = [tmp_path / "origin.py", tmp_path / "consumer.py"]
@@ -63,14 +66,14 @@ class TestCollectProjectImportedNames:
         assert_that(result, has_entry(tmp_path / "origin.py", frozenset({"X"})))
 
     def test_does_not_record_stdlib_import(self, tmp_path: Path) -> None:
+        """An import that doesn't resolve inside the project is not recorded."""
         (tmp_path / "consumer.py").write_text("from typing import TypeVar\n")
         files = [tmp_path / "consumer.py"]
         result = collect_project_imported_names(files, tmp_path)
         assert_that(result, is_({}))
 
     def test_unrelated_same_name_in_two_files_does_not_collide(self, tmp_path: Path) -> None:
-        # Two unrelated modules each declaring a local `T` must not be conflated - the map is
-        # keyed by resolved origin file, not by name alone.
+        """Two unrelated files declaring the same name, with no imports between them, record nothing."""
         (tmp_path / "a.py").write_text("T = 1\n")
         (tmp_path / "b.py").write_text("T = 2\n")
         files = [tmp_path / "a.py", tmp_path / "b.py"]
