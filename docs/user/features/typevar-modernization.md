@@ -147,14 +147,17 @@ A module without `__all__` is still Python-legal to import any of its top-level 
 `__all__` only governs `from module import *`, never `from module import specific_name`. So a declaration with
 no `__all__` isn't automatically "unused elsewhere": before converting or removing it, the CLI (see API entry
 points below) scans every file it was given for `from this_module import this_name`-shaped imports (absolute
-or relative, resolved to the actual file - see `renaissance.utils.import_resolution`) and treats any hit as
-`"unsafe"`, `IMPORTED_ELSEWHERE_IN_PROJECT`, regardless of `__all__`. Running the recipe on a single file in
+or relative, resolved to the actual file - see `renaissance.utils.import_resolution`), and for the name read as
+an attribute of the imported module (`import pkg.this_module` then `pkg.this_module.this_name`, or
+`from pkg import this_module` then `this_module.this_name`). Any hit is treated as `"unsafe"`,
+`IMPORTED_ELSEWHERE_IN_PROJECT`, regardless of `__all__`. A `from this_module import *` is not expanded, so a
+name it pulls in is not detected. Running the recipe on a single file in
 isolation (not via the CLI, or via the CLI on a lone file with no other files passed) has nothing to check
 against, so this constraint can only fire when the target is a directory scanned alongside the files that
 import from it.
 
 **To convert this yourself:** the report only names the candidate, not the importing file - grep the project
-for `from <this_module> import <name>` (absolute or relative) to find it. Once found, either update that
+for `from <this_module> import <name>` (absolute or relative) and `<this_module>.<name>` to find it. Once found, either update that
 importer in the same change to get `name` from wherever it ends up after conversion, or leave the module-level
 declaration as it is if the importer can't be updated alongside it - the same public-API trade-off as the
 `__all__` case above, just surfaced by a direct import instead of an explicit `__all__` entry.
