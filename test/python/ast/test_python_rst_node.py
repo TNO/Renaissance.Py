@@ -162,6 +162,7 @@ class Parent:
             PythonRstNode.load(Path(targets.__file__).parent / "invalid.py")
 
     def test_load_file_with_non_cp1252_bytes(self, mocker: MockerFixture, tmp_path: Path) -> None:
+        """A UTF-8 file with bytes undefined in cp1252 loads even when the locale default is cp1252."""
         # `Ё` (U+0401) encodes to UTF-8 bytes D0 81; 0x81 is undefined in cp1252, so reading this
         # file without an explicit UTF-8 encoding raises UnicodeDecodeError on Windows.
         file_path = tmp_path / "non_cp1252.py"
