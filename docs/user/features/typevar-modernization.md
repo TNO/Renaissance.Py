@@ -182,6 +182,12 @@ untouched.
   found nothing, since the declaration wasn't local yet). Re-running the CLI a second time picks it up, since
   every phase is idempotent.
 
+A declaration imported by other files in the target project is always kept at its origin during a run, even
+when every importer gets localized in that same run. A second CLI run converts it, once no file imports it anymore.
+
+Removing a declaration or an unused import leaves its surrounding blank lines behind, so a modified file can
+start with, or contain, extra blank lines. Run your formatter afterwards to tidy them up.
+
 ## Related concepts
 
 - [Type parameter scope](../concepts/type-parameter-scope.md)
