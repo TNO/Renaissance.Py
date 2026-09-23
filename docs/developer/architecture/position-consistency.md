@@ -113,11 +113,9 @@ the two sides can silently disagree, producing incorrect or corrupted output.
 ## Related code
 
 ## Notes
-* [GCC diagnostics docs](https://gcc.gnu.org/onlinedocs/gcc/Diagnostic-Message-Formatting-Options.html) that mentions the formats of location information: `file:line` or `file:line:column`.
-* [Clang diagnostics docs](https://clang.llvm.org/docs/UsersManual.html#diagnostics) that that mentions the formats of location and range information, and explicitly states:
-`The printed column numbers count bytes from the beginning of the line; take care if your source contains multibyte characters.`.
-* [Language-Server-Protocol's specification of location/position in text.](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.19/specification/#position)
-It mentions that the character offset is expressed in code units, and a character can be represented by multiple code units.
-Furthermore, it mentions the challenge of consistent line splitting with multiple possible end-of-line sequences. 
-* [Language-Server-Protocol's specification of range in text.](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.19/specification/#range)
+* [GCC diagnostics docs](https://gcc.gnu.org/onlinedocs/gcc/Diagnostic-Message-Formatting-Options.html) show a widely used, but de facto, location format such as `file:line` or `file:line:column`. This is a practical convention used by compiler tooling, not a single universal formal standard.
+* [Clang diagnostics docs](https://clang.llvm.org/docs/UsersManual.html#diagnostics) also use location and range formats in a compiler-style convention and explicitly state that column numbers may be counted in bytes from the beginning of the line. This illustrates why position semantics depend on the underlying text model and encoding, especially when multibyte characters are present.
+* [Language Server Protocol position specification](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.19/specification/#position) defines positions as `line` and `character` in a text model, with `character` expressed in the document's chosen indexing unit (for example, UTF-16 code units in many client implementations). This makes the point that a single file location may be represented differently across tools, editors, and parsers.
+* [Language Server Protocol range specification](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.19/specification/#range) formalizes the relationship between ranges and text positions, including the need to handle line splitting and end-of-line conventions consistently.
+* These examples reinforce the core design decision of this document: positions must be treated as bound to the exact buffer and text representation used by the parser, rather than assumed to be a universal byte-based or character-based convention.
 
