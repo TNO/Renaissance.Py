@@ -114,16 +114,22 @@ the two sides can silently disagree, producing incorrect or corrupted output.
 
 ## Notes
 
+* [Casey Muratori argues that byte positions are better than line numbers.](https://www.computerenhance.com/p/byte-positions-are-better-than-line)
 * [GCC diagnostics docs](https://gcc.gnu.org/onlinedocs/gcc/Diagnostic-Message-Formatting-Options.html) show a widely used,
 but de facto, location format such as `file:line` or `file:line:column`.
+The location in a `file` is specified using the one-based `line` and one-based `column` offset.
 This is a practical convention used by compiler tooling, not a single universal formal standard.
+* [Visual Studio Code](https://github.com/microsoft/vscode/issues/196067)
+also supports the location format `file::offset` that uses the one-based `offset`.
 * [Clang diagnostics docs](https://clang.llvm.org/docs/UsersManual.html#diagnostics) also use location and range formats
 in a compiler-style convention
-and explicitly state that column numbers may be counted in bytes from the beginning of the line.
+and explicitly state that column numbers are counted in bytes - not characters - from the beginning of the line.
 This illustrates why position semantics depend on the underlying text model and encoding, especially when multibyte characters are present.
 * [Language Server Protocol position specification](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.19/specification/#position)
-defines positions as `line` and `character` in a text model,
-with `character` expressed in the document's chosen indexing unit (for example, UTF-16 code units in many client implementations).
+defines locations in a text document using zero-based `line` and zero-based `character` offset.
+A location is between two characters like an `insert` cursor in an editor.
+The `character` offset is expressed in the document's chosen indexing unit.
+In particular, some characters are represented using multiple code units.
 This makes the point that a single file location may be represented differently across tools, editors, and parsers.
 * [Language Server Protocol range specification](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.19/specification/#range)
 formalizes the relationship between ranges and text positions, including the need to handle line splitting and end-of-line conventions consistently.
