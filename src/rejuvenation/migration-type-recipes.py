@@ -263,6 +263,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     target = target.absolute()
     files = resolve_target_files(target)
     project_root = target if target.is_dir() else target.parent
+    # TODO: computed once upfront, so an origin whose importers all get localized this run is only converted on a second run.
     imported_names_by_file = collect_project_imported_names(files, project_root)
 
     reports = []
@@ -279,6 +280,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     modified_paths = [report.path for report in reports if has_fixed(report)]
     if modified_paths:
+        # TODO: removed statements leave their blank lines behind; ruff's E303 (preview) collapses them, but not at file start.
         _run_ruff_unused_import_cleanup(modified_paths)
 
     console_report = _format_console_report(reports)
