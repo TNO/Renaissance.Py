@@ -174,16 +174,14 @@ below `TypeVarCheck`'s (PEP 646 landed a release before PEP 695), not raised to 
 
 ## Non-goals
 
-- Neither recipe resolves package-qualified or dotted-module imports for the cross-file *localization* phase
-  (`resolve_sibling_module`, same-directory only) - this is unrelated to, and unchanged by,
-  `resolve_project_module`'s project-wide resolution used for the removal-safety check above, which does
-  handle absolute and relative dotted imports.
+- `resolve_project_module` doesn't follow re-exports through an intermediate `__init__.py` or handle namespace
+  packages (PEP 420); such imports are skipped by both the localization phase and the removal-safety check.
 - The Python-version gates (`target_supports_pep695` and `target_supports_pep646`, both backed by
   `renaissance.utils.python_version`) only recognise `requires-python` specifiers matching a known, hardcoded
   list of versions (3.8-3.14) - an exotic specifier that matches none of them is treated as unknown, the same as
   a missing one, and blocks the rewrite.
 - `TypeVarTupleCheck` only finds a **module-level** `TypeVarTuple` declaration in the same file, never one
-  imported from a sibling module - unlike `TypeVarCheck`, it has no cross-file localization phase of its own.
+  imported from another module - unlike `TypeVarCheck`, it has no cross-file localization phase of its own.
   When both recipes run together (`migration-type-recipes.py`), running `TypeVarTupleCheck` first lets it catch
   the common case before `TypeVarCheck` converts and removes the declaration out from under it, but a
   cross-file-imported `TypeVarTuple` used via `Unpack[T]` still needs a second CLI run to localize first, then
