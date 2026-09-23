@@ -261,7 +261,9 @@ class TestConsoleReportDocLinks:
     """main(): each unsafe name printed under NEEDS MANUAL REVIEW links to its documented rule."""
 
     def test_needs_manual_review_includes_doc_link_for_the_specific_reason(
-        self, tmp_path: Path, capsys: pytest.CaptureFixture[str],
+        self,
+        tmp_path: Path,
+        capsys: pytest.CaptureFixture[str],
     ) -> None:
         """The report links a __all__-exported TypeVar to the DECLARED_TYPEVAR_EXPORTED rule."""
         target = tmp_path / "mod.py"
@@ -329,10 +331,7 @@ class TestMainProjectWideImportSafety:
     """
 
     def test_declaration_survives_when_another_file_imports_it(self, tmp_path: Path) -> None:
-        # consumer.py lives in a different directory than typing_mod.py deliberately - phase 1's
-        # own cross-file localization (resolve_sibling_module) only resolves same-directory
-        # imports, so it leaves this import alone, isolating this test to the project-wide
-        # removal-safety check under test (an absolute import, resolved from project_root).
+        """A TypeVar declaration imported by a file in another directory is kept at its origin."""
         (tmp_path / "typing_mod.py").write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
         sub = tmp_path / "sub"
         sub.mkdir()
