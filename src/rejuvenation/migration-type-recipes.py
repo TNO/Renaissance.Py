@@ -93,6 +93,7 @@ def process_file(
     path: Path,
     *,
     min_python: tuple[int, int] | None,
+    project_root: Path,
     project_wide_imported_names: frozenset[str],
 ) -> FileReport:
     """Run TypeVarTupleCheck then TypeVarCheck's phases against a single file, returning one FileReport.
@@ -117,6 +118,7 @@ def process_file(
         tv_recipe = TypeVarCheck(path)
         if min_python is not None:
             tv_recipe.min_python_override = min_python
+        tv_recipe.project_root = project_root
         tv_recipe.project_wide_imported_names = project_wide_imported_names
         typevar_result = run_steps(
             [
@@ -257,6 +259,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     if target.is_file() and target.suffix != ".py":
         parser.error(f"not a Python file: {target}")
 
+    # Absolute, so file paths match the keys collect_project_imported_names returns.
+    target = target.absolute()
     files = resolve_target_files(target)
     project_root = target if target.is_dir() else target.parent
     imported_names_by_file = collect_project_imported_names(files, project_root)
@@ -264,7 +268,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     reports = []
     for path in files:
         project_wide_imported_names = imported_names_by_file.get(path, frozenset())
-        report = process_file(path, min_python=args.min_python, project_wide_imported_names=project_wide_imported_names)
+        report = process_file(
+            path,
+            min_python=args.min_python,
+            project_root=project_root,
+            project_wide_imported_names=project_wide_imported_names,
+        )
         reports.append(report)
         print(f"{path} reviewed.")
 

@@ -134,7 +134,7 @@ class TestProcessFile:
         target = tmp_path / "mod.py"
         target.write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
 
-        report = migration.process_file(target, min_python=(3, 12), project_wide_imported_names=frozenset())
+        report = migration.process_file(target, min_python=(3, 12), project_root=tmp_path, project_wide_imported_names=frozenset())
 
         assert_that(migration.has_fixed(report), is_(True))
         assert_that(target.read_text(encoding="utf-8"), contains_string("def identity[T]"))
@@ -145,7 +145,7 @@ class TestProcessFile:
         target.write_text(UNSAFE_TYPEVAR_SOURCE, encoding="utf-8")
         original = target.read_text(encoding="utf-8")
 
-        report = migration.process_file(target, min_python=(3, 12), project_wide_imported_names=frozenset())
+        report = migration.process_file(target, min_python=(3, 12), project_root=tmp_path, project_wide_imported_names=frozenset())
 
         assert_that(migration.has_unsafe(report), is_(True))
         assert_that(target.read_text(encoding="utf-8"), equal_to(original))
@@ -155,7 +155,7 @@ class TestProcessFile:
         target = tmp_path / "mod.py"
         target.write_text(UNSAFE_TYPEVAR_SOURCE, encoding="utf-8")
 
-        report = migration.process_file(target, min_python=(3, 12), project_wide_imported_names=frozenset())
+        report = migration.process_file(target, min_python=(3, 12), project_root=tmp_path, project_wide_imported_names=frozenset())
 
         assert_that(report.reasons, is_not(None))
         assert_that(report.reasons["converted"], has_entry("T", UnsafeReason.DECLARED_TYPEVAR_EXPORTED))
@@ -165,7 +165,7 @@ class TestProcessFile:
         target = tmp_path / "mod.py"
         target.write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
 
-        report = migration.process_file(target, min_python=(3, 12), project_wide_imported_names=frozenset({"T"}))
+        report = migration.process_file(target, min_python=(3, 12), project_root=tmp_path, project_wide_imported_names=frozenset({"T"}))
 
         assert_that(migration.has_unsafe(report), is_(True))
         assert_that(report.reasons["converted"], has_entry("T", UnsafeReason.IMPORTED_ELSEWHERE_IN_PROJECT))
@@ -176,7 +176,7 @@ class TestProcessFile:
         target = tmp_path / "broken.py"
         target.write_text("def broken(:\n", encoding="utf-8")
 
-        report = migration.process_file(target, min_python=(3, 12), project_wide_imported_names=frozenset())
+        report = migration.process_file(target, min_python=(3, 12), project_root=tmp_path, project_wide_imported_names=frozenset())
 
         assert_that(report.error, is_not(None))
         assert_that(report.result, is_(None))
@@ -186,7 +186,7 @@ class TestProcessFile:
         target = tmp_path / "mod.py"
         target.write_text(TYPEVARTUPLE_SOURCE, encoding="utf-8")
 
-        report = migration.process_file(target, min_python=(3, 12), project_wide_imported_names=frozenset())
+        report = migration.process_file(target, min_python=(3, 12), project_root=tmp_path, project_wide_imported_names=frozenset())
 
         assert_that(migration.has_fixed(report), is_(True))
         output = target.read_text(encoding="utf-8")
@@ -323,45 +323,55 @@ class TestMainBatchErrorIsolation:
 
 
 class TestMainProjectWideImportSafety:
-    """main(): a declaration imported by another file in the batch is never removed.
-
-    Regression test for the real redis-py case (issue: AnyKeyT removed from typing.py while
-    commands/core.py, commands/cluster.py, and asyncio/cluster.py still imported it directly -
-    none of those files declare __all__, so the old __all__-only check missed it).
-    """
-
-    def test_declaration_survives_when_another_file_imports_it(self, tmp_path: Path) -> None:
-        """A TypeVar declaration imported by a file in another directory is kept at its origin."""
-        (tmp_path / "typing_mod.py").write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
-        sub = tmp_path / "sub"
-        sub.mkdir()
-        (sub / "consumer.py").write_text("from typing_mod import T\n\ndef use(x: T) -> T:\n    return x\n", encoding="utf-8")
-
-        exit_code = migration.main([str(tmp_path), "--min-python", "3.12"])
-
-        assert_that(exit_code, equal_to(0))
-        assert_that((tmp_path / "typing_mod.py").read_text(encoding="utf-8"), contains_string('T = TypeVar("T")'))
-        assert_that((sub / "consumer.py").read_text(encoding="utf-8"), contains_string("from typing_mod import T"))
+    """main(): a TypeVar imported by another file in the batch is localized there and kept at its origin."""
 
     @pytest.mark.parametrize(
-        "import_line",
+        ("consumer_rel", "import_line"),
         [
-            pytest.param("from pkg.typing_mod import T", id="absolute-dotted"),
-            pytest.param("from .typing_mod import T", id="relative"),
+            pytest.param("pkg/client.py", "from pkg.typing_mod import T", id="absolute-dotted"),
+            pytest.param("pkg/client.py", "from .typing_mod import T", id="relative"),
+            pytest.param("other/client.py", "from pkg.typing_mod import T", id="absolute-other-directory"),
         ],
     )
-    def test_consumer_import_is_localized_from_project_root(self, tmp_path: Path, import_line: str) -> None:
-        """A package-style import resolved from the target root is localized, while the origin declaration survives."""
+    def test_consumer_is_localized_and_origin_declaration_survives(
+        self,
+        tmp_path: Path,
+        consumer_rel: str,
+        import_line: str,
+    ) -> None:
+        """The importing file gets a PEP 695 local TypeVar, and the origin declaration is not removed."""
         pkg = tmp_path / "pkg"
         pkg.mkdir()
         (pkg / "__init__.py").write_text("", encoding="utf-8")
         (pkg / "typing_mod.py").write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
-        (pkg / "client.py").write_text(f"{import_line}\n\ndef use(x: T) -> T:\n    return x\n", encoding="utf-8")
+        consumer = tmp_path / consumer_rel
+        consumer.parent.mkdir(exist_ok=True)
+        consumer.write_text(f"{import_line}\n\ndef use(x: T) -> T:\n    return x\n", encoding="utf-8")
 
         exit_code = migration.main([str(tmp_path), "--min-python", "3.12"])
 
         assert_that(exit_code, equal_to(0))
-        client = (pkg / "client.py").read_text(encoding="utf-8")
-        assert_that(client, contains_string("def use[T](x: T) -> T:"))
-        assert_that(client, is_not(contains_string(import_line)))
+        consumer_text = consumer.read_text(encoding="utf-8")
+        assert_that(consumer_text, contains_string("def use[T](x: T) -> T:"))
+        assert_that(consumer_text, is_not(contains_string(import_line)))
         assert_that((pkg / "typing_mod.py").read_text(encoding="utf-8"), contains_string('T = TypeVar("T")'))
+
+    @pytest.mark.parametrize("target_arg", [pytest.param(".", id="dot"), pytest.param("pkg", id="subdirectory")])
+    def test_origin_declaration_survives_with_relative_target(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        target_arg: str,
+    ) -> None:
+        """A relative target path still protects a declaration imported by another file in the batch."""
+        pkg = tmp_path / "pkg"
+        pkg.mkdir()
+        (pkg / "typing_mod.py").write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
+        (pkg / "client.py").write_text("from .typing_mod import T\n\ndef use(x: T) -> T:\n    return x\n", encoding="utf-8")
+        monkeypatch.chdir(tmp_path)
+
+        exit_code = migration.main([target_arg, "--min-python", "3.12"])
+
+        assert_that(exit_code, equal_to(0))
+        assert_that((pkg / "typing_mod.py").read_text(encoding="utf-8"), contains_string('T = TypeVar("T")'))
+        assert_that((pkg / "client.py").read_text(encoding="utf-8"), contains_string("def use[T](x: T) -> T:"))
