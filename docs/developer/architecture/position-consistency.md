@@ -113,3 +113,11 @@ the two sides can silently disagree, producing incorrect or corrupted output.
 ## Related code
 
 ## Notes
+* [GCC diagnostics docs](https://gcc.gnu.org/onlinedocs/gcc/Diagnostic-Message-Formatting-Options.html) that mentions the formats of location information: `file:line` or `file:line:column`.
+* [Clang diagnostics docs](https://clang.llvm.org/docs/UsersManual.html#diagnostics) that that mentions the formats of location and range information, and explicitly states:
+`The printed column numbers count bytes from the beginning of the line; take care if your source contains multibyte characters.`.
+* [Language-Server-Protocol's specification of location/position in text.](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.19/specification/#position)
+It mentions that the character offset is expressed in code units, and a character can be represented by multiple code units.
+Furthermore, it mentions the challenge of consistent line splitting with multiple possible end-of-line sequences. 
+* [Language-Server-Protocol's specification of range in text.](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.19/specification/#range)
+
