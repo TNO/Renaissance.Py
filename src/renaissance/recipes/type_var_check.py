@@ -111,7 +111,7 @@ class TypeVarCheck(PythonRefactoring):
         # Collected here instead of replaced immediately: a function using 2+ converted type
         # params (e.g. TypeVar and ParamSpec) must get exactly one self.replace() covering all
         # of them - queuing one per name would target the same function node twice before a
-        # commit, which corrupts the output (see python-ast-known-limitations.md item 4).
+        # commit, which the rewriter rejects as conflicting.
         touched_functions: dict[int, ast.FunctionDef | ast.AsyncFunctionDef] = {}
         for name, functions in usage.items():
             decl_stmt = declarations[name]
