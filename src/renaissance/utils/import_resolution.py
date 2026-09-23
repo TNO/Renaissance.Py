@@ -22,10 +22,14 @@ def resolve_project_module(importing_file: Path, project_root: Path, module: str
     Tries `<path>.py` first, then `<path>/__init__.py` for a package-style import. Returns None
     if neither exists, or if resolution would walk above `project_root` - the common case for a
     stdlib/third-party import, which is exactly the signal used to exclude those as noise.
+    Relative input paths are made absolute first, so the returned path is always absolute.
 
     # TODO: doesn't follow re-exports through an intermediate __init__.py, or handle namespace
     # packages (no __init__.py, PEP 420) - out of scope for now.
     """
+    # A relative path can't walk above itself: Path("a.py").parent.parent is still Path(".").
+    importing_file = importing_file.absolute()
+    project_root = project_root.absolute()
     if level == 0:
         anchor = project_root
     else:
@@ -51,9 +55,8 @@ def collect_project_imported_names(files: Sequence[Path], project_root: Path) ->
     Parses every file's `ImportFrom` statements, resolves each via `resolve_project_module`, and
     records `alias.name` (the name as declared in the origin module, not `alias.asname`) against
     the resolved origin file - an aliased import still depends on the original name existing.
-    Imports that don't resolve inside `project_root` (stdlib/third-party) are skipped. A file that
-    can't be read or parsed is skipped for that file only, matching `migration-type-recipes.py`'s
-    own isolate-one-bad-file policy.
+    Imports that don't resolve inside `project_root` (stdlib/third-party) are skipped, as is any
+    file that can't be read or parsed.
     """
     imported: dict[Path, set[str]] = {}
     for file in files:
