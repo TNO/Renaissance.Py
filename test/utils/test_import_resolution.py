@@ -1,6 +1,6 @@
 """Tests for renaissance.utils.import_resolution."""
 
-from pathlib import Path  # noqa: TC003 - no circular-import risk, not worth a TYPE_CHECKING block here
+from pathlib import Path
 
 import pytest
 from hamcrest import assert_that, has_entry, is_
@@ -46,6 +46,27 @@ class TestResolveProjectModule:
         importing_file =project_tree / importing_file_rel
         expected = project_tree / expected_rel if expected_rel is not None else None
         assert_that(resolve_project_module(importing_file, project_tree, module, level), is_(expected))
+
+    @pytest.mark.parametrize(
+        ("module", "level"),
+        [
+            pytest.param("sibling", 2, id="parent-module"),
+            pytest.param(None, 2, id="parent-package"),
+        ],
+    )
+    def test_relative_import_above_relative_root_is_none(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        module: str | None,
+        level: int,
+    ) -> None:
+        """A relative import walking above a relative project root (".") resolves to None."""
+        (tmp_path / "sibling.py").write_text("X = 1\n")
+        (tmp_path / "__init__.py").write_text("")
+        monkeypatch.chdir(tmp_path)
+
+        assert_that(resolve_project_module(Path("top.py"), Path(), module, level), is_(None))
 
 
 class TestCollectProjectImportedNames:
