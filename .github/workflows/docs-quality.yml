@@ -29,3 +29,16 @@ jobs:
         run: uv run codespell ./docs
       - name: Lint markdown
         run: uv run pymarkdown scan -r ./docs
+
+  ci-passed:
+    name: Docs CI passed
+    if: always()
+    needs: [docs]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check docs result
+        run: |
+          if [ "${{ needs.docs.result }}" != "success" ]; then
+            echo "docs job failed or was cancelled"
+            exit 1
+          fi

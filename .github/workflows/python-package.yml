@@ -100,3 +100,16 @@ jobs:
     - name: Deploy coverage report to GitHub Pages
       id: deployment
       uses: actions/deploy-pages@v5.0.1
+
+  ci-passed:
+    name: CI passed
+    if: always()
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check build result
+        run: |
+          if [ "${{ needs.build.result }}" != "success" ]; then
+            echo "build job failed or was cancelled"
+            exit 1
+          fi
