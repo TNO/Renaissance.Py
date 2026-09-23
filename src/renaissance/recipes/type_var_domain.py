@@ -217,8 +217,7 @@ def is_safe_to_convert(
 
     Otherwise returns the reason it isn't: DECLARED_TYPEVAR_EXPORTED if exported via `__all__`,
     IMPORTED_ELSEWHERE_IN_PROJECT if `name` is in `project_wide_imported_names` (another file in
-    the target project imports it directly, regardless of `__all__` - see
-    renaissance.utils.import_resolution.collect_project_imported_names), or
+    the target project imports it directly, regardless of `__all__`), or
     USED_OUTSIDE_FUNCTION if referenced anywhere outside the functions using it.
     """
     dunder_all = _find_dunder_all(tree)
