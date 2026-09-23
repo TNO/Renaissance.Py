@@ -342,3 +342,26 @@ class TestMainProjectWideImportSafety:
         assert_that(exit_code, equal_to(0))
         assert_that((tmp_path / "typing_mod.py").read_text(encoding="utf-8"), contains_string('T = TypeVar("T")'))
         assert_that((sub / "consumer.py").read_text(encoding="utf-8"), contains_string("from typing_mod import T"))
+
+    @pytest.mark.parametrize(
+        "import_line",
+        [
+            pytest.param("from pkg.typing_mod import T", id="absolute-dotted"),
+            pytest.param("from .typing_mod import T", id="relative"),
+        ],
+    )
+    def test_consumer_import_is_localized_from_project_root(self, tmp_path: Path, import_line: str) -> None:
+        """A package-style import resolved from the target root is localized, while the origin declaration survives."""
+        pkg = tmp_path / "pkg"
+        pkg.mkdir()
+        (pkg / "__init__.py").write_text("", encoding="utf-8")
+        (pkg / "typing_mod.py").write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
+        (pkg / "client.py").write_text(f"{import_line}\n\ndef use(x: T) -> T:\n    return x\n", encoding="utf-8")
+
+        exit_code = migration.main([str(tmp_path), "--min-python", "3.12"])
+
+        assert_that(exit_code, equal_to(0))
+        client = (pkg / "client.py").read_text(encoding="utf-8")
+        assert_that(client, contains_string("def use[T](x: T) -> T:"))
+        assert_that(client, is_not(contains_string(import_line)))
+        assert_that((pkg / "typing_mod.py").read_text(encoding="utf-8"), contains_string('T = TypeVar("T")'))
