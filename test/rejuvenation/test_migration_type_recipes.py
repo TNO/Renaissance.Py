@@ -301,6 +301,18 @@ class TestPerFileProgressFeedback:
         assert_that(output, contains_string(f"File {good} checked."))
         assert_that(output, contains_string(f"File {broken} checked."))
 
+    def test_progress_line_path_has_no_parent_segments(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+        """A target containing `..` is normalized before its files are reported."""
+        good = tmp_path / "good.py"
+        good.write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
+        (tmp_path / "sub").mkdir()
+
+        migration.main([str(tmp_path / "sub" / ".."), "--min-python", "3.12"])
+
+        output = capsys.readouterr().out
+        assert_that(output, contains_string(f"File {good} checked."))
+        assert_that(output, is_not(contains_string("..")))
+
 
 class TestMainBatchErrorIsolation:
     """main(): one bad file in a batch must not abort processing of the rest."""
@@ -375,3 +387,25 @@ class TestMainProjectWideImportSafety:
         assert_that(exit_code, equal_to(0))
         assert_that((pkg / "typing_mod.py").read_text(encoding="utf-8"), contains_string('T = TypeVar("T")'))
         assert_that((pkg / "client.py").read_text(encoding="utf-8"), contains_string("def use[T](x: T) -> T:"))
+
+    @pytest.mark.parametrize(
+        "consumer_source",
+        [
+            pytest.param("import pkg.typing_mod\n\ndef use(x: pkg.typing_mod.T) -> None: ...\n", id="import-dotted"),
+            pytest.param("import pkg.typing_mod as tm\n\ndef use(x: tm.T) -> None: ...\n", id="import-as"),
+            pytest.param("from pkg import typing_mod\n\ndef use(x: typing_mod.T) -> None: ...\n", id="from-package"),
+            pytest.param("from . import typing_mod\n\ndef use(x: typing_mod.T) -> None: ...\n", id="from-relative"),
+        ],
+    )
+    def test_origin_declaration_survives_module_attribute_access(self, tmp_path: Path, consumer_source: str) -> None:
+        """A TypeVar accessed as a module attribute by another file is kept at its origin."""
+        pkg = tmp_path / "pkg"
+        pkg.mkdir()
+        (pkg / "__init__.py").write_text("", encoding="utf-8")
+        (pkg / "typing_mod.py").write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
+        (pkg / "client.py").write_text(consumer_source, encoding="utf-8")
+
+        exit_code = migration.main([str(tmp_path), "--min-python", "3.12"])
+
+        assert_that(exit_code, equal_to(0))
+        assert_that((pkg / "typing_mod.py").read_text(encoding="utf-8"), contains_string('T = TypeVar("T")'))
