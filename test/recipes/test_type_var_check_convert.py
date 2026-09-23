@@ -248,8 +248,7 @@ class TestTypeVarCheckConvert:
         assert_that(subject.apply_to_string(), contains_string('T = TypeVar("T")'))
 
     def test_does_not_convert_typevar_imported_elsewhere_in_project(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
-        # No __all__ - but another project file imports T directly, so removing the
-        # declaration would still break that import even though it's not "exported" by name.
+        """A TypeVar imported directly by another project file is reported unsafe and not converted, even without __all__."""
         subject = create_type_var_check("""
             from typing import TypeVar
 
