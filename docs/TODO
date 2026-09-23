@@ -20,13 +20,6 @@
 
 9. **analysis.md** — Near-empty. Should describe the analysis-only recipe pattern (using `apply` without any `replace`/`remove`), and distinguish it from transformation recipes.
 
-21. **python-ast-known-limitations.md** — page exists, covers two limitations with no other tracker anywhere:
-    `TextUtils.shift_right`/`ast.unparse()` losing comments and indentation (permanent), and the
-    dominance/suppression tautology in `__is_ancestor_in_nodes`. A related `TypeVarCheck`-specific design
-    trade-off - whole-function replacement reformatting the entire body, not just the changed signature - is
-    tracked in `typevar-modernization.md`'s Change considerations instead, since it's a recipe choice, not a
-    framework bug.
-
 ### Features documented in Java but absent in Python docs
 
 10. **`findLinked` and `findInSameATU`** (add to find.md) — Java documents a linked-find mechanism: `findLinked(pattern, "$placeholder")` constrains a subsequent search to the same analysis unit as the preceding match, using a shared placeholder as the correlation key. `findInSameATU` is the variant without a placeholder key.
