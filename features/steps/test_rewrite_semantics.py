@@ -524,7 +524,7 @@ def when_surround_second_sibling(context: dict, before: str, after: str) -> None
 @then("applying the changes raises an error")
 def then_applying_raises_error(context: dict) -> None:
     """AI: Assert that applying the collected rewrites raises an error."""
-    with pytest.raises(Exception):
+    with pytest.raises(ValueError, match="Conflicting rewrites"):
         context["rewriter"].apply_to_string()
 
 
