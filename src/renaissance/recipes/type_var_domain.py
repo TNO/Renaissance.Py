@@ -165,14 +165,8 @@ def functions_using_nodes(
     """Map each of `names` to the outermost function/method node whose signature or body references it.
 
     A name referenced inside a nested function (a closure) is attributed to the *outermost*
-    function in its nesting chain, never the nested one - a PEP 695 type parameter declared on an
-    enclosing function is already visible inside a nested closure the same way any other name in
-    an enclosing scope is, so the nested function must never be treated as an independent user
-    needing its own (shadowing) declaration. Getting this wrong doubled up as two bugs at once:
-    semantically pointless shadowing declarations, and - combined with the still-open rewrite
-    dominance/suppression gap - genuinely corrupted output, confirmed live against
-    `starlette/starlette/authentication.py`'s `requires()` and its nested `*_wrapper` closures.
-    See python-ast-known-limitations.md item 2.
+    function in its nesting chain, never the nested one: a PEP 695 type parameter declared on the
+    enclosing function is already visible inside its closures.
     """
     usage: dict[str, list[ast.FunctionDef | ast.AsyncFunctionDef]] = {name: [] for name in names}
 
