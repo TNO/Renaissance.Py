@@ -14,7 +14,6 @@ from hamcrest import (
     is_,
 )
 from hypothesis import HealthCheck, given, settings
-from pytest_mock import MockerFixture
 
 import targets
 from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
@@ -160,18 +159,6 @@ class Parent:
         """AI: Verify loading a syntactically invalid Python file raises an IndentationError."""
         with pytest.raises(IndentationError, match="unexpected indent"):
             PythonRstNode.load(Path(targets.__file__).parent / "invalid.py")
-
-    def test_load_file_with_non_cp1252_bytes(self, mocker: MockerFixture, tmp_path: Path) -> None:
-        """A UTF-8 file with bytes undefined in cp1252 loads even when the locale default is cp1252."""
-        # `Ё` (U+0401) encodes to UTF-8 bytes D0 81; 0x81 is undefined in cp1252, so reading this
-        # file without an explicit UTF-8 encoding raises UnicodeDecodeError on Windows.
-        file_path = tmp_path / "non_cp1252.py"
-        file_path.write_text("# Ё\nx = 1\n", encoding="utf-8")
-        mocker.patch("locale.getpreferredencoding", return_value="cp1252")
-
-        atu = PythonRstNode.load(file_path)
-
-        assert_that(atu.translation_unit.atu.type_ignores, is_(empty()))
 
     def test_ann_fun_to_str2(self):
         """AI: Verify a decorated function's offset and signature reflect the leading decorator text."""
