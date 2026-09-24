@@ -6,9 +6,9 @@
 
 ## Purpose
 
-Explains the mechanism every version-gated recipe shares for deciding whether a rewrite is safe to apply: find
-the target codebase's minimum declared Python version, and only rewrite when that minimum meets the specific
-syntax feature's own threshold - never a guess.
+Explains the mechanism every version-gated recipe shares for deciding whether a rewrite is safe to apply: take
+the target codebase's minimum supported Python version as given by the user, and only rewrite when that minimum
+meets the specific syntax feature's own threshold - never a guess.
 
 ## Scope
 
@@ -22,24 +22,18 @@ recipes use this today:
 
 ## Definition
 
-Each gate is a small `target_supports_<pep>(file_path)` function (`type_var_check.py`'s `target_supports_pep695`,
-`type_var_tuple_check.py`'s `target_supports_pep646`) that:
+Each version-gated recipe has a `min_python` attribute (`tuple[int, int] | None`, default `None`) holding the
+target codebase's minimum supported Python version. The tool never detects it: `migration-type-recipes.py`
+requires it through its `--py MAJOR.MINOR` flag and sets it on every recipe it runs; tests set it directly.
 
-1. Calls `renaissance.utils.python_version.minimum_python_version(file_path)`, which finds the nearest
-   `pyproject.toml` above `file_path` and parses its `requires-python` specifier down to the lowest version it
-   allows.
-2. Compares that minimum against the feature's own threshold (`PEP_695_MINIMUM = (3, 12)` /
-   `PEP_646_MINIMUM = (3, 11)`).
-3. Returns `True` only if a minimum was found *and* it meets the threshold.
-
-A recipe instance can also set `min_python_override` directly (a class attribute, e.g. `recipe.min_python_override
-= (3, 12)`) to skip the `pyproject.toml` lookup entirely - used by tests, and by `migration-type-recipes.py`'s
-`--min-python MAJOR.MINOR` flag to let a user override the detected minimum from the CLI.
+Each gate (`TypeVarCheck._target_supports_pep695()`, `TypeVarTupleCheck._target_supports_pep646()`) returns
+`True` only if `min_python` is set *and* meets the feature's own threshold (`PEP_695_MINIMUM = (3, 12)` /
+`PEP_646_MINIMUM = (3, 11)`).
 
 ## Invariants / guarantees
 
-- **Conservative by design.** No `pyproject.toml`, a missing or unparsable `requires-python`, or a minimum below
-  the threshold all produce the same result: `False`. An unknown minimum is never treated as safe - the syntax
+- **Conservative by design.** An unknown `min_python` (a recipe run without it being set) and a minimum below
+  the threshold both produce the same result: `False`. An unknown minimum is never treated as safe - the syntax
   each of these gates protects is a hard `SyntaxError` on an older interpreter, so guessing wrong isn't a
   cosmetic mistake, it's a codebase the recipe would break outright.
 - Two recipes can use two different thresholds independently and correctly in the same CLI run, each compared
@@ -53,9 +47,9 @@ A recipe instance can also set `min_python_override` directly (a class attribute
 
 ## Related code
 
-- `renaissance/utils/python_version.py` (`minimum_python_version`, `KNOWN_PYTHON_VERSIONS`)
-- `renaissance/recipes/type_var_check.py` (`target_supports_pep695`, `PEP_695_MINIMUM`)
-- `renaissance/recipes/type_var_tuple_check.py` (`target_supports_pep646`, `PEP_646_MINIMUM`)
+- `rejuvenation/migration-type-recipes.py` (the `--py` flag)
+- `renaissance/recipes/type_var_check.py` (`min_python`, `_target_supports_pep695`, `PEP_695_MINIMUM`)
+- `renaissance/recipes/type_var_tuple_check.py` (`min_python`, `_target_supports_pep646`, `PEP_646_MINIMUM`)
 
 ## Notes
 
