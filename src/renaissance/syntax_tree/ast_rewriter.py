@@ -248,18 +248,19 @@ class _RewriteActions:
         return self.apply().decode(self.encoding)
 
     def __check_for_conflicting_rewrites(self) -> None:
-        """Raise if two different queued rewrites target overlapping source ranges.
+        """Raise if two queued replace/remove rewrites target overlapping source ranges.
 
-        Applying both would silently corrupt the output (concatenated/garbled text) instead of
-        erroring - __is_ancestor_in_nodes's nested-rewrite skip doesn't cover this case, since
-        it's for a rewrite nested *inside* another rewrite's node, not two rewrites on the same
-        or sibling-overlapping range.
+        Insert rewrites are ignored: they only add text before or after a node without
+        overwriting it, so they can be combined with any other rewrite. A node nested inside
+        another rewritten node is not treated as overlapping.
 
         TODO: this only turns silent corruption into a clear error - it doesn't merge
         conflicting rewrites into a correct result. Recipes must still avoid queuing more than
         one rewrite per node/range before a commit.
         """
-        all_nodes = [(rewrite, node) for rewrite in self.rewrites for node in rewrite.nodes if node != self.node]
+        # INSERT_BEFORE/AFTER can work with each other and with REPLACE/REMOVE
+        replacing = [r for r in self.rewrites if r.action in (_RewriteActionType.REPLACE, _RewriteActionType.REMOVE)]
+        all_nodes = [(rewrite, node) for rewrite in replacing for node in rewrite.nodes if node != self.node]
         for i, (rewrite_a, node_a) in enumerate(all_nodes):
             for rewrite_b, node_b in all_nodes[i + 1 :]:
                 if rewrite_a is rewrite_b or self.__is_nested(node_a, node_b) or self.__is_nested(node_b, node_a):
