@@ -131,6 +131,8 @@ class PythonRefactoring(ASTProcessor):
         E.g. after mutating an ast.FunctionDef in place, this finds the RST node to pass to
         self.replace().
         """
+        # TODO: Drop once recipes can navigate wrapper nodes via the unified node protocol?
+        # 24-09 discussion over future Node Protocol implementation
         found: list[Any] = []
 
         def visit(node: Any) -> None:
