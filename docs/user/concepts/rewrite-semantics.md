@@ -6,28 +6,49 @@
 
 ## Purpose
 
-Define predictable and understandable semantics for collected and committed changes.
+Define deterministic semantics of collecting and committing changes.
 
-## Kind of changes
+## Scope
 
-We distinguish two kinds of changes: Replacements and insertions.
+This concept covers the collection and combination of change operations.
+These change operations can have two views on the code:
+code can be viewed as a sequence of characters or as an abstract syntax tree.
+This concept describes both the commonalities between the views and
+the combination of the changes within the different views.
 
-Each replacement affects a range within the original text.
-In AST-based pattern matching that range of text corresponds to either an AST node or a sequence of consecutive sibling nodes.
+## Change process
+
+The change process consists of the following steps:
+
+1. Given the view, interpret the code,
+1. collect changes in that view, and
+1. commit changes to produce the final text.
+
+## Unit of view
+
+The two views have different units:
+The unit of character-based changes is a character.
+The unit of AST-based changes is an AST node.
+
+A change operator acts on zero or more consecutive units.
+In particular, a character-based operator acts on consecutive characters and
+an AST-based change operator acts on consecutive AST nodes, i.e., adjacent sibling nodes.
+
+All consecutive units correspond to a range of text in the original code.
+For zero consecutive units this text range is empty, but it has a well-defined location.
+For instance, the empty parameter list of a function definition denotes zero AST nodes,
+located between the brackets.
+
+## Kinds of changes
+
+We distinguish two kinds of changes: replacements and insertions.
+
+Each replacement substitutes zero or more consecutive units with some text.
 A removal is `just` a replacement with an empty string.
 
-Each insertion relates to a location in the original text.
-In AST-based pattern matching that location of text corresponds to either the start location or the end location of an AST node.
-Three kind of insertions are supported, i.e., prepend, append, and around,
-that insert text at the start, end, and both locations of the AST node.
-
-## Rewrite step
-
-Each rewrite step consists of the following, sequential steps:
-
-1. parse code,
-1. collect changes, and
-1. commit changes.
+Each insertion add text related to zero or more consecutive units.
+Three kinds of insertions are supported, i.e., prepend, append, and surround,
+that insert text at the start, end, and both locations of the consecutive units.
 
 ## Particular combinations
 
