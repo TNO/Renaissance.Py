@@ -39,7 +39,7 @@ cleanup actually runs.
 
 ## Inputs
 
-A single Python source file, passed by path.
+A Python file or directory, and the target project's minimum supported Python version (`--py`).
 
 ## Outputs / effects
 
@@ -66,18 +66,17 @@ explains it, rather than a generic "couldn't convert" message.
 { #feature-typevar-modernization-pep695-version-gate }
 
 [PEP 695](https://peps.python.org/pep-0695/) generic syntax (`def f[T](...)`) did not exist before Python 3.12
-(released October 2023). Before rewriting, the recipe checks the minimum Python version passed with `--py`; if
-it is below 3.12 (or unknown, when the recipe is run without the CLI and `min_python` is never set), every
-candidate is reported `"unsafe"` and left untouched, the same conservative treatment as any other unsafe candidate. Cross-file
-localization (phase 1) is unaffected by this check and always runs, since it never introduces PEP 695 syntax.
+(released October 2023). If the minimum Python version passed with `--py` is below 3.12, every candidate is
+reported `"unsafe"` and left untouched. Cross-file localization (phase 1) always runs, since it never introduces
+PEP 695 syntax.
 
 The cross-file phase resolves absolute and relative imports against the target directory passed to the CLI.
 Imports that don't resolve to a file inside it (stdlib, third-party, re-exports through an intermediate
 `__init__.py`, namespace packages) are silently out of scope, not reported unsafe.
 
-**To fix this yourself:** if the project actually supports 3.12+, re-run with `--py 3.12` (or higher) - the
-recipe picks these candidates up automatically on the next pass. If the project has to keep supporting older Pythons, there's no
-manual PEP 695 rewrite available either, since the syntax itself doesn't exist before 3.12.
+**To fix this yourself:** if the project actually supports 3.12+, re-run with `--py 3.12` (or higher). If it
+has to keep supporting older Pythons, there's no manual PEP 695 rewrite either, since the syntax doesn't exist
+before 3.12.
 
 ### A declared TypeVar is exported via `__all__`
 
@@ -215,31 +214,16 @@ start with, or contain, extra blank lines. Run your formatter afterwards to tidy
 ## API entry points
 
 ```shell
-rejuvenate refactor TypeVarCheck <file>
-rejuvenate refactor TypeVarTupleCheck <file>
-```
-
-Equivalently, `PythonRefactoring.process("TypeVarCheck", file)` /
-`PythonRefactoring.process("TypeVarTupleCheck", file)`.
-
-A friendlier standalone CLI wraps both recipes together: `--help`, a required `--py` flag giving the minimum
-Python version the target project supports (not the one running the tool; compared against each recipe's own
-true minimum - 3.12 for `TypeVarCheck`, 3.11 for `TypeVarTupleCheck`), and a report distinguishing modified
-files from files with TypeVars it found but couldn't safely convert. It writes changes for real - the target is always expected to be a git-tracked
-checkout, so `git diff`/`git checkout` (or an editor's diff view) is the review-and-revert mechanism, not a
-custom preview built into this tool. Before processing any file, it scans every discovered file once for
-project-wide imports (see the `IMPORTED_ELSEWHERE_IN_PROJECT` constraint above) so a later file's removal
-decision can account for an earlier or later file importing the name directly. After processing every file,
-it runs `ruff check --fix --select F401` once over every file it modified, dropping whichever imports either
-recipe's own rewrite made redundant - see the User-facing summary above for why neither recipe drops that
-import itself.
-
-```shell
 python src/rejuvenation/migration-type-recipes.py <path> --py MAJOR.MINOR [--report PATH]
 ```
 
-`<path>` may be a single `.py` file or a directory, scanned recursively (`.git`/`__pycache__`/`.venv`/`venv`
-excluded). Run with `--help` for the full flag reference.
+- `<path>`: a `.py` file or a directory, scanned recursively (`.git`/`__pycache__`/`.venv`/`venv` excluded).
+- `--py` (required): the minimum Python version the target project supports, not the one running the tool.
+  PEP 695 rewrites need 3.12+, `*Ts` unpacking needs 3.11+.
+- `--report`: also write the report to a file.
+
+Runs `TypeVarTupleCheck`, then `TypeVarCheck`, on every file, then `ruff check --fix --select F401` on the files
+it changed. Changes are written directly, so run it on a git checkout and review with `git diff`.
 
 ## Change considerations
 
