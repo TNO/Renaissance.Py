@@ -37,15 +37,11 @@ def make_recipe(mocker: MockerFixture) -> Callable[[type[PythonRefactoring], str
 
 @pytest.fixture
 def create_type_var_check(make_recipe: Callable[[type[PythonRefactoring], str], PythonRefactoring]) -> Callable[[str], TypeVarCheck]:
-    """Like `make_recipe`, but pinned to Python 3.12+.
-
-    So PEP 695-conversion tests don't depend on whatever pyproject.toml happens to be found
-    from the ambient cwd.
-    """
+    """Like `make_recipe`, but with min_python set to 3.12 so PEP 695 conversion is enabled."""
 
     def _create(text: str) -> TypeVarCheck:
         subject = cast("TypeVarCheck", make_recipe(TypeVarCheck, text))
-        subject.min_python_override = PEP_695_MINIMUM
+        subject.min_python = PEP_695_MINIMUM
         return subject
 
     return _create
@@ -55,15 +51,11 @@ def create_type_var_check(make_recipe: Callable[[type[PythonRefactoring], str], 
 def create_type_var_tuple_check(
     make_recipe: Callable[[type[PythonRefactoring], str], PythonRefactoring],
 ) -> Callable[[str], TypeVarTupleCheck]:
-    """Like `make_recipe`, but pinned to Python 3.11+.
-
-    So PEP 646 `Unpack[T]` -> `*T` fix tests don't depend on whatever pyproject.toml happens to be
-    found from the ambient cwd.
-    """
+    """Like `make_recipe`, but with min_python set to 3.11 so the PEP 646 `Unpack[T]` -> `*T` fix is enabled."""
 
     def _create(text: str) -> TypeVarTupleCheck:
         subject = cast("TypeVarTupleCheck", make_recipe(TypeVarTupleCheck, text))
-        subject.min_python_override = PEP_646_MINIMUM
+        subject.min_python = PEP_646_MINIMUM
         return subject
 
     return _create
