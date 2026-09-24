@@ -20,22 +20,9 @@ from renaissance.recipes.type_var_domain import (
     type_param_name,
 )
 from renaissance.utils.import_resolution import resolve_project_module
-from renaissance.utils.python_version import minimum_python_version
 from renaissance.utils.unparse_utils import unparse_signature_only
 
 PEP_695_MINIMUM = (3, 12)
-
-
-def target_supports_pep695(file_path: str) -> bool:
-    """Return True only if the target codebase's minimum supported Python version is 3.12+.
-
-    See renaissance.utils.python_version.minimum_python_version. Conservative by design: an
-    unknown minimum (no pyproject.toml, no/unparsable requires-python, or a version below 3.12)
-    all return False - PEP 695 syntax (`def f[T](...)`) is a hard SyntaxError before Python 3.12,
-    so an unknown minimum must never be treated as safe.
-    """
-    minimum = minimum_python_version(file_path)
-    return minimum is not None and minimum >= PEP_695_MINIMUM
 
 
 class TypeVarCheck(PythonRefactoring):
@@ -44,9 +31,8 @@ class TypeVarCheck(PythonRefactoring):
     See check() for the three phases this runs, in order.
     """
 
-    # Set directly (e.g. in a test) to skip the pyproject.toml lookup and use this value
-    # instead - mirrors how `in_memory` is set on the base class after construction.
-    min_python_override: tuple[int, int] | None = None
+    # Minimum Python version the target codebase supports; None means unknown.
+    min_python: tuple[int, int] | None = None
 
     # Names other files in the target project import directly from this file; never removed.
     project_wide_imported_names: frozenset[str] = frozenset()
@@ -59,13 +45,12 @@ class TypeVarCheck(PythonRefactoring):
         self.result = self.check()
 
     def _target_supports_pep695(self) -> bool:
-        """Return True if PEP 695 syntax is safe on this recipe's target file.
+        """Return True only if min_python is known and is 3.12+.
 
-        Uses min_python_override if a test set one, otherwise target_supports_pep695(self.filename).
+        An unknown minimum returns False: PEP 695 syntax (`def f[T](...)`) is a hard SyntaxError
+        before Python 3.12.
         """
-        if self.min_python_override is not None:
-            return self.min_python_override >= PEP_695_MINIMUM
-        return target_supports_pep695(self.filename)
+        return self.min_python is not None and self.min_python >= PEP_695_MINIMUM
 
     def check(self) -> dict[str, dict[str, str]]:
         """Check this file's TypeVar/ParamSpec/TypeVarTuple usage end to end.
@@ -90,8 +75,7 @@ class TypeVarCheck(PythonRefactoring):
         now-redundant module-level declaration - see is_safe_to_convert and the check()
         docstring. Returns {name: "fixed" | "unsafe"}.
 
-        PEP 695 syntax requires Python 3.12+ on the target codebase (see
-        target_supports_pep695); if the nearest pyproject.toml's `requires-python` doesn't
+        PEP 695 syntax requires Python 3.12+ on the target codebase; if min_python doesn't
         guarantee that, every candidate is reported "unsafe" and the file is left untouched
         by this phase - localize_imported_typevars still runs regardless, since it never
         introduces PEP 695 syntax. The specific UnsafeReason behind each "unsafe" entry is

@@ -6,21 +6,8 @@ from typing import cast
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
 from renaissance.recipes.python_refactoring import PythonRefactoring
 from renaissance.recipes.type_var_domain import UnsafeReason, find_type_param_declarations, type_param_constructor_name
-from renaissance.utils.python_version import minimum_python_version
 
 PEP_646_MINIMUM = (3, 11)
-
-
-def target_supports_pep646(file_path: str) -> bool:
-    """Return True only if the target codebase's minimum supported Python version is 3.11+.
-
-    See renaissance.utils.python_version.minimum_python_version. Conservative by design: an
-    unknown minimum (no pyproject.toml, no/unparsable requires-python, or a version below 3.11)
-    all return False - native `*T` unpacking syntax (PEP 646) is a hard SyntaxError before Python
-    3.11, so an unknown minimum must never be treated as safe.
-    """
-    minimum = minimum_python_version(file_path)
-    return minimum is not None and minimum >= PEP_646_MINIMUM
 
 
 class TypeVarTupleCheck(PythonRefactoring):
@@ -30,9 +17,8 @@ class TypeVarTupleCheck(PythonRefactoring):
     just detects, kept for any caller that only wants the names without touching the file.
     """
 
-    # Set directly (e.g. in a test) to skip the pyproject.toml lookup and use this value instead -
-    # mirrors how TypeVarCheck.min_python_override/in_memory are set on a recipe after construction.
-    min_python_override: tuple[int, int] | None = None
+    # Minimum Python version the target codebase supports; None means unknown.
+    min_python: tuple[int, int] | None = None
 
     def run(self) -> None:
         """Entry point called by PythonRefactoring.process(); stores fix_legacy_unpack_usage()'s result."""
@@ -41,13 +27,12 @@ class TypeVarTupleCheck(PythonRefactoring):
             self.commit()
 
     def _target_supports_pep646(self) -> bool:
-        """Return True if native `*T` unpacking syntax is safe on this recipe's target file.
+        """Return True only if min_python is known and is 3.11+.
 
-        Uses min_python_override if a test set one, otherwise target_supports_pep646(self.filename).
+        An unknown minimum returns False: native `*T` unpacking syntax (PEP 646) is a hard
+        SyntaxError before Python 3.11.
         """
-        if self.min_python_override is not None:
-            return self.min_python_override >= PEP_646_MINIMUM
-        return target_supports_pep646(self.filename)
+        return self.min_python is not None and self.min_python >= PEP_646_MINIMUM
 
     def find_legacy_unpack_usage(self) -> list[str]:
         """Find every module-level TypeVarTuple name still referenced via the legacy Unpack[T] subscript form.
@@ -64,8 +49,8 @@ class TypeVarTupleCheck(PythonRefactoring):
 
         `Unpack[T]` and `*T` are fully equivalent wherever T is a TypeVarTuple - Unpack exists only
         because it's parseable on Pythons before the native syntax landed (PEP 646, 3.11+), so
-        there's no per-occurrence safety analysis needed beyond the file-wide version gate: if the
-        target doesn't declare 3.11+, every candidate is reported "unsafe" and the file is left
+        there's no per-occurrence safety analysis needed beyond the file-wide version gate: if
+        min_python isn't 3.11+, every candidate is reported "unsafe" and the file is left
         untouched. Returns {name: "fixed" | "unsafe"}; every "unsafe" entry's reason (always
         PEP646_VERSION_GATE, the only unsafe case this recipe has) is recorded on
         self.unsafe_reasons.
