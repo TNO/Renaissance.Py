@@ -93,7 +93,7 @@ class PythonRefactoring(ASTProcessor):
 
         positional_args = [arg_node.signature for arg_node in (args_implicit.children if args_implicit else [])]
         keyword_args: dict[str, str] = {}
-        for kw_node in (keywords_implicit.children if keywords_implicit else []):
+        for kw_node in keywords_implicit.children if keywords_implicit else []:
             kw_name = kw_node.node.arg
             if kw_name:
                 value_node = kw_node.children[0] if kw_node.children else kw_node
@@ -131,6 +131,8 @@ class PythonRefactoring(ASTProcessor):
         E.g. after mutating an ast.FunctionDef in place, this finds the RST node to pass to
         self.replace().
         """
+        # TODO: Drop once recipes can navigate wrapper nodes via the unified node protocol?
+        # 24-09 discussion over future Node Protocol implementation
         found: list[Any] = []
 
         def visit(node: Any) -> None:
