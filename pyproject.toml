@@ -96,9 +96,11 @@ skip_covered = false
 line-length = 140
 src = ["src", "test", "features"]
 extend-exclude = [
-    "features/targets/invalid.py",
-    "features/targets/taut/taut_test.py",  # legacy fixture source, not real code
-    "features/targets/go/node.py",  # legacy fixture source, not real code
+    "features/targets/taut/taut_test.py",  # legacy example, not real code
+    "features/targets/invalid.py",  # deliberately invalid Python (syntax errors); per docs/developer/
+                                    # coding-conventions.md we prefer line-based `# noqa` suppression,
+                                    # but invalid-syntax has no rule code so it can't be suppressed
+                                    # that way (or via per-file-ignores) — file-level exclusion only
 ]
 force-exclude = true
 

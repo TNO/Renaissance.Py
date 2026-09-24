@@ -13,6 +13,7 @@ from renaissance.integrations.python.ast.rst_node import PythonRstNode
 from renaissance.integrations.python.ast.util import to_str
 from renaissance.syntax_tree import ASTProcessor
 from renaissance.syntax_tree.match_finder import match_pattern
+from renaissance.syntax_tree.semantic_kind import SemanticKind
 from renaissance.utils.text_utils import snake_case
 
 
@@ -68,6 +69,56 @@ class PythonRefactoring(ASTProcessor):
 
         print(colored(f"refactor          {Path(refactor.filename).resolve()}", "green", attrs=["bold"]))
         refactor.run()
+
+    def extract_call_arguments(self, node: PythonRstNode) -> tuple[list[str], dict[str, str]]:
+        """Extract positional and keyword arguments from a Call node.
+
+        The input may be a `Call` node itself or any descendant node.
+        When given a descendant, this method walks up parent links and uses the first
+        ancestor whose semantic kind is `CALL`.
+
+        Returned keyword arguments preserve Python call semantics where keyword
+        arguments appear after positional arguments.
+        """
+        current = node
+        while current is not None and current.semantic_kind != SemanticKind.CALL:
+            current = current.parent
+
+        call_node = current
+        if call_node is None:
+            return [], {}
+
+        args_implicit = next((c for c in call_node.children if c.name == "args"), None)
+        keywords_implicit = next((c for c in call_node.children if c.name == "keywords"), None)
+
+        positional_args = [arg_node.signature for arg_node in (args_implicit.children if args_implicit else [])]
+        keyword_args: dict[str, str] = {}
+        for kw_node in (keywords_implicit.children if keywords_implicit else []):
+            kw_name = kw_node.node.arg
+            if kw_name:
+                value_node = kw_node.children[0] if kw_node.children else kw_node
+                keyword_args[str(kw_name)] = value_node.signature
+
+        return positional_args, keyword_args
+
+    def class_declares_base(self, class_node: PythonRstNode, base_name: str) -> bool:
+        """Return whether class_node explicitly declares base_name as a base class.
+
+        This check uses only the names declared in the class header's base list,
+        so implicit Python inheritance from `object` is not treated as a declared base.
+        """
+        return base_name in self.class_base_arguments(class_node)
+
+    def class_base_arguments(self, class_node: PythonRstNode) -> list[str]:
+        """Return base class signatures explicitly listed in the class declaration.
+
+        Only names inside the parentheses of ``class Name(...):`` are returned.
+        The implicit default base object is not returned when no bases are declared.
+        """
+        bases_implicit = next((c for c in class_node.children if c.name == "bases"), None)
+        if bases_implicit is None:
+            return []
+        return [child.signature for child in bases_implicit.children]
 
     @property
     def body(self) -> Sequence[PythonRstNode]:
