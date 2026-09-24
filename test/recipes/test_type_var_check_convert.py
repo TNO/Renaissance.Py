@@ -484,7 +484,7 @@ class TestTypeVarCheckConvert:
             T = TypeVar("T")
         """
         subject = cast(TypeVarCheck, make_recipe(TypeVarCheck, code))
-        subject.min_python_override = (3, 10)
+        subject.min_python = (3, 10)
 
         result = subject.convert_declared_typevars()
 
