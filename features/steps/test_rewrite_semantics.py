@@ -54,10 +54,6 @@ def test_dominated_change_not_applied():
     """AI: Scenario test for 'Dominated change is not applied'."""
 
 
-@pytest.mark.xfail(
-    reason="Overlapping replacement detection not yet implemented: Rewriter merges instead of raising",
-    strict=True,
-)
 @scenario(_FEATURE, "Overlapping replacements produce an error")
 def test_overlapping_replacements_produce_error():
     """AI: Scenario test for 'Overlapping replacements produce an error'."""
@@ -83,10 +79,6 @@ def test_sibling_sib2_first():
     """AI: Scenario test for 'Operation on first sibling precedes operation on second sibling' (second sibling collected first)."""
 
 
-@pytest.mark.xfail(
-    reason="Replacing the same sibling range twice is not yet rejected by ASTRewriter (same gap as the single-node case)",
-    strict=True,
-)
 @scenario(_FEATURE, "Replacements of the same sibling range produce an error")
 def test_replacements_of_same_sibling_range_produce_error():
     """AI: Scenario test for 'Replacements of the same sibling range produce an error'."""
