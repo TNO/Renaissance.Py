@@ -205,7 +205,7 @@ class TestRuffImportCleanup:
         target = tmp_path / "mod.py"
         target.write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
 
-        exit_code = migration.main([str(target), "--min-python", "3.12"])
+        exit_code = migration.main([str(target), "--py", "3.12"])
 
         assert_that(exit_code, equal_to(0))
         written = target.read_text(encoding="utf-8")
@@ -229,7 +229,7 @@ class TestRuffImportCleanup:
             encoding="utf-8",
         )
 
-        exit_code = migration.main([str(target), "--min-python", "3.12"])
+        exit_code = migration.main([str(target), "--py", "3.12"])
 
         assert_that(exit_code, equal_to(0))
         written = target.read_text(encoding="utf-8")
@@ -251,7 +251,7 @@ class TestRuffImportCleanup:
             """)
         sibling.write_text(sibling_source, encoding="utf-8")
 
-        exit_code = migration.main([str(tmp_path), "--min-python", "3.12"])
+        exit_code = migration.main([str(tmp_path), "--py", "3.12"])
 
         assert_that(exit_code, equal_to(0))
         assert_that(sibling.read_text(encoding="utf-8"), equal_to(sibling_source))
@@ -269,7 +269,7 @@ class TestConsoleReportDocLinks:
         target = tmp_path / "mod.py"
         target.write_text(UNSAFE_TYPEVAR_SOURCE, encoding="utf-8")
 
-        migration.main([str(target), "--min-python", "3.12"])
+        migration.main([str(target), "--py", "3.12"])
 
         output = capsys.readouterr().out
         assert_that(output, contains_string(doc_link(UnsafeReason.DECLARED_TYPEVAR_EXPORTED)))
@@ -279,7 +279,7 @@ class TestConsoleReportDocLinks:
         target = tmp_path / "mod.py"
         target.write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
 
-        migration.main([str(target), "--min-python", "3.12"])
+        migration.main([str(target), "--py", "3.12"])
 
         output = capsys.readouterr().out
         assert_that(output, is_not(contains_string("tno.github.io")))
@@ -295,7 +295,7 @@ class TestPerFileProgressFeedback:
         broken = tmp_path / "broken.py"
         broken.write_text("def broken(:\n", encoding="utf-8")
 
-        migration.main([str(tmp_path), "--min-python", "3.12"])
+        migration.main([str(tmp_path), "--py", "3.12"])
 
         output = capsys.readouterr().out
         assert_that(output, contains_string(f"File {good} checked."))
@@ -307,7 +307,7 @@ class TestPerFileProgressFeedback:
         good.write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
         (tmp_path / "sub").mkdir()
 
-        migration.main([str(tmp_path / "sub" / ".."), "--min-python", "3.12"])
+        migration.main([str(tmp_path / "sub" / ".."), "--py", "3.12"])
 
         output = capsys.readouterr().out
         assert_that(output, contains_string(f"File {good} checked."))
@@ -326,7 +326,7 @@ class TestMainBatchErrorIsolation:
         (tmp_path / "good.py").write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
         (tmp_path / "broken.py").write_text("def broken(:\n", encoding="utf-8")
 
-        exit_code = migration.main([str(tmp_path), "--min-python", "3.12"])
+        exit_code = migration.main([str(tmp_path), "--py", "3.12"])
 
         assert_that(exit_code, equal_to(3))
         output = capsys.readouterr().out
@@ -360,7 +360,7 @@ class TestMainProjectWideImportSafety:
         consumer.parent.mkdir(exist_ok=True)
         consumer.write_text(f"{import_line}\n\ndef use(x: T) -> T:\n    return x\n", encoding="utf-8")
 
-        exit_code = migration.main([str(tmp_path), "--min-python", "3.12"])
+        exit_code = migration.main([str(tmp_path), "--py", "3.12"])
 
         assert_that(exit_code, equal_to(0))
         consumer_text = consumer.read_text(encoding="utf-8")
@@ -382,7 +382,7 @@ class TestMainProjectWideImportSafety:
         (pkg / "client.py").write_text("from .typing_mod import T\n\ndef use(x: T) -> T:\n    return x\n", encoding="utf-8")
         monkeypatch.chdir(tmp_path)
 
-        exit_code = migration.main([target_arg, "--min-python", "3.12"])
+        exit_code = migration.main([target_arg, "--py", "3.12"])
 
         assert_that(exit_code, equal_to(0))
         assert_that((pkg / "typing_mod.py").read_text(encoding="utf-8"), contains_string('T = TypeVar("T")'))
@@ -405,7 +405,58 @@ class TestMainProjectWideImportSafety:
         (pkg / "typing_mod.py").write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
         (pkg / "client.py").write_text(consumer_source, encoding="utf-8")
 
-        exit_code = migration.main([str(tmp_path), "--min-python", "3.12"])
+        exit_code = migration.main([str(tmp_path), "--py", "3.12"])
 
         assert_that(exit_code, equal_to(0))
         assert_that((pkg / "typing_mod.py").read_text(encoding="utf-8"), contains_string('T = TypeVar("T")'))
+
+
+class TestPyVersionFlag:
+    """main(): the required --py flag alone sets the target's minimum Python version."""
+
+    @pytest.mark.parametrize(
+        ("py_version", "expected", "unexpected"),
+        [
+            pytest.param("3.11", "def foo(*args: *Ts)", "def foo[", id="3.11-unpack-only"),
+            pytest.param("3.12", "def foo[*Ts](*args: *Ts)", "Unpack[Ts]", id="3.12-both"),
+        ],
+    )
+    def test_py_flag_gates_rewrites(self, tmp_path: Path, py_version: str, expected: str, unexpected: str) -> None:
+        """--py decides which version-gated rewrites run, regardless of the target's requires-python."""
+        (tmp_path / "pyproject.toml").write_text('[project]\nname = "demo"\nrequires-python = ">=3.12"\n', encoding="utf-8")
+        target = tmp_path / "mod.py"
+        target.write_text(TYPEVARTUPLE_SOURCE, encoding="utf-8")
+
+        exit_code = migration.main([str(target), "--py", py_version])
+
+        assert_that(exit_code, equal_to(0))
+        written = target.read_text(encoding="utf-8")
+        assert_that(written, contains_string(expected))
+        assert_that(written, is_not(contains_string(unexpected)))
+
+    @pytest.mark.parametrize(
+        "bad_args",
+        [
+            pytest.param([], id="flag-missing"),
+            pytest.param(["--min-python", "3.12"], id="old-flag-removed"),
+            pytest.param(["--py", "3"], id="missing-minor"),
+            pytest.param(["--py", "3.x"], id="non-numeric"),
+        ],
+    )
+    def test_bad_version_arguments_are_usage_errors(
+        self,
+        tmp_path: Path,
+        capsys: pytest.CaptureFixture[str],
+        bad_args: list[str],
+    ) -> None:
+        """A missing, unknown or malformed version flag exits with code 2 and a usage line naming --py."""
+        target = tmp_path / "mod.py"
+        target.write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
+        original = target.read_text(encoding="utf-8")
+
+        with pytest.raises(SystemExit) as excinfo:
+            migration.main([str(target), *bad_args])
+
+        assert_that(excinfo.value.code, equal_to(2))
+        assert_that(capsys.readouterr().err, contains_string("--py MAJOR.MINOR"))
+        assert_that(target.read_text(encoding="utf-8"), equal_to(original))

@@ -37,10 +37,10 @@ class UnsafeRule:
 
 UNSAFE_RULES: dict[UnsafeReason, UnsafeRule] = {
     UnsafeReason.PEP695_VERSION_GATE: UnsafeRule(
-        "target codebase doesn't declare Python 3.12+", "feature-typevar-modernization-pep695-version-gate",
+        "target's minimum Python version is unknown or below 3.12", "feature-typevar-modernization-pep695-version-gate",
     ),
     UnsafeReason.PEP646_VERSION_GATE: UnsafeRule(
-        "target codebase doesn't declare Python 3.11+", "feature-typevar-modernization-pep646-version-gate",
+        "target's minimum Python version is unknown or below 3.11", "feature-typevar-modernization-pep646-version-gate",
     ),
     UnsafeReason.DECLARED_TYPEVAR_EXPORTED: UnsafeRule(
         "exported via __all__", "feature-typevar-modernization-declared-typevar-exported",

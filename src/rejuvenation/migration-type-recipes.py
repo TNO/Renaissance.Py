@@ -5,8 +5,8 @@ real CLI: `--help`, named flags, and a report distinguishing files it modified f
 TypeVars it found but couldn't safely convert.
 
 Examples:
-    python src/rejuvenation/migration-type-recipes.py ./some_repo --report review.md --min-python 3.12
-    python src/rejuvenation/migration-type-recipes.py ./some_repo/file.py
+    python src/rejuvenation/migration-type-recipes.py ./some_repo --py 3.12 --report review.md
+    python src/rejuvenation/migration-type-recipes.py ./some_repo/file.py --py 3.10
 
 """
 
@@ -55,7 +55,7 @@ def resolve_target_files(target: Path) -> list[Path]:
     return [Path(path) for path in PythonScanner(str(target)).find_sources()]
 
 
-def _parse_min_python(text: str) -> tuple[int, int]:
+def _parse_py_version(text: str) -> tuple[int, int]:
     """Parse a "MAJOR.MINOR" string into a (major, minor) tuple for argparse's type=.
 
     Raises argparse.ArgumentTypeError on anything else, so argparse reports a clean usage error
@@ -92,7 +92,7 @@ def is_clean(report: FileReport) -> bool:
 def process_file(
     path: Path,
     *,
-    min_python: tuple[int, int] | None,
+    min_python: tuple[int, int],
     project_root: Path,
     project_wide_imported_names: frozenset[str],
 ) -> FileReport:
@@ -105,8 +105,7 @@ def process_file(
     """
     try:
         tvt_recipe = TypeVarTupleCheck(path)
-        if min_python is not None:
-            tvt_recipe.min_python_override = min_python
+        tvt_recipe.min_python = min_python
         unpack_result = run_steps([Step("unpack_syntax", tvt_recipe, tvt_recipe.fix_legacy_unpack_usage)])
 
         # TypeVarCheck is constructed only now, not upfront alongside tvt_recipe: each recipe reads
@@ -116,8 +115,7 @@ def process_file(
         # TODO: a 3rd chained recipe would need this same hand-ordering trick repeated - worth a
         # generic chain runner, or a PythonRefactoring.from_processor() avoiding the disk round-trip?
         tv_recipe = TypeVarCheck(path)
-        if min_python is not None:
-            tv_recipe.min_python_override = min_python
+        tv_recipe.min_python = min_python
         tv_recipe.project_root = project_root
         tv_recipe.project_wide_imported_names = project_wide_imported_names
         typevar_result = run_steps(
@@ -227,18 +225,19 @@ def build_arg_parser() -> argparse.ArgumentParser:
         description="Modernize legacy TypeVar/ParamSpec/TypeVarTuple usage to PEP 695 syntax.",
         epilog=textwrap.dedent("""\
             Examples:
-              python src/rejuvenation/migration-type-recipes.py ./some_repo --report review.md
-              python src/rejuvenation/migration-type-recipes.py ./some_repo/file.py
+              python src/rejuvenation/migration-type-recipes.py ./some_repo --py 3.12 --report review.md
+              python src/rejuvenation/migration-type-recipes.py ./some_repo/file.py --py 3.10
             """),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("path", type=Path, help="A .py file or a directory to scan.")
     parser.add_argument(
-        "--min-python",
-        type=_parse_min_python,
+        "--py",
+        type=_parse_py_version,
+        required=True,
         metavar="MAJOR.MINOR",
-        help="Override the detected minimum target Python version, e.g. 3.12 - PEP 695 syntax "
-        "requires 3.12+, and without this flag it's detected from the target's pyproject.toml.",
+        help="Minimum Python version the target project supports (not the one running this tool), "
+        "e.g. 3.12. PEP 695 rewrites need 3.12+, native *Ts unpacking needs 3.11+.",
     )
     parser.add_argument("--report", type=Path, metavar="PATH", help="Also write the full report to this file.")
     return parser
@@ -271,7 +270,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         project_wide_imported_names = imported_names_by_file.get(path, frozenset())
         report = process_file(
             path,
-            min_python=args.min_python,
+            min_python=args.py,
             project_root=project_root,
             project_wide_imported_names=project_wide_imported_names,
         )

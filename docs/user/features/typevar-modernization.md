@@ -66,19 +66,17 @@ explains it, rather than a generic "couldn't convert" message.
 { #feature-typevar-modernization-pep695-version-gate }
 
 [PEP 695](https://peps.python.org/pep-0695/) generic syntax (`def f[T](...)`) did not exist before Python 3.12
-(released October 2023). Before rewriting, the recipe finds the nearest `pyproject.toml` above the file being
-refactored and checks its `requires-python`; if the lowest version that specifier allows is below 3.12 - or no
-`pyproject.toml` is found, or `requires-python` is missing or unparsable - every candidate is reported
-`"unsafe"` and left untouched, the same conservative treatment as any other unsafe candidate. Cross-file
+(released October 2023). Before rewriting, the recipe checks the minimum Python version passed with `--py`; if
+it is below 3.12 (or unknown, when the recipe is run without the CLI and `min_python` is never set), every
+candidate is reported `"unsafe"` and left untouched, the same conservative treatment as any other unsafe candidate. Cross-file
 localization (phase 1) is unaffected by this check and always runs, since it never introduces PEP 695 syntax.
 
 The cross-file phase resolves absolute and relative imports against the target directory passed to the CLI.
 Imports that don't resolve to a file inside it (stdlib, third-party, re-exports through an intermediate
 `__init__.py`, namespace packages) are silently out of scope, not reported unsafe.
 
-**To fix this yourself:** if the project actually supports 3.12+, fix `requires-python` in `pyproject.toml` (or
-pass `--min-python 3.12` to override detection for a one-off run), then re-run - the recipe picks these
-candidates up automatically on the next pass. If the project has to keep supporting older Pythons, there's no
+**To fix this yourself:** if the project actually supports 3.12+, re-run with `--py 3.12` (or higher) - the
+recipe picks these candidates up automatically on the next pass. If the project has to keep supporting older Pythons, there's no
 manual PEP 695 rewrite available either, since the syntax itself doesn't exist before 3.12.
 
 ### A declared TypeVar is exported via `__all__`
@@ -166,14 +164,14 @@ declaration as it is if the importer can't be updated alongside it - the same pu
 
 { #feature-typevar-modernization-pep646-version-gate }
 
-`TypeVarTupleCheck`'s `Unpack[T]` → `*T` rewrite only applies when the target declares Python 3.11+ (PEP
+`TypeVarTupleCheck`'s `Unpack[T]` → `*T` rewrite only applies when `--py` is 3.11+ (PEP
 646's true minimum - one version below `TypeVarCheck`'s own 3.12+ gate for PEP 695, deliberately not raised
 to match it, see [Python version gates](../concepts/python-version-gates.md)). Same conservative treatment as
 the PEP 695 gate above: an unknown or too-low minimum reports every candidate `"unsafe"` and leaves the file
 untouched.
 
-**To fix this yourself:** if the project actually supports 3.11+, fix `requires-python` (or pass `--min-python
-3.11` for a one-off run) and re-run - same fix as the PEP 695 gate above, just at the lower threshold.
+**To fix this yourself:** if the project actually supports 3.11+, re-run with `--py 3.11` (or higher) - same
+fix as the PEP 695 gate above, just at the lower threshold.
 
 `TypeVarTupleCheck` only recognizes a **module-level** `T = TypeVarTuple(...)` declaration in the same file -
   not one imported from another module. When both recipes run together (the CLI below), `TypeVarTupleCheck`
@@ -224,10 +222,10 @@ rejuvenate refactor TypeVarTupleCheck <file>
 Equivalently, `PythonRefactoring.process("TypeVarCheck", file)` /
 `PythonRefactoring.process("TypeVarTupleCheck", file)`.
 
-A friendlier standalone CLI wraps both recipes together: `--help`, `--min-python` to override the detected
-minimum target version (compared against each recipe's own true minimum - 3.12 for `TypeVarCheck`, 3.11 for
-`TypeVarTupleCheck`), and a report distinguishing modified files from files with TypeVars it found but
-couldn't safely convert. It writes changes for real - the target is always expected to be a git-tracked
+A friendlier standalone CLI wraps both recipes together: `--help`, a required `--py` flag giving the minimum
+Python version the target project supports (not the one running the tool; compared against each recipe's own
+true minimum - 3.12 for `TypeVarCheck`, 3.11 for `TypeVarTupleCheck`), and a report distinguishing modified
+files from files with TypeVars it found but couldn't safely convert. It writes changes for real - the target is always expected to be a git-tracked
 checkout, so `git diff`/`git checkout` (or an editor's diff view) is the review-and-revert mechanism, not a
 custom preview built into this tool. Before processing any file, it scans every discovered file once for
 project-wide imports (see the `IMPORTED_ELSEWHERE_IN_PROJECT` constraint above) so a later file's removal
@@ -237,7 +235,7 @@ recipe's own rewrite made redundant - see the User-facing summary above for why 
 import itself.
 
 ```shell
-python src/rejuvenation/migration-type-recipes.py <path> [--min-python MAJOR.MINOR] [--report PATH]
+python src/rejuvenation/migration-type-recipes.py <path> --py MAJOR.MINOR [--report PATH]
 ```
 
 `<path>` may be a single `.py` file or a directory, scanned recursively (`.git`/`__pycache__`/`.venv`/`venv`
@@ -249,6 +247,3 @@ excluded). Run with `--help` for the full flag reference.
   `build_type_param` in `type_var_domain.py` together.
 - Following re-exports through an intermediate `__init__.py`, or supporting namespace packages (PEP 420), means
   extending `resolve_project_module` in `renaissance/utils/import_resolution.py`.
-- The version gate (see Constraints above) only recognises versions in a known list (3.8 through 3.14, see
-  `KNOWN_PYTHON_VERSIONS` in `renaissance/utils/python_version.py`); extending it to a new Python release means
-  adding that release to the list.

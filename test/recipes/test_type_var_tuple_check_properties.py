@@ -45,5 +45,5 @@ class TestTypeVarTupleCheckProperties:
         ):
             subject = TypeVarTupleCheck("x.py")
             subject.in_memory = True
-            subject.min_python_override = (3, 11)
+            subject.min_python = (3, 11)
             subject.fix_legacy_unpack_usage()
