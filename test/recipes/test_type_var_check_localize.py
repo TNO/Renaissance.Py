@@ -26,7 +26,7 @@ class TestTypeVarCheckLocalize:
         )
         subject = TypeVarCheck(importing_file)
         subject.in_memory = True
-        subject.min_python_override = PEP_695_MINIMUM
+        subject.min_python = PEP_695_MINIMUM
         return subject
 
     def test_localizes_plain_function_generic_typevar(self, mocker: MockerFixture, tmp_path: Path) -> None:
@@ -225,7 +225,7 @@ class TestTypeVarCheckLocalize:
         )
         subject = TypeVarCheck(importing_file)
         subject.in_memory = True
-        subject.min_python_override = PEP_695_MINIMUM
+        subject.min_python = PEP_695_MINIMUM
         subject.project_root = tmp_path
 
         result = subject.localize_imported_typevars()
