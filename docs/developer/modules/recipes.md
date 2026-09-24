@@ -21,8 +21,7 @@ page covers `TypeVarCheck` and `TypeVarTupleCheck`, the recipes built for
   in order, committing each one's owning recipe only if it fixed something" primitive both recipes use.
 - Base class: `src/renaissance/recipes/python_refactoring.py` - also owns a generic, cross-recipe
   primitive that `TypeVarCheck` uses: `find_rst_node`.
-- Shared utilities: `src/renaissance/utils/python_version.py` (minimum-supported-Python-version detection),
-  `src/renaissance/utils/unparse_utils.py` (the `ast.unparse()` docstring-indent workaround),
+- Shared utilities: `src/renaissance/utils/unparse_utils.py` (the `ast.unparse()` docstring-indent workaround),
   `src/renaissance/utils/import_resolution.py` (resolves `from X import Y` project-wide to the file it
   imports from - not TypeVar-specific, kept out of `type_var_domain.py` on purpose).
 
@@ -38,7 +37,7 @@ page covers `TypeVarCheck` and `TypeVarTupleCheck`, the recipes built for
 - `TypeVarTupleCheck.run()` / `TypeVarTupleCheck.fix_legacy_unpack_usage()` — rewrites every legacy `Unpack[T]`
   usage of a module-level `TypeVarTuple` to native `*T` syntax, dropping the now-unused `Unpack` import unless
   the file separately needs it (e.g. PEP 692 `**kwargs: Unpack[SomeTypedDict]`); gated by its own
-  `target_supports_pep646` version check. `find_legacy_unpack_usage()` still exists, detection-only, for any
+  `_target_supports_pep646()` version check. `find_legacy_unpack_usage()` still exists, detection-only, for any
   caller that just wants the names without touching the file - it's what `fix_legacy_unpack_usage()` is built on
   top of, not a separate code path.
 - Dispatched from the CLI via `PythonRefactoring.process(class_name, file)`, which resolves `"TypeVarCheck"` to
@@ -115,17 +114,14 @@ whose `type_params` already declares the same name) and only reports a live use 
 rewritten to `def f[T](...)`, with the old `T = TypeVar("T")` still sitting in the module, which `ruff` documents
 it will never remove itself.
 
-Before rewriting anything, `convert_declared_typevars` calls `TypeVarCheck._target_supports_pep695()`, which in turn
-calls `target_supports_pep695(file_path)` (a standalone function in `type_var_check.py`, so it can be tested without
-constructing a recipe). That function only compares `renaissance.utils.python_version.minimum_python_version(file_path)`
-against `PEP_695_MINIMUM = (3, 12)` - the filesystem lookup (nearest `pyproject.toml`, `requires-python` parsing)
-lives in that shared utility module, not here, since any future recipe whose rewrite depends on a minimum Python
-version needs the same detection, not just this one. `TypeVarCheck.min_python_override` is a class attribute a test
-can set after construction to bypass the filesystem lookup entirely - the same pattern `in_memory` already uses on
-the base class.
+Before rewriting anything, `convert_declared_typevars` calls `TypeVarCheck._target_supports_pep695()`, which
+compares the recipe's `min_python` class attribute against `PEP_695_MINIMUM = (3, 12)`; `None` (unknown) never
+passes. The tool doesn't detect the target's version: `migration-type-recipes.py` sets `min_python` from its
+required `--py` flag, and tests set it after construction - the same pattern `in_memory` already uses on the base
+class.
 
 `fix_legacy_unpack_usage` follows the identical pattern with its own threshold: `_target_supports_pep646()` /
-`target_supports_pep646(file_path)` / `PEP_646_MINIMUM = (3, 11)`, `min_python_override` set the same way - see
+`PEP_646_MINIMUM = (3, 11)`, `min_python` set the same way - see
 [Python version gates](../../user/concepts/python-version-gates.md) for why this recipe's minimum is one version
 below `TypeVarCheck`'s (PEP 646 landed a release before PEP 695), not raised to match it for consistency.
 
@@ -176,10 +172,8 @@ below `TypeVarCheck`'s (PEP 646 landed a release before PEP 695), not raised to 
 
 - `resolve_project_module` doesn't follow re-exports through an intermediate `__init__.py` or handle namespace
   packages (PEP 420); such imports are skipped by both the localization phase and the removal-safety check.
-- The Python-version gates (`target_supports_pep695` and `target_supports_pep646`, both backed by
-  `renaissance.utils.python_version`) only recognise `requires-python` specifiers matching a known, hardcoded
-  list of versions (3.8-3.14) - an exotic specifier that matches none of them is treated as unknown, the same as
-  a missing one, and blocks the rewrite.
+- Neither recipe detects the target's minimum Python version (e.g. from `requires-python`); it has to be given
+  explicitly via `--py`.
 - `TypeVarTupleCheck` only finds a **module-level** `TypeVarTuple` declaration in the same file, never one
   imported from another module - unlike `TypeVarCheck`, it has no cross-file localization phase of its own.
   When both recipes run together (`migration-type-recipes.py`), running `TypeVarTupleCheck` first lets it catch

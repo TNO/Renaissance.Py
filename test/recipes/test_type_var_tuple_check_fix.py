@@ -97,7 +97,7 @@ class TestFixLegacyUnpackUsage:
                 pass
         """
         subject = cast(TypeVarTupleCheck, make_recipe(TypeVarTupleCheck, code))
-        subject.min_python_override = (3, 10)
+        subject.min_python = (3, 10)
 
         result = subject.fix_legacy_unpack_usage()
 
@@ -121,7 +121,7 @@ class TestFixLegacyUnpackUsage:
             encoding="utf-8",
         )
         subject = TypeVarTupleCheck(target)
-        subject.min_python_override = PEP_646_MINIMUM
+        subject.min_python = PEP_646_MINIMUM
 
         subject.run()
 
