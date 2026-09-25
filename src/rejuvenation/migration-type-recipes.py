@@ -7,6 +7,7 @@ TypeVars it found but couldn't safely convert.
 Examples:
     python src/rejuvenation/migration-type-recipes.py ./some_repo --py 3.12 --report review.md
     python src/rejuvenation/migration-type-recipes.py ./some_repo/file.py --py 3.10
+    python src/rejuvenation/migration-type-recipes.py ./some_repo --py 3.12 --no-ruff
 
 """
 
@@ -169,11 +170,12 @@ def _format_commit_summary(reports: list[FileReport]) -> str:
     )
 
 
-def _format_console_report(reports: list[FileReport]) -> str:
+def _format_console_report(reports: list[FileReport], *, ruff_ran: bool) -> str:
     """Build the full per-file report: MODIFIED / NEEDS MANUAL REVIEW / ERRORS sections.
 
     Clean files (no TypeVar usage found at all) are folded into the top-line count only, never
-    listed individually - the report's job is to surface what needs attention.
+    listed individually - the report's job is to surface what needs attention. The ruff
+    import-cleanup line is only included when ruff_ran is True.
     """
     modified = [report for report in reports if has_fixed(report)]
     needs_review = [report for report in reports if has_unsafe(report)]
@@ -187,7 +189,7 @@ def _format_console_report(reports: list[FileReport]) -> str:
             f"manual review, {clean_count} clean, {len(errors)} errors"
         ),
     ]
-    if modified:
+    if ruff_ran:
         lines.append(
             "Unused imports across the modified files above were also cleaned up via `ruff check --fix --select F401`.",
         )
@@ -227,6 +229,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
             Examples:
               python src/rejuvenation/migration-type-recipes.py ./some_repo --py 3.12 --report review.md
               python src/rejuvenation/migration-type-recipes.py ./some_repo/file.py --py 3.10
+              python src/rejuvenation/migration-type-recipes.py ./some_repo --py 3.12 --no-ruff
             """),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -240,6 +243,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "e.g. 3.12. PEP 695 rewrites need 3.12+, native *Ts unpacking needs 3.11+.",
     )
     parser.add_argument("--report", type=Path, metavar="PATH", help="Also write the full report to this file.")
+    parser.add_argument(
+        "--no-ruff",
+        action="store_true",
+        help="Skip the final `ruff check --fix --select F401` pass that drops imports made unused.",
+    )
     return parser
 
 
@@ -278,11 +286,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"File {path} checked.")
 
     modified_paths = [report.path for report in reports if has_fixed(report)]
-    if modified_paths:
+    ruff_ran = bool(modified_paths) and not args.no_ruff
+    if ruff_ran:
         # TODO: removed statements leave their blank lines behind; ruff's E303 (preview) collapses them, but not at file start.
         _run_ruff_unused_import_cleanup(modified_paths)
 
-    console_report = _format_console_report(reports)
+    console_report = _format_console_report(reports, ruff_ran=ruff_ran)
     print(console_report)
     print()
     print(colored(_format_commit_summary(reports), "green", attrs=["bold"]))
