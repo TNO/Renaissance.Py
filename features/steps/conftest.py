@@ -31,11 +31,6 @@ _XFAIL_TAGS = {
         "when ancestor is collected first: Rewriter appends in insertion order",
         "strict": True,
     },
-    "xfail_sibling_range_dominance_range_first": {
-        "reason": "Range dominance not yet enforced when the dominating range is "
-        "collected first: _RewriteActions has no range-dominance filtering",
-        "strict": True,
-    },
     "xfail_surround_descendant_first_shared_start": {
         "reason": "Surround-before ordering not yet enforced when descendant is "
         "collected first: Rewriter orders surround-before texts by collection order, not AST structure",

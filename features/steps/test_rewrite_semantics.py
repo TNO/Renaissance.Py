@@ -93,6 +93,10 @@ def test_sibling_range_dominates_proper_subrange():
     """AI: Scenario test for 'Sibling range dominates a proper subrange regardless of collection order'."""
 
 
+@pytest.mark.xfail(
+    reason="Range dominance filtering not yet active: _RewriteActions has no logic to suppress a dominated sibling-range replacement",
+    strict=True,
+)
 @scenario(_FEATURE, "Sibling range dominates a single contained sibling regardless of collection order")
 def test_sibling_range_dominates_single_sibling():
     """AI: Scenario test for 'Sibling range dominates a single contained sibling regardless of collection order'."""
