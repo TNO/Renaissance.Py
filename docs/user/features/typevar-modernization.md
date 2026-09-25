@@ -214,16 +214,17 @@ start with, or contain, extra blank lines. Run your formatter afterwards to tidy
 ## API entry points
 
 ```shell
-python src/rejuvenation/migration-type-recipes.py <path> --py MAJOR.MINOR [--report PATH]
+python src/rejuvenation/migration-type-recipes.py <path> --py MAJOR.MINOR [--report PATH] [--no-ruff]
 ```
 
 - `<path>`: a `.py` file or a directory, scanned recursively (`.git`/`__pycache__`/`.venv`/`venv` excluded).
 - `--py` (required): the minimum Python version the target project supports, not the one running the tool.
   PEP 695 rewrites need 3.12+, `*Ts` unpacking needs 3.11+.
 - `--report`: also write the report to a file.
+- `--no-ruff`: skip the final `ruff` pass, leaving the imports the recipes made unused in place.
 
 Runs `TypeVarTupleCheck`, then `TypeVarCheck`, on every file, then `ruff check --fix --select F401` on the files
-it changed. Changes are written directly, so run it on a git checkout and review with `git diff`.
+it changed (unless `--no-ruff` is passed). Changes are written directly, so run it on a git checkout and review with `git diff`.
 
 ## Change considerations
 
