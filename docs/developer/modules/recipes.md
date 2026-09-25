@@ -101,7 +101,7 @@ Neither recipe removes a now-unused import itself (e.g. `from typing import Type
 that used to be hand-rolled per recipe (`TypeVarCheck._remove_unused_constructor_imports`,
 `TypeVarTupleCheck._has_other_unpack_subscript`), duplicating exactly what `ruff`'s `F401` rule already detects
 generically. `migration-type-recipes.py` now runs `ruff check --fix --select F401` over every file it modified,
-once, after both recipes have finished - see its own docs.
+once, after both recipes have finished, unless `--no-ruff` is passed - see its own docs.
 `_localize_import` is a separate, still-hand-rolled concern that survives this: narrowing an import because a
 name moved from *imported* to *locally declared* isn't "is this unused," so it isn't something `ruff` can do -
 it still uses `narrowed_import_text` directly.
