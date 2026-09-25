@@ -1,0 +1,34 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+
+# Only settings that differ from CodeRabbit's defaults are listed here.
+# Kept deliberately small. It can be updated later on.
+
+language: en-GB
+
+tone_instructions: >-
+  Be concise and technical. Prioritise correctness, typing and maintainability
+  over style nits: ruff already enforces formatting and style in CI. Do not request 
+  fixes that have nothing to do with the PR.
+
+reviews:
+  path_filters:
+    - "!uv.lock"
+    # Mirroring [tool.ruff] extend-exclude.
+    - "!features/targets/invalid.py"
+    - "!features/targets/taut/taut_test.py"
+    - "!features/targets/go/node.py"
+
+  pre_merge_checks:
+    docstrings:
+      # ruff's D rules cover this
+      mode: "off"
+
+  tools:
+    # ruff is the project's main linter
+    pylint:
+      enabled: false
+    flake8:
+      enabled: false
+    # pymarkdownlnt is the project's linter for docs
+    markdownlint:
+      enabled: false
