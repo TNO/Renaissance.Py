@@ -174,10 +174,6 @@ Feature: Rewrite semantics
   # ── Scenario Range Dominance — single sibling ────────────────────────────────────────
   # Range [sib1, sib2] dominates the single sibling [sib2].
   # 'DOMINATED' is the dominated change text; see Sentinel tokens in the preamble.
-  # Range dominance filtering is not AST-depth-aware here either: it only
-  # suppresses the dominated change when the range is collected first, so
-  # 'range collected first' is a known xfail (see conftest.py) until dominance
-  # is enforced regardless of collection order.
   Scenario Outline: Sibling range dominates a single contained sibling regardless of collection order
     Given the source 'a = 1\nb = 2\nc = 3\n'
     And the statement 'a = 1' is the first sibling
@@ -187,13 +183,9 @@ Feature: Rewrite semantics
     Then the result contains 'RANGE'
     But the result does not contain 'DOMINATED'
 
-    @xfail_sibling_range_dominance_range_first
     Examples:
       | first_op                                            | second_op                                             | collection order                |
       | first and second siblings are replaced with 'RANGE' | second sibling is replaced with 'DOMINATED'           | range collected first           |
-
-    Examples:
-      | first_op                                            | second_op                                             | collection order                |
       | second sibling is replaced with 'DOMINATED'         | first and second siblings are replaced with 'RANGE'   | single sibling collected first  |
 
   # ════════════════════════════════════════════════════════════════════════════════

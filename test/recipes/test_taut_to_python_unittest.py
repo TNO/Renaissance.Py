@@ -186,12 +186,6 @@ class TestTautToPythonUnittest:
         result = subject.apply_to_string()
         assert_that(result, is_(input_code + insert_code))
 
-    @pytest.mark.xfail(
-        reason="convert_setup() queues two rewrites on the same node before a commit - "
-        "previously silently corrupted output that happened to still satisfy this assertion; "
-        "now correctly rejected.",
-        strict=True,
-    )
     @pytest.mark.parametrize("input_code, expected_code", [(tst_class.set_up, tst_class.new_set_up)])
     def test_setup(self, input_code, expected_code, mocker):
         """AI: Verify convert_setup rewrites the sample set_up method to unittest's setUp form."""
@@ -293,12 +287,6 @@ class TestTautToPythonUnittest:
         result = subject.apply_to_string()
         assert_that(result, is_(expected_code))
 
-    @pytest.mark.xfail(
-        reason="insert_asserter() + remove_assert_func() queue two rewrites on the same node "
-        "before a commit - previously silently corrupted output that happened to still satisfy "
-        "this assertion; now correctly rejected.",
-        strict=True,
-    )
     def test_insert_asserter(self, mocker):
         """AI: Verify insert_asserter plus remove_assert_func inserts the asserter helper and removes the original function."""
         subject = self._create(mocker, "def assert_double_equal(a, br=c):\n    pass")

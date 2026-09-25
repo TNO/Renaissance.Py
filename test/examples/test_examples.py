@@ -152,18 +152,17 @@ class TestExamplesDifferentStyles:
         assert_that(expected, is_(result))
 
     @pytest.mark.xfail(
-        reason="example_add_comment_and_commit queues two rewrites on the same node before a "
-        "commit - previously silently corrupted output that happened to still satisfy this "
-        "assertion; now correctly rejected.",
+        reason="The declaration patterns do not match the 'old' declarations of the target file, so the "
+        "comment is inserted twice before every declaration instead of once before each 'old' one.",
         strict=True,
     )
     def test_example_add_comment_and_commit(self):
-        """AI: Verify example_add_comment_and_commit inserts the expected obsolete-comment text using Clang."""
+        """Verify example_add_comment_and_commit adds the obsolete-comment once before each 'old' declaration using Clang."""
         factory = ASTFactory(ClangASTNode)
         pattern_factory = CPatternFactory(factory)
         result, expected = example_add_comment_and_commit(factory, pattern_factory)
 
-        assert_that(result, contains_string("// old has become obsolete\n        // old has become obsolete\n "))
+        assert_that(result, is_(expected))
 
     def test_example_add_comment_and_commit_json(self):
         """AI: Verify example_add_comment_and_commit inserts the expected obsolete-comment text using Clang JSON."""
@@ -174,21 +173,16 @@ class TestExamplesDifferentStyles:
         assert_that(result, contains_string("        // old has become obsolete\n        old b = 2;"))
 
     @pytest.mark.xfail(
-        reason="example_add_comment_and_commit queues two rewrites on the same node before a "
-        "commit - previously silently corrupted output that happened to still satisfy this "
-        "assertion; now correctly rejected.",
+        reason="The declaration patterns never bind $old to the 'old' type, so no declaration is replaced.",
         strict=True,
     )
     def test_example_replace_old_by_fancy_new(self):
-        """AI: Verify example_replace_old_by_fancy_new runs without raising an exception."""
+        """Verify example_replace_old_by_fancy_new replaces every 'old' declaration type with 'fancy_new' using Clang."""
         factory = ASTFactory(ClangASTNode)
         pattern_factory = CPatternFactory(factory)
-
-        assert_that(calling(lambda: example_add_comment_and_commit(factory, pattern_factory)), not_(raises(Exception)))
-
         result, expected = example_replace_old_by_fancy_new(factory, pattern_factory)
-        # should check this:
-        # assert_that(result, contains_string("fancy_new b = 2;\n"))
+
+        assert_that(result, is_(expected))
 
     def test_make_sure_that_batch_remove_proc_still_run(self):
         """AI: Verify batch_remove_unused_variable_once_example runs without raising an exception."""
@@ -206,12 +200,6 @@ class TestExamplesDifferentStyles:
         """AI: Verify the recipe example raises the expected 'stddef.h not found' exception."""
         assert_that(calling(receipe_example), raises(Exception, pattern="'stddef.h' file not found"))
 
-    @pytest.mark.xfail(
-        reason="example_add_comment_and_commit queues two rewrites on the same node before a "
-        "commit - previously silently corrupted output that happened to still satisfy this "
-        "assertion; now correctly rejected.",
-        strict=True,
-    )
     def test_make_sure_different_style_still_run(self):
         """AI: Verify all example refactor/finder functions run without raising an exception."""
         factory = ASTFactory(ClangASTNode)
@@ -240,9 +228,9 @@ class TestExamplesDifferentStyles:
         assert_that(calling(lambda: refactor_with_nested_compositions([])), not_(raises(Exception)))
 
     @pytest.mark.xfail(
-        reason="remove_unused_variable_using_refactor_method queues two rewrites on the same "
-        "node before a commit - previously silently corrupted output that happened to still "
-        "satisfy this assertion; now correctly rejected.",
+        reason="remove_unused_variable_low_level finds a declaration once per enclosing compound "
+        "statement, so a nested declaration is queued for removal twice, which ASTRewriter "
+        "rejects as conflicting.",
         strict=True,
     )
     @pytest.mark.parametrize("node_type", [ClangASTNode, ClangJsonASTNode])
