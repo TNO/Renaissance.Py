@@ -24,6 +24,9 @@ The change process consists of the following steps:
 1. collect changes in that view, and
 1. commit changes to produce the final text.
 
+These steps are performed for each view;
+see [Combination of the two views](#combination-of-the-two-views) for the combination of the changes of both views.
+
 ## Unit of view
 
 The two views have different units:
@@ -39,6 +42,11 @@ For zero consecutive units the text range is empty,
 yet the location in the original code is specified.
 For instance, an empty parameter list of a function definition denotes zero AST nodes,
 located between the brackets.
+That location depends on the interpretation of the code,
+i.e., on the parser for the AST-based view and on the regular expression matcher for the character-based view.
+As zero consecutive units contain no units at all, their location distinguishes them:
+zero consecutive units at different locations in the code are different,
+e.g., the empty parameter lists of two different function definitions.
 
 ## Kinds of changes
 
@@ -54,13 +62,14 @@ that insert text at the start, end, and both locations of the consecutive units.
 ## Particular combinations
 
 We have the following rules to combine and commit the collected changes.
-The rules are stated in terms of the consecutive units that a change acts on,
-using the following relations between the consecutive units of two changes:
+Each rule compares the consecutive units that the changes act on,
+using the following relations between consecutive units:
 
-* They are the *same* when both changes act on exactly the same units.
-* They *partly overlap* when they share at least one unit,
-  while each change also acts on a unit that the other does not.
-* The units of one change *contain* the units of another change when the two are not the same and
+* Consecutive units are the *same* when they consist of exactly the same units,
+  and, for zero consecutive units, when their locations are the same.
+* Consecutive units *partly overlap* when they share at least one unit,
+  while each of them also has a unit that the other does not have.
+* Consecutive units *contain* other consecutive units when the two are not the same and
   every unit of the latter is a unit of the former or lies within one of them.
   In the character-based view a character never lies within another character,
   so the containing characters are always longer than the contained characters.
@@ -72,12 +81,15 @@ the same units have equal text ranges, partly overlapping units have partly over
 and containing units have a text range that includes the contained text range.
 Note that the including text range is not always longer:
 in the AST-based view the text range of a node and the text range of one of its descendants can be equal,
-e.g., in the CDT parser a declaration statement node and the declaration node it contains have the same text range.
+e.g., in the CDT parser for C/C++ a declaration statement node and the declaration node it contains have the same text range.
+
+Two changes can also be unrelated, i.e., their consecutive units are disjoint and their text ranges do not overlap.
+Such changes do not affect each other, so no rule is needed to combine them.
 
 1. Replacements affecting the same consecutive units are erroneous.  
-In both views, an error is raised whenever different replacements are applied to the same consecutive units.
-These replacements also have equal, completely overlapping text ranges.
-Figure 1.1 shows an example where different replacements are applied to the same AST node, and an error is raised.  
+In both views, an error is raised whenever multiple replacements are applied to the same consecutive units.
+These replacements also have equal, and therefore overlapping text ranges.
+Figure 1.1 shows an example where multiple replacements are applied to the same AST node, and an error is raised.  
 /// html | figure#rewrite-semantics-equal  
 ![Multiple replacements to the same AST-node](rewrite-semantics-images/rewrite-semantics-equal.png)
 *Figure 1.1 (CONCEPT-REWRITE-SEMANTICS-EQUAL): Example of multiple replacements to the same AST node.*
@@ -86,7 +98,7 @@ Figure 1.1 shows an example where different replacements are applied to the same
 1. Replacements affecting partly overlapping consecutive units are erroneous.  
 In both views, an error is raised whenever different replacements are applied to partly overlapping consecutive units.
 These replacements also have partly overlapping text ranges.
-In the AST-based view this can only occur for two ranges of consecutive siblings of the same parent node.
+In the AST-based view this can only occur for consecutive siblings of the same parent node.
 Figure 1.2 shows an example where replacements are applied to partly overlapping consecutive AST nodes,
 some arguments of a function call, and an error is raised.  
 /// html | figure#rewrite-semantics-overlap
@@ -100,7 +112,7 @@ These surrounds also have partly overlapping text ranges.
 
 1. Changes are ignored when a replacement affects containing consecutive units.  
 In both views, a change is ignored when the consecutive units of a replacement contain the consecutive units of that change.
-The text range of the ignored change is then included in the text range of that replacement.
+The text range of the ignored change is then contained in the text range of that replacement.
 In the AST-based view this includes the case where the text range of a node and the text range of one of its
 descendants are equal, as the units and not the text ranges are decisive.
 Changes affecting the same consecutive units as the replacement are not ignored;
@@ -113,6 +125,7 @@ Figure 1.3 shows an example where the replacement of an AST node dominates the r
 
 1. Multiple prepends at the same text location  
    * different consecutive units:  
+     Different consecutive units can only share their start location when one of them contains the other.
      The prepend of the containing consecutive units is before
      the prepend of the contained consecutive units.
      In the AST-based view, a prepend of an ancestor is before a prepend of a descendant.
@@ -127,6 +140,7 @@ Figure 1.3 shows an example where the replacement of an AST node dominates the r
 
 1. Multiple appends at the same text location
    * different consecutive units:  
+     Different consecutive units can only share their end location when one of them contains the other.
      The append of the containing consecutive units is after
      the append of the contained consecutive units.
      In the AST-based view, an append of an ancestor is after an append of a descendant.
@@ -188,6 +202,20 @@ Example of append and prepend of adjacent siblings at the same textual location.
      Surround After 1 - ... - Surround After M -
      Append 1 - ... - Append P
 
+## Combination of the two views
+
+The [change process](#change-process) is performed for each view.
+Changes from both views are combined in the following order:
+
+1. All changes are collected, in the character-based view as well as in the AST-based view,
+1. the changes in the AST-based view are combined using the rules above,
+   which produces character-based changes, and
+1. all character-based changes, both the collected and the produced ones,
+   are combined using the same rules.
+
+The changes of the AST-based view are thus reduced to character-based changes before the final combination,
+so the rules are always applied to changes of a single view.
+
 ## Summary
 
 Summary of the rewrite-semantics
@@ -205,6 +233,6 @@ Summary of the rewrite-semantics
 * Sequence rule - given two adjacent consecutive units, e.g., adjacent sibling AST nodes:
   * Any text inserted at the end of the preceding units (append text, or a surround's after-text) is
   always before any text inserted at the start of the following units (prepend text, or a surround's before-text)
-* Multiple applications rule - The direction depends on the operator:
+* Multiple applications rule - the direction depends on the operator:
   multiple prepends (and surround before-texts) follow the order of collection of the changes,
   while multiple appends (and surround after-texts) follow the reversed order of collection.
