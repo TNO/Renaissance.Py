@@ -1,0 +1,94 @@
+"""Recipe modernizing legacy `Unpack[T]` usage of a declared TypeVarTuple to native `*T` syntax."""
+
+import ast
+from typing import cast
+
+from renaissance.integrations.python.ast.rst_node import PythonRstNode
+from renaissance.recipes.python_refactoring import PythonRefactoring
+from renaissance.recipes.type_var_domain import UnsafeReason, find_type_param_declarations, type_param_constructor_name
+
+PEP_646_MINIMUM = (3, 11)
+
+
+class TypeVarTupleCheck(PythonRefactoring):
+    """Modernize legacy `Unpack[T]` usage of a declared TypeVarTuple to native `*T` syntax.
+
+    See fix_legacy_unpack_usage() for the rewrite this runs; find_legacy_unpack_usage() alone still
+    just detects, kept for any caller that only wants the names without touching the file.
+    """
+
+    # Minimum Python version the target codebase supports; None means unknown.
+    min_python: tuple[int, int] | None = None
+
+    def run(self) -> None:
+        """Entry point called by PythonRefactoring.process(); stores fix_legacy_unpack_usage()'s result."""
+        self.result = self.fix_legacy_unpack_usage()
+        if "fixed" in self.result.values():
+            self.commit()
+
+    def _target_supports_pep646(self) -> bool:
+        """Return True only if min_python is known and is 3.11+.
+
+        An unknown minimum returns False: native `*T` unpacking syntax (PEP 646) is a hard
+        SyntaxError before Python 3.11.
+        """
+        return self.min_python is not None and self.min_python >= PEP_646_MINIMUM
+
+    def find_legacy_unpack_usage(self) -> list[str]:
+        """Find every module-level TypeVarTuple name still referenced via the legacy Unpack[T] subscript form.
+
+        The newer syntax is `*T` unpacking instead. Detection only - see fix_legacy_unpack_usage()
+        to actually rewrite these.
+        """
+        root = cast("PythonRstNode", cast("object", self.root))
+        tree = cast("ast.Module", root.node)
+        return [name for name, _ in self._find_unpack_occurrences(tree)]
+
+    def fix_legacy_unpack_usage(self) -> dict[str, str]:
+        """Rewrite every legacy `Unpack[T]` usage of a declared TypeVarTuple to native `*T` syntax.
+
+        `Unpack[T]` and `*T` are fully equivalent wherever T is a TypeVarTuple - Unpack exists only
+        because it's parseable on Pythons before the native syntax landed (PEP 646, 3.11+), so
+        there's no per-occurrence safety analysis needed beyond the file-wide version gate: if
+        min_python isn't 3.11+, every candidate is reported "unsafe" and the file is left
+        untouched. Returns {name: "fixed" | "unsafe"}; every "unsafe" entry's reason (always
+        PEP646_VERSION_GATE, the only unsafe case this recipe has) is recorded on
+        self.unsafe_reasons.
+        """
+        root = cast("PythonRstNode", cast("object", self.root))
+        tree = cast("ast.Module", root.node)
+        self.unsafe_reasons: dict[str, UnsafeReason] = {}
+        occurrences = self._find_unpack_occurrences(tree)
+        if not occurrences:
+            return {}
+
+        names = {name for name, _ in occurrences}
+        if not self._target_supports_pep646():
+            self.unsafe_reasons = dict.fromkeys(names, UnsafeReason.PEP646_VERSION_GATE)
+            return dict.fromkeys(names, "unsafe")
+
+        for name, node in occurrences:
+            rst_node = self.find_rst_node(node)
+            self.replace(f"*{name}", rst_node, include_whitespace=False, include_comments=False)
+
+        return dict.fromkeys(names, "fixed")
+
+    def _find_unpack_occurrences(self, tree: ast.Module) -> list[tuple[str, ast.Subscript]]:
+        """Find every `Unpack[name]` subscript in the file where `name` is a declared TypeVarTuple.
+
+        Returns (name, node) pairs, one per occurrence - the same name can appear more than once.
+        """
+        declarations = find_type_param_declarations(tree)
+        typevartuple_names = {name for name, decl in declarations.items() if type_param_constructor_name(decl) == "TypeVarTuple"}
+
+        return [
+            (node.slice.id, node)
+            for node in ast.walk(tree)
+            if (
+                isinstance(node, ast.Subscript)
+                and isinstance(node.value, ast.Name)
+                and node.value.id == "Unpack"
+                and isinstance(node.slice, ast.Name)
+                and node.slice.id in typevartuple_names
+            )
+        ]
