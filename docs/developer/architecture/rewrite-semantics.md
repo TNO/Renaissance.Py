@@ -9,6 +9,32 @@
 Document design decisions that determine how the rewrite semantics are implemented.
 For the domain model of changes and the rewrite step, see [Rewrite semantics](../../user/concepts/rewrite-semantics.md).
 
+## Units versus text ranges
+
+The rules that combine changes can be stated over the text ranges that the changes affect,
+or over the consecutive units - characters or AST nodes - that the changes act on.
+Text ranges look like the simpler notion, as every change ultimately affects a range of text.
+
+A pure text-range formulation, however, fails for the dominance rule.
+That rule ignores every change whose text range is contained in the text range of a replacement,
+yet a prepend or an append on exactly the units that are replaced must still be applied,
+even though its location lies within the text range of that replacement.
+Stated over text ranges, the rule thus needs an exception that cannot be expressed in text ranges alone.
+
+Stated over units the exception disappears:
+a change is ignored when the units of a replacement contain its units,
+and insertions on the same units are not contained, hence not ignored.
+The AST-based view gives a second reason:
+a node and one of its descendants can have equal text ranges - e.g., a declaration statement node
+and the declaration node it contains in the CDT parser - so their text ranges cannot tell them apart,
+whereas their units can.
+
+**Decision**:
+
+1. The combination rules are stated over the consecutive units that the changes act on.
+1. Text ranges are used to describe the consequences of those rules, never to define them.
+1. For zero consecutive units, which contain no units at all, the location determines identity.
+
 ## Impossible combinations of changes
 
 The collected changes might contain changes whose combination is not possible.

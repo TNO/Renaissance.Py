@@ -28,10 +28,6 @@ proper ancestor.
 An [insertion](#insertion) that adds text immediately after the end location of an AST node.
 See [Rewrite semantics](user/concepts/rewrite-semantics.md).
 
-### Around
-
-See [Surround](#surround).
-
 ### AST (Abstract Syntax Tree)
 
 A hierarchical representation of source code produced by a compiler front-end,
