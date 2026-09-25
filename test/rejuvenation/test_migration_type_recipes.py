@@ -11,6 +11,7 @@ from types import ModuleType  # noqa: TC003
 
 import pytest
 from hamcrest import assert_that, contains_string, equal_to, has_entry, is_, is_not
+from hamcrest.core.matcher import Matcher  # noqa: TC002
 
 from renaissance.project.project_scanner import PythonScanner
 from renaissance.recipes.type_var_domain import UnsafeReason, doc_link
@@ -200,17 +201,51 @@ class TestProcessFile:
 class TestRuffImportCleanup:
     """main(): the ruff F401 batch step actually drops now-unused imports end to end."""
 
-    def test_unused_typevar_import_is_dropped(self, tmp_path: Path) -> None:
-        """A TypeVar import made redundant by conversion is gone from disk after main() runs."""
+    @pytest.mark.parametrize(
+        ("extra_args", "import_matcher"),
+        [
+            pytest.param([], is_not(contains_string("TypeVar")), id="default-drops-import"),
+            pytest.param(["--no-ruff"], contains_string("from typing import TypeVar"), id="no-ruff-keeps-import"),
+        ],
+    )
+    def test_unused_typevar_import_cleanup(
+        self,
+        tmp_path: Path,
+        extra_args: list[str],
+        import_matcher: Matcher[str],
+    ) -> None:
+        """The redundant TypeVar import is dropped by default and kept with --no-ruff; conversion runs either way."""
         target = tmp_path / "mod.py"
         target.write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
 
-        exit_code = migration.main([str(target), "--py", "3.12"])
+        exit_code = migration.main([str(target), "--py", "3.12", *extra_args])
 
         assert_that(exit_code, equal_to(0))
         written = target.read_text(encoding="utf-8")
         assert_that(written, contains_string("def identity[T]"))
-        assert_that(written, is_not(contains_string("TypeVar")))
+        assert_that(written, import_matcher)
+
+    @pytest.mark.parametrize(
+        ("extra_args", "report_matcher"),
+        [
+            pytest.param([], contains_string("cleaned up via `ruff"), id="default-mentions-ruff"),
+            pytest.param(["--no-ruff"], is_not(contains_string("cleaned up via `ruff")), id="no-ruff-omits-mention"),
+        ],
+    )
+    def test_report_mentions_ruff_cleanup_only_when_it_ran(
+        self,
+        tmp_path: Path,
+        capsys: pytest.CaptureFixture[str],
+        extra_args: list[str],
+        report_matcher: Matcher[str],
+    ) -> None:
+        """The report's ruff cleanup line appears only when the ruff pass actually ran."""
+        target = tmp_path / "mod.py"
+        target.write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
+
+        migration.main([str(target), "--py", "3.12", *extra_args])
+
+        assert_that(capsys.readouterr().out, report_matcher)
 
     def test_unrelated_import_survives_cleanup(self, tmp_path: Path) -> None:
         """An Unpack import still needed for an unrelated PEP 692 usage survives the ruff pass."""
