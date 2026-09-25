@@ -71,7 +71,8 @@ Each relation implies a relation between the corresponding text ranges, but the 
 the same units have equal text ranges, partly overlapping units have partly overlapping text ranges,
 and containing units have a text range that includes the contained text range.
 Note that the including text range is not always longer:
-in the AST-based view the text range of a node and the text range of one of its descendants can be equal.
+in the AST-based view the text range of a node and the text range of one of its descendants can be equal,
+e.g., in the CDT parser a declaration statement node and the declaration node it contains have the same text range.
 
 1. Replacements affecting the same consecutive units are erroneous.  
 In both views, an error is raised whenever different replacements are applied to the same consecutive units.
