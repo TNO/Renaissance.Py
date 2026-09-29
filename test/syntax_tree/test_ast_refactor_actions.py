@@ -1,6 +1,8 @@
 """Tests for the ASTRefactorActions helper."""
 
-from hamcrest import assert_that, is_
+import typing
+
+from hamcrest import assert_that, has_key, is_
 
 from renaissance.syntax_tree import ASTRefactorActions
 from renaissance.syntax_tree.semantic_kind import SemanticKind
@@ -94,5 +96,11 @@ class TestASTRefactorActions:
         proc.find_match.return_value = []
         factory = mocker.Mock()
         refactor_actions = ASTRefactorActions(proc, factory)
-        refactor_actions.collect("pattern", "pattern_kind")
+        refactor_actions.collect("pattern", None)
         assert_that(proc.find_match.called, is_(1))
+
+    def test_init_annotations_resolve(self) -> None:
+        """Assert the constructor annotations can be evaluated at runtime, as inspect.signature does."""
+        hints = typing.get_type_hints(ASTRefactorActions.__init__)
+
+        assert_that(hints, has_key("pattern_factory"))
