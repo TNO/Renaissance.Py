@@ -20,6 +20,8 @@ from renaissance.utils.text_utils import snake_case
 def narrowed_import_text(raw: ast.ImportFrom, names: str | set[str]) -> str | None:
     """Build the "from module import ..." text for `raw` with `names`' aliases dropped.
 
+    A relative import keeps its leading dots, e.g. "from ..pkg import x" or "from . import x".
+
     Returns None if nothing would remain (meaning the whole import statement should be removed
     instead).
     """
@@ -29,7 +31,8 @@ def narrowed_import_text(raw: ast.ImportFrom, names: str | set[str]) -> str | No
         for alias in raw.names
         if (alias.asname or alias.name) not in targets
     ]
-    return f"from {raw.module} import {', '.join(remaining)}" if remaining else None
+    module = "." * raw.level + (raw.module or "")
+    return f"from {module} import {', '.join(remaining)}" if remaining else None
 
 
 class PythonRefactoring(ASTProcessor):
@@ -132,7 +135,7 @@ class PythonRefactoring(ASTProcessor):
         self.replace().
         """
         # TODO: Drop once recipes can navigate wrapper nodes via the unified node protocol?
-        # 24-09 discussion over future Node Protocol implementation
+        # decided during 24-09 discussion over future Node Protocol implementation
         found: list[Any] = []
 
         def visit(node: Any) -> None:
