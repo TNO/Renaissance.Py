@@ -134,6 +134,20 @@ import, `"unsafe"`.
 import safely means converting that class - and anything downstream that depends on it - in the same
 coordinated change, or the two modules end up with different, incompatible `T`s.
 
+### An imported TypeVar's origin module imports its constructor conditionally
+
+{ #feature-typevar-modernization-origin-imports-constructor-conditionally }
+
+A localized declaration is a copy of the origin's `T = TypeVar(...)` call, so it runs with whichever `TypeVar`
+the *importing* file has in scope. If the origin imports `TypeVar` (or `ParamSpec`/`TypeVarTuple`) inside a
+module-level `if` or `try` block - typically `typing` on newer Pythons and `typing_extensions` below, because
+the declaration uses an argument such as `default=` that older `typing` versions reject - the copy may bind a
+different implementation than the origin intended and fail at import time on some supported versions. Left as
+an import, `"unsafe"`.
+
+**To fix this yourself:** give the importing file the same conditional import as the origin before copying the
+declaration across, or leave the import as it is.
+
 Supports `TypeVar` (including `bound=` and constraint forms), `ParamSpec`, and `TypeVarTuple`.
 
 ### A declared TypeVar is imported directly by another file in the target project
