@@ -201,6 +201,41 @@ class TestTypeVarCheckLocalize:
         output = subject.apply_to_string()
         assert_that(output.count("from typing import TypeVar"), is_(1))
 
+    def test_does_not_localize_when_origin_imports_constructor_conditionally(
+        self,
+        mocker: MockerFixture,
+        tmp_path: Path,
+    ) -> None:
+        """A TypeVar whose origin picks TypeVar per Python version stays imported, marked unsafe."""
+        subject = self._create_cross_file(
+            mocker,
+            tmp_path,
+            """
+            import sys
+            if sys.version_info >= (3, 13):
+                from typing import TypeVar
+            else:
+                from typing_extensions import TypeVar
+            T = TypeVar("T", contravariant=True, default=None)
+            """,
+            """
+            from typing import TypeVar
+            from file_1 import T, helper
+            def b(x: T) -> None:
+                helper()
+            """,
+        )
+        result = subject.localize_imported_typevars()
+
+        assert_that(result, has_entry("T", "unsafe"))
+        assert_that(
+            subject.cross_file_unsafe_reasons,
+            has_entry("T", UnsafeReason.ORIGIN_IMPORTS_CONSTRUCTOR_CONDITIONALLY),
+        )
+        output = subject.apply_to_string()
+        assert_that(output, contains_string("from file_1 import T, helper"))
+        assert_that(output, not_(contains_string("T = TypeVar")))
+
     def test_localizes_project_wide_import_from_different_directory(self, mocker: MockerFixture, tmp_path: Path) -> None:
         """A TypeVar imported from a module in a parent directory is localized when project_root is set."""
         (tmp_path / "file_1.py").write_text(
