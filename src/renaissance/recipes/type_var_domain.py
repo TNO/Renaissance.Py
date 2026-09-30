@@ -25,6 +25,7 @@ class UnsafeReason(StrEnum):
     ORIGIN_MODULE_EXPORTS_NAME = "origin_module_exports_name"
     USED_IN_EXPORTED_GENERIC_BASE = "used_in_exported_generic_base"
     IMPORTED_ELSEWHERE_IN_PROJECT = "imported_elsewhere_in_project"
+    ORIGIN_IMPORTS_CONSTRUCTOR_CONDITIONALLY = "origin_imports_constructor_conditionally"
 
 
 @dataclass(frozen=True)
@@ -56,6 +57,10 @@ UNSAFE_RULES: dict[UnsafeReason, UnsafeRule] = {
     ),
     UnsafeReason.IMPORTED_ELSEWHERE_IN_PROJECT: UnsafeRule(
         "imported directly by another file in the target project", "feature-typevar-modernization-imported-elsewhere-in-project",
+    ),
+    UnsafeReason.ORIGIN_IMPORTS_CONSTRUCTOR_CONDITIONALLY: UnsafeRule(
+        "origin module imports TypeVar/ParamSpec/TypeVarTuple conditionally, e.g. per Python version",
+        "feature-typevar-modernization-origin-imports-constructor-conditionally",
     ),
 }
 
@@ -134,18 +139,37 @@ def _used_in_exported_generic_base(tree: ast.Module, name: str) -> bool:
     return False
 
 
+def _imports_name_conditionally(tree: ast.Module, name: str) -> bool:
+    """Return True if an import inside a module-level `if`/`try` block binds `name`."""
+    for stmt in tree.body:
+        if not isinstance(stmt, ast.If | ast.Try | ast.TryStar):
+            continue
+        for node in ast.walk(stmt):
+            if isinstance(node, ast.Import | ast.ImportFrom) and any(
+                (alias.asname or alias.name.split(".")[0]) == name for alias in node.names
+            ):
+                return True
+    return False
+
+
 def is_safe_to_localize(origin_tree: ast.Module, name: str) -> UnsafeReason | None:
     """Return None if `name` is safe to duplicate as a local declaration, else the reason it isn't.
 
     The origin module must not advertise it as public API, whether via `__all__`
     (ORIGIN_MODULE_EXPORTS_NAME) or as a class-level `Generic[...]` parameter
     (USED_IN_EXPORTED_GENERIC_BASE, where identity crossing files can matter for subclassing).
+    Its constructor (TypeVar/ParamSpec/TypeVarTuple) must also not be imported inside a
+    module-level `if`/`try` block (ORIGIN_IMPORTS_CONSTRUCTOR_CONDITIONALLY), since which
+    implementation it binds then depends on the runtime, e.g. `typing_extensions` below 3.13.
     """
     dunder_all = _find_dunder_all(origin_tree)
     if dunder_all is not None and name in dunder_all:
         return UnsafeReason.ORIGIN_MODULE_EXPORTS_NAME
     if _used_in_exported_generic_base(origin_tree, name):
         return UnsafeReason.USED_IN_EXPORTED_GENERIC_BASE
+    declaration = find_type_param_declarations(origin_tree).get(name)
+    if declaration is not None and _imports_name_conditionally(origin_tree, type_param_constructor_name(declaration)):
+        return UnsafeReason.ORIGIN_IMPORTS_CONSTRUCTOR_CONDITIONALLY
     return None
 
 
