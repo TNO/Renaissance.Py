@@ -132,6 +132,30 @@ class TestIsSafeToLocalize:
                 """,
                 UnsafeReason.USED_IN_EXPORTED_GENERIC_BASE,
             ),
+            (
+                """
+                import sys
+
+                if sys.version_info >= (3, 13):
+                    from typing import TypeVar
+                else:
+                    from typing_extensions import TypeVar
+
+                T = TypeVar("T", default=None)
+                """,
+                UnsafeReason.ORIGIN_IMPORTS_CONSTRUCTOR_CONDITIONALLY,
+            ),
+            (
+                """
+                try:
+                    from typing import ParamSpec
+                except ImportError:
+                    from typing_extensions import ParamSpec
+
+                T = ParamSpec("T")
+                """,
+                UnsafeReason.ORIGIN_IMPORTS_CONSTRUCTOR_CONDITIONALLY,
+            ),
         ],
     )
     def test_returns_the_specific_reason_when_unsafe(self, source: str, expected_reason: UnsafeReason) -> None:
@@ -139,3 +163,16 @@ class TestIsSafeToLocalize:
         tree = _parse(source)
 
         assert_that(is_safe_to_localize(tree, "T"), is_(expected_reason))
+
+    def test_ignores_conditional_imports_of_other_names(self) -> None:
+        """A conditional import of an unrelated name doesn't make an unconditionally imported constructor unsafe."""
+        tree = _parse("""
+            from typing import TYPE_CHECKING, TypeVar
+
+            if TYPE_CHECKING:
+                from collections.abc import Sequence
+
+            T = TypeVar("T")
+        """)
+
+        assert_that(is_safe_to_localize(tree, "T"), is_(None))
