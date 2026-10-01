@@ -1,6 +1,7 @@
 """AI: ASTNode implementation backed by libclang's Python bindings."""
 
 import sys
+from ast import literal_eval
 from collections.abc import Sequence
 from functools import cache
 from pathlib import Path
@@ -551,7 +552,7 @@ class ReferenceHelper:
         ref_fields = ["referenced"]  # , 'type.get_declaration()']
         for field in ref_fields:
             try:
-                element = eval("ast_node.node." + field)
+                element = literal_eval("ast_node.node." + field)
                 if element.kind.name == "NO_DECL_FOUND":
                     continue
                 ref_id = element.hash
