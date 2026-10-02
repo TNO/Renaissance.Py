@@ -1,13 +1,13 @@
 """Tests for TypeVarTupleCheck.fix_legacy_unpack_usage."""
 
 import textwrap
-from collections.abc import Callable  # noqa: TC003
-from pathlib import Path  # noqa: TC003
+from collections.abc import Callable
+from pathlib import Path
 from typing import cast
 
 from hamcrest import assert_that, contains_string, equal_to, has_entry, is_not
 
-from renaissance.recipes.python_refactoring import PythonRefactoring  # noqa: TC001
+from renaissance.recipes.python_refactoring import PythonRefactoring
 from renaissance.recipes.type_var_domain import UnsafeReason
 from renaissance.recipes.type_var_tuple_check import PEP_646_MINIMUM, TypeVarTupleCheck
 

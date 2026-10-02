@@ -6,7 +6,7 @@ from typing import cast
 
 from hamcrest import assert_that, contains_string, has_entry, not_
 
-from renaissance.recipes.python_refactoring import PythonRefactoring  # noqa: TC001
+from renaissance.recipes.python_refactoring import PythonRefactoring
 from renaissance.recipes.type_var_check import TypeVarCheck
 from renaissance.recipes.type_var_domain import UnsafeReason
 
