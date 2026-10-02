@@ -41,6 +41,13 @@ cleanup actually runs.
 
 A Python file or directory, and the target project's minimum supported Python version (`--py`).
 
+Supports `TypeVar` (including `bound=` and constraint forms), `ParamSpec`, and `TypeVarTuple` declarations.
+
+The cross-file phase resolves absolute and relative imports against the target directory passed to the CLI (the
+file's own folder when a single file is passed). Imports that don't resolve to a file inside it (stdlib,
+third-party, re-exports through an intermediate `__init__.py`, namespace packages) are silently out of scope, not
+reported unsafe.
+
 ## Outputs / effects
 
 - The file is rewritten in place for every change classified as safe.
@@ -58,8 +65,8 @@ A Python file or directory, and the target project's minimum supported Python ve
 ## Constraints
 
 Every case below is a distinct, permanent reason a candidate is reported `"unsafe"` and left untouched - each has
-its own anchor so `migration-type-recipes.py --report` can link a specific occurrence straight to the rule that
-explains it, rather than a generic "couldn't convert" message.
+its own anchor so the CLI's report (printed on every run, and also saved to a file by `--report`) can link a
+specific occurrence straight to the rule that explains it, rather than a generic "couldn't convert" message.
 
 ### PEP 695 version gate
 
@@ -67,12 +74,8 @@ explains it, rather than a generic "couldn't convert" message.
 
 [PEP 695](https://peps.python.org/pep-0695/) generic syntax (`def f[T](...)`) did not exist before Python 3.12
 (released October 2023). If the minimum Python version passed with `--py` is below 3.12, every candidate is
-reported `"unsafe"` and left untouched. Cross-file localization (phase 1) always runs, since it never introduces
-PEP 695 syntax.
-
-The cross-file phase resolves absolute and relative imports against the target directory passed to the CLI.
-Imports that don't resolve to a file inside it (stdlib, third-party, re-exports through an intermediate
-`__init__.py`, namespace packages) are silently out of scope, not reported unsafe.
+reported `"unsafe"` by the conversion phase (phase 2) and left untouched. Cross-file localization (phase 1) and
+the orphaned-declaration cleanup (phase 3) still run, since neither introduces PEP 695 syntax.
 
 **To fix this yourself:** if the project actually supports 3.12+, re-run with `--py 3.12` (or higher). If it
 has to keep supporting older Pythons, there's no manual PEP 695 rewrite either, since the syntax doesn't exist
@@ -101,9 +104,8 @@ type parameter only exists inside the function signature it's declared on, so th
 referencing a name that no longer exists. Left unconverted, `"unsafe"`.
 
 **To convert this yourself:** check every other reference first (a `Generic[T]` base, a module-level type alias,
-and so on) - a PEP 695 type parameter only exists inside the function signature that declares it, so it can't
-back those other uses. If those other use sites can be rewritten or removed, the function signatures can then be
-converted by hand and the module-level declaration deleted; otherwise it has to stay module-level.
+and so on). If those other use sites can be rewritten or removed, the function signatures can then be converted
+by hand and the module-level declaration deleted; otherwise it has to stay module-level.
 
 ### An imported TypeVar's origin module exports it via `__all__`
 
@@ -119,14 +121,15 @@ original, still-exported one, and the new local copy), which silently breaks ide
 (same public-API trade-off as the previous case, on the other file) - otherwise the two files end up with two
 independent `T` objects, silently breaking anything relying on both referring to the same one.
 
-### An imported TypeVar is used in an exported `Generic[...]` base at its origin
+### An imported TypeVar is used in a `Generic[...]` base at its origin
 
 { #feature-typevar-modernization-used-in-exported-generic-base }
 
 If the origin module uses the imported name as a class's `Generic[T]` base, that class's own generic identity is
 tied to this specific `T` object - localizing the import would create a second, unrelated `T`, breaking
 subclassing or type-checking that depends on the two modules sharing the same type parameter. Left as an
-import, `"unsafe"`.
+import, `"unsafe"`. Any class in the origin module counts, exported or not, but only a bare `Generic[...]` base
+is detected: `typing.Generic[...]` and other generic bases such as `Protocol[T]` are not.
 
 **To fix this yourself:** the origin module's class is generic over this exact `T` object, so localizing the
 import safely means converting that class - and anything downstream that depends on it - in the same
@@ -145,8 +148,6 @@ an import, `"unsafe"`.
 
 **To fix this yourself:** give the importing file the same conditional import as the origin before copying the
 declaration across, or leave the import as it is.
-
-Supports `TypeVar` (including `bound=` and constraint forms), `ParamSpec`, and `TypeVarTuple`.
 
 ### A declared TypeVar is imported directly by another file in the target project
 
@@ -197,6 +198,16 @@ fix as the PEP 695 gate above, just at the lower threshold.
 A declaration imported by other files in the target project is always kept at its origin during a run, even
 when every importer gets localized in that same run. A second CLI run converts it, once no file imports it anymore.
 
+A single import statement that brings in two or more localizable type parameters (`from .origin import T, U`)
+currently makes the localization phase fail for that file: it is reported under `ERRORS` and left unchanged,
+because two rewrites are queued on the same statement. Splitting it into one import per name
+(`from .origin import T` and `from .origin import U`) lets the next run localize both.
+
+A function whose body contains a multi-line string literal with a continuation line indented less than the body
+(for example at column 0) is converted with the contents of that literal changed and the body re-indented; the
+tool does not report it. Review modified files with `git diff`, or convert such functions by hand. See
+[Python AST known limitations](../../developer/modules/python-ast-known-limitations.md).
+
 Removing a declaration or an unused import leaves its surrounding blank lines behind, so a modified file can
 start with, or contain, extra blank lines. Run your formatter afterwards to tidy them up.
 
@@ -215,6 +226,10 @@ start with, or contain, extra blank lines. Run your formatter afterwards to tidy
 - `test/recipes/test_type_var_tuple_check_fix.py`
 - `test/recipes/test_type_var_tuple_check_properties.py`
 - `test/recipes/test_type_var_domain.py`
+- `test/recipes/test_step_runner.py` - the step runner both phases of the CLI use
+- `test/recipes/test_python_refactoring.py` - `find_rst_node` and `narrowed_import_text`, shared by both recipes
+- `test/recipes/conftest.py` - the fixtures that build the recipes in the tests above
+- `test/utils/test_unparse_utils.py` - the bracket splice that adds the PEP 695 type parameters to a signature
 - `test/utils/test_import_resolution.py` - the project-wide import resolution the CLI uses for the
   `IMPORTED_ELSEWHERE_IN_PROJECT` constraint above
 - `test/rejuvenation/test_migration_type_recipes.py` (the CLI wrapper above)
@@ -222,6 +237,10 @@ start with, or contain, extra blank lines. Run your formatter afterwards to tidy
 ## Implemented by code modules
 
 - [Refactoring recipes](../../developer/modules/recipes.md)
+- `src/renaissance/recipes/type_var_check.py`, `type_var_tuple_check.py`, `type_var_domain.py`, `step_runner.py` and
+  `python_refactoring.py`
+- `src/renaissance/utils/import_resolution.py` and `unparse_utils.py`
+- `src/rejuvenation/migration-type-recipes.py` (the CLI)
 
 ## API entry points
 
@@ -232,11 +251,21 @@ python src/rejuvenation/migration-type-recipes.py <path> --py MAJOR.MINOR [--rep
 - `<path>`: a `.py` file or a directory, scanned recursively (`.git`/`__pycache__`/`.venv`/`venv` excluded).
 - `--py` (required): the minimum Python version the target project supports, not the one running the tool.
   PEP 695 rewrites need 3.12+, `*Ts` unpacking needs 3.11+.
-- `--report`: also write the report to a file.
-- `--no-ruff`: skip the final `ruff` pass, leaving the imports the recipes made unused in place.
+- `--report`: also write the report to a file. The same report is always printed to the console.
+- `--no-ruff`: skip the final `ruff` pass, leaving every unused import in the modified files in place, including
+  the ones the recipes made unused.
 
 Runs `TypeVarTupleCheck`, then `TypeVarCheck`, on every file, then `ruff check --fix --select F401` on the files
-it changed (unless `--no-ruff` is passed). Changes are written directly, so run it on a git checkout and review with `git diff`.
+it changed (unless `--no-ruff` is passed). That pass removes every import `ruff` reports as unused in those
+files, including imports that were already unused before the run. `ruff` is invoked as `python -m ruff`, so it
+has to be installed in the same environment as the tool; if it can't run, the files keep the recipes' output and
+the report line still says the pass ran. Changes are written directly, so run it on a git checkout and review
+with `git diff`.
+
+The report has a summary line, then the `MODIFIED`, `NEEDS MANUAL REVIEW` (each unsafe name with its documented
+rule and link) and `ERRORS` sections; files with no type-parameter usage are only counted. The exit code is 0 on
+normal completion (files needing manual review are not a failure), 2 for a usage error such as a missing path or
+a malformed `--py`, and 3 if any file raised an unhandled exception, which is listed under `ERRORS`.
 
 ## Change considerations
 
