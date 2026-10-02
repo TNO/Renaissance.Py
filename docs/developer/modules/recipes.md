@@ -130,7 +130,6 @@ below `TypeVarCheck`'s (PEP 646 landed a release before PEP 695), not raised to 
 
 ## Related concepts
 
-- [Type parameter scope](../../user/concepts/type-parameter-scope.md)
 - [Python version gates](../../user/concepts/python-version-gates.md)
 
 ## Validated by test modules

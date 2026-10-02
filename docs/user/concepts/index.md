@@ -25,7 +25,7 @@ This section introduces the conceptual model of the repository.
 
 ## 5. Code modernization
 
-1. [Type parameter scope](type-parameter-scope.md)
+1. [Python version gates](python-version-gates.md)
 
 ## 6. Reusable libraries
 
