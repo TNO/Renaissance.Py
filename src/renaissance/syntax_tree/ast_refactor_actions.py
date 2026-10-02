@@ -2,16 +2,13 @@
 
 from collections.abc import Callable, Sequence
 from functools import cache
-from typing import TYPE_CHECKING
 
 from .ast_finder import matches_node
 from .ast_node import ASTNode
 from .ast_processor import ASTProcessor
 from .match_finder import MatchFinder, PatternMatch
+from .pattern_factory_protocol import PatternFactoryProtocol
 from .semantic_kind import SemanticKind
-
-if TYPE_CHECKING:
-    from renaissance.integrations.clang.c_pattern_factory import CPPPatternFactory
 
 
 def _kind_predicate(kind):
@@ -24,10 +21,10 @@ def _kind_predicate(kind):
     raise TypeError("kind must be a SemanticKind or a node predicate")
 
 
-class ASTRefactorActions:
+class ASTRefactorActions[NodeT, TranslationUnitT]:
     """AI: Higher-level refactoring actions (replace, insert, remove) built on top of pattern matching and rewriting."""
 
-    def __init__(self, processor: ASTProcessor, pattern_factory: CPPPatternFactory) -> None:
+    def __init__(self, processor: ASTProcessor, pattern_factory: PatternFactoryProtocol[NodeT, TranslationUnitT]) -> None:
         """AI: Provide pattern-based refactoring actions (replace, insert, remove) over an AST."""
         self.processor = processor
         self.pattern_factory = pattern_factory
@@ -118,7 +115,7 @@ class ASTRefactorActions:
         return self.processor.find_match(pattern)
 
     @cache
-    def collect(self, pattern: str, pattern_kind: str):
+    def collect(self, pattern: str, pattern_kind: Callable[[ASTNode[NodeT, TranslationUnitT]], bool] | None) -> Sequence[PatternMatch]:
         """AI: Return the matches of pattern parsed as the given pattern_kind."""
         root = self.pattern_factory.create(pattern, pattern_kind)
 
