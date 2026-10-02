@@ -198,6 +198,7 @@ class TypeVarCheck(PythonRefactoring):
 
                 decl_stmt = declarations[alias.name]
                 needed_import = self._missing_constructor_import(origin_tree, decl_stmt)
+                # TODO: queues one replace per alias on the same import node, which conflicts when a statement localizes 2+ names.
                 self._localize_import(import_node, raw, alias.name, decl_stmt, needed_import)
                 results[alias.name] = "fixed"
 
