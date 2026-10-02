@@ -63,7 +63,7 @@ class PythonScanner(ProjectScanner):
         self.package_dirs = package_dirs
 
     def find_sources(self) -> list[str]:
-        """Return every .py file under root_dir (or package_dirs, if given), sorted, excluding EXCLUDED_DIRS."""
+        """Return every .py file under root_dir (or package_dirs, if given), sorted, skipping EXCLUDED_DIRS subdirectories."""
         path = Path(self.root_dir)
         if not path.exists():
             message = f"root_dir does not exist: {self.root_dir}"
@@ -72,13 +72,16 @@ class PythonScanner(ProjectScanner):
             message = f"root_dir is not a directory: {self.root_dir}"
             raise NotADirectoryError(message)
 
-        roots = [Path(self.root_dir) / d for d in self.package_dirs] if self.package_dirs else [Path(self.root_dir)]
+        roots = [path / d for d in self.package_dirs] if self.package_dirs else [path]
         files: list[Path] = []
         for root in roots:
             if not root.exists():
                 continue
-            files.extend(path for path in root.rglob("*.py") if not any(part in self.EXCLUDED_DIRS for part in path.parts))
-        return sorted(str(path) for path in files)
+            for dirpath, dirnames, filenames in root.walk():
+                # Pruning in place stops walk() from descending into excluded directories at all.
+                dirnames[:] = [name for name in dirnames if name not in self.EXCLUDED_DIRS]
+                files.extend(dirpath / name for name in filenames if (dirpath / name).match("*.py"))
+        return sorted(str(file) for file in files)
 
 
 class BearCppScanner(CppScanner):

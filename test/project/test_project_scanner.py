@@ -261,6 +261,20 @@ class TestPythonScanner:
 
         assert_that(result, equal_to([str(redis_like / "client.py")]))
 
+    @pytest.mark.parametrize("excluded_dir", sorted(PythonScanner.EXCLUDED_DIRS))
+    def test_root_dir_inside_excluded_name_is_still_scanned(self, tmp_path: Path, excluded_dir: str) -> None:
+        """Assert PythonScanner.find_sources only applies EXCLUDED_DIRS below root_dir, never to its ancestors."""
+        root = tmp_path / excluded_dir / "project"
+        noise_dir = root / excluded_dir
+        noise_dir.mkdir(parents=True)
+        (noise_dir / "ignored.py").write_text("")
+        (root / "kept.py").write_text("")
+
+        scanner = PythonScanner(str(root))
+        result = [Path(p).name for p in scanner.find_sources()]
+
+        assert_that(result, equal_to(["kept.py"]))
+
 
 # ---------------------------------------------------------------------------
 # BearCppScanner

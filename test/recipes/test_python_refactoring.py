@@ -1,15 +1,19 @@
 """Tests for the PythonRefactoring recipe base class."""
 
+import ast
 import keyword
 import textwrap
+from typing import cast
 from unittest.mock import patch
 
+import pytest
 from hamcrest import assert_that, contains_string, is_
 from hypothesis import given, settings
 from hypothesis import strategies as st
+from pytest_mock import MockerFixture
 
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
-from renaissance.recipes.python_refactoring import PythonRefactoring
+from renaissance.recipes.python_refactoring import PythonRefactoring, narrowed_import_text
 from renaissance.recipes.unit_to_pytest import UnitToPytest
 from renaissance.syntax_tree.semantic_kind import SemanticKind
 
@@ -288,5 +292,57 @@ class TestPythonRefactoring:
             """,
             "test_foo.py",
         )
+
         subject = UnitToPytest("test_foo.py")
         assert_that(len(subject.body), is_(2))
+
+    # ------------------------------------------------------------------
+    # find_rst_node
+    # ------------------------------------------------------------------
+
+    def test_find_rst_node_returns_wrapper_for_raw_ast_node(self, mocker: MockerFixture) -> None:
+        """AI: Verify find_rst_node locates the PythonRstNode wrapping a given raw ast.FunctionDef."""
+        self._patch_factory(
+            mocker,
+            """
+            def foo():
+                pass
+            """,
+            "test_foo.py",
+        )
+
+        subject = UnitToPytest("test_foo.py")
+        root = cast("PythonRstNode", cast("object", subject.root))
+        module = cast(ast.Module, root.node)
+        target = next(node for node in ast.walk(module) if isinstance(node, ast.FunctionDef))
+
+        found = subject.find_rst_node(target)
+
+        assert_that(found.node, is_(target))
+
+
+class TestNarrowedImportText:
+    """Tests for narrowed_import_text."""
+
+    @pytest.mark.parametrize(
+        ("source", "expected"),
+        [
+            ("from pkg.mod import T, x", "from pkg.mod import x"),
+            ("from .mod import T, x", "from .mod import x"),
+            ("from ..pkg.mod import T, x", "from ..pkg.mod import x"),
+            ("from . import T, x", "from . import x"),
+            ("from .. import T, x as y", "from .. import x as y"),
+        ],
+    )
+    def test_keeps_module_and_relative_level(self, source: str, expected: str) -> None:
+        """Dropping a name keeps the module path, including a relative import's leading dots."""
+        raw = cast("ast.ImportFrom", ast.parse(source).body[0])
+
+        assert_that(narrowed_import_text(raw, "T"), is_(expected))
+
+    @pytest.mark.parametrize("source", ["from pkg.mod import T", "from ..pkg.mod import T", "from . import T"])
+    def test_returns_none_when_nothing_remains(self, source: str) -> None:
+        """Removing the only imported name returns None instead of an empty import."""
+        raw = cast("ast.ImportFrom", ast.parse(source).body[0])
+
+        assert_that(narrowed_import_text(raw, "T"), is_(None))

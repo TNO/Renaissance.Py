@@ -23,6 +23,10 @@ This section introduces the conceptual model of the repository.
 1. [Transformation](transformation.md)
 2. [Composition](composition.md)
 
-## 5. Reusable libraries
+## 5. Code modernization
+
+1. [Python version gates](python-version-gates.md)
+
+## 6. Reusable libraries
 
 1. [Standard analyses and transformations](standard-libraries.md)
