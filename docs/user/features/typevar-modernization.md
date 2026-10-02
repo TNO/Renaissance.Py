@@ -17,9 +17,9 @@ clean up at all:
 2. **Conversion to PEP 695 syntax.** Every declared `TypeVar`/`ParamSpec`/`TypeVarTuple` is rewritten to
    [PEP 695](https://peps.python.org/pep-0695/) generic syntax (`def f[T](...)`) across every function that uses
    it — whether it's used by one function (the same rewrite `ruff` offers, but only via `--unsafe-fixes`) or
-   shared across several (see [Type parameter scope](../concepts/type-parameter-scope.md); `ruff` can't safely do
-   this at all, since converting one function at a time never lets it confirm every use site is covered). The
-   now-redundant module-level declaration is removed as part of the same pass.
+   shared across several (`ruff` can't safely do this at all, since converting one function at a time never lets it
+   confirm every use site is covered). The now-redundant module-level declaration is removed as part of the same
+   pass.
 3. **Orphaned declaration cleanup.** A defensive final pass for declarations left dead by outside means — e.g. a
    signature already converted to PEP 695 syntax by hand, or by running `ruff` before this recipe. `ruff`'s
    `UP047`, by its own documentation, never removes the module-level `T = TypeVar("T")` it makes redundant, in
@@ -84,8 +84,7 @@ before 3.12.
 
 A module-level `T = TypeVar(...)` (or `ParamSpec`/`TypeVarTuple`) listed in its own file's `__all__` is public
 API - removing its declaration to convert it to PEP 695 syntax would break any importer still doing
-`from this_module import T`. Left unconverted, `"unsafe"`. See
-[Type parameter scope](../concepts/type-parameter-scope.md).
+`from this_module import T`. Left unconverted, `"unsafe"`.
 
 **To convert this yourself:** you have to accept the same trade-off the tool won't make automatically - remove
 `T` from `__all__` (usually a breaking change for anything still importing it), move it into a PEP 695 signature
@@ -99,8 +98,7 @@ at every function that uses it, and delete the old `T = TypeVar(...)` line once 
 A module-level declaration referenced anywhere other than inside the function(s) being converted - for example
 as a class's `Generic[T]` base, or in a module-level type alias - can't have its declaration removed: a PEP 695
 type parameter only exists inside the function signature it's declared on, so that other use site would be left
-referencing a name that no longer exists. Left unconverted, `"unsafe"`. See
-[Type parameter scope](../concepts/type-parameter-scope.md).
+referencing a name that no longer exists. Left unconverted, `"unsafe"`.
 
 **To convert this yourself:** check every other reference first (a `Generic[T]` base, a module-level type alias,
 and so on) - a PEP 695 type parameter only exists inside the function signature that declares it, so it can't
@@ -204,7 +202,7 @@ start with, or contain, extra blank lines. Run your formatter afterwards to tidy
 
 ## Related concepts
 
-- [Type parameter scope](../concepts/type-parameter-scope.md)
+- [Python version gates](../concepts/python-version-gates.md)
 
 ## Verified by test modules
 
