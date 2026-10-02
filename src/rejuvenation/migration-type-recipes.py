@@ -1,8 +1,7 @@
-"""Friendly CLI to run TypeVarTupleCheck and TypeVarCheck (TypeVar/ParamSpec/TypeVarTuple modernization).
+"""CLI that modernizes type parameters (TypeVar, ParamSpec, TypeVarTuple) to PEP 695 and PEP 646 syntax.
 
-Replaces the raw `python cli.py refactor TypeVarCheck <file>` positional-argv dispatch with a
-real CLI: `--help`, named flags, and a report distinguishing files it modified from files with
-TypeVars it found but couldn't safely convert.
+Runs TypeVarTupleCheck, then TypeVarCheck, on a file or directory, and reports which files were
+modified and which need manual review.
 
 Examples:
     python src/rejuvenation/migration-type-recipes.py ./some_repo --py 3.12 --report review.md
@@ -11,15 +10,14 @@ Examples:
 
 """
 
-# A CLI's entire job is printing its report to the user - this mirrors the existing
-# print()+termcolor convention already used by PythonRefactoring.process().
+# Printing the report is this CLI's purpose.
 # ruff: noqa: T201
 
 import argparse
 import subprocess
 import sys
 import textwrap
-from collections.abc import Sequence  # noqa: TC003
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
