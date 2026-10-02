@@ -116,7 +116,7 @@ def _removal_advice() -> str:
         "\nNo ruff or pyright issues are left. This budget functionality can be removed:\n"
         '  1. move the strict settings into pyproject.toml (ruff `select = ["ALL"]`, pyright `typeCheckingMode = "strict"`);\n'
         f"  2. delete {BUDGET_FILE.name}, {PYRIGHT_STRICT_CONFIG.name} and tools/{Path(__file__).name};\n"
-        "  3. delete the 'Check ruff and pyright issue budgets' step from .github/workflows/python-package.yml."
+        "  3. delete the 'Check ruff and pyright issue budgets' step from .github/workflows/code-quality.yml."
     )
 
 

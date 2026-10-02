@@ -1,4 +1,4 @@
-name: Docs quality
+name: docs quality
 
 on:
   pull_request:
