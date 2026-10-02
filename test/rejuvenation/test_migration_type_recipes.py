@@ -7,11 +7,11 @@ importlib.util.spec_from_file_location instead of a normal import - see _load_sc
 import importlib.util
 import textwrap
 from pathlib import Path
-from types import ModuleType  # noqa: TC003
+from types import ModuleType
 
 import pytest
 from hamcrest import assert_that, contains_string, equal_to, has_entry, is_, is_not
-from hamcrest.core.matcher import Matcher  # noqa: TC002
+from hamcrest.core.matcher import Matcher
 
 from renaissance.project.project_scanner import PythonScanner
 from renaissance.recipes.type_var_domain import UnsafeReason, doc_link

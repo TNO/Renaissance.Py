@@ -1,9 +1,9 @@
 """A small, generic way to sequence independently-committable fix actions across one or more recipes."""
 
-from collections.abc import Callable, Sequence  # noqa: TC003
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 
-from renaissance.recipes.python_refactoring import PythonRefactoring  # noqa: TC001
+from renaissance.recipes.python_refactoring import PythonRefactoring
 
 
 @dataclass(frozen=True)
