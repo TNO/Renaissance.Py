@@ -1,10 +1,10 @@
 """Tests for Step/run_steps."""
 
-from collections.abc import Callable  # noqa: TC003
+from collections.abc import Callable
 
 import pytest
 from hamcrest import assert_that, equal_to, is_
-from pytest_mock import MockerFixture  # noqa: TC002
+from pytest_mock import MockerFixture
 
 from renaissance.recipes.python_refactoring import PythonRefactoring
 from renaissance.recipes.step_runner import Step, run_steps
@@ -54,10 +54,12 @@ class TestRunSteps:
         fixing_recipe = mocker.Mock(spec=PythonRefactoring)
         unsafe_recipe = mocker.Mock(spec=PythonRefactoring)
 
-        run_steps([
-            Step("fixes", fixing_recipe, lambda: {"A": "fixed"}),
-            Step("unsafe", unsafe_recipe, lambda: {"B": "unsafe"}),
-        ])
+        run_steps(
+            [
+                Step("fixes", fixing_recipe, lambda: {"A": "fixed"}),
+                Step("unsafe", unsafe_recipe, lambda: {"B": "unsafe"}),
+            ]
+        )
 
         assert_that(fixing_recipe.commit.called, is_(True))
         assert_that(unsafe_recipe.commit.called, is_(False))
