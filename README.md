@@ -1,13 +1,10 @@
 # Renaissance.Py
 
-[![Python package](https://github.com/TNO/Renaissance.Py/actions/workflows/python-package.yml/badge.svg)](https://github.com/TNO/Renaissance.Py/actions/workflows/python-package.yml)
-[![Docs quality](https://github.com/TNO/Renaissance.Py/actions/workflows/docs-quality.yml/badge.svg)](https://github.com/TNO/Renaissance.Py/actions/workflows/docs-quality.yml)
-[![License: EPL 2.0](https://img.shields.io/badge/License-EPL_2.0-red.svg)](https://opensource.org/license/epl-2-0)
-[![Python](https://img.shields.io/badge/python-3.14-blue.svg)](https://www.python.org/downloads/)
-[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
-[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
-[![Docs](https://img.shields.io/badge/docs-mkdocs--material-blue.svg)](https://tno.github.io/Renaissance.Py/)
+[![code quality](https://github.com/TNO/Renaissance.Py/actions/workflows/code-quality.yml/badge.svg)](https://github.com/TNO/Renaissance.Py/actions/workflows/code-quality.yml)
 [![Coverage report](https://img.shields.io/badge/coverage-report-informational.svg)](https://tno.github.io/Renaissance.Py/coverage/)
+[![docs quality](https://github.com/TNO/Renaissance.Py/actions/workflows/docs-quality.yml/badge.svg)](https://github.com/TNO/Renaissance.Py/actions/workflows/docs-quality.yml)
+[![docs](https://img.shields.io/badge/docs-mkdocs-blue.svg)](https://tno.github.io/Renaissance.Py/)
+[![License: EPL 2.0](https://img.shields.io/badge/License-EPL_2.0-red.svg)](https://opensource.org/license/epl-2-0)
 
 Renaissance.Py is a library and tool for software analysis and transformation.
 Renaissance.Py provides AST matching for multiple programming languages.
@@ -31,7 +28,7 @@ For licensing inquiries please contact: [Jos Hegge](https://esi.tno.nl/about-us/
 
 To ensure that the project can continue to be distributed under non-restrictive OS licenses and
 for certain applications closed source licenses, all contributions must be submitted under
-the MIT License or BSD 3-Clause License and must comply with the contribution requirements
+the MIT License or BSD 3-Clause License and must comply with the contribution policy
 described in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 Contributions that are subject to additional restrictions or incompatible license terms will not be accepted.
