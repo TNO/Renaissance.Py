@@ -6,9 +6,10 @@
 
 Concrete limitations found in the Python AST/RST layer (`renaissance.integrations.python.ast`) and the rewrite mechanism it
 feeds (`renaissance.syntax_tree.ast_rewriter`, `renaissance.utils.text_utils`) while building recipes
-(`TypeVarCheck`, `TypeVarTupleCheck`), that have no other tracker (no fix, no TODO, no test) anywhere in the
-codebase. Anything already tracked by a code comment, an `xfail` test, or a fix already merged/sitting on a branch
-lives there instead of being duplicated here - a recipe still has to work around both items below.
+(`TypeVarCheck`, `TypeVarTupleCheck`). A recipe still has to work around both items below. Item 1 has no other
+tracker in the codebase. Item 2 is also tracked by a `# TODO` at the `return` in `ast_rewriter.py`, by `xfail`
+scenarios in `features/steps/test_rewrite_semantics.py` and `test/syntax_tree/test_ast_rewriter.py`, and by tests
+skipped with `TODO: fix impl.` in the latter; this page records why the obvious fix does not work.
 
 ## 1. `ast.unparse()`/`shift_right` lose comments and indentation
 
@@ -26,6 +27,14 @@ without Python itself changing. Both are real for any recipe that regenerates a 
 **`TypeVarCheck` avoids this, it doesn't fix it** - see [Refactoring recipes](../../developer/modules/recipes.md)
 for how `unparse_signature_only` splices only the new `[T]`/`[**P]`/`[*Ts]` bracket into the function's original
 text instead of regenerating anything via `ast.unparse()`.
+
+The avoidance is not complete. `unparse_signature_only` still re-indents the function's lines (`_renormalize_indent`),
+taking the *smallest* indentation among the body's non-blank lines as the body's own indentation, and that is
+blind to string literals too. A multi-line string literal in the body with a continuation line indented less than
+the body (for example at column 0) lowers that minimum: the function is re-indented from the wrong baseline and
+the literal's contents change silently (`'first\nsecond'` becomes `'first\n    second'`). This reproduces with
+`TypeVarCheck.convert_declared_typevars` on both a module-level function and a method; a literal whose
+continuation lines are indented like the body is not affected.
 
 A future recipe that genuinely needs to regenerate a whole body from the AST - not just a signature - still hits
 both issues above and has to work around them itself; neither `ast.unparse()`'s comment blindness nor
@@ -48,12 +57,14 @@ same collection `apply()` draws `n` from when it calls `__is_ancestor_in_nodes(n
 tautology: `True` for almost any node, since it always includes a self-comparison. Dropping `and False` would
 make `__is_ancestor_in_nodes` return `True` for nearly every queued node - including nodes that have no real
 ancestor/descendant relationship to anything else - so `apply()`'s `continue` would skip most rewrites, not
-just the dominated ones, breaking the majority of currently-passing scenarios rather than fixing the handful that
-are `xfail`. A real fix needs to exclude a node's own rewrite from the comparison set and use a genuine
+just the dominated ones, breaking the majority of currently-passing scenarios rather than fixing the dominance
+scenarios that are marked `xfail` (for example `test_dominated_change_not_applied` in
+`features/steps/test_rewrite_semantics.py`). A real fix needs to exclude a node's own rewrite from the comparison set and use a genuine
 ancestor/descendant check - e.g. reusing `__is_nested` (already used by `__check_for_conflicting_rewrites`, the
 sibling check that turns a *different* kind of overlapping-rewrite bug into a clear `ValueError` instead of
 corrupting output) - instead of repairing `no_conflict`'s offset-overlap test.
 
-`TypeVarCheck` avoids triggering this gap by construction - see [Refactoring recipes](../../developer/modules/recipes.md)
-for how `convert_declared_typevars` collects every touched function and queues exactly one edit per node, never a
-second rewrite on the same node.
+`TypeVarCheck` avoids triggering this gap by construction: `functions_using_nodes` attributes a name to the
+outermost function using it, so a nested closure never gets an edit of its own alongside its parent's. See
+[Refactoring recipes](recipes.md), which also describes how `convert_declared_typevars` queues exactly one edit per
+function, never a second rewrite on the same node.

@@ -28,6 +28,10 @@ proper ancestor.
 An [insertion](#insertion) that adds text immediately after the end location of an AST node.
 See [Rewrite semantics](user/concepts/rewrite-semantics.md).
 
+### Around
+
+See [Surround](#surround).
+
 ### AST (Abstract Syntax Tree)
 
 A hierarchical representation of source code produced by a compiler front-end,
@@ -165,6 +169,12 @@ See [Observability](user/concepts/observability.md).
 
 An [insertion](#insertion) that adds text immediately before the start location of an AST node.
 See [Rewrite semantics](user/concepts/rewrite-semantics.md).
+
+### Python version gate
+
+A check that lets a recipe apply a rewrite only when the target codebase's minimum supported Python version, as
+given by the user, meets the threshold of the syntax the rewrite introduces. An unknown minimum never passes.
+See [Python version gates](user/concepts/python-version-gates.md).
 
 ---
 
