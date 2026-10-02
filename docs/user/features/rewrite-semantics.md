@@ -18,7 +18,7 @@ which produce errors, so that transformation authors can reason about the outcom
 
 * [Rewrite semantics test module](../../developer/modules/rewrite-semantics.md)
 * BDD scenarios: `features/rewrite-semantics.feature`
-* BDD steps: `features/steps/test-rewrite-semantics.py`
+* BDD steps: `features/steps/test_rewrite_semantics.py`
 
 ## Corner case: Dominated, overlapping replacements
 

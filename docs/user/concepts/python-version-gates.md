@@ -37,13 +37,21 @@ Each gate (`TypeVarCheck._target_supports_pep695()`, `TypeVarTupleCheck._target_
   each of these gates protects is a hard `SyntaxError` on an older interpreter, so guessing wrong isn't a
   cosmetic mistake, it's a codebase the recipe would break outright.
 - Two recipes can use two different thresholds independently and correctly in the same CLI run, each compared
-  against its own true minimum - see [TypeVar modernization](../features/typevar-modernization.md)'s Constraints
-  section for the concrete case (a target declaring exactly 3.11 fixes `Unpack[T]` → `*T` but still reports PEP
-  695 conversion `"unsafe"`).
+  against its own true minimum. For example, with `--py 3.11` the CLI rewrites `Unpack[T]` to `*T` (PEP 646,
+  3.11) but still reports the PEP 695 conversion `"unsafe"` (3.12); with `--py 3.12` it does both. See
+  [TypeVar modernization](../features/typevar-modernization.md)'s Constraints section for the thresholds.
+- The gate protects rewrites that *introduce* new syntax. Removing a declaration that is already dead, because
+  every use of it is shadowed by a PEP 695 type parameter, adds no syntax and does not depend on `min_python`.
 
 ## Related features
 
 - [TypeVar modernization](../features/typevar-modernization.md)
+
+## Related tests
+
+- `test/recipes/test_type_var_check.py` (`test_pep695_gate_threshold`)
+- `test/recipes/test_type_var_tuple_check_fix.py` (`test_version_gate_below_minimum_reports_unsafe_and_leaves_file_untouched`)
+- `test/rejuvenation/test_migration_type_recipes.py` (`test_py_flag_gates_rewrites`)
 
 ## Related code
 
