@@ -17,7 +17,6 @@
 ## 3. TypeVar modernization
 
 - **Feature:** [TypeVar modernization](../../user/features/typevar-modernization.md)
-- **Concepts:** [Type parameter scope](../../user/concepts/type-parameter-scope.md)
 - **Code modules:** [Refactoring recipes](../../developer/modules/recipes.md)
 - **Test file(s):**
   - `test/recipes/test_type_var_check.py`
