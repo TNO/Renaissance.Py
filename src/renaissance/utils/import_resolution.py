@@ -6,8 +6,8 @@ name` works regardless of whether the origin module declares `__all__`.
 """
 
 import ast
-from collections.abc import Sequence  # noqa: TC003 - no circular-import risk, not worth a TYPE_CHECKING block here
-from pathlib import Path  # noqa: TC003 - same reason
+from collections.abc import Sequence
+from pathlib import Path
 
 
 def resolve_project_module(importing_file: Path, project_root: Path, module: str | None, level: int) -> Path | None:
@@ -66,7 +66,7 @@ def collect_project_imported_names(files: Sequence[Path], project_root: Path) ->
     for file in files:
         try:
             tree = ast.parse(file.read_text(encoding="utf-8"))
-        except (OSError, SyntaxError):
+        except OSError, SyntaxError:
             continue
         module_bindings: dict[str, Path] = {}
         for stmt in ast.walk(tree):
