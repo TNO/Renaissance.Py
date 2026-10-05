@@ -9,14 +9,14 @@ from renaissance.recipes.python_refactoring import PythonRefactoring
 class SimplifyRenaissance(PythonRefactoring):
     """AI: Recipe that simplifies Renaissance's own unit-to-pytest conversion files."""
 
-    def __init__(self, file):
+    def __init__(self, file) -> None:
         """AI: Prepare a refactoring processor scoped to Renaissance's own unit-to-pytest conversion files."""
         super().__init__(file)
         self.white_list_pattern = "unit_to_pytest"
         self.black_list_pattern = "SimplifyRenaissance"
 
     @override
-    def run(self):
+    def run(self) -> None:
         if self.black_list_pattern in self.filename or self.white_list_pattern not in self.filename:
             print(f"skipping:         {Path(self.filename).resolve()}")
             return

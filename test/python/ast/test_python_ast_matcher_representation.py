@@ -195,7 +195,7 @@ class TestPythonAstMatcherRepresentation:
         + make_parametersets_of_equivalence_classes("tuple", PATTERN_FACTORY.create_statement, TUPLE_REPRESENTATIONS)
         + make_parametersets_of_equivalence_classes("equal", PATTERN_FACTORY.create_expression, EQUAL_REPRESENTATIONS),
     )
-    def test_pairs_of_equivalence_classes(self, a: NodeProtocol, b: NodeProtocol, expected: bool):
+    def test_pairs_of_equivalence_classes(self, a: NodeProtocol, b: NodeProtocol, expected: bool) -> None:
         """AI: Verify literal pairs from the same or different numeric/string equivalence classes match as expected."""
         assert_pair_equivalence(a, b, expected)
 

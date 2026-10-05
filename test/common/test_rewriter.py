@@ -21,14 +21,14 @@ class TestRewriter:
             (b"abcdefghij", 5, -1, b"AT_END", b"abcdeAT_END"),
         ],
     )
-    def test_replace(self, initial_bytes, start, end, new_content, expected_bytes):
+    def test_replace(self, initial_bytes, start, end, new_content, expected_bytes) -> None:
         """AI: Assert Rewriter.replace produces the expected byte sequence after a single replacement."""
         rewriter = Rewriter(initial_bytes)
         rewriter.replace(start, end, new_content)
         result = rewriter.apply()
         assert_that(expected_bytes, is_(result))
 
-    def test_multiple_replaces(self):
+    def test_multiple_replaces(self) -> None:
         """AI: Assert Rewriter correctly applies several overlapping and non-overlapping replacements together."""
         initial_bytes = b"abcdefghij"
         rewriter = Rewriter(initial_bytes)

@@ -97,7 +97,7 @@ class TestCommentLocation:
         stop_offset: int,
         content: bytes,
         expected: tuple[int, int],
-    ):
+    ) -> None:
         """AI: Verify _get_comment_location finds the expected comment span for each comment-style scenario."""
         result = ASTRewriter._get_comment_location(start_offset, stop_offset, content)
         # converted print but what to do it true???
@@ -108,7 +108,7 @@ class TestCommentLocation:
 class TestRewrites:
     """AI: Base class with shared helpers for ASTRewriter rewrite-action tests."""
 
-    def test_passing_case_in_clang(self):
+    def test_passing_case_in_clang(self) -> None:
         """AI: Verify insert_before places replacement text between two adjacent comments in a C declaration."""
         # action: Callable[[ASTRewriter, str, Sequence[ASTNode], bool, bool], None],
         # factory: ASTFactory,code: str, replacement: str, include_whitespace: bool, include_comments: bool, expected: str):
@@ -127,7 +127,7 @@ class TestRewrites:
             is_("void f() { /* c1 */ int b=4;int c=5;\n /* c2 */ int a=3;\n}"),
         )
 
-    def test_failing_case(self):
+    def test_failing_case(self) -> None:
         """AI: Duplicate of test_passing_case_in_clang, kept as a placeholder for a failing-case scenario."""
         # action: Callable[[ASTRewriter, str, Sequence[ASTNode], bool, bool], None],
         # factory: ASTFactory,code: str, replacement: str, include_whitespace: bool, include_comments: bool, expected: str):
@@ -155,7 +155,7 @@ class TestRewrites:
         include_whitespace: bool,
         include_comments: bool,
         expected: str,
-    ):
+    ) -> None:
         """AI: Apply the given rewrite action to the matched declaration and assert the resulting text matches expected."""
         atu = factory.create_from_text(code, "test.cpp")
         pattern_factory = CPatternFactory(factory)
@@ -210,7 +210,7 @@ class TestRemove(TestRewrites):
         include_whitespace: Any,
         include_comments: Any,
         expected: Any,
-    ):
+    ) -> None:
         """AI: Apply ASTRewriter.remove to the matched declaration and assert the resulting text matches expected."""
 
         def reemove(s, _, n, ws, cm):
@@ -226,7 +226,7 @@ class TestRemove(TestRewrites):
             expected,
         )
 
-    def test_remove_last_node_at_eof_without_trailing_newline(self):
+    def test_remove_last_node_at_eof_without_trailing_newline(self) -> None:
         """AI: Removing a final node at EOF should not crash and should keep surrounding content intact."""
         factory = PythonFactory(PythonRstNode)
         atu = factory.create_from_text("import DDXA\nfrom TAUT import TestDoubles", "test.py")
@@ -364,7 +364,7 @@ class TestReplace(TestRewrites):
         include_whitespace: Any,
         include_comments: Any,
         expected: Any,
-    ):
+    ) -> None:
         """AI: Apply ASTRewriter.replace to the matched declaration and assert the resulting text matches expected."""
         self.do_test(
             ASTRewriter.replace,
@@ -499,7 +499,7 @@ class TestInsertBeforeSingleLine(TestRewrites):
         include_whitespace: Any,
         include_comments: Any,
         expected: Any,
-    ):
+    ) -> None:
         """AI: Apply ASTRewriter.insert_before with a single-line insertion and assert the resulting text matches expected."""
         self.do_test(
             ASTRewriter.insert_before,
@@ -652,7 +652,7 @@ class TestInsertBeforeMultiLine(TestRewrites):
         include_whitespace: Any,
         include_comments: Any,
         expected: Any,
-    ):
+    ) -> None:
         """AI: Apply ASTRewriter.insert_before with a multi-line insertion and assert the resulting text matches expected."""
         self.do_test(
             ASTRewriter.insert_before,
@@ -787,7 +787,7 @@ class TestInsertAfterSingleLine(TestRewrites):
         include_whitespace: Any,
         include_comments: Any,
         expected: Any,
-    ):
+    ) -> None:
         """AI: Apply ASTRewriter.insert_after with a single-line insertion and assert the resulting text matches expected."""
         self.do_test(
             ASTRewriter.insert_after,
@@ -940,7 +940,7 @@ class TestInsertAfterMultiLine(TestRewrites):
         include_whitespace: Any,
         include_comments: Any,
         expected: Any,
-    ):
+    ) -> None:
         """AI: Apply ASTRewriter.insert_after with a multi-line insertion and assert the resulting text matches expected."""
         self.do_test(
             ASTRewriter.insert_after,
@@ -975,7 +975,7 @@ class TestComposeReplacement:
         statements: Any,
         extra_declarations: Any,
         replacement: Any,
-    ):
+    ) -> None:
         """AI: Verify replace rewrites a matched if/else pattern into a ternary assignment using the placeholder bindings."""
         code = """
             int a = 1;
@@ -1007,7 +1007,7 @@ class TestComposeReplacement:
             actual = rewriter.apply_to_string()
             assert_that(compress(expected), is_(compress(actual)))
 
-    def test_get_node_in_match_pattern(self, mocker):
+    def test_get_node_in_match_pattern(self, mocker) -> None:
         """AI: Verify _RewriteAction._get_nodes resolves a node's referenced_by chain back to the original node."""
         node = mocker.Mock()
         reference = mocker.Mock()
@@ -1018,13 +1018,13 @@ class TestComposeReplacement:
         assert_that(n, is_(node))
 
     @pytest.mark.skip("fail on empty nodes")
-    def test_get_node_in_match_pattern_on_empty_pattern(self):
+    def test_get_node_in_match_pattern_on_empty_pattern(self) -> None:
         """AI: Verify __get_texts raises/returns gracefully when given an empty node list (currently fails)."""
         it = _RewriteActions([], sys.getfilesystemencoding(), True)
         text = it._RewriteActions__get_texts([])
         assert_that(text, is_("node"))
 
-    def test_get_text_from_rewrite(self, mocker):
+    def test_get_text_from_rewrite(self, mocker) -> None:
         """AI: Verify __get_texts extracts the node's text slice from its binary file content."""
         node = mocker.Mock()
         node.root = node
@@ -1044,7 +1044,7 @@ class TestAroundComposition:
     @pytest.mark.skip(
         "TODO: Test fails due to two issues\n  1. order of inserts ([  )]\n  2. insert around whole pattern, not placeholder.",
     )
-    def test_around(self):
+    def test_around(self) -> None:
         """AI: Verify two composed insert_before/insert_after pairs around the same placeholder nest correctly (currently fails)."""
         # set up
         factory = PythonFactory(PythonRstNode)
@@ -1092,7 +1092,7 @@ class TestContainedOperations:
         return rewriter, match
 
     @pytest.mark.skip("TODO: fix impl.")
-    def test_replace_contained_replace(self):
+    def test_replace_contained_replace(self) -> None:
         """AI: Verify replacing the parent then the contained child collapses to the parent's replacement (currently fails)."""
         rewriter, match = self.setup()
         rewriter.replace("product", match.nodes)
@@ -1100,7 +1100,7 @@ class TestContainedOperations:
         assert rewriter.apply_to_string() == "x = product", "Unexpected replacement"
 
     @pytest.mark.skip("TODO: fix impl.")
-    def test_contained_replace_replace(self):
+    def test_contained_replace_replace(self) -> None:
         """AI: Verify replacing the contained child then the parent collapses to the parent's replacement (currently fails)."""
         rewriter, match = self.setup()
         rewriter.replace("term", match.expansions["$a"])
@@ -1108,7 +1108,7 @@ class TestContainedOperations:
         assert rewriter.apply_to_string() == "x = product", "Unexpected replacement"
 
     @pytest.mark.skip("TODO: fix impl.")
-    def test_replace_contained_remove(self):
+    def test_replace_contained_remove(self) -> None:
         """AI: Verify replacing the parent then removing a contained child leaves only the parent's replacement (currently fails)."""
         rewriter, match = self.setup()
         rewriter.replace("product", match.nodes)
@@ -1116,7 +1116,7 @@ class TestContainedOperations:
         assert rewriter.apply_to_string() == "x = product", "Unexpected replacement"
 
     @pytest.mark.skip("TODO: fix impl.")
-    def test_contained_remove_replace(self):
+    def test_contained_remove_replace(self) -> None:
         """AI: Verify removing a contained child then replacing the parent leaves only the parent's replacement (currently fails)."""
         rewriter, match = self.setup()
         rewriter.remove(match.expansions["$a"])
@@ -1124,7 +1124,7 @@ class TestContainedOperations:
         assert rewriter.apply_to_string() == "x = product", "Unexpected replacement"
 
     @pytest.mark.skip("TODO: fix impl.")
-    def test_replace_contained_prepend(self):
+    def test_replace_contained_prepend(self) -> None:
         """AI: Verify replacing the parent then prepending to a contained child leaves only the parent's replacement (currently fails)."""
         rewriter, match = self.setup()
         rewriter.replace("product", match.nodes)
@@ -1132,7 +1132,7 @@ class TestContainedOperations:
         assert rewriter.apply_to_string() == "x = product", "Unexpected replacement"
 
     @pytest.mark.skip("TODO: fix impl.")
-    def test_contained_prepend_replace(self):
+    def test_contained_prepend_replace(self) -> None:
         """AI: Verify prepending to a contained child then replacing the parent leaves only the parent's replacement (currently fails)."""
         rewriter, match = self.setup()
         rewriter.insert_before("term", match.expansions["$a"])
@@ -1140,7 +1140,7 @@ class TestContainedOperations:
         assert rewriter.apply_to_string() == "x = product", "Unexpected replacement"
 
     @pytest.mark.skip("TODO: fix impl.")
-    def test_replace_contained_append(self):
+    def test_replace_contained_append(self) -> None:
         """AI: Verify replacing the parent then appending to a contained child leaves only the parent's replacement (currently fails)."""
         rewriter, match = self.setup()
         rewriter.replace("product", match.nodes)
@@ -1148,7 +1148,7 @@ class TestContainedOperations:
         assert rewriter.apply_to_string() == "x = product", "Unexpected replacement"
 
     @pytest.mark.skip("TODO: fix impl.")
-    def test_contained_append_replace(self):
+    def test_contained_append_replace(self) -> None:
         """AI: Verify appending to a contained child then replacing the parent leaves only the parent's replacement (currently fails)."""
         rewriter, match = self.setup()
         rewriter.insert_after("term", match.expansions["$a"])
@@ -1189,7 +1189,7 @@ def f($a,$b,$c):
     @pytest.mark.skip(
         "it is not correctly implementing: https://github.com/TNO/Renaissance-Experiments/wiki/Transform-%E2%80%90-AST%E2%80%90aware-changes#scenario-contained-changes",
     )
-    def test_overlapping_replaces(self):
+    def test_overlapping_replaces(self) -> None:
         """AI: Verify apply_to_string raises when two replace operations target partially overlapping placeholder ranges."""
         rewriter, match = self.setup()
         placeholder_a = match.expansions["$a"]
@@ -1228,7 +1228,7 @@ class TestSyntaxAwareNestedComposition:
         return rewriter, match
 
     @pytest.mark.skip("TODO: Test fails as prepend of child appears before prepend of parent")
-    def test_prepend_child_parent(self):
+    def test_prepend_child_parent(self) -> None:
         """AI: Verify prepending to the child then the parent nests both insertions in child-before-parent order (currently fails)."""
         rewriter, match = self.setup()
         rewriter.insert_before("4 *", match.expansions["$a"])
@@ -1237,7 +1237,7 @@ class TestSyntaxAwareNestedComposition:
         # TODO: Test fails as prepend of child appears before prepend of parent
 
     @pytest.mark.skip("TODO: Test fails as prepend of child appears before prepend of parent")
-    def test_prepend_parent_child(self):
+    def test_prepend_parent_child(self) -> None:
         """AI: Verify prepending to the parent then the child nests both insertions in child-before-parent order."""
         rewriter, match = self.setup()
         rewriter.insert_before("6 +", match.nodes)
@@ -1245,7 +1245,7 @@ class TestSyntaxAwareNestedComposition:
         assert rewriter.apply_to_string() == "x = 6 + 4 * a * b", "Unexpected replacement"
 
     @pytest.mark.skip("TODO: Test fails as prepend of child appears before prepend of parent")
-    def test_append_child_parent(self):
+    def test_append_child_parent(self) -> None:
         """AI: Verify appending to the child then the parent nests both insertions in child-before-parent order."""
         rewriter, match = self.setup()
         rewriter.insert_after("* 4", match.expansions["$b"])
@@ -1253,7 +1253,7 @@ class TestSyntaxAwareNestedComposition:
         assert rewriter.apply_to_string() == "x = a * b * 4 + 6", "Unexpected replacement"
 
     @pytest.mark.skip("TODO: Test fails as prepend of child appears before prepend of parent")
-    def test_append_parent_child(self):
+    def test_append_parent_child(self) -> None:
         """AI: Verify appending to the parent then the child nests both insertions in child-before-parent order (currently fails)."""
         rewriter, match = self.setup()
         rewriter.insert_after("+ 6", match.nodes)
@@ -1292,7 +1292,7 @@ class TestSyntaxAwareAdjacentComposition:
         return rewriter, match
 
     @pytest.mark.skip("TODO: implement accordingly")
-    def test_first_append_prepend_second(self):
+    def test_first_append_prepend_second(self) -> None:
         """AI: Verify appending after the first statement then prepending before the second nests in source order (not yet implemented)."""
         # setup
         rewriter, match = self.setup(ASTFactory(ClangASTNode))
@@ -1306,7 +1306,7 @@ class TestSyntaxAwareAdjacentComposition:
 
     @pytest.mark.parametrize("name, factory", Factories.factories)
     @pytest.mark.skip("TODO: implement accordingly")
-    def test_prepend_second_first_append(self, name: str, factory: ASTFactory):
+    def test_prepend_second_first_append(self, name: str, factory: ASTFactory) -> None:
         """AI: Verify prepend-before-second then append-after-first nests in source order, across factories (not yet implemented)."""
         # setup
         rewriter, match = self.setup(factory)

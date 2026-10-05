@@ -20,7 +20,7 @@ class FindMatchTest(unittest.TestCase):
 
     # def setUpClass(cls):
     #     cls.code_text: str = "int my_function();"
-    def setUp(self):
+    def setUp(self) -> None:
         """AI: Initialize test fixture strings used by the C AST pattern-matching tests."""
         self.b = 55
         print(f"{self.b=}")
@@ -33,7 +33,7 @@ class FindMatchTest(unittest.TestCase):
         if self.extra_declarations_inner_text:
             print(f"{self.extra_declarations_inner_text[0]}")
 
-    def tearDown(self):
+    def tearDown(self) -> None:
         """AI: Clear the fixture strings set up in setUp."""
         self.outer_text: str = None
         self.inner_text: str = None
@@ -42,7 +42,7 @@ class FindMatchTest(unittest.TestCase):
     # def tearDownClass(cls):
     #     cls.code_text: str = None
 
-    def test_is_match(self):
+    def test_is_match(self) -> None:
         """AI: Assert basic equality/identity semantics used to sanity-check the test fixtures."""
         self.assertIn(self.a, [self.a], "An expression matches itself")
 
@@ -58,7 +58,7 @@ class FindMatchTest(unittest.TestCase):
         )  # TODO: self.a and a string are both expression, so msg is incorrect
 
     @parameterized.expand(Factories.factories)
-    def test_case(self, _: str, factory: ASTFactory):
+    def test_case(self, _: str, factory: ASTFactory) -> None:
         """AI: Assert an inner expression pattern doesn't spuriously match an unrelated outer statement pattern."""
         pattern_factory = CPatternFactory(factory)
         code_pattern = factory.create_from_text(self.code_text, "text.c")
@@ -101,7 +101,7 @@ class TestBasicNoNamespace(TestCase):
     )
     @unittest.skip("stmt and expr are the same")
     # unused param
-    def test_snippet(self, _: str, factory: ASTFactory, snippet: str, extra_declarations: list[str]):
+    def test_snippet(self, _: str, factory: ASTFactory, snippet: str, extra_declarations: list[str]) -> None:
         """AI: Assert a literal or placeholder snippet matches exactly one node among the code's children."""
         pattern_factory = CPatternFactory(factory)
         code_pattern = factory.create_from_text(self.code_text, "text.c")  # file extension consistent with C Pattern Factory
@@ -112,13 +112,13 @@ class TestBasicNoNamespace(TestCase):
         self.assertEqual(1, count, "count = " + str(count))
 
 
-def test_it_can_be_created():
+def test_it_can_be_created() -> None:
     """AI: Assert a PythonRstNode wrapping an ast.Pass node can be constructed."""
     it = PythonRstNode(ast.Pass())
     assert it
 
 
-def test_it_has_elements():
+def test_it_has_elements() -> None:
     """AI: Assert a PythonRstNode's item access matches its children list."""
     it = PythonRstNode(ast.parse("def fun():  pass"))
     assert it[0] == it.children[0]

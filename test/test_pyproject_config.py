@@ -19,7 +19,7 @@ def _load_pyproject() -> dict:
         return tomllib.load(f)
 
 
-def test_source_roots_are_consistent_across_tool_configs():
+def test_source_roots_are_consistent_across_tool_configs() -> None:
     """AI: Assert the source-root list is identical across pytest, ruff, and pyright tool configs."""
     config = _load_pyproject()
     pytest_pythonpath = config["tool"]["pytest"]["ini_options"]["pythonpath"]

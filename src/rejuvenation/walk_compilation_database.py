@@ -11,7 +11,7 @@ from renaissance.syntax_tree import ASTProcessor, ASTShower
 from renaissance.syntax_tree.semantic_kind import SemanticKind
 
 
-def main(args):
+def main(args) -> None:
     """AI: Walk the compilation database given in `args` for each Clang integration and show its AST."""
     # the first argument is the code to be parsed
     database = args[0] if len(args) > 0 else ""

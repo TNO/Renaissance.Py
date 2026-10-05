@@ -32,7 +32,7 @@ class TestShowNodeInMermaid:
             ("public class Test { public static void main(String[] args) {} }", tsjava),
         ],
     )
-    def test_create_diagrams(self, raw, module):
+    def test_create_diagrams(self, raw, module) -> None:
         """AI: Verify rendering source code in each language grammar produces a non-empty Mermaid diagram."""
         result = self.process_code(module, raw)
         # with open(f"lst_output_{module.__name__}.mmd", "w", encoding="utf-8") as f:

@@ -28,7 +28,7 @@ class TestClangConcretePatternMatcher:
             ("int body=0; auto f = []() { return 1; };", "int $body=0; auto $f = []() { $body; };"),
         ],
     )
-    def test_clang_patterns(self, code, pattern):
+    def test_clang_patterns(self, code, pattern) -> None:
         """AI: Verify a variety of C++ constructs match their corresponding pattern with placeholders."""
         adapter = ClangAdapter()
         interface = TreeSitterPatternFactory(adapter)
@@ -36,7 +36,7 @@ class TestClangConcretePatternMatcher:
         matches = extractor.run(code)
         assert_that(matches, is_not(empty()))
 
-    def test_clang_patterns_using_extractor(self):
+    def test_clang_patterns_using_extractor(self) -> None:
         """AI: Verify an enum pattern matches its occurrence in source via the Extractor."""
         adapter = ClangAdapter()
         interface = TreeSitterPatternFactory(adapter)
@@ -44,7 +44,7 @@ class TestClangConcretePatternMatcher:
         matches = extractor.run("int E = 0; int vals=0; enum E { A };")
         assert_that(matches, has_length(1))
 
-    def test_clang_failing_pattern(self):
+    def test_clang_failing_pattern(self) -> None:
         """AI: Verify an enum statement pattern matches its occurrence via match_pattern directly on LST nodes."""
         adapter = ClangAdapter()
         interface = TreeSitterPatternFactory(adapter)
@@ -53,7 +53,7 @@ class TestClangConcretePatternMatcher:
         matches = match_pattern(code.root.children, pattern)
         assert_that(matches, has_length(1))
 
-    def test_find_variant_with_clang_failing_pattern(self):
+    def test_find_variant_with_clang_failing_pattern(self) -> None:
         """AI: Verify find_variants locates a matching variant for an enum statement pattern."""
         adapter = ClangAdapter()
         interface = TreeSitterPatternFactory(adapter)
@@ -64,7 +64,7 @@ class TestClangConcretePatternMatcher:
         assert_that(matches[0].end_index, is_not(MIS_MATCH))
 
     @pytest.mark.skip("it should be the same really")
-    def test_type_property_between_code_and_pattern_are_same(self):
+    def test_type_property_between_code_and_pattern_are_same(self) -> None:
         """AI: Verify the 'type' property is the same for equivalent code and pattern enum nodes."""
         adapter = ClangAdapter()
         interface = TreeSitterPatternFactory(adapter)
@@ -87,7 +87,7 @@ class TestClangConcretePatternMatcher:
             ("try {} catch (...) {}", "int $body, $handler;try $body catch (...) $handler"),
         ],
     )
-    def test_clang_patterns_to_be_fixed(self, code, pattern):
+    def test_clang_patterns_to_be_fixed(self, code, pattern) -> None:
         """AI: Verify currently-unsupported C++ constructs don't match their pattern yet (documents known gaps)."""
         adapter = ClangAdapter()
         interface = TreeSitterPatternFactory(adapter)
@@ -95,7 +95,7 @@ class TestClangConcretePatternMatcher:
         matches = extractor.run(code)
         assert_that(matches, has_length(0))  # but should be 1
 
-    def test_is_match_clang_patterns_without_decl(self):
+    def test_is_match_clang_patterns_without_decl(self) -> None:
         """AI: Verify a return statement doesn't match a placeholder pattern when the placeholder isn't declared."""
         adapter = ClangAdapter()
         interface = TreeSitterPatternFactory(adapter)
@@ -103,7 +103,7 @@ class TestClangConcretePatternMatcher:
         p = interface.create_statement("int main() { return $body; }")
         assert_that(is_match(c.children[-1], p.children[-1], {}), is_(False))
 
-    def test_is_match_clang_patterns_with_decl(self):
+    def test_is_match_clang_patterns_with_decl(self) -> None:
         """AI: Verify a return statement matches a placeholder pattern when the placeholder is declared."""
         adapter = ClangAdapter()
         interface = TreeSitterPatternFactory(adapter)
@@ -111,7 +111,7 @@ class TestClangConcretePatternMatcher:
         p = interface.create_statement("int $body=0; int main() { return $body; }")
         assert_that(is_match(c.children[-1], p.children[-1], {}), is_(True))
 
-    def test_is_match_clang_tree(self):
+    def test_is_match_clang_tree(self) -> None:
         """AI: Verify is_match_tree confirms a matching statement tree against its pattern."""
         adapter = ClangAdapter()
         interface = TreeSitterPatternFactory(adapter)
@@ -119,7 +119,7 @@ class TestClangConcretePatternMatcher:
         p = interface.create_statement("int $body=0; int main() { return $body; }")
         assert_that(is_match_tree([c.children[-1]], [p.children[-1]], {}), is_(True))
 
-    def test_is_match_clang_patterns(self):
+    def test_is_match_clang_patterns(self) -> None:
         """AI: Verify MatchFinder.match_pattern finds one match for a statement against its pattern."""
         adapter = ClangAdapter()
         interface = TreeSitterPatternFactory(adapter)

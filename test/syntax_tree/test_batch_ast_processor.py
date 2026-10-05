@@ -9,13 +9,13 @@ from renaissance.syntax_tree import batch_ast_processor as bap
 class TestBatchASTProcessor:
     """AI: Tests for the BatchASTProcessor."""
 
-    def test_it(self):
+    def test_it(self) -> None:
         """AI: Verify BatchASTProcessor stores its in_memory flag and max_processes count."""
         it = BatchASTProcessor(True, 8)
         assert_that(it.in_memory)
         assert_that(it.max_processes, is_(8))
 
-    def test_once(self, mocker):
+    def test_once(self, mocker) -> None:
         """AI: Verify once() invokes the processor's internal __process method."""
         processor = BatchASTProcessor(True, 8)
         iterable_items = [mocker.Mock()]
@@ -24,7 +24,7 @@ class TestBatchASTProcessor:
         processor.once(lambda: iterable_items, actions_mock)
         assert_that(process_method_spy.called)
 
-    def test_repeat(self, mocker):
+    def test_repeat(self, mocker) -> None:
         """AI: Verify repeat() invokes the processor's internal __process method."""
         processor = BatchASTProcessor(True, 8)
         iterable_items = [mocker.Mock()]
@@ -35,7 +35,7 @@ class TestBatchASTProcessor:
 
         assert_that(process_method_spy.called)
 
-    def test__process(self, mocker):
+    def test__process(self, mocker) -> None:
         """AI: Verify the internal __process method invokes process_atu for each item."""
         processor = BatchASTProcessor(True, 8)
         dummy_atu_item = (mocker.Mock(), mocker.Mock())
@@ -45,7 +45,7 @@ class TestBatchASTProcessor:
         processor._BatchASTProcessor__process(atu_items, actions_list)
         assert_that(process_atu_spy.called)
 
-    def test_replace_if_in_memory(self, mocker):
+    def test_replace_if_in_memory(self, mocker) -> None:
         """AI: Verify _replace_if_in_memory swaps in in-memory file content when registered, and passes through otherwise."""
         processor = BatchASTProcessor(True, 8)
         fake_factory = mocker.Mock()
@@ -67,7 +67,7 @@ class TestBatchASTProcessor:
         assert_that(result_with_in_memory[1], is_(sentinel_atu))
         fake_factory.create_from_text.assert_called_with(in_memory_content, fake_node.filename)
 
-    def test_process_atu(self, mocker):
+    def test_process_atu(self, mocker) -> None:
         """AI: Verify process_atu runs the given action on the ASTProcessor and returns its results."""
         processor = BatchASTProcessor(True, 8)
 

@@ -22,12 +22,12 @@ class TestPythonMatcher:
     """AI: Tests for matching Python AST patterns via MatchFinder."""
 
     @pytest.fixture(autouse=True)
-    def setup(self):
+    def setup(self) -> None:
         """AI: Build the shared Python factory and pattern factory used by the matcher tests."""
         self.factory = PythonFactory(PythonRstNode)
         self.pattern_factory = PythonPatternFactory(self.factory)
 
-    def test_if_statements(self):
+    def test_if_statements(self) -> None:
         """Document the semantic power of [the Python parser ast](https://docs.python.org/3/library/ast.html) for if statements.
 
         In particular, syntax differences between `elif` and `else if` are not semantically relevant.
@@ -63,7 +63,7 @@ class TestPythonMatcher:
         assert_that(is_match(if_then_else_if_statement, if_then_elif_statement), is_(True))
         assert_that(is_match(if_then_else_if_statement, if_then_else_if_statement), is_(True))
 
-    def test_is_match_if_statements(self):
+    def test_is_match_if_statements(self) -> None:
         """AI: Verify variant_in_match_stmt finds no variants matching a bare if against an if/else-if statement's else branch."""
         code_if_then_statement = "if c1:\n    pass"
         code_if_then_else_if_statement = "if c1:\n    pass\nelse:\n    if c2:\n        pass"
@@ -98,13 +98,13 @@ class TestPythonMatcher:
             ("return 1, 2, 3,", "return $$expressions", True),
         ],
     )
-    def test_placeholder_return_stmt(self, stmt_txt: str, pattern_txt: str, expected: bool):
+    def test_placeholder_return_stmt(self, stmt_txt: str, pattern_txt: str, expected: bool) -> None:
         """AI: Verify return statements with 0, 1, or multiple values match bare/single/multi-placeholder patterns."""
         stmt = self.pattern_factory.create_statement(stmt_txt)
         pattern = self.pattern_factory.create_statement(pattern_txt)
         assert_that(is_match(stmt, pattern, {}), is_(expected))
 
-    def test_generic_is_match_any_stmt(self):
+    def test_generic_is_match_any_stmt(self) -> None:
         """AI: Verify a call statement matches a single-placeholder-callee pattern."""
         atu = self.factory.create_from_text("ba(55)", "test.py")
 
@@ -113,21 +113,21 @@ class TestPythonMatcher:
         assert_that(simple.parser_kind, is_("Expr"))
         assert_that(is_match(atu.children[0], simple, {}), is_(True))
 
-    def test_generic_is_match_any_assignment(self):
+    def test_generic_is_match_any_assignment(self) -> None:
         """AI: Verify an assignment statement matches a single MATCH_ONE placeholder pattern."""
         atu = self.factory.create_from_text("na=55", "test.py")
         simple = self.pattern_factory.create_statement("$pa")
         assert_that(simple.pattern_kind, is_(PatternKind.MATCH_ONE))
         assert_that(is_match(atu.children[0], simple, {}), is_(True))
 
-    def test_match_multiple_single_stmt(self):
+    def test_match_multiple_single_stmt(self) -> None:
         """AI: Verify a single-placeholder pattern matches all four statements in the module."""
         atu = self.factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "test.py")
         simple = self.pattern_factory.create_statements("$pa")
         result = MatchFinder.match_pattern(atu.children, simple)
         assert_that(result, has_length(4))
 
-    def test_match_fix_stmt_fix_param(self):
+    def test_match_fix_stmt_fix_param(self) -> None:
         """AI: Verify an exact statement pattern matches exactly one of several similar statements."""
         atu = self.factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "test.py")
 
@@ -135,7 +135,7 @@ class TestPythonMatcher:
         result = MatchFinder.match_pattern(atu.children, simple)
         assert_that(result, has_length(1))
 
-    def test_is_match_any_stmt_with_fix_param_in_detail(self):
+    def test_is_match_any_stmt_with_fix_param_in_detail(self) -> None:
         """AI: Verify a call pattern with a fixed argument matches only the statement with that exact argument."""
         atu = self.factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "test.py")
 
@@ -147,7 +147,7 @@ class TestPythonMatcher:
         result = MatchFinder.match_pattern(atu.children, [simple])
         assert_that(result, has_length(1))
 
-    def test_is_match_any_stmt_with_any_param(self):
+    def test_is_match_any_stmt_with_any_param(self) -> None:
         """AI: Verify a call pattern with a placeholder callee and argument matches all matching calls."""
         atu = self.factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "test.py")
 
@@ -155,21 +155,21 @@ class TestPythonMatcher:
         result = match_pattern(atu.children, simple)
         assert_that(result, has_length(3))
 
-    def test_match_multi_fix_stmts(self):
+    def test_match_multi_fix_stmts(self) -> None:
         """AI: Verify a fixed two-statement pattern matches exactly once against the module's statements."""
         atu = self.factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "test.py")
         simple = self.pattern_factory.create_statements("ba(55)\nca(555)")
         result = match_pattern(atu.children, simple)
         assert_that(result, has_length(1))
 
-    def test_match_fix_stmt_with_multi_result(self):
+    def test_match_fix_stmt_with_multi_result(self) -> None:
         """AI: Verify an exact single-statement pattern matches all repeated occurrences of that statement."""
         atu = self.factory.create_from_text("pa(55)\npa(55)\npa(55)\npa=55", "test.py")
         simple = self.pattern_factory.create_statement("pa(55)")
         results = MatchFinder.match_pattern(atu.children, [simple])
         assert_that(results, has_length(3))
 
-    def test_match_multi_fix_stmt_with_multi_result(self):
+    def test_match_multi_fix_stmt_with_multi_result(self) -> None:
         """AI: Verify a repeated multi-statement pattern with placeholders matches multiple sequences of 3 nodes each."""
         atu = self.factory.create_from_text("ba(55)\nna(55)\nna(55)\npa(55)\npa(55)\nba(55)\nna(55)\nna(55)\nna=55")
         simple = self.pattern_factory.create_statements("ba($a)\nna($b)\nna($c)")
@@ -177,7 +177,7 @@ class TestPythonMatcher:
         assert_that(results, has_length(2))
         assert_that(results[0].nodes, has_length(3))
 
-    def test_match_multi_fix_stmt_with_multi_different_result(self):
+    def test_match_multi_fix_stmt_with_multi_different_result(self) -> None:
         """AI: Verify a repeated multi-statement pattern with placeholders finds multiple non-overlapping matches, each with 3 nodes."""
         atu = self.factory.create_from_text(
             "ba(51)\nna(52)\nna(53)\npa(54)\npa(55)\nba(56)\nna(57)\nna(58)\nna=59\nba(51)\nna(52)\nna(53)\n",
@@ -189,7 +189,7 @@ class TestPythonMatcher:
         assert_that(results[1].nodes, has_length(3))
         assert_that(results[2].nodes, has_length(3))
 
-    def test_match_stmts_in_children(self):
+    def test_match_stmts_in_children(self) -> None:
         """AI: Verify a multi-statement pattern with placeholders matches within if/else branches, each with 3 nodes."""
         atu = self.factory.create_from_text(
             "ba(51)\nna(52)\nna(53)\npa(54)\nif pa(55):\n  ba(51)\n  na(52)\n  na(53)\n  na=59\nelse:\n  ba(51)\n  na(52)\n  na(53)\n",
@@ -199,7 +199,7 @@ class TestPythonMatcher:
         assert_that(results, has_length(3))
         assert_that(results[0].nodes, has_length(3))
 
-    def test_match_placeholder_with_args(self):
+    def test_match_placeholder_with_args(self) -> None:
         """AI: Verify a pattern with a fixed prefix/suffix and a MATCH_ALL middle placeholder matches once with the expected 3 nodes."""
         atu = self.factory.create_from_text("ba()\nna()\nba()\npa(54)\nba()\nna()\nba()\nna()\nna=59\nba(1)\nna()\nba(1)")
         simple = self.pattern_factory.create_statements("ba($a)\n$$na\nba($c)")
@@ -207,7 +207,7 @@ class TestPythonMatcher:
         assert_that(results, has_length(1))
         assert_that(results[0].nodes, has_length(3))
 
-    def test_match_sandwitch_pattern_with_different_content(self):
+    def test_match_sandwitch_pattern_with_different_content(self) -> None:
         """AI: Verify a sandwich pattern (fixed prefix/middle/suffix) matches 3 sequences of 5 nodes each in nested branches."""
         atu = self.factory.create_from_text(
             textwrap.dedent("""
@@ -237,7 +237,7 @@ class TestPythonMatcher:
         assert_that(results, has_length(3))
         assert_that(results[0].nodes, has_length(5))
 
-    def test_match_any_placeholder_but_in_child(self):
+    def test_match_any_placeholder_but_in_child(self) -> None:
         """AI: Verify a sandwich pattern with fixed empty calls matches 3 sequences of varying length across nested branches."""
         atu = self.factory.create_from_text(
             textwrap.dedent("""
@@ -271,7 +271,7 @@ class TestPythonMatcher:
         assert_that(results[2].nodes, has_length(2))
 
     # can only return one match
-    def test_match_all_epxression(self):
+    def test_match_all_epxression(self) -> None:
         """AI: Verify an exact expression pattern matches all 6 occurrences within nested if-statements."""
         atu = self.factory.create_from_text("pa(55)\npa(55)\nif pa(55):\n  pa(55)\n  if pa(55):\n    pa(55)\n  pa=55")
 
@@ -279,7 +279,7 @@ class TestPythonMatcher:
         results = MatchFinder.match_pattern(atu.children, [simple])
         assert_that(results, has_length(6))
 
-    def test_match_all_statement(self):
+    def test_match_all_statement(self) -> None:
         """AI: Verify an exact statement pattern matches all 3 occurrences within nested if-statements."""
         atu = self.factory.create_from_text("pa(55)\nif pa(55):\n  pa(55)\n  if pa(55):\n    pa(55)\n  pa=55")
 
@@ -287,30 +287,30 @@ class TestPythonMatcher:
         results = match_pattern(atu.children, simple)
         assert_that(results, has_length(3))
 
-    def test_ast_name(self):
+    def test_ast_name(self) -> None:
         """AI: Verify a call statement pattern's name reflects the full call signature."""
         simple = self.pattern_factory.create_statement("pa(55)")
         assert_that(simple.name, is_("pa(55)"))
 
-    def test_python_ast_name(self):
+    def test_python_ast_name(self) -> None:
         """AI: Verify the raw Python ast module exposes the called function's id via value.func.id."""
         simple = ast.parse("pa(55)").body[0]
         assert_that(simple.value.func.id, is_("pa"))
 
-    def test_equal_nodes(self):
+    def test_equal_nodes(self) -> None:
         """AI: Verify an exact statement pattern equals the identical statement node in the parsed module."""
         atu = self.factory.create_from_text("pa(55)\nif pa(55):\n  pa(55)\n  pa=55", "test.py")
 
         simple = self.pattern_factory.create_statement("pa(55)")
         assert_that(simple, is_(atu.children[0]))
 
-    def test_equal_nodes_different_args(self):
+    def test_equal_nodes_different_args(self) -> None:
         """AI: Verify a statement pattern with a different argument is not equal to the parsed module's statement."""
         atu = self.factory.create_from_text("pa(55)\nif pa(55):\n  pa(55)\n  pa=55", "test.py")
         simple = self.pattern_factory.create_statement("pa(66)")
         assert_that(simple, is_not(atu.children[0]))
 
-    def test_replace_multiple_different_nodes(self):
+    def test_replace_multiple_different_nodes(self) -> None:
         """AI: Verify a multi-statement module with imports and nested if/else branches parses successfully."""
         example_code = textwrap.dedent("""
         from module import foo, bar, baz, quux
@@ -335,7 +335,7 @@ class TestPythonMatcher:
         atu = self.factory.create_from_text(example_code)
         assert_that(atu, is_not(None))
 
-    def test_find_pattern_four_depth(self):
+    def test_find_pattern_four_depth(self) -> None:
         """AI: Verify a keyword-argument call pattern matches occurrences nested 4 levels deep inside a class method."""
         example_code = """class CommonTestUtils():
     def foo():
@@ -348,7 +348,7 @@ class TestPythonMatcher:
         pattern = self.pattern_factory.create_expression("TestDoubles($a=ImprovedStub($b))")
         assert_that(match_pattern(atu.children, [pattern]), has_length(2))
 
-    def test_find_pattern_one_expr(self):
+    def test_find_pattern_one_expr(self) -> None:
         """AI: Verify a keyword-argument call pattern matches a single occurrence inside a list expression."""
         example_code = textwrap.dedent("""
         [TestDoubles(b=ImprovedStub(write))]
@@ -357,7 +357,7 @@ class TestPythonMatcher:
         pattern = self.pattern_factory.create_expression("TestDoubles($a=ImprovedStub($b))")
         assert_that(match_pattern(atu.children, [pattern]), has_length(1))
 
-    def test_find_pattern_one_stmt(self):
+    def test_find_pattern_one_stmt(self) -> None:
         """AI: Verify a keyword-argument call pattern matches a single occurrence as a bare statement."""
         example_code = textwrap.dedent("""
         TestDoubles(b=ImprovedStub(write))
@@ -366,7 +366,7 @@ class TestPythonMatcher:
         pattern = self.pattern_factory.create_statement("TestDoubles($a=ImprovedStub($b))")
         assert_that(match_pattern(atu.children, [pattern]), has_length(1))
 
-    def test_variable_length_match_variant_x(self):
+    def test_variable_length_match_variant_x(self) -> None:
         """AI: Verify a variable-length pattern with a fixed marker finds variants with correct before/after slice lengths."""
         example_code = textwrap.dedent("0\n1\n2\n3\n4\n5\n3")
         atu = self.factory.create_from_text(example_code)
@@ -381,14 +381,14 @@ class TestPythonMatcher:
         assert_that(variants[1].exp["$$before"], has_length(3))
         assert_that(variants[1].exp["$$after"], has_length(3))
 
-    def test_simple_match_with_variant(self):
+    def test_simple_match_with_variant(self) -> None:
         """AI: Verify an exact multi-statement pattern finds exactly one variant."""
         example_code = textwrap.dedent("0\n1\n2\n")
         atu = self.factory.create_from_text(example_code)
         pattern = self.pattern_factory.create_statements("0\n1\n2\n")
         assert_that(find_variants(atu.children, pattern), has_length(1))
 
-    def test_variable_length_matcher_as_valid_variants(self):
+    def test_variable_length_matcher_as_valid_variants(self) -> None:
         """AI: Verify a variable-length-prefix-plus-single-placeholder pattern finds a variant for each statement."""
         example_code = textwrap.dedent("""
             0
@@ -404,7 +404,7 @@ class TestPythonMatcher:
         variants = find_variants(atu.children, pattern)
         assert_that(variants, has_length(7))
 
-    def test_variable_length_matcherat_start_end_end_as_variants(self):
+    def test_variable_length_matcherat_start_end_end_as_variants(self) -> None:
         """AI: Verify a variable-length prefix/middle/suffix pattern finds a variant for each statement."""
         example_code = textwrap.dedent("""
             0
@@ -420,7 +420,7 @@ class TestPythonMatcher:
         variants = find_variants(atu.children, pattern)
         assert_that(variants, has_length(7))
 
-    def test_match_pattern_needs_variants(self):
+    def test_match_pattern_needs_variants(self) -> None:
         """AI: Verify a doubled variable-length pattern with a separator finds one variant with correctly bound placeholders."""
         example_code = textwrap.dedent("0\n1\n2\n8\n0\n7\n2")
         atu = self.factory.create_from_text(example_code)
@@ -432,7 +432,7 @@ class TestPythonMatcher:
         assert_that(variants[0].exp["$dido"], has_length(1))
         assert_that(variants[0].exp["$$after"], has_length(1))
 
-    def test_trim_variants(self):
+    def test_trim_variants(self) -> None:
         """AI: Verify find_variants trims a doubled variable-length pattern down to exactly one variant."""
         example_code = textwrap.dedent("0\n1\n2\n8\n0\n7\n2")
         atu = self.factory.create_from_text(example_code)
@@ -440,7 +440,7 @@ class TestPythonMatcher:
         variants = find_variants(atu.children, pattern)
         assert_that(variants, has_length(1))
 
-    def test_mismatch_with_double_match_all(self):
+    def test_mismatch_with_double_match_all(self) -> None:
         """AI: Verify a pattern with two MATCH_ALL placeholders sandwiching a fixed marker finds no variants when it can't match."""
         example_code = textwrap.dedent("0\n1\n2\n3\n0\n7\n2")
         atu = self.factory.create_from_text(example_code)
@@ -448,7 +448,7 @@ class TestPythonMatcher:
         variants = find_variants(atu.children, pattern)
         assert_that(variants, has_length(0))
 
-    def test_trim_variants_with_double_match_all(self):
+    def test_trim_variants_with_double_match_all(self) -> None:
         """AI: Verify a doubled variable-length pattern with two MATCH_ALL groups finds 3 trimmed variants."""
         example_code = textwrap.dedent("0\n1\n2\n0\n7\n2")
         atu = self.factory.create_from_text(example_code)
@@ -459,7 +459,7 @@ class TestPythonMatcher:
         # assert_that(trimmed_variants[1], has_length(3)) # [] 0 [1] [] 2 missing 1
         # assert_that(trimmed_variants[2], has_length(5))
 
-    def test_match_variant_in_args(self):
+    def test_match_variant_in_args(self) -> None:
         """AI: Verify find_variants finds multiple variants when matching a sandwich pattern against call arguments."""
         example_code = textwrap.dedent("fc(1,2,3,4,5)")
         atu = self.factory.create_from_text(example_code)
@@ -467,7 +467,7 @@ class TestPythonMatcher:
         variants = find_variants(atu.body[0].expression.children[1].children, pattern.children[1].children, {})
         assert_that(variants, has_length(greater_than(1)))
 
-    def test_variant_in_args(self):
+    def test_variant_in_args(self) -> None:
         """AI: Verify variant_in_match_stmt finds multiple variants when matching a sandwich pattern against a call node."""
         example_code = textwrap.dedent("fc(1,2,3,4,5)")
         atu = self.factory.create_from_text(example_code)
@@ -475,7 +475,7 @@ class TestPythonMatcher:
         variants = variant_in_match_stmt(atu.body[0].expression.children[1], pattern.children[1], {})
         assert_that(variants, has_length(greater_than(1)))
 
-    def test_variant_in_children_function(self):
+    def test_variant_in_children_function(self) -> None:
         """AI: Verify variant_in_match_stmt finds all 5 variants of a call's placeholder pattern with correctly bound placeholders."""
         example_code = textwrap.dedent("fc(1,2,3,4,5)")
         atu = self.factory.create_from_text(example_code)
@@ -486,7 +486,7 @@ class TestPythonMatcher:
         assert_that(variants[2].exp["$a"][0].signature, is_("3"))
         assert_that(variants[2].exp["$$after"], has_length(2))
 
-    def test_variant_in_children_function_with_expansion(self):
+    def test_variant_in_children_function_with_expansion(self) -> None:
         """AI: Verify a previously bound placeholder ($a) can be reused as context to bind a new placeholder ($b) on a second call."""
         atu = self.factory.create_from_text("fc(1,2,3,4,5)")
         pattern = self.pattern_factory.create_statements("$f($$before, $a, $$after)")
@@ -499,7 +499,7 @@ class TestPythonMatcher:
         assert_that(variants, has_length(1))
         assert_that(variants[0].exp["$b"][0].name, is_("6"))
 
-    def test_find_variant_in_children_function(self):
+    def test_find_variant_in_children_function(self) -> None:
         """AI: Verify find_variants finds more than one variant for a placeholder call pattern among the module's top-level children."""
         example_code = textwrap.dedent("fc(1,2,3,4,5)")
         atu = self.factory.create_from_text(example_code)
@@ -507,7 +507,7 @@ class TestPythonMatcher:
         variants = find_variants(atu.body, pattern, {})
         assert_that(variants, has_length(greater_than(1)))
 
-    def test_only_one_variant_in_children_functions(self):
+    def test_only_one_variant_in_children_functions(self) -> None:
         """AI: Verify a two-statement pattern with shared and distinct placeholders finds exactly one variant across two calls."""
         example_code = textwrap.dedent("fc(1,2,3,4,5)\nfc(1,2,6,4,5)")
         atu = self.factory.create_from_text(example_code)
@@ -516,7 +516,7 @@ class TestPythonMatcher:
         # should be 1
         assert_that(variants, has_length(1))
 
-    def test_variant_in_children(self):
+    def test_variant_in_children(self) -> None:
         """AI: Verify find_variants finds more than one variant when matching a placeholder call pattern against the module's children."""
         example_code = textwrap.dedent("fc(1,2,3,4,5)")
         atu = self.factory.create_from_text(example_code)
@@ -525,7 +525,7 @@ class TestPythonMatcher:
         print(variants)
         assert_that(variants, has_length(greater_than(1)))
 
-    def test_variable_length_matcher(self):
+    def test_variable_length_matcher(self) -> None:
         """AI: Verify a two-statement pattern with shared and distinct placeholders finds a non-empty variant list and a single match."""
         example_code = textwrap.dedent("""
             fc(1,2,3,4,5)
@@ -541,7 +541,7 @@ class TestPythonMatcher:
         assert_that(variants, is_not(empty()))
         assert_that(match_pattern(atu.children, pattern), has_length(1))
 
-    def test_match_multi_fun_using_generic_matcher2(self):
+    def test_match_multi_fun_using_generic_matcher2(self) -> None:
         """AI: Verify a fixed two-statement pattern matches exactly once against the module's statements (second variant)."""
         atu = self.factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "test.py")
         simple = self.pattern_factory.create_statements("ba(55)\nca(555)")

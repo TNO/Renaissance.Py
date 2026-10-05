@@ -33,7 +33,7 @@ class ASTRefactorActions:
         self.pattern_factory = pattern_factory
         self.replaced: set[int] = set()
 
-    def replace_expr(self, name: str, replacement: str, kind: SemanticKind | Callable[[ASTNode], bool]):
+    def replace_expr(self, name: str, replacement: str, kind: SemanticKind | Callable[[ASTNode], bool]) -> None:
         """AI: Replace occurrences of the named expression matching kind with replacement."""
         kind_predicate = _kind_predicate(kind)
 
@@ -49,7 +49,7 @@ class ASTRefactorActions:
         replacement: str,
         kind: SemanticKind | Callable[[ASTNode], bool] | None = None,
         skip_kind: SemanticKind | Callable[[ASTNode], bool] | None = None,
-    ):
+    ) -> None:
         """AI: Replace occurrences of the named node (matching kind, excluding skip_kind) with replacement."""
         kind_predicate = _kind_predicate(kind)
         skip_kind_predicate = _kind_predicate(skip_kind)
@@ -73,7 +73,7 @@ class ASTRefactorActions:
         replacement: str,
         kind: SemanticKind | Callable[[ASTNode], bool] | None = None,
         skip_kind: SemanticKind | Callable[[ASTNode], bool] | None = None,
-    ):
+    ) -> None:
         """AI: Replace nodes whose text equals text (matching kind, excluding skip_kind) with replacement."""
         kind_predicate = _kind_predicate(kind)
         skip_kind_predicate = _kind_predicate(skip_kind)
@@ -91,7 +91,7 @@ class ASTRefactorActions:
 
         [self.processor.replace(n.text.replace(n.name, replacement, 1), n) for n in found_nodes]
 
-    def replace_declaration(self, declaration: str, replacement: str):
+    def replace_declaration(self, declaration: str, replacement: str) -> None:
         """AI: Replace every match of declaration with replacement."""
         for match in self.find_declaration(declaration):
             self.processor.replace(replacement, match)
@@ -102,7 +102,7 @@ class ASTRefactorActions:
         replacement: str,
         patterns: Sequence[Sequence[ASTNode]],
         matches: Sequence[PatternMatch],
-    ):
+    ) -> None:
         if not patterns:
             self.processor.replace(replacement, matches)
             return

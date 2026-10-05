@@ -60,7 +60,7 @@ class ASTRewriter:
         target: Rewritable | Sequence[Rewritable] | PatternMatch | Sequence[PatternMatch],
         include_whitespace: bool = True,
         include_comments: bool = True,
-    ):
+    ) -> None:
         """AI: Queue a rewrite replacing target's source text with new_content."""
         self.__rewrites.add(
             _RewriteActionType.REPLACE,
@@ -75,7 +75,7 @@ class ASTRewriter:
         target: Rewritable | Sequence[Rewritable] | PatternMatch | Sequence[PatternMatch],
         include_whitespace: bool = True,
         include_comments: bool = True,
-    ):
+    ) -> None:
         """AI: Queue a rewrite removing target's source text."""
         self.__rewrites.add(_RewriteActionType.REMOVE, target, "", include_whitespace, include_comments)
 
@@ -85,7 +85,7 @@ class ASTRewriter:
         target: Rewritable | Sequence[Rewritable] | PatternMatch | Sequence[PatternMatch],
         include_whitespace: bool = True,
         include_comments: bool = True,
-    ):
+    ) -> None:
         """AI: Queue a rewrite inserting new_content immediately before target's source text."""
         self.__rewrites.add(
             _RewriteActionType.INSERT_BEFORE,
@@ -101,7 +101,7 @@ class ASTRewriter:
         target: Rewritable | Sequence[Rewritable] | PatternMatch | Sequence[PatternMatch],
         include_whitespace: bool = True,
         include_comments: bool = True,
-    ):
+    ) -> None:
         """AI: Queue a rewrite inserting new_content immediately after target's source text."""
         self.__rewrites.add(
             _RewriteActionType.INSERT_AFTER,
@@ -192,11 +192,11 @@ class _RewriteActions:
         replacement: str,
         include_whitespace: bool,
         include_comments: bool,
-    ):
+    ) -> None:
         rewrite = _RewriteAction(action, target, replacement, include_whitespace, include_comments)
         self.add_rewrite(rewrite)
 
-    def add_rewrite(self, rewrite: _RewriteAction):
+    def add_rewrite(self, rewrite: _RewriteAction) -> None:
         self.rewrites.append(rewrite)
 
     def apply(self) -> bytes:
@@ -304,7 +304,7 @@ class _RewriteActions:
         # 2
         # | rew |
         #               |node|
-        def no_conflict(node1, rew):
+        def no_conflict(node1, rew) -> bool:
             return not (node1.end_offset < rew.offset or node1.offset > rew.end_offset)
 
         result = any(no_conflict(node, rew) for rew in rewrite_nodes)
@@ -318,7 +318,7 @@ class _RewriteActions:
         nodes: Sequence[Rewritable],
         include_whitespace: bool,
         include_comments: bool,
-    ):
+    ) -> None:
         """Replace the content of the given node(s) with new content.
 
         Args:
@@ -354,7 +354,7 @@ class _RewriteActions:
         nodes: Sequence[Rewritable],
         include_whitespace: bool = False,
         include_comments: bool = False,
-    ):
+    ) -> None:
         """Remove a list of AST nodes from the content, optionally including surrounding whitespace and comments.
 
         Args:
@@ -404,7 +404,7 @@ class _RewriteActions:
         nodes: Sequence[Rewritable],
         include_whitespace: bool,
         include_comments: bool,
-    ):
+    ) -> None:
         if not nodes:
             return
         content = self.content

@@ -30,7 +30,7 @@ class TestASTReference:
             ],
         ),
     )
-    def test_definition_declaration_references(self, _, factory, code, args):
+    def test_definition_declaration_references(self, _, factory, code, args) -> None:
         """AI: Verify a call/construct expression references its function definition/declaration and vice versa."""
         ast = factory.create_from_text(code, "test.cpp")
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -58,7 +58,7 @@ class TestASTReference:
         assert_that(declarations, has_length(greater_than(0)))
 
     @pytest.mark.parametrize("_, factory", Factories.factories)
-    def test_call_reference(self, _, factory):
+    def test_call_reference(self, _, factory) -> None:
         """AI: Verify a function call reference resolves to its declared function and back via referenced_by."""
         ast = factory.create_from_text("void f(){} void f1(){ f();}", "test.c")
         call = first(find_nodes(ast, is_clang_declaration_reference))
@@ -86,7 +86,7 @@ class TestASTReference:
             ],
         ),
     )
-    def test_var_reference(self, _, factory, code, args):
+    def test_var_reference(self, _, factory, code, args) -> None:
         """AI: Verify a variable-use reference resolves to its declaration/parameter and back via referenced_by."""
         ast = factory.create_from_text(code, "test.c")
         using = first(find_nodes(ast, is_clang_declaration_reference))
@@ -112,7 +112,7 @@ class TestASTReference:
             ],
         ),
     )
-    def test_type_reference(self, _, factory, code, language):
+    def test_type_reference(self, _, factory, code, language) -> None:
         """AI: Verify a type-use reference resolves to its class/typedef declaration and back via referenced_by."""
         ast = factory.create_from_text(code, "test." + language)
         # in clang python, there is a TYPE_REF below the VAR_DECL node whereas
@@ -148,7 +148,7 @@ class TestASTReference:
             ],
         ),
     )
-    def test_base_class_reference(self, _, factory, code, language):
+    def test_base_class_reference(self, _, factory, code, language) -> None:
         """AI: Verify a derived class references its base class declaration."""
         ast = factory.create_from_text(code, "test." + language)
 

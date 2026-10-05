@@ -28,19 +28,19 @@ class TestPythonRstNode:
     """AI: Tests for the RST-based Python AST node implementation."""
 
     @pytest.fixture(autouse=True)
-    def setup(self):
+    def setup(self) -> None:
         """AI: Build the shared Python factory, sample AST, and pattern factory used by the RST node tests."""
         self.factory = PythonFactory(PythonRstNode)
         self.atu = self.factory.create_from_text("a = 0", "all.py")
         # create a pattern factory atu is passed to the pattern factory for use of all # includes, #defines and declarations
         self.pattern_factory = PythonPatternFactory(self.factory)
 
-    def test_type_alias(self):
+    def test_type_alias(self) -> None:
         """AI: Verify a type-alias statement parses with parser kind 'TypeAlias'."""
         it = self.factory.create_from_text("type UserId = int", "context.py")
         assert_that(it.children[0].parser_kind, is_("TypeAlias"))
 
-    def test_exposes_parser_and_semantic_kinds(self):
+    def test_exposes_parser_and_semantic_kinds(self) -> None:
         """AI: Verify a function definition's nodes expose the expected parser and semantic kinds for function, parameter, and name."""
         root = self.factory.create_from_text("def f(value):\n    return value\n")
         function = root.children[0]
@@ -52,7 +52,7 @@ class TestPythonRstNode:
         assert parameter.semantic_kind is SemanticKind.PARAMETER
         assert returned_name.semantic_kind is SemanticKind.NAME
 
-    def test_unknown_python_kind_keeps_parser_name(self):
+    def test_unknown_python_kind_keeps_parser_name(self) -> None:
         """AI: Verify a set literal keeps its parser kind 'Set' while its semantic kind falls back to NODE."""
         root = self.factory.create_from_text("x = {1, 2}")
         set_node = root.children[0].children[1]
@@ -60,38 +60,38 @@ class TestPythonRstNode:
         assert set_node.parser_kind == "Set"
         assert set_node.semantic_kind is SemanticKind.NODE
 
-    def test_slice(self):
+    def test_slice(self) -> None:
         """AI: Verify a subscript slice expression's second child has parser kind 'Slice'."""
         it = self.pattern_factory.create_expression("items[1:2:3]")
         assert_that(it.children[1].parser_kind, is_("Slice"))
 
-    def test_named_expr(self):
+    def test_named_expr(self) -> None:
         """AI: Verify a walrus-operator condition in an if-statement parses with parser kind 'NamedExpr'."""
         it = self.pattern_factory.create_statement("if n:= len(items): pass")
         assert_that(it.children[0].parser_kind, is_("NamedExpr"))
 
-    def test_named_expr_simple(self):
+    def test_named_expr_simple(self) -> None:
         """AI: Verify a bare walrus-operator expression parses with parser kind 'NamedExpr'."""
         it = self.pattern_factory.create_statement("(n:= 3)")
         assert_that(it.children[0].parser_kind, is_("NamedExpr"))
 
     # why not ""?
-    def test_starred(self):
+    def test_starred(self) -> None:
         """AI: Verify a starred-unpacking assignment target parses with parser kind 'Starred'."""
         it = self.pattern_factory.create_statement("*x =[1,2]")
         assert_that(it.children[0].children[0].parser_kind, is_("Starred"))
 
-    def test_formatted_value(self):
+    def test_formatted_value(self) -> None:
         """AI: Verify an f-string's embedded expression parses with parser kind 'FormattedValue'."""
         it = self.pattern_factory.create_expression('f"{one}two"')
         assert_that(it.children[0].parser_kind, is_("FormattedValue"))
 
-    def test_except_handler(self):
+    def test_except_handler(self) -> None:
         """AI: Verify a try/except statement's except clause parses with parser kind 'ExceptHandler'."""
         it = self.pattern_factory.create_statement("try: pass\nexcept NameError:pass")
         assert_that(it.children[1].children[0].parser_kind, is_("ExceptHandler"))
 
-    def test_match_stmt(self):
+    def test_match_stmt(self) -> None:
         """AI: Verify a match-case statement with sequence unpacking parses with the expected nested parser kinds."""
         sample_code = (
             'match data:\n  case [first, *rest]: return f"List with first element {first} and {len(rest)} more items"\n  case _: pass'
@@ -102,7 +102,7 @@ class TestPythonRstNode:
         assert_that(stmt.children[1].children[0].children[0].children[1].parser_kind, is_("MatchStar"))
         assert_that(stmt.children[1].children[0].children[0].children[0].parser_kind, is_("MatchAs"))
 
-    def test_show_call(self):
+    def test_show_call(self) -> None:
         """AI: Verify a statement node exposes correct offset, length, filename, and shared translation unit."""
         atu = self.factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "apple.py")
         second_stmt = atu.children[1]
@@ -111,14 +111,14 @@ class TestPythonRstNode:
         assert_that(second_stmt.filename, is_("apple.py"))
         assert_that(atu.translation_unit, is_(second_stmt.translation_unit))
 
-    def test_attribute_signature_has_at(self):
+    def test_attribute_signature_has_at(self) -> None:
         """AI: Verify a decorated function's decorator node signature includes the leading @ syntax."""
         src = self.pattern_factory.create_statement("@TUAT\ndef ba(): pass")
         ASTShower.show_node(src)
         attr = src.children[2].children[0]
         assert_that(attr.signature, is_("@TUAT"))
 
-    def test_node_family(self):
+    def test_node_family(self) -> None:
         """AI: Verify a method node exposes its name, sibling methods, parent class, and children count."""
         src = PythonRstNode.load_from_text(
             textwrap.dedent("""
@@ -145,22 +145,22 @@ class Parent:
         assert_that(me.children[1].children, has_length(4))
 
     @pytest.mark.skip("don't use ast comment parser")
-    def test_load_file_with_ignored_types(self):
+    def test_load_file_with_ignored_types(self) -> None:
         """AI: Verify loading source with a '# type: ignore' comment records it in the AST's type_ignores."""
         atu = PythonRstNode.load_from_text("x = 1 # type: ignore", "bogus.py")
         assert_that(atu.translation_unit.atu.type_ignores, has_length(1))
 
-    def test_load_file(self):
+    def test_load_file(self) -> None:
         """AI: Verify loading a demo Python file from disk produces no type_ignores."""
         atu = PythonRstNode.load(Path(targets.__file__).parent / "demo.py")
         assert_that(atu.translation_unit.atu.type_ignores, is_(empty()))
 
-    def test_load_invalid_file(self):
+    def test_load_invalid_file(self) -> None:
         """AI: Verify loading a syntactically invalid Python file raises an IndentationError."""
         with pytest.raises(IndentationError, match="unexpected indent"):
             PythonRstNode.load(Path(targets.__file__).parent / "invalid.py")
 
-    def test_ann_fun_to_str2(self):
+    def test_ann_fun_to_str2(self) -> None:
         """AI: Verify a decorated function's offset and signature reflect the leading decorator text."""
         ann_fun = textwrap.dedent("""
     @parameterized.expand(Factories.extend(['$x;$y;']))
@@ -176,7 +176,7 @@ class Parent:
         assert_that(it.signature, contains_string("@parameterized.expand"))
 
     # @pytest.mark.skip("it was working before")
-    def test_ann_fun_to_str(self):
+    def test_ann_fun_to_str(self) -> None:
         """AI: Verify a decorated function's signature round-trips back to the original source text."""
         ann_fun = textwrap.dedent("""
         @parameterized.expand(Factories.extend(['$x;$y;']))
@@ -194,7 +194,7 @@ class Parent:
     @pytest.mark.hypothesisslow
     @given(code=hypothesmith.from_node(libcst.BaseStatement))
     @settings(max_examples=50, suppress_health_check=list(HealthCheck))
-    def test_from_cst_returns_statement(self, code):
+    def test_from_cst_returns_statement(self, code) -> None:
         """AI: Verify creating a node from arbitrary hypothesis-generated code yields a non-NODE-kind child."""
         reject_unsupported_code(code)
         factory = PythonFactory(PythonRstNode)
@@ -202,7 +202,7 @@ class Parent:
         print(f"testing {code=} with PythonRstNode")
         assert_that(node.children[0].semantic_kind is not SemanticKind.NODE, is_(True), f"{code=}")
 
-    def test_corner_case(self):
+    def test_corner_case(self) -> None:
         """AI: Verify a class name made of exotic unicode characters yields a non-NODE-kind child."""
         factory = PythonFactory(PythonRstNode)
         node = factory.create_from_text("class ŻP𭻊鲖ÉØ_ąň𣑗: pass\n")
@@ -216,7 +216,7 @@ class Parent:
             ("async def f():\n    async for a, (b, c) in x():\n        pass\n", "AsyncFor"),
         ],
     )
-    def test_nested_tuple_unpacking_for_target(self, code, expected_kind, capsys):
+    def test_nested_tuple_unpacking_for_target(self, code, expected_kind, capsys) -> None:
         """AI: Verify nested-tuple for-loop targets parse without AttributeError and produce the expected kind."""
         root = PythonRstNode.load_from_text(code)
 
@@ -231,7 +231,7 @@ class Parent:
             ("def f():\n    def g():\n        nonlocal x\n", "Nonlocal"),
         ],
     )
-    def test_global_nonlocal_names_not_dropped(self, code, expected_kind, capsys):
+    def test_global_nonlocal_names_not_dropped(self, code, expected_kind, capsys) -> None:
         """AI: Verify global/nonlocal statements keep their names without raising AttributeError."""
         root = PythonRstNode.load_from_text(code)
 
@@ -242,7 +242,7 @@ class Parent:
         reason="PythonRstNode does not inherit from ASTNode, so get_ancestor() is not available on it",
         strict=True,
     )
-    def test_get_ancestor_finds_enclosing_function(self):
+    def test_get_ancestor_finds_enclosing_function(self) -> None:
         """get_ancestor() walks up .parent to find the nearest FunctionDef."""
         root = PythonRstNode.load_from_text("def f():\n    x = 1\n")
         target = root.children[0].children[0]

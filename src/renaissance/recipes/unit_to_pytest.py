@@ -16,19 +16,19 @@ from renaissance.syntax_tree.semantic_kind import SemanticKind
 class UnitToPytest(PythonRefactoring):
     """AI: Recipe that converts unittest-style test files to pytest style."""
 
-    def __init__(self, file):
+    def __init__(self, file) -> None:
         """Hide internal administration in the parent class so that this class you only deals with specific refactors."""
         super().__init__(file)
         self.black_list_pattern = "utils_for_test"
         self.white_list_pattern = "test"
 
-    def run(self):
+    def run(self) -> None:
         """Entry point for converting unittest to pytest."""
         self.refactor()
 
         self.post_processing()
 
-    def refactor(self):
+    def refactor(self) -> None:
         """AI: Apply file-, class-, and function-level unittest-to-pytest conversions."""
         # 1: file level changes
         self.convert_test_class()
@@ -65,7 +65,7 @@ class UnitToPytest(PythonRefactoring):
         self.replace_stmt("self.assertIsInstance($act, $exp)", "assert_that($act, is_($exp))")
         self.replace_stmt("with self.assertRaises($exc): $call()", "assert_that(calling($call), raises($exc))")
 
-    def post_processing(self):
+    def post_processing(self) -> None:
         """AI: Repeatedly simplify assert_that(...) expressions until no further changes occur."""
         # 4: improve to more concise asserts
         while self.has_changed():
@@ -89,7 +89,7 @@ class UnitToPytest(PythonRefactoring):
             self.remove_duplicate_import("import pytest\nfrom hamcrest import *")
         self.commit()
 
-    def convert_test_class(self):
+    def convert_test_class(self) -> None:
         """AI: Rewrite TestCase-derived class headers to drop the unittest base class."""
         test_main: Sequence[NodeProtocol] = self.pattern_factory.create_statements(
             "class $klass($test_class):\n    $$test_cases\n",
@@ -110,7 +110,7 @@ class UnitToPytest(PythonRefactoring):
                 # repl = f'class {match.expansions["$klass"][0]}:\n{raw(match.expansions["$$test_cases"])}'
                 self.replace(repl, match.nodes, False, False)
 
-    def convert_test_setup(self):
+    def convert_test_setup(self) -> None:
         """AI: Convert a setUp method into a pytest autouse fixture named setup."""
         setup_function = self.pattern_factory.create_statements("def setUp(self): $$stmts")
         for match in match_pattern(self.body, setup_function):
@@ -118,7 +118,7 @@ class UnitToPytest(PythonRefactoring):
             repl = f"@pytest.fixture(autouse=True)\n{match.signature}".replace(" setUp(self)", " setup(self)")
             self.replace(repl, match.nodes, False, False)
 
-    def convert_assert(self, pattern, replacement):
+    def convert_assert(self, pattern, replacement) -> None:
         """AI: Replace calls matching pattern with replacement, swapping expected/actual arguments as needed."""
         pat = self.pattern_factory.create_statements(pattern)
         for match in match_pattern(self.root.children, pat):
@@ -136,7 +136,7 @@ class UnitToPytest(PythonRefactoring):
         """AI: Return whether $exp and $act appear swapped in the match (i.e. $exp is a literal)."""
         return match.expansions["$exp"][0].semantic_kind is SemanticKind.LITERAL
 
-    def convert_parameterized_test(self):
+    def convert_parameterized_test(self) -> None:
         """AI: Convert @parameterized.expand-decorated test functions into @pytest.mark.parametrize."""
         unittest = self.pattern_factory.create_statements(
             textwrap.dedent("""
@@ -163,7 +163,7 @@ class UnitToPytest(PythonRefactoring):
 
             self.replace(repl, fun, False, False)
 
-    def remove_print(self):
+    def remove_print(self) -> None:
         """AI: Remove print(...) statements, or their containing block if it's the only statement."""
         print_msg = self.pattern_factory.create_statements("print($$msg)")  # type: ignore[assignment]
         for match in match_pattern(self.root.children, print_msg):
@@ -172,7 +172,7 @@ class UnitToPytest(PythonRefactoring):
             else:
                 self.remove(match.nodes, False, False)
 
-    def convert_plain_assert_same_length(self):
+    def convert_plain_assert_same_length(self) -> None:
         """AI: Replace a manual length-check assert with an assert_that(...) has_length assertion."""
         pattern: Sequence[NodeProtocol] = self.pattern_factory.create_statements(
             '$act: int = len($real)\nassert $exp == $act, "$act = " + str($act)',
@@ -184,14 +184,14 @@ class UnitToPytest(PythonRefactoring):
             repl = repl.replace("$exp", exp).replace("$real", real)
             self.replace(repl, match.nodes, False, False)
 
-    def convert_skip_test(self):
+    def convert_skip_test(self) -> None:
         """AI: Replace unittest.skip attribute references with pytest.mark.skip."""
         nodes = find_semantic_kind(self.root, SemanticKind.ATTRIBUTE)
         for node in nodes:
             if node.signature == "unittest.skip":
                 self.replace("pytest.mark.skip", node, False, False)
 
-    def swap_expected_and_actual(self):
+    def swap_expected_and_actual(self) -> None:
         """AI: Swap the $exp and $act arguments of assert_that(...) calls when they appear reversed."""
         pattern: Sequence[NodeProtocol] = self.pattern_factory.create_statements("assert_that($exp, is_($act))")  # type: ignore[assignment]
         for match in match_pattern(self.root.children, pattern):
@@ -202,7 +202,7 @@ class UnitToPytest(PythonRefactoring):
                 repl = repl.replace("$exp", exp).replace("$act", act)
                 self.replace(repl, match.nodes, False, False)
 
-    def restructure_module(self):
+    def restructure_module(self) -> None:
         """AI: Move module-level functions into a test class, creating one if none exists."""
         funs = [stmt for stmt in self.body if stmt.semantic_kind is SemanticKind.FUNCTION]
         test_classes = [stmt for stmt in self.body if stmt.semantic_kind is SemanticKind.CLASS and stmt.name.startswith("Test")]
@@ -241,7 +241,7 @@ class UnitToPytest(PythonRefactoring):
         name = "".join(word.capitalize() for word in parts)
         return name if name.startswith("Test") else f"Test{name}"
 
-    def remove_duplicate_import(self, import_str):
+    def remove_duplicate_import(self, import_str) -> None:
         """AI: Remove duplicate occurrences of the given import statement, keeping the first and last."""
         import_stmt: Sequence[NodeProtocol] = self.pattern_factory.create_statements(import_str)  # type: ignore[assignment]
         # type: ignore[assignment]

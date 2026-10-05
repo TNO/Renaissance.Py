@@ -19,7 +19,7 @@ class Context(dict):
         """AI: Return the dict item named `name` as an attribute."""
         return self[name]
 
-    def __setattr__(self, name, value):
+    def __setattr__(self, name, value) -> None:
         """AI: Set the dict item named `name` as an attribute."""
         self[name] = value
 
@@ -36,24 +36,24 @@ def context():
     encoding="utf-8",
     features_base_dir=str(FEATURES_BASE_DIR),
 )
-def test_refactor_python_file():
+def test_refactor_python_file() -> None:
     """AI: Scenario test for the 'python code' refactor-python-file.feature scenario."""
 
 
 @given("'python' programming language")
-def init_language_factory(context):
+def init_language_factory(context) -> None:
     """AI: Initialize the AST factory for the Python programming language."""
     context["factory"] = ASTFactory(PythonRstNode, "")
 
 
 @given(parsers.parse("'{file}' file written in that programming language"))
-def step_given_file_in_language(context, file):
+def step_given_file_in_language(context, file) -> None:
     """AI: Parse the given file into an AST using the scenario's factory."""
     context["atu"] = context["factory"].create(FEATURES_BASE_DIR / Path(file))
 
 
 @given(parsers.parse("node '{old}' exits within that AST"))
-def step_given_node_exists(context, old):
+def step_given_node_exists(context, old) -> None:
     """AI: Assert that a node matching the given pattern exists in the AST."""
     pattern_factory = PythonPatternFactory(context["factory"])
     find = pattern_factory.create_statements(old)
@@ -62,13 +62,13 @@ def step_given_node_exists(context, old):
 
 
 @given("a sequence of descendant nodes of that node")
-def step_given_descendant_nodes(context):
+def step_given_descendant_nodes(context) -> None:
     """AI: Assert that the matched node has descendant children."""
     assert context["result"][0].nodes[0].children
 
 
 @when(parsers.parse("that node is replaced by '{replacement}'"))
-def step_when_node_replaced(context, replacement):
+def step_when_node_replaced(context, replacement) -> None:
     """AI: Queue a replacement of the matched node with the given text."""
     context["replacement"] = replacement
     context["rewriter"] = ASTRewriter(context["atu"])
@@ -76,18 +76,18 @@ def step_when_node_replaced(context, replacement):
 
 
 @when("rewrites replace is performed on that sequence of descendant nodes")
-def step_when_rewrites_applied(context):
+def step_when_rewrites_applied(context) -> None:
     """AI: Apply the queued rewrite to the AST."""
     context["rewriter"].apply()
 
 
 @then("in the modified source file that node is replaced by the given text")
-def step_then_replaced_in_source(context):
+def step_then_replaced_in_source(context) -> None:
     """AI: Assert the replacement text appears in the rewritten source."""
     assert context["replacement"] in context["rewriter"].apply_to_string()
 
 
 @then("all rewrites on that sequence of descendant nodes are not performed or hidden")
-def step_then_rewrites_not_performed_or_hidden(context):
+def step_then_rewrites_not_performed_or_hidden(context) -> None:
     """AI: Assert the rewriter reports pending, unapplied changes."""
     assert context["rewriter"].has_changed()

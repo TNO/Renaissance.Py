@@ -33,17 +33,17 @@ def budget_file(tmp_path, monkeypatch):
     return path
 
 
-def _stub_counts(monkeypatch, ruff: dict[str, int], pyright: dict[str, int]):
+def _stub_counts(monkeypatch, ruff: dict[str, int], pyright: dict[str, int]) -> None:
     """AI: Replace the ruff and pyright runs by fixed issue counts."""
     monkeypatch.setattr(lint_budget, "COUNTERS", {"ruff": lambda: Counter(ruff), "pyright": lambda: Counter(pyright)})
 
 
-def test_unchanged_counts_are_within_budget():
+def test_unchanged_counts_are_within_budget() -> None:
     """AI: Assert equal counts are neither exceeded nor improved."""
     assert lint_budget.compare("ruff", Counter({"E501": 3}), {"E501": 3}) == ([], [])
 
 
-def test_more_issues_of_a_budgeted_kind_exceed_the_budget():
+def test_more_issues_of_a_budgeted_kind_exceed_the_budget() -> None:
     """AI: Assert an extra issue of an existing kind is reported as exceeding its budget."""
     exceeded, improved = lint_budget.compare("ruff", Counter({"E501": 4}), {"E501": 3})
     assert len(exceeded) == 1
@@ -51,7 +51,7 @@ def test_more_issues_of_a_budgeted_kind_exceed_the_budget():
     assert improved == []
 
 
-def test_a_new_kind_of_issue_exceeds_its_zero_budget():
+def test_a_new_kind_of_issue_exceeds_its_zero_budget() -> None:
     """AI: Assert a kind without a budget entry may not occur at all."""
     exceeded, improved = lint_budget.compare("ruff", Counter({"E501": 3, "D100": 1}), {"E501": 3})
     assert len(exceeded) == 1
@@ -59,14 +59,14 @@ def test_a_new_kind_of_issue_exceeds_its_zero_budget():
     assert improved == []
 
 
-def test_fewer_issues_are_reported_as_improvement():
+def test_fewer_issues_are_reported_as_improvement() -> None:
     """AI: Assert a reduced count is reported as an improvement rather than a failure."""
     exceeded, improved = lint_budget.compare("ruff", Counter({"E501": 1}), {"E501": 3, "D100": 2})
     assert exceeded == []
     assert len(improved) == 2
 
 
-def test_check_fails_when_a_new_issue_is_introduced(budget_file, monkeypatch):
+def test_check_fails_when_a_new_issue_is_introduced(budget_file, monkeypatch) -> None:
     """AI: Assert the gate fails and keeps the budget when a pull request adds an issue."""
     budget_file.write_text(json.dumps({"ruff": {"E501": 1}, "pyright": {}}), encoding="utf-8")
     _stub_counts(monkeypatch, ruff={"E501": 2}, pyright={})
@@ -75,7 +75,7 @@ def test_check_fails_when_a_new_issue_is_introduced(budget_file, monkeypatch):
     assert json.loads(budget_file.read_text(encoding="utf-8"))["ruff"] == {"E501": 1}
 
 
-def test_reduced_counts_are_adopted_as_the_new_budget(budget_file, monkeypatch):
+def test_reduced_counts_are_adopted_as_the_new_budget(budget_file, monkeypatch) -> None:
     """AI: Assert the budget ratchets down to the reduced counts."""
     budget_file.write_text(json.dumps({"ruff": {"E501": 5}, "pyright": {"reportUnusedVariable": 2}}), encoding="utf-8")
     _stub_counts(monkeypatch, ruff={"E501": 3}, pyright={"reportUnusedVariable": 2})
@@ -84,7 +84,7 @@ def test_reduced_counts_are_adopted_as_the_new_budget(budget_file, monkeypatch):
     assert json.loads(budget_file.read_text(encoding="utf-8")) == {"ruff": {"E501": 3}, "pyright": {"reportUnusedVariable": 2}}
 
 
-def test_check_mode_reports_a_stale_budget_without_writing(budget_file, monkeypatch):
+def test_check_mode_reports_a_stale_budget_without_writing(budget_file, monkeypatch) -> None:
     """AI: Assert CI mode never writes the budget file and asks for the reduction to be committed."""
     budget_file.write_text(json.dumps({"ruff": {"E501": 5}, "pyright": {}}), encoding="utf-8")
     _stub_counts(monkeypatch, ruff={"E501": 3}, pyright={})
@@ -93,7 +93,7 @@ def test_check_mode_reports_a_stale_budget_without_writing(budget_file, monkeypa
     assert json.loads(budget_file.read_text(encoding="utf-8"))["ruff"] == {"E501": 5}
 
 
-def test_removal_is_advised_when_no_issues_are_left(budget_file, monkeypatch, capsys):
+def test_removal_is_advised_when_no_issues_are_left(budget_file, monkeypatch, capsys) -> None:
     """AI: Assert the user is told the budget functionality can be removed once all issues are gone."""
     budget_file.write_text(json.dumps({"ruff": {"E501": 1}, "pyright": {}}), encoding="utf-8")
     _stub_counts(monkeypatch, ruff={}, pyright={})

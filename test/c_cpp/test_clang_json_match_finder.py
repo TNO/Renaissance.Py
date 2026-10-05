@@ -15,7 +15,7 @@ class TestClangJsonMatchFinder:
     """AI: Tests matching patterns against Clang JSON AST nodes."""
 
     @pytest.mark.skip
-    def test_is_match_using_macro_from_atu(self):
+    def test_is_match_using_macro_from_atu(self) -> None:
         """AI: Verify a pattern derived from a translation unit's own macro matches the equivalent source usage."""
         code = """
         #define BAR "bar"

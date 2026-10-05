@@ -38,7 +38,7 @@ class TestConcretePatternMatcher:
             ("import os\nx=5", "import $mod $stmt"),
         ],
     )
-    def test_python_pattern(self, code, pattern):
+    def test_python_pattern(self, code, pattern) -> None:
         """AI: Verify a variety of Python constructs match their corresponding pattern with placeholders."""
         adapter = TreeSitterAdapter(tree_sitter_python)
         interface = TreeSitterPatternFactory(adapter)
@@ -47,7 +47,7 @@ class TestConcretePatternMatcher:
 
         assert_that(matches, has_length(1), f"{code=} {pattern=}")
 
-    def test_is_match_python_patterns(self):
+    def test_is_match_python_patterns(self) -> None:
         """AI: Verify each try/except sub-statement matches its corresponding placeholder pattern node."""
         adapter = TreeSitterAdapter(tree_sitter_python)
         interface = TreeSitterPatternFactory(adapter)
@@ -58,7 +58,7 @@ class TestConcretePatternMatcher:
         assert_that(is_match(c.children[2], p.children[2], {}), is_(True))
         assert_that(is_match(c.children[3], p.children[3], {}), is_(True))
 
-    def test_is_match_python_patterns_tree(self):
+    def test_is_match_python_patterns_tree(self) -> None:
         """AI: Verify is_match_tree confirms a matching try/except node sequence against its pattern."""
         adapter = TreeSitterAdapter(tree_sitter_python)
         interface = TreeSitterPatternFactory(adapter)
@@ -66,7 +66,7 @@ class TestConcretePatternMatcher:
         p = interface.create_statement("try: $b\nexcept Exception: $b")
         assert_that(is_match_tree(c.children, p.children, {}), is_(True))
 
-    def test_is_match_python_patterns_1(self):
+    def test_is_match_python_patterns_1(self) -> None:
         """AI: Verify an if-statement matches its placeholder pattern via is_match and match_pattern."""
         adapter = TreeSitterAdapter(tree_sitter_python)
         interface = TreeSitterPatternFactory(adapter)
@@ -75,7 +75,7 @@ class TestConcretePatternMatcher:
         assert_that(is_match(c, p), is_(True))
         assert_that(match_pattern([c], [p]), is_not(empty()))
 
-    def test_is_match(self):
+    def test_is_match(self) -> None:
         """AI: Verify an identical function definition pattern matches itself."""
         adapter = TreeSitterAdapter(tree_sitter_python)
         interface = TreeSitterPatternFactory(adapter)

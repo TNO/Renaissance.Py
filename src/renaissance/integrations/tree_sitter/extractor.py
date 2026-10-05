@@ -21,7 +21,7 @@ def _has_semantic_kind(node, kind: SemanticKind) -> bool:
 class Extractor:
     """AI: Find occurrences of a set of patterns in tree-sitter-parsed code."""
 
-    def __init__(self, factory: TreeSitterPatternFactory, patterns: list[str]):
+    def __init__(self, factory: TreeSitterPatternFactory, patterns: list[str]) -> None:
         """AI: Configure an extractor that finds occurrences of the given patterns in code."""
         self.pattern_factory = factory
         self.patterns = patterns
@@ -39,14 +39,14 @@ class Extractor:
 class BaseCodeGraphExtractor:
     """AI: Base class that extracts a code graph from a language's tree-sitter-parsed files."""
 
-    def __init__(self, language: str, lib_path: str):
+    def __init__(self, language: str, lib_path: str) -> None:
         """AI: Configure a code-graph extractor for the given language and grammar library."""
         self.language = language
         self.lib_path = lib_path
         self.adapter = TreeSitterAdapter(lib_path)
         self.graph = nx.DiGraph()
 
-    def extract(self, files):
+    def extract(self, files) -> None:
         """AI: Parse each file and build the code graph by processing its LST."""
         for f in files:
             try:
@@ -60,7 +60,7 @@ class BaseCodeGraphExtractor:
     def _process_file(self, file_path: str, lst):
         raise NotImplementedError
 
-    def save_graph(self, filename: str):
+    def save_graph(self, filename: str) -> None:
         """AI: Write the extracted code graph to a GraphML file named filename."""
         path = Path(GRAPHML_DIR) / filename
         nx.write_graphml(self.graph, path)
@@ -70,7 +70,7 @@ class BaseCodeGraphExtractor:
 class PythonCodeGraphExtractor(BaseCodeGraphExtractor):
     """AI: Extract a code graph (functions, calls) from Python source files."""
 
-    def _process_file(self, file_path, lst):
+    def _process_file(self, file_path, lst) -> None:
         folder = str(Path(file_path).parent)
         self.graph.add_node(file_path, type="file", folder=folder)
         self.graph.add_node(folder, type="folder")
@@ -91,7 +91,7 @@ class PythonCodeGraphExtractor(BaseCodeGraphExtractor):
 class JavaCodeGraphExtractor(BaseCodeGraphExtractor):
     """AI: Extract a code graph (methods, calls) from Java source files."""
 
-    def _process_file(self, file_path, lst):
+    def _process_file(self, file_path, lst) -> None:
         folder = str(Path(file_path).parent)
         self.graph.add_node(file_path, type="file", folder=folder)
         self.graph.add_node(folder, type="folder")
@@ -112,7 +112,7 @@ class JavaCodeGraphExtractor(BaseCodeGraphExtractor):
 class CppCodeGraphExtractor(BaseCodeGraphExtractor):
     """AI: Extract a code graph (functions, calls) from C++ source files."""
 
-    def _process_file(self, file_path, lst):
+    def _process_file(self, file_path, lst) -> None:
         folder = str(Path(file_path).parent)
         self.graph.add_node(file_path, type="file", folder=folder)
         self.graph.add_node(folder, type="folder")

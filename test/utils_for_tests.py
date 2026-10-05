@@ -24,7 +24,7 @@ def compress(s: str):
     return skip_whitespace.strip()
 
 
-def show_node(node: ASTNode, title: str = ""):
+def show_node(node: ASTNode, title: str = "") -> None:
     """AI: Print an ASTNode's structure via ASTShower when VERBOSE mode is enabled."""
     if VERBOSE:
         if title:
@@ -32,7 +32,7 @@ def show_node(node: ASTNode, title: str = ""):
         ASTShower.show_node(node)
 
 
-def debug_mismatch(debug_mismatches, atu, patterns: list[ASTNode], matches: list[PatternMatch]):
+def debug_mismatch(debug_mismatches, atu, patterns: list[ASTNode], matches: list[PatternMatch]) -> None:
     """AI: Print details of mismatched pattern matches for debugging when debug_mismatches is enabled."""
     if debug_mismatches:
         for idx, pattern in enumerate(patterns):
@@ -59,7 +59,7 @@ def debug_print(
     expected_result: ASTNode,
     include_comments: bool,
     include_whitespace: bool,
-):
+) -> None:
     """AI: Print original, expected, and actual AST/text output for debugging test comparisons."""
     if AST_SHOWER:
         print("Original:")

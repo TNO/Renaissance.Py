@@ -41,7 +41,7 @@ _FEATURE = "../rewrite-semantics.feature"
 # Scenario 0 — Scenario Outline: three representative examples.
 # Universal property test: test/syntax_tree/test_rewrite_semantics_properties.py
 @scenario(_FEATURE, "Replacements of the same node produce an error")
-def test_replacements_of_same_node_produce_error():
+def test_replacements_of_same_node_produce_error() -> None:
     """AI: Scenario test for 'Replacements of the same node produce an error'."""
 
 
@@ -50,37 +50,37 @@ def test_replacements_of_same_node_produce_error():
     strict=True,
 )
 @scenario(_FEATURE, "Dominated change is not applied")
-def test_dominated_change_not_applied():
+def test_dominated_change_not_applied() -> None:
     """AI: Scenario test for 'Dominated change is not applied'."""
 
 
 @scenario(_FEATURE, "Overlapping replacements produce an error")
-def test_overlapping_replacements_produce_error():
+def test_overlapping_replacements_produce_error() -> None:
     """AI: Scenario test for 'Overlapping replacements produce an error'."""
 
 
 @scenario(_FEATURE, "Prepend of ancestor precedes prepend of descendant regardless of collection order")
-def test_prepend_ordering():
+def test_prepend_ordering() -> None:
     """AI: Scenario test for 'Prepend of ancestor precedes prepend of descendant regardless of collection order'."""
 
 
 @scenario(_FEATURE, "Append of descendant precedes append of ancestor regardless of collection order")
-def test_append_ordering():
+def test_append_ordering() -> None:
     """AI: Scenario test for 'Append of descendant precedes append of ancestor regardless of collection order'."""
 
 
 @scenario(_FEATURE, "Operation on first sibling precedes operation on second sibling \u2014 first sibling collected first")
-def test_sibling_sib1_first():
+def test_sibling_sib1_first() -> None:
     """AI: Scenario test for 'Operation on first sibling precedes operation on second sibling' (first sibling collected first)."""
 
 
 @scenario(_FEATURE, "Operation on first sibling precedes operation on second sibling \u2014 second sibling collected first")
-def test_sibling_sib2_first():
+def test_sibling_sib2_first() -> None:
     """AI: Scenario test for 'Operation on first sibling precedes operation on second sibling' (second sibling collected first)."""
 
 
 @scenario(_FEATURE, "Replacements of the same sibling range produce an error")
-def test_replacements_of_same_sibling_range_produce_error():
+def test_replacements_of_same_sibling_range_produce_error() -> None:
     """AI: Scenario test for 'Replacements of the same sibling range produce an error'."""
 
 
@@ -89,7 +89,7 @@ def test_replacements_of_same_sibling_range_produce_error():
     strict=True,
 )
 @scenario(_FEATURE, "Sibling range dominates a proper subrange regardless of collection order")
-def test_sibling_range_dominates_proper_subrange():
+def test_sibling_range_dominates_proper_subrange() -> None:
     """AI: Scenario test for 'Sibling range dominates a proper subrange regardless of collection order'."""
 
 
@@ -98,12 +98,12 @@ def test_sibling_range_dominates_proper_subrange():
     strict=True,
 )
 @scenario(_FEATURE, "Sibling range dominates a single contained sibling regardless of collection order")
-def test_sibling_range_dominates_single_sibling():
+def test_sibling_range_dominates_single_sibling() -> None:
     """AI: Scenario test for 'Sibling range dominates a single contained sibling regardless of collection order'."""
 
 
 @scenario(_FEATURE, "Prepends of same node are applied in order of collection.")
-def test_prepends_of_same_node_in_order():
+def test_prepends_of_same_node_in_order() -> None:
     """AI: Scenario test for 'Prepends of same node are applied in order of collection.'."""
 
 
@@ -112,7 +112,7 @@ def test_prepends_of_same_node_in_order():
     strict=True,
 )
 @scenario(_FEATURE, "Appends of same node are applied in reversed order of collection.")
-def test_appends_of_same_node_in_reversed_order():
+def test_appends_of_same_node_in_reversed_order() -> None:
     """AI: Scenario test for 'Appends of same node are applied in reversed order of collection.'."""
 
 
@@ -121,22 +121,22 @@ def test_appends_of_same_node_in_reversed_order():
     strict=True,
 )
 @scenario(_FEATURE, "Surrounds of same node: before texts in collection order, after texts in reversed collection order")
-def test_surrounds_of_same_node():
+def test_surrounds_of_same_node() -> None:
     """AI: Scenario test for 'Surrounds of same node' before/after text ordering."""
 
 
 @scenario(_FEATURE, "Surround of ancestor precedes surround of descendant at shared start location regardless of collection order")
-def test_surround_ancestor_precedes_surround_descendant_start():
+def test_surround_ancestor_precedes_surround_descendant_start() -> None:
     """AI: Scenario test for 'Surround of ancestor precedes surround of descendant at shared start location'."""
 
 
 @scenario(_FEATURE, "Surround of descendant precedes surround of ancestor at shared end location regardless of collection order")
-def test_surround_descendant_precedes_surround_ancestor_end():
+def test_surround_descendant_precedes_surround_ancestor_end() -> None:
     """AI: Scenario test for 'Surround of descendant precedes surround of ancestor at shared end location'."""
 
 
 @scenario(_FEATURE, "Prepend is outside surround of the same node \u2014 prepend collected first")
-def test_prepend_outside_surround_prepend_first():
+def test_prepend_outside_surround_prepend_first() -> None:
     """AI: Scenario test for 'Prepend is outside surround of the same node' (prepend collected first)."""
 
 
@@ -146,7 +146,7 @@ def test_prepend_outside_surround_prepend_first():
     strict=True,
 )
 @scenario(_FEATURE, "Prepend is outside surround of the same node \u2014 surround collected first")
-def test_prepend_outside_surround_surround_first():
+def test_prepend_outside_surround_surround_first() -> None:
     """AI: Scenario test for 'Prepend is outside surround of the same node' (surround collected first)."""
 
 
@@ -156,17 +156,17 @@ def test_prepend_outside_surround_surround_first():
     strict=True,
 )
 @scenario(_FEATURE, "Append is outside surround of the same node \u2014 append collected first")
-def test_append_outside_surround_append_first():
+def test_append_outside_surround_append_first() -> None:
     """AI: Scenario test for 'Append is outside surround of the same node' (append collected first)."""
 
 
 @scenario(_FEATURE, "Append is outside surround of the same node \u2014 surround collected first")
-def test_append_outside_surround_surround_first():
+def test_append_outside_surround_surround_first() -> None:
     """AI: Scenario test for 'Append is outside surround of the same node' (surround collected first)."""
 
 
 @scenario(_FEATURE, "Prepend appears before replacement of the same node \u2014 prepend collected first")
-def test_prepend_before_replacement_prepend_first():
+def test_prepend_before_replacement_prepend_first() -> None:
     """AI: Scenario test for 'Prepend appears before replacement of the same node' (prepend collected first)."""
 
 
@@ -176,17 +176,17 @@ def test_prepend_before_replacement_prepend_first():
     strict=True,
 )
 @scenario(_FEATURE, "Prepend appears before replacement of the same node \u2014 replace collected first")
-def test_prepend_before_replacement_replace_first():
+def test_prepend_before_replacement_replace_first() -> None:
     """AI: Scenario test for 'Prepend appears before replacement of the same node' (replace collected first)."""
 
 
 @scenario(_FEATURE, "Replacement appears before append of the same node \u2014 replace collected first")
-def test_replacement_before_append_replace_first():
+def test_replacement_before_append_replace_first() -> None:
     """AI: Scenario test for 'Replacement appears before append of the same node' (replace collected first)."""
 
 
 @scenario(_FEATURE, "Replacement appears before append of the same node \u2014 append collected first")
-def test_replacement_before_append_append_first():
+def test_replacement_before_append_append_first() -> None:
     """AI: Scenario test for 'Replacement appears before append of the same node' (append collected first)."""
 
 
@@ -196,12 +196,12 @@ def test_replacement_before_append_append_first():
     strict=True,
 )
 @scenario(_FEATURE, "Surround wraps replacement of the same node \u2014 replace collected first")
-def test_surround_wraps_replacement_replace_first():
+def test_surround_wraps_replacement_replace_first() -> None:
     """AI: Scenario test for 'Surround wraps replacement of the same node' (replace collected first)."""
 
 
 @scenario(_FEATURE, "Surround wraps replacement of the same node \u2014 surround collected first")
-def test_surround_wraps_replacement_surround_first():
+def test_surround_wraps_replacement_surround_first() -> None:
     """AI: Scenario test for 'Surround wraps replacement of the same node' (surround collected first)."""
 
 
@@ -211,17 +211,17 @@ def test_surround_wraps_replacement_surround_first():
     strict=True,
 )
 @scenario(_FEATURE, "Prepend of descendant is inside surround of ancestor at shared start location \u2014 prepend collected first")
-def test_prepend_descendant_inside_surround_ancestor_start_prepend_first():
+def test_prepend_descendant_inside_surround_ancestor_start_prepend_first() -> None:
     """AI: Scenario test for 'Prepend of descendant is inside surround of ancestor at shared start location' (prepend collected first)."""
 
 
 @scenario(_FEATURE, "Prepend of descendant is inside surround of ancestor at shared start location \u2014 surround collected first")
-def test_prepend_descendant_inside_surround_ancestor_start_surround_first():
+def test_prepend_descendant_inside_surround_ancestor_start_surround_first() -> None:
     """AI: Scenario test for 'Prepend of descendant is inside surround of ancestor at shared start location' (surround collected first)."""
 
 
 @scenario(_FEATURE, "Append of descendant is inside surround of ancestor at shared end location \u2014 append collected first")
-def test_append_descendant_inside_surround_ancestor_end_append_first():
+def test_append_descendant_inside_surround_ancestor_end_append_first() -> None:
     """AI: Scenario test for 'Append of descendant is inside surround of ancestor at shared end location' (append collected first)."""
 
 
@@ -231,12 +231,12 @@ def test_append_descendant_inside_surround_ancestor_end_append_first():
     strict=True,
 )
 @scenario(_FEATURE, "Append of descendant is inside surround of ancestor at shared end location \u2014 surround collected first")
-def test_append_descendant_inside_surround_ancestor_end_surround_first():
+def test_append_descendant_inside_surround_ancestor_end_surround_first() -> None:
     """AI: Scenario test for 'Append of descendant is inside surround of ancestor at shared end location' (surround collected first)."""
 
 
 @scenario(_FEATURE, "Surround of descendant is inside prepend of ancestor at shared start location \u2014 prepend collected first")
-def test_surround_descendant_inside_prepend_ancestor_start_prepend_first():
+def test_surround_descendant_inside_prepend_ancestor_start_prepend_first() -> None:
     """AI: Scenario test for 'Surround of descendant is inside prepend of ancestor at shared start location' (prepend collected first)."""
 
 
@@ -246,7 +246,7 @@ def test_surround_descendant_inside_prepend_ancestor_start_prepend_first():
     strict=True,
 )
 @scenario(_FEATURE, "Surround of descendant is inside prepend of ancestor at shared start location \u2014 surround collected first")
-def test_surround_descendant_inside_prepend_ancestor_start_surround_first():
+def test_surround_descendant_inside_prepend_ancestor_start_surround_first() -> None:
     """AI: Scenario test for 'Surround of descendant is inside prepend of ancestor at shared start location' (surround collected first)."""
 
 
@@ -256,12 +256,12 @@ def test_surround_descendant_inside_prepend_ancestor_start_surround_first():
     strict=True,
 )
 @scenario(_FEATURE, "Surround of descendant is inside append of ancestor at shared end location \u2014 append collected first")
-def test_surround_descendant_inside_append_ancestor_end_append_first():
+def test_surround_descendant_inside_append_ancestor_end_append_first() -> None:
     """AI: Scenario test for 'Surround of descendant is inside append of ancestor at shared end location' (append collected first)."""
 
 
 @scenario(_FEATURE, "Surround of descendant is inside append of ancestor at shared end location \u2014 surround collected first")
-def test_surround_descendant_inside_append_ancestor_end_surround_first():
+def test_surround_descendant_inside_append_ancestor_end_surround_first() -> None:
     """AI: Scenario test for 'Surround of descendant is inside append of ancestor at shared end location' (surround collected first)."""
 
 

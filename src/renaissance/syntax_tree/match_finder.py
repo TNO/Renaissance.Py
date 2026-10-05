@@ -50,7 +50,7 @@ class Variant:
         greedy: str | None,
         expansion_start: int,
         end_index: int = INCOMPLETE_MATCH,
-    ):
+    ) -> None:
         """AI: Track one candidate pattern-match state (bound expansions, greedy position) during matching."""
         self.exp: dict[str, Sequence[NodeProtocol]] = exp
         self.index: int = index
@@ -58,12 +58,12 @@ class Variant:
         self.end_index: int = end_index
         self.expansion_start: int = expansion_start
 
-    def reset_greedy(self):
+    def reset_greedy(self) -> None:
         """AI: Clear the current greedy-expansion tracking state."""
         self.greedy = None
         self.expansion_start = -1
 
-    def close_greedy(self, key, nodes, start, end):
+    def close_greedy(self, key, nodes, start, end) -> None:
         """Store a completed greedy expansion and reset greedy state."""
         value = nodes[start:end]
         self.exp[key] = value
@@ -77,13 +77,13 @@ class Variant:
 class PatternMatch:
     """AI: Represent a successful match of a pattern against a sequence of AST nodes."""
 
-    def __init__(self, nodes, expansions, patterns):
+    def __init__(self, nodes, expansions, patterns) -> None:
         """AI: Represent a successful match of a pattern against a sequence of AST nodes."""
         self.nodes = nodes
         self.expansions = expansions
         self.patterns = patterns
 
-    def __str__(self):
+    def __str__(self) -> str:
         """AI: Return the newline-joined signatures of the matched nodes."""
         return "\n".join(node.signature for node in self.nodes)
 
@@ -148,7 +148,7 @@ def variant_in_match_stmt(src: NodeProtocol, cmp: NodeProtocol, expansions) -> l
     return []
 
 
-def _advance_match_all(variant: Variant, cmp: Sequence, src: Sequence, i: int, new_variants: list):
+def _advance_match_all(variant: Variant, cmp: Sequence, src: Sequence, i: int, new_variants: list) -> None:
     """Advance variant.index past consecutive MATCH_ALL pattern nodes, forking new_variants as needed."""
     while pattern_kind(cmp[variant.index]) is PatternKind.MATCH_ALL:
         current_name = cmp[variant.index].name
@@ -170,7 +170,7 @@ def _advance_match_all(variant: Variant, cmp: Sequence, src: Sequence, i: int, n
             break
 
 
-def _apply_child_match(variant: Variant, child_variants: list, cmp: Sequence, src: Sequence, i: int, new_variants: list):
+def _apply_child_match(variant: Variant, child_variants: list, cmp: Sequence, src: Sequence, i: int, new_variants: list) -> None:
     """Apply a successful child match, forking if there are multiple child variants."""
     greedy_open = variant.greedy is not None and variant.expansion_start != -1 and variant.greedy not in variant.exp
     if greedy_open:
@@ -189,7 +189,7 @@ def _apply_child_match(variant: Variant, child_variants: list, cmp: Sequence, sr
             variant.end_index = len(src) - 1
 
 
-def _advance_greedy(variant: Variant, cmp: Sequence, src: Sequence, i: int):
+def _advance_greedy(variant: Variant, cmp: Sequence, src: Sequence, i: int) -> None:
     """Accumulate or verify greedy expansion for the current source node."""
     exp_for_key = variant.exp.get(cmp[variant.index].name)
     exp_index = i - variant.expansion_start
@@ -270,7 +270,7 @@ def find_variants(src: Sequence, cmp: Sequence, expansion=None, start: int = 0, 
     return valid_variants
 
 
-def find_in_list(src: Sequence, cmp: Sequence, exp=None, start: int = 0):
+def find_in_list(src: Sequence, cmp: Sequence, exp=None, start: int = 0) -> int:
     """AI: Return the end index of the first full match of cmp within src starting at start, or -2 if none."""
     if exp is None:
         exp = {}

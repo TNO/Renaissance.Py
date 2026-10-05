@@ -298,7 +298,7 @@ class TestPythonFactory:
         expression = pattern_factory.create_expression(raw)
         assert_that(expression.parser_kind, is_in(expected))
 
-    def test_function_with_multi_patterns(self):
+    def test_function_with_multi_patterns(self) -> None:
         """AI: Verify a call pattern mixing MATCH_ONE and MATCH_ALL placeholders assigns the expected pattern kinds to each child."""
         pattern = self.pattern_factory.create_expression("$f($$before, $a, $$after)")
         assert_that(pattern.parser_kind, is_("Call"))

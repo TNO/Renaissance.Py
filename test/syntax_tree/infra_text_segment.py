@@ -143,7 +143,7 @@ def _check_column_range(
     column: int,
     line_starts: tuple[int, ...],
     description: str,
-):
+) -> None:
     start_line = line_starts[line]
     end_line = (
         length_full_text + 1  ## column must be able to point beyond last character of full text to include that character as well.

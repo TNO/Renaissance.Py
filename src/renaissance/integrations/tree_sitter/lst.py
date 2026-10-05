@@ -23,7 +23,7 @@ class LSTNode:
         children: list[Self] | None = None,
         parent: Self | None = None,
         root: Self | None = None,
-    ):
+    ) -> None:
         """AI: Wrap a tree-sitter node as a language-syntax-tree node with derived semantic kind."""
         self.root = root or self
         self.parent = parent
@@ -78,7 +78,7 @@ class LSTNode:
         """AI: Return whether this node's children match the given children at each corresponding index."""
         return all(i < len(self.children) and self.children[i] == child for i, child in enumerate(children))
 
-    def add_child(self, child):  # LSTNode):
+    def add_child(self, child) -> None:  # LSTNode):
         """AI: Append child to this node's children and set its parent to this node."""
         self.children.append(child)
         child.parent = self
@@ -108,7 +108,7 @@ class LSTNode:
         """AI: Return this node itself."""
         return self
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """AI: Return the formatted node representation."""
         return format_node(self)
         # raw_lines = self.signature.splitlines()
@@ -129,6 +129,6 @@ class LSTNode:
 class LST:
     """AI: Hold the root node of a language-syntax tree."""
 
-    def __init__(self, root: LSTNode):
+    def __init__(self, root: LSTNode) -> None:
         """AI: Hold the root node of a language-syntax tree."""
         self.root = root

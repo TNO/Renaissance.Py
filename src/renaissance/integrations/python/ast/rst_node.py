@@ -39,7 +39,7 @@ class ImplicitNode(ast.Name):
         "body": list,
     }
 
-    def __init__(self, name, children=None):
+    def __init__(self, name, children=None) -> None:
         """AI: Represent a synthetic AST node inserted where the real source has none."""
         super().__init__(name, children or [])
         self.lineno = 0
@@ -51,7 +51,7 @@ class ImplicitNode(ast.Name):
 class PythonRSTReference:
     """AI: Represent a reference from one Python RST AST node to another by id."""
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """AI: Return a string identifying the referenced node id and reference kind."""
         return f"{self.node_id}:{self.ref_kind}"
 
@@ -67,7 +67,7 @@ class PythonRstTranslationUnit:
 
     cache = {}
 
-    def __init__(self, content, file_name: str):
+    def __init__(self, content, file_name: str) -> None:
         """AI: Parse Python source into a stdlib ast tree with lazily-built reference caches."""
         self.content = content.encode(sys.getfilesystemencoding())
         self.atu = ast.parse(content, file_name)
@@ -99,7 +99,7 @@ class PythonRstTranslationUnit:
             self.create_references(n)
         self.references_initialized = True
 
-    def add(self, node):
+    def add(self, node) -> None:
         """AI: Register node in the node-name lookup table, keyed by its parser-kind-specific name."""
         match node.parser_kind:
             case "Name":
@@ -213,7 +213,7 @@ class PythonRstTranslationUnit:
 class PythonRstNode:
     """AI: ASTNode implementation backed by the stdlib ast module."""
 
-    def __init__(self, node: ast.AST, translation_unit: PythonRstTranslationUnit = None, parent=None):
+    def __init__(self, node: ast.AST, translation_unit: PythonRstTranslationUnit = None, parent=None) -> None:
         """AI: Wrap a stdlib ast node as an AST node within the given translation unit."""
         self.root = parent.root if parent and parent.root else self
         self.node = node
@@ -285,11 +285,11 @@ class PythonRstNode:
             and match_children(self.children, other.children, IRRELEVANT_NODES)
         )
 
-    def __contains__(self, item):
+    def __contains__(self, item) -> bool:
         """AI: Return whether item(s) are found among this node's children."""
         if not isinstance(item, list):
             item = [item]
-        return find_in_list(self.children, item)
+        return bool(find_in_list(self.children, item))
 
     def __getitem__(self, key):
         """Allow indexing/slicing into node to access children.
@@ -298,7 +298,7 @@ class PythonRstNode:
         """
         return self.children[key]
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """AI: Return the formatted node representation."""
         return format_node(self)
 
@@ -318,7 +318,7 @@ class PythonRstNode:
         for child in self.children:
             child.process(function)
 
-    def derive_position(self, node: ast.AST, translation_unit: PythonRstTranslationUnit, parent):
+    def derive_position(self, node: ast.AST, translation_unit: PythonRstTranslationUnit, parent) -> None:
         """AI: Compute and set this node's offset and length in the source text from its ast position attributes."""
         if node._attributes:
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)) and node.decorator_list:
@@ -495,7 +495,7 @@ class PythonRstNode:
         self.translation_unit.lazy_create_refers(self)
         return self.translation_unit.get_references(self.name)
 
-    def add_node(self):
+    def add_node(self) -> None:
         """AI: Register this node in its translation unit's node-name lookup table."""
         self.translation_unit.add(self)
 

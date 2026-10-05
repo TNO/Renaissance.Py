@@ -8,7 +8,7 @@ from renaissance.integrations.python.ast.rst_node import PythonRstNode
 from renaissance.syntax_tree.semantic_kind import SemanticKind
 
 
-def test_native_ast_exposes_protocol_metadata():
+def test_native_ast_exposes_protocol_metadata() -> None:
     """AI: Assert a native ast-based Python node exposes the expected parser_kind and semantic_kind."""
     node = PythonFactory(ast.AST).create_from_text("def f(): pass").body[0]
 
@@ -16,7 +16,7 @@ def test_native_ast_exposes_protocol_metadata():
     assert node.semantic_kind is SemanticKind.FUNCTION
 
 
-def test_python_cst_exposes_protocol_metadata():
+def test_python_cst_exposes_protocol_metadata() -> None:
     """AI: Assert a Python CST node exposes the expected parser_kind and semantic_kind."""
     root = PythonCstNode.load_from_text("def f(): pass")
 
@@ -25,7 +25,7 @@ def test_python_cst_exposes_protocol_metadata():
     assert root.children[0].semantic_kind is SemanticKind.FUNCTION
 
 
-def test_python_rst_exposes_protocol_metadata():
+def test_python_rst_exposes_protocol_metadata() -> None:
     """AI: Assert a Python RST node exposes the expected parser_kind and semantic_kind."""
     root = PythonRstNode.load_from_text("f(1)")
 
@@ -33,7 +33,7 @@ def test_python_rst_exposes_protocol_metadata():
     assert root.semantic_kind is SemanticKind.TRANSLATION_UNIT
 
 
-def test_python_rst_kind_key_preserves_unknown_parser_identity():
+def test_python_rst_kind_key_preserves_unknown_parser_identity() -> None:
     """AI: Assert kind_key falls back to the parser kind for an RST node with no mapped semantic kind."""
     node_type = "NotARealNode"
     node = type(node_type, (), {"_fields": []})()

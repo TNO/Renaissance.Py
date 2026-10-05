@@ -16,13 +16,13 @@ class TestPatternMatch:
     """AI: Tests for the PatternMatch container returned by pattern matching."""
 
     @pytest.fixture(autouse=True)
-    def setup(self):
+    def setup(self) -> None:
         """AI: Build the shared Python factory and pattern factory used by the pattern-match tests."""
         self.factory = PythonFactory(PythonRstNode)
         self.pattern_factory = PythonPatternFactory(self.factory)
 
     @pytest.mark.skip("length on empty node")
-    def test_empty_expansion_has_offset(self):
+    def test_empty_expansion_has_offset(self) -> None:
         """AI: Verify an empty ($$empty) expansion reports an empty value, no expansions, and the correct offset/length."""
         example_code = textwrap.dedent("""
         1
@@ -43,7 +43,7 @@ class TestPatternMatch:
         assert_that(match.offset_of("$$empty"), is_(5))
         assert_that(match.length_of("$$empty"), is_(0))
 
-    def test_single_expansion_has_offset(self):
+    def test_single_expansion_has_offset(self) -> None:
         """AI: Verify a single-value ($3) expansion reports its value and correct offset/length."""
         example_code = textwrap.dedent("""
         1
@@ -64,7 +64,7 @@ class TestPatternMatch:
         assert_that(match.offset_of("$3"), is_(5))
         assert_that(match.length_of("$3"), is_(1))
 
-    def test_multi_expansion_has_offset(self):
+    def test_multi_expansion_has_offset(self) -> None:
         """AI: Verify a multi-value ($$other) expansion reports its joined value and correct offset/length."""
         example_code = textwrap.dedent("""
         1
@@ -85,7 +85,7 @@ class TestPatternMatch:
         assert_that(match.offset_of("$$other"), is_(3))
         assert_that(match.length_of("$$other"), is_(7))
 
-    def test_match_referenced_by(self, mocker):
+    def test_match_referenced_by(self, mocker) -> None:
         """AI: Verify match_referenced_by calls match_pattern once per referencing node."""
         node = mocker.Mock()
         reference = mocker.Mock()
@@ -99,7 +99,7 @@ class TestPatternMatch:
         pattern_match.match_referenced_by([[node]], False)
         assert_that(mock_matcher.call_count, is_(6))
 
-    def test_get_key_redirect_to_expansion_signature(self, mocker):
+    def test_get_key_redirect_to_expansion_signature(self, mocker) -> None:
         """AI: Verify __getitem__ resolves plain keys, placeholder node signatures, and missing keys to an empty string."""
         node = mocker.Mock()
         node.signature = "name_1"

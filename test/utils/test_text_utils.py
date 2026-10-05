@@ -24,6 +24,6 @@ class TestSnakeCase:
             ("TestSnakeCase", "test_snake_case"),
         ],
     )
-    def test_snake_case(self, input_str, expected):
+    def test_snake_case(self, input_str, expected) -> None:
         """AI: Assert snake_case converts camelCase/PascalCase strings to snake_case, preserving acronyms."""
         assert_that(snake_case(input_str), is_(expected))

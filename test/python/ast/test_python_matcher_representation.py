@@ -11,12 +11,12 @@ class TestPythonMatcherRepresentation:
     """AI: Tests documenting the representation of Python AST pattern matches."""
 
     @pytest.fixture(autouse=True)
-    def setup(self):
+    def setup(self) -> None:
         """AI: Build the shared Python AST factory and pattern factory used by the representation tests."""
         self.factory = PythonFactory(PythonRstNode)
         self.pattern_factory = PythonPatternFactory(self.factory)
 
-    def test_literal_whole_numbers_representation(self):
+    def test_literal_whole_numbers_representation(self) -> None:
         """Document the semantic power of [the Python parser ast](https://docs.python.org/3/library/ast.html) for whole-number literals.
 
         Different representations of literal instances of whole numbers are not semantically relevant.
@@ -70,7 +70,7 @@ class TestPythonMatcherRepresentation:
         for expression in expressions:
             assert_that(expression_signed, is_not(expression))
 
-    def test_literal_real_numbers_representation(self):
+    def test_literal_real_numbers_representation(self) -> None:
         """Document how the different representations of literal instances of real numbers are handled by the parser."""
         normal = "0.123456"
         more_significant_digits = "0.123456000"
@@ -103,7 +103,7 @@ class TestPythonMatcherRepresentation:
         for expression in expressions:
             assert_that(expression_fraction, is_not(expression))
 
-    def test_character_representation(self):
+    def test_character_representation(self) -> None:
         """Document the semantic power of [the Python parser ast](https://docs.python.org/3/library/ast.html) for character representations.
 
         Different character representations are not semantically relevant.
@@ -134,7 +134,7 @@ class TestPythonMatcherRepresentation:
             for expression2 in expressions:
                 assert_that(expression1, is_(expression2))
 
-    def test_string_representation(self):
+    def test_string_representation(self) -> None:
         """Document how the different string representations are handled by the parser."""
         normal_single = "'abcdef'"
         normal_double = '"abcdef"'
@@ -179,7 +179,7 @@ class TestPythonMatcherRepresentation:
             for expression in expressions:
                 assert_that(expression_explicit_concatenated, is_not(expression))
 
-    def test_statements_with_comment_and_whitespace(self):
+    def test_statements_with_comment_and_whitespace(self) -> None:
         """Document how statements with comments and whitespace are handled by the parser."""
         statement = "x = 1"
         statement_with_comment = "x = 1  # This is a comment"

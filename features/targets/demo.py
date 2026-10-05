@@ -17,7 +17,7 @@ component_six = sum(2, 4)
 long_expression = component_one + component_two + component_three + component_four + component_five + component_six
 
 
-def xyzzy(a1, a2, long_parameter_1, a3, a4, long_parameter_2):
+def xyzzy(a1, a2, long_parameter_1, a3, a4, long_parameter_2) -> None:
     """AI: No-op function with many parameters, used to exercise long-signature formatting."""
 
 

@@ -14,12 +14,12 @@ from steps.conftest import FEATURES_BASE_DIR
     encoding="utf-8",
     features_base_dir=str(FEATURES_BASE_DIR),
 )
-def test_taut_test():
+def test_taut_test() -> None:
     """AI: Scenario test for the 'migrate taut to unittest without syntax errors' scenario."""
 
 
 @when("I convert taut to unittest")
-def step_when_convert(context):
+def step_when_convert(context) -> None:
     """AI: Convert the scenario's taut test file to a Python unittest and record its output."""
     converter = TautToPythonUnittest(context.file)
     converter.in_memory = True

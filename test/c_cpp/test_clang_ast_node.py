@@ -10,46 +10,46 @@ from renaissance.syntax_tree import ASTFactory
 class TestClangAstNode:
     """AI: Tests for the Clang-backed ASTNode implementation."""
 
-    def test_is_same_node(self):
+    def test_is_same_node(self) -> None:
         """AI: Verify two occurrences of an identical pattern statement resolve to the same node."""
         factory = ASTFactory(ClangASTNode, [])
         src = CPatternFactory(factory).create_statements("a == 3;a == 3;")
         CPatternFactory(factory).create_statement("a == 3;")
         assert_that(src[0], is_(src[1]))
 
-    def test_find_all_in_clang_list_with_expansion(self):
+    def test_find_all_in_clang_list_with_expansion(self) -> None:
         """AI: Verify a declaration reference node's name property is populated within a Clang AST list."""
         factory = ASTFactory(ClangASTNode, [])
         src = CPatternFactory(factory).create_statement("a == 3;")
         assert_that("a", is_(src.children[0].children[0].properties["name"]))
 
-    def test_marco_also_include_define(self):
+    def test_marco_also_include_define(self) -> None:
         """AI: Verify a #define macro is parsed as a single child node."""
         src = ClangASTNode.load_from_text('#define x "xxx"', "test.c")
         assert_that(src.children, has_length(1))
 
-    def test_marco_also_include_define_signature(self):
+    def test_marco_also_include_define_signature(self) -> None:
         """AI: Verify a #define macro's signature text matches the original source."""
         src = ClangASTNode.load_from_text('#define x "xxx"', "test.c")
         assert_that('#define x "xxx"', is_(src.children[-1].signature))
 
-    def test_var_decl_includesemi_column(self):
+    def test_var_decl_includesemi_column(self) -> None:
         """AI: Verify a variable declaration's signature includes its trailing semicolon."""
         src = ClangASTNode.load_from_text("int x= 0;", "test.c")
         assert_that(src.children[-1].signature, is_("int x= 0;"))
 
-    def test_var_decl_in_ancestor(self):
+    def test_var_decl_in_ancestor(self) -> None:
         """AI: Verify get_ancestor finds the enclosing VAR_DECL ancestor node."""
         src = ClangASTNode.load_from_text("int x= 0;", "test.c")
         assert_that(src.children[-1].children[-1].get_ancestor("VAR_DECL"))
 
-    def test_var_decl_in_ancestor_of(self):
+    def test_var_decl_in_ancestor_of(self) -> None:
         """AI: Verify is_ancestor_of confirms the translation unit is an ancestor of a nested declaration node."""
         src = ClangASTNode.load_from_text("int x= 0;", "test.c")
         assert_that(src.is_ancestor_of(src.children[-1].children[-1]))
 
     @pytest.mark.skip("last semicolon is cut off from decl")
-    def test_var_decl_include_semi_column_and_keep_space(self):
+    def test_var_decl_include_semi_column_and_keep_space(self) -> None:
         """AI: Verify a variable declaration's signature preserves surrounding whitespace and trailing semicolon."""
         src = ClangASTNode.load_from_text("   int    x   =    0   ;", "test.c")
         assert_that(src.children[-1].signature, is_("   int    x   =    0   ;"))
@@ -62,7 +62,7 @@ class TestClangAstNode:
         "so slicing the (differently-sized) cached byte array with clang's offsets returns "
         "corrupted text.",
     )
-    def test_signature_after_multibyte_char_when_filesystem_encoding_is_not_utf8(self, mocker):
+    def test_signature_after_multibyte_char_when_filesystem_encoding_is_not_utf8(self, mocker) -> None:
         """AI: Verify a node's signature offsets remain correct after a multi-byte character when the filesystem encoding isn't UTF-8."""
         # 'é' encodes as 1 byte in latin-1 but 2 bytes in UTF-8. libclang parses/reports
         # offsets against a UTF-8 encoding of the source regardless of the platform's
@@ -72,18 +72,18 @@ class TestClangAstNode:
         src = ClangASTNode.load_from_text(code, "test.c")
         assert_that(src.children[-1].signature, is_("int x = 0;"))
 
-    def test_struct_include_semicolon(self):
+    def test_struct_include_semicolon(self) -> None:
         """AI: Verify a struct forward-declaration's signature includes its trailing semicolon."""
         src = ClangASTNode.load_from_text("struct s;", "test.c")
         assert_that(src.children[-1].signature, is_("struct s;"))
 
     @pytest.mark.skip("last semicolon is cut off from struct")
-    def test_struct_include_semicolon_and_space(self):
+    def test_struct_include_semicolon_and_space(self) -> None:
         """AI: Verify a struct definition's signature includes trailing whitespace and semicolon."""
         src = ClangASTNode.load_from_text("struct s{int x; int y;} ;", "test.c")
         assert_that("struct s{int x; int y;} ;", is_(src.children[-1].signature))
 
-    def test_mix_of_macro_and_decl(self):
+    def test_mix_of_macro_and_decl(self) -> None:
         """AI: Verify a mix of macro defines and declarations parse correctly together."""
         src = ClangASTNode.load_from_text(
             """

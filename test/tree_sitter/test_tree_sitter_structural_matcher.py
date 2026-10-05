@@ -37,7 +37,7 @@ class TestTreeSitterStructuralMatcher:
             ("import os", "import $os"),
         ],
     )
-    def test_python_patterns(self, code, pattern):
+    def test_python_patterns(self, code, pattern) -> None:
         """AI: Assert a placeholder Python pattern matches its corresponding concrete code snippet."""
         adapter = TreeSitterAdapter(tspython)
         ast = adapter.parse_code(code)
@@ -81,7 +81,7 @@ class TestTreeSitterStructuralMatcher:
             ("foo();", "$foo();"),
         ],
     )
-    def test_cpp_patterns(self, code, pattern):
+    def test_cpp_patterns(self, code, pattern) -> None:
         """AI: Assert a placeholder C++ pattern matches its corresponding concrete code snippet."""
         adapter = TreeSitterAdapter(tscpp)
         ast = adapter.parse_code(code)
