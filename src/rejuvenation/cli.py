@@ -13,7 +13,7 @@ from renaissance.syntax_tree import ASTShower
 # See https://github.com/TNO/Renaissance.Py/issues/196
 
 
-def refactor():
+def refactor() -> None:
     """AI: Run the `refactor`/`extract`/`inspect` CLI subcommands based on `sys.argv`."""
     if sys.argv[1] == "refactor":
         refactoring = sys.argv[2]

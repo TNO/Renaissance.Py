@@ -68,7 +68,7 @@ def simple_codebase_provider() -> Iterable[tuple[ASTFactory, ASTNode]]:
         yield factory, atu2
 
 
-def print_results(title, batch_processor):
+def print_results(title, batch_processor) -> None:
     """AI: Print the given title followed by each in-memory file's path and rewritten content."""
     print(title + ":")
     for file, code in batch_processor.in_memory_files.items():
@@ -76,7 +76,7 @@ def print_results(title, batch_processor):
         print(TextUtils.shift_right(code, 8) + "\n")
 
 
-def batch_remove_unused_variable_once_example():
+def batch_remove_unused_variable_once_example() -> None:
     """Demonstrate a batch processing example using different AST node implementations.
 
     It iterates over a list of AST node implementations (`ClangASTNode` and `ClangJsonASTNode`),
@@ -93,7 +93,7 @@ def batch_remove_unused_variable_once_example():
     print_results("example batch remove unused variable once", batch_processor)
 
 
-def batch_repeat_example():
+def batch_repeat_example() -> None:
     """Demonstrates the use of a batch processor to perform multiple refactoring operations on a codebase.
 
     This example creates an in-memory batch processor and applies two refactoring operations:
@@ -114,7 +114,7 @@ def batch_repeat_example():
     batch_processor = BatchASTProcessor(in_memory=True)
 
     # remove a function to create more unused variables
-    def remove_function(ast_processor: ASTProcessor):
+    def remove_function(ast_processor: ASTProcessor) -> None:
         [ast_processor.insert_before("// ", node, False, False) for node in ast_processor.find_semantic_kind(SemanticKind.CALL)]
 
     # batch_processor.repeat(simple_codebase_provider, [remove_function])
@@ -137,7 +137,7 @@ class CallInfo:
 class AnalysisRecipe:
     """AI: Recipe that collects function-call analysis results across the processed AST."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """AI: Initialize an empty recipe for collecting function-call analysis results."""
         self._calls = []
 
@@ -155,25 +155,25 @@ class AnalysisRecipe:
         return None
 
     @after_step("store_function_call")
-    def just_show_the_method(self):
+    def just_show_the_method(self) -> None:
         """AI: Print a marker showing this hook ran after store_function_call."""
         print("called after store_function_call")
 
     @final_action()
-    def final_action(self):
+    def final_action(self) -> None:
         """AI: Print all collected function calls after the recipe finishes."""
         print("Calls:")
         for call in self._calls:
             print("    " + call.callee + " --  calls --> " + call.calls)
 
     @staticmethod
-    def _add_function_call(call: ASTNode, calls: list[CallInfo]):
+    def _add_function_call(call: ASTNode, calls: list[CallInfo]) -> None:
         callee = call.get_ancestor("(?i)Function_?Decl")
         if callee:
             calls.append(CallInfo(callee.name, call.children[0].name))
 
 
-def batch_recipe_example():
+def batch_recipe_example() -> None:
     """AI: Run the analysis recipe over the example codebase and print discovered calls."""
     print("example batch analysis using recipe:\n")
     recipe_ast_processor = RecipeASTProcessor(AnalysisRecipe(), simple_codebase_provider, r".*", in_memory=True)

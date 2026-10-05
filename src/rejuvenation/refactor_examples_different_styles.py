@@ -160,7 +160,7 @@ def example_use_ast_function_finder(factory, _):
     return result, expected_result_old_fancy_new
 
 
-def main(args):
+def main(args) -> None:
     """AI: Run all four 'old'-to-'fancy_new' refactoring style examples against the parsed args."""
     # the first argument is the code to be parsed
     code = args[1] if len(args) > 1 else ""

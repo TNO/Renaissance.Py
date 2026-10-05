@@ -223,12 +223,12 @@ def simple_codebase_provider() -> Iterable[tuple[ASTFactory, ASTNode]]:
 class MyRefactor:
     """AI: Example recipe demonstrating text/name/declaration replacement via ASTRefactorActions."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """AI: Initialize an empty recipe for collecting refactoring actions."""
         self._calls = []
 
     @recipe_step(order=0)
-    def recipe(self, ast_processor: ASTProcessor):
+    def recipe(self, ast_processor: ASTProcessor) -> None:
         """AI: Apply the example text, name, and declaration replacements to the processed AST."""
         pattern = CPPPatternFactory(ast_processor.factory)
         actions = ASTRefactorActions(ast_processor, pattern)
@@ -290,7 +290,7 @@ class MyRefactor:
         TextUtils.to_clipboard(ast_processor.apply_to_string())
 
 
-def batch_recipe_example():
+def batch_recipe_example() -> None:
     """AI: Run `MyRefactor` over the example codebase and copy the rewritten source to the clipboard."""
     print("example batch analysis using recipe:\n")
     recipe_ast_processor = RecipeASTProcessor(MyRefactor(), simple_codebase_provider, r".*", in_memory=True)
