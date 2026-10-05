@@ -271,12 +271,12 @@ def find_variants(src: Sequence, cmp: Sequence, expansion=None, start: int = 0, 
 
 
 def find_in_list(src: Sequence, cmp: Sequence, exp=None, start: int = 0) -> int:
-    """AI: Return the end index of the first full match of cmp within src starting at start, or -2 if none."""
+    """AI: Return the end index of the first full match of cmp within src starting at start, or MIS_MATCH if none."""
     if exp is None:
         exp = {}
     variants = find_variants(src, cmp, exp, start)
     if not variants:
-        return -2
+        return MIS_MATCH
     exp.update(variants[0].exp)
     # [0] most greedy
     # [-1] least greedy

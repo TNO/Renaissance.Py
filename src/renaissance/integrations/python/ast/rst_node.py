@@ -289,7 +289,7 @@ class PythonRstNode:
         """AI: Return whether item(s) are found among this node's children."""
         if not isinstance(item, list):
             item = [item]
-        return bool(find_in_list(self.children, item))
+        return find_in_list(self.children, item) >= 0
 
     def __getitem__(self, key):
         """Allow indexing/slicing into node to access children.
