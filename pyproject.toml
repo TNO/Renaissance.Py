@@ -39,7 +39,7 @@ test = [
     "hypothesmith>=0.3.3",
     "parameterized>=0.9",
     "pytest>=8.0",
-    "pytest-bdd==8.1.0",
+    "pytest-bdd==9.0.0",
     "pytest-cov>=7.0",
     "pytest-mock>=3.15",
     "pytest-profiling>=1.8",
