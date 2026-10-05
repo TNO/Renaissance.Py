@@ -3,6 +3,7 @@
 import textwrap
 from pathlib import Path
 
+import pytest
 from hamcrest import assert_that, contains_string, has_entry, is_, not_
 from pytest_mock import MockerFixture
 
@@ -123,6 +124,37 @@ class TestTypeVarCheckLocalize:
         output = subject.apply_to_string()
         assert_that(output, contains_string("from file_1 import helper"))
         assert_that(output, contains_string("T = TypeVar('T')"))
+
+    @pytest.mark.xfail(
+        reason="localize_imported_typevars queues one replace per localized name on the same import "
+        "statement, which the rewriter rejects as conflicting rewrites.",
+        raises=ValueError,
+        strict=True,
+    )
+    def test_localizes_two_names_from_one_import_statement(self, mocker: MockerFixture, tmp_path: Path) -> None:
+        """Verify one import statement bringing in two localizable names localizes both."""
+        subject = self._create_cross_file(
+            mocker,
+            tmp_path,
+            """
+            from typing import TypeVar
+            T = TypeVar("T")
+            U = TypeVar("U")
+            """,
+            """
+            from file_1 import T, U
+            def b(x: T, y: U) -> T:
+                return x
+            """,
+        )
+        result = subject.localize_imported_typevars()
+
+        assert_that(result, has_entry("T", "fixed"))
+        assert_that(result, has_entry("U", "fixed"))
+        output = subject.apply_to_string()
+        assert_that(output, contains_string("T = TypeVar('T')"))
+        assert_that(output, contains_string("U = TypeVar('U')"))
+        assert_that(output, not_(contains_string("from file_1 import")))
 
     def test_adds_missing_typevar_import_when_localizing(self, mocker: MockerFixture, tmp_path: Path) -> None:
         """AI: Verify localizing a TypeVar adds the "from typing import TypeVar" import if missing."""

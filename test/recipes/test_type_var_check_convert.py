@@ -4,7 +4,8 @@ import ast
 from collections.abc import Callable
 from typing import cast
 
-from hamcrest import assert_that, contains_string, has_entry, not_
+import pytest
+from hamcrest import assert_that, contains_string, equal_to, has_entry, not_
 
 from renaissance.recipes.python_refactoring import PythonRefactoring
 from renaissance.recipes.type_var_check import TypeVarCheck
@@ -491,3 +492,32 @@ class TestTypeVarCheckConvert:
         assert_that(result, has_entry("T", "unsafe"))
         assert_that(subject.converted_unsafe_reasons, has_entry("T", UnsafeReason.PEP695_VERSION_GATE))
         assert_that(subject.apply_to_string(), contains_string('T = TypeVar("T")'))
+
+    @pytest.mark.xfail(
+        reason="_renormalize_indent takes the body's minimum indent over every line, including the lines "
+        "inside a multi-line string literal, so the literal's value changes.",
+        raises=AssertionError,
+        strict=True,
+    )
+    def test_converts_function_preserving_multiline_string_literal(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
+        """Verify converting a function keeps a multi-line string literal whose continuation line is at column 0."""
+        # Built line by line: textwrap.dedent in the fixture would otherwise be blocked by the column-0 line.
+        source_lines = [
+            "from typing import TypeVar",
+            'T = TypeVar("T")',
+            "def f(x: T) -> T:",
+            '    text = """first',
+            "second",
+            '    third"""',
+            "    return x",
+        ]
+        subject = create_type_var_check("\n".join(source_lines) + "\n")
+        result = subject.convert_declared_typevars()
+
+        assert_that(result, has_entry("T", "fixed"))
+        output = subject.apply_to_string()
+        assert_that(output, contains_string("def f[T](x: T) -> T:"))
+        text_assign = next(
+            node for node in ast.walk(ast.parse(output)) if isinstance(node, ast.Assign) and ast.unparse(node.targets[0]) == "text"
+        )
+        assert_that(ast.literal_eval(text_assign.value), equal_to("first\nsecond\n    third"))

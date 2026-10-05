@@ -228,3 +228,6 @@ __marimo__/
 **/*.dll
 **/.*.so
 **/*.dot
+
+# Folder containing relevant presentations made with Marp
+.marp_presentations
