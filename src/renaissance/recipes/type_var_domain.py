@@ -1,8 +1,4 @@
-"""TypeVar/ParamSpec/TypeVarTuple domain model and safety analysis.
-
-Shared between TypeVarCheck and TypeVarTupleCheck, kept separate from either recipe's own
-pipeline logic.
-"""
+"""TypeVar/ParamSpec/TypeVarTuple domain model and safety analysis."""
 
 import ast
 from dataclasses import dataclass
@@ -19,7 +15,6 @@ class UnsafeReason(StrEnum):
     """
 
     PEP695_VERSION_GATE = "pep695_version_gate"
-    PEP646_VERSION_GATE = "pep646_version_gate"
     DECLARED_TYPEVAR_EXPORTED = "declared_typevar_exported"
     USED_OUTSIDE_FUNCTION = "used_outside_function"
     ORIGIN_MODULE_EXPORTS_NAME = "origin_module_exports_name"
@@ -39,9 +34,6 @@ class UnsafeRule:
 UNSAFE_RULES: dict[UnsafeReason, UnsafeRule] = {
     UnsafeReason.PEP695_VERSION_GATE: UnsafeRule(
         "target's minimum Python version is unknown or below 3.12", "feature-typevar-modernization-pep695-version-gate",
-    ),
-    UnsafeReason.PEP646_VERSION_GATE: UnsafeRule(
-        "target's minimum Python version is unknown or below 3.11", "feature-typevar-modernization-pep646-version-gate",
     ),
     UnsafeReason.DECLARED_TYPEVAR_EXPORTED: UnsafeRule(
         "exported via __all__", "feature-typevar-modernization-declared-typevar-exported",
