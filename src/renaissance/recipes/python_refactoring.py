@@ -19,7 +19,7 @@ from renaissance.utils.text_utils import snake_case
 class PythonRefactoring(ASTProcessor):
     """AI: Base processor for Python-specific source refactoring recipes."""
 
-    def __init__(self, file):
+    def __init__(self, file) -> None:
         """AI: Prepare a Python-specific refactoring processor for the given source file."""
         factory = PythonFactory(PythonRstNode)
         atu = factory.create(file)
@@ -28,7 +28,7 @@ class PythonRefactoring(ASTProcessor):
         self.black_list_pattern = ".git"
         self.white_list_pattern = ""
 
-    def replace_stmt(self, find, repl):
+    def replace_stmt(self, find, repl) -> None:
         """AI: Replace all statements matching the find pattern with the repl template, expanding captures."""
         pattern = self.pattern_factory.create_statements(find)
         for match in match_pattern(self.root.children, pattern):
@@ -41,7 +41,7 @@ class PythonRefactoring(ASTProcessor):
             self.replace(replacement, match.nodes, False, False)
 
     @staticmethod
-    def process(class_name, file):
+    def process(class_name, file) -> None:
         """Return a subclass by name using importlib, like Java's Class.forName()."""
         snake = snake_case(class_name)
         module = importlib.import_module(f"renaissance.recipes.{snake}")
@@ -77,7 +77,7 @@ class PythonRefactoring(ASTProcessor):
 
         positional_args = [arg_node.signature for arg_node in (args_implicit.children if args_implicit else [])]
         keyword_args: dict[str, str] = {}
-        for kw_node in (keywords_implicit.children if keywords_implicit else []):
+        for kw_node in keywords_implicit.children if keywords_implicit else []:
             kw_name = kw_node.node.arg
             if kw_name:
                 value_node = kw_node.children[0] if kw_node.children else kw_node
@@ -109,5 +109,5 @@ class PythonRefactoring(ASTProcessor):
         """AI: Return the root node's body statements."""
         return cast("PythonRstNode", cast("object", self.root)).body
 
-    def run(self):
+    def run(self) -> None:
         """AI: Run this refactoring recipe. Subclasses override this to perform the refactoring."""

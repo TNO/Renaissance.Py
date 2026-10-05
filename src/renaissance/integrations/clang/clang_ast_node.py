@@ -44,7 +44,7 @@ class ClangTranslationUnit:
 
     cache = []
 
-    def __init__(self, clang_atu: ClangCindexTranslationUnit, file_name: str):
+    def __init__(self, clang_atu: ClangCindexTranslationUnit, file_name: str) -> None:
         """AI: Wrap a parsed clang translation unit with lazily-built reference and macro-expansion caches."""
         self.clang_atu = clang_atu
         self.file_name = file_name
@@ -110,7 +110,7 @@ class ClangASTNode(ASTNode[Cursor, ClangTranslationUnit]):
         start_offset: int | None = None,
         length: int | None = None,
         insert_kind: str | None = None,
-    ):
+    ) -> None:
         """AI: Wrap a clang cursor as an AST node within the given translation unit."""
         super().__init__(self if parent is None else parent.root)
         self.node = node
@@ -433,7 +433,7 @@ class ClangASTNode(ASTNode[Cursor, ClangTranslationUnit]):
             for ref in self.translation_unit._references.get(self.node.hash, EMPTY_LIST)
         )
 
-    def _add_tokens(self, result: dict[str, str], *token_kind):
+    def _add_tokens(self, result: dict[str, str], *token_kind) -> None:
         for token in self.node.get_tokens():
             # find all attr of token that are of type str or int
             kind = str(token.kind).split(".")[-1]
@@ -486,7 +486,7 @@ class ClangASTNode(ASTNode[Cursor, ClangTranslationUnit]):
         return cursor
 
     @staticmethod
-    def _is_reference(node):
+    def _is_reference(node) -> bool | None:
         # refactor this
         try:
             print(type(node))

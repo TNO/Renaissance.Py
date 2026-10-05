@@ -55,7 +55,7 @@ class ClangJsonASTReference:
 class ClangJsonTranslationUnit:
     """AI: Wrap a parsed clang JSON AST dump with lazily-built reference caches."""
 
-    def __init__(self, json_root: dict[str, Any], file_name: str):
+    def __init__(self, json_root: dict[str, Any], file_name: str) -> None:
         """AI: Wrap a parsed clang JSON AST dump with lazily-built reference caches."""
         self.json_root = json_root
         self.filename = file_name
@@ -492,7 +492,7 @@ class ClangJsonASTNode(ASTNode[dict[str, Any], ClangJsonTranslationUnit]):
             return default
 
     @property
-    def is_implicit(self):
+    def is_implicit(self) -> None:
         """AI: Return whether this node is implicitly generated (part of the translation unit)."""
         self.is_part_of_translation_unit()
 

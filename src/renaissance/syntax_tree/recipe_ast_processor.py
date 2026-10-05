@@ -40,7 +40,7 @@ def final_action() -> TFunc:
 
     def final_action_decorator(func: TFunc) -> TFunc:
         @functools.wraps(func)
-        def final_action_wrapper(recipe: TFunc):
+        def final_action_wrapper(recipe: TFunc) -> None:
             func(recipe)
 
         return final_action_wrapper
@@ -75,7 +75,7 @@ def after_step(step: str) -> TFunc:
 
     def after_step_decorator(func: TFunc) -> TFunc:
         @functools.wraps(func)
-        def after_step_wrapper(preceding_methods: Sequence[str], recipe: TFunc):
+        def after_step_wrapper(preceding_methods: Sequence[str], recipe: TFunc) -> None:
             if step in preceding_methods:
                 func(recipe)
 
@@ -94,21 +94,21 @@ class RecipeASTProcessor[TRecipe]:
         file_filter: str,
         in_memory: bool = False,
         max_processes: int = 4,
-    ):
+    ) -> None:
         """AI: Prepare a processor that runs a recipe's steps across a batch of files, optionally in parallel."""
         self.__recipe: TRecipe = recipe
         self.__batch_processor = BatchASTProcessor(in_memory=in_memory, max_processes=max_processes)
         self.__iterableProvider = iterable_provider
         self.__file_filter = file_filter
 
-    def run(self):
+    def run(self) -> None:
         """AI: Run each of the recipe's decorated steps across the batch of files and return the collected results."""
         actions: list[TFunc] = []
         results: list[Any] = []
         for idx, recipe_step_method in enumerate(get_methods_with_decorator(type(self.__recipe), recipe_step)):
             results.append(None)
 
-            def recipe_action(ast_processor: ASTProcessor):
+            def recipe_action(ast_processor: ASTProcessor) -> None:
                 result = recipe_step_method(step, self.__recipe, ast_processor)
                 if result:
                     results[idx] = result
@@ -118,7 +118,7 @@ class RecipeASTProcessor[TRecipe]:
         after_step_actions: list[TFunc] = []
         for after_step_method in get_methods_with_decorator(self.__recipe.__class__, after_step):
 
-            def after_step_action():
+            def after_step_action() -> None:
                 after_step_method(results, self.__recipe)
 
             after_step_actions.append(after_step_action)

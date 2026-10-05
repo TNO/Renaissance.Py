@@ -14,7 +14,7 @@ class PythonExtractor:
     graph = nx.DiGraph()
     codebase: dict = {}
 
-    def process(self, file: Path):
+    def process(self, file: Path) -> None:
         """AI: Parse file and merge its module/import/function/class nodes into the codebase graph."""
         root = PythonRstNode.load(file)
         module_name = root.filename.replace("/", ".").replace(".py", "")
@@ -46,7 +46,7 @@ class PythonExtractor:
         # self.edges |=tu._references
         # self.edges |= tu._referenced_by
 
-    def save_graph(self, filename: str):
+    def save_graph(self, filename: str) -> None:
         """AI: Write the extracted codebase graph to a GraphML file named filename."""
         nx.write_graphml(self.graph, filename)
         print(f"Graph saved to: {filename}")

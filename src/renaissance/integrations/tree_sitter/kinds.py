@@ -67,5 +67,5 @@ TREE_SITTER_KIND_MAP = {
     "binary_operator": SemanticKind.BINARY_OPERATION,
     "unary_operator": SemanticKind.UNARY_OPERATION,
     "with": SemanticKind.LOOP,
-    "type_alias_statement": SemanticKind.STATEMENT
+    "type_alias_statement": SemanticKind.STATEMENT,
 }
