@@ -137,8 +137,8 @@ class TestPythonicStyle:
     def test_is_match_all_stmt(self) -> None:
         """AI: Verify a MATCH_ALL placeholder pattern's node is contained within the parsed module."""
         atu = self.factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "test.py")
-        match_all = self.pattern_factory.create("$$pa")
-        assert_that(match_all.node, is_in(atu))
+        match_all = self.pattern_factory.create_statement("$$pa")
+        assert_that(match_all, is_in(atu))
 
     def test_is_exact_match(self) -> None:
         """AI: Verify the first statement in the module equals an independently parsed identical statement."""
