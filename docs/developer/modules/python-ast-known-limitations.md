@@ -6,8 +6,8 @@
 
 Concrete limitations found in the Python AST/RST layer (`renaissance.integrations.python.ast`) and the rewrite mechanism it
 feeds (`renaissance.syntax_tree.ast_rewriter`, `renaissance.utils.text_utils`) while building recipes
-(`TypeVarCheck`). A recipe still has to work around both items below. Item 1 has no other
-tracker in the codebase. Item 2 is also tracked by a `# TODO` at the `return` in `ast_rewriter.py`, by `xfail`
+(`TypeVarCheck`). A recipe still has to work around both items below. The string-literal part of
+item 1 is also tracked by an `xfail` test (see below). Item 2 is also tracked by a `# TODO` at the `return` in `ast_rewriter.py`, by `xfail`
 scenarios in `features/steps/test_rewrite_semantics.py` and `test/syntax_tree/test_ast_rewriter.py`, and by tests
 skipped with `TODO: fix impl.` in the latter; this page records why the obvious fix does not work.
 
@@ -34,7 +34,8 @@ blind to string literals too. A multi-line string literal in the body with a con
 the body (for example at column 0) lowers that minimum: the function is re-indented from the wrong baseline and
 the literal's contents change silently (`'first\nsecond'` becomes `'first\n    second'`). This reproduces with
 `TypeVarCheck.convert_declared_typevars` on both a module-level function and a method; a literal whose
-continuation lines are indented like the body is not affected.
+continuation lines are indented like the body is not affected. Tracked by the `xfail` test
+`test_converts_function_preserving_multiline_string_literal` in `test/recipes/test_type_var_check_convert.py`.
 
 A future recipe that genuinely needs to regenerate a whole body from the AST - not just a signature - still hits
 both issues above and has to work around them itself; neither `ast.unparse()`'s comment blindness nor

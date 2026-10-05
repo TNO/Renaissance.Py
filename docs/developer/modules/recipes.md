@@ -181,6 +181,8 @@ syntax.
 - `localize_imported_typevars` queues one rewrite per localized name, so a single import statement that brings in
   two or more localizable names (`from .origin import T, U`) makes the commit fail with a conflicting-rewrite
   error. The CLI reports that file under `ERRORS` and leaves it unchanged; one import per name avoids it.
+  Tracked by the `xfail` test `test_localizes_two_names_from_one_import_statement` in
+  `test/recipes/test_type_var_check_localize.py`.
 - The recipe doesn't detect the target's minimum Python version (e.g. from `requires-python`); it has to be given
   explicitly via `--py`.
 - Rewriting legacy `Unpack[Ts]` usages to native `*Ts` syntax is left to `ruff`'s `UP044` rule - see
