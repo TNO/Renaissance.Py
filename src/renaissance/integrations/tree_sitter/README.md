@@ -116,26 +116,20 @@ For advanced C++ analysis (with preprocessing and include resolution), this tool
 
 ### 🛠 Install Dependencies
 
-```bash
-# On Ubuntu/Debian
-sudo apt install libclang-dev
-
-# Python bindings
-pip install clang
-```
+No extra installation is needed. The `libclang` library is provided by the pinned `libclang-ng` dependency,
+which `uv sync` installs into the virtual environment.
 
 ### 🔧 Usage
 
 Use `ClangAdapter` instead of `TreeSitterAdapter`:
 
 ```python
-from core.clang_adapter import ClangAdapter
+from renaissance.integrations.clang.clang_adapter import ClangAdapter
 
 adapter = ClangAdapter()
 lst = adapter.parse("examples/cpp_example.cpp")
 
-for node in lst.traverse():
-    print(node)
+print(lst.root.kind_key)
 ```
 
 The `ClangAdapter` provides:

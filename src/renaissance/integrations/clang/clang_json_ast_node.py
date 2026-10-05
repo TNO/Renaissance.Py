@@ -3,12 +3,16 @@
 # create a class that inherits syntax tree ASTNode
 
 import json
+import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
+import warnings
 from collections.abc import Sequence
 from functools import cache
+from importlib.metadata import version
 from pathlib import Path
 from typing import Any, Self, override
 
@@ -40,6 +44,40 @@ STMT_PARENT_KINDS = {"CompoundStmt", "COMPOUND_STMT", "TranslationUnitDecl", "TR
 IRRELEVANT_PROPS = {"macro_expansion", "start_point", "end_point", "source_code", "location", "type"}
 IRRELEVANT_NODE_KINDS = {"comment", "Comment", "MacroDefinition", "MACRO_DEFINITION", "FullComment"}
 VERBOSE = False
+COMPILER_ENV_VAR = "RENAISSANCE_CLANG"
+# The libclang bindings used by ClangASTNode are pinned by this distribution, so its version is the reference.
+LIBCLANG_DISTRIBUTION = "libclang-ng"
+COMPILER_HINT = (
+    f"Install LLVM and put clang (clang++ for C++) on PATH, set the {COMPILER_ENV_VAR} environment variable, "
+    f"or call ClangJsonASTNode.set_compiler_path()."
+)
+
+
+@cache
+def verify_compiler(compiler: str) -> None:
+    """AI: Check the clang driver runs and warn when its major version differs from the pinned libclang version."""
+    arguments = [compiler, "--version"]
+    try:
+        result = subprocess.run(arguments, capture_output=True, text=True, check=False)  # noqa: S603 (the compiler comes from the configuration, not from parsed input)
+    except OSError as error:
+        message = f"The clang driver {compiler} cannot be executed. {COMPILER_HINT}"
+        raise FileNotFoundError(message) from error
+    found = re.search(r"clang version (\d+)", result.stdout)
+    pinned = version(LIBCLANG_DISTRIBUTION).split(".")[0]
+    if found and found.group(1) != pinned:
+        message = f"{compiler} is LLVM {found.group(1)} while libclang is pinned to LLVM {pinned}; the ASTs may differ."
+        warnings.warn(message, stacklevel=2)
+
+
+def resolve_compiler(file_path: Path) -> str:
+    """AI: Return the clang driver to invoke: the pinned path, the environment override, or the one found on PATH."""
+    name = "clang++" if file_path.suffix == ".cpp" else "clang"
+    compiler = ClangJsonASTNode.compiler_path or os.environ.get(COMPILER_ENV_VAR) or shutil.which(name)
+    if compiler is None:
+        message = f"No clang driver found. {COMPILER_HINT}"
+        raise FileNotFoundError(message)
+    verify_compiler(compiler)
+    return compiler
 
 
 class ClangJsonASTReference:
@@ -86,6 +124,12 @@ class ClangJsonASTNode(ASTNode[dict[str, Any], ClangJsonTranslationUnit]):
         "-ast-dump=json",
         "-fsyntax-only",
     ]
+    compiler_path: str | None = None
+
+    @staticmethod
+    def set_compiler_path(path: str | Path | None) -> None:
+        """AI: Pin the clang driver used for the JSON AST dump; pass None to fall back to the environment."""
+        ClangJsonASTNode.compiler_path = str(path) if path else None
 
     def __init__(
         self,
@@ -204,8 +248,7 @@ class ClangJsonASTNode(ASTNode[dict[str, Any], ClangJsonTranslationUnit]):
                 extra_args = extra_args[1:]
             # add clang compiler if it is not in the arguments
             if len(extra_args) == 0 or "clang" not in extra_args[0]:
-                clang = "clang++" if file_path.suffix == ".cpp" else "clang"
-                extra_args = [clang, *extra_args]
+                extra_args = [resolve_compiler(file_path), *extra_args]
 
             command = [*extra_args, *ClangJsonASTNode.parse_args]
             if code:
