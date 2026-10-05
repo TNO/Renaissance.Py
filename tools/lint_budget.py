@@ -59,13 +59,15 @@ def _parse_json(output: str, opening: str):
     return json.loads(output[start:])
 
 
-def count_ruff_issues() -> Counter[str]:
-    """AI: Count the ruff issues per rule code with every rule selected."""
+def count_ruff_issues(*, preview: bool = False) -> Counter[str]:
+    """AI: Count the ruff issues per rule code with every rule selected, optionally in ruff's preview mode."""
     # `--select` on the command line replaces the whole configured selection, so the deliberate ignores are repeated here.
     with PYPROJECT_FILE.open("rb") as file:
         ignored = tomllib.load(file)["tool"]["ruff"]["lint"]["ignore"]
-    ignore_option = ["--ignore", ",".join(ignored)] if ignored else []
-    command = [*_tool_command("ruff"), "check", "--select", "ALL", *ignore_option, "--output-format", "json", "--quiet", *CHECK_PATHS]
+    options = ["--ignore", ",".join(ignored)] if ignored else []
+    if preview:
+        options.append("--preview")
+    command = [*_tool_command("ruff"), "check", "--select", "ALL", *options, "--output-format", "json", "--quiet", *CHECK_PATHS]
     diagnostics = _parse_json(_run(command, max_exit_code=1), "[")
     return Counter(diagnostic.get("code") or "syntax-error" for diagnostic in diagnostics)
 
