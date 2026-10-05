@@ -1,7 +1,7 @@
-"""CLI that modernizes type parameters (TypeVar, ParamSpec, TypeVarTuple) to PEP 695 and PEP 646 syntax.
+"""CLI that modernizes type parameters (TypeVar, ParamSpec, TypeVarTuple) to PEP 695 syntax.
 
-Runs TypeVarTupleCheck, then TypeVarCheck, on a file or directory, and reports which files were
-modified and which need manual review.
+Runs TypeVarCheck on a file or directory, and reports which files were modified and which need
+manual review.
 
 Examples:
     python src/rejuvenation/migration-type-recipes.py ./some_repo --py 3.12 --report review.md
@@ -27,7 +27,6 @@ from renaissance.project.project_scanner import PythonScanner
 from renaissance.recipes.step_runner import Step, run_steps
 from renaissance.recipes.type_var_check import TypeVarCheck
 from renaissance.recipes.type_var_domain import UNSAFE_RULES, UnsafeReason, doc_link
-from renaissance.recipes.type_var_tuple_check import TypeVarTupleCheck
 from renaissance.utils.import_resolution import collect_project_imported_names
 
 _MAJOR_MINOR_PART_COUNT = 2
@@ -35,7 +34,7 @@ _MAJOR_MINOR_PART_COUNT = 2
 
 @dataclass
 class FileReport:
-    """Outcome of running TypeVarTupleCheck and TypeVarCheck against a single file."""
+    """Outcome of running TypeVarCheck against a single file."""
 
     path: Path
     result: dict[str, dict[str, str]] | None
@@ -83,7 +82,7 @@ def has_unsafe(report: FileReport) -> bool:
 
 
 def is_clean(report: FileReport) -> bool:
-    """Return True if report.result found no Type Paramater usage at all."""
+    """Return True if report.result found no type parameter usage at all."""
     if report.result is None:
         return False
     return not any(phase for phase in report.result.values())
@@ -96,42 +95,27 @@ def process_file(
     project_root: Path,
     project_wide_imported_names: frozenset[str],
 ) -> FileReport:
-    """Run TypeVarTupleCheck then TypeVarCheck's phases against a single file, returning one FileReport.
+    """Run TypeVarCheck's three phases against a single file, returning one FileReport.
 
-    TypeVarTupleCheck runs first: TypeVarCheck's own PEP 695 conversion removes a TypeVarTuple's
-    module-level declaration once it converts it, and TypeVarTupleCheck can only find an
-    `Unpack[T]` usage while that declaration still exists. Any failure is caught and reported on
-    FileReport.error instead of propagating, since one bad file must never abort a batch run.
+    Any failure is caught and reported on FileReport.error instead of propagating, since one bad
+    file must never abort a batch run.
     """
     try:
-        tvt_recipe = TypeVarTupleCheck(path)
-        tvt_recipe.min_python = min_python
-        unpack_result = run_steps([Step("unpack_syntax", tvt_recipe, tvt_recipe.fix_legacy_unpack_usage)])
-
-        # TypeVarCheck is constructed only now, not upfront alongside tvt_recipe: each recipe reads
-        # `path` from disk once, at construction, and never again - constructing it earlier would
-        # give it a stale in-memory copy from before TypeVarTupleCheck's step wrote to disk, and its
-        # own commit() would then overwrite that fix with its own reconstruction of the old content.
-        # TODO: a 3rd chained recipe would need this same hand-ordering trick repeated - worth a
-        # generic chain runner, or a PythonRefactoring.from_processor() avoiding the disk round-trip?
-        tv_recipe = TypeVarCheck(path)
-        tv_recipe.min_python = min_python
-        tv_recipe.project_root = project_root
-        tv_recipe.project_wide_imported_names = project_wide_imported_names
-        typevar_result = run_steps(
+        recipe = TypeVarCheck(path)
+        recipe.min_python = min_python
+        recipe.project_root = project_root
+        recipe.project_wide_imported_names = project_wide_imported_names
+        result = run_steps(
             [
-                Step("cross_file", tv_recipe, tv_recipe.localize_imported_typevars),
-                Step("converted", tv_recipe, tv_recipe.convert_declared_typevars),
-                Step("orphaned", tv_recipe, tv_recipe.remove_orphaned_declarations),
+                Step("cross_file", recipe, recipe.localize_imported_typevars),
+                Step("converted", recipe, recipe.convert_declared_typevars),
+                Step("orphaned", recipe, recipe.remove_orphaned_declarations),
             ],
         )
-
-        result = {**unpack_result, **typevar_result}
         reasons = {
-            "unpack_syntax": tvt_recipe.unsafe_reasons,
-            "cross_file": tv_recipe.cross_file_unsafe_reasons,
-            "converted": tv_recipe.converted_unsafe_reasons,
-            "orphaned": tv_recipe.orphaned_unsafe_reasons,
+            "cross_file": recipe.cross_file_unsafe_reasons,
+            "converted": recipe.converted_unsafe_reasons,
+            "orphaned": recipe.orphaned_unsafe_reasons,
         }
     except Exception as exc:  # noqa: BLE001 - isolate one bad file, never abort the whole batch
         return FileReport(path=path, result=None, error=f"{type(exc).__name__}: {exc}")
@@ -238,8 +222,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
         type=_parse_py_version,
         required=True,
         metavar="MAJOR.MINOR",
-        help="Minimum Python version the target project supports (not the one running this tool), "
-        "e.g. 3.12. PEP 695 rewrites need 3.12+, native *Ts unpacking needs 3.11+.",
+        help="Minimum Python version the target project supports (not the one running this tool), e.g. 3.12. PEP 695 rewrites need 3.12+.",
     )
     parser.add_argument("--report", type=Path, metavar="PATH", help="Also write the full report to this file.")
     parser.add_argument(
@@ -251,7 +234,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """Parse arguments, run the recipes across the target, print/save the report, return an exit code.
+    """Parse arguments, run TypeVarCheck across the target, print/save the report, return an exit code.
 
     Exit codes: 0 on normal completion (files needing manual review are informational, not a
     failure), 2 on a usage error (bad path/argument), 3 if any file hit an unhandled exception.
@@ -272,7 +255,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     # TODO: computed once upfront, so an origin whose importers all get localized this run is only converted on a second run.
     imported_names_by_file = collect_project_imported_names(files, project_root)
 
-    reports = []
+    reports: list[FileReport] = []
     for path in files:
         project_wide_imported_names = imported_names_by_file.get(path, frozenset())
         report = process_file(

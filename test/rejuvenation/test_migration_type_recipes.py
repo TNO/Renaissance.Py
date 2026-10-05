@@ -55,16 +55,6 @@ UNSAFE_TYPEVAR_SOURCE = textwrap.dedent("""\
         return x
     """)
 
-TYPEVARTUPLE_SOURCE = textwrap.dedent("""\
-    from typing import TypeVarTuple, Unpack
-
-    Ts = TypeVarTuple("Ts")
-
-
-    def foo(*args: Unpack[Ts]) -> None:
-        pass
-    """)
-
 
 class TestResolveTargetFiles:
     """resolve_target_files: single-file shortcut, otherwise delegates to PythonScanner."""
@@ -182,21 +172,6 @@ class TestProcessFile:
         assert_that(report.error, is_not(None))
         assert_that(report.result, is_(None))
 
-    def test_composes_typevarcheck_and_typevartuplecheck(self, tmp_path: Path) -> None:
-        """TypeVarCheck's [*Ts] bracket and TypeVarTupleCheck's Unpack[Ts]->*Ts compose in one pass."""
-        target = tmp_path / "mod.py"
-        target.write_text(TYPEVARTUPLE_SOURCE, encoding="utf-8")
-
-        report = migration.process_file(target, min_python=(3, 12), project_root=tmp_path, project_wide_imported_names=frozenset())
-
-        assert_that(migration.has_fixed(report), is_(True))
-        output = target.read_text(encoding="utf-8")
-        assert_that(output, contains_string("def foo[*Ts](*args: *Ts) -> None:"))
-        assert_that(output, is_not(contains_string("Unpack[Ts]")))
-        # process_file() alone doesn't run the ruff import-cleanup pass (that's main()'s job) -
-        # both now-unused names are still present in the import at this layer.
-        assert_that(output, contains_string("from typing import TypeVarTuple, Unpack"))
-
 
 class TestRuffImportCleanup:
     """main(): the ruff F401 batch step actually drops now-unused imports end to end."""
@@ -246,32 +221,6 @@ class TestRuffImportCleanup:
         migration.main([str(target), "--py", "3.12", *extra_args])
 
         assert_that(capsys.readouterr().out, report_matcher)
-
-    def test_unrelated_import_survives_cleanup(self, tmp_path: Path) -> None:
-        """An Unpack import still needed for an unrelated PEP 692 usage survives the ruff pass."""
-        target = tmp_path / "mod.py"
-        target.write_text(
-            textwrap.dedent("""\
-                from typing import TypeVarTuple, Unpack
-                from mymodule import Kwargs
-
-                Ts = TypeVarTuple("Ts")
-
-
-                def foo(*args: Unpack[Ts], **kwargs: Unpack[Kwargs]) -> None:
-                    pass
-                """),
-            encoding="utf-8",
-        )
-
-        exit_code = migration.main([str(target), "--py", "3.12"])
-
-        assert_that(exit_code, equal_to(0))
-        written = target.read_text(encoding="utf-8")
-        assert_that(written, contains_string("*args: *Ts"))
-        assert_that(written, contains_string("from typing import Unpack"))
-        assert_that(written, is_not(contains_string("TypeVarTuple")))
-        assert_that(written, contains_string("**kwargs: Unpack[Kwargs]"))
 
     def test_unmodified_sibling_file_is_left_untouched(self, tmp_path: Path) -> None:
         """A sibling file with no TypeVar usage - and its own genuinely-unused import - survives main() byte-for-byte."""
@@ -452,15 +401,14 @@ class TestPyVersionFlag:
     @pytest.mark.parametrize(
         ("py_version", "expected", "unexpected"),
         [
-            pytest.param("3.11", "def foo(*args: *Ts)", "def foo[", id="3.11-unpack-only"),
-            pytest.param("3.12", "def foo[*Ts](*args: *Ts)", "Unpack[Ts]", id="3.12-both"),
+            pytest.param("3.11", 'T = TypeVar("T")', "def identity[", id="3.11-gated"),
+            pytest.param("3.12", "def identity[T]", 'T = TypeVar("T")', id="3.12-converted"),
         ],
     )
     def test_py_flag_gates_rewrites(self, tmp_path: Path, py_version: str, expected: str, unexpected: str) -> None:
-        """--py decides which version-gated rewrites run, regardless of the target's requires-python."""
-        (tmp_path / "pyproject.toml").write_text('[project]\nname = "demo"\nrequires-python = ">=3.12"\n', encoding="utf-8")
+        """--py decides whether the PEP 695 rewrite runs."""
         target = tmp_path / "mod.py"
-        target.write_text(TYPEVARTUPLE_SOURCE, encoding="utf-8")
+        target.write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
 
         exit_code = migration.main([str(target), "--py", py_version])
 
@@ -473,7 +421,6 @@ class TestPyVersionFlag:
         "bad_args",
         [
             pytest.param([], id="flag-missing"),
-            pytest.param(["--min-python", "3.12"], id="old-flag-removed"),
             pytest.param(["--py", "3"], id="missing-minor"),
             pytest.param(["--py", "3.x"], id="non-numeric"),
         ],
@@ -484,7 +431,7 @@ class TestPyVersionFlag:
         capsys: pytest.CaptureFixture[str],
         bad_args: list[str],
     ) -> None:
-        """A missing, unknown or malformed version flag exits with code 2 and a usage line naming --py."""
+        """A missing or malformed --py flag exits with code 2 and a usage line naming --py."""
         target = tmp_path / "mod.py"
         target.write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
         original = target.read_text(encoding="utf-8")
