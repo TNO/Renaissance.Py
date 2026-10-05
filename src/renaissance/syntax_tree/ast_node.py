@@ -243,9 +243,6 @@ class ASTNode[NodeT, TranslationUnitT](ABC):
         Args:
             function (Callable[[Self], VisitorResult]): A function that takes an ASTNode as an argument and returns a VisitorResult.
 
-        Returns:
-            None
-
         """
         if function(self) == VisitorResult.CONTINUE:
             for child in self.children:
