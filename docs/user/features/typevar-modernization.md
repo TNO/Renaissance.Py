@@ -25,17 +25,14 @@ clean up at all:
    `UP047`, by its own documentation, never removes the module-level `T = TypeVar("T")` it makes redundant, in
    any case. Once every remaining reference to a declared name is shadowed by a same-named PEP 695 type parameter
    (or there's no reference left at all), the recipe removes the declaration.
-4. **Legacy `Unpack[T]` → `*T` rewrite (`TypeVarTupleCheck`).** A separate recipe, not a phase of the above:
-   `Unpack[T]` and native `*T` unpacking are fully equivalent wherever `T` is a declared `TypeVarTuple` -
-   `Unpack[T]` exists only because it's parseable on Pythons before the native syntax landed
-   ([PEP 646](https://peps.python.org/pep-0646/), 3.11+). Every occurrence is rewritten with no per-occurrence
-   safety analysis needed (unlike the PEP 695 conversion above, swapping syntax at one call site never changes
-   semantics or visibility) - the only gate is the file-wide Python-version check, see
-   [Python version gates](../concepts/python-version-gates.md).
 
-Neither recipe drops the import it just made redundant (`TypeVar`, `Unpack`, ...) itself - that's `ruff`'s
-`F401` rule's job, already solved there rather than duplicated; see API entry points below for where that
-cleanup actually runs.
+The recipe doesn't drop the import it just made redundant (`TypeVar`, ...) itself - that's `ruff`'s `F401`
+rule's job, already solved there rather than duplicated; see API entry points below for where that cleanup
+actually runs.
+
+A converted `TypeVarTuple` keeps its legacy `Unpack[Ts]` usages (`def f[*Ts](*args: Unpack[Ts])`), which is
+valid as it is. To rewrite them to native `*Ts` syntax, run `ruff`'s `UP044` rule afterwards; see
+[Rejected recipes](../../developer/modules/rejected-recipes.md) for why the tool doesn't do this itself.
 
 ## Inputs
 
@@ -52,15 +49,14 @@ reported unsafe.
 
 - The file is rewritten in place for every change classified as safe.
 - `TypeVarCheck` returns `{"cross_file": {...}, "converted": {...}, "orphaned": {...}}`, each mapping
-  `name -> "fixed" | "unsafe"`. `TypeVarTupleCheck` returns a single flat `{name -> "fixed" | "unsafe"}` (one
-  phase, not three) - the CLI below merges it into the same result shape under an `"unpack_syntax"` key.
-- Neither recipe removes the `from typing import ...` (or equivalent) name it makes redundant - see the
+  `name -> "fixed" | "unsafe"`.
+- The recipe doesn't remove the `from typing import ...` (or equivalent) name it makes redundant - see the
   User-facing summary above and the CLI's own `ruff check --fix --select F401` pass in API entry points below.
 - Alongside each phase's `"unsafe"` status, `TypeVarCheck` also records *why* on a matching instance attribute -
-  `cross_file_unsafe_reasons`, `converted_unsafe_reasons`, `orphaned_unsafe_reasons` - and `TypeVarTupleCheck`
-  records its own on `unsafe_reasons`; each maps `name -> UnsafeReason` (see Constraints below for the specific
-  reasons). The CLI collects these into `FileReport.reasons` and prints the matching documented rule and link
-  next to each unsafe name - see API entry points below.
+  `cross_file_unsafe_reasons`, `converted_unsafe_reasons`, `orphaned_unsafe_reasons` - each mapping
+  `name -> UnsafeReason` (see Constraints below for the specific reasons). The CLI collects these into
+  `FileReport.reasons` and prints the matching documented rule and link next to each unsafe name - see API entry
+  points below.
 
 ## Constraints
 
@@ -172,29 +168,6 @@ importer in the same change to get `name` from wherever it ends up after convers
 declaration as it is if the importer can't be updated alongside it - the same public-API trade-off as the
 `__all__` case above, just surfaced by a direct import instead of an explicit `__all__` entry.
 
-### PEP 646 version gate
-
-{ #feature-typevar-modernization-pep646-version-gate }
-
-`TypeVarTupleCheck`'s `Unpack[T]` → `*T` rewrite only applies when `--py` is 3.11+ (PEP
-646's true minimum - one version below `TypeVarCheck`'s own 3.12+ gate for PEP 695, deliberately not raised
-to match it, see [Python version gates](../concepts/python-version-gates.md)). Same conservative treatment as
-the PEP 695 gate above: an unknown or too-low minimum reports every candidate `"unsafe"` and leaves the file
-untouched.
-
-**To fix this yourself:** if the project actually supports 3.11+, re-run with `--py 3.11` (or higher) - same
-fix as the PEP 695 gate above, just at the lower threshold.
-
-`TypeVarTupleCheck` only recognizes a **module-level** `T = TypeVarTuple(...)` declaration in the same file -
-  not one imported from another module. When both recipes run together (the CLI below), `TypeVarTupleCheck`
-  runs first specifically so the common case (a TypeVarTuple declared and used via `Unpack[T]` in the same file)
-  composes correctly - `TypeVarCheck` removes a converted declaration once it PEP-695-converts it, and
-  `TypeVarTupleCheck` needs that declaration to still be present to find the usage. One narrower case doesn't
-  fully resolve in a single pass either way: a *cross-file-imported* `TypeVarTuple` used via `Unpack[T]` -
-  `TypeVarCheck`'s own cross-file localization phase only runs after `TypeVarTupleCheck` has already looked (and
-  found nothing, since the declaration wasn't local yet). Re-running the CLI a second time picks it up, since
-  every phase is idempotent.
-
 A declaration imported by other files in the target project is always kept at its origin during a run, even
 when every importer gets localized in that same run. A second CLI run converts it, once no file imports it anymore.
 
@@ -222,13 +195,10 @@ start with, or contain, extra blank lines. Run your formatter afterwards to tidy
 - `test/recipes/test_type_var_check_localize.py`
 - `test/recipes/test_type_var_check_orphaned.py`
 - `test/recipes/test_type_var_check_properties.py`
-- `test/recipes/test_type_var_tuple_check.py`
-- `test/recipes/test_type_var_tuple_check_fix.py`
-- `test/recipes/test_type_var_tuple_check_properties.py`
 - `test/recipes/test_type_var_domain.py`
-- `test/recipes/test_step_runner.py` - the step runner both phases of the CLI use
-- `test/recipes/test_python_refactoring.py` - `find_rst_node` and `narrowed_import_text`, shared by both recipes
-- `test/recipes/conftest.py` - the fixtures that build the recipes in the tests above
+- `test/recipes/test_step_runner.py` - the step runner the CLI uses for the three phases
+- `test/recipes/test_python_refactoring.py` - `find_rst_node` and `narrowed_import_text`, used by the recipe
+- `test/recipes/conftest.py` - the fixtures that build the recipe in the tests above
 - `test/utils/test_unparse_utils.py` - the bracket splice that adds the PEP 695 type parameters to a signature
 - `test/utils/test_import_resolution.py` - the project-wide import resolution the CLI uses for the
   `IMPORTED_ELSEWHERE_IN_PROJECT` constraint above
@@ -237,8 +207,7 @@ start with, or contain, extra blank lines. Run your formatter afterwards to tidy
 ## Implemented by code modules
 
 - [Refactoring recipes](../../developer/modules/recipes.md)
-- `src/renaissance/recipes/type_var_check.py`, `type_var_tuple_check.py`, `type_var_domain.py`, `step_runner.py` and
-  `python_refactoring.py`
+- `src/renaissance/recipes/type_var_check.py`, `type_var_domain.py`, `step_runner.py` and `python_refactoring.py`
 - `src/renaissance/utils/import_resolution.py` and `unparse_utils.py`
 - `src/rejuvenation/migration-type-recipes.py` (the CLI)
 
@@ -250,15 +219,15 @@ python src/rejuvenation/migration-type-recipes.py <path> --py MAJOR.MINOR [--rep
 
 - `<path>`: a `.py` file or a directory, scanned recursively (`.git`/`__pycache__`/`.venv`/`venv` excluded).
 - `--py` (required): the minimum Python version the target project supports, not the one running the tool.
-  PEP 695 rewrites need 3.12+, `*Ts` unpacking needs 3.11+.
+  PEP 695 rewrites need 3.12+.
 - `--report`: also write the report to a file. The same report is always printed to the console.
 - `--no-ruff`: skip the final `ruff` pass, leaving every unused import in the modified files in place, including
-  the ones the recipes made unused.
+  the ones the recipe made unused.
 
-Runs `TypeVarTupleCheck`, then `TypeVarCheck`, on every file, then `ruff check --fix --select F401` on the files
-it changed (unless `--no-ruff` is passed). That pass removes every import `ruff` reports as unused in those
-files, including imports that were already unused before the run. `ruff` is invoked as `python -m ruff`, so it
-has to be installed in the same environment as the tool; if it can't run, the files keep the recipes' output and
+Runs `TypeVarCheck` on every file, then `ruff check --fix --select F401` on the files it changed (unless
+`--no-ruff` is passed). That pass removes every import `ruff` reports as unused in those files, including
+imports that were already unused before the run. `ruff` is invoked as `python -m ruff`, so it has to be
+installed in the same environment as the tool; if it can't run, the files keep the recipe's output and
 the report line still says the pass ran. Changes are written directly, so run it on a git checkout and review
 with `git diff`.
 

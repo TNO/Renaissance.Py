@@ -200,6 +200,7 @@ nav:
           - Rewrite semantics module: developer/modules/rewrite-semantics.md
           - Refactoring recipes: developer/modules/recipes.md
           - Python AST known limitations: developer/modules/python-ast-known-limitations.md
+          - Rejected recipes: developer/modules/rejected-recipes.md
 
       - API reference:
           - Overview: developer/api/index.md
