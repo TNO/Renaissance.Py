@@ -57,8 +57,9 @@ def resolve_target_files(target: Path) -> list[Path]:
 def _parse_py_version(text: str) -> tuple[int, int]:
     """Parse a "MAJOR.MINOR" string into a (major, minor) tuple for argparse's type=.
 
-    Raises argparse.ArgumentTypeError on anything else, so argparse reports a clean usage error
-    instead of a raw traceback.
+    Raises:
+        argparse.ArgumentTypeError: If text is not in MAJOR.MINOR form.
+
     """
     parts = text.split(".")
     if len(parts) != _MAJOR_MINOR_PART_COUNT or not all(part.isdigit() for part in parts):
@@ -82,7 +83,7 @@ def has_unsafe(report: FileReport) -> bool:
 
 
 def is_clean(report: FileReport) -> bool:
-    """Return True if report.result found no TypeVar/ParamSpec/TypeVarTuple usage at all."""
+    """Return True if report.result found no Type Paramater usage at all."""
     if report.result is None:
         return False
     return not any(phase for phase in report.result.values())
