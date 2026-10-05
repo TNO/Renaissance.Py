@@ -363,9 +363,6 @@ class _RewriteActions:
             include_whitespace (bool, optional): Whether to include surrounding whitespace in the removal. Defaults to False.
             include_comments (bool, optional): Whether to include surrounding comments in the removal. Defaults to False.
 
-        Returns:
-            None
-
         """
         if not nodes:
             return

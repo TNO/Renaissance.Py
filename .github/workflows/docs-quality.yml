@@ -24,8 +24,9 @@ jobs:
         run: uv run python tools/check_doc_images_policy.py
       - name: Check spelling
         run: uv run codespell ./docs
+      # pymarkdown has no configuration key for path exclusions, so .venv must be excluded on the command line.
       - name: Lint markdown
-        run: uv run pymarkdown scan -r ./docs
+        run: uv run pymarkdown scan -r --respect-gitignore .
 
   ci-passed:
     name: Docs CI passed

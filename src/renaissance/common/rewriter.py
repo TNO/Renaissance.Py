@@ -36,9 +36,6 @@ class Rewriter:
             end (int): The ending index of the content to be replaced.
             new_content (bytes): The new content to insert in place of the old content.
 
-        Returns:
-            None
-
         """
         for r in self.__rewrites:
             # if r partially overlaps with start and end then append the new content to the existing replacement

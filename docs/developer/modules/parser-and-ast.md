@@ -177,6 +177,111 @@ Use the existing backend tests as the primary contract examples. Cross-backend
 tests establish the `NodeProtocol` matching contract; rewrite, trivia, and
 reparse behavior remain tests and responsibilities of the selected adapter.
 
+## Clang prerequisites
+
+The repository has two independent Clang backends, and they obtain Clang in
+different ways:
+
+| Backend | Needs | Obtained from |
+| --- | --- | --- |
+| `ClangASTNode` | the `libclang` library | the pinned `libclang-ng` wheel, installed by `uv sync` |
+| `ClangJsonASTNode` | the `clang` or `clang++` driver | an LLVM installation on the machine |
+
+`ClangASTNode` works without extra setup: `clang_ast_node.py` points libclang
+at the bundled native library, so its version is pinned by `pyproject.toml`
+and is identical on every machine.
+
+`ClangJsonASTNode` runs the compiler driver as a subprocess, because
+`-Xclang -ast-dump=json` is a frontend action that the library API does not
+expose. That driver is not part of the Python dependencies and must be
+installed separately. Without it, every `clang_json` test fails.
+
+### Determine the required version
+
+Both backends are compared against the same expectations in the cross-backend
+tests, so the driver should have the same LLVM major version as the bundled
+library. The bundled version is the one pinned in `pyproject.toml`. Print the
+LLVM version it corresponds to:
+
+```powershell
+uv run python -c "from importlib.metadata import version; print('.'.join(version('libclang-ng').split('.')[:3]))"
+```
+
+The `libclang-ng` version has four components, such as `22.1.4.2`. The first
+three are the LLVM version, `22.1.4` in this example, and the fourth is the
+wheel build number.
+
+### Install that version
+
+Windows, where the version must be given exactly as published. A major version
+alone is rejected with `No version found matching: 22`, and
+`winget show LLVM.LLVM --versions` lists the accepted values:
+
+```powershell
+winget install LLVM.LLVM --version 22.1.4
+```
+
+Debian, Ubuntu, or WSL. The distribution package is usually older than the
+pinned version, so install from the LLVM apt repository, which takes the major
+version and installs version-suffixed binaries such as `clang-22`:
+
+```bash
+wget https://apt.llvm.org/llvm.sh
+chmod +x llvm.sh
+sudo ./llvm.sh 22
+```
+
+macOS, using the versioned formula:
+
+```bash
+brew install llvm@22
+```
+
+Open a new terminal afterwards, so that the updated `PATH` is picked up, and
+check that the driver is reachable and reports the expected version:
+
+```powershell
+clang --version
+```
+
+On Windows the installer does not add LLVM to `PATH`, so this reports that
+`clang` is not recognized even though the install succeeded. Either add
+`C:\Program Files\LLVM\bin` to `PATH`, or point `RENAISSANCE_CLANG` at the
+driver as described below.
+
+### Select a specific driver
+
+The driver is resolved in this order:
+
+1. the first entry of `extra_args`, when it names a clang executable
+2. the path passed to `ClangJsonASTNode.set_compiler_path()`
+3. the `RENAISSANCE_CLANG` environment variable
+4. `clang`, or `clang++` for C++, found on `PATH`
+
+When none of these resolves to an executable driver, parsing raises
+`FileNotFoundError` describing these options, rather than failing inside the
+subprocess call.
+
+Set `RENAISSANCE_CLANG` when `PATH` does not already point at the intended
+driver. This is the normal case on Windows, where the installer leaves `PATH`
+alone, and on Linux, where the LLVM apt repository installs `clang-22` while
+`clang` remains the distribution version:
+
+```bash
+export RENAISSANCE_CLANG=/usr/bin/clang++-22
+```
+
+```powershell
+$env:RENAISSANCE_CLANG = "C:/Program Files/LLVM/bin/clang++.exe"
+& $env:RENAISSANCE_CLANG --version
+```
+
+The major version of the resolved driver is compared with the pinned
+`libclang-ng` version, and a mismatch raises a warning such as
+`clang++ is LLVM 18 while libclang is pinned to LLVM 22; the ASTs may differ.`
+Only the major version is compared, so any `22.x` driver satisfies a `22.1.4`
+pin. No warning means the versions agree.
+
 ## Validation
 
 Run the repository checks with the parser's optional dependencies installed:
@@ -189,4 +294,5 @@ uv run pyright ./src ./test ./tools ./features
 uv run mkdocs build --strict
 ```
 
-For Clang integrations, make LLVM available on `PATH` before running tests.
+The Clang backends additionally require the setup described in
+[Clang prerequisites](#clang-prerequisites).

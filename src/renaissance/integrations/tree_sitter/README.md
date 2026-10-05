@@ -1,6 +1,8 @@
 # LST Toolkit
 
-This toolkit provides a parser-independent Language-Specific Tree (LST) representation with pattern matching, symbol binding, and extraction capabilities. It supports Tree-sitter grammars and offers a flexible interface for analyzing Python, Java, and C++ code.
+This toolkit provides a parser-independent Language-Specific Tree (LST) representation with pattern matching, symbol binding,
+and extraction capabilities.
+It supports Tree-sitter grammars and offers a flexible interface for analyzing Python, Java, and C++ code.
 
 ---
 
@@ -31,6 +33,7 @@ pip install -e .
 ```bash
 pip install tree-sitter
 ```
+
 with a dash and not an underscore
 
 1. Run the setup script to clone grammars and build the shared library:
@@ -40,6 +43,7 @@ python setup_grammars.py
 ```
 
 This will:
+
 - Clone Tree-sitter grammars for Python, Java, and C++
 - Build `build/my-languages.so` for use in adapters
 
@@ -109,36 +113,30 @@ results = extractor.run(source_code)
 This toolkit is part of Renaissance.Py and is licensed under the Eclipse Public License 2.0 (EPL-2.0),
 as described in [LICENSE](../../../../LICENSE).
 
-
 ## 🔌 Clang Integration for C++
 
 For advanced C++ analysis (with preprocessing and include resolution), this toolkit supports [libclang](https://clang.llvm.org/).
 
 ### 🛠 Install Dependencies
 
-```bash
-# On Ubuntu/Debian
-sudo apt install libclang-dev
-
-# Python bindings
-pip install clang
-```
+No extra installation is needed. The `libclang` library is provided by the pinned `libclang-ng` dependency,
+which `uv sync` installs into the virtual environment.
 
 ### 🔧 Usage
 
 Use `ClangAdapter` instead of `TreeSitterAdapter`:
 
 ```python
-from core.clang_adapter import ClangAdapter
+from renaissance.integrations.clang.clang_adapter import ClangAdapter
 
 adapter = ClangAdapter()
 lst = adapter.parse("examples/cpp_example.cpp")
 
-for node in lst.traverse():
-    print(node)
+print(lst.root.kind_key)
 ```
 
 The `ClangAdapter` provides:
+
 - Full include resolution
 - Macro expansion
 - AST node types like `FUNCTION_DECL`, `CALL_EXPR`, etc.

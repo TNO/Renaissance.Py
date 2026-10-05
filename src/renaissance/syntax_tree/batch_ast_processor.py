@@ -43,9 +43,6 @@ class BatchASTProcessor:
             actions (Action | Sequence[Action]): The action or sequence of actions to apply to each item in the iterable.
             file_filter (Optional[str | re.Pattern], optional): A filter to apply to file names. Defaults to None.
 
-        Returns:
-            bool: True if processing was successful, False otherwise.
-
         """
         iterable = iterable() if callable(iterable) else iterable
         self.__process(iterable, actions, self.in_memory, file_filter)
@@ -66,9 +63,6 @@ class BatchASTProcessor:
             actions (Action | Sequence[Action]): A single action or a sequence of actions to be performed on each item.
             file_filter (Optional[str | re.Pattern], optional): A filter to apply to the files being processed. Defaults to None.
             max_repeat (int, optional): The maximum number of times to repeat the processing. Defaults to 5.
-
-        Returns:
-            bool: True if the processing still yields changes, False otherwise.
 
         """
         self.__process(iterable_provider(), actions, self.in_memory, file_filter, max_repeat)
