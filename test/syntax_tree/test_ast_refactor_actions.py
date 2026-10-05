@@ -9,14 +9,14 @@ from renaissance.syntax_tree.semantic_kind import SemanticKind
 class TestASTRefactorActions:
     """AI: Tests for the ASTRefactorActions helper."""
 
-    def test_it_can_be_created(self, mocker):
+    def test_it_can_be_created(self, mocker) -> None:
         """AI: Verify ASTRefactorActions can be constructed from a processor and factory."""
         proc = mocker.Mock()
         factory = mocker.Mock()
         refactor_actions = ASTRefactorActions(proc, factory)
         assert_that(refactor_actions, not is_(None))
 
-    def test_replace_expr(self, mocker):
+    def test_replace_expr(self, mocker) -> None:
         """AI: Verify replace_expr delegates to the processor's find_all method."""
         proc = mocker.Mock()
         proc.find_all.return_value = []
@@ -25,7 +25,7 @@ class TestASTRefactorActions:
         refactor_actions.replace_expr("name", "my_awsome_name", SemanticKind.NAME)
         assert_that(proc.find_all.called)
 
-    def test_replace_name(self, mocker):
+    def test_replace_name(self, mocker) -> None:
         """AI: Verify replace_name finds a matching name node and calls the processor's replace method."""
         node = mocker.Mock()
         node.offset = 1
@@ -40,7 +40,7 @@ class TestASTRefactorActions:
 
         assert_that(proc.replace.called)
 
-    def test_replace_text(self, mocker):
+    def test_replace_text(self, mocker) -> None:
         """AI: Verify replace_text finds matching literal nodes and calls the processor's replace method."""
         node = mocker.Mock()
         node.semantic_kind = SemanticKind.LITERAL
@@ -55,7 +55,7 @@ class TestASTRefactorActions:
 
         assert_that(proc.replace.called)
 
-    def test_replace_declaration(self, mocker):
+    def test_replace_declaration(self, mocker) -> None:
         """AI: Verify replace_declaration finds the declaration and calls the processor's replace method."""
         node = mocker.Mock()
         proc = mocker.Mock()
@@ -67,7 +67,7 @@ class TestASTRefactorActions:
 
         assert_that(proc.replace.called)
 
-    def test_replace_patterns(self, mocker):
+    def test_replace_patterns(self, mocker) -> None:
         """AI: Verify _replace_patterns matches the pattern and calls the processor's replace method."""
         node = mocker.Mock()
         proc = mocker.Mock()
@@ -80,7 +80,7 @@ class TestASTRefactorActions:
         assert_that(proc.replace.called)
         assert_that(is_match_mock.called)
 
-    def test_find_declaration(self, mocker):
+    def test_find_declaration(self, mocker) -> None:
         """AI: Verify find_declaration delegates to the processor's find_match method."""
         proc = mocker.Mock()
         factory = mocker.Mock()
@@ -88,7 +88,7 @@ class TestASTRefactorActions:
         refactor_actions.find_declaration("decl_pattern")
         assert_that(proc.find_match.called)
 
-    def test_collect(self, mocker):
+    def test_collect(self, mocker) -> None:
         """AI: Verify collect delegates to the processor's find_match method."""
         proc = mocker.Mock()
         proc.find_match.return_value = []

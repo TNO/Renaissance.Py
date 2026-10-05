@@ -39,7 +39,7 @@ class TestPythonAstMatcherBasic:
         "a, b, expected",
         make_parametersets_of_equivalence_classes("if statement", PATTERN_FACTORY.create_statement, IF_CLASSES),
     )
-    def test_pairs_of_equivalence_classes(self, a: NodeProtocol, b: NodeProtocol, expected: bool):
+    def test_pairs_of_equivalence_classes(self, a: NodeProtocol, b: NodeProtocol, expected: bool) -> None:
         """AI: Verify if-statement pairs from the same or different equivalence classes match as expected."""
         assert_pair_equivalence(a, b, expected)
 

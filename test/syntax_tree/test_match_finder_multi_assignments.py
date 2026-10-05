@@ -21,7 +21,7 @@ class TestMatchFinderMultiAssignments:
     """AI: Tests for MatchFinder matching multiple assignment variants."""
 
     @pytest.mark.skip("not impl. yet")
-    def test_find_multi_assignments(self):
+    def test_find_multi_assignments(self) -> None:
         """AI: Verify find_variants produces two distinct assignment variants for a placeholder call pattern (not yet implemented)."""
         # set up
         factory = PythonFactory(PythonRstNode)

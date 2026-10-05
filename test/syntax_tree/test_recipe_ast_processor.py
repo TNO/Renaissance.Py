@@ -15,28 +15,28 @@ from renaissance.syntax_tree.recipe_ast_processor import (
 class TestRecipeASTProcessor:
     """AI: Tests for the RecipeASTProcessor and its decorator helpers."""
 
-    def test_receipe_proc(self):
+    def test_receipe_proc(self) -> None:
         """AI: Verify RecipeASTProcessor can be constructed from a recipe, iterable provider, and path."""
         it = RecipeASTProcessor(lambda n: n, lambda: (), "")
         assert_that(it, is_(RecipeASTProcessor))
 
-    def test_run(self, mocker):
+    def test_run(self, mocker) -> None:
         """AI: Verify run() invokes each recipe_step-decorated method via BatchASTProcessor.repeat."""
 
         # define a simple recipe class with one recipe_step
         class SimpleRecipe:
-            def __init__(self):
+            def __init__(self) -> None:
                 self.ran = []
 
             @recipe_step(order=0)
             def do_step(self, _):
-                def work():
+                def work() -> None:
                     self.ran.append("done")
 
                 return work
 
         # patch BatchASTProcessor.repeat to immediately invoke actions with a dummy ASTProcessor
-        def fake_repeat(_, _1, actions, _2):
+        def fake_repeat(_, _1, actions, _2) -> None:
             dummy = mocker.Mock()
             dummy.repeat_step = 0
             for action in actions:
@@ -52,7 +52,7 @@ class TestRecipeASTProcessor:
 
         assert_that(recipe.ran, is_(["done"]))
 
-    def test_annotate_decorator(self):
+    def test_annotate_decorator(self) -> None:
         """AI: Verify annotate_decorator preserves the wrapped decorator's name and attaches a recipe_action name."""
 
         def foreign(f):
@@ -64,29 +64,29 @@ class TestRecipeASTProcessor:
 
         # when applied to a function, the decorator attaches the recipe_action name
         @decorator
-        def sample():
+        def sample() -> int:
             return 1
 
         assert_that(sample.recipe_action, is_("test_decorator"))
 
-    def test_get_methods_with_decorator(self):
+    def test_get_methods_with_decorator(self) -> None:
         """AI: Verify get_methods_with_decorator finds methods decorated with @recipe_step."""
 
         class Sample:
             @recipe_step()
-            def step1(self):
+            def step1(self) -> None:
                 pass
 
         methods = list(get_methods_with_decorator(Sample, recipe_step))
         assert_that(methods, has_length(1))
         assert_that(methods[0].__name__, is_("step1"))
 
-    def test_final_action(self):
+    def test_final_action(self) -> None:
         """AI: Verify get_methods_with_decorator finds methods decorated with @final_action."""
 
         class Sample:
             @final_action()
-            def final(self):
+            def final(self) -> None:
                 pass
 
         methods = list(get_methods_with_decorator(Sample, final_action))

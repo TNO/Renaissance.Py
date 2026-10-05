@@ -115,47 +115,47 @@ class BadTypesButProtocolLike:
     """
 
     @property
-    def full_text(self):  # not str
+    def full_text(self) -> int:  # not str
         """AI: Return a value of the wrong type (int) for full_text, to trigger a validation failure."""
         return 123
 
     @property
-    def location(self):  # not str
+    def location(self) -> None:  # not str
         """AI: Return a value of the wrong type (None) for location, to trigger a validation failure."""
         return None
 
     @property
-    def start_line(self):  # not int
+    def start_line(self) -> str:  # not int
         """AI: Return a value of the wrong type (str) for start_line, to trigger a validation failure."""
         return "hello"
 
     @property
-    def start_column(self):  # not int
+    def start_column(self) -> str:  # not int
         """AI: Return a value of the wrong type (str) for start_column, to trigger a validation failure."""
         return "hello"
 
     @property
-    def start_offset(self):  # not int
+    def start_offset(self) -> str:  # not int
         """AI: Return a value of the wrong type (str) for start_offset, to trigger a validation failure."""
         return "hello"
 
     @property
-    def end_line(self):  # not int
+    def end_line(self) -> str:  # not int
         """AI: Return a value of the wrong type (str) for end_line, to trigger a validation failure."""
         return "hello"
 
     @property
-    def end_column(self):  # not int
+    def end_column(self) -> str:  # not int
         """AI: Return a value of the wrong type (str) for end_column, to trigger a validation failure."""
         return "hello"
 
     @property
-    def end_offset(self):  # not int
+    def end_offset(self) -> str:  # not int
         """AI: Return a value of the wrong type (str) for end_offset, to trigger a validation failure."""
         return "hello"
 
     @property
-    def text_segment(self):  # not str
+    def text_segment(self) -> int:  # not str
         """AI: Return a value of the wrong type (int) for text_segment, to trigger a validation failure."""
         return 456
 

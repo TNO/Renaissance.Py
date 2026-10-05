@@ -15,17 +15,17 @@ pytest.mark.skip("empty workdir should also work right?")
 class TestClangJsonAstNode:
     """AI: Tests for the Clang JSON-backed ASTNode implementation."""
 
-    def test_load_from_text_empty_dir(self):
+    def test_load_from_text_empty_dir(self) -> None:
         """AI: Verify load_from_text with an empty work directory returns a ClangJsonASTNode instance."""
         node = ClangJsonASTNode.load_from_text("int main(){return 0;}", "hello.c", [], Path())
         assert_that(isinstance(node, ClangJsonASTNode))
 
-    def test_load_from_text(self):
+    def test_load_from_text(self) -> None:
         """AI: Verify load_from_text returns a ClangJsonASTNode instance for simple source text."""
         node = ClangJsonASTNode.load_from_text("int main(){return 0;}", "hello.c", [], Path())
         assert_that(isinstance(node, ClangJsonASTNode))
 
-    def test_name_in_props(self):
+    def test_name_in_props(self) -> None:
         """AI: Verify a declaration reference node's name is exposed in its properties dict."""
         factory = ASTFactory(ClangJsonASTNode, [])
         src = CPatternFactory(factory).create_statement("a == 3;")
@@ -38,7 +38,7 @@ class TestClangJsonAstNode:
         "which defines both.",
         strict=True,
     )
-    def test_is_hashable(self):
+    def test_is_hashable(self) -> None:
         """AI: Verify hashing a ClangJsonASTNode fails since it defines __eq__ without __hash__."""
         node = ClangJsonASTNode.load_from_text("int main(){return 0;}", "hello.c", [], Path())
         hash(node)

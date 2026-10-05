@@ -71,11 +71,11 @@ class TestPythonNode:
     """AI: Tests resolving references between Python AST nodes (function calls, definitions)."""
 
     @pytest.fixture(autouse=True)
-    def setup(self):
+    def setup(self) -> None:
         """Set up fixture state before each test method."""
         self.factory = PythonFactory(PythonRstNode)
 
-    def test_def_call_references(self):
+    def test_def_call_references(self) -> None:
         """AI: Verify function f's references to functions a and b are resolved, each referenced back by f."""
         # Function f() refers to Function a()
         ast = PythonRstNode.load_from_text(content2)
@@ -102,7 +102,7 @@ class TestPythonNode:
         assert_that(referenced_by1, has_length(1))  # Function b referenced by function f.
         assert_that(func_def in [ast.translation_unit._nodes[r.node_id] for r in referenced_by])
 
-    def test_type_reference(self):
+    def test_type_reference(self) -> None:
         """AI: Verify a type-annotated name resolves its reference to the imported name it annotates."""
         # Name z refers to Name a
         ast = self.factory.create_from_text("from abc import a\nx = a()\nz: a = x", "content3.py")
@@ -121,7 +121,7 @@ class TestPythonNode:
         assert_that(referenced_by, has_length(greater_than(0)))
         assert_that(type_node in [ast.translation_unit._nodes[r.node_id] for r in referenced_by])
 
-    def test_class_reference(self):
+    def test_class_reference(self) -> None:
         """AI: Verify a subclass resolves its reference to its base class."""
         # Class A refers to Class B
         ast = self.factory.create_from_text(content3, "content3.py")
@@ -141,7 +141,7 @@ class TestPythonNode:
         assert_that(referenced_by, has_length(2))
         assert_that(class_node in [ast.translation_unit._nodes[r.node_id] for r in referenced_by])
 
-    def test_param_reference(self):
+    def test_param_reference(self) -> None:
         """AI: Verify a parameter's type annotation resolves its reference to the class defined in the same file."""
         # param obj refers to its type, if type definition in the same file, refers to def, otherwise refers to Name
         ast = self.factory.create_from_text(content, "content.py")
@@ -162,7 +162,7 @@ class TestPythonNode:
         types = [r.node_id for r in referenced_by]
         assert_that(param_node[0].name, is_in(types))
 
-    def test_function_reference(self):
+    def test_function_reference(self) -> None:
         """AI: Verify a method call resolves its reference to the method it calls."""
         ast = self.factory.create_from_text(content, "content.py")
         with tempfile.TemporaryDirectory(delete=True) as temp_dir:
@@ -179,13 +179,13 @@ class TestPythonNode:
         assert_that(referenced_by, has_length(1))
         assert_that(call_node in [ast.translation_unit._nodes[r.node_id] for r in referenced_by])
 
-    def test_ref_node_to_str(self):
+    def test_ref_node_to_str(self) -> None:
         """AI: Verify PythonRSTReference's string representation combines its message and kind."""
         it = PythonRSTReference("it is ", "kind", {})
         assert_that(it, has_string("it is :kind"))
 
     @pytest.mark.parametrize("def_keyword", ["def", "async def"])
-    def test_return_type_reference(self, def_keyword):
+    def test_return_type_reference(self, def_keyword) -> None:
         """AI: Verify a function's return type annotation resolves its reference to the annotated class."""
         # Function make_config()'s return annotation refers to Class Config.
         code = f"class Config:\n    pass\n\n{def_keyword} make_config() -> Config:\n    pass\n"
@@ -197,7 +197,7 @@ class TestPythonNode:
         ref_node = ast.translation_unit._nodes[refs[0].node_id]
         assert_that(ref_node.semantic_kind is SemanticKind.CLASS, is_(True))
 
-    def test_function_without_return_annotation_has_no_type_reference(self):
+    def test_function_without_return_annotation_has_no_type_reference(self) -> None:
         """AI: Verify a function without a return annotation has no references."""
         ast = self.factory.create_from_text("def f():\n    pass\n", "content.py")
         func_node = first(n for n in traverse(ast) if n.name == "f")

@@ -8,7 +8,7 @@ from renaissance.integrations.clang.kinds import CLANG_KIND_MAP
 from renaissance.syntax_tree.semantic_kind import SemanticKind
 
 
-def test_clang_json_nodes_expose_protocol_metadata():
+def test_clang_json_nodes_expose_protocol_metadata() -> None:
     """AI: Assert a Clang JSON AST node exposes the expected parser_kind and semantic_kind."""
     node = ClangJsonASTNode.load_from_text("int f() { return 1; }", "test.c", [], Path())
 
@@ -16,7 +16,7 @@ def test_clang_json_nodes_expose_protocol_metadata():
     assert node.semantic_kind is SemanticKind.TRANSLATION_UNIT
 
 
-def test_clang_common_kinds_map_to_shared_semantic_kinds():
+def test_clang_common_kinds_map_to_shared_semantic_kinds() -> None:
     """AI: Assert common clang parser kinds map to their expected shared semantic kinds."""
     assert CLANG_KIND_MAP["FunctionDecl"] is SemanticKind.FUNCTION
     assert CLANG_KIND_MAP["CallExpr"] is SemanticKind.CALL
@@ -24,7 +24,7 @@ def test_clang_common_kinds_map_to_shared_semantic_kinds():
     assert CLANG_KIND_MAP["CXXRecordDecl"] is SemanticKind.CLASS
 
 
-def test_clang_specific_unknown_kinds_keep_parser_identity():
+def test_clang_specific_unknown_kinds_keep_parser_identity() -> None:
     """AI: Assert an unmapped clang parser kind falls back to the generic NODE semantic kind."""
     parser_kind = "FriendDecl"
 
@@ -32,7 +32,7 @@ def test_clang_specific_unknown_kinds_keep_parser_identity():
     assert CLANG_KIND_MAP.get(parser_kind, SemanticKind.NODE) is SemanticKind.NODE
 
 
-def test_clang_parser_kind_predicate_preserves_specific_concepts():
+def test_clang_parser_kind_predicate_preserves_specific_concepts() -> None:
     """AI: Assert is_clang_kind matches only the exact requested parser kind."""
     node = type("Node", (), {"parser_kind": "CXXConstructorDecl"})()
 

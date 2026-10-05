@@ -32,7 +32,7 @@ class TestCleanupRefactoring:
             ),
         ),
     )
-    def test_remove_unused_variables(self, name, factory: ASTFactory, input_code, expected_code):
+    def test_remove_unused_variables(self, name, factory: ASTFactory, input_code, expected_code) -> None:
         """AI: Verify unused local variable declarations are removed while used ones are preserved."""
         atu = factory.create_from_text(input_code, "test.c")
         ASTShower.show_node(atu)
@@ -41,7 +41,7 @@ class TestCleanupRefactoring:
         result = ast_refactor.commit().apply_to_string()
         assert_that(result, is_(expected_code))
 
-    def test_should_not_be_instantiable(self):
+    def test_should_not_be_instantiable(self) -> None:
         """AI: Verify CleanupRefactoring cannot be instantiated directly."""
         assert_that(calling(CleanupRefactoring), raises(Exception))
 

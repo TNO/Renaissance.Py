@@ -14,7 +14,7 @@ from renaissance.utils.ast_utils import traverse
 class TestClangAdapter:
     """AI: Tests for the Clang-based LST adapter."""
 
-    def test_parse_cpp_file(self):
+    def test_parse_cpp_file(self) -> None:
         """AI: Verify parsing a C++ example file produces a traversable LST."""
         adapter = ClangAdapter()
         lst = adapter.parse(Path(targets.__file__).parent / "cpp_example.cpp")

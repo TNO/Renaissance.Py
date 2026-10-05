@@ -32,7 +32,7 @@ def make_lst_node(kind, signature, name=None):
 class TestBaseCodeGraphExtractor:
     """AI: Tests the shared BaseCodeGraphExtractor behavior (abstract hook, file iteration, graph saving)."""
 
-    def test_is_abstract(self):
+    def test_is_abstract(self) -> None:
         """AI: Verify _process_file raises NotImplementedError on the base extractor."""
         with patch("renaissance.integrations.tree_sitter.adapter.TreeSitterAdapter"):
             extractor = BaseCodeGraphExtractor.__new__(BaseCodeGraphExtractor)
@@ -40,7 +40,7 @@ class TestBaseCodeGraphExtractor:
             with pytest.raises(NotImplementedError):
                 extractor._process_file("file.py", MagicMock())
 
-    def test_extract_calls_process_file_for_each_file(self, mocker, tmp_path):
+    def test_extract_calls_process_file_for_each_file(self, mocker, tmp_path) -> None:
         """AI: Verify extract() calls _process_file once per input file."""
         f1 = tmp_path / "a.py"
         f1.write_text("x = 1")
@@ -59,7 +59,7 @@ class TestBaseCodeGraphExtractor:
 
             assert_that(spy.call_count, is_(2))
 
-    def test_extract_skips_file_on_error(self, tmp_path):
+    def test_extract_skips_file_on_error(self, tmp_path) -> None:
         """AI: Verify extract() skips a file whose parsing raises an error without propagating it."""
         with patch("renaissance.integrations.tree_sitter.adapter.TreeSitterAdapter") as mock_adapter_cls:
             mock_adapter = mock_adapter_cls.return_value
@@ -69,7 +69,7 @@ class TestBaseCodeGraphExtractor:
             # Should not raise
             extractor.extract([str(tmp_path / "nonexistent.py")])
 
-    def test_save_graph_writes_file(self, tmp_path, mocker):
+    def test_save_graph_writes_file(self, tmp_path, mocker) -> None:
         """AI: Verify save_graph writes the graph to a graphml file."""
         with patch("renaissance.integrations.tree_sitter.adapter.TreeSitterAdapter"):
             extractor = PythonCodeGraphExtractor("python", tree_sitter_python)
@@ -80,7 +80,7 @@ class TestBaseCodeGraphExtractor:
 
             mock_write.assert_called_once()
 
-    def test_constructor_creates_directed_graph(self):
+    def test_constructor_creates_directed_graph(self) -> None:
         """AI: Verify the extractor constructor initializes a directed graph."""
         with patch("renaissance.integrations.tree_sitter.adapter.TreeSitterAdapter"):
             extractor = PythonCodeGraphExtractor("python", tree_sitter_python)
@@ -107,7 +107,7 @@ class TestPythonCodeGraphExtractor(TestBaseCodeGraphExtractor):
         with patch("renaissance.integrations.tree_sitter.adapter.TreeSitterAdapter"):
             return PythonCodeGraphExtractor("python", tree_sitter_python)
 
-    def test_adds_file_and_folder_nodes(self):
+    def test_adds_file_and_folder_nodes(self) -> None:
         """AI: Verify processing a Python file adds file and folder nodes to the graph."""
         extractor = self._make_extractor()
         lst = self.make_lst([])
@@ -117,7 +117,7 @@ class TestPythonCodeGraphExtractor(TestBaseCodeGraphExtractor):
         assert_that(extractor.graph.nodes, has_item("/project/src/foo.py"))
         assert_that(extractor.graph.nodes, has_item("/project/src"))
 
-    def test_adds_contains_edge_from_folder_to_file(self):
+    def test_adds_contains_edge_from_folder_to_file(self) -> None:
         """AI: Verify processing a Python file adds a contains edge from its folder to the file."""
         extractor = self._make_extractor()
         lst = self.make_lst([])
@@ -127,7 +127,7 @@ class TestPythonCodeGraphExtractor(TestBaseCodeGraphExtractor):
         assert_that(extractor.graph.has_edge("/project/src", "/project/src/foo.py"), is_(True))
         assert_that(extractor.graph.edges["/project/src", "/project/src/foo.py"]["type"], is_("contains"))
 
-    def test_adds_function_node_for_function_definition(self):
+    def test_adds_function_node_for_function_definition(self) -> None:
         """AI: Verify a Python function definition adds a function node to the graph."""
         extractor = self._make_extractor()
         func_node = make_lst_node(SemanticKind.FUNCTION, "def my_func(x):")
@@ -138,7 +138,7 @@ class TestPythonCodeGraphExtractor(TestBaseCodeGraphExtractor):
         assert_that(extractor.graph.nodes, has_item("my_func"))
         assert_that(extractor.graph.nodes["my_func"]["type"], is_("function"))
 
-    def test_adds_defines_edge_for_function(self):
+    def test_adds_defines_edge_for_function(self) -> None:
         """AI: Verify a Python function definition adds a defines edge from the file to the function."""
         extractor = self._make_extractor()
         func_node = make_lst_node(SemanticKind.FUNCTION, "def my_func(x):")
@@ -149,7 +149,7 @@ class TestPythonCodeGraphExtractor(TestBaseCodeGraphExtractor):
         assert_that(extractor.graph.has_edge("/src/foo.py", "my_func"), is_(True))
         assert_that(extractor.graph.edges["/src/foo.py", "my_func"]["type"], is_("defines"))
 
-    def test_adds_call_node_for_call(self):
+    def test_adds_call_node_for_call(self) -> None:
         """AI: Verify a Python call expression adds a call-target node to the graph."""
         extractor = self._make_extractor()
         call_node = make_lst_node(SemanticKind.CALL, "some_func(arg1)")
@@ -160,7 +160,7 @@ class TestPythonCodeGraphExtractor(TestBaseCodeGraphExtractor):
         assert_that(extractor.graph.nodes, has_item("some_func"))
         assert_that(extractor.graph.nodes["some_func"]["type"], is_("call_target"))
 
-    def test_adds_calls_edge_for_call(self):
+    def test_adds_calls_edge_for_call(self) -> None:
         """AI: Verify a Python call expression adds a calls edge from the file to the call target."""
         extractor = self._make_extractor()
         call_node = make_lst_node(SemanticKind.CALL, "some_func(arg1)")
@@ -171,7 +171,7 @@ class TestPythonCodeGraphExtractor(TestBaseCodeGraphExtractor):
         assert_that(extractor.graph.has_edge("/src/foo.py", "some_func"), is_(True))
         assert_that(extractor.graph.edges["/src/foo.py", "some_func"]["type"], is_("calls"))
 
-    def test_ignores_unrelated_node_kinds(self):
+    def test_ignores_unrelated_node_kinds(self) -> None:
         """AI: Verify unrelated Python node kinds are not added to the graph."""
         extractor = self._make_extractor()
         other_node = make_lst_node("import_statement", "import os")
@@ -181,7 +181,7 @@ class TestPythonCodeGraphExtractor(TestBaseCodeGraphExtractor):
 
         assert_that(extractor.graph.nodes, not_(has_item("import os")))
 
-    def test_multiple_functions_all_added(self):
+    def test_multiple_functions_all_added(self) -> None:
         """AI: Verify multiple Python function definitions are all added as separate nodes."""
         extractor = self._make_extractor()
         nodes = [
@@ -209,7 +209,7 @@ class TestJavaCodeGraphExtractor(TestBaseCodeGraphExtractor):
         with patch("renaissance.integrations.tree_sitter.adapter.TreeSitterAdapter"):
             return JavaCodeGraphExtractor("java", tree_sitter_python)
 
-    def test_adds_file_and_folder_nodes(self):
+    def test_adds_file_and_folder_nodes(self) -> None:
         """AI: Verify processing a Java file adds file and folder nodes to the graph."""
         extractor = self._make_extractor()
         lst = self.make_lst([])
@@ -219,7 +219,7 @@ class TestJavaCodeGraphExtractor(TestBaseCodeGraphExtractor):
         assert_that(extractor.graph.nodes, has_item("/project/src/Main.java"))
         assert_that(extractor.graph.nodes, has_item("/project/src"))
 
-    def test_adds_method_node_for_method_declaration(self):
+    def test_adds_method_node_for_method_declaration(self) -> None:
         """AI: Verify a Java method declaration adds a method node to the graph."""
         extractor = self._make_extractor()
         method_node = make_lst_node(SemanticKind.FUNCTION, "void doSomething(){}", name="doSomething")
@@ -230,7 +230,7 @@ class TestJavaCodeGraphExtractor(TestBaseCodeGraphExtractor):
         assert_that(extractor.graph.nodes, has_item("doSomething"))
         assert_that(extractor.graph.nodes["doSomething"]["type"], is_("method"))
 
-    def test_method_node_uses_default_name_when_missing(self):
+    def test_method_node_uses_default_name_when_missing(self) -> None:
         """AI: Verify a Java method node falls back to a default name when the name property is missing."""
         extractor = self._make_extractor()
         method_node = make_lst_node(SemanticKind.FUNCTION, "void doSomething(){}")
@@ -241,7 +241,7 @@ class TestJavaCodeGraphExtractor(TestBaseCodeGraphExtractor):
 
         assert_that(extractor.graph.nodes, has_item("method"))
 
-    def test_adds_defines_edge_for_method(self):
+    def test_adds_defines_edge_for_method(self) -> None:
         """AI: Verify a Java method declaration adds a defines edge from the file to the method."""
         extractor = self._make_extractor()
         method_node = make_lst_node(SemanticKind.FUNCTION, "void doSomething()", name="doSomething")
@@ -252,7 +252,7 @@ class TestJavaCodeGraphExtractor(TestBaseCodeGraphExtractor):
         assert_that(extractor.graph.has_edge("/src/Main.java", "doSomething"), is_(True))
         assert_that(extractor.graph.edges["/src/Main.java", "doSomething"]["type"], is_("defines"))
 
-    def test_adds_method_invocation_node(self):
+    def test_adds_method_invocation_node(self) -> None:
         """AI: Verify a Java method invocation adds a method-target node to the graph."""
         extractor = self._make_extractor()
         invocation_node = make_lst_node(SemanticKind.CALL, "obj.doSomething(arg)")
@@ -263,7 +263,7 @@ class TestJavaCodeGraphExtractor(TestBaseCodeGraphExtractor):
         assert_that(extractor.graph.nodes, has_item("obj.doSomething"))
         assert_that(extractor.graph.nodes["obj.doSomething"]["type"], is_("method_target"))
 
-    def test_adds_calls_edge_for_invocation(self):
+    def test_adds_calls_edge_for_invocation(self) -> None:
         """AI: Verify a Java method invocation adds a calls edge from the file to the method target."""
         extractor = self._make_extractor()
         invocation_node = make_lst_node(SemanticKind.CALL, "obj.doSomething(arg)")
@@ -288,7 +288,7 @@ class TestCppCodeGraphExtractor(TestBaseCodeGraphExtractor):
         with patch("renaissance.integrations.tree_sitter.adapter.TreeSitterAdapter"):
             return CppCodeGraphExtractor("cpp", tree_sitter_python)
 
-    def test_adds_file_and_folder_nodes(self):
+    def test_adds_file_and_folder_nodes(self) -> None:
         """AI: Verify processing a C++ file adds file and folder nodes to the graph."""
         extractor = self._make_extractor()
         lst = self.make_lst([])
@@ -298,7 +298,7 @@ class TestCppCodeGraphExtractor(TestBaseCodeGraphExtractor):
         assert_that(extractor.graph.nodes, has_item("/project/src/main.cpp"))
         assert_that(extractor.graph.nodes, has_item("/project/src"))
 
-    def test_adds_function_node_for_function_definition(self):
+    def test_adds_function_node_for_function_definition(self) -> None:
         """AI: Verify a C++ function definition adds a function node to the graph."""
         extractor = self._make_extractor()
         func_node = make_lst_node(SemanticKind.FUNCTION, "int main()", name="main")
@@ -309,7 +309,7 @@ class TestCppCodeGraphExtractor(TestBaseCodeGraphExtractor):
         assert_that(extractor.graph.nodes, has_item("main"))
         assert_that(extractor.graph.nodes["main"]["type"], is_("function"))
 
-    def test_function_node_uses_default_name_when_missing(self):
+    def test_function_node_uses_default_name_when_missing(self) -> None:
         """AI: Verify a C++ function node falls back to a default name when the name property is missing."""
         extractor = self._make_extractor()
         func_node = make_lst_node(SemanticKind.FUNCTION, "int main()")
@@ -320,7 +320,7 @@ class TestCppCodeGraphExtractor(TestBaseCodeGraphExtractor):
 
         assert_that(extractor.graph.nodes, has_item("func"))
 
-    def test_adds_defines_edge_for_function(self):
+    def test_adds_defines_edge_for_function(self) -> None:
         """AI: Verify a C++ function definition adds a defines edge from the file to the function."""
         extractor = self._make_extractor()
         func_node = make_lst_node(SemanticKind.FUNCTION, "int main()", name="main")
@@ -331,7 +331,7 @@ class TestCppCodeGraphExtractor(TestBaseCodeGraphExtractor):
         assert_that(extractor.graph.has_edge("/src/main.cpp", "main"), is_(True))
         assert_that(extractor.graph.edges["/src/main.cpp", "main"]["type"], is_("defines"))
 
-    def test_adds_call_expression_node(self):
+    def test_adds_call_expression_node(self) -> None:
         """AI: Verify a C++ call expression adds a call-target node to the graph."""
         extractor = self._make_extractor()
         call_node = make_lst_node(SemanticKind.CALL, "printf(fmt)")
@@ -342,7 +342,7 @@ class TestCppCodeGraphExtractor(TestBaseCodeGraphExtractor):
         assert_that(extractor.graph.nodes, has_item("printf"))
         assert_that(extractor.graph.nodes["printf"]["type"], is_("call_target"))
 
-    def test_adds_calls_edge_for_call_expression(self):
+    def test_adds_calls_edge_for_call_expression(self) -> None:
         """AI: Verify a C++ call expression adds a calls edge from the file to the call target."""
         extractor = self._make_extractor()
         call_node = make_lst_node(SemanticKind.CALL, "printf(fmt)")
@@ -353,7 +353,7 @@ class TestCppCodeGraphExtractor(TestBaseCodeGraphExtractor):
         assert_that(extractor.graph.has_edge("/src/main.cpp", "printf"), is_(True))
         assert_that(extractor.graph.edges["/src/main.cpp", "printf"]["type"], is_("calls"))
 
-    def test_ignores_unrelated_node_kinds(self):
+    def test_ignores_unrelated_node_kinds(self) -> None:
         """AI: Verify unrelated C++ node kinds are not added to the graph."""
         extractor = self._make_extractor()
         other_node = make_lst_node(SemanticKind.COMMENT, "// a comment")

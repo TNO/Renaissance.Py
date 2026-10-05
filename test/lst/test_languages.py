@@ -81,7 +81,7 @@ class TestLanguages:
             (tscpp, "float pi = 3.14f;"),
         ],
     )
-    def test_language_parsing(self, lang, code):
+    def test_language_parsing(self, lang, code) -> None:
         """AI: Verify parsing a code snippet with the given tree-sitter language grammar produces a non-empty LST."""
         adapter = TreeSitterAdapter(lang)
         tree = adapter.parse_code(code)
