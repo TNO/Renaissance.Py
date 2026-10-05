@@ -42,7 +42,8 @@ def _tool_command(tool: str) -> list[str]:
 
 def _run(command: list[str], max_exit_code: int) -> str:
     """AI: Run `command` in the repository root and return its stdout, or raise when it fails."""
-    result = subprocess.run(command, capture_output=True, text=True, cwd=ROOT, check=False)  # noqa: S603 (command built from constants here)
+    # encoding is explicit because the tools emit UTF-8 while Windows decodes with the ANSI code page by default.
+    result = subprocess.run(command, capture_output=True, text=True, encoding="utf-8", cwd=ROOT, check=False)  # noqa: S603 (command built from constants here)
     if result.returncode > max_exit_code:
         message = f"{Path(command[0]).name} failed (exit code {result.returncode}):\n{result.stderr.strip()}"
         raise RuntimeError(message)

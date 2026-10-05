@@ -105,10 +105,10 @@ force-exclude = true
 
 [tool.ruff.lint]
 select = [
-    "A","AIR", "ASYNC", "COM", "D", "DJ", "DTZ", "E", "EXE",
+    "A","AIR", "ASYNC", "COM", "D", "DJ", "DOC", "DTZ", "E", "EXE",
     "F", "FA", "FAST", "FLY", "FURB", "G", "I", "ICN", "INT", "ISC",
-    "LOG", "NPY", "PTH", "PD", "PERF", "PGH", "PIE", "PLC", "PYI",
-    "Q", "RSE", "SIM", "SLOT", "T10", "TID", "UP", "W", "YTT",
+    "LOG", "N", "NPY", "PTH", "PD", "PERF", "PGH", "PIE", "PLC", "PLE", "PYI",
+    "Q", "RSE", "SIM", "SLOT", "T10", "TC", "TID", "UP", "W", "YTT",
 ]
 #select = ["ALL"]  # goal of issue 
 ignore = [
