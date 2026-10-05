@@ -10,3 +10,4 @@
 8. [Rewrite semantics module](rewrite-semantics.md)
 9. [Refactoring recipes](recipes.md)
 10. [Python AST known limitations](python-ast-known-limitations.md)
+11. [Rejected recipes](rejected-recipes.md)

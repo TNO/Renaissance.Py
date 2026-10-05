@@ -6,7 +6,7 @@
 
 Concrete limitations found in the Python AST/RST layer (`renaissance.integrations.python.ast`) and the rewrite mechanism it
 feeds (`renaissance.syntax_tree.ast_rewriter`, `renaissance.utils.text_utils`) while building recipes
-(`TypeVarCheck`, `TypeVarTupleCheck`). A recipe still has to work around both items below. Item 1 has no other
+(`TypeVarCheck`). A recipe still has to work around both items below. Item 1 has no other
 tracker in the codebase. Item 2 is also tracked by a `# TODO` at the `return` in `ast_rewriter.py`, by `xfail`
 scenarios in `features/steps/test_rewrite_semantics.py` and `test/syntax_tree/test_ast_rewriter.py`, and by tests
 skipped with `TODO: fix impl.` in the latter; this page records why the obvious fix does not work.
