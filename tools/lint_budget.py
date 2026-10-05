@@ -22,6 +22,7 @@ import sys
 import tomllib
 from collections import Counter
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 BUDGET_FILE = ROOT / "lint-budget.json"
@@ -59,6 +60,11 @@ def _parse_json(output: str, opening: str):
     return json.loads(output[start:])
 
 
+def run_json_array(tool: str, arguments: list[str], max_exit_code: int = 0) -> list[dict[str, Any]]:
+    """AI: Run `tool` with `arguments` and parse the JSON array it prints."""
+    return _parse_json(_run([*_tool_command(tool), *arguments], max_exit_code), "[")
+
+
 def count_ruff_issues(*, preview: bool = False) -> Counter[str]:
     """AI: Count the ruff issues per rule code with every rule selected, optionally in ruff's preview mode."""
     # `--select` on the command line replaces the whole configured selection, so the deliberate ignores are repeated here.
@@ -67,8 +73,8 @@ def count_ruff_issues(*, preview: bool = False) -> Counter[str]:
     options = ["--ignore", ",".join(ignored)] if ignored else []
     if preview:
         options.append("--preview")
-    command = [*_tool_command("ruff"), "check", "--select", "ALL", *options, "--output-format", "json", "--quiet", *CHECK_PATHS]
-    diagnostics = _parse_json(_run(command, max_exit_code=1), "[")
+    arguments = ["check", "--select", "ALL", *options, "--output-format", "json", "--quiet", *CHECK_PATHS]
+    diagnostics = run_json_array("ruff", arguments, max_exit_code=1)
     return Counter(diagnostic.get("code") or "syntax-error" for diagnostic in diagnostics)
 
 

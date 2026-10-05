@@ -19,7 +19,7 @@ from collections import Counter
 from dataclasses import dataclass
 from typing import Any
 
-from lint_budget import EXIT_OK, EXIT_TOOL_FAILURE, PYPROJECT_FILE, _parse_json, _run, _tool_command, count_ruff_issues
+from lint_budget import EXIT_OK, EXIT_TOOL_FAILURE, PYPROJECT_FILE, count_ruff_issues, run_json_array
 
 UNGROUPED = "-"
 
@@ -48,7 +48,7 @@ class Statistics:
 
 def _ruff_json(*arguments: str) -> list[dict[str, Any]]:
     """AI: Run `ruff` with `arguments` and parse the JSON array it prints."""
-    return _parse_json(_run([*_tool_command("ruff"), *arguments], max_exit_code=0), "[")
+    return run_json_array("ruff", list(arguments))
 
 
 def linter_groups() -> list[Group]:
