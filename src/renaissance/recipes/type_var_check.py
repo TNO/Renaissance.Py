@@ -214,6 +214,9 @@ class TypeVarCheck(PythonRefactoring):
         ctor_name = type_param_constructor_name(decl_stmt)
         ctor_module = find_import_source(origin_tree, ctor_name)
         if ctor_module is None:
+            # TODO: an origin using `from typing import *` lands here,
+            # so a file not importing the constructor itself gets a NameError.
+            # TBD - needs a fix
             return None
 
         for import_node in self.body:
