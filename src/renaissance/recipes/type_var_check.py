@@ -219,6 +219,8 @@ class TypeVarCheck(PythonRefactoring):
             # TBD - needs a fix
             return None
 
+        # TODO: the constructor already imported here from another module (e.g. `typing` vs the origin's
+        # `typing_extensions`) isn't matched, so a second, shadowing import of the same name is added.
         for import_node in self.body:
             raw = import_node.node
             if (
