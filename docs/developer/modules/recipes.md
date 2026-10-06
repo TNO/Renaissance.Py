@@ -139,7 +139,8 @@ syntax.
 
 ## Validated by test modules
 
-- `test/recipes/test_type_var_check.py` - the end-to-end `run()`/`check()` path and the Python-version gate.
+- `test/recipes/test_type_var_check.py` - the end-to-end `run()`/`check()` path, including a target below the
+  Python-version gate.
 - `test/recipes/test_type_var_check_localize.py`
 - `test/recipes/test_type_var_check_convert.py`
 - `test/recipes/test_type_var_check_orphaned.py`

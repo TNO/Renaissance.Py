@@ -45,7 +45,7 @@ feature's own threshold (`PEP_695_MINIMUM = (3, 12)`).
 
 ## Related tests
 
-- `test/recipes/test_type_var_check.py` (`test_pep695_gate_threshold`)
+- `test/recipes/test_type_var_check_convert.py` (`test_version_gate_below_pep695_reports_unsafe_with_reason`)
 - `test/rejuvenation/test_migration_type_recipes.py` (`test_py_flag_gates_rewrites`)
 
 ## Related code
