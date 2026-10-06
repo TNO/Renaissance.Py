@@ -196,7 +196,7 @@ start with, or contain, extra blank lines. Run your formatter afterwards to tidy
 - `test/recipes/test_type_var_check_orphaned.py`
 - `test/recipes/test_type_var_check_properties.py`
 - `test/recipes/test_type_var_domain.py`
-- `test/recipes/test_step_runner.py` - the step runner the CLI uses for the three phases
+- `test/recipes/test_step_runner.py` - the step runner `TypeVarCheck.check()` uses for the three phases
 - `test/recipes/test_python_refactoring.py` - `find_rst_node` and `narrowed_import_text`, used by the recipe
 - `test/recipes/conftest.py` - the fixtures that build the recipe in the tests above
 - `test/utils/test_unparse_utils.py` - the bracket splice that adds the PEP 695 type parameters to a signature

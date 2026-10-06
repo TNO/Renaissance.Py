@@ -19,7 +19,7 @@ removed are listed in [Rejected recipes](rejected-recipes.md).
   analysis.
 - `src/renaissance/recipes/step_runner.py` - `Step`/`run_steps`, the generic "run these independent fix actions
   in order, committing each one's owning recipe only if it fixed something" primitive that `TypeVarCheck.check()`
-  and the CLI use.
+  uses.
 - Base class: `src/renaissance/recipes/python_refactoring.py` - also owns two generic, cross-recipe helpers:
   `find_rst_node` (used by `TypeVarCheck`'s conversion) and the module-level `narrowed_import_text` (used by `TypeVarCheck`'s
   import localization).
@@ -41,9 +41,9 @@ removed are listed in [Rejected recipes](rejected-recipes.md).
   `renaissance.recipes.type_var_check` using `snake_case()`. Only the `refactor` subcommand of
   `src/rejuvenation/cli.py` uses this path, and it never sets `min_python`, `project_root` or
   `project_wide_imported_names`, so the version-gated rewrites are always reported `"unsafe"` there. The supported
-  entry point is `migration-type-recipes.py`, which builds the recipes directly.
-- `step_runner.run_steps(steps)` - `TypeVarCheck.check()` calls this internally with its own three phases;
-  `migration-type-recipes.py` calls it once per file with the same three phases. See the CLI's own docs.
+  entry point is `migration-type-recipes.py`, which builds the recipe directly, sets those attributes and calls
+  `check()` once per file.
+- `step_runner.run_steps(steps)` - `TypeVarCheck.check()` calls this internally with its own three phases.
 
 ## Internal structure
 
