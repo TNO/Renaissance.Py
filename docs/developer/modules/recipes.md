@@ -30,13 +30,15 @@ removed are listed in [Rejected recipes](rejected-recipes.md).
 
 ## Public entry points
 
-- `TypeVarCheck.run()` / `TypeVarCheck.check()` — localizes cross-file type parameter imports, converts every
-  declared type parameter to PEP 695 syntax (whether one function uses it or several), then removes any declaration left orphaned
-  by outside means (e.g. a signature converted by hand or by `ruff`'s own `UP047` fix beforehand); commits changes
-  to disk between phases (via `renaissance.recipes.step_runner.run_steps`, see below).
-- `TypeVarCheck.localize_imported_typevars()`, `TypeVarCheck.convert_declared_typevars()`, and
+- `TypeVarCheck.run()` / `TypeVarCheck.check()` — localizes cross-file type parameter imports, adds PEP 695 type
+  parameters to every function using a declared type parameter (whether one function uses it or several), then
+  removes every declaration left orphaned, by that conversion or by outside means (e.g. a signature converted by
+  hand or by `ruff`'s own `UP047` fix beforehand); commits changes to disk between phases (via
+  `renaissance.recipes.step_runner.run_steps`, see below).
+- `TypeVarCheck.localize_imported_typevars()`, `TypeVarCheck.convert_declared_typevars()` and
   `TypeVarCheck.remove_orphaned_declarations()` — the three phases individually, each returning
-  `{name: "fixed" | "unsafe"}`.
+  `{name: "fixed" | "unsafe"}`. `convert_declared_typevars` only adds type parameters and
+  `remove_orphaned_declarations` only removes declarations.
 - Dispatched by name via `PythonRefactoring.process(class_name, file)`, which resolves `"TypeVarCheck"` to
   `renaissance.recipes.type_var_check` using `snake_case()`. Only the `refactor` subcommand of
   `src/rejuvenation/cli.py` uses this path, and it never sets `min_python`, `project_root` or
@@ -54,14 +56,14 @@ plus the safety-analysis functions `is_safe_to_convert`/`is_safe_to_localize`) l
 kept out of `type_var_check.py` so domain modelling doesn't mix with pipeline orchestration.
 
 `is_safe_to_convert`/`is_safe_to_localize` return `UnsafeReason | None` (`None` meaning safe), not a bare
-`bool` - each of the seven `UnsafeReason` members (the Python-version gate plus the six `__all__`/scope/
+`bool` - each of the eight `UnsafeReason` members (the Python-version gate plus the seven `__all__`/scope/
 cross-project conditions across both functions) has a matching `UnsafeRule` (a short message plus a docs anchor
 slug) in `UNSAFE_RULES`, and `doc_link(reason)` resolves one to the full URL under
 [TypeVar modernization](../../user/features/typevar-modernization.md)'s Constraints section. `is_safe_to_convert`
 additionally takes `project_wide_imported_names` (a `frozenset[str]`, defaulting to empty) - set on
 `TypeVarCheck.project_wide_imported_names` by the CLI, via `renaissance.utils.import_resolution.
-collect_project_imported_names` over every file it was given, before either `TypeVarCheck` phase that can
-remove a declaration runs. `TypeVarCheck` records the reason behind each `"unsafe"` name on one instance
+collect_project_imported_names` over every file it was given, before the `TypeVarCheck` phase that can remove a
+declaration runs. `TypeVarCheck` records the reason behind each `"unsafe"` name on one instance
 attribute per phase (see its own docs), and `migration-type-recipes.py`'s
 report prints `UNSAFE_RULES[reason].message` and `doc_link(reason)`
 next to each one - this is what makes a specific "unsafe" occurrence traceable to the exact documented rule that
@@ -73,9 +75,9 @@ to the parent folder when given a single file.
 locates the owning `PythonRstNode` for a nested function via `self.find_rst_node(function)` - a generic
 `PythonRefactoring` base-class method (matching by node identity against the raw `ast.FunctionDef`/
 `ast.AsyncFunctionDef` node), available to any future recipe needing the same lookup, not just this one. It skips
-a function that already declares a matching PEP 695 `type_param` (rather than adding a duplicate) - the same
-check that lets phase 2 absorb the "signature already converted, declaration left behind" case directly, without
-needing phase 3 for it.
+a function that already declares a matching PEP 695 `type_param` (rather than adding a duplicate). A name used by
+a class that already declares it as a PEP 695 type parameter (`class Box[T]:`) is reported `"unsafe"`
+(`USED_IN_PEP695_CLASS`) instead: adding `[T]` to one of its methods would shadow the class's own `T`.
 
 `convert_declared_typevars` calls `unparse_signature_only(function, original_text)` (from
 `renaissance.utils.unparse_utils`) rather than `self.replace(unparse_node(function), ...)`: it splices only the
@@ -113,13 +115,14 @@ name moved from *imported* to *locally declared* isn't "is this unused," so it i
 it still uses `narrowed_import_text` directly.
 
 `remove_orphaned_declarations` detects a dead declaration without counting references: `all_refs_shadowed_by_pep695`
-(in `type_var_domain.py`) walks the tree tracking whether the current position is "shadowed" (inside a function
-whose `type_params` already declares the same name) and only reports a live use for a `Name` node reached while
-*not* shadowed. This is what lets it recognize the state `ruff`'s `UP047` leaves behind — a signature already
-rewritten to `def f[T](...)`, with the old `T = TypeVar("T")` still sitting in the module, which `ruff` documents
-it will never remove itself.
+(in `type_var_domain.py`) walks the tree tracking whether the current position is "shadowed" (inside a function,
+or a function nested in one, whose `type_params` already declares the same name) and only reports a live use for
+a `Name` node reached while *not* shadowed. `convert_declared_typevars` uses the same check to skip a name that
+needs no conversion. This is what lets the recipe recognize both the state its own conversion leaves behind and
+the one `ruff`'s `UP047` leaves — a signature already rewritten to `def f[T](...)`, with the old
+`T = TypeVar("T")` still sitting in the module, which `ruff` documents it will never remove itself.
 
-Before rewriting anything, `convert_declared_typevars` calls `TypeVarCheck._target_supports_pep695()`, which
+Before adding PEP 695 syntax, `convert_declared_typevars` calls `TypeVarCheck._target_supports_pep695()`, which
 compares the recipe's `min_python` class attribute against `PEP_695_MINIMUM = (3, 12)`; `None` (unknown) never
 passes. The tool doesn't detect the target's version: `migration-type-recipes.py` sets `min_python` from its
 required `--py` flag, and tests set it after construction - the same pattern `in_memory` already uses on the base
@@ -144,8 +147,8 @@ syntax.
   against arbitrary generated source (see [ADR 09](../architecture/adr/09_property_based_tests.md)).
 - `test/recipes/test_type_var_domain.py` - `is_safe_to_convert`/`is_safe_to_localize` in isolation, confirming
   that five of the `UnsafeReason` members (the `__all__`, outside-use, origin-export, generic-base and
-  conditional-constructor conditions) are returned by their specific unsafe condition. The version gate and
-  `IMPORTED_ELSEWHERE_IN_PROJECT` are covered through the recipe and the CLI instead.
+  conditional-constructor conditions) are returned by their specific unsafe condition. The version gate,
+  `USED_IN_PEP695_CLASS` and `IMPORTED_ELSEWHERE_IN_PROJECT` are covered through the recipe and the CLI instead.
 - `test/recipes/test_step_runner.py` - `Step`/`run_steps`: commit only when a step fixed something, results in step
   order.
 - `test/recipes/test_python_refactoring.py` - `PythonRefactoring.find_rst_node` and `narrowed_import_text`.
@@ -172,6 +175,7 @@ syntax.
   independently-committable fix action.
 
 ## Fixes to be made/ Non-Goals
+
 - `resolve_project_module` doesn't follow re-exports through an intermediate `__init__.py` or handle namespace
   packages (PEP 420); such imports are skipped by both the localization phase and the removal-safety check.
 - A `from pkg.mod import *` is not expanded, so a name it pulls in is not detected by the removal-safety check.

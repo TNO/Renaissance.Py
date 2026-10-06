@@ -8,7 +8,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 import pytest
-from hamcrest import assert_that, contains_string, has_entry, is_, not_
+from hamcrest import assert_that, contains_string, equal_to, has_entry, is_, not_
 from pytest_mock import MockerFixture
 
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
@@ -18,21 +18,30 @@ from renaissance.recipes.type_var_check import TypeVarCheck
 class TestTypeVarCheck:
     """See module docstring."""
 
-    def test_check_cleans_up_ruff_style_leftover_end_to_end(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
-        """AI: Verify check() converts a PEP-695-ready TypeVar and leaves its ruff-style leftover for F401."""
-        # "orphaned" (phase 3) stays empty here: phase 2 already drops the redundant declaration
-        # once it sees the function is pre-converted.
-        subject = create_type_var_check("""
+    @pytest.mark.parametrize(
+        ("signature", "expected_converted"),
+        [
+            pytest.param("def b(x: T) -> T:", {"T": "fixed"}, id="legacy-signature"),
+            pytest.param("def b[T](x: T) -> T:", {}, id="ruff-style-leftover"),
+        ],
+    )
+    def test_check_converts_then_removes_the_declaration_end_to_end(
+        self,
+        create_type_var_check: Callable[[str], TypeVarCheck],
+        signature: str,
+        expected_converted: dict[str, str],
+    ) -> None:
+        """Verify check() adds the type parameter where missing, then removes the now-orphaned declaration."""
+        subject = create_type_var_check(f"""
             from typing import TypeVar
             T = TypeVar('T')
 
-            def b[T](x: T) -> T:
+            {signature}
                 return x
         """)
         subject.run()
 
-        assert_that(subject.result["converted"], has_entry("T", "fixed"))
-        assert_that(subject.result["orphaned"], is_({}))
+        assert_that(subject.result, equal_to({"cross_file": {}, "converted": expected_converted, "orphaned": {"T": "fixed"}}))
         output = subject.apply_to_string()
         assert_that(output, contains_string("def b[T](x: T) -> T:"))
         assert_that(output, not_(contains_string("T = TypeVar")))

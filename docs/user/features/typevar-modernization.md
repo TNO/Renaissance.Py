@@ -18,13 +18,14 @@ clean up at all:
    [PEP 695](https://peps.python.org/pep-0695/) generic syntax (`def f[T](...)`) across every function that uses
    it — whether it's used by one function (the same rewrite `ruff` offers, but only via `--unsafe-fixes`) or
    shared across several (`ruff` can't safely do this at all, since converting one function at a time never lets it
-   confirm every use site is covered). The now-redundant module-level declaration is removed as part of the same
-   pass.
-3. **Orphaned declaration cleanup.** A defensive final pass for declarations left dead by outside means — e.g. a
-   signature already converted to PEP 695 syntax by hand, or by running `ruff` before this recipe. `ruff`'s
-   `UP047`, by its own documentation, never removes the module-level `T = TypeVar("T")` it makes redundant, in
-   any case. Once every remaining reference to a declared name is shadowed by a same-named PEP 695 type parameter
-   (or there's no reference left at all), the recipe removes the declaration.
+   confirm every use site is covered). This phase only adds the type parameters; the module-level declaration
+   it makes redundant is removed by the next one.
+3. **Orphaned declaration cleanup.** Removes every module-level declaration nothing uses anymore: the ones phase 2
+   just made redundant, and ones left dead by outside means - e.g. a signature already converted to PEP 695
+   syntax by hand, or by running `ruff` before this recipe; `ruff`'s `UP047`, by its own documentation, never
+   removes the module-level `T = TypeVar("T")` it makes redundant. A declaration counts as dead once every
+   remaining reference to it is shadowed by a same-named PEP 695 type parameter on a function, including one
+   enclosing it (or there's no reference left at all).
 
 The recipe doesn't drop the import it just made redundant (`TypeVar`, ...) itself - that's `ruff`'s `F401`
 rule's job, already solved there rather than duplicated; see API entry points below for where that cleanup
@@ -54,7 +55,7 @@ it is, and a file whose only type parameters arrive that way is counted as clean
 - The recipe doesn't remove the `from typing import ...` (or equivalent) name it makes redundant - see the
   User-facing summary above and the CLI's own `ruff check --fix --select F401` pass in API entry points below.
 - Alongside each phase's `"unsafe"` status, `TypeVarCheck` also records *why* on a matching instance attribute -
-  `cross_file_unsafe_reasons`, `converted_unsafe_reasons`, `orphaned_unsafe_reasons` - each mapping
+  `cross_file_unsafe_reasons`, `converted_unsafe_reasons` and `orphaned_unsafe_reasons` - each mapping
   `name -> UnsafeReason` (see Constraints below for the specific reasons). The CLI collects these into
   `FileReport.reasons` and prints the matching documented rule and link next to each unsafe name - see API entry
   points below.
@@ -70,9 +71,10 @@ specific occurrence straight to the rule that explains it, rather than a generic
 { #feature-typevar-modernization-pep695-version-gate }
 
 [PEP 695](https://peps.python.org/pep-0695/) generic syntax (`def f[T](...)`) did not exist before Python 3.12
-(released October 2023). If the minimum Python version passed with `--py` is below 3.12, every candidate is
-reported `"unsafe"` by the conversion phase (phase 2) and left untouched. Cross-file localization (phase 1) and
-the orphaned-declaration cleanup (phase 3) still run, since neither introduces PEP 695 syntax.
+(released October 2023). If the minimum Python version passed with `--py` is below 3.12, every candidate that
+needs PEP 695 syntax is reported `"unsafe"` by the conversion phase (phase 2) and left untouched. Cross-file
+localization (phase 1) and the orphaned-declaration cleanup (phase 3) still run, since neither introduces PEP 695
+syntax.
 
 **To fix this yourself:** if the project actually supports 3.12+, re-run with `--py 3.12` (or higher). If it
 has to keep supporting older Pythons, there's no manual PEP 695 rewrite either, since the syntax doesn't exist
@@ -103,6 +105,20 @@ referencing a name that no longer exists. Left unconverted, `"unsafe"`.
 **To convert this yourself:** check every other reference first (a `Generic[T]` base, a module-level type alias,
 and so on). If those other use sites can be rewritten or removed, the function signatures can then be converted
 by hand and the module-level declaration deleted; otherwise it has to stay module-level.
+
+### A declared TypeVar is used inside a PEP 695 generic class
+
+{ #feature-typevar-modernization-used-in-pep695-class }
+
+A class that already declares the same name as a PEP 695 type parameter (`class Box[T]:`, for example after
+`ruff`'s `UP046`, which leaves the old `T = TypeVar("T")` behind) and references it inside its body. Inside that
+class, `T` is the class's own parameter, so adding `[T]` to one of its methods would give the method a second,
+unrelated `T` and change what its signature means. The tool leaves the class and the declaration as they are.
+Left unconverted, `"unsafe"`.
+
+**To fix this yourself:** if no other code uses the module-level `T`, delete the old `T = TypeVar("T")` line;
+the class's methods already refer to the class's `T`. If other functions still use it, convert those by hand
+first.
 
 ### An imported TypeVar's origin module exports it via `__all__`
 
@@ -197,7 +213,7 @@ start with, or contain, extra blank lines. Run your formatter afterwards to tidy
 - `test/recipes/test_type_var_check_orphaned.py`
 - `test/recipes/test_type_var_check_properties.py`
 - `test/recipes/test_type_var_domain.py`
-- `test/recipes/test_step_runner.py` - the step runner `TypeVarCheck.check()` uses for the three phases
+- `test/recipes/test_step_runner.py` - the step runner `TypeVarCheck.check()` uses for its three phases
 - `test/recipes/test_python_refactoring.py` - `find_rst_node` and `narrowed_import_text`, used by the recipe
 - `test/recipes/conftest.py` - the fixtures that build the recipe in the tests above
 - `test/utils/test_unparse_utils.py` - the bracket splice that adds the PEP 695 type parameters to a signature
