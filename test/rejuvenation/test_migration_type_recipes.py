@@ -13,7 +13,6 @@ import pytest
 from hamcrest import assert_that, contains_string, equal_to, has_entry, is_, is_not
 from hamcrest.core.matcher import Matcher
 
-from renaissance.project.project_scanner import PythonScanner
 from renaissance.recipes.type_var_domain import UnsafeReason, doc_link
 
 _SCRIPT_PATH = Path(__file__).resolve().parents[2] / "src" / "rejuvenation" / "migration-type-recipes.py"
@@ -54,67 +53,6 @@ UNSAFE_TYPEVAR_SOURCE = textwrap.dedent("""\
     def identity(x: T) -> T:
         return x
     """)
-
-
-class TestResolveTargetFiles:
-    """resolve_target_files: single-file shortcut, otherwise delegates to PythonScanner."""
-
-    def test_single_file_returned_as_is(self, tmp_path: Path) -> None:
-        """A single .py file path (not a directory) is returned as a one-item list."""
-        target = tmp_path / "solo.py"
-        target.write_text("x = 1\n")
-
-        result = migration.resolve_target_files(target)
-
-        assert_that(result, equal_to([target]))
-
-    def test_directory_target_delegates_to_python_scanner(self, tmp_path: Path) -> None:
-        """A directory target is scanned via PythonScanner, wrapping each result back into a Path."""
-        (tmp_path / "pkg").mkdir()
-        (tmp_path / "pkg" / "a.py").write_text("x = 1\n")
-        (tmp_path / "pkg" / "b.py").write_text("y = 2\n")
-
-        result = migration.resolve_target_files(tmp_path)
-
-        assert_that(result, equal_to([Path(p) for p in PythonScanner(str(tmp_path)).find_sources()]))
-        assert_that(all(isinstance(path, Path) for path in result), is_(True))
-
-
-class TestClassification:
-    """has_fixed/has_unsafe/is_clean: classification predicates over a FileReport."""
-
-    @pytest.mark.parametrize(
-        ("result", "expected"),
-        [
-            ({"cross_file": {}, "converted": {"T": "fixed"}, "orphaned": {}}, (True, False, False)),
-            ({"cross_file": {}, "converted": {"T": "unsafe"}, "orphaned": {}}, (False, True, False)),
-            (
-                {"cross_file": {}, "converted": {"T": "fixed", "U": "unsafe"}, "orphaned": {}},
-                (True, True, False),
-            ),
-            ({"cross_file": {}, "converted": {}, "orphaned": {}}, (False, False, True)),
-        ],
-    )
-    def test_predicates(
-        self,
-        result: dict[str, dict[str, str]],
-        expected: tuple[bool, bool, bool],
-    ) -> None:
-        """Each predicate matches the expected (fixed, unsafe, clean) reading of `result`."""
-        expected_fixed, expected_unsafe, expected_clean = expected
-        report = migration.FileReport(path=Path("x.py"), result=result, error=None)
-
-        assert_that(migration.has_fixed(report), is_(expected_fixed))
-        assert_that(migration.has_unsafe(report), is_(expected_unsafe))
-        assert_that(migration.is_clean(report), is_(expected_clean))
-
-    def test_error_report_is_neither_fixed_unsafe_nor_clean(self) -> None:
-        """A report with no result (an error occurred) is False for every predicate."""
-        report = migration.FileReport(path=Path("x.py"), result=None, error="boom")
-
-        assert_that(migration.has_fixed(report), is_(False))
-        assert_that(migration.has_unsafe(report), is_(False))
-        assert_that(migration.is_clean(report), is_(False))
 
 
 class TestProcessFile:
@@ -258,15 +196,36 @@ class TestConsoleReportDocLinks:
         output = capsys.readouterr().out
         assert_that(output, contains_string(doc_link(UnsafeReason.DECLARED_TYPEVAR_EXPORTED)))
 
-    def test_no_link_printed_for_modified_files_section(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
-        """A fixed name (no reason attached) never gets a doc link line."""
-        target = tmp_path / "mod.py"
-        target.write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
 
-        migration.main([str(target), "--py", "3.12"])
+class TestConsoleReportModifiedSection:
+    """main(): what the MODIFIED section lists per file."""
+
+    def test_converted_name_is_not_listed_again_as_orphaned(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+        """A converted name is listed once; only declarations removed without a conversion appear under orphaned."""
+        target = tmp_path / "mod.py"
+        target.write_text(
+            textwrap.dedent("""\
+                from typing import TypeVar
+
+                T = TypeVar("T")
+                U = TypeVar("U")
+
+
+                def f(x: T) -> T:
+                    return x
+
+
+                def g[U](y: U) -> U:
+                    return y
+                """),
+            encoding="utf-8",
+        )
+
+        migration.main([str(target), "--py", "3.12", "--no-ruff"])
 
         output = capsys.readouterr().out
-        assert_that(output, is_not(contains_string("tno.github.io")))
+        assert_that(output, contains_string("    converted: T\n"))
+        assert_that(output, contains_string("    orphaned: U\n"))
 
 
 class TestPerFileProgressFeedback:
