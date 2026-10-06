@@ -53,12 +53,11 @@ class TypeVarCheck(PythonRefactoring):
         return self.min_python is not None and self.min_python >= PEP_695_MINIMUM
 
     def check(self) -> dict[str, dict[str, str]]:
-        """Check this file's TypeVar/ParamSpec/TypeVarTuple usage end to end.
+        """Run the three phases in order, committing each one that fixed something.
 
-        Runs three phases in order - localize_imported_typevars, then convert_declared_typevars,
-        then remove_orphaned_declarations (see each method's own docstring for what it does and
-        why). Returns {"cross_file": {...}, "converted": {...}, "orphaned": {...}}, each mapping
-        name -> "fixed" | "unsafe".
+        localize_imported_typevars, then convert_declared_typevars, then
+        remove_orphaned_declarations. Returns {"cross_file": {...}, "converted": {...},
+        "orphaned": {...}}, each mapping name -> "fixed" | "unsafe".
         """
         return run_steps(
             [
@@ -69,37 +68,33 @@ class TypeVarCheck(PythonRefactoring):
         )
 
     def convert_declared_typevars(self) -> dict[str, str]:
-        """Rewrite every function using a module-level TypeVar/ParamSpec/TypeVarTuple to PEP 695 syntax.
+        """Add a PEP 695 type parameter to every function using a module-level TypeVar/ParamSpec/TypeVarTuple.
 
-        Whether it's used by one function or shared across several, then remove the
-        now-redundant module-level declaration - see is_safe_to_convert and the check()
-        docstring. Returns {name: "fixed" | "unsafe"}.
-
-        PEP 695 syntax requires Python 3.12+ on the target codebase; if min_python doesn't
-        guarantee that, every candidate is reported "unsafe" and the file is left untouched
-        by this phase - localize_imported_typevars still runs regardless, since it never
-        introduces PEP 695 syntax. The specific UnsafeReason behind each "unsafe" entry is
-        recorded on self.converted_unsafe_reasons.
+        The declaration itself is left in place; remove_orphaned_declarations removes it once it
+        is unused. A name whose references are all already shadowed by a same-named PEP 695 type
+        parameter, or that has none, needs no conversion and is skipped. A name that
+        is_safe_to_convert rejects, or that would need PEP 695 syntax while min_python isn't 3.12+,
+        is reported "unsafe", with its UnsafeReason recorded on self.converted_unsafe_reasons.
+        Returns {name: "fixed" | "unsafe"}.
         """
         root = cast("PythonRstNode", cast("object", self.root))
-        tree = cast(ast.Module, root.node)
+        tree = cast("ast.Module", root.node)
         declarations = find_type_param_declarations(tree)
         usage = functions_using_nodes(tree, set(declarations.keys()))
 
-        if not self._target_supports_pep695():
-            self.converted_unsafe_reasons = dict.fromkeys(usage, UnsafeReason.PEP695_VERSION_GATE)
-            return dict.fromkeys(usage, "unsafe")
-
         results: dict[str, str] = {}
         self.converted_unsafe_reasons: dict[str, UnsafeReason] = {}
-        # Collected here instead of replaced immediately: a function using 2+ converted type
-        # params (e.g. TypeVar and ParamSpec) must get exactly one self.replace() covering all
-        # of them - queuing one per name would target the same function node twice before a
-        # commit, which the rewriter rejects as conflicting.
+        # One self.replace() per function: a function using two converted names would otherwise get two
+        # rewrites of the same node, which the rewriter rejects as conflicting.
         touched_functions: dict[int, ast.FunctionDef | ast.AsyncFunctionDef] = {}
         for name, functions in usage.items():
             decl_stmt = declarations[name]
+            if all_refs_shadowed_by_pep695(tree, name, decl_stmt):
+                continue
+
             reason = is_safe_to_convert(tree, name, decl_stmt, self.project_wide_imported_names)
+            if reason is None and not self._target_supports_pep695():
+                reason = UnsafeReason.PEP695_VERSION_GATE
             if reason is not None:
                 self._mark_unsafe(results, self.converted_unsafe_reasons, name, reason)
                 continue
@@ -107,11 +102,9 @@ class TypeVarCheck(PythonRefactoring):
             type_param = build_type_param(decl_stmt)
             for function in functions:
                 if any(type_param_name(existing) == name for existing in function.type_params):
-                    continue  # already PEP 695 syntax (handled by Ruff)
+                    continue
                 function.type_params = [*function.type_params, type_param]
                 touched_functions[id(function)] = function
-
-            self._remove_declaration(decl_stmt)
             results[name] = "fixed"
 
         for function in touched_functions.values():
@@ -121,22 +114,20 @@ class TypeVarCheck(PythonRefactoring):
         return results
 
     def remove_orphaned_declarations(self) -> dict[str, str]:
-        """Remove a module-level TypeVar/ParamSpec/TypeVarTuple declaration once it's orphaned.
+        """Remove every module-level TypeVar/ParamSpec/TypeVarTuple declaration that nothing uses anymore.
 
-        Every remaining reference to it is shadowed by a same-named PEP 695 type parameter on
-        the function(s) using it (see all_refs_shadowed_by_pep695) - the state ruff's UP047
-        leaves behind after converting a signature, since that rule documents that it never
-        removes the declaration it makes redundant. Returns {name: "fixed" | "unsafe"}; the
-        specific UnsafeReason behind each "unsafe" entry is recorded on
-        self.orphaned_unsafe_reasons.
+        A declaration is orphaned when every reference to its name is shadowed by a same-named
+        PEP 695 type parameter, or when there is none (see all_refs_shadowed_by_pep695). Removing
+        it adds no syntax, so it doesn't depend on min_python. A declaration that
+        is_safe_to_convert rejects is kept and reported "unsafe", with its UnsafeReason recorded
+        on self.orphaned_unsafe_reasons. Returns {name: "fixed" | "unsafe"}.
         """
         root = cast("PythonRstNode", cast("object", self.root))
-        tree = cast(ast.Module, root.node)
-        declarations = find_type_param_declarations(tree)
+        tree = cast("ast.Module", root.node)
 
         results: dict[str, str] = {}
         self.orphaned_unsafe_reasons: dict[str, UnsafeReason] = {}
-        for name, decl_stmt in declarations.items():
+        for name, decl_stmt in find_type_param_declarations(tree).items():
             if not all_refs_shadowed_by_pep695(tree, name, decl_stmt):
                 continue
 
