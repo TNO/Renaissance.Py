@@ -150,8 +150,9 @@ def _format_console_report(reports: list[FileReport], *, ruff_ran: bool) -> str:
     """Build the full per-file report: MODIFIED / NEEDS MANUAL REVIEW / ERRORS sections.
 
     Clean files (no TypeVar usage found at all) are folded into the top-line count only, never
-    listed individually - the report's job is to surface what needs attention. The ruff
-    import-cleanup line is only included when ruff_ran is True.
+    listed individually - the report's job is to surface what needs attention. Under MODIFIED, a
+    name listed as converted isn't listed again as orphaned. The ruff import-cleanup line is only
+    included when ruff_ran is True.
     """
     modified = [report for report in reports if has_fixed(report)]
     needs_review = [report for report in reports if has_unsafe(report)]
@@ -172,8 +173,11 @@ def _format_console_report(reports: list[FileReport], *, ruff_ran: bool) -> str:
     lines.extend(["", f"MODIFIED ({len(modified)})"])
     for report in modified:
         lines.append(f"  {report.path}")
-        for phase, names in (report.result or {}).items():
-            fixed = [name for name, status in names.items() if status == "fixed"]
+        result = report.result or {}
+        converted = {name for name, status in result.get("converted", {}).items() if status == "fixed"}
+        for phase, names in result.items():
+            # A converted name's declaration is always removed afterwards; listing it under orphaned too would repeat it.
+            fixed = [name for name, status in names.items() if status == "fixed" and not (phase == "orphaned" and name in converted)]
             if fixed:
                 lines.append(f"    {phase}: {', '.join(fixed)}")
 
