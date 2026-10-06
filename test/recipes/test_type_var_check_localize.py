@@ -301,6 +301,28 @@ class TestTypeVarCheckLocalize:
         assert_that(subject.apply_to_string(), contains_string("T = TypeVar('T')"))
         assert_that(subject.apply_to_string(), not_(contains_string("from file_1 import T")))
 
+    def test_unparsable_origin_error_names_the_origin_file(self, mocker: MockerFixture, tmp_path: Path) -> None:
+        """Verify a syntax error in the origin module is raised with the origin file's path, not `<unknown>`."""
+        subject = self._create_cross_file(
+            mocker,
+            tmp_path,
+            """
+            from typing import TypeVar
+            T = TypeVar("T")
+            def broken(:
+            """,
+            """
+            from file_1 import T
+            def b(x: T) -> T:
+                return x
+            """,
+        )
+
+        with pytest.raises(SyntaxError) as excinfo:
+            subject.localize_imported_typevars()
+
+        assert_that(excinfo.value.filename, is_(str(tmp_path / "file_1.py")))
+
     def test_no_typevar_import_found(self, mocker: MockerFixture, tmp_path: Path) -> None:
         """AI: Verify localize_imported_typevars reports nothing when the importing file has no cross-file TypeVar."""
         subject = self._create_cross_file(
