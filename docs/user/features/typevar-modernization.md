@@ -249,7 +249,9 @@ the report line still says the pass ran. Changes are written directly, so run it
 with `git diff`.
 
 The report has a summary line, then the `MODIFIED`, `NEEDS MANUAL REVIEW` (each unsafe name with its documented
-rule and link) and `ERRORS` sections; files with no type-parameter usage are only counted. The exit code is 0 on
+rule and link) and `ERRORS` sections; files with no type-parameter usage are only counted. Under `MODIFIED`, a
+name listed as converted isn't repeated under orphaned, since its declaration is removed as part of the same run.
+The exit code is 0 on
 normal completion (files needing manual review are not a failure), 2 for a usage error such as a missing path or
 a malformed `--py`, and 3 if any file raised an unhandled exception, which is listed under `ERRORS`.
 
