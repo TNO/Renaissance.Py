@@ -171,11 +171,11 @@ syntax.
 - `step_runner.Step`/`run_steps` are available to any new recipe (or CLI) that needs to sequence more than one
   independently-committable fix action.
 
-## Non-goals
-
+## Fixes to be made/ Non-Goals
 - `resolve_project_module` doesn't follow re-exports through an intermediate `__init__.py` or handle namespace
   packages (PEP 420); such imports are skipped by both the localization phase and the removal-safety check.
 - A `from pkg.mod import *` is not expanded, so a name it pulls in is not detected by the removal-safety check.
+- `localize_imported_typevars` skips an aliased import (`from .origin import T as U`) without reporting it.
 - The names other files import from a module are computed once, before the first file is processed, so an origin
   whose importers all get localized in the same run is only converted by a second run.
 - `localize_imported_typevars` queues one rewrite per localized name, so a single import statement that brings in

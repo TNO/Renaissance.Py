@@ -43,7 +43,8 @@ Supports `TypeVar` (including `bound=` and constraint forms), `ParamSpec`, and `
 The cross-file phase resolves absolute and relative imports against the target directory passed to the CLI (the
 file's own folder when a single file is passed). Imports that don't resolve to a file inside it (stdlib,
 third-party, re-exports through an intermediate `__init__.py`, namespace packages) are silently out of scope, not
-reported unsafe.
+reported unsafe. So is an import that renames the type parameter (`from .origin import T as U`): it is left as
+it is, and a file whose only type parameters arrive that way is counted as clean.
 
 ## Outputs / effects
 

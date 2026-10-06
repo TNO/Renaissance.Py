@@ -184,10 +184,11 @@ class TypeVarCheck(PythonRefactoring):
             if origin_path is None:
                 continue
 
-            origin_tree = ast.parse(origin_path.read_text(encoding="utf-8"))
+            origin_tree = ast.parse(origin_path.read_text(encoding="utf-8"), str(origin_path))
             declarations = find_type_param_declarations(origin_tree)
 
             for alias in raw.names:
+                # TODO: `from x import T as U` is not currently being caught, tbd
                 if alias.asname is not None or alias.name not in declarations:
                     continue
 
