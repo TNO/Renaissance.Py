@@ -24,7 +24,6 @@ from pathlib import Path
 from termcolor import colored
 
 from renaissance.project.project_scanner import PythonScanner
-from renaissance.recipes.step_runner import Step, run_steps
 from renaissance.recipes.type_var_check import TypeVarCheck
 from renaissance.recipes.type_var_domain import UNSAFE_RULES, UnsafeReason, doc_link
 from renaissance.utils.import_resolution import collect_project_imported_names
@@ -105,13 +104,7 @@ def process_file(
         recipe.min_python = min_python
         recipe.project_root = project_root
         recipe.project_wide_imported_names = project_wide_imported_names
-        result = run_steps(
-            [
-                Step("cross_file", recipe, recipe.localize_imported_typevars),
-                Step("converted", recipe, recipe.convert_declared_typevars),
-                Step("orphaned", recipe, recipe.remove_orphaned_declarations),
-            ],
-        )
+        result = recipe.check()
         reasons = {
             "cross_file": recipe.cross_file_unsafe_reasons,
             "converted": recipe.converted_unsafe_reasons,
