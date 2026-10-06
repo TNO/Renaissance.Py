@@ -27,9 +27,10 @@ class TestTypeVarCheckConvert:
 
             T = TypeVar("T")
         """)
-        result = subject.convert_declared_typevars()
+        result = subject.check()
 
-        assert_that(result, has_entry("T", "fixed"))
+        assert_that(result["converted"], has_entry("T", "fixed"))
+        assert_that(result["orphaned"], has_entry("T", "fixed"))
         output = subject.apply_to_string()
         assert_that(output, contains_string("def a[T](x: T) -> T:"))
         assert_that(output, contains_string("def b[T](y: T) -> T:"))
@@ -285,10 +286,11 @@ class TestTypeVarCheckConvert:
             T = TypeVar("T")
             U = TypeVar("U")
         """)
-        result = subject.convert_declared_typevars()
+        result = subject.check()
 
-        assert_that(result, has_entry("T", "fixed"))
-        assert_that(result, has_entry("U", "unsafe"))
+        assert_that(result["converted"], has_entry("T", "fixed"))
+        assert_that(result["converted"], has_entry("U", "unsafe"))
+        assert_that(result["orphaned"], has_entry("T", "fixed"))
         output = subject.apply_to_string()
         assert_that(output, contains_string("from typing import TypeVar"))
         assert_that(output, contains_string('U = TypeVar("U")'))
@@ -462,10 +464,11 @@ class TestTypeVarCheckConvert:
             def identity(x: T) -> T:
                 return x
         """)
-        result = subject.convert_declared_typevars()
+        result = subject.check()
 
-        assert_that(result, has_entry("P", "fixed"))
-        assert_that(result, has_entry("T", "fixed"))
+        assert_that(result["converted"], has_entry("P", "fixed"))
+        assert_that(result["converted"], has_entry("T", "fixed"))
+        assert_that(result["orphaned"], equal_to({"P": "fixed", "T": "fixed"}))
         output = subject.apply_to_string()
         ast.parse(output)  # raises SyntaxError if the shared import got corrupted
         assert_that(output, contains_string("from typing import ParamSpec, TypeVar"))
@@ -521,3 +524,39 @@ class TestTypeVarCheckConvert:
             node for node in ast.walk(ast.parse(output)) if isinstance(node, ast.Assign) and ast.unparse(node.targets[0]) == "text"
         )
         assert_that(ast.literal_eval(text_assign.value), equal_to("first\nsecond\n    third"))
+
+    @pytest.mark.parametrize(
+        ("class_header", "expected_result", "expected_reasons", "expected_method"),
+        [
+            pytest.param(
+                "class Box[T]:",
+                {"T": "unsafe"},
+                {"T": UnsafeReason.USED_IN_PEP695_CLASS},
+                "def get(self, x: T) -> T:",
+                id="class-declares-the-name",
+            ),
+            pytest.param("class Box[U]:", {"T": "fixed"}, {}, "def get[T](self, x: T) -> T:", id="class-declares-another-name"),
+        ],
+    )
+    def test_does_not_convert_typevar_used_in_pep695_class(
+        self,
+        create_type_var_check: Callable[[str], TypeVarCheck],
+        class_header: str,
+        expected_result: dict[str, str],
+        expected_reasons: dict[str, UnsafeReason],
+        expected_method: str,
+    ) -> None:
+        """Verify a name a PEP 695 class already declares is left alone inside it, while other names still convert."""
+        subject = create_type_var_check(f"""
+            from typing import TypeVar
+            T = TypeVar('T')
+
+            {class_header}
+                def get(self, x: T) -> T:
+                    return x
+        """)
+        result = subject.convert_declared_typevars()
+
+        assert_that(result, equal_to(expected_result))
+        assert_that(subject.converted_unsafe_reasons, equal_to(expected_reasons))
+        assert_that(subject.apply_to_string(), contains_string(expected_method))
