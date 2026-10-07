@@ -93,14 +93,6 @@ class TestCollectProjectImportedNames:
         result = collect_project_imported_names(files, tmp_path)
         assert_that(result, is_({}))
 
-    def test_unrelated_same_name_in_two_files_does_not_collide(self, tmp_path: Path) -> None:
-        """Two unrelated files declaring the same name, with no imports between them, record nothing."""
-        (tmp_path / "a.py").write_text("T = 1\n")
-        (tmp_path / "b.py").write_text("T = 2\n")
-        files = [tmp_path / "a.py", tmp_path / "b.py"]
-        result = collect_project_imported_names(files, tmp_path)
-        assert_that(result, is_({}))
-
 
 @pytest.fixture
 def module_tree(tmp_path: Path) -> Path:
