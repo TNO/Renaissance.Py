@@ -93,7 +93,8 @@ bracket the same way needs it too.
 
 `convert_declared_typevars` collects the functions it touches and queues exactly one `self.replace()` per
 function, even when several type parameters apply to it: queuing one per name would target the same node twice
-before a commit, which the rewriter rejects as a conflicting rewrite.
+before a commit, which the rewriter rejects as a conflicting rewrite. The type parameters are added in the order
+their declarations appear in the file, so the same input always produces the same output.
 
 `functions_using_nodes` (`type_var_domain.py`) attributes a name's usage to the *outermost* function in a nesting
 chain, never a nested closure that merely references it - a PEP 695 type parameter declared on an enclosing
