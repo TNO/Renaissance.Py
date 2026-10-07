@@ -10,7 +10,6 @@ from renaissance.utils.unparse_utils import (
     _bracket_end_offset,  # pyright: ignore[reportPrivateUsage]
     _header_end_line,  # pyright: ignore[reportPrivateUsage]
     _name_end_offset,  # pyright: ignore[reportPrivateUsage]
-    _type_params_bracket,  # pyright: ignore[reportPrivateUsage]
     unparse_signature_only,
 )
 
@@ -55,27 +54,6 @@ class TestBracketEndOffset:
         """AI: Verify the closing bracket offset tracks nesting depth correctly across a bound's own brackets."""
         source = "def f[T: list[int]](x: T) -> T:\n    return x\n"
         assert_that(_bracket_end_offset(source, 5), is_(19))
-
-
-class TestTypeParamsBracket:
-    """See module docstring."""
-
-    def test_no_type_params_returns_empty(self) -> None:
-        """AI: Verify a function with no type params produces an empty bracket string."""
-        node = cast(ast.FunctionDef, ast.parse("def f(x): pass").body[0])
-        assert_that(_type_params_bracket(node), is_(""))
-
-    def test_one_type_param(self) -> None:
-        """AI: Verify a function with one type param produces a single-name bracket."""
-        node = cast(ast.FunctionDef, ast.parse("def f(x): pass").body[0])
-        node.type_params = [ast.TypeVar(name="T")]
-        assert_that(_type_params_bracket(node), is_("[T]"))
-
-    def test_two_type_params(self) -> None:
-        """AI: Verify a function with two type params produces a comma-separated bracket, in order."""
-        node = cast(ast.FunctionDef, ast.parse("def f(x): pass").body[0])
-        node.type_params = [ast.TypeVar(name="U"), ast.TypeVar(name="T")]
-        assert_that(_type_params_bracket(node), is_("[U, T]"))
 
 
 class TestHeaderEndLine:

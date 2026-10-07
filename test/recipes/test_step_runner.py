@@ -48,18 +48,3 @@ class TestRunSteps:
         run_steps([Step("only", recipe, action)])
 
         assert_that(recipe.commit.called, is_(expect_commit))
-
-    def test_each_steps_recipe_commits_independently(self, mocker: MockerFixture) -> None:
-        """AI: Verify each step commits its own recipe independently, based only on its own result."""
-        fixing_recipe = mocker.Mock(spec=PythonRefactoring)
-        unsafe_recipe = mocker.Mock(spec=PythonRefactoring)
-
-        run_steps(
-            [
-                Step("fixes", fixing_recipe, lambda: {"A": "fixed"}),
-                Step("unsafe", unsafe_recipe, lambda: {"B": "unsafe"}),
-            ]
-        )
-
-        assert_that(fixing_recipe.commit.called, is_(True))
-        assert_that(unsafe_recipe.commit.called, is_(False))

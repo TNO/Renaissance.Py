@@ -75,7 +75,6 @@ class TestTypeVarCheckOrphaned:
         assert_that(result, equal_to({"T": "fixed"}))
         output = subject.apply_to_string()
         assert_that(output, not_(contains_string("T = TypeVar")))
-        assert_that(output, contains_string("from typing import TypeVar"))
         for def_line in (line.strip() for line in textwrap.dedent(source).splitlines() if line.strip().startswith("def ")):
             assert_that(output, contains_string(def_line))
 

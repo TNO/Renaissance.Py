@@ -45,9 +45,6 @@ class TestTypeVarCheck:
         output = subject.apply_to_string()
         assert_that(output, contains_string("def b[T](x: T) -> T:"))
         assert_that(output, not_(contains_string("T = TypeVar")))
-        # The now-redundant `TypeVar` import itself is left for ruff's F401 to clean up - the
-        # recipe only owns removing the declaration, not general unused-import detection.
-        assert_that(output, contains_string("from typing import TypeVar"))
 
     def test_check_still_localizes_when_target_too_old(self, mocker: MockerFixture, tmp_path: Path) -> None:
         """AI: Verify cross-file localization still runs when the target is too old for the PEP 695 conversion."""

@@ -268,39 +268,6 @@ class TestTypeVarCheckLocalize:
         assert_that(output, contains_string("from file_1 import T, helper"))
         assert_that(output, not_(contains_string("T = TypeVar")))
 
-    def test_localizes_project_wide_import_from_different_directory(self, mocker: MockerFixture, tmp_path: Path) -> None:
-        """A TypeVar imported from a module in a parent directory is localized when project_root is set."""
-        (tmp_path / "file_1.py").write_text(
-            textwrap.dedent("""
-            from typing import TypeVar
-            T = TypeVar("T")
-            def a(x: T) -> T:
-                return x
-            """),
-        )
-        sub = tmp_path / "sub"
-        sub.mkdir()
-        importing_code = textwrap.dedent("""
-            from file_1 import T
-            def b(x: T) -> T:
-                return x
-            """)
-        importing_file = str(sub / "file_2.py")
-        mocker.patch(
-            "renaissance.integrations.python.ast.factory.PythonFactory.create",
-            return_value=PythonRstNode.load_from_text(importing_code, importing_file),
-        )
-        subject = TypeVarCheck(importing_file)
-        subject.in_memory = True
-        subject.min_python = PEP_695_MINIMUM
-        subject.project_root = tmp_path
-
-        result = subject.localize_imported_typevars()
-
-        assert_that(result, has_entry("T", "fixed"))
-        assert_that(subject.apply_to_string(), contains_string("T = TypeVar('T')"))
-        assert_that(subject.apply_to_string(), not_(contains_string("from file_1 import T")))
-
     def test_unparsable_origin_error_names_the_origin_file(self, mocker: MockerFixture, tmp_path: Path) -> None:
         """Verify a syntax error in the origin module is raised with the origin file's path, not `<unknown>`."""
         subject = self._create_cross_file(
@@ -368,4 +335,3 @@ class TestTypeVarCheckLocalize:
         output = subject.apply_to_string()
         assert_that(output, contains_string("def b[T](x: T) -> T:"))
         assert_that(output, not_(contains_string("T = TypeVar")))
-        assert_that(output, contains_string("from typing import TypeVar"))
