@@ -348,8 +348,19 @@ class TestTypeVarCheckConvert:
         assert_that(result["converted"], has_entry("T", "fixed"))
         assert_that(result["orphaned"], equal_to({"P": "fixed", "T": "fixed"}))
         functions = {node.name: node for node in ast.parse(subject.apply_to_string()).body if isinstance(node, ast.FunctionDef)}
-        assert_that({param.name for param in functions["run_in_threadpool"].type_params}, equal_to({"P", "T"}))
+        assert_that([param.name for param in functions["run_in_threadpool"].type_params], equal_to(["P", "T"]))
         assert_that([param.name for param in functions["identity"].type_params], equal_to(["T"]))
+
+    def test_orders_type_params_by_declaration(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
+        """Verify the added type parameters follow the order their declarations appear in the file."""
+        names = ["A", "B", "C", "D", "E", "F"]
+        declarations = "\n".join(f'{name} = TypeVar("{name}")' for name in names)
+        parameters = ", ".join(f"{name.lower()}: {name}" for name in names)
+        subject = create_type_var_check(f"from typing import TypeVar\n{declarations}\ndef f({parameters}) -> None: ...\n")
+
+        subject.convert_declared_typevars()
+
+        assert_that(subject.apply_to_string(), contains_string(f"def f[{', '.join(names)}]({parameters}) -> None: ..."))
 
     def test_version_gate_below_pep695_reports_unsafe_with_reason(
         self, make_recipe: Callable[[type[PythonRefactoring], str], PythonRefactoring]
