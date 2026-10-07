@@ -17,8 +17,8 @@ from renaissance.recipes.type_var_domain import (
     from_import_sources,
     functions_in_generic_classes,
     functions_using_nodes,
-    is_safe_to_convert,
     is_safe_to_localize,
+    is_safe_to_remove,
     type_param_constructor_name,
     type_param_name,
 )
@@ -77,9 +77,9 @@ class TypeVarCheck(PythonRefactoring):
         is unused. A name whose references are all already shadowed by a same-named PEP 695 type
         parameter, or that has none, needs no conversion and is skipped. Methods of a class generic
         over the name (see functions_in_generic_classes) keep using the class's parameter and are
-        never converted. A name that is_safe_to_convert rejects, that only such methods use, or that
-        would need PEP 695 syntax while min_python isn't 3.12+ is reported "unsafe", with its
-        UnsafeReason recorded on self.converted_unsafe_reasons. Returns {name: "fixed" | "unsafe"}.
+        never converted. A name that only such methods use, or that would need PEP 695 syntax while
+        min_python isn't 3.12+, is reported "unsafe", with its UnsafeReason recorded on
+        self.converted_unsafe_reasons. Returns {name: "fixed" | "unsafe"}.
         """
         root = cast("PythonRstNode", cast("object", self.root))
         tree = cast("ast.Module", root.node)
@@ -103,15 +103,12 @@ class TypeVarCheck(PythonRefactoring):
                 if id(function) not in generic_class_method_ids
                 and not any(type_param_name(existing) == name for existing in function.type_params)
             ]
-            reason = is_safe_to_convert(tree, name, self.project_wide_imported_names)
-            if reason is None and not candidates:
-                if not any(id(function) in generic_class_method_ids for function in functions):
-                    continue
-                reason = UnsafeReason.USED_IN_GENERIC_CLASS
-            if reason is None and not self._target_supports_pep695():
-                reason = UnsafeReason.PEP695_VERSION_GATE
-            if reason is not None:
-                self._mark_unsafe(results, self.converted_unsafe_reasons, name, reason)
+            if not candidates:
+                if any(id(function) in generic_class_method_ids for function in functions):
+                    self._mark_unsafe(results, self.converted_unsafe_reasons, name, UnsafeReason.USED_IN_GENERIC_CLASS)
+                continue
+            if not self._target_supports_pep695():
+                self._mark_unsafe(results, self.converted_unsafe_reasons, name, UnsafeReason.PEP695_VERSION_GATE)
                 continue
 
             type_param = build_type_param(decl_stmt)
@@ -132,7 +129,7 @@ class TypeVarCheck(PythonRefactoring):
         A declaration is orphaned when every reference to its name is shadowed by a same-named
         PEP 695 type parameter, or when there is none (see all_refs_shadowed_by_pep695). Removing
         it adds no syntax, so it doesn't depend on min_python. A declaration that
-        is_safe_to_convert rejects is kept and reported "unsafe", with its UnsafeReason recorded
+        is_safe_to_remove rejects is kept and reported "unsafe", with its UnsafeReason recorded
         on self.orphaned_unsafe_reasons. Returns {name: "fixed" | "unsafe"}.
         """
         root = cast("PythonRstNode", cast("object", self.root))
@@ -144,7 +141,7 @@ class TypeVarCheck(PythonRefactoring):
             if not all_refs_shadowed_by_pep695(tree, name, decl_stmt):
                 continue
 
-            reason = is_safe_to_convert(tree, name, self.project_wide_imported_names)
+            reason = is_safe_to_remove(tree, name, self.project_wide_imported_names)
             if reason is not None:
                 self._mark_unsafe(results, self.orphaned_unsafe_reasons, name, reason)
                 continue
@@ -173,7 +170,7 @@ class TypeVarCheck(PythonRefactoring):
         Absolute and relative imports are resolved against project_root. Where safe, rewrites the
         import into an equivalent local declaration, importing from the origin any name its arguments
         use (e.g. `bound=Shape`). It isn't safe when is_safe_to_localize rejects the origin, when this
-        file passes the name on to others (is_safe_to_convert on this file), or when a name the
+        file passes the name on to others (is_safe_to_remove on this file), or when a name the
         declaration uses means something else here (DECLARATION_NAME_CONFLICT). Returns
         {name: "fixed" | "unsafe"} for every candidate found; the specific UnsafeReason behind each
         "unsafe" entry is recorded on self.cross_file_unsafe_reasons.
@@ -201,7 +198,7 @@ class TypeVarCheck(PythonRefactoring):
                     continue
 
                 decl_stmt = declarations[alias.name]
-                reason = is_safe_to_localize(origin_tree, alias.name) or is_safe_to_convert(
+                reason = is_safe_to_localize(origin_tree, alias.name) or is_safe_to_remove(
                     importing_tree, alias.name, self.project_wide_imported_names
                 )
                 argument_names = self._argument_names_to_import(importing_tree, origin_tree, raw, decl_stmt)
