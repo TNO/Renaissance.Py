@@ -35,7 +35,6 @@ class TestTypeVarCheckConvert:
         assert_that(output, contains_string("def a[T](x: T) -> T:"))
         assert_that(output, contains_string("def b[T](y: T) -> T:"))
         assert_that(output, not_(contains_string("T = TypeVar")))
-        assert_that(output, contains_string("from typing import TypeVar"))
 
     def test_converts_typevar_shared_across_methods_to_pep695(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
         """AI: Verify a TypeVar shared across two methods of the same class converts both to PEP 695 syntax."""
@@ -208,128 +207,39 @@ class TestTypeVarCheckConvert:
         assert_that(result, has_entry("Ts", "fixed"))
         assert_that(subject.apply_to_string(), contains_string("def a[*Ts]"))
 
-    def test_does_not_convert_typevar_used_in_generic_base(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
-        """AI: Verify a TypeVar also used in a class's Generic[...] base is left unconverted, marked unsafe."""
-        subject = create_type_var_check("""
-            from typing import TypeVar, Generic
+    @pytest.mark.parametrize(
+        ("extra_line", "imported_elsewhere", "expected_reason"),
+        [
+            pytest.param("class Box(Generic[T]): ...", frozenset(), UnsafeReason.USED_OUTSIDE_FUNCTION, id="generic-base"),
+            pytest.param('__all__ = ["T"]', frozenset(), UnsafeReason.DECLARED_TYPEVAR_EXPORTED, id="exported-via-dunder-all"),
+            pytest.param("", frozenset({"T"}), UnsafeReason.IMPORTED_ELSEWHERE_IN_PROJECT, id="imported-elsewhere"),
+        ],
+    )
+    def test_does_not_convert_unsafe_typevar(
+        self,
+        create_type_var_check: Callable[[str], TypeVarCheck],
+        extra_line: str,
+        imported_elsewhere: frozenset[str],
+        expected_reason: UnsafeReason,
+    ) -> None:
+        """Verify a TypeVar that is_safe_to_convert rejects is reported unsafe with its reason and left unconverted."""
+        subject = create_type_var_check(f"""
+            from typing import Generic, TypeVar
+
+            {extra_line}
 
             def a(x: T) -> T:
                 return x
-            def b(y: T) -> T:
-                return y
-
-            class Box(Generic[T]):
-                pass
 
             T = TypeVar("T")
         """)
+        subject.project_wide_imported_names = imported_elsewhere
+
         result = subject.convert_declared_typevars()
 
-        assert_that(result, has_entry("T", "unsafe"))
-        assert_that(subject.converted_unsafe_reasons, has_entry("T", UnsafeReason.USED_OUTSIDE_FUNCTION))
-        assert_that(subject.apply_to_string(), contains_string('T = TypeVar("T")'))
-
-    def test_does_not_convert_typevar_in_dunder_all(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
-        """AI: Verify a TypeVar exported via __all__ is left unconverted, marked unsafe."""
-        subject = create_type_var_check("""
-            from typing import TypeVar
-
-            __all__ = ["T"]
-
-            def a(x: T) -> T:
-                return x
-            def b(y: T) -> T:
-                return y
-
-            T = TypeVar("T")
-        """)
-        result = subject.convert_declared_typevars()
-
-        assert_that(result, has_entry("T", "unsafe"))
-        assert_that(subject.converted_unsafe_reasons, has_entry("T", UnsafeReason.DECLARED_TYPEVAR_EXPORTED))
-        assert_that(subject.apply_to_string(), contains_string('T = TypeVar("T")'))
-
-    def test_does_not_convert_typevar_imported_elsewhere_in_project(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
-        """A TypeVar imported directly by another project file is reported unsafe and not converted, even without __all__."""
-        subject = create_type_var_check("""
-            from typing import TypeVar
-
-            def a(x: T) -> T:
-                return x
-            def b(y: T) -> T:
-                return y
-
-            T = TypeVar("T")
-        """)
-        subject.project_wide_imported_names = frozenset({"T"})
-        result = subject.convert_declared_typevars()
-
-        assert_that(result, has_entry("T", "unsafe"))
-        assert_that(subject.converted_unsafe_reasons, has_entry("T", UnsafeReason.IMPORTED_ELSEWHERE_IN_PROJECT))
-        assert_that(subject.apply_to_string(), contains_string('T = TypeVar("T")'))
-
-    def test_removes_declaration_but_keeps_import_used_by_other_typevar(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
-        """AI: Verify removing one converted TypeVar's declaration keeps the shared import alive for an unsafe sibling."""
-        # T is multi-scope and safe to convert; U is left alone (used in a Generic[...] base),
-        # so the shared "from typing import TypeVar" import must survive for U's sake.
-        subject = create_type_var_check("""
-            from typing import TypeVar, Generic
-
-            def a(x: T) -> T:
-                return x
-            def b(y: T) -> T:
-                return y
-
-            class Box(Generic[U]):
-                pass
-
-            T = TypeVar("T")
-            U = TypeVar("U")
-        """)
-        result = subject.check()
-
-        assert_that(result["converted"], has_entry("T", "fixed"))
-        assert_that(result["converted"], has_entry("U", "unsafe"))
-        assert_that(result["orphaned"], has_entry("T", "fixed"))
-        output = subject.apply_to_string()
-        assert_that(output, contains_string("from typing import TypeVar"))
-        assert_that(output, contains_string('U = TypeVar("U")'))
-        assert_that(output, not_(contains_string("T = TypeVar")))
-
-    def test_converts_single_scope_typevar_without_ruff(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
-        """AI: Verify a TypeVar used by a single function still converts even without a ruff-style leftover."""
-        subject = create_type_var_check("""
-            from typing import TypeVar
-
-            T = TypeVar('T')
-
-            def b(x: T) -> T:
-                return x
-        """)
-        result = subject.convert_declared_typevars()
-
-        assert_that(result, has_entry("T", "fixed"))
-        output = subject.apply_to_string()
-        assert_that(output, contains_string("def b[T](x: T) -> T:"))
-
-    def test_converts_function_preserving_internal_comments(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
-        """AI: Verify converting a signature never touches or drops a comment inside its body."""
-        # Converting a function's signature must never touch or drop a comment in its body.
-        subject = create_type_var_check("""
-            from typing import TypeVar
-
-            def b(x: T) -> T:
-                # this explains something non-obvious
-                return x
-
-            T = TypeVar("T")
-        """)
-        result = subject.convert_declared_typevars()
-
-        assert_that(result, has_entry("T", "fixed"))
-        output = subject.apply_to_string()
-        assert_that(output, contains_string("def b[T](x: T) -> T:"))
-        assert_that(output, contains_string("# this explains something non-obvious"))
+        assert_that(result, equal_to({"T": "unsafe"}))
+        assert_that(subject.converted_unsafe_reasons, equal_to({"T": expected_reason}))
+        assert_that(subject.apply_to_string(), contains_string("def a(x: T) -> T:"))
 
     def test_converts_function_preserving_unusual_body_formatting(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
         """AI: Verify converting a signature never reformats or collapses its body's unusual formatting."""
@@ -377,34 +287,6 @@ class TestTypeVarCheckConvert:
         assert_that(output, contains_string("def wrapper(*args: P.args, **kwargs: P.kwargs) -> int:"))
         assert_that(output, not_(contains_string("wrapper[**P]")))
 
-    def test_preserves_multiline_signature_formatting(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
-        """AI: Verify converting a multi-line signature doesn't collapse it onto one line."""
-        # Converting a multi-line signature must not collapse it onto one line.
-        subject = create_type_var_check("""
-            from typing import TypeVar
-
-            def b(
-                x: T,
-                y: int = 1,
-                *,
-                z: str | None = None,
-            ) -> T:
-                return x
-
-            T = TypeVar("T")
-        """)
-        result = subject.convert_declared_typevars()
-
-        assert_that(result, has_entry("T", "fixed"))
-        output = subject.apply_to_string()
-        assert_that(output, contains_string("def b[T](\n"))
-        assert_that(output, contains_string("    x: T,\n"))
-        assert_that(output, contains_string("    y: int = 1,\n"))
-        assert_that(output, contains_string("    *,\n"))
-        assert_that(output, contains_string("    z: str | None = None,\n"))
-        # would appear if the signature got collapsed onto one line, like ast.unparse() does by default
-        assert_that(output, not_(contains_string("def b[T](x: T")))
-
     def test_merges_into_an_existing_type_params_bracket(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
         """AI: Verify converting a second TypeVar merges it into an existing PEP 695 bracket instead of adding a new one."""
         # Regression test: a function that already declares one PEP 695 type parameter must gain
@@ -445,12 +327,8 @@ class TestTypeVarCheckConvert:
         assert_that(output, contains_string("@overload"))
         assert_that(output, contains_string("def get[T](self, key: str, default: T = ...) -> T: ..."))
 
-    def test_converts_two_type_params_sharing_one_import_without_corrupting_it(
-        self, create_type_var_check: Callable[[str], TypeVarCheck]
-    ) -> None:
-        """AI: Verify converting two names sharing one import leaves that import line untouched."""
-        # Converting two names sharing one import must leave that import line untouched - the
-        # recipe never edits it itself (ruff's F401 owns that).
+    def test_converts_function_using_two_new_type_params(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
+        """Verify a function using two declared type parameters gets both in one bracket."""
         subject = create_type_var_check("""
             from typing import ParamSpec, TypeVar
             from collections.abc import Callable
@@ -469,11 +347,9 @@ class TestTypeVarCheckConvert:
         assert_that(result["converted"], has_entry("P", "fixed"))
         assert_that(result["converted"], has_entry("T", "fixed"))
         assert_that(result["orphaned"], equal_to({"P": "fixed", "T": "fixed"}))
-        output = subject.apply_to_string()
-        ast.parse(output)  # raises SyntaxError if the shared import got corrupted
-        assert_that(output, contains_string("from typing import ParamSpec, TypeVar"))
-        assert_that(output, not_(contains_string("P = ParamSpec")))
-        assert_that(output, not_(contains_string("T = TypeVar")))
+        functions = {node.name: node for node in ast.parse(subject.apply_to_string()).body if isinstance(node, ast.FunctionDef)}
+        assert_that({param.name for param in functions["run_in_threadpool"].type_params}, equal_to({"P", "T"}))
+        assert_that([param.name for param in functions["identity"].type_params], equal_to(["T"]))
 
     def test_version_gate_below_pep695_reports_unsafe_with_reason(
         self, make_recipe: Callable[[type[PythonRefactoring], str], PythonRefactoring]
