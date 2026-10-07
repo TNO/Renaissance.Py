@@ -57,6 +57,8 @@ Configure it with the `LINT_BUDGET_APP_CLIENT_ID` repository variable and the `L
 repository secret of an app with `contents` and `pull-requests` write access that is installed on this repository;
 until then the workflow falls back to `GITHUB_TOKEN` and its pull request has to be checked and merged by hand.
 Auto-merge also has to be allowed in the repository settings.
+The commit is written through the GitHub API (`sign-commits`), so GitHub signs it on the app's behalf and the
+"commits must have verified signatures" rule accepts it; a plain `git push` from the runner cannot be signed.
 
 The app itself needs no code or hosting: it is a registration that only hands out short-lived tokens.
 It may be owned by a personal account — create it under <https://github.com/settings/apps/new> with the webhook
