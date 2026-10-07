@@ -65,7 +65,7 @@ class TestIsSafeToLocalize:
     """is_safe_to_localize: None when safe, the specific UnsafeReason otherwise."""
 
     def test_returns_none_when_safe(self) -> None:
-        """A TypeVar not exported and with no class at its origin generic over it is safe to localize."""
+        """A TypeVar that its origin doesn't export or import conditionally is safe to localize."""
         tree = _parse("""
             from typing import TypeVar
 
@@ -80,40 +80,21 @@ class TestIsSafeToLocalize:
     @pytest.mark.parametrize(
         "class_header",
         [
+            pytest.param("class Plain(object):", id="plain-class"),
             pytest.param("class Box(Generic[T]):", id="generic"),
             pytest.param("class Box(typing.Generic[T]):", id="qualified-generic"),
             pytest.param("class Box(Protocol[T]):", id="protocol"),
             pytest.param("class Box(Mapping[T]):", id="generic-abc"),
             pytest.param("class Box(Base[int, T]):", id="generic-subclass"),
+            pytest.param("class Box[T]:", id="pep695-class"),
         ],
     )
-    def test_reports_origin_class_inheriting_the_type_parameter(self, class_header: str) -> None:
-        """A class at the origin whose bases mention T is generic over that T object, so T can't be copied."""
+    def test_class_at_the_origin_does_not_block_localizing(self, class_header: str) -> None:
+        """A class at the origin, generic over T or not, keeps its own T, so copying T elsewhere is safe."""
         tree = _parse(f"""
             import typing
             from collections.abc import Mapping
             from typing import Generic, Protocol, TypeVar
-
-            T = TypeVar("T")
-
-            {class_header}
-                pass
-        """)
-
-        assert_that(is_safe_to_localize(tree, "T"), is_(UnsafeReason.ORIGIN_CLASS_IS_GENERIC_OVER_NAME))
-
-    @pytest.mark.parametrize(
-        "class_header",
-        [
-            pytest.param("class Plain(object):", id="plain-class"),
-            pytest.param("class Box[T]:", id="pep695-class-declares-its-own"),
-            pytest.param("class Box[T](Base[T]):", id="pep695-class-with-generic-base"),
-        ],
-    )
-    def test_class_not_tied_to_the_module_typevar_stays_safe_to_localize(self, class_header: str) -> None:
-        """A class that isn't generic over the module-level T, or declares its own T, doesn't block localizing it."""
-        tree = _parse(f"""
-            from typing import TypeVar
 
             T = TypeVar("T")
 
