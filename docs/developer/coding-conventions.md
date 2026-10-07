@@ -45,9 +45,26 @@ Instead of disabling those checks, their issues are *budgeted* by `tools/lint_bu
 * `lint-budget.json` records how many issues of each kind (`ruff` rule code, `pyright` rule name) currently exist;
 * CI runs `python tools/lint_budget.py --check` and fails when a pull request exceeds the budget of any kind,
   so no new issue of any kind can be introduced;
-* run `python tools/lint_budget.py` locally after fixing issues: it lowers the budget to the new counts,
-  and the lowered `lint-budget.json` is committed with the fix, so the counts can only ratchet down;
+* a pull request that *lowers* a count passes: the budget is a ceiling, never a quota;
+* run `python tools/lint_budget.py` locally after fixing issues to lower the budget to the new counts, or leave it:
+  after the merge — and once a week — the `lint budget` workflow runs the script on `main` and opens an auto-merging
+  pull request with the lowered `lint-budget.json`, so the counts can only ratchet down;
 * `--init` records the current counts as the budget; use it only for the first run or an approved exception.
+
+The `lint budget` workflow opens its pull request with a GitHub App token, because the checks of a pull request
+opened with the default `GITHUB_TOKEN` are never triggered, so auto-merge would wait for them forever.
+Configure it with the `LINT_BUDGET_APP_CLIENT_ID` repository variable and the `LINT_BUDGET_APP_PRIVATE_KEY`
+repository secret of an app with `contents` and `pull-requests` write access that is installed on this repository;
+until then the workflow falls back to `GITHUB_TOKEN` and its pull request has to be checked and merged by hand.
+Auto-merge also has to be allowed in the repository settings.
+The commit is written through the GitHub API (`sign-commits`), so GitHub signs it on the app's behalf and the
+"commits must have verified signatures" rule accepts it; a plain `git push` from the runner cannot be signed.
+
+The app itself needs no code or hosting: it is a registration that only hands out short-lived tokens.
+It may be owned by a personal account — create it under <https://github.com/settings/apps/new> with the webhook
+disabled, "Where can this app be installed" set to **Any account**, and the two repository permissions above.
+Installing it on `TNO/Renaissance.Py` then raises a request that a `TNO` owner has to approve.
+An owner should transfer the app to the `TNO` organisation afterwards, so it outlives its creator's account.
 
 CI checks the pull request merged with `main`, so the counts can exceed the budget because of issues
 that arrived on `main` after the branch was created. Merge `main` into the branch and re-run the script.
