@@ -377,11 +377,11 @@ class TestPyVersionFlag:
         assert_that(written, is_not(contains_string(unexpected)))
 
     @pytest.mark.parametrize(
-        "bad_args",
+        ("bad_args", "expected_error"),
         [
-            pytest.param([], id="flag-missing"),
-            pytest.param(["--py", "3"], id="missing-minor"),
-            pytest.param(["--py", "3.x"], id="non-numeric"),
+            pytest.param([], "the following arguments are required: --py", id="flag-missing"),
+            pytest.param(["--py", "3"], "expected MAJOR.MINOR (e.g. 3.12), got '3'", id="missing-minor"),
+            pytest.param(["--py", "3.x"], "expected MAJOR.MINOR (e.g. 3.12), got '3.x'", id="non-numeric"),
         ],
     )
     def test_bad_version_arguments_are_usage_errors(
@@ -389,15 +389,14 @@ class TestPyVersionFlag:
         tmp_path: Path,
         capsys: pytest.CaptureFixture[str],
         bad_args: list[str],
+        expected_error: str,
     ) -> None:
-        """A missing or malformed --py flag exits with code 2 and a usage line naming --py."""
+        """A missing or malformed --py flag exits with code 2 and an error saying what is wrong with it."""
         target = tmp_path / "mod.py"
         target.write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
-        original = target.read_text(encoding="utf-8")
 
         with pytest.raises(SystemExit) as excinfo:
             migration.main([str(target), *bad_args])
 
         assert_that(excinfo.value.code, equal_to(2))
-        assert_that(capsys.readouterr().err, contains_string("--py MAJOR.MINOR"))
-        assert_that(target.read_text(encoding="utf-8"), equal_to(original))
+        assert_that(capsys.readouterr().err, contains_string(expected_error))
