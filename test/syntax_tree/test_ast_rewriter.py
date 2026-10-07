@@ -1,7 +1,7 @@
 """Tests for the ASTRewriter."""
 
 import sys
-from typing import Any
+from collections.abc import Callable, Sequence
 
 import pytest
 from hamcrest import assert_that, has_length, is_
@@ -11,7 +11,7 @@ from renaissance.integrations.clang import ClangASTNode, CPatternFactory
 from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
 from renaissance.syntax_tree import ASTFactory, ASTRewriter, PatternMatch
-from renaissance.syntax_tree.ast_rewriter import _RewriteAction, _RewriteActions
+from renaissance.syntax_tree.ast_rewriter import Rewritable, _RewriteAction, _RewriteActions
 from renaissance.syntax_tree.match_finder import find_all, match_pattern
 from utils_for_tests import compress, debug_print
 
@@ -148,7 +148,7 @@ class TestRewrites:
 
     @staticmethod
     def do_test(
-        action: Any,
+        action: Callable[[ASTRewriter, str, Sequence[Rewritable], bool, bool], None],
         factory: ASTFactory,
         code: str,
         replacement: str,
@@ -164,7 +164,7 @@ class TestRewrites:
         found = match_pattern(atu.children, declaration_pattern)
 
         for match in found:  # .map(lambda m: m.nodes).to_iterable():
-            nodes = match.nodes
+            nodes: Sequence[Rewritable] = match.nodes
             action(rewriter, replacement, nodes, include_whitespace, include_comments)
         expected_result = factory.create_from_text(expected, "test.cpp")
         actual = rewriter.apply_to_string()
@@ -207,17 +207,15 @@ class TestRemove(TestRewrites):
         name: str,
         factory: ASTFactory,
         code: str,
-        include_whitespace: Any,
-        include_comments: Any,
-        expected: Any,
+        *,
+        include_whitespace: bool,
+        include_comments: bool,
+        expected: str,
     ) -> None:
         """AI: Apply ASTRewriter.remove to the matched declaration and assert the resulting text matches expected."""
-
-        def reemove(s, _, n, ws, cm):
-            return ASTRewriter.remove(s, n, ws, cm)
-
         self.do_test(
-            reemove,
+            # remove takes no replacement text, so the action signature's second parameter is dropped here.
+            lambda rewriter, _, nodes, whitespace, comments: ASTRewriter.remove(rewriter, nodes, whitespace, comments),
             factory,
             code,
             "int aa=4;",
@@ -361,9 +359,10 @@ class TestReplace(TestRewrites):
         name: str,
         factory: ASTFactory,
         code: str,
-        include_whitespace: Any,
-        include_comments: Any,
-        expected: Any,
+        *,
+        include_whitespace: bool,
+        include_comments: bool,
+        expected: str,
     ) -> None:
         """AI: Apply ASTRewriter.replace to the matched declaration and assert the resulting text matches expected."""
         self.do_test(
@@ -496,9 +495,10 @@ class TestInsertBeforeSingleLine(TestRewrites):
         name: str,
         factory: ASTFactory,
         code: str,
-        include_whitespace: Any,
-        include_comments: Any,
-        expected: Any,
+        *,
+        include_whitespace: bool,
+        include_comments: bool,
+        expected: str,
     ) -> None:
         """AI: Apply ASTRewriter.insert_before with a single-line insertion and assert the resulting text matches expected."""
         self.do_test(
@@ -649,9 +649,10 @@ class TestInsertBeforeMultiLine(TestRewrites):
         name: str,
         factory: ASTFactory,
         code: str,
-        include_whitespace: Any,
-        include_comments: Any,
-        expected: Any,
+        *,
+        include_whitespace: bool,
+        include_comments: bool,
+        expected: str,
     ) -> None:
         """AI: Apply ASTRewriter.insert_before with a multi-line insertion and assert the resulting text matches expected."""
         self.do_test(
@@ -784,9 +785,10 @@ class TestInsertAfterSingleLine(TestRewrites):
         name: str,
         factory: ASTFactory,
         code: str,
-        include_whitespace: Any,
-        include_comments: Any,
-        expected: Any,
+        *,
+        include_whitespace: bool,
+        include_comments: bool,
+        expected: str,
     ) -> None:
         """AI: Apply ASTRewriter.insert_after with a single-line insertion and assert the resulting text matches expected."""
         self.do_test(
@@ -937,9 +939,10 @@ class TestInsertAfterMultiLine(TestRewrites):
         name: str,
         factory: ASTFactory,
         code: str,
-        include_whitespace: Any,
-        include_comments: Any,
-        expected: Any,
+        *,
+        include_whitespace: bool,
+        include_comments: bool,
+        expected: str,
     ) -> None:
         """AI: Apply ASTRewriter.insert_after with a multi-line insertion and assert the resulting text matches expected."""
         self.do_test(
@@ -970,11 +973,11 @@ class TestComposeReplacement:
     )
     def test_args(
         self,
-        _: Any,
+        _: str,
         factory: ASTFactory,
-        statements: Any,
-        extra_declarations: Any,
-        replacement: Any,
+        statements: str,
+        extra_declarations: list[str],
+        replacement: dict[str, str],
     ) -> None:
         """AI: Verify replace rewrites a matched if/else pattern into a ternary assignment using the placeholder bindings."""
         code = """
