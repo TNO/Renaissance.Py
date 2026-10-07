@@ -60,9 +60,9 @@ kept out of `type_var_check.py` so domain modelling doesn't mix with pipeline or
 cross-project conditions across both functions) has a matching `UnsafeRule` (a short message plus a docs anchor
 slug) in `UNSAFE_RULES`, and `doc_link(reason)` resolves one to the full URL under
 [TypeVar modernization](../../user/features/typevar-modernization.md)'s Constraints section. Adding `[T]` to a
-function is always safe, so `is_safe_to_remove` only guards *removing* something: a declaration
-(`remove_orphaned_declarations`) or an import other files depend on (`localize_imported_typevars`); it never
-blocks `convert_declared_typevars`. It additionally takes `project_wide_imported_names` (a `frozenset[str]`, defaulting to empty) - set on
+function is always safe, so `is_safe_to_remove` only guards *removing* a declaration
+(`remove_orphaned_declarations`); it never blocks `convert_declared_typevars`. It additionally takes
+`project_wide_imported_names` (a `frozenset[str]`, defaulting to empty) - set on
 `TypeVarCheck.project_wide_imported_names` by the CLI, via `renaissance.utils.import_resolution.
 collect_project_imported_names` over every file it was given, before the `TypeVarCheck` phase that can remove a
 declaration runs. `TypeVarCheck` records the reason behind each `"unsafe"` name on one instance
@@ -87,10 +87,9 @@ file's copy of `T` in that file's own scopes.
 
 `localize_imported_typevars` copies the origin's declaration exactly (`ast.unparse`) and imports from the origin
 module every name its arguments use (`declaration_argument_names`, string forward references included). It
-refuses to localize when this file binds one of those names to something else (`from_import_sources`,
-`DECLARATION_NAME_CONFLICT`), or when this file passes the imported name on to others: `is_safe_to_remove` on
-this file's own tree reports its `__all__` (`DECLARED_TYPEVAR_EXPORTED`) or another project file importing it
-from here (`IMPORTED_ELSEWHERE_IN_PROJECT`).
+refuses to localize when one of those names can't be imported from the origin as the same object
+(`DECLARATION_NAME_UNAVAILABLE`): the origin doesn't bind it at module level at runtime (only under
+`if TYPE_CHECKING:`), or this file binds it to something else (`from_import_sources`).
 A name that only such methods use is reported `"unsafe"` (`USED_IN_GENERIC_CLASS`). A name also used outside
 functions (a `Generic[T]` base, a module-level alias) doesn't block converting the functions that use it:
 `remove_orphaned_declarations` keeps the declaration as long as such a live reference remains.
@@ -165,9 +164,8 @@ syntax.
   against arbitrary generated source (see [ADR 09](../architecture/adr/09_property_based_tests.md)).
 - `test/recipes/test_type_var_domain.py` - `is_safe_to_remove`/`is_safe_to_localize` in isolation, confirming
   that three of the `UnsafeReason` members (the `__all__`, imported-elsewhere and conditional-constructor
-  conditions) are returned by their specific unsafe condition, and that neither the origin's `__all__` nor a class
-  at the origin, generic or not, blocks localizing. The version gate, `USED_IN_GENERIC_CLASS` and
-  `DECLARATION_NAME_CONFLICT` are covered through the recipe instead.
+  conditions) are returned by their specific unsafe condition. The version gate, `USED_IN_GENERIC_CLASS` and
+  `DECLARATION_NAME_UNAVAILABLE` are covered through the recipe instead.
 - `test/recipes/test_step_runner.py` - `Step`/`run_steps`: commit only when a step fixed something, results in step
   order.
 - `test/recipes/test_python_refactoring.py` - `PythonRefactoring.find_rst_node` and `narrowed_import_text`.

@@ -99,9 +99,7 @@ before 3.12.
 A module-level `T = TypeVar(...)` (or `ParamSpec`/`TypeVarTuple`) listed in its own file's `__all__` is public
 API - removing its declaration would break any importer still doing `from this_module import T`. The functions
 using it are still converted (each gets its own `[T]`), but the declaration is kept and reported `"unsafe"` by
-the orphaned-declaration cleanup. The same applies to an *imported* `T` that a file lists in its `__all__`:
-localizing it would hand that file's importers a different object than the origin's, so the import is kept,
-`"unsafe"`.
+the orphaned-declaration cleanup.
 
 **To remove it yourself:** drop `T` from `__all__` (usually a breaking change for anything still importing it),
 then delete the `T = TypeVar(...)` line. If `T` can't be dropped from `__all__`, the declaration has to stay.
@@ -119,15 +117,17 @@ convert and the name is reported `"unsafe"`; when standalone functions also use 
 Once the class declares `T` itself and nothing else uses the module-level `T`, delete the old
 `T = TypeVar("T")` line.
 
-### A name the declaration uses means something else here { #feature-typevar-modernization-declaration-name-conflict }
+### A name the declaration uses can't be imported here { #feature-typevar-modernization-declaration-name-unavailable }
 
 A localized declaration is a copy of the origin's, and the names its arguments use (`bound=Shape`, constraints,
-`default=`) are imported from the origin. If the importing file already binds one of those names to something
-else - its own `class Shape`, or a `Shape` imported from another module - the copy would silently refer to that
-other object and change the type parameter's meaning. Left as an import, `"unsafe"`.
+`default=`) are imported from the origin. That's only possible when the origin binds the name at module level at
+runtime, and only correct when the importing file doesn't already bind it to something else. If the origin only
+imports it for type checking (`if TYPE_CHECKING:`, typically with `bound="Shape"`), importing it from there would
+fail at runtime; if the importing file has its own `class Shape`, or a `Shape` from another module, the copy would
+silently refer to that other object. Left as an import, `"unsafe"`.
 
-**To fix this yourself:** rename one of the two names, or import the origin's under an alias and write the local
-declaration by hand.
+**To fix this yourself:** import the name the same way the origin does (for example under `if TYPE_CHECKING:`)
+or rename one of the two names, then write the local declaration by hand.
 
 ### The origin imports the TypeVar constructor conditionally { #feature-typevar-modernization-origin-imports-constructor-conditionally }
 
@@ -145,15 +145,13 @@ declaration across, or leave the import as it is.
 
 A module without `__all__` is still Python-legal to import any of its top-level names from directly -
 `__all__` only governs `from module import *`, never `from module import specific_name`. So a declaration with
-no `__all__` isn't automatically "unused elsewhere": before converting or removing it, the CLI (see API entry
+no `__all__` isn't automatically "unused elsewhere": before removing it, the CLI (see API entry
 points below) scans every file it was given for `from this_module import this_name`-shaped imports (absolute
 or relative, resolved to the actual file - see `renaissance.utils.import_resolution`), and for the name read as
 an attribute of the imported module (`import pkg.this_module` then `pkg.this_module.this_name`, or
 `from pkg import this_module` then `this_module.this_name`). Any hit keeps the declaration, `"unsafe"`,
-`IMPORTED_ELSEWHERE_IN_PROJECT`, regardless of `__all__`; the functions using it are still converted. The same
-check stops cross-file localization when
-another file imports an *imported* `T` from this file: it would otherwise receive a different object than the
-origin's. A `from this_module import *` is not expanded, so a
+`IMPORTED_ELSEWHERE_IN_PROJECT`, regardless of `__all__`; the functions using it are still converted. A
+`from this_module import *` is not expanded, so a
 name it pulls in is not detected. Running the recipe on a single file in
 isolation (not via the CLI, or via the CLI on a lone file with no other files passed) has nothing to check
 against, so this constraint can only fire when the target is a directory scanned alongside the files that
@@ -164,7 +162,7 @@ import from it.
 no longer needs it, a second run of the tool removes the declaration.
 
 A declaration imported by other files in the target project is always kept at its origin during a run, even
-when every importer gets localized in that same run. A second CLI run converts it, once no file imports it anymore.
+when every importer gets localized in that same run. A second CLI run removes it, once no file imports it anymore.
 
 A single import statement that brings in two or more localizable type parameters (`from .origin import T, U`)
 currently makes the localization phase fail for that file: it is reported under `ERRORS` and left unchanged,
@@ -178,7 +176,8 @@ tool does not report it. Review modified files with `git diff`, or convert such 
 
 A localized type parameter is a new object with the same definition as the origin's. Type checkers treat it the
 same, but runtime code that compares type parameters by identity (for example `MyBox.__parameters__[0] is
-origin.T`) sees two different objects.
+origin.T`) sees two different objects. A file that imports `T` from a file the tool localized (directly or
+through its `__all__`) receives that copy too.
 
 Removing a declaration or an unused import leaves its surrounding blank lines behind, so a modified file can
 start with, or contain, extra blank lines. Run your formatter afterwards to tidy them up.
