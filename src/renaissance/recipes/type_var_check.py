@@ -11,8 +11,10 @@ from renaissance.recipes.type_var_domain import (
     UnsafeReason,
     all_refs_shadowed_by_pep695,
     build_type_param,
+    declaration_argument_names,
     find_import_source,
     find_type_param_declarations,
+    from_import_sources,
     functions_in_generic_classes,
     functions_using_nodes,
     is_safe_to_convert,
@@ -168,13 +170,17 @@ class TypeVarCheck(PythonRefactoring):
     def localize_imported_typevars(self) -> dict[str, str]:
         """Find TypeVar/ParamSpec/TypeVarTuple names imported from anywhere in the target project.
 
-        Absolute and relative imports are resolved against project_root. Where safe (see
-        is_safe_to_localize), rewrites the import into an equivalent local
-        declaration. Returns {name: "fixed" | "unsafe"} for every candidate found; the specific
-        UnsafeReason behind each "unsafe" entry is recorded on self.cross_file_unsafe_reasons.
+        Absolute and relative imports are resolved against project_root. Where safe, rewrites the
+        import into an equivalent local declaration, importing from the origin any name its arguments
+        use (e.g. `bound=Shape`). It isn't safe when is_safe_to_localize rejects the origin, when this
+        file passes the name on to others (is_safe_to_convert on this file), or when a name the
+        declaration uses means something else here (DECLARATION_NAME_CONFLICT). Returns
+        {name: "fixed" | "unsafe"} for every candidate found; the specific UnsafeReason behind each
+        "unsafe" entry is recorded on self.cross_file_unsafe_reasons.
         """
         results: dict[str, str] = {}
         self.cross_file_unsafe_reasons: dict[str, UnsafeReason] = {}
+        importing_tree = cast("ast.Module", cast("PythonRstNode", cast("object", self.root)).node)
 
         project_root = self.project_root if self.project_root is not None else Path(self.filename).parent
         for import_node in self.body:
@@ -194,15 +200,22 @@ class TypeVarCheck(PythonRefactoring):
                 if alias.asname is not None or alias.name not in declarations:
                     continue
 
-                reason = is_safe_to_localize(origin_tree, alias.name)
+                decl_stmt = declarations[alias.name]
+                reason = is_safe_to_localize(origin_tree, alias.name) or is_safe_to_convert(
+                    importing_tree, alias.name, self.project_wide_imported_names
+                )
+                argument_names = self._argument_names_to_import(importing_tree, origin_tree, raw, decl_stmt)
+                if reason is None and argument_names is None:
+                    reason = UnsafeReason.DECLARATION_NAME_CONFLICT
                 if reason is not None:
                     self._mark_unsafe(results, self.cross_file_unsafe_reasons, alias.name, reason)
                     continue
 
-                decl_stmt = declarations[alias.name]
-                needed_import = self._missing_constructor_import(origin_tree, decl_stmt)
+                needed_imports = [self._missing_constructor_import(origin_tree, decl_stmt)]
+                if argument_names:
+                    needed_imports.append(f"from {'.' * raw.level}{raw.module or ''} import {', '.join(sorted(argument_names))}")
                 # TODO: queues one replace per alias on the same import node, which conflicts when a statement localizes 2+ names.
-                self._localize_import(import_node, raw, alias.name, decl_stmt, needed_import)
+                self._localize_import(import_node, raw, alias.name, decl_stmt, [line for line in needed_imports if line is not None])
                 results[alias.name] = "fixed"
 
         return results
@@ -234,15 +247,37 @@ class TypeVarCheck(PythonRefactoring):
 
         return f"from {ctor_module} import {ctor_name}"
 
-    def _localize_import(self, import_node: Any, raw: ast.ImportFrom, name: str, decl_stmt: ast.Assign, needed_import: str | None) -> None:
+    def _argument_names_to_import(
+        self, importing_tree: ast.Module, origin_tree: ast.Module, raw: ast.ImportFrom, decl_stmt: ast.Assign
+    ) -> set[str] | None:
+        """Return the names decl_stmt's arguments use that this file must import from the origin module.
+
+        A name this file already imports from the origin module (or from the same absolute module the
+        origin imports it from) is fine and not returned. Returns None if this file binds one of those
+        names to something else, since the copy would then silently refer to a different object.
+        """
+        origin_sources = from_import_sources(origin_tree)
+        importing_sources = from_import_sources(importing_tree)
+        missing: set[str] = set()
+        for name in declaration_argument_names(decl_stmt):
+            if name not in importing_sources:
+                missing.add(name)
+                continue
+            origin_source = origin_sources.get(name)
+            accepted = {(raw.module or "", raw.level)}
+            if origin_source is not None and origin_source[1] == 0:
+                accepted.add(origin_source)
+            if importing_sources[name] not in accepted:
+                return None
+        return missing
+
+    def _localize_import(self, import_node: Any, raw: ast.ImportFrom, name: str, decl_stmt: ast.Assign, needed_imports: list[str]) -> None:
         """Replace import_node with decl_stmt's text as a local declaration.
 
-        Narrows or removes the original import for name, and prepends needed_import if the
-        declaration's constructor isn't already imported here.
+        Narrows or removes the original import for name, and prepends needed_imports: the imports the
+        declaration needs (its constructor, names its arguments use) that this file doesn't have yet.
         """
-        decl_text = ast.unparse(decl_stmt)
-        if needed_import is not None:
-            decl_text = f"{needed_import}\n{decl_text}"
+        decl_text = "\n".join([*needed_imports, ast.unparse(decl_stmt)])
 
         new_import = narrowed_import_text(raw, name)
         if new_import is not None:
