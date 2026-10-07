@@ -11,7 +11,9 @@ clean up at all:
 1. **Cross-file import localization.** A type parameter imported from another module in the target project
    (`from pkg.other_module import T`, `from .other_module import T`) is invisible to `ruff`'s `UP047` rule, which
    only looks at declarations in the
-   same file. Where safe, the recipe rewrites the import into an equivalent local declaration.
+   same file. Where safe, the recipe rewrites the import into an equivalent local declaration: an exact copy of the
+   origin's declaration (bound, constraints, variance and default included), importing from the origin any name
+   its arguments use (`bound=Shape`).
 2. **Conversion to PEP 695 syntax.** Every declared `TypeVar`/`ParamSpec`/`TypeVarTuple` is rewritten to
    [PEP 695](https://peps.python.org/pep-0695/) generic syntax (`def f[T](...)`) across every function that uses
    it — whether it's used by one function (the same rewrite `ruff` offers, but only via `--unsafe-fixes`) or
@@ -55,12 +57,11 @@ A class is *generic over* `T` when `T` is one of its type parameters, in one of 
 
 1. **Declared:** the class declares its own `T` as a PEP 695 type parameter (`class Box[T]:`).
 2. **Inherited:** `T` appears in one of its bases - `Generic[T]`, `typing.Generic[T]`, `Protocol[T]`,
-   `Mapping[T]`, `Base[int, T]` - and the class doesn't declare its own `T`. The class is then tied to the
-   module-level `T = TypeVar("T")` object itself.
+   `Mapping[T]`, `Base[int, T]` - and the class doesn't declare its own `T`.
 
-Inside such a class, `T` in a method means the class's parameter. Both kinds keep the tool from adding `[T]` to the
-class's methods; only the inherited kind is tied to the module-level object, so only it matters when copying that
-object to another file.
+Inside such a class, `T` in a method means the class's parameter, so the tool never adds `[T]` to the class's
+methods. A generic class at the origin of an import doesn't stop the import from being localized: the class keeps
+its own `T`, and the importing file's functions resolve their copy of `T` in their own scope.
 
 ## Outputs / effects
 
@@ -97,7 +98,9 @@ before 3.12.
 
 A module-level `T = TypeVar(...)` (or `ParamSpec`/`TypeVarTuple`) listed in its own file's `__all__` is public
 API - removing its declaration to convert it to PEP 695 syntax would break any importer still doing
-`from this_module import T`. Left unconverted, `"unsafe"`.
+`from this_module import T`. Left unconverted, `"unsafe"`. The same applies to an *imported* `T` that a file lists
+in its `__all__`: localizing it would hand that file's importers a different object than the origin's, so the
+import is kept, `"unsafe"`.
 
 **To convert this yourself:** you have to accept the same trade-off the tool won't make automatically - remove
 `T` from `__all__` (usually a breaking change for anything still importing it), move it into a PEP 695 signature
@@ -129,18 +132,15 @@ original, still-exported one, and the new local copy), which silently breaks ide
 (same public-API trade-off as the previous case, on the other file) - otherwise the two files end up with two
 independent `T` objects, silently breaking anything relying on both referring to the same one.
 
-### A class at an imported TypeVar's origin is generic over it { #feature-typevar-modernization-origin-class-is-generic-over-name }
+### A name the declaration uses means something else here { #feature-typevar-modernization-declaration-name-conflict }
 
-If a class in the origin module inherits the imported name as its type parameter (`Generic[T]`, `Protocol[T]`,
-`Mapping[T]`, ... - the *inherited* kind of generic class, see Generic classes above), that
-class's own generic identity is tied to this specific `T` object - localizing the import would create a second,
-unrelated `T`, breaking subclassing or type-checking that depends on the two modules sharing the same type
-parameter. Left as an import, `"unsafe"`. Any class in the origin module counts, exported or not. A class that
-declares its own `T` (`class Bag[T]:`) doesn't use the module-level object and doesn't block it.
+A localized declaration is a copy of the origin's, and the names its arguments use (`bound=Shape`, constraints,
+`default=`) are imported from the origin. If the importing file already binds one of those names to something
+else - its own `class Shape`, or a `Shape` imported from another module - the copy would silently refer to that
+other object and change the type parameter's meaning. Left as an import, `"unsafe"`.
 
-**To fix this yourself:** the origin module's class is generic over this exact `T` object, so localizing the
-import safely means converting that class - and anything downstream that depends on it - in the same
-coordinated change, or the two modules end up with different, incompatible `T`s.
+**To fix this yourself:** rename one of the two names, or import the origin's under an alias and write the local
+declaration by hand.
 
 ### The origin imports the TypeVar constructor conditionally { #feature-typevar-modernization-origin-imports-constructor-conditionally }
 
@@ -163,7 +163,9 @@ points below) scans every file it was given for `from this_module import this_na
 or relative, resolved to the actual file - see `renaissance.utils.import_resolution`), and for the name read as
 an attribute of the imported module (`import pkg.this_module` then `pkg.this_module.this_name`, or
 `from pkg import this_module` then `this_module.this_name`). Any hit is treated as `"unsafe"`,
-`IMPORTED_ELSEWHERE_IN_PROJECT`, regardless of `__all__`. A `from this_module import *` is not expanded, so a
+`IMPORTED_ELSEWHERE_IN_PROJECT`, regardless of `__all__`. The same check stops cross-file localization when
+another file imports an *imported* `T` from this file: it would otherwise receive a different object than the
+origin's. A `from this_module import *` is not expanded, so a
 name it pulls in is not detected. Running the recipe on a single file in
 isolation (not via the CLI, or via the CLI on a lone file with no other files passed) has nothing to check
 against, so this constraint can only fire when the target is a directory scanned alongside the files that
@@ -187,6 +189,10 @@ A function whose body contains a multi-line string literal with a continuation l
 (for example at column 0) is converted with the contents of that literal changed and the body re-indented; the
 tool does not report it. Review modified files with `git diff`, or convert such functions by hand. See
 [Python AST known limitations](../../developer/modules/python-ast-known-limitations.md).
+
+A localized type parameter is a new object with the same definition as the origin's. Type checkers treat it the
+same, but runtime code that compares type parameters by identity (for example `MyBox.__parameters__[0] is
+origin.T`) sees two different objects.
 
 Removing a declaration or an unused import leaves its surrounding blank lines behind, so a modified file can
 start with, or contain, extra blank lines. Run your formatter afterwards to tidy them up.

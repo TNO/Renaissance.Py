@@ -1,15 +1,41 @@
 """Tests for TypeVarCheck.localize_imported_typevars."""
 
+import ast
+import builtins
 import textwrap
 from pathlib import Path
+from typing import cast
 
 import pytest
-from hamcrest import assert_that, contains_string, has_entry, is_, not_
+from hamcrest import assert_that, contains_string, equal_to, has_entry, is_, not_
 from pytest_mock import MockerFixture
 
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
 from renaissance.recipes.type_var_check import PEP_695_MINIMUM, TypeVarCheck
 from renaissance.recipes.type_var_domain import UnsafeReason
+
+
+def _module_level_names(module: ast.Module) -> set[str]:
+    """Return the names bound at module level by imports, classes, functions and assignments."""
+    names: set[str] = set()
+    for node in module.body:
+        if isinstance(node, ast.Import | ast.ImportFrom):
+            names.update((alias.asname or alias.name).split(".")[0] for alias in node.names)
+        elif isinstance(node, ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef):
+            names.add(node.name)
+        elif isinstance(node, ast.Assign):
+            names.update(target.id for target in node.targets if isinstance(target, ast.Name))
+    return names
+
+
+def _names_used_by(call: ast.Call) -> set[str]:
+    """Return the non-builtin names a TypeVar call's arguments use, including inside string forward references."""
+    names: set[str] = set()
+    for argument in [*call.args[1:], *(keyword.value for keyword in call.keywords)]:
+        if isinstance(argument, ast.Constant) and isinstance(argument.value, str):
+            argument = ast.parse(argument.value, mode="eval").body
+        names.update(node.id for node in ast.walk(argument) if isinstance(node, ast.Name))
+    return names - set(dir(builtins))
 
 
 class TestTypeVarCheckLocalize:
@@ -77,8 +103,8 @@ class TestTypeVarCheckLocalize:
         assert_that(subject.cross_file_unsafe_reasons, has_entry("T", UnsafeReason.ORIGIN_MODULE_EXPORTS_NAME))
         assert_that(subject.apply_to_string(), contains_string("from file_1 import T"))
 
-    def test_does_not_localize_typevar_an_origin_class_is_generic_over(self, mocker: MockerFixture, tmp_path: Path) -> None:
-        """Verify a TypeVar that a class at its origin is generic over stays imported, marked unsafe."""
+    def test_localizes_typevar_an_origin_class_is_generic_over(self, mocker: MockerFixture, tmp_path: Path) -> None:
+        """Verify a TypeVar is localized even when a class at its origin is generic over it."""
         subject = self._create_cross_file(
             mocker,
             tmp_path,
@@ -96,8 +122,106 @@ class TestTypeVarCheckLocalize:
         )
         result = subject.localize_imported_typevars()
 
-        assert_that(result, has_entry("T", "unsafe"))
-        assert_that(subject.cross_file_unsafe_reasons, has_entry("T", UnsafeReason.ORIGIN_CLASS_IS_GENERIC_OVER_NAME))
+        assert_that(result, has_entry("T", "fixed"))
+        output = subject.apply_to_string()
+        assert_that(output, contains_string("T = TypeVar('T')"))
+        assert_that(output, not_(contains_string("from file_1 import T")))
+
+    @pytest.mark.parametrize(
+        "declaration",
+        [
+            pytest.param('T = TypeVar("T", bound=Shape)', id="invariant-bound"),
+            pytest.param('T = TypeVar("T", int, Shape)', id="constraints"),
+            pytest.param('T = TypeVar("T", bound=Shape, covariant=True)', id="covariant"),
+            pytest.param('T = TypeVar("T", bound=Shape, contravariant=True)', id="contravariant"),
+            pytest.param('T = TypeVar("T", bound="Shape")', id="string-bound"),
+        ],
+    )
+    def test_localized_declaration_keeps_its_meaning(self, mocker: MockerFixture, tmp_path: Path, declaration: str) -> None:
+        """Verify the local copy has the origin's exact arguments and every name they use is defined in the importing file."""
+        origin = f"from typing import TypeVar\nclass Shape:\n    pass\n{declaration}\n"
+        subject = self._create_cross_file(
+            mocker,
+            tmp_path,
+            origin,
+            """
+            from file_1 import T
+            def biggest(items: list[T]) -> T:
+                return items[0]
+            """,
+        )
+        result = subject.localize_imported_typevars()
+
+        assert_that(result, equal_to({"T": "fixed"}))
+        module = ast.parse(subject.apply_to_string())
+        local_call = next(node.value for node in module.body if isinstance(node, ast.Assign))
+        origin_call = cast("ast.Assign", ast.parse(origin).body[-1]).value
+        assert_that(ast.dump(local_call), equal_to(ast.dump(origin_call)))
+        assert_that(_names_used_by(cast("ast.Call", local_call)) - _module_level_names(module), equal_to(set()))
+
+    def test_does_not_localize_when_a_name_the_declaration_uses_means_something_else_here(
+        self, mocker: MockerFixture, tmp_path: Path
+    ) -> None:
+        """Verify a declaration using a name the importing file binds to something else stays imported, marked unsafe."""
+        subject = self._create_cross_file(
+            mocker,
+            tmp_path,
+            """
+            from typing import TypeVar
+            class Shape:
+                pass
+            T = TypeVar("T", bound=Shape)
+            """,
+            """
+            from file_1 import T
+            class Shape:
+                pass
+            def biggest(items: list[T]) -> T:
+                return items[0]
+            """,
+        )
+        result = subject.localize_imported_typevars()
+
+        assert_that(result, equal_to({"T": "unsafe"}))
+        assert_that(subject.cross_file_unsafe_reasons, equal_to({"T": UnsafeReason.DECLARATION_NAME_CONFLICT}))
+        assert_that(subject.apply_to_string(), contains_string("from file_1 import T"))
+
+    @pytest.mark.parametrize(
+        ("dunder_all", "imported_elsewhere", "expected_reason"),
+        [
+            pytest.param('__all__ = ["T"]', frozenset(), UnsafeReason.DECLARED_TYPEVAR_EXPORTED, id="re-exported-via-dunder-all"),
+            pytest.param("", frozenset({"T"}), UnsafeReason.IMPORTED_ELSEWHERE_IN_PROJECT, id="imported-from-here-elsewhere"),
+        ],
+    )
+    def test_does_not_localize_typevar_this_file_re_exports(
+        self,
+        mocker: MockerFixture,
+        tmp_path: Path,
+        dunder_all: str,
+        imported_elsewhere: frozenset[str],
+        expected_reason: UnsafeReason,
+    ) -> None:
+        """Verify an imported TypeVar this file passes on to others keeps pointing at the origin's object."""
+        subject = self._create_cross_file(
+            mocker,
+            tmp_path,
+            """
+            from typing import TypeVar
+            T = TypeVar("T")
+            """,
+            f"""
+            from file_1 import T
+            {dunder_all}
+            def b(x: T) -> T:
+                return x
+            """,
+        )
+        subject.project_wide_imported_names = imported_elsewhere
+
+        result = subject.localize_imported_typevars()
+
+        assert_that(result, equal_to({"T": "unsafe"}))
+        assert_that(subject.cross_file_unsafe_reasons, equal_to({"T": expected_reason}))
         assert_that(subject.apply_to_string(), contains_string("from file_1 import T"))
 
     def test_keeps_other_names_when_localizing_one_of_several_imports(self, mocker: MockerFixture, tmp_path: Path) -> None:
