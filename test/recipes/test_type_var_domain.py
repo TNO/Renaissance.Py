@@ -1,12 +1,15 @@
 """Tests for type_var_domain's safety predicates and their UnsafeReason results."""
 
 import ast
+import re
 import textwrap
+from pathlib import Path
 
 import pytest
 from hamcrest import assert_that, is_
 
 from renaissance.recipes.type_var_domain import (
+    UNSAFE_RULES,
     UnsafeReason,
     is_safe_to_convert,
     is_safe_to_localize,
@@ -62,7 +65,7 @@ class TestIsSafeToLocalize:
     """is_safe_to_localize: None when safe, the specific UnsafeReason otherwise."""
 
     def test_returns_none_when_safe(self) -> None:
-        """A TypeVar not exported and not used in a Generic[...] base is safe to localize."""
+        """A TypeVar not exported and with no class at its origin generic over it is safe to localize."""
         tree = _parse("""
             from typing import TypeVar
 
@@ -74,18 +77,47 @@ class TestIsSafeToLocalize:
 
         assert_that(is_safe_to_localize(tree, "T"), is_(None))
 
-    def test_ignores_non_generic_subscripted_base_and_plain_base(self) -> None:
-        """AI: Verify a TypeVar used only as a subscript of a non-Generic base stays safe to localize."""
-        tree = _parse("""
-            from typing import TypeVar
+    @pytest.mark.parametrize(
+        "class_header",
+        [
+            pytest.param("class Box(Generic[T]):", id="generic"),
+            pytest.param("class Box(typing.Generic[T]):", id="qualified-generic"),
+            pytest.param("class Box(Protocol[T]):", id="protocol"),
+            pytest.param("class Box(Mapping[T]):", id="generic-abc"),
+            pytest.param("class Box(Base[int, T]):", id="generic-subclass"),
+        ],
+    )
+    def test_reports_origin_class_inheriting_the_type_parameter(self, class_header: str) -> None:
+        """A class at the origin whose bases mention T is generic over that T object, so T can't be copied."""
+        tree = _parse(f"""
+            import typing
             from collections.abc import Mapping
+            from typing import Generic, Protocol, TypeVar
 
             T = TypeVar("T")
 
-            class Plain(object):
+            {class_header}
                 pass
+        """)
 
-            class Box(Mapping[T]):
+        assert_that(is_safe_to_localize(tree, "T"), is_(UnsafeReason.ORIGIN_CLASS_IS_GENERIC_OVER_NAME))
+
+    @pytest.mark.parametrize(
+        "class_header",
+        [
+            pytest.param("class Plain(object):", id="plain-class"),
+            pytest.param("class Box[T]:", id="pep695-class-declares-its-own"),
+            pytest.param("class Box[T](Base[T]):", id="pep695-class-with-generic-base"),
+        ],
+    )
+    def test_class_not_tied_to_the_module_typevar_stays_safe_to_localize(self, class_header: str) -> None:
+        """A class that isn't generic over the module-level T, or declares its own T, doesn't block localizing it."""
+        tree = _parse(f"""
+            from typing import TypeVar
+
+            T = TypeVar("T")
+
+            {class_header}
                 pass
         """)
 
@@ -103,17 +135,6 @@ class TestIsSafeToLocalize:
                 T = TypeVar("T")
                 """,
                 UnsafeReason.ORIGIN_MODULE_EXPORTS_NAME,
-            ),
-            (
-                """
-                from typing import TypeVar, Generic
-
-                T = TypeVar("T")
-
-                class Box(Generic[T]):
-                    pass
-                """,
-                UnsafeReason.USED_IN_EXPORTED_GENERIC_BASE,
             ),
             (
                 """
@@ -159,3 +180,18 @@ class TestIsSafeToLocalize:
         """)
 
         assert_that(is_safe_to_localize(tree, "T"), is_(None))
+
+
+_FEATURE_DOC = Path(__file__).resolve().parents[2] / "docs" / "user" / "features" / "typevar-modernization.md"
+
+
+class TestUnsafeRuleDocAnchors:
+    """Every UnsafeRule's documentation anchor exists where the CLI's report links to it."""
+
+    @pytest.mark.parametrize("reason", list(UnsafeReason))
+    def test_anchor_is_set_on_a_heading(self, reason: UnsafeReason) -> None:
+        """The rule's anchor is attached to a heading line, the only place attr_list turns it into a link target."""
+        anchor = UNSAFE_RULES[reason].doc_anchor
+        heading = re.compile(rf"^#+ .+ \{{ #{re.escape(anchor)} \}}$", re.MULTILINE)
+
+        assert_that(bool(heading.search(_FEATURE_DOC.read_text(encoding="utf-8"))), is_(True))
