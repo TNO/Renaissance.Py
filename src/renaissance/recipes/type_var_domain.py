@@ -19,7 +19,7 @@ class UnsafeReason(StrEnum):
     PEP695_VERSION_GATE = "pep695_version_gate"
     DECLARED_TYPEVAR_EXPORTED = "declared_typevar_exported"
     USED_IN_GENERIC_CLASS = "used_in_generic_class"
-    DECLARATION_NAME_CONFLICT = "declaration_name_conflict"
+    DECLARATION_NAME_UNAVAILABLE = "declaration_name_unavailable"
     IMPORTED_ELSEWHERE_IN_PROJECT = "imported_elsewhere_in_project"
     ORIGIN_IMPORTS_CONSTRUCTOR_CONDITIONALLY = "origin_imports_constructor_conditionally"
 
@@ -42,9 +42,9 @@ UNSAFE_RULES: dict[UnsafeReason, UnsafeRule] = {
     UnsafeReason.USED_IN_GENERIC_CLASS: UnsafeRule(
         "only used inside a class that is generic over it", "feature-typevar-modernization-used-in-generic-class",
     ),
-    UnsafeReason.DECLARATION_NAME_CONFLICT: UnsafeRule(
-        "a name its declaration uses means something else in this file",
-        "feature-typevar-modernization-declaration-name-conflict",
+    UnsafeReason.DECLARATION_NAME_UNAVAILABLE: UnsafeRule(
+        "a name its declaration uses can't be imported here as the same object",
+        "feature-typevar-modernization-declaration-name-unavailable",
     ),
     UnsafeReason.IMPORTED_ELSEWHERE_IN_PROJECT: UnsafeRule(
         "imported directly by another file in the target project", "feature-typevar-modernization-imported-elsewhere-in-project",
