@@ -6,12 +6,14 @@ configuration, counts the issues per kind (ruff rule code, pyright rule name), a
 the counts with a per-kind budget stored in `lint-budget.json`:
 
 * a pull request may never exceed the budget of any kind (new issues fail the check);
-* every reduction is adopted as the new budget, so the counts can only ratchet down;
+* a reduction never fails the check: improving the code is always allowed, and the lower
+  counts are adopted as the new budget, so the counts can only ratchet down;
 * once every count reaches zero the budget file, this script, `pyrightconfig.strict.json`
   and the CI step can be removed, and the strict settings can move into `pyproject.toml`.
 
 Run `python tools/lint_budget.py` to check and adopt improvements, and
-`python tools/lint_budget.py --check` (as CI does) to check without writing.
+`python tools/lint_budget.py --check` (as CI does) to check without writing; the
+`lint budget` workflow adopts the improvements on `main` in a pull request of its own.
 """
 
 import argparse
@@ -170,13 +172,14 @@ def main(argv: list[str] | None = None) -> int:
     if improved:
         print("\nThese kinds of issues improved:")
         print("\n".join(improved))
-        for tool in tools:
-            budget[tool] = dict(sorted(counts[tool].items()))
         if args.check:
-            print(f"\n{BUDGET_FILE.name} is out of date: run `python tools/lint_budget.py` and commit the lowered budgets.")
-            return EXIT_OVER_BUDGET
-        save_budget(budget)
-        print(f"\nAdopted the lower counts as the new budget in {BUDGET_FILE.name}.")
+            # An improvement is not a failure: the budget is a ceiling, and the 'lint budget' workflow lowers it on main.
+            print(f"\n{BUDGET_FILE.name} is out of date: run `python tools/lint_budget.py`, or let the 'lint budget' workflow lower it.")
+        else:
+            for tool in tools:
+                budget[tool] = dict(sorted(counts[tool].items()))
+            save_budget(budget)
+            print(f"\nAdopted the lower counts as the new budget in {BUDGET_FILE.name}.")
 
     if args.tool == "all" and not any(counts[tool] for tool in tools):
         print(_removal_advice())
