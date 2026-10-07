@@ -1,6 +1,7 @@
 """AI: Step definitions for the rewrite-semantics BDD feature scenarios."""
 
 from pathlib import Path
+from typing import Any
 
 import pytest
 from pytest_bdd import given, parsers, scenario, then, when
@@ -15,7 +16,7 @@ from steps.conftest import FEATURES_BASE_DIR
 class Context(dict):
     """AI: Dict subclass exposing its items as attributes, used to share BDD scenario state."""
 
-    def __getattr__(self, name):
+    def __getattr__(self, name) -> Any:  # noqa: ANN401 (scenario state is heterogeneous by nature)
         """AI: Return the dict item named `name` as an attribute."""
         return self[name]
 

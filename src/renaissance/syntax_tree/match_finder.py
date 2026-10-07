@@ -1,7 +1,7 @@
 """AI: Pattern matching engine that finds AST nodes matching a given pattern."""
 
 from collections.abc import Iterable, Sequence
-from typing import Self
+from typing import Any, Self
 
 from renaissance.utils.ast_utils import use_dollar
 
@@ -92,7 +92,7 @@ class PatternMatch:
         """AI: Return the newline-joined signatures of the matched nodes."""
         return str(self)
 
-    def __getitem__(self, key):
+    def __getitem__(self, key) -> str:
         """AI: Return the newline-joined expansion text for the given placeholder key."""
         return "\n".join(node.signature if isinstance(node, NodeProtocol) else node for node in self.expansions[key])
 
@@ -320,7 +320,7 @@ def match_pattern(src_nodes, patterns, recursive=True) -> Sequence[PatternMatch]
     return found_statements
 
 
-def find_all(src_nodes, *patterns, recursive: bool = True) -> Sequence[PatternMatch]:
+def find_all(src_nodes, *patterns: Any, recursive: bool = True) -> Sequence[PatternMatch]:
     """AI: Find all matches of any of the given patterns within src_nodes."""
     return [m for pattern in patterns for m in match_pattern(src_nodes, pattern, recursive)]
 

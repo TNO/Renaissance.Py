@@ -15,7 +15,7 @@ from renaissance.syntax_tree import (
     ASTShower,
 )
 from renaissance.syntax_tree.ast_finder import find_nodes
-from renaissance.syntax_tree.match_finder import find_in_list, find_variants, is_match, match_pattern
+from renaissance.syntax_tree.match_finder import PatternMatch, find_in_list, find_variants, is_match, match_pattern
 from renaissance.syntax_tree.semantic_kind import SemanticKind
 from utils_for_tests import compress, debug_mismatch, show_node
 
@@ -53,7 +53,7 @@ class TestCMatchFinder:
         assert_that(matches, has_length(1))
 
     @staticmethod
-    def do_test(factory: ASTFactory, cpp_code, patterns: list[ASTNode], recursive: bool):
+    def do_test(factory: ASTFactory, cpp_code, patterns: list[ASTNode], recursive: bool) -> list[PatternMatch]:
         """AI: Parse cpp_code and return the pattern matches that are part of the translation unit."""
         atu = factory.create_from_text(cpp_code, "test.c")
         # find all if and while statements

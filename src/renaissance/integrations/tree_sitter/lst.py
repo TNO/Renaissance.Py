@@ -56,7 +56,7 @@ class LSTNode:
         """AI: Return the semantic kind, or the raw parser kind when no semantic kind applies."""
         return self.semantic_kind if self.semantic_kind is not SemanticKind.NODE else self.parser_kind
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         """AI: Return whether this node is structurally equal to `other`, ignoring irrelevant properties/children."""
         return (
             isinstance(other, type(self))
@@ -65,7 +65,7 @@ class LSTNode:
             and match_children(self.children, other.children, IRRELEVANT_NODE)
         )
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         """AI: Return a hash based on the node's kind key, properties, and children."""
         return hash((self.kind_key, frozenset(self.properties.items()), tuple(self.children)))
 

@@ -532,7 +532,7 @@ class _RewriteActions:
         return any(node in rewrite.nodes[1:] for rewrite in self.rewrites if isinstance(rewrite.target, PatternMatch))
 
     @staticmethod
-    def _get_parent_statement(node: Rewritable):
+    def _get_parent_statement(node: Rewritable) -> Rewritable | None:
         parent = node
         while parent and not parent.is_statement:
             parent = parent.parent
@@ -545,7 +545,7 @@ class _RewriteActions:
         include_whitespace: bool,
         include_comments: bool,
         nodes: Sequence[Rewritable],
-    ):
+    ) -> tuple[int, int]:
         start_offset = nodes[0].offset - offset
         end_offset = nodes[-1].extended_end_offset - offset
         if include_comments:
@@ -637,7 +637,7 @@ class _RewriteActions:
         return -1, -1
 
     @staticmethod
-    def __get_end_of_line(content: bytes, start: int):
+    def __get_end_of_line(content: bytes, start: int) -> int:
         location = content.find(b"\n", start)
         if location == -1:
             return len(content)
