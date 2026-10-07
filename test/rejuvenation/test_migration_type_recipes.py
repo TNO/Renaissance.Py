@@ -10,7 +10,7 @@ from pathlib import Path
 from types import ModuleType
 
 import pytest
-from hamcrest import assert_that, contains_string, equal_to, has_entry, is_, is_not
+from hamcrest import assert_that, contains_string, equal_to, is_, is_not
 from hamcrest.core.matcher import Matcher
 
 from renaissance.recipes.type_var_domain import UnsafeReason, doc_link
@@ -68,37 +68,28 @@ class TestProcessFile:
         assert_that(migration.has_fixed(report), is_(True))
         assert_that(target.read_text(encoding="utf-8"), contains_string("def identity[T]"))
 
-    def test_unsafe_typevar_reported_but_not_written(self, tmp_path: Path) -> None:
-        """A TypeVar exported via __all__ is reported unsafe and the file is left untouched."""
+    @pytest.mark.parametrize(
+        ("source", "imported_elsewhere", "expected_reason"),
+        [
+            pytest.param(UNSAFE_TYPEVAR_SOURCE, frozenset(), UnsafeReason.DECLARED_TYPEVAR_EXPORTED, id="exported-via-dunder-all"),
+            pytest.param(LEGACY_TYPEVAR_SOURCE, frozenset({"T"}), UnsafeReason.IMPORTED_ELSEWHERE_IN_PROJECT, id="imported-elsewhere"),
+        ],
+    )
+    def test_converts_function_but_keeps_a_declaration_others_rely_on(
+        self, tmp_path: Path, source: str, imported_elsewhere: frozenset[str], expected_reason: UnsafeReason
+    ) -> None:
+        """The function is converted on disk, the declaration stays, and the report says why it stayed."""
         target = tmp_path / "mod.py"
-        target.write_text(UNSAFE_TYPEVAR_SOURCE, encoding="utf-8")
-        original = target.read_text(encoding="utf-8")
+        target.write_text(source, encoding="utf-8")
 
-        report = migration.process_file(target, min_python=(3, 12), project_root=tmp_path, project_wide_imported_names=frozenset())
+        report = migration.process_file(target, min_python=(3, 12), project_root=tmp_path, project_wide_imported_names=imported_elsewhere)
 
-        assert_that(migration.has_unsafe(report), is_(True))
-        assert_that(target.read_text(encoding="utf-8"), equal_to(original))
-
-    def test_unsafe_typevar_reason_is_recorded(self, tmp_path: Path) -> None:
-        """The specific UnsafeReason (not just the "unsafe" status) is recorded per name."""
-        target = tmp_path / "mod.py"
-        target.write_text(UNSAFE_TYPEVAR_SOURCE, encoding="utf-8")
-
-        report = migration.process_file(target, min_python=(3, 12), project_root=tmp_path, project_wide_imported_names=frozenset())
-
+        assert_that(migration.has_fixed(report), is_(True))
         assert_that(report.reasons, is_not(None))
-        assert_that(report.reasons["converted"], has_entry("T", UnsafeReason.DECLARED_TYPEVAR_EXPORTED))
-
-    def test_project_wide_imported_name_is_reported_unsafe_even_without_dunder_all(self, tmp_path: Path) -> None:
-        """A name imported directly by another passed-in file is left alone, __all__ or not."""
-        target = tmp_path / "mod.py"
-        target.write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
-
-        report = migration.process_file(target, min_python=(3, 12), project_root=tmp_path, project_wide_imported_names=frozenset({"T"}))
-
-        assert_that(migration.has_unsafe(report), is_(True))
-        assert_that(report.reasons["converted"], has_entry("T", UnsafeReason.IMPORTED_ELSEWHERE_IN_PROJECT))
-        assert_that(target.read_text(encoding="utf-8"), contains_string('T = TypeVar("T")'))
+        assert_that((report.reasons or {})["orphaned"], equal_to({"T": expected_reason}))
+        written = target.read_text(encoding="utf-8")
+        assert_that(written, contains_string("def identity[T](x: T) -> T:"))
+        assert_that(written, contains_string('T = TypeVar("T")'))
 
     def test_syntax_error_reported_as_error_not_raised(self, tmp_path: Path) -> None:
         """A file that fails to parse is reported on FileReport.error, not raised."""

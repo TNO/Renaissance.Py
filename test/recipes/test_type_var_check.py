@@ -13,6 +13,7 @@ from pytest_mock import MockerFixture
 
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
 from renaissance.recipes.type_var_check import TypeVarCheck
+from renaissance.recipes.type_var_domain import UnsafeReason
 
 
 class TestTypeVarCheck:
@@ -45,6 +46,24 @@ class TestTypeVarCheck:
         output = subject.apply_to_string()
         assert_that(output, contains_string("def b[T](x: T) -> T:"))
         assert_that(output, not_(contains_string("T = TypeVar")))
+
+    def test_check_converts_but_keeps_an_exported_declaration(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
+        """Verify check() converts the functions but keeps a declaration listed in __all__, reporting why."""
+        subject = create_type_var_check("""
+            from typing import TypeVar
+            __all__ = ["T"]
+            T = TypeVar('T')
+
+            def first(items: list[T]) -> T:
+                return items[0]
+        """)
+        subject.run()
+
+        assert_that(subject.result, equal_to({"cross_file": {}, "converted": {"T": "fixed"}, "orphaned": {"T": "unsafe"}}))
+        assert_that(subject.orphaned_unsafe_reasons, equal_to({"T": UnsafeReason.DECLARED_TYPEVAR_EXPORTED}))
+        output = subject.apply_to_string()
+        assert_that(output, contains_string("def first[T](items: list[T]) -> T:"))
+        assert_that(output, contains_string("T = TypeVar('T')"))
 
     def test_check_keeps_declaration_still_used_by_a_generic_class(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
         """Verify check() converts a standalone function but keeps the declaration a Generic[...] base still needs."""
