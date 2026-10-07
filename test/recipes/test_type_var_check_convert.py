@@ -208,20 +208,19 @@ class TestTypeVarCheckConvert:
         assert_that(subject.apply_to_string(), contains_string("def a[*Ts]"))
 
     @pytest.mark.parametrize(
-        ("extra_line", "imported_elsewhere", "expected_reason"),
+        ("extra_line", "imported_elsewhere"),
         [
-            pytest.param('__all__ = ["T"]', frozenset(), UnsafeReason.DECLARED_TYPEVAR_EXPORTED, id="exported-via-dunder-all"),
-            pytest.param("", frozenset({"T"}), UnsafeReason.IMPORTED_ELSEWHERE_IN_PROJECT, id="imported-elsewhere"),
+            pytest.param('__all__ = ["T"]', frozenset(), id="exported-via-dunder-all"),
+            pytest.param("", frozenset({"T"}), id="imported-elsewhere"),
         ],
     )
-    def test_does_not_convert_unsafe_typevar(
+    def test_converts_functions_using_a_typevar_whose_declaration_must_stay(
         self,
         create_type_var_check: Callable[[str], TypeVarCheck],
         extra_line: str,
         imported_elsewhere: frozenset[str],
-        expected_reason: UnsafeReason,
     ) -> None:
-        """Verify a TypeVar that is_safe_to_convert rejects is reported unsafe with its reason and left unconverted."""
+        """Verify functions get [T] even when T's declaration can't be removed, and the declaration is kept."""
         subject = create_type_var_check(f"""
             from typing import TypeVar
 
@@ -236,9 +235,10 @@ class TestTypeVarCheckConvert:
 
         result = subject.convert_declared_typevars()
 
-        assert_that(result, equal_to({"T": "unsafe"}))
-        assert_that(subject.converted_unsafe_reasons, equal_to({"T": expected_reason}))
-        assert_that(subject.apply_to_string(), contains_string("def a(x: T) -> T:"))
+        assert_that(result, equal_to({"T": "fixed"}))
+        output = subject.apply_to_string()
+        assert_that(output, contains_string("def a[T](x: T) -> T:"))
+        assert_that(output, contains_string('T = TypeVar("T")'))
 
     def test_converts_function_preserving_unusual_body_formatting(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
         """AI: Verify converting a signature never reformats or collapses its body's unusual formatting."""
