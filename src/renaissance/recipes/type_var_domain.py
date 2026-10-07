@@ -17,8 +17,7 @@ class UnsafeReason(StrEnum):
 
     PEP695_VERSION_GATE = "pep695_version_gate"
     DECLARED_TYPEVAR_EXPORTED = "declared_typevar_exported"
-    USED_OUTSIDE_FUNCTION = "used_outside_function"
-    USED_IN_PEP695_CLASS = "used_in_pep695_class"
+    USED_IN_GENERIC_CLASS = "used_in_generic_class"
     ORIGIN_MODULE_EXPORTS_NAME = "origin_module_exports_name"
     USED_IN_EXPORTED_GENERIC_BASE = "used_in_exported_generic_base"
     IMPORTED_ELSEWHERE_IN_PROJECT = "imported_elsewhere_in_project"
@@ -40,12 +39,8 @@ UNSAFE_RULES: dict[UnsafeReason, UnsafeRule] = {
     UnsafeReason.DECLARED_TYPEVAR_EXPORTED: UnsafeRule(
         "exported via __all__", "feature-typevar-modernization-declared-typevar-exported",
     ),
-    UnsafeReason.USED_OUTSIDE_FUNCTION: UnsafeRule(
-        "used outside a function body, e.g. a Generic[...] base", "feature-typevar-modernization-used-outside-function",
-    ),
-    UnsafeReason.USED_IN_PEP695_CLASS: UnsafeRule(
-        "used inside a class that already declares it as a PEP 695 type parameter",
-        "feature-typevar-modernization-used-in-pep695-class",
+    UnsafeReason.USED_IN_GENERIC_CLASS: UnsafeRule(
+        "only used inside a class that is generic over it", "feature-typevar-modernization-used-in-generic-class",
     ),
     UnsafeReason.ORIGIN_MODULE_EXPORTS_NAME: UnsafeRule(
         "origin module exports it via __all__", "feature-typevar-modernization-origin-module-exports-name",
@@ -205,58 +200,42 @@ def functions_using_nodes(
     return usage
 
 
-def _used_outside_functions(tree: ast.Module, name: str, decl_stmt: ast.Assign) -> bool:
-    """Return True if `name` is referenced anywhere outside a function/method body.
+def functions_in_generic_classes(tree: ast.Module, name: str) -> list[ast.FunctionDef | ast.AsyncFunctionDef]:
+    """Return every function or method defined inside a class that is generic over `name`.
 
-    Other than its own declaration - e.g. a class's `Generic[...]` base or a module-level type
-    alias.
+    A class is generic over `name` when it declares it as a PEP 695 type parameter (`class Box[T]:`)
+    or when one of its bases mentions it (`Generic[T]`, `Protocol[T]`, `Base[T]`).
     """
-
-    def visit(node: ast.AST, in_function: bool) -> bool:
-        if node is decl_stmt:
-            return False
-        if isinstance(node, ast.Name) and node.id == name and not in_function:
-            return True
-        current = in_function or isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef)
-        return any(visit(child, current) for child in ast.iter_child_nodes(node))
-
-    return visit(tree, False)
-
-
-def _used_in_pep695_class(tree: ast.Module, name: str) -> bool:
-    """Return True if a class declaring `name` as a PEP 695 type parameter (`class Box[T]:`) references it."""
-    return any(
-        isinstance(node, ast.ClassDef)
-        and any(type_param_name(param) == name for param in node.type_params)
-        and any(isinstance(child, ast.Name) and child.id == name for child in ast.walk(node))
+    # TODO: try to come up with a smart solution for when Generic can be safely changed, but don't touch it for now.
+    return [
+        function
         for node in ast.walk(tree)
-    )
+        if isinstance(node, ast.ClassDef)
+        and (
+            any(type_param_name(param) == name for param in node.type_params)
+            or any(isinstance(child, ast.Name) and child.id == name for base in node.bases for child in ast.walk(base))
+        )
+        for function in ast.walk(node)
+        if isinstance(function, ast.FunctionDef | ast.AsyncFunctionDef)
+    ]
 
 
 def is_safe_to_convert(
     tree: ast.Module,
     name: str,
-    decl_stmt: ast.Assign,
     project_wide_imported_names: frozenset[str] = frozenset(),
 ) -> UnsafeReason | None:
-    """Return None if `name` is safe to convert to PEP 695 syntax and its declaration removed.
+    """Return None if `name`'s module-level declaration may be converted and later removed.
 
-    Otherwise returns the reason it isn't: DECLARED_TYPEVAR_EXPORTED if exported via `__all__`,
-    IMPORTED_ELSEWHERE_IN_PROJECT if `name` is in `project_wide_imported_names` (another file in
-    the target project imports it directly, regardless of `__all__`), USED_IN_PEP695_CLASS if a
-    class declaring `name` as a PEP 695 type parameter references it, or USED_OUTSIDE_FUNCTION if
-    referenced anywhere outside the functions using it.
+    Otherwise returns the reason it may not: DECLARED_TYPEVAR_EXPORTED if exported via `__all__`,
+    or IMPORTED_ELSEWHERE_IN_PROJECT if `name` is in `project_wide_imported_names` (another file in
+    the target project imports it directly, regardless of `__all__`).
     """
     dunder_all = _find_dunder_all(tree)
     if dunder_all is not None and name in dunder_all:
         return UnsafeReason.DECLARED_TYPEVAR_EXPORTED
     if name in project_wide_imported_names:
         return UnsafeReason.IMPORTED_ELSEWHERE_IN_PROJECT
-    # TODO: try to come up with a smart solution for when Generic can be safely changed, but don't touch it for now.
-    if _used_in_pep695_class(tree, name):
-        return UnsafeReason.USED_IN_PEP695_CLASS
-    if _used_outside_functions(tree, name, decl_stmt):
-        return UnsafeReason.USED_OUTSIDE_FUNCTION
     return None
 
 

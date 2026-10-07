@@ -13,6 +13,7 @@ from renaissance.recipes.type_var_domain import (
     build_type_param,
     find_import_source,
     find_type_param_declarations,
+    functions_in_generic_classes,
     functions_using_nodes,
     is_safe_to_convert,
     is_safe_to_localize,
@@ -72,10 +73,11 @@ class TypeVarCheck(PythonRefactoring):
 
         The declaration itself is left in place; remove_orphaned_declarations removes it once it
         is unused. A name whose references are all already shadowed by a same-named PEP 695 type
-        parameter, or that has none, needs no conversion and is skipped. A name that
-        is_safe_to_convert rejects, or that would need PEP 695 syntax while min_python isn't 3.12+,
-        is reported "unsafe", with its UnsafeReason recorded on self.converted_unsafe_reasons.
-        Returns {name: "fixed" | "unsafe"}.
+        parameter, or that has none, needs no conversion and is skipped. Methods of a class generic
+        over the name (see functions_in_generic_classes) keep using the class's parameter and are
+        never converted. A name that is_safe_to_convert rejects, that only such methods use, or that
+        would need PEP 695 syntax while min_python isn't 3.12+ is reported "unsafe", with its
+        UnsafeReason recorded on self.converted_unsafe_reasons. Returns {name: "fixed" | "unsafe"}.
         """
         root = cast("PythonRstNode", cast("object", self.root))
         tree = cast("ast.Module", root.node)
@@ -92,7 +94,18 @@ class TypeVarCheck(PythonRefactoring):
             if all_refs_shadowed_by_pep695(tree, name, decl_stmt):
                 continue
 
-            reason = is_safe_to_convert(tree, name, decl_stmt, self.project_wide_imported_names)
+            generic_class_method_ids = {id(method) for method in functions_in_generic_classes(tree, name)}
+            candidates = [
+                function
+                for function in functions
+                if id(function) not in generic_class_method_ids
+                and not any(type_param_name(existing) == name for existing in function.type_params)
+            ]
+            reason = is_safe_to_convert(tree, name, self.project_wide_imported_names)
+            if reason is None and not candidates:
+                if not any(id(function) in generic_class_method_ids for function in functions):
+                    continue
+                reason = UnsafeReason.USED_IN_GENERIC_CLASS
             if reason is None and not self._target_supports_pep695():
                 reason = UnsafeReason.PEP695_VERSION_GATE
             if reason is not None:
@@ -100,9 +113,7 @@ class TypeVarCheck(PythonRefactoring):
                 continue
 
             type_param = build_type_param(decl_stmt)
-            for function in functions:
-                if any(type_param_name(existing) == name for existing in function.type_params):
-                    continue
+            for function in candidates:
                 function.type_params = [*function.type_params, type_param]
                 touched_functions[id(function)] = function
             results[name] = "fixed"
@@ -131,7 +142,7 @@ class TypeVarCheck(PythonRefactoring):
             if not all_refs_shadowed_by_pep695(tree, name, decl_stmt):
                 continue
 
-            reason = is_safe_to_convert(tree, name, decl_stmt, self.project_wide_imported_names)
+            reason = is_safe_to_convert(tree, name, self.project_wide_imported_names)
             if reason is not None:
                 self._mark_unsafe(results, self.orphaned_unsafe_reasons, name, reason)
                 continue

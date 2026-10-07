@@ -56,7 +56,7 @@ plus the safety-analysis functions `is_safe_to_convert`/`is_safe_to_localize`) l
 kept out of `type_var_check.py` so domain modelling doesn't mix with pipeline orchestration.
 
 `is_safe_to_convert`/`is_safe_to_localize` return `UnsafeReason | None` (`None` meaning safe), not a bare
-`bool` - each of the eight `UnsafeReason` members (the Python-version gate plus the seven `__all__`/scope/
+`bool` - each of the seven `UnsafeReason` members (the Python-version gate plus the six `__all__`/scope/
 cross-project conditions across both functions) has a matching `UnsafeRule` (a short message plus a docs anchor
 slug) in `UNSAFE_RULES`, and `doc_link(reason)` resolves one to the full URL under
 [TypeVar modernization](../../user/features/typevar-modernization.md)'s Constraints section. `is_safe_to_convert`
@@ -75,9 +75,12 @@ to the parent folder when given a single file.
 locates the owning `PythonRstNode` for a nested function via `self.find_rst_node(function)` - a generic
 `PythonRefactoring` base-class method (matching by node identity against the raw `ast.FunctionDef`/
 `ast.AsyncFunctionDef` node), available to any future recipe needing the same lookup, not just this one. It skips
-a function that already declares a matching PEP 695 `type_param` (rather than adding a duplicate). A name used by
-a class that already declares it as a PEP 695 type parameter (`class Box[T]:`) is reported `"unsafe"`
-(`USED_IN_PEP695_CLASS`) instead: adding `[T]` to one of its methods would shadow the class's own `T`.
+a function that already declares a matching PEP 695 `type_param` (rather than adding a duplicate), and every
+method of a class generic over the name (`functions_in_generic_classes` in `type_var_domain.py`: the class
+declares it as a PEP 695 type parameter, or a base mentions it): adding `[T]` there would shadow the class's own
+`T`. A name that only such methods use is reported `"unsafe"` (`USED_IN_GENERIC_CLASS`). A name also used outside
+functions (a `Generic[T]` base, a module-level alias) doesn't block converting the functions that use it:
+`remove_orphaned_declarations` keeps the declaration as long as such a live reference remains.
 
 `convert_declared_typevars` calls `unparse_signature_only(function, original_text)` (from
 `renaissance.utils.unparse_utils`) rather than `self.replace(unparse_node(function), ...)`: it splices only the
@@ -148,9 +151,9 @@ syntax.
 - `test/recipes/test_type_var_check_properties.py` - Hypothesis/hypothesmith crash-safety fuzzing of `check()`
   against arbitrary generated source (see [ADR 09](../architecture/adr/09_property_based_tests.md)).
 - `test/recipes/test_type_var_domain.py` - `is_safe_to_convert`/`is_safe_to_localize` in isolation, confirming
-  that five of the `UnsafeReason` members (the `__all__`, outside-use, origin-export, generic-base and
-  conditional-constructor conditions) are returned by their specific unsafe condition. The version gate,
-  `USED_IN_PEP695_CLASS` and `IMPORTED_ELSEWHERE_IN_PROJECT` are covered through the recipe and the CLI instead.
+  that five of the `UnsafeReason` members (the `__all__`, imported-elsewhere, origin-export, generic-base and
+  conditional-constructor conditions) are returned by their specific unsafe condition. The version gate and
+  `USED_IN_GENERIC_CLASS` are covered through the recipe instead.
 - `test/recipes/test_step_runner.py` - `Step`/`run_steps`: commit only when a step fixed something, results in step
   order.
 - `test/recipes/test_python_refactoring.py` - `PythonRefactoring.find_rst_node` and `narrowed_import_text`.
