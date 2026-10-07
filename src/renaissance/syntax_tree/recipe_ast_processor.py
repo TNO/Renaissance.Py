@@ -25,7 +25,7 @@ def annotate_decorator(foreign_decorator: TFunc, name: str):
     return new_decorator
 
 
-def get_methods_with_decorator(cls: Any, decorator: TFunc):
+def get_methods_with_decorator(cls: type, decorator: TFunc):
     """AI: Yield all methods of cls that were annotated with the given recipe-action decorator."""
     for maybe_decorated in cls.__dict__.values():
         if hasattr(maybe_decorated, "recipe_action") and maybe_decorated.recipe_action == decorator.__name__:

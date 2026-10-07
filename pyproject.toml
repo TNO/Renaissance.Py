@@ -110,8 +110,8 @@ select = [
     "LOG", "N", "NPY", "PTH", "PD", "PERF", "PGH", "PIE", "PLC", "PLE", "PYI",
     "Q", "RSE", "SIM", "SLOT", "T10", "TC", "TID", "UP", "W", "YTT",
     # ANN is adopted code by code as each phase clears it; the rest stay unselected so the
-    # lint budget keeps counting them. Still open: ANN001, ANN201, ANN202, ANN401.
-    "ANN002", "ANN003", "ANN204", "ANN205",
+    # lint budget keeps counting them. Still open: ANN001, ANN201, ANN202.
+    "ANN002", "ANN003", "ANN204", "ANN205", "ANN401",
 ]
 #select = ["ALL"]  # goal of issue 
 ignore = [

@@ -7,6 +7,7 @@ import pytest
 
 import test.syntax_tree.infra_syntax_node
 import test.syntax_tree.infra_text_segment
+from renaissance.syntax_tree.text_segment import TextSegment
 
 
 def _offset_to_line_col(text: str, offset: int) -> tuple[int, int]:
@@ -99,9 +100,9 @@ class DummyNode:
 
 class _SegmentCallCounter:
     def __init__(self) -> None:
-        self.calls: list[Any] = []
+        self.calls: list[TextSegment] = []
 
-    def __call__(self, seg: Any) -> None:
+    def __call__(self, seg: TextSegment) -> None:
         self.calls.append(seg)
 
 
