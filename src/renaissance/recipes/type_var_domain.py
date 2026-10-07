@@ -1,6 +1,7 @@
 """TypeVar/ParamSpec/TypeVarTuple domain model and safety analysis."""
 
 import ast
+from collections.abc import Iterable
 from dataclasses import dataclass
 from enum import StrEnum
 from typing import cast
@@ -181,9 +182,9 @@ def find_import_source(tree: ast.Module, name: str) -> str | None:
 
 
 def functions_using_nodes(
-    tree: ast.Module, names: set[str]
+    tree: ast.Module, names: Iterable[str]
 ) -> dict[str, list[ast.FunctionDef | ast.AsyncFunctionDef]]:
-    """Map each of `names` to the outermost function/method node whose signature or body references it.
+    """Map each of `names`, in the given order, to the outermost function/method node whose signature or body references it.
 
     A name referenced inside a nested function (a closure) is attributed to the *outermost*
     function in its nesting chain, never the nested one: a PEP 695 type parameter declared on the

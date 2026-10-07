@@ -80,7 +80,7 @@ class TypeVarCheck(PythonRefactoring):
         root = cast("PythonRstNode", cast("object", self.root))
         tree = cast("ast.Module", root.node)
         declarations = find_type_param_declarations(tree)
-        usage = functions_using_nodes(tree, set(declarations.keys()))
+        usage = functions_using_nodes(tree, declarations.keys())
 
         results: dict[str, str] = {}
         self.converted_unsafe_reasons: dict[str, UnsafeReason] = {}
