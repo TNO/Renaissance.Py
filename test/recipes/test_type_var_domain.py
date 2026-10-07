@@ -8,7 +8,6 @@ from hamcrest import assert_that, is_
 
 from renaissance.recipes.type_var_domain import (
     UnsafeReason,
-    find_type_param_declarations,
     is_safe_to_convert,
     is_safe_to_localize,
 )
@@ -22,7 +21,7 @@ class TestIsSafeToConvert:
     """is_safe_to_convert: None when safe, the specific UnsafeReason otherwise."""
 
     def test_returns_none_when_safe(self) -> None:
-        """A TypeVar used only inside functions, not exported, is safe to convert."""
+        """A TypeVar not exported and not imported by another project file is safe to convert, whatever else is."""
         tree = _parse("""
             from typing import TypeVar
 
@@ -31,48 +30,32 @@ class TestIsSafeToConvert:
 
             T = TypeVar("T")
         """)
-        decl_stmt = find_type_param_declarations(tree)["T"]
 
-        assert_that(is_safe_to_convert(tree, "T", decl_stmt), is_(None))
+        assert_that(is_safe_to_convert(tree, "T", frozenset({"U"})), is_(None))
 
     @pytest.mark.parametrize(
-        ("source", "expected_reason"),
+        ("dunder_all", "imported_elsewhere", "expected_reason"),
         [
-            (
-                """
-                from typing import TypeVar
-
-                __all__ = ["T"]
-
-                def a(x: T) -> T:
-                    return x
-
-                T = TypeVar("T")
-                """,
-                UnsafeReason.DECLARED_TYPEVAR_EXPORTED,
-            ),
-            (
-                """
-                from typing import TypeVar, Generic
-
-                def a(x: T) -> T:
-                    return x
-
-                class Box(Generic[T]):
-                    pass
-
-                T = TypeVar("T")
-                """,
-                UnsafeReason.USED_OUTSIDE_FUNCTION,
-            ),
+            pytest.param('__all__ = ["T"]', frozenset(), UnsafeReason.DECLARED_TYPEVAR_EXPORTED, id="exported-via-dunder-all"),
+            pytest.param("", frozenset({"T"}), UnsafeReason.IMPORTED_ELSEWHERE_IN_PROJECT, id="imported-elsewhere"),
         ],
     )
-    def test_returns_the_specific_reason_when_unsafe(self, source: str, expected_reason: UnsafeReason) -> None:
+    def test_returns_the_specific_reason_when_unsafe(
+        self, dunder_all: str, imported_elsewhere: frozenset[str], expected_reason: UnsafeReason
+    ) -> None:
         """Each unsafe condition is distinguishable, not collapsed into one generic reason."""
-        tree = _parse(source)
-        decl_stmt = find_type_param_declarations(tree)["T"]
+        tree = _parse(f"""
+            from typing import TypeVar
 
-        assert_that(is_safe_to_convert(tree, "T", decl_stmt), is_(expected_reason))
+            {dunder_all}
+
+            def a(x: T) -> T:
+                return x
+
+            T = TypeVar("T")
+        """)
+
+        assert_that(is_safe_to_convert(tree, "T", imported_elsewhere), is_(expected_reason))
 
 
 class TestIsSafeToLocalize:
