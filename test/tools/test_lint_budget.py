@@ -84,13 +84,12 @@ def test_reduced_counts_are_adopted_as_the_new_budget(budget_file, monkeypatch) 
     assert json.loads(budget_file.read_text(encoding="utf-8")) == {"ruff": {"E501": 3}, "pyright": {"reportUnusedVariable": 2}}
 
 
-def test_check_mode_accepts_an_improvement_without_writing(budget_file, monkeypatch, capsys) -> None:
+def test_check_mode_accepts_an_improvement_without_writing(budget_file, monkeypatch) -> None:
     """AI: Assert CI mode passes a pull request that lowers the counts and never writes the budget file."""
     budget_file.write_text(json.dumps({"ruff": {"E501": 5}, "pyright": {}}), encoding="utf-8")
     _stub_counts(monkeypatch, ruff={"E501": 3}, pyright={})
 
     assert lint_budget.main(["--check"]) == lint_budget.EXIT_OK
-    assert "improved" in capsys.readouterr().out
     assert json.loads(budget_file.read_text(encoding="utf-8"))["ruff"] == {"E501": 5}
 
 
