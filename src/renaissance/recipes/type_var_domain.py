@@ -19,7 +19,6 @@ class UnsafeReason(StrEnum):
     PEP695_VERSION_GATE = "pep695_version_gate"
     DECLARED_TYPEVAR_EXPORTED = "declared_typevar_exported"
     USED_IN_GENERIC_CLASS = "used_in_generic_class"
-    ORIGIN_MODULE_EXPORTS_NAME = "origin_module_exports_name"
     DECLARATION_NAME_CONFLICT = "declaration_name_conflict"
     IMPORTED_ELSEWHERE_IN_PROJECT = "imported_elsewhere_in_project"
     ORIGIN_IMPORTS_CONSTRUCTOR_CONDITIONALLY = "origin_imports_constructor_conditionally"
@@ -42,9 +41,6 @@ UNSAFE_RULES: dict[UnsafeReason, UnsafeRule] = {
     ),
     UnsafeReason.USED_IN_GENERIC_CLASS: UnsafeRule(
         "only used inside a class that is generic over it", "feature-typevar-modernization-used-in-generic-class",
-    ),
-    UnsafeReason.ORIGIN_MODULE_EXPORTS_NAME: UnsafeRule(
-        "origin module exports it via __all__", "feature-typevar-modernization-origin-module-exports-name",
     ),
     UnsafeReason.DECLARATION_NAME_CONFLICT: UnsafeRule(
         "a name its declaration uses means something else in this file",
@@ -193,14 +189,10 @@ def _imports_name_conditionally(tree: ast.Module, name: str) -> bool:
 def is_safe_to_localize(origin_tree: ast.Module, name: str) -> UnsafeReason | None:
     """Return None if `name` is safe to duplicate as a local declaration, else the reason it isn't.
 
-    The origin module must not advertise it as public API via `__all__` (ORIGIN_MODULE_EXPORTS_NAME).
-    Its constructor (TypeVar/ParamSpec/TypeVarTuple) must also not be imported inside a
-    module-level `if`/`try` block (ORIGIN_IMPORTS_CONSTRUCTOR_CONDITIONALLY), since which
+    Its constructor (TypeVar/ParamSpec/TypeVarTuple) must not be imported inside a module-level
+    `if`/`try` block at the origin (ORIGIN_IMPORTS_CONSTRUCTOR_CONDITIONALLY), since which
     implementation it binds then depends on the runtime, e.g. `typing_extensions` below 3.13.
     """
-    dunder_all = _find_dunder_all(origin_tree)
-    if dunder_all is not None and name in dunder_all:
-        return UnsafeReason.ORIGIN_MODULE_EXPORTS_NAME
     declaration = find_type_param_declarations(origin_tree).get(name)
     if declaration is not None and _imports_name_conditionally(origin_tree, type_param_constructor_name(declaration)):
         return UnsafeReason.ORIGIN_IMPORTS_CONSTRUCTOR_CONDITIONALLY
@@ -258,12 +250,12 @@ def functions_in_generic_classes(tree: ast.Module, name: str) -> list[ast.Functi
     ]
 
 
-def is_safe_to_convert(
+def is_safe_to_remove(
     tree: ast.Module,
     name: str,
     project_wide_imported_names: frozenset[str] = frozenset(),
 ) -> UnsafeReason | None:
-    """Return None if `name`'s module-level declaration may be converted and later removed.
+    """Return None if this file's own binding of `name` may be removed or replaced.
 
     Otherwise returns the reason it may not: DECLARED_TYPEVAR_EXPORTED if exported via `__all__`,
     or IMPORTED_ELSEWHERE_IN_PROJECT if `name` is in `project_wide_imported_names` (another file in

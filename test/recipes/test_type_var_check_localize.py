@@ -79,18 +79,20 @@ class TestTypeVarCheckLocalize:
         assert_that(subject.apply_to_string(), contains_string("T = TypeVar('T')"))
         assert_that(subject.apply_to_string(), not_(contains_string("from file_1 import T")))
 
-    def test_does_not_localize_typevar_in_dunder_all(self, mocker: MockerFixture, tmp_path: Path) -> None:
-        """AI: Verify an origin-file TypeVar exported via __all__ is left cross-file unlocalized, marked unsafe."""
+    @pytest.mark.parametrize(
+        "origin_extra",
+        [
+            pytest.param('__all__ = ["T"]', id="origin-exports-it"),
+            pytest.param("class Box(Generic[T]):\n    pass", id="origin-class-is-generic-over-it"),
+        ],
+    )
+    def test_localizes_typevar_whatever_its_origin_does_with_it(self, mocker: MockerFixture, tmp_path: Path, origin_extra: str) -> None:
+        """Verify an imported TypeVar is localized even when its origin exports it or has a class generic over it."""
+        origin = f"from typing import Generic, TypeVar\nT = TypeVar('T')\n{origin_extra}\n"
         subject = self._create_cross_file(
             mocker,
             tmp_path,
-            """
-            from typing import TypeVar
-            __all__ = ["T"]
-            T = TypeVar("T")
-            def a(x: T) -> T:
-                return x
-            """,
+            origin,
             """
             from file_1 import T
             def b(x: T) -> T:
@@ -99,30 +101,7 @@ class TestTypeVarCheckLocalize:
         )
         result = subject.localize_imported_typevars()
 
-        assert_that(result, has_entry("T", "unsafe"))
-        assert_that(subject.cross_file_unsafe_reasons, has_entry("T", UnsafeReason.ORIGIN_MODULE_EXPORTS_NAME))
-        assert_that(subject.apply_to_string(), contains_string("from file_1 import T"))
-
-    def test_localizes_typevar_an_origin_class_is_generic_over(self, mocker: MockerFixture, tmp_path: Path) -> None:
-        """Verify a TypeVar is localized even when a class at its origin is generic over it."""
-        subject = self._create_cross_file(
-            mocker,
-            tmp_path,
-            """
-            from typing import TypeVar, Generic
-            T = TypeVar("T")
-            class Box(Generic[T]):
-                pass
-            """,
-            """
-            from file_1 import T
-            def b(x: T) -> T:
-                return x
-            """,
-        )
-        result = subject.localize_imported_typevars()
-
-        assert_that(result, has_entry("T", "fixed"))
+        assert_that(result, equal_to({"T": "fixed"}))
         output = subject.apply_to_string()
         assert_that(output, contains_string("T = TypeVar('T')"))
         assert_that(output, not_(contains_string("from file_1 import T")))
