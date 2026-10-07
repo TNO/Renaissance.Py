@@ -78,7 +78,7 @@ its own `T`, and the importing file's functions resolve their copy of `T` in the
 
 ## Constraints
 
-Every case below is a distinct, permanent reason a candidate is reported `"unsafe"` and left untouched - each has
+Every case below is a distinct, permanent reason a candidate is reported `"unsafe"` - each has
 its own anchor so the CLI's report (printed on every run, and also saved to a file by `--report`) can link a
 specific occurrence straight to the rule that explains it, rather than a generic "couldn't convert" message.
 
@@ -97,15 +97,14 @@ before 3.12.
 ### A declared TypeVar is exported via `__all__` { #feature-typevar-modernization-declared-typevar-exported }
 
 A module-level `T = TypeVar(...)` (or `ParamSpec`/`TypeVarTuple`) listed in its own file's `__all__` is public
-API - removing its declaration to convert it to PEP 695 syntax would break any importer still doing
-`from this_module import T`. Left unconverted, `"unsafe"`. The same applies to an *imported* `T` that a file lists
-in its `__all__`: localizing it would hand that file's importers a different object than the origin's, so the
-import is kept, `"unsafe"`.
+API - removing its declaration would break any importer still doing `from this_module import T`. The functions
+using it are still converted (each gets its own `[T]`), but the declaration is kept and reported `"unsafe"` by
+the orphaned-declaration cleanup. The same applies to an *imported* `T` that a file lists in its `__all__`:
+localizing it would hand that file's importers a different object than the origin's, so the import is kept,
+`"unsafe"`.
 
-**To convert this yourself:** you have to accept the same trade-off the tool won't make automatically - remove
-`T` from `__all__` (usually a breaking change for anything still importing it), move it into a PEP 695 signature
-at every function that uses it, and delete the old `T = TypeVar(...)` line once every use site is converted. If
-`T` can't be dropped from `__all__`, the declaration has to stay as it is.
+**To remove it yourself:** drop `T` from `__all__` (usually a breaking change for anything still importing it),
+then delete the `T = TypeVar(...)` line. If `T` can't be dropped from `__all__`, the declaration has to stay.
 
 ### A declared TypeVar is only used inside a generic class { #feature-typevar-modernization-used-in-generic-class }
 
@@ -119,18 +118,6 @@ convert and the name is reported `"unsafe"`; when standalone functions also use 
 **To fix this yourself:** for a `Generic[T]`-style class, `ruff`'s `UP046` can rewrite it to `class Box[T]:`.
 Once the class declares `T` itself and nothing else uses the module-level `T`, delete the old
 `T = TypeVar("T")` line.
-
-### An imported TypeVar's origin module exports it via `__all__` { #feature-typevar-modernization-origin-module-exports-name }
-
-Cross-file localization (phase 1) turns `from other_module import T` into a local `T = TypeVar(...)`
-declaration. If `other_module` lists `T` in its own `__all__`, it's advertised as that module's public API -
-localizing the import would leave two independent declarations of the same logical type parameter (the
-original, still-exported one, and the new local copy), which silently breaks identity-based uses (e.g.
-`isinstance` checks or generic subclassing across the two copies). Left as an import, `"unsafe"`.
-
-**To fix this yourself:** localizing the import means also removing `T` from the *origin* module's `__all__`
-(same public-API trade-off as the previous case, on the other file) - otherwise the two files end up with two
-independent `T` objects, silently breaking anything relying on both referring to the same one.
 
 ### A name the declaration uses means something else here { #feature-typevar-modernization-declaration-name-conflict }
 
@@ -162,8 +149,9 @@ no `__all__` isn't automatically "unused elsewhere": before converting or removi
 points below) scans every file it was given for `from this_module import this_name`-shaped imports (absolute
 or relative, resolved to the actual file - see `renaissance.utils.import_resolution`), and for the name read as
 an attribute of the imported module (`import pkg.this_module` then `pkg.this_module.this_name`, or
-`from pkg import this_module` then `this_module.this_name`). Any hit is treated as `"unsafe"`,
-`IMPORTED_ELSEWHERE_IN_PROJECT`, regardless of `__all__`. The same check stops cross-file localization when
+`from pkg import this_module` then `this_module.this_name`). Any hit keeps the declaration, `"unsafe"`,
+`IMPORTED_ELSEWHERE_IN_PROJECT`, regardless of `__all__`; the functions using it are still converted. The same
+check stops cross-file localization when
 another file imports an *imported* `T` from this file: it would otherwise receive a different object than the
 origin's. A `from this_module import *` is not expanded, so a
 name it pulls in is not detected. Running the recipe on a single file in
@@ -171,11 +159,9 @@ isolation (not via the CLI, or via the CLI on a lone file with no other files pa
 against, so this constraint can only fire when the target is a directory scanned alongside the files that
 import from it.
 
-**To convert this yourself:** the report only names the candidate, not the importing file - grep the project
-for `from <this_module> import <name>` (absolute or relative) and `<this_module>.<name>` to find it. Once found, either update that
-importer in the same change to get `name` from wherever it ends up after conversion, or leave the module-level
-declaration as it is if the importer can't be updated alongside it - the same public-API trade-off as the
-`__all__` case above, just surfaced by a direct import instead of an explicit `__all__` entry.
+**To remove it yourself:** the report only names the candidate, not the importing file - grep the project for
+`from <this_module> import <name>` (absolute or relative) and `<this_module>.<name>` to find it. Once that importer
+no longer needs it, a second run of the tool removes the declaration.
 
 A declaration imported by other files in the target project is always kept at its origin during a run, even
 when every importer gets localized in that same run. A second CLI run converts it, once no file imports it anymore.
