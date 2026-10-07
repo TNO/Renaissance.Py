@@ -51,6 +51,8 @@ jobs:
         uses: peter-evans/create-pull-request@v8.1.1
         with:
           token: ${{ steps.app-token.outputs.token || secrets.GITHUB_TOKEN }}
+          # Committing through the API instead of git lets GitHub sign the commit, as branch protection requires.
+          sign-commits: true
           add-paths: lint-budget.json
           branch: chore/lower-lint-budget
           delete-branch: true
