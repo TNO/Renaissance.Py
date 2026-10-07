@@ -77,8 +77,8 @@ class TestTypeVarCheckLocalize:
         assert_that(subject.cross_file_unsafe_reasons, has_entry("T", UnsafeReason.ORIGIN_MODULE_EXPORTS_NAME))
         assert_that(subject.apply_to_string(), contains_string("from file_1 import T"))
 
-    def test_does_not_localize_typevar_used_in_exported_generic_base(self, mocker: MockerFixture, tmp_path: Path) -> None:
-        """AI: Verify an origin-file TypeVar used in an exported Generic[...] base is left cross-file unlocalized."""
+    def test_does_not_localize_typevar_an_origin_class_is_generic_over(self, mocker: MockerFixture, tmp_path: Path) -> None:
+        """Verify a TypeVar that a class at its origin is generic over stays imported, marked unsafe."""
         subject = self._create_cross_file(
             mocker,
             tmp_path,
@@ -97,7 +97,7 @@ class TestTypeVarCheckLocalize:
         result = subject.localize_imported_typevars()
 
         assert_that(result, has_entry("T", "unsafe"))
-        assert_that(subject.cross_file_unsafe_reasons, has_entry("T", UnsafeReason.USED_IN_EXPORTED_GENERIC_BASE))
+        assert_that(subject.cross_file_unsafe_reasons, has_entry("T", UnsafeReason.ORIGIN_CLASS_IS_GENERIC_OVER_NAME))
         assert_that(subject.apply_to_string(), contains_string("from file_1 import T"))
 
     def test_keeps_other_names_when_localizing_one_of_several_imports(self, mocker: MockerFixture, tmp_path: Path) -> None:

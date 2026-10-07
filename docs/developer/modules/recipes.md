@@ -76,9 +76,13 @@ locates the owning `PythonRstNode` for a nested function via `self.find_rst_node
 `PythonRefactoring` base-class method (matching by node identity against the raw `ast.FunctionDef`/
 `ast.AsyncFunctionDef` node), available to any future recipe needing the same lookup, not just this one. It skips
 a function that already declares a matching PEP 695 `type_param` (rather than adding a duplicate), and every
-method of a class generic over the name (`functions_in_generic_classes` in `type_var_domain.py`: the class
-declares it as a PEP 695 type parameter, or a base mentions it): adding `[T]` there would shadow the class's own
-`T`. A name that only such methods use is reported `"unsafe"` (`USED_IN_GENERIC_CLASS`). A name also used outside
+method of a class generic over the name (`functions_in_generic_classes` in `type_var_domain.py`): adding `[T]`
+there would shadow the class's own `T`. "Generic over a name" has one definition, shared by both phases:
+`_declares_type_param` (the class declares it, `class Box[T]:`) or `_inherits_type_param` (a base mentions it and
+the class doesn't declare its own). Phase 2 uses both; phase 1's `ORIGIN_CLASS_IS_GENERIC_OVER_NAME` only the
+inherited kind, the only one tied to the module-level object - see
+[Generic classes](../../user/features/typevar-modernization.md#feature-typevar-modernization-generic-class).
+A name that only such methods use is reported `"unsafe"` (`USED_IN_GENERIC_CLASS`). A name also used outside
 functions (a `Generic[T]` base, a module-level alias) doesn't block converting the functions that use it:
 `remove_orphaned_declarations` keeps the declaration as long as such a live reference remains.
 
@@ -151,7 +155,7 @@ syntax.
 - `test/recipes/test_type_var_check_properties.py` - Hypothesis/hypothesmith crash-safety fuzzing of `check()`
   against arbitrary generated source (see [ADR 09](../architecture/adr/09_property_based_tests.md)).
 - `test/recipes/test_type_var_domain.py` - `is_safe_to_convert`/`is_safe_to_localize` in isolation, confirming
-  that five of the `UnsafeReason` members (the `__all__`, imported-elsewhere, origin-export, generic-base and
+  that five of the `UnsafeReason` members (the `__all__`, imported-elsewhere, origin-export, origin-generic-class and
   conditional-constructor conditions) are returned by their specific unsafe condition. The version gate and
   `USED_IN_GENERIC_CLASS` are covered through the recipe instead.
 - `test/recipes/test_step_runner.py` - `Step`/`run_steps`: commit only when a step fixed something, results in step
