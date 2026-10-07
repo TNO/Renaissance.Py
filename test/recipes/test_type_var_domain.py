@@ -11,8 +11,8 @@ from hamcrest import assert_that, is_
 from renaissance.recipes.type_var_domain import (
     UNSAFE_RULES,
     UnsafeReason,
-    is_safe_to_convert,
     is_safe_to_localize,
+    is_safe_to_remove,
 )
 
 
@@ -20,8 +20,8 @@ def _parse(source: str) -> ast.Module:
     return ast.parse(textwrap.dedent(source))
 
 
-class TestIsSafeToConvert:
-    """is_safe_to_convert: None when safe, the specific UnsafeReason otherwise."""
+class TestIsSafeToRemove:
+    """is_safe_to_remove: None when safe, the specific UnsafeReason otherwise."""
 
     def test_returns_none_when_safe(self) -> None:
         """A TypeVar not exported and not imported by another project file is safe to convert, whatever else is."""
@@ -34,7 +34,7 @@ class TestIsSafeToConvert:
             T = TypeVar("T")
         """)
 
-        assert_that(is_safe_to_convert(tree, "T", frozenset({"U"})), is_(None))
+        assert_that(is_safe_to_remove(tree, "T", frozenset({"U"})), is_(None))
 
     @pytest.mark.parametrize(
         ("dunder_all", "imported_elsewhere", "expected_reason"),
@@ -58,16 +58,18 @@ class TestIsSafeToConvert:
             T = TypeVar("T")
         """)
 
-        assert_that(is_safe_to_convert(tree, "T", imported_elsewhere), is_(expected_reason))
+        assert_that(is_safe_to_remove(tree, "T", imported_elsewhere), is_(expected_reason))
 
 
 class TestIsSafeToLocalize:
     """is_safe_to_localize: None when safe, the specific UnsafeReason otherwise."""
 
     def test_returns_none_when_safe(self) -> None:
-        """A TypeVar that its origin doesn't export or import conditionally is safe to localize."""
+        """A TypeVar is safe to localize, even when its origin exports it, unless its constructor is imported conditionally."""
         tree = _parse("""
             from typing import TypeVar
+
+            __all__ = ["T"]
 
             T = TypeVar("T")
 
@@ -107,16 +109,6 @@ class TestIsSafeToLocalize:
     @pytest.mark.parametrize(
         ("source", "expected_reason"),
         [
-            (
-                """
-                from typing import TypeVar
-
-                __all__ = ["T"]
-
-                T = TypeVar("T")
-                """,
-                UnsafeReason.ORIGIN_MODULE_EXPORTS_NAME,
-            ),
             (
                 """
                 import sys
