@@ -1,6 +1,4 @@
-# TypeVar modernization
-
-{ #feature-typevar-modernization }
+# TypeVar modernization { #feature-typevar-modernization }
 
 **Stable ID:** `FEATURE-TYPEVAR-MODERNIZATION`
 
@@ -49,6 +47,21 @@ third-party, re-exports through an intermediate `__init__.py`, namespace package
 reported unsafe. So is an import that renames the type parameter (`from .origin import T as U`): it is left as
 it is, and a file whose only type parameters arrive that way is counted as clean.
 
+### Generic classes { #feature-typevar-modernization-generic-class }
+
+A class is *generic over* `T` when `T` is one of its type parameters, in one of two ways
+([PEP 484](https://peps.python.org/pep-0484/#user-defined-generic-types),
+[PEP 695](https://peps.python.org/pep-0695/)):
+
+1. **Declared:** the class declares its own `T` as a PEP 695 type parameter (`class Box[T]:`).
+2. **Inherited:** `T` appears in one of its bases - `Generic[T]`, `typing.Generic[T]`, `Protocol[T]`,
+   `Mapping[T]`, `Base[int, T]` - and the class doesn't declare its own `T`. The class is then tied to the
+   module-level `T = TypeVar("T")` object itself.
+
+Inside such a class, `T` in a method means the class's parameter. Both kinds keep the tool from adding `[T]` to the
+class's methods; only the inherited kind is tied to the module-level object, so only it matters when copying that
+object to another file.
+
 ## Outputs / effects
 
 - The file is rewritten in place for every change classified as safe.
@@ -68,9 +81,7 @@ Every case below is a distinct, permanent reason a candidate is reported `"unsaf
 its own anchor so the CLI's report (printed on every run, and also saved to a file by `--report`) can link a
 specific occurrence straight to the rule that explains it, rather than a generic "couldn't convert" message.
 
-### PEP 695 version gate
-
-{ #feature-typevar-modernization-pep695-version-gate }
+### PEP 695 version gate { #feature-typevar-modernization-pep695-version-gate }
 
 [PEP 695](https://peps.python.org/pep-0695/) generic syntax (`def f[T](...)`) did not exist before Python 3.12
 (released October 2023). If the minimum Python version passed with `--py` is below 3.12, every candidate that
@@ -82,9 +93,7 @@ syntax.
 has to keep supporting older Pythons, there's no manual PEP 695 rewrite either, since the syntax doesn't exist
 before 3.12.
 
-### A declared TypeVar is exported via `__all__`
-
-{ #feature-typevar-modernization-declared-typevar-exported }
+### A declared TypeVar is exported via `__all__` { #feature-typevar-modernization-declared-typevar-exported }
 
 A module-level `T = TypeVar(...)` (or `ParamSpec`/`TypeVarTuple`) listed in its own file's `__all__` is public
 API - removing its declaration to convert it to PEP 695 syntax would break any importer still doing
@@ -95,14 +104,12 @@ API - removing its declaration to convert it to PEP 695 syntax would break any i
 at every function that uses it, and delete the old `T = TypeVar(...)` line once every use site is converted. If
 `T` can't be dropped from `__all__`, the declaration has to stay as it is.
 
-### A declared TypeVar is only used inside a generic class
+### A declared TypeVar is only used inside a generic class { #feature-typevar-modernization-used-in-generic-class }
 
-{ #feature-typevar-modernization-used-in-generic-class }
-
-A class is generic over `T` when it declares it as a PEP 695 type parameter (`class Box[T]:`, for example after
-`ruff`'s `UP046`, which leaves the old `T = TypeVar("T")` behind) or when one of its bases mentions it
-(`Generic[T]`, `Protocol[T]`, `Base[T]`). Inside that class, `T` is the class's own parameter, so adding `[T]` to
-one of its methods would give the method a second, unrelated `T` and change what its signature means. The tool
+A class generic over `T` (see Generic classes above), declared (`class Box[T]:`, for example
+after `ruff`'s `UP046`, which leaves the old `T = TypeVar("T")` behind) or inherited (`Generic[T]`,
+`Protocol[T]`, `Base[T]`). Inside that class, `T` is the class's own parameter, so adding `[T]` to one of its
+methods would give the method a second, unrelated `T` and change what its signature means. The tool
 never touches those methods, the class or the declaration. When nothing else uses `T`, there is nothing left to
 convert and the name is reported `"unsafe"`; when standalone functions also use it, those are converted.
 
@@ -110,9 +117,7 @@ convert and the name is reported `"unsafe"`; when standalone functions also use 
 Once the class declares `T` itself and nothing else uses the module-level `T`, delete the old
 `T = TypeVar("T")` line.
 
-### An imported TypeVar's origin module exports it via `__all__`
-
-{ #feature-typevar-modernization-origin-module-exports-name }
+### An imported TypeVar's origin module exports it via `__all__` { #feature-typevar-modernization-origin-module-exports-name }
 
 Cross-file localization (phase 1) turns `from other_module import T` into a local `T = TypeVar(...)`
 declaration. If `other_module` lists `T` in its own `__all__`, it's advertised as that module's public API -
@@ -124,23 +129,20 @@ original, still-exported one, and the new local copy), which silently breaks ide
 (same public-API trade-off as the previous case, on the other file) - otherwise the two files end up with two
 independent `T` objects, silently breaking anything relying on both referring to the same one.
 
-### An imported TypeVar is used in a `Generic[...]` base at its origin
+### A class at an imported TypeVar's origin is generic over it { #feature-typevar-modernization-origin-class-is-generic-over-name }
 
-{ #feature-typevar-modernization-used-in-exported-generic-base }
-
-If the origin module uses the imported name as a class's `Generic[T]` base, that class's own generic identity is
-tied to this specific `T` object - localizing the import would create a second, unrelated `T`, breaking
-subclassing or type-checking that depends on the two modules sharing the same type parameter. Left as an
-import, `"unsafe"`. Any class in the origin module counts, exported or not, but only a bare `Generic[...]` base
-is detected: `typing.Generic[...]` and other generic bases such as `Protocol[T]` are not.
+If a class in the origin module inherits the imported name as its type parameter (`Generic[T]`, `Protocol[T]`,
+`Mapping[T]`, ... - the *inherited* kind of generic class, see Generic classes above), that
+class's own generic identity is tied to this specific `T` object - localizing the import would create a second,
+unrelated `T`, breaking subclassing or type-checking that depends on the two modules sharing the same type
+parameter. Left as an import, `"unsafe"`. Any class in the origin module counts, exported or not. A class that
+declares its own `T` (`class Bag[T]:`) doesn't use the module-level object and doesn't block it.
 
 **To fix this yourself:** the origin module's class is generic over this exact `T` object, so localizing the
 import safely means converting that class - and anything downstream that depends on it - in the same
 coordinated change, or the two modules end up with different, incompatible `T`s.
 
-### An imported TypeVar's origin module imports its constructor conditionally
-
-{ #feature-typevar-modernization-origin-imports-constructor-conditionally }
+### The origin imports the TypeVar constructor conditionally { #feature-typevar-modernization-origin-imports-constructor-conditionally }
 
 A localized declaration is a copy of the origin's `T = TypeVar(...)` call, so it runs with whichever `TypeVar`
 the *importing* file has in scope. If the origin imports `TypeVar` (or `ParamSpec`/`TypeVarTuple`) inside a
@@ -152,9 +154,7 @@ an import, `"unsafe"`.
 **To fix this yourself:** give the importing file the same conditional import as the origin before copying the
 declaration across, or leave the import as it is.
 
-### A declared TypeVar is imported directly by another file in the target project
-
-{ #feature-typevar-modernization-imported-elsewhere-in-project }
+### A declared TypeVar is imported by another project file { #feature-typevar-modernization-imported-elsewhere-in-project }
 
 A module without `__all__` is still Python-legal to import any of its top-level names from directly -
 `__all__` only governs `from module import *`, never `from module import specific_name`. So a declaration with
