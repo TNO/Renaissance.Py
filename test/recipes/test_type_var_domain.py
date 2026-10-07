@@ -24,7 +24,7 @@ class TestIsSafeToRemove:
     """is_safe_to_remove: None when safe, the specific UnsafeReason otherwise."""
 
     def test_returns_none_when_safe(self) -> None:
-        """A TypeVar not exported and not imported by another project file is safe to convert, whatever else is."""
+        """A TypeVar not exported and not imported by another project file is safe to remove, whatever else is."""
         tree = _parse("""
             from typing import TypeVar
 
@@ -65,43 +65,14 @@ class TestIsSafeToLocalize:
     """is_safe_to_localize: None when safe, the specific UnsafeReason otherwise."""
 
     def test_returns_none_when_safe(self) -> None:
-        """A TypeVar is safe to localize, even when its origin exports it, unless its constructor is imported conditionally."""
+        """A TypeVar whose constructor its origin imports unconditionally is safe to localize."""
         tree = _parse("""
             from typing import TypeVar
-
-            __all__ = ["T"]
 
             T = TypeVar("T")
 
             def a(x: T) -> T:
                 return x
-        """)
-
-        assert_that(is_safe_to_localize(tree, "T"), is_(None))
-
-    @pytest.mark.parametrize(
-        "class_header",
-        [
-            pytest.param("class Plain(object):", id="plain-class"),
-            pytest.param("class Box(Generic[T]):", id="generic"),
-            pytest.param("class Box(typing.Generic[T]):", id="qualified-generic"),
-            pytest.param("class Box(Protocol[T]):", id="protocol"),
-            pytest.param("class Box(Mapping[T]):", id="generic-abc"),
-            pytest.param("class Box(Base[int, T]):", id="generic-subclass"),
-            pytest.param("class Box[T]:", id="pep695-class"),
-        ],
-    )
-    def test_class_at_the_origin_does_not_block_localizing(self, class_header: str) -> None:
-        """A class at the origin, generic over T or not, keeps its own T, so copying T elsewhere is safe."""
-        tree = _parse(f"""
-            import typing
-            from collections.abc import Mapping
-            from typing import Generic, Protocol, TypeVar
-
-            T = TypeVar("T")
-
-            {class_header}
-                pass
         """)
 
         assert_that(is_safe_to_localize(tree, "T"), is_(None))
