@@ -19,7 +19,7 @@ class UnsafeReason(StrEnum):
     DECLARED_TYPEVAR_EXPORTED = "declared_typevar_exported"
     USED_IN_GENERIC_CLASS = "used_in_generic_class"
     ORIGIN_MODULE_EXPORTS_NAME = "origin_module_exports_name"
-    USED_IN_EXPORTED_GENERIC_BASE = "used_in_exported_generic_base"
+    ORIGIN_CLASS_IS_GENERIC_OVER_NAME = "origin_class_is_generic_over_name"
     IMPORTED_ELSEWHERE_IN_PROJECT = "imported_elsewhere_in_project"
     ORIGIN_IMPORTS_CONSTRUCTOR_CONDITIONALLY = "origin_imports_constructor_conditionally"
 
@@ -45,8 +45,9 @@ UNSAFE_RULES: dict[UnsafeReason, UnsafeRule] = {
     UnsafeReason.ORIGIN_MODULE_EXPORTS_NAME: UnsafeRule(
         "origin module exports it via __all__", "feature-typevar-modernization-origin-module-exports-name",
     ),
-    UnsafeReason.USED_IN_EXPORTED_GENERIC_BASE: UnsafeRule(
-        "used in a Generic[...] base at its origin module", "feature-typevar-modernization-used-in-exported-generic-base",
+    UnsafeReason.ORIGIN_CLASS_IS_GENERIC_OVER_NAME: UnsafeRule(
+        "a class at its origin module is generic over it",
+        "feature-typevar-modernization-origin-class-is-generic-over-name",
     ),
     UnsafeReason.IMPORTED_ELSEWHERE_IN_PROJECT: UnsafeRule(
         "imported directly by another file in the target project", "feature-typevar-modernization-imported-elsewhere-in-project",
@@ -116,20 +117,25 @@ def _find_dunder_all(tree: ast.Module) -> set[str] | None:
     return None
 
 
-def _used_in_exported_generic_base(tree: ast.Module, name: str) -> bool:
-    """Return True if `name` appears inside a `Generic[...]` base of any class in this module."""
-    for node in ast.walk(tree):
-        if not isinstance(node, ast.ClassDef):
-            continue
-        for base in node.bases:
-            if not isinstance(base, ast.Subscript):
-                continue
-            if not (isinstance(base.value, ast.Name) and base.value.id == "Generic"):
-                continue
-            for inner in ast.walk(base.slice):
-                if isinstance(inner, ast.Name) and inner.id == name:
-                    return True
-    return False
+def _declares_type_param(class_node: ast.ClassDef, name: str) -> bool:
+    """Return True if the class declares `name` as its own PEP 695 type parameter (`class Box[T]:`)."""
+    return any(type_param_name(param) == name for param in class_node.type_params)
+
+
+def _inherits_type_param(class_node: ast.ClassDef, name: str) -> bool:
+    """Return True if the class is generic over the module-level `name` through one of its bases.
+
+    That is, a base mentions `name` (`Generic[T]`, `Protocol[T]`, `Mapping[T]`, `Base[int, T]`) and the
+    class doesn't declare its own `name`, which would be the one its bases refer to instead.
+    """
+    return not _declares_type_param(class_node, name) and any(
+        isinstance(child, ast.Name) and child.id == name for base in class_node.bases for child in ast.walk(base)
+    )
+
+
+def _has_class_inheriting_type_param(tree: ast.Module, name: str) -> bool:
+    """Return True if any class in the module is generic over the module-level `name` through its bases."""
+    return any(isinstance(node, ast.ClassDef) and _inherits_type_param(node, name) for node in ast.walk(tree))
 
 
 def _imports_name_conditionally(tree: ast.Module, name: str) -> bool:
@@ -148,9 +154,9 @@ def _imports_name_conditionally(tree: ast.Module, name: str) -> bool:
 def is_safe_to_localize(origin_tree: ast.Module, name: str) -> UnsafeReason | None:
     """Return None if `name` is safe to duplicate as a local declaration, else the reason it isn't.
 
-    The origin module must not advertise it as public API, whether via `__all__`
-    (ORIGIN_MODULE_EXPORTS_NAME) or as a class-level `Generic[...]` parameter
-    (USED_IN_EXPORTED_GENERIC_BASE, where identity crossing files can matter for subclassing).
+    The origin module must not advertise it as public API via `__all__` (ORIGIN_MODULE_EXPORTS_NAME),
+    and no class in it may be generic over it through its bases (ORIGIN_CLASS_IS_GENERIC_OVER_NAME):
+    that class is tied to this exact object, and a local copy would be a different one.
     Its constructor (TypeVar/ParamSpec/TypeVarTuple) must also not be imported inside a
     module-level `if`/`try` block (ORIGIN_IMPORTS_CONSTRUCTOR_CONDITIONALLY), since which
     implementation it binds then depends on the runtime, e.g. `typing_extensions` below 3.13.
@@ -158,8 +164,8 @@ def is_safe_to_localize(origin_tree: ast.Module, name: str) -> UnsafeReason | No
     dunder_all = _find_dunder_all(origin_tree)
     if dunder_all is not None and name in dunder_all:
         return UnsafeReason.ORIGIN_MODULE_EXPORTS_NAME
-    if _used_in_exported_generic_base(origin_tree, name):
-        return UnsafeReason.USED_IN_EXPORTED_GENERIC_BASE
+    if _has_class_inheriting_type_param(origin_tree, name):
+        return UnsafeReason.ORIGIN_CLASS_IS_GENERIC_OVER_NAME
     declaration = find_type_param_declarations(origin_tree).get(name)
     if declaration is not None and _imports_name_conditionally(origin_tree, type_param_constructor_name(declaration)):
         return UnsafeReason.ORIGIN_IMPORTS_CONSTRUCTOR_CONDITIONALLY
@@ -204,17 +210,14 @@ def functions_in_generic_classes(tree: ast.Module, name: str) -> list[ast.Functi
     """Return every function or method defined inside a class that is generic over `name`.
 
     A class is generic over `name` when it declares it as a PEP 695 type parameter (`class Box[T]:`)
-    or when one of its bases mentions it (`Generic[T]`, `Protocol[T]`, `Base[T]`).
+    or inherits it through one of its bases (see _inherits_type_param).
     """
     # TODO: try to come up with a smart solution for when Generic can be safely changed, but don't touch it for now.
     return [
         function
         for node in ast.walk(tree)
         if isinstance(node, ast.ClassDef)
-        and (
-            any(type_param_name(param) == name for param in node.type_params)
-            or any(isinstance(child, ast.Name) and child.id == name for base in node.bases for child in ast.walk(base))
-        )
+        and (_declares_type_param(node, name) or _inherits_type_param(node, name))
         for function in ast.walk(node)
         if isinstance(function, ast.FunctionDef | ast.AsyncFunctionDef)
     ]
