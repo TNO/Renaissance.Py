@@ -1,6 +1,7 @@
 """TypeVar/ParamSpec/TypeVarTuple domain model and safety analysis."""
 
 import ast
+import builtins
 from collections.abc import Iterable
 from dataclasses import dataclass
 from enum import StrEnum
@@ -19,7 +20,7 @@ class UnsafeReason(StrEnum):
     DECLARED_TYPEVAR_EXPORTED = "declared_typevar_exported"
     USED_IN_GENERIC_CLASS = "used_in_generic_class"
     ORIGIN_MODULE_EXPORTS_NAME = "origin_module_exports_name"
-    ORIGIN_CLASS_IS_GENERIC_OVER_NAME = "origin_class_is_generic_over_name"
+    DECLARATION_NAME_CONFLICT = "declaration_name_conflict"
     IMPORTED_ELSEWHERE_IN_PROJECT = "imported_elsewhere_in_project"
     ORIGIN_IMPORTS_CONSTRUCTOR_CONDITIONALLY = "origin_imports_constructor_conditionally"
 
@@ -45,9 +46,9 @@ UNSAFE_RULES: dict[UnsafeReason, UnsafeRule] = {
     UnsafeReason.ORIGIN_MODULE_EXPORTS_NAME: UnsafeRule(
         "origin module exports it via __all__", "feature-typevar-modernization-origin-module-exports-name",
     ),
-    UnsafeReason.ORIGIN_CLASS_IS_GENERIC_OVER_NAME: UnsafeRule(
-        "a class at its origin module is generic over it",
-        "feature-typevar-modernization-origin-class-is-generic-over-name",
+    UnsafeReason.DECLARATION_NAME_CONFLICT: UnsafeRule(
+        "a name its declaration uses means something else in this file",
+        "feature-typevar-modernization-declaration-name-conflict",
     ),
     UnsafeReason.IMPORTED_ELSEWHERE_IN_PROJECT: UnsafeRule(
         "imported directly by another file in the target project", "feature-typevar-modernization-imported-elsewhere-in-project",
@@ -133,9 +134,47 @@ def _inherits_type_param(class_node: ast.ClassDef, name: str) -> bool:
     )
 
 
-def _has_class_inheriting_type_param(tree: ast.Module, name: str) -> bool:
-    """Return True if any class in the module is generic over the module-level `name` through its bases."""
-    return any(isinstance(node, ast.ClassDef) and _inherits_type_param(node, name) for node in ast.walk(tree))
+def declaration_argument_names(decl_stmt: ast.Assign) -> set[str]:
+    """Return the non-builtin names a declaration's arguments use, e.g. {"Shape"} for `TypeVar("T", bound=Shape)`.
+
+    The first positional argument (the type parameter's own name) is skipped; a string argument is read as a
+    forward reference (`bound="Shape"`). A string that isn't a valid expression contributes no names.
+    """
+    call = cast("ast.Call", decl_stmt.value)
+    names: set[str] = set()
+    for argument in [*call.args[1:], *(keyword.value for keyword in call.keywords)]:
+        expression = argument
+        if isinstance(argument, ast.Constant) and isinstance(argument.value, str):
+            try:
+                expression = ast.parse(argument.value, mode="eval").body
+            except SyntaxError:
+                continue
+        names.update(node.id for node in ast.walk(expression) if isinstance(node, ast.Name))
+    return names - set(dir(builtins))
+
+
+def from_import_sources(tree: ast.Module) -> dict[str, tuple[str, int] | None]:
+    """Map every name bound at module level to its `from` import's (module, level), or None if bound otherwise.
+
+    Names bound by a class, function, assignment or plain `import` map to None.
+    """
+    sources: dict[str, tuple[str, int] | None] = {}
+    for stmt in tree.body:
+        if isinstance(stmt, ast.ImportFrom):
+            for alias in stmt.names:
+                sources[alias.asname or alias.name] = (stmt.module or "", stmt.level)
+        elif isinstance(stmt, ast.Import):
+            for alias in stmt.names:
+                sources[(alias.asname or alias.name).split(".")[0]] = None
+        elif isinstance(stmt, ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef):
+            sources[stmt.name] = None
+        elif isinstance(stmt, ast.Assign | ast.AnnAssign):
+            targets = stmt.targets if isinstance(stmt, ast.Assign) else [stmt.target]
+            for target in targets:
+                for node in ast.walk(target):
+                    if isinstance(node, ast.Name):
+                        sources[node.id] = None
+    return sources
 
 
 def _imports_name_conditionally(tree: ast.Module, name: str) -> bool:
@@ -154,9 +193,7 @@ def _imports_name_conditionally(tree: ast.Module, name: str) -> bool:
 def is_safe_to_localize(origin_tree: ast.Module, name: str) -> UnsafeReason | None:
     """Return None if `name` is safe to duplicate as a local declaration, else the reason it isn't.
 
-    The origin module must not advertise it as public API via `__all__` (ORIGIN_MODULE_EXPORTS_NAME),
-    and no class in it may be generic over it through its bases (ORIGIN_CLASS_IS_GENERIC_OVER_NAME):
-    that class is tied to this exact object, and a local copy would be a different one.
+    The origin module must not advertise it as public API via `__all__` (ORIGIN_MODULE_EXPORTS_NAME).
     Its constructor (TypeVar/ParamSpec/TypeVarTuple) must also not be imported inside a
     module-level `if`/`try` block (ORIGIN_IMPORTS_CONSTRUCTOR_CONDITIONALLY), since which
     implementation it binds then depends on the runtime, e.g. `typing_extensions` below 3.13.
@@ -164,8 +201,6 @@ def is_safe_to_localize(origin_tree: ast.Module, name: str) -> UnsafeReason | No
     dunder_all = _find_dunder_all(origin_tree)
     if dunder_all is not None and name in dunder_all:
         return UnsafeReason.ORIGIN_MODULE_EXPORTS_NAME
-    if _has_class_inheriting_type_param(origin_tree, name):
-        return UnsafeReason.ORIGIN_CLASS_IS_GENERIC_OVER_NAME
     declaration = find_type_param_declarations(origin_tree).get(name)
     if declaration is not None and _imports_name_conditionally(origin_tree, type_param_constructor_name(declaration)):
         return UnsafeReason.ORIGIN_IMPORTS_CONSTRUCTOR_CONDITIONALLY
