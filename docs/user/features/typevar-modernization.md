@@ -18,8 +18,10 @@ clean up at all:
    [PEP 695](https://peps.python.org/pep-0695/) generic syntax (`def f[T](...)`) across every function that uses
    it — whether it's used by one function (the same rewrite `ruff` offers, but only via `--unsafe-fixes`) or
    shared across several (`ruff` can't safely do this at all, since converting one function at a time never lets it
-   confirm every use site is covered). This phase only adds the type parameters; the module-level declaration
-   it makes redundant is removed by the next one.
+   confirm every use site is covered). A function is converted even when the name is also used outside functions
+   (a `Generic[T]` base, a module-level alias): its own `[T]` means the same thing there. The methods of a class
+   that is generic over the name are left alone, since their `T` is the class's. This phase only adds the type
+   parameters; the module-level declaration is removed by the next one once nothing uses it anymore.
 3. **Orphaned declaration cleanup.** Removes every module-level declaration nothing uses anymore: the ones phase 2
    just made redundant, and ones left dead by outside means - e.g. a signature already converted to PEP 695
    syntax by hand, or by running `ruff` before this recipe; `ruff`'s `UP047`, by its own documentation, never
@@ -93,32 +95,20 @@ API - removing its declaration to convert it to PEP 695 syntax would break any i
 at every function that uses it, and delete the old `T = TypeVar(...)` line once every use site is converted. If
 `T` can't be dropped from `__all__`, the declaration has to stay as it is.
 
-### A declared TypeVar is used outside a function body
+### A declared TypeVar is only used inside a generic class
 
-{ #feature-typevar-modernization-used-outside-function }
+{ #feature-typevar-modernization-used-in-generic-class }
 
-A module-level declaration referenced anywhere other than inside the function(s) being converted - for example
-as a class's `Generic[T]` base, or in a module-level type alias - can't have its declaration removed: a PEP 695
-type parameter only exists inside the function signature it's declared on, so that other use site would be left
-referencing a name that no longer exists. Left unconverted, `"unsafe"`.
+A class is generic over `T` when it declares it as a PEP 695 type parameter (`class Box[T]:`, for example after
+`ruff`'s `UP046`, which leaves the old `T = TypeVar("T")` behind) or when one of its bases mentions it
+(`Generic[T]`, `Protocol[T]`, `Base[T]`). Inside that class, `T` is the class's own parameter, so adding `[T]` to
+one of its methods would give the method a second, unrelated `T` and change what its signature means. The tool
+never touches those methods, the class or the declaration. When nothing else uses `T`, there is nothing left to
+convert and the name is reported `"unsafe"`; when standalone functions also use it, those are converted.
 
-**To convert this yourself:** check every other reference first (a `Generic[T]` base, a module-level type alias,
-and so on). If those other use sites can be rewritten or removed, the function signatures can then be converted
-by hand and the module-level declaration deleted; otherwise it has to stay module-level.
-
-### A declared TypeVar is used inside a PEP 695 generic class
-
-{ #feature-typevar-modernization-used-in-pep695-class }
-
-A class that already declares the same name as a PEP 695 type parameter (`class Box[T]:`, for example after
-`ruff`'s `UP046`, which leaves the old `T = TypeVar("T")` behind) and references it inside its body. Inside that
-class, `T` is the class's own parameter, so adding `[T]` to one of its methods would give the method a second,
-unrelated `T` and change what its signature means. The tool leaves the class and the declaration as they are.
-Left unconverted, `"unsafe"`.
-
-**To fix this yourself:** if no other code uses the module-level `T`, delete the old `T = TypeVar("T")` line;
-the class's methods already refer to the class's `T`. If other functions still use it, convert those by hand
-first.
+**To fix this yourself:** for a `Generic[T]`-style class, `ruff`'s `UP046` can rewrite it to `class Box[T]:`.
+Once the class declares `T` itself and nothing else uses the module-level `T`, delete the old
+`T = TypeVar("T")` line.
 
 ### An imported TypeVar's origin module exports it via `__all__`
 

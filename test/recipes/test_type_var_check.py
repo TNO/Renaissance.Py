@@ -46,6 +46,27 @@ class TestTypeVarCheck:
         assert_that(output, contains_string("def b[T](x: T) -> T:"))
         assert_that(output, not_(contains_string("T = TypeVar")))
 
+    def test_check_keeps_declaration_still_used_by_a_generic_class(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
+        """Verify check() converts a standalone function but keeps the declaration a Generic[...] base still needs."""
+        subject = create_type_var_check("""
+            from typing import Generic, TypeVar
+            T = TypeVar('T')
+
+            class Box(Generic[T]):
+                def get(self, x: T) -> T:
+                    return x
+
+            def first(items: list[T]) -> T:
+                return items[0]
+        """)
+        subject.run()
+
+        assert_that(subject.result, equal_to({"cross_file": {}, "converted": {"T": "fixed"}, "orphaned": {}}))
+        output = subject.apply_to_string()
+        assert_that(output, contains_string("def first[T](items: list[T]) -> T:"))
+        assert_that(output, contains_string("T = TypeVar('T')"))
+        assert_that(output, contains_string("    def get(self, x: T) -> T:"))
+
     def test_check_still_localizes_when_target_too_old(self, mocker: MockerFixture, tmp_path: Path) -> None:
         """AI: Verify cross-file localization still runs when the target is too old for the PEP 695 conversion."""
         (tmp_path / "file_1.py").write_text(

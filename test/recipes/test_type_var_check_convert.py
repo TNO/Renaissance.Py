@@ -210,7 +210,6 @@ class TestTypeVarCheckConvert:
     @pytest.mark.parametrize(
         ("extra_line", "imported_elsewhere", "expected_reason"),
         [
-            pytest.param("class Box(Generic[T]): ...", frozenset(), UnsafeReason.USED_OUTSIDE_FUNCTION, id="generic-base"),
             pytest.param('__all__ = ["T"]', frozenset(), UnsafeReason.DECLARED_TYPEVAR_EXPORTED, id="exported-via-dunder-all"),
             pytest.param("", frozenset({"T"}), UnsafeReason.IMPORTED_ELSEWHERE_IN_PROJECT, id="imported-elsewhere"),
         ],
@@ -224,7 +223,7 @@ class TestTypeVarCheckConvert:
     ) -> None:
         """Verify a TypeVar that is_safe_to_convert rejects is reported unsafe with its reason and left unconverted."""
         subject = create_type_var_check(f"""
-            from typing import Generic, TypeVar
+            from typing import TypeVar
 
             {extra_line}
 
@@ -413,29 +412,49 @@ class TestTypeVarCheckConvert:
         assert_that(ast.literal_eval(text_assign.value), equal_to("first\nsecond\n    third"))
 
     @pytest.mark.parametrize(
-        ("class_header", "expected_result", "expected_reasons", "expected_method"),
+        "class_header",
         [
-            pytest.param(
-                "class Box[T]:",
-                {"T": "unsafe"},
-                {"T": UnsafeReason.USED_IN_PEP695_CLASS},
-                "def get(self, x: T) -> T:",
-                id="class-declares-the-name",
-            ),
-            pytest.param("class Box[U]:", {"T": "fixed"}, {}, "def get[T](self, x: T) -> T:", id="class-declares-another-name"),
+            pytest.param("class Box(Generic[T]):", id="generic-base"),
+            pytest.param("class Box(Protocol[T]):", id="protocol-base"),
+            pytest.param("class Sub(Base[T]):", id="generic-subclass"),
+            pytest.param("class Box[T]:", id="pep695-class"),
         ],
     )
-    def test_does_not_convert_typevar_used_in_pep695_class(
-        self,
-        create_type_var_check: Callable[[str], TypeVarCheck],
-        class_header: str,
-        expected_result: dict[str, str],
-        expected_reasons: dict[str, UnsafeReason],
-        expected_method: str,
+    def test_converts_function_but_not_methods_of_a_generic_class(
+        self, create_type_var_check: Callable[[str], TypeVarCheck], class_header: str
     ) -> None:
-        """Verify a name a PEP 695 class already declares is left alone inside it, while other names still convert."""
+        """Verify a standalone function gets [T] while the methods of a class generic over T keep using the class's T."""
         subject = create_type_var_check(f"""
-            from typing import TypeVar
+            from typing import Generic, Protocol, TypeVar
+            T = TypeVar('T')
+
+            {class_header}
+                def get(self, x: T) -> T:
+                    return x
+
+            def first(items: list[T]) -> T:
+                return items[0]
+        """)
+        result = subject.convert_declared_typevars()
+
+        assert_that(result, equal_to({"T": "fixed"}))
+        output = subject.apply_to_string()
+        assert_that(output, contains_string("def first[T](items: list[T]) -> T:"))
+        assert_that(output, contains_string("    def get(self, x: T) -> T:"))
+
+    @pytest.mark.parametrize(
+        "class_header",
+        [
+            pytest.param("class Box(Generic[T]):", id="generic-base"),
+            pytest.param("class Box[T]:", id="pep695-class"),
+        ],
+    )
+    def test_reports_typevar_used_only_in_a_generic_class(
+        self, create_type_var_check: Callable[[str], TypeVarCheck], class_header: str
+    ) -> None:
+        """Verify a TypeVar only a generic class uses is reported unsafe with its reason and left as it is."""
+        subject = create_type_var_check(f"""
+            from typing import Generic, TypeVar
             T = TypeVar('T')
 
             {class_header}
@@ -444,6 +463,53 @@ class TestTypeVarCheckConvert:
         """)
         result = subject.convert_declared_typevars()
 
-        assert_that(result, equal_to(expected_result))
-        assert_that(subject.converted_unsafe_reasons, equal_to(expected_reasons))
-        assert_that(subject.apply_to_string(), contains_string(expected_method))
+        assert_that(result, equal_to({"T": "unsafe"}))
+        assert_that(subject.converted_unsafe_reasons, equal_to({"T": UnsafeReason.USED_IN_GENERIC_CLASS}))
+        assert_that(subject.apply_to_string(), contains_string("    def get(self, x: T) -> T:"))
+
+    @pytest.mark.parametrize(
+        "class_header",
+        [
+            pytest.param("class Util:", id="plain-class"),
+            pytest.param("class Box(Generic[U]):", id="generic-over-another-name"),
+            pytest.param("class Box[U]:", id="pep695-class-over-another-name"),
+        ],
+    )
+    def test_converts_method_of_a_class_not_generic_over_the_name(
+        self, create_type_var_check: Callable[[str], TypeVarCheck], class_header: str
+    ) -> None:
+        """Verify a method gets [T] when its class isn't generic over T."""
+        subject = create_type_var_check(f"""
+            from typing import Generic, TypeVar
+            T = TypeVar('T')
+            U = TypeVar('U')
+
+            {class_header}
+                def get(self, x: T) -> T:
+                    return x
+        """)
+        result = subject.convert_declared_typevars()
+
+        assert_that(result, has_entry("T", "fixed"))
+        assert_that(subject.apply_to_string(), contains_string("    def get[T](self, x: T) -> T:"))
+
+    def test_converts_function_when_typevar_is_also_used_outside_functions(
+        self, create_type_var_check: Callable[[str], TypeVarCheck]
+    ) -> None:
+        """Verify a function using T is converted even though a module-level alias also uses T."""
+        subject = create_type_var_check("""
+            from typing import TypeVar
+            T = TypeVar('T')
+
+            Pair = tuple[T, T]
+
+            def first(pair: Pair) -> T:
+                return pair[0]
+
+            def same(x: T) -> T:
+                return x
+        """)
+        result = subject.convert_declared_typevars()
+
+        assert_that(result, equal_to({"T": "fixed"}))
+        assert_that(subject.apply_to_string(), contains_string("def same[T](x: T) -> T:"))
