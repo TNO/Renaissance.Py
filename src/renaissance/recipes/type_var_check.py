@@ -165,13 +165,13 @@ class TypeVarCheck(PythonRefactoring):
                 break
 
     def localize_imported_typevars(self) -> dict[str, str]:
-        """Find TypeVar/ParamSpec/TypeVarTuple names imported from anywhere in the target project.
+        """Replace imports of TypeVar/ParamSpec/TypeVarTuple names from the target project with local declarations.
 
         Absolute and relative imports are resolved against project_root. Where safe, rewrites the
         import into an equivalent local declaration, importing from the origin any name its arguments
-        use (e.g. `bound=Shape`). It isn't safe when is_safe_to_localize rejects the origin, when this
-        file passes the name on to others (is_safe_to_remove on this file), or when a name the
-        declaration uses means something else here (DECLARATION_NAME_CONFLICT). Returns
+        use (e.g. `bound=Shape`). It isn't safe when is_safe_to_localize rejects the origin, or when a
+        name the declaration uses can't be imported from the origin as the same object
+        (DECLARATION_NAME_UNAVAILABLE, see _argument_names_to_import). Returns
         {name: "fixed" | "unsafe"} for every candidate found; the specific UnsafeReason behind each
         "unsafe" entry is recorded on self.cross_file_unsafe_reasons.
         """
@@ -198,12 +198,10 @@ class TypeVarCheck(PythonRefactoring):
                     continue
 
                 decl_stmt = declarations[alias.name]
-                reason = is_safe_to_localize(origin_tree, alias.name) or is_safe_to_remove(
-                    importing_tree, alias.name, self.project_wide_imported_names
-                )
+                reason = is_safe_to_localize(origin_tree, alias.name)
                 argument_names = self._argument_names_to_import(importing_tree, origin_tree, raw, decl_stmt)
                 if reason is None and argument_names is None:
-                    reason = UnsafeReason.DECLARATION_NAME_CONFLICT
+                    reason = UnsafeReason.DECLARATION_NAME_UNAVAILABLE
                 if reason is not None:
                     self._mark_unsafe(results, self.cross_file_unsafe_reasons, alias.name, reason)
                     continue
@@ -250,17 +248,20 @@ class TypeVarCheck(PythonRefactoring):
         """Return the names decl_stmt's arguments use that this file must import from the origin module.
 
         A name this file already imports from the origin module (or from the same absolute module the
-        origin imports it from) is fine and not returned. Returns None if this file binds one of those
-        names to something else, since the copy would then silently refer to a different object.
+        origin imports it from) is fine and not returned. Returns None if one of those names can't be
+        imported from the origin as the same object: the origin doesn't bind it at module level at
+        runtime (e.g. only under `if TYPE_CHECKING:`), or this file binds it to something else.
         """
         origin_sources = from_import_sources(origin_tree)
         importing_sources = from_import_sources(importing_tree)
         missing: set[str] = set()
         for name in declaration_argument_names(decl_stmt):
+            if name not in origin_sources:
+                return None
             if name not in importing_sources:
                 missing.add(name)
                 continue
-            origin_source = origin_sources.get(name)
+            origin_source = origin_sources[name]
             accepted = {(raw.module or "", raw.level)}
             if origin_source is not None and origin_source[1] == 0:
                 accepted.add(origin_source)
