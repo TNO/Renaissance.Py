@@ -138,49 +138,55 @@ class TestTypeVarCheckLocalize:
         assert_that(ast.dump(local_call), equal_to(ast.dump(origin_call)))
         assert_that(_names_used_by(cast("ast.Call", local_call)) - _module_level_names(module), equal_to(set()))
 
-    def test_does_not_localize_when_a_name_the_declaration_uses_means_something_else_here(
-        self, mocker: MockerFixture, tmp_path: Path
+    @pytest.mark.parametrize(
+        ("origin", "importing_extra"),
+        [
+            pytest.param(
+                'from typing import TypeVar\nclass Shape:\n    pass\nT = TypeVar("T", bound=Shape)\n',
+                "class Shape:\n    pass",
+                id="name-means-something-else-here",
+            ),
+            pytest.param(
+                "from typing import TYPE_CHECKING, TypeVar\n"
+                "if TYPE_CHECKING:\n"
+                "    from shapes import Shape\n"
+                'T = TypeVar("T", bound="Shape")\n',
+                "",
+                id="origin-binds-it-only-for-type-checking",
+            ),
+        ],
+    )
+    def test_does_not_localize_when_a_name_the_declaration_uses_cant_be_imported_safely(
+        self, mocker: MockerFixture, tmp_path: Path, origin: str, importing_extra: str
     ) -> None:
-        """Verify a declaration using a name the importing file binds to something else stays imported, marked unsafe."""
+        """Verify a declaration using a name that can't be imported from the origin as the same object stays imported."""
         subject = self._create_cross_file(
             mocker,
             tmp_path,
-            """
-            from typing import TypeVar
-            class Shape:
-                pass
-            T = TypeVar("T", bound=Shape)
-            """,
-            """
-            from file_1 import T
-            class Shape:
-                pass
-            def biggest(items: list[T]) -> T:
-                return items[0]
-            """,
+            origin,
+            f"from file_1 import T\n{importing_extra}\ndef biggest(items: list[T]) -> T:\n    return items[0]\n",
         )
         result = subject.localize_imported_typevars()
 
         assert_that(result, equal_to({"T": "unsafe"}))
-        assert_that(subject.cross_file_unsafe_reasons, equal_to({"T": UnsafeReason.DECLARATION_NAME_CONFLICT}))
+        assert_that(subject.cross_file_unsafe_reasons, equal_to({"T": UnsafeReason.DECLARATION_NAME_UNAVAILABLE}))
         assert_that(subject.apply_to_string(), contains_string("from file_1 import T"))
 
     @pytest.mark.parametrize(
-        ("dunder_all", "imported_elsewhere", "expected_reason"),
+        ("dunder_all", "imported_elsewhere"),
         [
-            pytest.param('__all__ = ["T"]', frozenset(), UnsafeReason.DECLARED_TYPEVAR_EXPORTED, id="re-exported-via-dunder-all"),
-            pytest.param("", frozenset({"T"}), UnsafeReason.IMPORTED_ELSEWHERE_IN_PROJECT, id="imported-from-here-elsewhere"),
+            pytest.param('__all__ = ["T"]', frozenset(), id="re-exported-via-dunder-all"),
+            pytest.param("", frozenset({"T"}), id="imported-from-here-elsewhere"),
         ],
     )
-    def test_does_not_localize_typevar_this_file_re_exports(
+    def test_localizes_typevar_this_file_re_exports(
         self,
         mocker: MockerFixture,
         tmp_path: Path,
         dunder_all: str,
         imported_elsewhere: frozenset[str],
-        expected_reason: UnsafeReason,
     ) -> None:
-        """Verify an imported TypeVar this file passes on to others keeps pointing at the origin's object."""
+        """Verify an imported TypeVar is localized even when this file passes it on to others."""
         subject = self._create_cross_file(
             mocker,
             tmp_path,
@@ -199,9 +205,10 @@ class TestTypeVarCheckLocalize:
 
         result = subject.localize_imported_typevars()
 
-        assert_that(result, equal_to({"T": "unsafe"}))
-        assert_that(subject.cross_file_unsafe_reasons, equal_to({"T": expected_reason}))
-        assert_that(subject.apply_to_string(), contains_string("from file_1 import T"))
+        assert_that(result, equal_to({"T": "fixed"}))
+        output = subject.apply_to_string()
+        assert_that(output, contains_string("T = TypeVar('T')"))
+        assert_that(output, not_(contains_string("from file_1 import T")))
 
     def test_keeps_other_names_when_localizing_one_of_several_imports(self, mocker: MockerFixture, tmp_path: Path) -> None:
         """AI: Verify localizing one imported name from a multi-name import statement keeps the other names imported."""
