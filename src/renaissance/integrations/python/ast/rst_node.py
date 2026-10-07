@@ -276,7 +276,7 @@ class PythonRstNode:
         """AI: Return the semantic kind, or the raw parser kind when no semantic kind applies."""
         return self.semantic_kind if self.semantic_kind is not SemanticKind.NODE else self.parser_kind
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         """AI: Return whether this node is structurally equal to `other`, ignoring irrelevant properties/children."""
         return (
             isinstance(other, type(self))
@@ -291,7 +291,7 @@ class PythonRstNode:
             item = [item]
         return find_in_list(self.children, item) >= 0
 
-    def __getitem__(self, key):
+    def __getitem__(self, key) -> Any:  # noqa: ANN401 (an int key yields a node, a slice yields a list of nodes)
         """Allow indexing/slicing into node to access children.
 
         Usage: node[0] == node.children[0]

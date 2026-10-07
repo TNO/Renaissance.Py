@@ -224,7 +224,7 @@ class ClangJsonASTNode(ASTNode[dict[str, Any], ClangJsonTranslationUnit]):
         ]
         self._children = [n for n in self._children if n.parser_kind not in IRRELEVANT_NODE_KINDS]
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         """AI: Return whether this node is structurally equal to `other`, ignoring irrelevant properties/children."""
         return (
             isinstance(other, type(self))
@@ -474,7 +474,7 @@ class ClangJsonASTNode(ASTNode[dict[str, Any], ClangJsonTranslationUnit]):
         return self.node.get("kind", EMPTY_STR)
 
     @staticmethod
-    def _remove_wrapper(node):
+    def _remove_wrapper(node) -> dict[str, Any]:
         try:
             if ClangJsonASTNode._is_wrapped(node):
                 return ClangJsonASTNode._remove_wrapper(list(node["inner"])[0])
@@ -483,18 +483,18 @@ class ClangJsonASTNode(ASTNode[dict[str, Any], ClangJsonTranslationUnit]):
         return node
 
     @staticmethod
-    def _remove_ids(json_node):
+    def _remove_ids(json_node) -> Any:  # noqa: ANN401 (passes non-dict JSON values through unchanged, so the type is the caller's)
         if not isinstance(json_node, dict):
             return json_node
         return {k: v for k, v in json_node.items() if k not in ID_TAGS}
 
     @staticmethod
-    def _is_reference(json_node):
+    def _is_reference(json_node) -> bool:
         return len(ReferenceHelper._get_reference_ids(json_node)) > 0
 
     @staticmethod
     @cache
-    def __is_property(key):
+    def __is_property(key) -> bool:
         return key not in [
             "id",
             "inner",
@@ -510,7 +510,7 @@ class ClangJsonASTNode(ASTNode[dict[str, Any], ClangJsonTranslationUnit]):
         ]
 
     @staticmethod
-    def _is_wrapped(node):
+    def _is_wrapped(node) -> bool:
         """Check if a node is wrapped.
 
         A node is considered wrapped if it meets the following conditions:
@@ -660,7 +660,7 @@ class ReferenceHelper:
         return []
 
     @staticmethod
-    def _get_reference_ids(json_node):
+    def _get_reference_ids(json_node) -> list[Any]:
         result = []
         if not isinstance(json_node, dict):
             return result
@@ -672,5 +672,5 @@ class ReferenceHelper:
 
     @staticmethod
     @cache
-    def _is_child_node(key):
+    def _is_child_node(key) -> bool:
         return key == "inner"

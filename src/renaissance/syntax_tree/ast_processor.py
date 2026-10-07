@@ -2,6 +2,7 @@
 
 from collections.abc import Callable, Iterator, Sequence
 from pathlib import Path
+from typing import Any
 
 import renaissance.syntax_tree.match_finder
 from renaissance.syntax_tree import ASTNode
@@ -96,7 +97,7 @@ class ASTProcessor:
         """AI: Return all descendant nodes of the root matching the given semantic kind."""
         return find_semantic_kind(self.__root_node, kind)
 
-    def find_match(self, *patterns_list, recursive: bool = True) -> Sequence[PatternMatch]:
+    def find_match(self, *patterns_list: Any, recursive: bool = True) -> Sequence[PatternMatch]:
         """AI: Return matches of patterns_list against the root's children."""
         return renaissance.syntax_tree.match_finder.find_all(
             self.__root_node.children,
@@ -132,7 +133,7 @@ class ASTProcessor:
         return ASTProcessor(self.__root_node, self.__ast_factory, self.in_memory)
 
     @staticmethod
-    def _commit(rewriter: ASTRewriter, factory: ASTFactory, in_memory: bool = False):
+    def _commit(rewriter: ASTRewriter, factory: ASTFactory, in_memory: bool = False) -> tuple[ASTNode[Any, Any], ASTRewriter]:
         rewriter.apply_to_string()
         if in_memory:
             atu = factory.create_from_text(rewriter.apply_to_string(), rewriter.get_filename())

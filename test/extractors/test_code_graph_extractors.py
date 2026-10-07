@@ -87,7 +87,7 @@ class TestBaseCodeGraphExtractor:
             assert_that(extractor.graph, instance_of(nx.DiGraph))
 
     @staticmethod
-    def make_lst(nodes):
+    def make_lst(nodes) -> MagicMock:
         """AI: Build a mock LST whose traverse() returns the given nodes."""
         lst = MagicMock()
         lst.traverse.return_value = nodes
@@ -103,7 +103,7 @@ class TestPythonCodeGraphExtractor(TestBaseCodeGraphExtractor):
     """AI: Tests extracting a code graph from Python tree-sitter nodes."""
 
     @staticmethod
-    def _make_extractor():
+    def _make_extractor() -> PythonCodeGraphExtractor:
         with patch("renaissance.integrations.tree_sitter.adapter.TreeSitterAdapter"):
             return PythonCodeGraphExtractor("python", tree_sitter_python)
 
@@ -205,7 +205,7 @@ class TestJavaCodeGraphExtractor(TestBaseCodeGraphExtractor):
     """AI: Tests extracting a code graph from Java tree-sitter nodes."""
 
     @staticmethod
-    def _make_extractor():
+    def _make_extractor() -> JavaCodeGraphExtractor:
         with patch("renaissance.integrations.tree_sitter.adapter.TreeSitterAdapter"):
             return JavaCodeGraphExtractor("java", tree_sitter_python)
 
@@ -284,7 +284,7 @@ class TestCppCodeGraphExtractor(TestBaseCodeGraphExtractor):
     """AI: Tests extracting a code graph from C++ tree-sitter nodes."""
 
     @staticmethod
-    def _make_extractor():
+    def _make_extractor() -> CppCodeGraphExtractor:
         with patch("renaissance.integrations.tree_sitter.adapter.TreeSitterAdapter"):
             return CppCodeGraphExtractor("cpp", tree_sitter_python)
 

@@ -190,17 +190,16 @@ class ClangASTNode(ASTNode[Cursor, ClangTranslationUnit]):
         """AI: Return the semantic kind, or the raw parser kind when no semantic kind applies."""
         return self.semantic_kind if self.semantic_kind is not SemanticKind.NODE else self.parser_kind
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         """AI: Return whether this node is structurally equal to `other`, ignoring irrelevant properties/children."""
         return (
-            other
-            and isinstance(other, type(self))
+            isinstance(other, type(self))
             and self.kind_key == other.kind_key
             and match_props(self.properties, other.properties, IRRELEVANT_PROPS)
             and match_children(self.children, other.children, IRRELEVANT_NODES)
         )
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         """AI: Return a hash based on the node's kind key and properties."""
         return hash((self.kind_key, frozenset(self.properties.items())))
 
@@ -433,7 +432,7 @@ class ClangASTNode(ASTNode[Cursor, ClangTranslationUnit]):
             for ref in self.translation_unit._references.get(self.node.hash, EMPTY_LIST)
         )
 
-    def _add_tokens(self, result: dict[str, str], *token_kind) -> None:
+    def _add_tokens(self, result: dict[str, str], *token_kind: str) -> None:
         for token in self.node.get_tokens():
             # find all attr of token that are of type str or int
             kind = str(token.kind).split(".")[-1]
@@ -476,7 +475,7 @@ class ClangASTNode(ASTNode[Cursor, ClangTranslationUnit]):
             return EMPTY_STR
 
     @staticmethod
-    def remove_wrapper(cursor):
+    def remove_wrapper(cursor) -> Cursor:
         """AI: Unwrap a cursor through single-child unexposed wrapper nodes to reach the real node."""
         try:
             if ClangASTNode._is_wrapped(cursor):
@@ -500,11 +499,11 @@ class ClangASTNode(ASTNode[Cursor, ClangTranslationUnit]):
 
     @staticmethod
     @cache
-    def __is_property(key, value):
+    def __is_property(key, value) -> bool:
         return callable(value) and any(key.startswith(tag) for tag in ["is_", "get"])
 
     @staticmethod
-    def _is_wrapped(cursor):
+    def _is_wrapped(cursor) -> bool:
         return cursor.kind.is_unexposed() and len(list(cursor.children)) == 1
 
     @property
