@@ -99,3 +99,7 @@ See *Verified by test modules* in [TypeVar modernization](../../user/features/ty
     - `test_localizes_two_names_from_one_import_statement` (`test_type_var_check_localize.py`)
     - `test_does_not_convert_default_referencing_another_declaration` (`test_type_var_check_convert.py`)
     - `test_converts_function_preserving_multiline_string_literal` (`test_type_var_check_convert.py`)
+    - `test_localized_file_imports_a_relatively_imported_constructor_from_the_same_module`
+      (`test_type_var_check_localize.py`)
+    - `test_keeps_declaration_used_in_a_string_annotation` (`test_type_var_check_orphaned.py`)
+    - `test_exported_name_is_unsafe_whatever_form_dunder_all_takes` (`test_type_var_domain.py`)
