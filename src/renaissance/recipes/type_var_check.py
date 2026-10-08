@@ -12,20 +12,24 @@ from renaissance.recipes.type_var_domain import (
     all_refs_shadowed_by_pep695,
     build_type_param,
     declaration_argument_names,
+    declared_default,
     find_import_source,
     find_type_param_declarations,
     from_import_sources,
     functions_in_generic_classes,
     functions_using_nodes,
+    has_unconvertible_argument,
     is_safe_to_localize,
     is_safe_to_remove,
     type_param_constructor_name,
     type_param_name,
+    type_params_defaults_last,
 )
 from renaissance.utils.import_resolution import resolve_project_module
 from renaissance.utils.unparse_utils import unparse_signature_only
 
 PEP_695_MINIMUM = (3, 12)
+PEP_696_MINIMUM = (3, 13)
 
 
 class TypeVarCheck(PythonRefactoring):
@@ -55,6 +59,24 @@ class TypeVarCheck(PythonRefactoring):
         """
         return self.min_python is not None and self.min_python >= PEP_695_MINIMUM
 
+    def _target_supports_pep696(self) -> bool:
+        """Return True only if min_python is known and is 3.13+.
+
+        An unknown minimum returns False: a PEP 696 type parameter default (`def f[T = int](...)`) is a
+        hard SyntaxError before Python 3.13.
+        """
+        return self.min_python is not None and self.min_python >= PEP_696_MINIMUM
+
+    def _conversion_refusal(self, decl_stmt: ast.Assign) -> UnsafeReason | None:
+        """Return why decl_stmt can't be converted to a PEP 695 type parameter on this target, or None if it can."""
+        if not self._target_supports_pep695():
+            return UnsafeReason.PEP695_VERSION_GATE
+        if has_unconvertible_argument(decl_stmt):
+            return UnsafeReason.NO_PEP695_EQUIVALENT
+        if declared_default(decl_stmt) is not None and not self._target_supports_pep696():
+            return UnsafeReason.PEP696_VERSION_GATE
+        return None
+
     def check(self) -> dict[str, dict[str, str]]:
         """Run the three phases in order, committing each one that fixed something.
 
@@ -77,8 +99,11 @@ class TypeVarCheck(PythonRefactoring):
         is unused. A name whose references are all already shadowed by a same-named PEP 695 type
         parameter, or that has none, needs no conversion and is skipped. Methods of a class generic
         over the name (see functions_in_generic_classes) keep using the class's parameter and are
-        never converted. A name that only such methods use, or that would need PEP 695 syntax while
-        min_python isn't 3.12+, is reported "unsafe", with its UnsafeReason recorded on
+        never converted. Bounds, constraints and `default=` are carried over, and type parameters with
+        a default are placed after those without one. A name that only such methods use, or whose
+        declaration _conversion_refusal rejects (min_python below 3.12, a `default=` while min_python
+        is below 3.13, or an argument with no PEP 695 equivalent, such as `covariant=True`), is
+        reported "unsafe", with its UnsafeReason recorded on
         self.converted_unsafe_reasons. Returns {name: "fixed" | "unsafe"}.
         """
         root = cast("PythonRstNode", cast("object", self.root))
@@ -107,8 +132,9 @@ class TypeVarCheck(PythonRefactoring):
                 if any(id(function) in generic_class_method_ids for function in functions):
                     self._mark_unsafe(results, self.converted_unsafe_reasons, name, UnsafeReason.USED_IN_GENERIC_CLASS)
                 continue
-            if not self._target_supports_pep695():
-                self._mark_unsafe(results, self.converted_unsafe_reasons, name, UnsafeReason.PEP695_VERSION_GATE)
+            reason = self._conversion_refusal(decl_stmt)
+            if reason is not None:
+                self._mark_unsafe(results, self.converted_unsafe_reasons, name, reason)
                 continue
 
             type_param = build_type_param(decl_stmt)
@@ -118,6 +144,7 @@ class TypeVarCheck(PythonRefactoring):
             results[name] = "fixed"
 
         for function in touched_functions.values():
+            function.type_params = type_params_defaults_last(function.type_params)
             rst_node = self.find_rst_node(function)
             self.replace(unparse_signature_only(function, rst_node.text), rst_node, False, False)
 
