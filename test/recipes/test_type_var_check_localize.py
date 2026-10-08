@@ -319,8 +319,7 @@ class TestTypeVarCheckLocalize:
         tmp_path: Path,
     ) -> None:
         """AI: Verify localizing still succeeds when the origin brings TypeVar into scope via a wildcard import."""
-        # find_import_source can't locate "TypeVar" here - safe only because the importing file
-        # already imports it itself.
+        # find_import_source can't find "TypeVar"; this is only safe because the importing file imports it.
         subject = self._create_cross_file(
             mocker,
             tmp_path,
@@ -421,8 +420,6 @@ class TestTypeVarCheckLocalize:
 
     def test_check_localizes_and_converts_in_one_pass(self, mocker: MockerFixture, tmp_path: Path) -> None:
         """AI: Verify check() localizes a cross-file TypeVar and converts it to PEP 695 in the same run."""
-        # Whole-pipeline integration, grouped here since cross-file localization is what
-        # sets this case apart from the plain-conversion tests in test_type_var_check_convert.py.
         subject = self._create_cross_file(
             mocker,
             tmp_path,

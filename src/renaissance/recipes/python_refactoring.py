@@ -129,11 +129,7 @@ class PythonRefactoring(ASTProcessor):
         return cast("PythonRstNode", cast("object", self.root)).body
 
     def find_rst_node(self, target: ast.AST) -> Any:
-        """Locate the PythonRstNode wrapping a raw ast node.
-
-        E.g. after mutating an ast.FunctionDef in place, this finds the RST node to pass to
-        self.replace().
-        """
+        """Return the PythonRstNode wrapping the raw ast node `target`, e.g. to pass to self.replace()."""
         # TODO: Drop once recipes can navigate wrapper nodes via the unified node protocol?
         # decided during 24-09 discussion over future Node Protocol implementation
         found: list[Any] = []
@@ -146,8 +142,4 @@ class PythonRefactoring(ASTProcessor):
         return found[0]
 
     def run(self):
-        """Perform this recipe's refactoring.
-
-        Overridden by every concrete subclass; the base no-op lets process() call it uniformly
-        even for a recipe that hasn't overridden it.
-        """
+        """Perform this recipe's refactoring; a no-op unless a subclass overrides it."""
