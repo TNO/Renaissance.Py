@@ -1,13 +1,12 @@
 """Tests for TypeVarCheck.convert_declared_typevars."""
 
 import ast
+import textwrap
 from collections.abc import Callable
-from typing import cast
 
 import pytest
 from hamcrest import assert_that, contains_string, equal_to, has_entry, not_
 
-from renaissance.recipes.python_refactoring import PythonRefactoring
 from renaissance.recipes.type_var_check import PEP_695_MINIMUM, PEP_696_MINIMUM, TypeVarCheck
 from renaissance.recipes.type_var_domain import UnsafeReason
 
@@ -15,126 +14,54 @@ from renaissance.recipes.type_var_domain import UnsafeReason
 class TestTypeVarCheckConvert:
     """See module docstring."""
 
-    def test_converts_typevar_shared_across_functions_to_pep695(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
-        """AI: Verify a TypeVar shared across two functions converts both to PEP 695 syntax."""
-        subject = create_type_var_check("""
-            from typing import TypeVar
-
-            def a(x: T) -> T:
-                return x
-            def b(y: T) -> T:
-                return y
-
-            T = TypeVar("T")
-        """)
-        result = subject.check()
-
-        assert_that(result["converted"], has_entry("T", "fixed"))
-        assert_that(result["orphaned"], has_entry("T", "fixed"))
-        output = subject.apply_to_string()
-        assert_that(output, contains_string("def a[T](x: T) -> T:"))
-        assert_that(output, contains_string("def b[T](y: T) -> T:"))
-        assert_that(output, not_(contains_string("T = TypeVar")))
-
-    def test_converts_typevar_shared_across_methods_to_pep695(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
-        """AI: Verify a TypeVar shared across two methods of the same class converts both to PEP 695 syntax."""
-        subject = create_type_var_check("""
-            from typing import TypeVar
-
-            class Foo:
-                def a(self, x: T) -> T:
-                    return x
-                def b(self, y: T) -> T:
-                    return y
-
-            T = TypeVar("T")
-        """)
-        result = subject.convert_declared_typevars()
-
-        assert_that(result, has_entry("T", "fixed"))
-        output = subject.apply_to_string()
-        assert_that(output, contains_string("def a[T](self, x: T) -> T:"))
-        assert_that(output, contains_string("def b[T](self, y: T) -> T:"))
-
-    def test_converts_function_with_multiline_docstring_without_double_indenting(
-        self, create_type_var_check: Callable[[str], TypeVarCheck]
+    @pytest.mark.parametrize(
+        ("functions", "expected_signatures"),
+        [
+            pytest.param(
+                "def a(x: T) -> T:\n    return x\ndef b(y: T) -> T:\n    return y\n",
+                ["def a[T](x: T) -> T:", "def b[T](y: T) -> T:"],
+                id="functions",
+            ),
+            pytest.param(
+                "class Foo:\n    def a(self, x: T) -> T:\n        return x\n    def b(self, y: T) -> T:\n        return y\n",
+                ["def a[T](self, x: T) -> T:", "def b[T](self, y: T) -> T:"],
+                id="methods",
+            ),
+        ],
+    )
+    def test_converts_typevar_shared_by_two_functions(
+        self, create_type_var_check: Callable[[str], TypeVarCheck], functions: str, expected_signatures: list[str]
     ) -> None:
-        """AI: Verify converting a signature doesn't double-indent its function's multi-line docstring."""
-        subject = create_type_var_check("""
-            from typing import TypeVar
+        """Verify a TypeVar shared by two functions, or two methods of one class, gives each its own [T]."""
+        subject = create_type_var_check(f'from typing import TypeVar\n\n{functions}\nT = TypeVar("T")\n')
+        result = subject.convert_declared_typevars()
 
-            class Foo:
-                def cast(self, x: T) -> T:
-                    \"\"\"First line.
+        assert_that(result, equal_to({"T": "fixed"}))
+        output = subject.apply_to_string()
+        for signature in expected_signatures:
+            assert_that(output, contains_string(signature))
 
-                    Second line already indented.
-                    Third line too.
-                    \"\"\"
-                    return x
-                def other(self, y: T) -> T:
-                    return y
-
-            T = TypeVar("T")
-        """)
+    @pytest.mark.parametrize(
+        "docstring",
+        [
+            pytest.param('"""One liner."""', id="single-line"),
+            pytest.param('"""First line.\n\nSecond line already indented.\nThird line too.\n"""', id="multi-line"),
+            pytest.param('"""Produce a cast.\n\n.. seealso::\n\n    :ref:`tutorial_casts`\n"""', id="nested-block"),
+        ],
+    )
+    def test_converts_method_keeping_its_docstring(self, create_type_var_check: Callable[[str], TypeVarCheck], docstring: str) -> None:
+        """Verify converting a method's signature keeps its docstring exactly, including any nested indentation."""
+        body = textwrap.indent(f"{docstring}\nreturn x\n", " " * 8)
+        subject = create_type_var_check(
+            "from typing import TypeVar\n\nclass Foo:\n"
+            f"    def cast(self, x: T) -> T:\n{body}"
+            "    def other(self, y: T) -> T:\n        return y\n\n"
+            'T = TypeVar("T")\n'
+        )
         result = subject.convert_declared_typevars()
 
         assert_that(result, has_entry("T", "fixed"))
-        output = subject.apply_to_string()
-        assert_that(output, contains_string("def cast[T](self, x: T) -> T:"))
-        assert_that(output, contains_string('        """First line.'))
-        assert_that(output, contains_string("        Second line already indented."))
-        assert_that(output, contains_string("        Third line too."))
-        assert_that(output, contains_string('        """\n        return x'))
-        # would appear if the continuation lines got shifted twice
-        assert_that(output, not_(contains_string("            Second line already indented.")))
-
-    def test_converts_function_with_nested_docstring_indentation(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
-        """AI: Verify converting a signature preserves a docstring's internal nested block's relative indentation."""
-        # For example a Sphinx ".. seealso::" block.
-        subject = create_type_var_check("""
-            from typing import TypeVar
-
-            class Foo:
-                def cast(self, x: T) -> T:
-                    \"\"\"Produce a cast.
-
-                    .. seealso::
-
-                        :ref:`tutorial_casts`
-                    \"\"\"
-                    return x
-                def other(self, y: T) -> T:
-                    return y
-
-            T = TypeVar("T")
-        """)
-        result = subject.convert_declared_typevars()
-
-        assert_that(result, has_entry("T", "fixed"))
-        output = subject.apply_to_string()
-        assert_that(output, contains_string("        .. seealso::"))
-        assert_that(output, contains_string("            :ref:`tutorial_casts`"))
-
-    def test_converts_function_with_single_line_docstring(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
-        """AI: Verify converting a signature leaves a single-line docstring untouched."""
-        subject = create_type_var_check("""
-            from typing import TypeVar
-
-            class Foo:
-                def cast(self, x: T) -> T:
-                    \"\"\"One liner.\"\"\"
-                    return x
-                def other(self, y: T) -> T:
-                    return y
-
-            T = TypeVar("T")
-        """)
-        result = subject.convert_declared_typevars()
-
-        assert_that(result, has_entry("T", "fixed"))
-        output = subject.apply_to_string()
-        assert_that(output, contains_string("def cast[T](self, x: T) -> T:"))
-        assert_that(output, contains_string('        """One liner."""'))
+        assert_that(subject.apply_to_string(), contains_string(f"    def cast[T](self, x: T) -> T:\n{body}"))
 
     @pytest.mark.parametrize(
         ("extra_line", "imported_elsewhere"),
@@ -283,27 +210,6 @@ class TestTypeVarCheckConvert:
         subject.convert_declared_typevars()
 
         assert_that(subject.apply_to_string(), contains_string(f"def f[{', '.join(names)}]({parameters}) -> None: ..."))
-
-    def test_version_gate_below_pep695_reports_unsafe_with_reason(
-        self, make_recipe: Callable[[type[PythonRefactoring], str], PythonRefactoring]
-    ) -> None:
-        """AI: Verify a target below the PEP 695 floor reports unsafe with the version-gate reason."""
-        code = """
-            from typing import TypeVar
-
-            def a(x: T) -> T:
-                return x
-
-            T = TypeVar("T")
-        """
-        subject = cast(TypeVarCheck, make_recipe(TypeVarCheck, code))
-        subject.min_python = (3, 10)
-
-        result = subject.convert_declared_typevars()
-
-        assert_that(result, has_entry("T", "unsafe"))
-        assert_that(subject.converted_unsafe_reasons, has_entry("T", UnsafeReason.PEP695_VERSION_GATE))
-        assert_that(subject.apply_to_string(), contains_string('T = TypeVar("T")'))
 
     @pytest.mark.xfail(
         reason="_renormalize_indent takes the body's minimum indent over every line, including the lines "
@@ -515,6 +421,13 @@ class TestTypeVarCheckConvertArguments:
     @pytest.mark.parametrize(
         ("declaration", "signature", "min_python", "expected_reason"),
         [
+            pytest.param(
+                'T = TypeVar("T")',
+                _TYPEVAR_USE,
+                (3, 11),
+                UnsafeReason.PEP695_VERSION_GATE,
+                id="typevar-plain-3.11",
+            ),
             pytest.param(
                 'T = TypeVar("T", default=int)',
                 _TYPEVAR_USE,
