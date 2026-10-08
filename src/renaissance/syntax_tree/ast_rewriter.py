@@ -67,6 +67,7 @@ class ASTRewriter:
     def __init__(
         self,
         node,
+        # TODO: see docs/developer/architecture/position-consistency.md - the encoding must come from the adapter, not the host.
         encoding: str = sys.getfilesystemencoding(),
         correct_indent: bool = True,
     ) -> None:
@@ -205,6 +206,7 @@ class _RewriteActions:
         self.node = node
         self.encoding = encoding
         # self.content = self.node.root.binary_file_content()[self.node.offset : self.node.extended_end_offset]
+        # TODO: see docs/developer/architecture/position-consistency.md - re-encodes node text instead of using the root buffer.
         self.content = node.text.encode(sys.getfilesystemencoding())
         self.correct_indent = correct_indent
 

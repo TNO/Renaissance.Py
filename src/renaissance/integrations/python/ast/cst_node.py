@@ -18,6 +18,7 @@ class PythonCstTranslationUnit:
 
     def __init__(self, content, file_name: str) -> None:
         """AI: Parse Python source into a libcst tree with position lookups for AST-node wrapping."""
+        # TODO: see docs/developer/architecture/position-consistency.md - exposes no buffer, so the rewriter derives its own.
         self.content = content
         self.lines = content.splitlines()
         self.file_name = file_name
