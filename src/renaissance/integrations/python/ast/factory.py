@@ -25,7 +25,7 @@ _MATCH_ONE_RE = re.compile(r"^" + re.escape(MATCH_ONE) + r"\w+$")
 SHOW_NODE = False
 
 
-class PythonPattern(NodeProtocol):
+class PythonPattern:
     """AI: Wrap a Python AST/RST node as a matchable pattern, detecting match-all/match-one placeholders."""
 
     def __init__(self, node) -> None:

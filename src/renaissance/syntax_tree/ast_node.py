@@ -152,7 +152,7 @@ class ASTNode[NodeT, TranslationUnitT](ABC):
 
     def is_ancestor_of(self, descendant: Self) -> bool:
         """AI: Return whether this node is an ancestor of descendant."""
-        parent: Self = descendant.parent
+        parent: Self | None = descendant.parent
         if parent == self:
             return True
         if not parent:

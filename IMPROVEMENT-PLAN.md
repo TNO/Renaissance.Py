@@ -60,11 +60,11 @@ Small, pure wins. These come first because every later phase is validated by the
   A single global budget means new `core/` code inherits a 9200-issue allowance.
   Per-package budgets allow declaring `core/` strict-clean with budget 0, while `parser_bindings/` burns down slowly.
   This is the highest-leverage change for the Ruff and Pyright goal; without it the counts will not converge.
-- **Settle the `X | Sequence[X]` question as an ADR, not as a code change.**
-  Recommendation: accept only `Sequence[X]` in core APIs.
-  The union doubles the type checker's work at every call site, which is a large slice of the `reportUnknownArgumentType` count,
-  and ergonomics are recoverable with a single `as_sequence()` normalizer at the boundary.
-  Decide this before phase 2, because phase 2 touches every signature.
+- **Settle the `X | Sequence[X]` question.**
+  We have two types `ASTPattern` and `ASTSource`.
+  `ASTPattern` is currently `Nodeprotocol | Sequence[Nodeprotocol]`, but will become its own class.
+  `ASTSource` is currently also `Nodeprotocol | Sequence[Nodeprotocol]`, yet might in the future also
+  include `ATU`.
 
 ## Phase 1 - Structure, as pure moves
 

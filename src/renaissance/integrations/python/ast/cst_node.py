@@ -100,6 +100,11 @@ class PythonCstNode:
         return self.translation_unit.end_of(self.node)
 
     @property
+    def extended_end_offset(self) -> int:
+        """AI: Return the end offset; libcst attaches trailing trivia to the node itself, so there is nothing to extend."""
+        return self.end_offset
+
+    @property
     def filename(self):
         """AI: Return the source file name of this node's translation unit."""
         return self.translation_unit.file_name
