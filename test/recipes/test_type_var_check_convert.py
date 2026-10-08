@@ -8,7 +8,7 @@ import pytest
 from hamcrest import assert_that, contains_string, equal_to, has_entry, not_
 
 from renaissance.recipes.python_refactoring import PythonRefactoring
-from renaissance.recipes.type_var_check import TypeVarCheck
+from renaissance.recipes.type_var_check import PEP_695_MINIMUM, PEP_696_MINIMUM, TypeVarCheck
 from renaissance.recipes.type_var_domain import UnsafeReason
 
 
@@ -137,75 +137,6 @@ class TestTypeVarCheckConvert:
         output = subject.apply_to_string()
         assert_that(output, contains_string("def cast[T](self, x: T) -> T:"))
         assert_that(output, contains_string('        """One liner."""'))
-
-    def test_converts_bound_typevar(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
-        """AI: Verify a bound TypeVar converts to a PEP 695 type param carrying the same bound."""
-        subject = create_type_var_check("""
-            from typing import TypeVar
-
-            def a(x: T) -> T:
-                return x
-            def b(y: T) -> T:
-                return y
-
-            T = TypeVar("T", bound=int)
-        """)
-        result = subject.convert_declared_typevars()
-
-        assert_that(result, has_entry("T", "fixed"))
-        assert_that(subject.apply_to_string(), contains_string("def a[T: int](x: T) -> T:"))
-
-    def test_converts_constrained_typevar(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
-        """AI: Verify a constrained TypeVar converts to a PEP 695 type param carrying the same constraints."""
-        subject = create_type_var_check("""
-            from typing import TypeVar
-
-            def a(x: T) -> T:
-                return x
-            def b(y: T) -> T:
-                return y
-
-            T = TypeVar("T", int, str)
-        """)
-        result = subject.convert_declared_typevars()
-
-        assert_that(result, has_entry("T", "fixed"))
-        assert_that(subject.apply_to_string(), contains_string("def a[T: (int, str)](x: T) -> T:"))
-
-    def test_converts_paramspec(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
-        """AI: Verify a ParamSpec shared across two functions converts both to PEP 695 `**P` syntax."""
-        subject = create_type_var_check("""
-            from typing import ParamSpec
-
-            def a(f: Callable[P, int]) -> Callable[P, int]:
-                return f
-            def b(f: Callable[P, str]) -> Callable[P, str]:
-                return f
-
-            P = ParamSpec("P")
-        """)
-        result = subject.convert_declared_typevars()
-
-        assert_that(result, has_entry("P", "fixed"))
-        assert_that(subject.apply_to_string(), contains_string("def a[**P]"))
-        assert_that(subject.apply_to_string(), contains_string("def b[**P]"))
-
-    def test_converts_typevartuple(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
-        """AI: Verify a TypeVarTuple converts to PEP 695 `*Ts` syntax."""
-        subject = create_type_var_check("""
-            from typing import TypeVarTuple
-
-            def a(*args: *Ts) -> tuple[*Ts]:
-                return args
-            def b(*args: *Ts) -> tuple[*Ts]:
-                return args
-
-            Ts = TypeVarTuple("Ts")
-        """)
-        result = subject.convert_declared_typevars()
-
-        assert_that(result, has_entry("Ts", "fixed"))
-        assert_that(subject.apply_to_string(), contains_string("def a[*Ts]"))
 
     @pytest.mark.parametrize(
         ("extra_line", "imported_elsewhere"),
@@ -513,3 +444,233 @@ class TestTypeVarCheckConvert:
 
         assert_that(result, equal_to({"T": "fixed"}))
         assert_that(subject.apply_to_string(), contains_string("def same[T](x: T) -> T:"))
+
+
+_HEADER = "from collections.abc import Callable\nfrom typing import ParamSpec, TypeVar, TypeVarTuple, Unpack\n\n"
+_TYPEVAR_USE = "def a(x: T) -> T:"
+_PARAMSPEC_USE = "def a(f: Callable[P, int]) -> Callable[P, int]:"
+_TYPEVARTUPLE_USE = "def a(*args: *Ts) -> tuple[*Ts]:"
+
+
+def _source(declarations: str, signature: str) -> str:
+    """Build a module with the given legacy declarations and a single function using them."""
+    return f"{_HEADER}{declarations}\n\n\n{signature}\n    ...\n"
+
+
+class TestTypeVarCheckConvertArguments:
+    """Every constructor argument is carried over or refused with a reason, never lost silently."""
+
+    @pytest.mark.parametrize(
+        ("declaration", "signature", "expected_signature"),
+        [
+            pytest.param('T = TypeVar("T")', _TYPEVAR_USE, "def a[T](x: T) -> T:", id="typevar-plain"),
+            pytest.param('T = TypeVar("T", int, str)', _TYPEVAR_USE, "def a[T: (int, str)](x: T) -> T:", id="typevar-constraints"),
+            pytest.param('T = TypeVar("T", bound=int)', _TYPEVAR_USE, "def a[T: int](x: T) -> T:", id="typevar-bound"),
+            pytest.param('T = TypeVar("T", default=int)', _TYPEVAR_USE, "def a[T = int](x: T) -> T:", id="typevar-default"),
+            pytest.param(
+                'T = TypeVar("T", bound=str, default=str)',
+                _TYPEVAR_USE,
+                "def a[T: str = str](x: T) -> T:",
+                id="typevar-bound-default",
+            ),
+            pytest.param(
+                'T = TypeVar("T", int, str, default=int)',
+                _TYPEVAR_USE,
+                "def a[T: (int, str) = int](x: T) -> T:",
+                id="typevar-constraints-default",
+            ),
+            pytest.param('T = TypeVar("T", infer_variance=True)', _TYPEVAR_USE, "def a[T](x: T) -> T:", id="typevar-infer-variance"),
+            pytest.param(
+                'P = ParamSpec("P")',
+                _PARAMSPEC_USE,
+                "def a[**P](f: Callable[P, int]) -> Callable[P, int]:",
+                id="paramspec-plain",
+            ),
+            pytest.param(
+                'P = ParamSpec("P", default=[int, str])',
+                _PARAMSPEC_USE,
+                "def a[**P = [int, str]](f: Callable[P, int]) -> Callable[P, int]:",
+                id="paramspec-default",
+            ),
+            pytest.param('Ts = TypeVarTuple("Ts")', _TYPEVARTUPLE_USE, "def a[*Ts](*args: *Ts) -> tuple[*Ts]:", id="typevartuple-plain"),
+            pytest.param(
+                'Ts = TypeVarTuple("Ts", default=Unpack[tuple[int]])',
+                _TYPEVARTUPLE_USE,
+                "def a[*Ts = Unpack[tuple[int]]](*args: *Ts) -> tuple[*Ts]:",
+                id="typevartuple-default",
+            ),
+        ],
+    )
+    def test_converts_keeping_every_expressible_argument(
+        self,
+        create_type_var_check: Callable[[str], TypeVarCheck],
+        declaration: str,
+        signature: str,
+        expected_signature: str,
+    ) -> None:
+        """Verify bounds, constraints, defaults and inferred variance are carried over."""
+        name = declaration.split(" = ", maxsplit=1)[0]
+        subject = create_type_var_check(_source(declaration, signature))
+        subject.min_python = PEP_696_MINIMUM
+
+        result = subject.convert_declared_typevars()
+
+        assert_that(result, has_entry(name, "fixed"))
+        output = subject.apply_to_string()
+        ast.parse(output)
+        assert_that(output, contains_string(expected_signature))
+
+    @pytest.mark.parametrize(
+        ("declaration", "signature", "min_python", "expected_reason"),
+        [
+            pytest.param(
+                'T = TypeVar("T", default=int)',
+                _TYPEVAR_USE,
+                PEP_695_MINIMUM,
+                UnsafeReason.PEP696_VERSION_GATE,
+                id="typevar-default-3.12",
+            ),
+            pytest.param(
+                'P = ParamSpec("P", default=[int, str])',
+                _PARAMSPEC_USE,
+                PEP_695_MINIMUM,
+                UnsafeReason.PEP696_VERSION_GATE,
+                id="paramspec-default-3.12",
+            ),
+            pytest.param(
+                'Ts = TypeVarTuple("Ts", default=Unpack[tuple[int]])',
+                _TYPEVARTUPLE_USE,
+                PEP_695_MINIMUM,
+                UnsafeReason.PEP696_VERSION_GATE,
+                id="typevartuple-default-3.12",
+            ),
+            pytest.param(
+                'T = TypeVar("T", covariant=True)',
+                _TYPEVAR_USE,
+                PEP_696_MINIMUM,
+                UnsafeReason.NO_PEP695_EQUIVALENT,
+                id="typevar-covariant",
+            ),
+            pytest.param(
+                'T = TypeVar("T", contravariant=True)',
+                _TYPEVAR_USE,
+                PEP_696_MINIMUM,
+                UnsafeReason.NO_PEP695_EQUIVALENT,
+                id="typevar-contravariant",
+            ),
+            pytest.param(
+                'P = ParamSpec("P", covariant=True)',
+                _PARAMSPEC_USE,
+                PEP_696_MINIMUM,
+                UnsafeReason.NO_PEP695_EQUIVALENT,
+                id="paramspec-covariant",
+            ),
+            pytest.param(
+                'Ts = TypeVarTuple("Ts", bound=int, covariant=True)',
+                _TYPEVARTUPLE_USE,
+                PEP_696_MINIMUM,
+                UnsafeReason.NO_PEP695_EQUIVALENT,
+                id="typevartuple-bound-covariant",
+            ),
+            pytest.param(
+                'P = ParamSpec("P", bound=int)',
+                _PARAMSPEC_USE,
+                PEP_696_MINIMUM,
+                UnsafeReason.NO_PEP695_EQUIVALENT,
+                id="paramspec-bound",
+            ),
+            pytest.param(
+                'T = TypeVar("T", future_kw=1)',
+                _TYPEVAR_USE,
+                PEP_696_MINIMUM,
+                UnsafeReason.NO_PEP695_EQUIVALENT,
+                id="unknown-keyword",
+            ),
+            pytest.param(
+                'T = TypeVar("T", **options)',
+                _TYPEVAR_USE,
+                PEP_696_MINIMUM,
+                UnsafeReason.NO_PEP695_EQUIVALENT,
+                id="double-star-keywords",
+            ),
+        ],
+    )
+    def test_refuses_argument_it_cannot_carry_over(
+        self,
+        create_type_var_check: Callable[[str], TypeVarCheck],
+        declaration: str,
+        signature: str,
+        min_python: tuple[int, int],
+        expected_reason: UnsafeReason,
+    ) -> None:
+        """Verify an argument the target can't express is reported unsafe with its reason and the file is left unchanged."""
+        name = declaration.split(" = ", maxsplit=1)[0]
+        source = _source(declaration, signature)
+        subject = create_type_var_check(source)
+        subject.min_python = min_python
+
+        result = subject.convert_declared_typevars()
+
+        assert_that(result, has_entry(name, "unsafe"))
+        assert_that(subject.converted_unsafe_reasons, has_entry(name, expected_reason))
+        assert_that(subject.apply_to_string(), equal_to(source))
+
+    @pytest.mark.parametrize(
+        ("declarations", "signature", "expected_signature"),
+        [
+            pytest.param(
+                'T = TypeVar("T", default=int)\nU = TypeVar("U")',
+                "def f(x: T, y: U) -> T:",
+                "def f[U, T = int](x: T, y: U) -> T:",
+                id="defaulted-declared-first",
+            ),
+            pytest.param(
+                'U = TypeVar("U")',
+                "def f[T = int](x: T, y: U) -> T:",
+                "def f[U, T = int](x: T, y: U) -> T:",
+                id="existing-defaulted-param",
+            ),
+            pytest.param(
+                'T = TypeVar("T", default=int)\nTs = TypeVarTuple("Ts")',
+                "def f(x: T, *args: *Ts) -> T:",
+                "def f[*Ts, T = int](x: T, *args: *Ts) -> T:",
+                id="typevartuple-after-defaulted",
+            ),
+        ],
+    )
+    def test_places_defaulted_type_params_last(
+        self,
+        create_type_var_check: Callable[[str], TypeVarCheck],
+        declarations: str,
+        signature: str,
+        expected_signature: str,
+    ) -> None:
+        """Verify type parameters with a default come after those without one, which Python requires."""
+        subject = create_type_var_check(_source(declarations, signature))
+        subject.min_python = PEP_696_MINIMUM
+
+        subject.convert_declared_typevars()
+
+        output = subject.apply_to_string()
+        ast.parse(output)
+        assert_that(output, contains_string(expected_signature))
+
+    @pytest.mark.xfail(
+        reason="A default referencing another legacy declaration is carried over as is, so the new type "
+        "parameter's default refers to the module-level TypeVar.",
+        raises=AssertionError,
+        strict=True,
+    )
+    def test_does_not_convert_default_referencing_another_declaration(
+        self,
+        create_type_var_check: Callable[[str], TypeVarCheck],
+    ) -> None:
+        """Verify a declaration whose default uses another legacy type parameter is reported unsafe and left unconverted."""
+        subject = create_type_var_check(_source('T = TypeVar("T")\nU = TypeVar("U", default=T)', "def f(x: U) -> U:"))
+        subject.min_python = PEP_696_MINIMUM
+
+        result = subject.convert_declared_typevars()
+
+        assert_that(result, has_entry("U", "unsafe"))
+        assert_that(subject.converted_unsafe_reasons, has_entry("U", not_(UnsafeReason.PEP696_VERSION_GATE)))
+        assert_that(subject.apply_to_string(), contains_string("def f(x: U) -> U:"))
