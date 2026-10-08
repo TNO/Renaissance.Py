@@ -44,8 +44,8 @@ class FileReport:
 def resolve_target_files(target: Path) -> list[Path]:
     """Return the .py files to process for `target`.
 
-    A single .py file is returned as-is; a directory is scanned recursively via PythonScanner
-    (whole-tree, no package_dirs allowlist, so arbitrary third-party layouts are supported).
+    A single .py file is returned as-is; a directory is scanned recursively with PythonScanner over
+    the whole tree (no package_dirs allowlist), so any project layout works.
     """
     if target.is_file():
         return [target]
@@ -94,10 +94,9 @@ def process_file(
     project_root: Path,
     project_wide_imported_names: frozenset[str],
 ) -> FileReport:
-    """Run TypeVarCheck's three phases against a single file, returning one FileReport.
+    """Run TypeVarCheck's three phases on one file and return its FileReport.
 
-    Any failure is caught and reported on FileReport.error instead of propagating, since one bad
-    file must never abort a batch run.
+    Any exception is caught and stored on FileReport.error, so one bad file never aborts a batch run.
     """
     try:
         recipe = TypeVarCheck(path)
@@ -118,9 +117,8 @@ def process_file(
 def _run_ruff_unused_import_cleanup(paths: list[Path]) -> None:
     """Run `ruff check --fix --select F401` over every path, dropping any now-unused import.
 
-    Best-effort: prints a warning and returns normally if ruff can't be invoked (e.g. not
-    installed), rather than raising - the files' own content is already correct at this point
-    regardless of whether this cleanup succeeds.
+    Best-effort: if ruff can't be invoked (e.g. not installed), prints a warning instead of raising.
+    The files are already valid without this cleanup.
     """
     try:
         subprocess.run(  # noqa: S603 - fixed argv list (sys.executable + literals + our own discovered paths), no shell
@@ -149,10 +147,9 @@ def _format_commit_summary(reports: list[FileReport]) -> str:
 def _format_console_report(reports: list[FileReport], *, ruff_ran: bool) -> str:
     """Build the full per-file report: MODIFIED / NEEDS MANUAL REVIEW / ERRORS sections.
 
-    Clean files (no TypeVar usage found at all) are folded into the top-line count only, never
-    listed individually - the report's job is to surface what needs attention. Under MODIFIED, a
-    name listed as converted isn't listed again as orphaned. The ruff import-cleanup line is only
-    included when ruff_ran is True.
+    Clean files (no type parameter usage at all) are only counted, not listed, so the report shows
+    what needs attention. Under MODIFIED, a converted name isn't repeated as orphaned. The ruff
+    import-cleanup line is only included when ruff_ran is True.
     """
     modified = [report for report in reports if has_fixed(report)]
     needs_review = [report for report in reports if has_unsafe(report)]
