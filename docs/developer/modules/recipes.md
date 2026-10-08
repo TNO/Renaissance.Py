@@ -56,9 +56,9 @@ plus the safety-analysis functions `is_safe_to_remove`/`is_safe_to_localize`) li
 kept out of `type_var_check.py` so domain modelling doesn't mix with pipeline orchestration.
 
 `is_safe_to_remove`/`is_safe_to_localize` return `UnsafeReason | None` (`None` meaning safe), not a bare
-`bool` - each of the six `UnsafeReason` members (the Python-version gate plus the five `__all__`/scope/
-cross-project conditions across both functions) has a matching `UnsafeRule` (a short message plus a docs anchor
-slug) in `UNSAFE_RULES`, and `doc_link(reason)` resolves one to the full URL under
+`bool` - each of the eight `UnsafeReason` members (the two Python-version gates, the five `__all__`/scope/
+cross-project conditions across both functions, and `NO_PEP695_EQUIVALENT`) has a matching
+`UnsafeRule` (a short message plus a docs anchor slug) in `UNSAFE_RULES`, and `doc_link(reason)` resolves one to the full URL under
 [TypeVar modernization](../../user/features/typevar-modernization.md)'s Constraints section. Adding `[T]` to a
 function is always safe, so `is_safe_to_remove` only guards *removing* a declaration
 (`remove_orphaned_declarations`); it never blocks `convert_declared_typevars`. It additionally takes
@@ -109,7 +109,9 @@ bracket the same way needs it too.
 `convert_declared_typevars` collects the functions it touches and queues exactly one `self.replace()` per
 function, even when several type parameters apply to it: queuing one per name would target the same node twice
 before a commit, which the rewriter rejects as a conflicting rewrite. The type parameters are added in the order
-their declarations appear in the file, so the same input always produces the same output.
+their declarations appear in the file, so the same input always produces the same output, except that
+`type_params_defaults_last` then moves every type parameter with a default after those without one (keeping the
+order within each group): `def f[T = int, U]` is a `SyntaxError`.
 
 `functions_using_nodes` (`type_var_domain.py`) attributes a name's usage to the *outermost* function in a nesting
 chain, never a nested closure that merely references it - a PEP 695 type parameter declared on an enclosing
@@ -138,12 +140,19 @@ needs no conversion. This is what lets the recipe recognize both the state its o
 the one `ruff`'s `UP047` leaves — a signature already rewritten to `def f[T](...)`, with the old
 `T = TypeVar("T")` still sitting in the module, which `ruff` documents it will never remove itself.
 
-Before adding PEP 695 syntax, `convert_declared_typevars` calls `TypeVarCheck._target_supports_pep695()`, which
-compares the recipe's `min_python` class attribute against `PEP_695_MINIMUM = (3, 12)`; `None` (unknown) never
-passes. The tool doesn't detect the target's version: `migration-type-recipes.py` sets `min_python` from its
-required `--py` flag, and tests set it after construction - the same pattern `in_memory` already uses on the base
-class. `remove_orphaned_declarations` has no such check: removing a declaration that is already dead adds no
-syntax.
+Before adding PEP 695 syntax, `convert_declared_typevars` checks each declaration with
+`TypeVarCheck._conversion_refusal()`. First comes `_target_supports_pep695()`, which compares the recipe's
+`min_python` class attribute against `PEP_695_MINIMUM = (3, 12)`; `None` (unknown) never passes. The tool doesn't
+detect the target's version: `migration-type-recipes.py` sets `min_python` from its required `--py` flag, and
+tests set it after construction - the same pattern `in_memory` already uses on the base class. Then a keyword
+`build_type_param` can't carry over is refused (`has_unconvertible_argument`: anything outside the
+per-constructor allow-list `_CONVERTIBLE_KEYWORDS`, `NO_PEP695_EQUIVALENT`). That covers `covariant=`/
+`contravariant=` and `bound=` on a `ParamSpec`/`TypeVarTuple`, which PEP 695 syntax can't write, and a keyword a
+later Python adds is refused rather than dropped. A `default=` (`declared_default`) is refused unless
+`_target_supports_pep696()` holds (`PEP_696_MINIMUM = (3, 13)`, `PEP696_VERSION_GATE`). `build_type_param`
+carries over bounds, constraints and `default=`; `infer_variance=` is allowed without being carried over, since a
+PEP 695 type parameter always infers its variance. `remove_orphaned_declarations` has no such check: removing a
+declaration that is already dead adds no syntax.
 
 ## Related features
 
@@ -164,8 +173,8 @@ syntax.
   against arbitrary generated source (see [ADR 09](../architecture/adr/09_property_based_tests.md)).
 - `test/recipes/test_type_var_domain.py` - `is_safe_to_remove`/`is_safe_to_localize` in isolation, confirming
   that three of the `UnsafeReason` members (the `__all__`, imported-elsewhere and conditional-constructor
-  conditions) are returned by their specific unsafe condition. The version gate, `USED_IN_GENERIC_CLASS` and
-  `DECLARATION_NAME_UNAVAILABLE` are covered through the recipe instead.
+  conditions) are returned by their specific unsafe condition. The two version gates, `USED_IN_GENERIC_CLASS`,
+  `DECLARATION_NAME_UNAVAILABLE` and `NO_PEP695_EQUIVALENT` are covered through the recipe instead.
 - `test/recipes/test_step_runner.py` - `Step`/`run_steps`: commit only when a step fixed something, results in step
   order.
 - `test/recipes/test_python_refactoring.py` - `PythonRefactoring.find_rst_node` and `narrowed_import_text`.
@@ -204,6 +213,10 @@ syntax.
   error. The CLI reports that file under `ERRORS` and leaves it unchanged; one import per name avoids it.
   Tracked by the `xfail` test `test_localizes_two_names_from_one_import_statement` in
   `test/recipes/test_type_var_check_localize.py`.
+- A `default=` that uses another legacy declaration (`U = TypeVar("U", default=T)`) is carried over as it is, so
+  the converted `def f[U = T]` refers to the module-level `T`. Tracked by the `xfail` test
+  `test_does_not_convert_default_referencing_another_declaration` in
+  `test/recipes/test_type_var_check_convert.py`.
 - The recipe doesn't detect the target's minimum Python version (e.g. from `requires-python`); it has to be given
   explicitly via `--py`.
 - Rewriting legacy `Unpack[Ts]` usages to native `*Ts` syntax is left to `ruff`'s `UP044` rule - see

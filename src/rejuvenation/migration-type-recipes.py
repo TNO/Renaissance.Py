@@ -219,7 +219,10 @@ def build_arg_parser() -> argparse.ArgumentParser:
         type=_parse_py_version,
         required=True,
         metavar="MAJOR.MINOR",
-        help="Minimum Python version the target project supports (not the one running this tool), e.g. 3.12. PEP 695 rewrites need 3.12+.",
+        help=(
+            "Minimum Python version the target project supports (not the one running this tool), e.g. 3.12. "
+            "PEP 695 rewrites need 3.12+, PEP 696 type parameter defaults 3.13+."
+        ),
     )
     parser.add_argument("--report", type=Path, metavar="PATH", help="Also write the full report to this file.")
     parser.add_argument(
