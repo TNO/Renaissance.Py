@@ -58,6 +58,11 @@ These cases are **not** reported, so review the changes with `git diff`:
 - A localized `T` is a new object: code comparing type parameters by identity (`is`) sees two different objects.
   A file importing `T` from a localized file gets that copy too.
 - A declaration whose importers are all localized in a run is only removed by a second run.
+- A `T` used only in string annotations (`def f(x: "T")`) is seen as unused, so its declaration is removed.
+- Only a plain `__all__ = [...]` protects an exported `T`. Annotated (`__all__: list[str] = ...`) or extended
+  (`+=`, `.extend()`, `.append()`) forms don't, so the declaration can be removed.
+- A constructor the origin imports relatively (`from ._compat import TypeVar`) is imported in the localized file
+  without the dot (`from _compat import TypeVar`). Fix the import by hand.
 - Removing a line can leave extra blank lines. Run your formatter afterwards.
 
 ## Constraints
