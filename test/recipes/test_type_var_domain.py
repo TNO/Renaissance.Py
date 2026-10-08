@@ -64,23 +64,27 @@ class TestIsSafeToRemove:
 class TestIsSafeToLocalize:
     """is_safe_to_localize: None when safe, the specific UnsafeReason otherwise."""
 
-    def test_returns_none_when_safe(self) -> None:
-        """A TypeVar whose constructor its origin imports unconditionally is safe to localize."""
-        tree = _parse("""
-            from typing import TypeVar
-
-            T = TypeVar("T")
-
-            def a(x: T) -> T:
-                return x
-        """)
-
-        assert_that(is_safe_to_localize(tree, "T"), is_(None))
+    @pytest.mark.parametrize(
+        "source",
+        [
+            pytest.param('from typing import TypeVar\nT = TypeVar("T")\n', id="unconditional-import"),
+            pytest.param(
+                "from typing import TYPE_CHECKING, TypeVar\n"
+                "if TYPE_CHECKING:\n"
+                "    from collections.abc import Sequence\n"
+                'T = TypeVar("T")\n',
+                id="conditional-import-of-another-name",
+            ),
+        ],
+    )
+    def test_returns_none_when_safe(self, source: str) -> None:
+        """A TypeVar whose constructor its origin imports unconditionally is safe to localize, whatever else is conditional."""
+        assert_that(is_safe_to_localize(_parse(source), "T"), is_(None))
 
     @pytest.mark.parametrize(
         ("source", "expected_reason"),
         [
-            (
+            pytest.param(
                 """
                 import sys
 
@@ -92,8 +96,9 @@ class TestIsSafeToLocalize:
                 T = TypeVar("T", default=None)
                 """,
                 UnsafeReason.ORIGIN_IMPORTS_CONSTRUCTOR_CONDITIONALLY,
+                id="if-version-check",
             ),
-            (
+            pytest.param(
                 """
                 try:
                     from typing import ParamSpec
@@ -103,6 +108,7 @@ class TestIsSafeToLocalize:
                 T = ParamSpec("T")
                 """,
                 UnsafeReason.ORIGIN_IMPORTS_CONSTRUCTOR_CONDITIONALLY,
+                id="try-except-import",
             ),
         ],
     )
@@ -111,19 +117,6 @@ class TestIsSafeToLocalize:
         tree = _parse(source)
 
         assert_that(is_safe_to_localize(tree, "T"), is_(expected_reason))
-
-    def test_ignores_conditional_imports_of_other_names(self) -> None:
-        """A conditional import of an unrelated name doesn't make an unconditionally imported constructor unsafe."""
-        tree = _parse("""
-            from typing import TYPE_CHECKING, TypeVar
-
-            if TYPE_CHECKING:
-                from collections.abc import Sequence
-
-            T = TypeVar("T")
-        """)
-
-        assert_that(is_safe_to_localize(tree, "T"), is_(None))
 
 
 _FEATURE_DOC = Path(__file__).resolve().parents[2] / "docs" / "user" / "features" / "typevar-modernization.md"

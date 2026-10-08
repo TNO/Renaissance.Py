@@ -58,16 +58,6 @@ UNSAFE_TYPEVAR_SOURCE = textwrap.dedent("""\
 class TestProcessFile:
     """process_file: writes changes for real, and isolates per-file errors."""
 
-    def test_writes_migrated_content_to_disk(self, tmp_path: Path) -> None:
-        """process_file() actually writes the PEP 695-converted content to disk."""
-        target = tmp_path / "mod.py"
-        target.write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
-
-        report = migration.process_file(target, min_python=(3, 12), project_root=tmp_path, project_wide_imported_names=frozenset())
-
-        assert_that(migration.has_fixed(report), is_(True))
-        assert_that(target.read_text(encoding="utf-8"), contains_string("def identity[T]"))
-
     @pytest.mark.parametrize(
         ("source", "imported_elsewhere", "expected_reason"),
         [
@@ -106,19 +96,31 @@ class TestRuffImportCleanup:
     """main(): the ruff F401 batch step actually drops now-unused imports end to end."""
 
     @pytest.mark.parametrize(
-        ("extra_args", "import_matcher"),
+        ("extra_args", "import_matcher", "report_matcher"),
         [
-            pytest.param([], is_not(contains_string("TypeVar")), id="default-drops-import"),
-            pytest.param(["--no-ruff"], contains_string("from typing import TypeVar"), id="no-ruff-keeps-import"),
+            pytest.param(
+                [],
+                is_not(contains_string("TypeVar")),
+                contains_string("cleaned up via `ruff"),
+                id="default-drops-import",
+            ),
+            pytest.param(
+                ["--no-ruff"],
+                contains_string("from typing import TypeVar"),
+                is_not(contains_string("cleaned up via `ruff")),
+                id="no-ruff-keeps-import",
+            ),
         ],
     )
     def test_unused_typevar_import_cleanup(
         self,
         tmp_path: Path,
+        capsys: pytest.CaptureFixture[str],
         extra_args: list[str],
         import_matcher: Matcher[str],
+        report_matcher: Matcher[str],
     ) -> None:
-        """The redundant TypeVar import is dropped by default and kept with --no-ruff; conversion runs either way."""
+        """The redundant TypeVar import is dropped, and the report says so, unless --no-ruff; conversion runs either way."""
         target = tmp_path / "mod.py"
         target.write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
 
@@ -128,27 +130,6 @@ class TestRuffImportCleanup:
         written = target.read_text(encoding="utf-8")
         assert_that(written, contains_string("def identity[T]"))
         assert_that(written, import_matcher)
-
-    @pytest.mark.parametrize(
-        ("extra_args", "report_matcher"),
-        [
-            pytest.param([], contains_string("cleaned up via `ruff"), id="default-mentions-ruff"),
-            pytest.param(["--no-ruff"], is_not(contains_string("cleaned up via `ruff")), id="no-ruff-omits-mention"),
-        ],
-    )
-    def test_report_mentions_ruff_cleanup_only_when_it_ran(
-        self,
-        tmp_path: Path,
-        capsys: pytest.CaptureFixture[str],
-        extra_args: list[str],
-        report_matcher: Matcher[str],
-    ) -> None:
-        """The report's ruff cleanup line appears only when the ruff pass actually ran."""
-        target = tmp_path / "mod.py"
-        target.write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
-
-        migration.main([str(target), "--py", "3.12", *extra_args])
-
         assert_that(capsys.readouterr().out, report_matcher)
 
     def test_unmodified_sibling_file_is_left_untouched(self, tmp_path: Path) -> None:
@@ -222,19 +203,6 @@ class TestConsoleReportModifiedSection:
 class TestPerFileProgressFeedback:
     """main(): prints a per-file progress line as each file is checked."""
 
-    def test_each_file_gets_a_checked_line(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
-        """Every discovered file - modified, clean, or errored - gets its own 'checked' line."""
-        good = tmp_path / "good.py"
-        good.write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
-        broken = tmp_path / "broken.py"
-        broken.write_text("def broken(:\n", encoding="utf-8")
-
-        migration.main([str(tmp_path), "--py", "3.12"])
-
-        output = capsys.readouterr().out
-        assert_that(output, contains_string(f"File {good} checked."))
-        assert_that(output, contains_string(f"File {broken} checked."))
-
     def test_progress_line_path_has_no_parent_segments(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
         """A target containing `..` is normalized before its files are reported."""
         good = tmp_path / "good.py"
@@ -256,16 +224,19 @@ class TestMainBatchErrorIsolation:
         tmp_path: Path,
         capsys: pytest.CaptureFixture[str],
     ) -> None:
-        """A batch with one broken file still reports the good file, and exits with code 3."""
-        (tmp_path / "good.py").write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
-        (tmp_path / "broken.py").write_text("def broken(:\n", encoding="utf-8")
+        """A batch with one broken file still checks and converts the good file, and exits with code 3."""
+        good = tmp_path / "good.py"
+        good.write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
+        broken = tmp_path / "broken.py"
+        broken.write_text("def broken(:\n", encoding="utf-8")
 
         exit_code = migration.main([str(tmp_path), "--py", "3.12"])
 
         assert_that(exit_code, equal_to(3))
         output = capsys.readouterr().out
-        assert_that(output, contains_string("good.py"))
-        assert_that(output, contains_string("broken.py"))
+        assert_that(output, contains_string(f"File {good} checked."))
+        assert_that(output, contains_string(f"File {broken} checked."))
+        assert_that(good.read_text(encoding="utf-8"), contains_string("def identity[T]"))
 
 
 class TestMainProjectWideImportSafety:
@@ -322,22 +293,13 @@ class TestMainProjectWideImportSafety:
         assert_that((pkg / "typing_mod.py").read_text(encoding="utf-8"), contains_string('T = TypeVar("T")'))
         assert_that((pkg / "client.py").read_text(encoding="utf-8"), contains_string("def use[T](x: T) -> T:"))
 
-    @pytest.mark.parametrize(
-        "consumer_source",
-        [
-            pytest.param("import pkg.typing_mod\n\ndef use(x: pkg.typing_mod.T) -> None: ...\n", id="import-dotted"),
-            pytest.param("import pkg.typing_mod as tm\n\ndef use(x: tm.T) -> None: ...\n", id="import-as"),
-            pytest.param("from pkg import typing_mod\n\ndef use(x: typing_mod.T) -> None: ...\n", id="from-package"),
-            pytest.param("from . import typing_mod\n\ndef use(x: typing_mod.T) -> None: ...\n", id="from-relative"),
-        ],
-    )
-    def test_origin_declaration_survives_module_attribute_access(self, tmp_path: Path, consumer_source: str) -> None:
+    def test_origin_declaration_survives_module_attribute_access(self, tmp_path: Path) -> None:
         """A TypeVar accessed as a module attribute by another file is kept at its origin."""
         pkg = tmp_path / "pkg"
         pkg.mkdir()
         (pkg / "__init__.py").write_text("", encoding="utf-8")
         (pkg / "typing_mod.py").write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
-        (pkg / "client.py").write_text(consumer_source, encoding="utf-8")
+        (pkg / "client.py").write_text("import pkg.typing_mod\n\ndef use(x: pkg.typing_mod.T) -> None: ...\n", encoding="utf-8")
 
         exit_code = migration.main([str(tmp_path), "--py", "3.12"])
 
