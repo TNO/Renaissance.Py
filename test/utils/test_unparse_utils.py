@@ -28,8 +28,6 @@ class TestNameEndOffset:
 
     def test_finds_a_def_indented_after_a_decorator(self) -> None:
         """AI: Verify the offset is found correctly when the "def" line is indented after a decorator."""
-        # A decorated method's .text includes the decorator on line 1 - the "def" line itself
-        # is a continuation line carrying its own real indentation, not flush at column 0.
         source = "@overload\n    def __call__(self, x: int) -> int: ...\n"
         assert_that(_name_end_offset(source, "__call__"), is_(26))
 
@@ -107,9 +105,7 @@ class TestUnparseSignatureOnly:
 
     def test_renormalizes_a_method_bodys_absolute_indent_to_four_spaces(self) -> None:
         """AI: Verify a method's real 8-space absolute body indent is renormalized to the 4-space baseline."""
-        # A method's .text carries the file's real (absolute) indentation - here 8 spaces, one
-        # level of class plus one level of method body - not the 4-space-relative-to-zero
-        # baseline the rewrite pipeline's shift expects.
+        # 8 spaces: one level for the class, one for the method body.
         original = "def f(x):\n        return x"
         node = cast(ast.FunctionDef, ast.parse(original).body[0])
         node.type_params = [ast.TypeVar(name="T")]
@@ -120,8 +116,6 @@ class TestUnparseSignatureOnly:
 
     def test_preserves_an_inline_single_line_body(self) -> None:
         """AI: Verify an inline "def f(x): ..." body stays on the header's own line after splicing."""
-        # "def f(x): ..." keeps its body on the header's own line - there's no separate block
-        # to renormalize, and the original inline style should survive as-is.
         original = "def f(x): ...\n"
         node = cast(ast.FunctionDef, ast.parse(original).body[0])
         node.type_params = [ast.TypeVar(name="T")]
@@ -132,8 +126,6 @@ class TestUnparseSignatureOnly:
 
     def test_preserves_a_multiline_signature(self) -> None:
         """AI: Verify splicing a type-param bracket doesn't collapse a multi-line parameter list onto one line."""
-        # Regression test: unparse_signature_only used to regenerate the whole header via
-        # ast.unparse(), collapsing a multi-line parameter list onto one line.
         original = "def f(\n    x: int,\n    y: int = 1,\n) -> int:\n    return x\n"
         node = cast(ast.FunctionDef, ast.parse(original).body[0])
         node.type_params = [ast.TypeVar(name="T")]
