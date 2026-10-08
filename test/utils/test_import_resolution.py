@@ -72,26 +72,28 @@ class TestResolveProjectModule:
 class TestCollectProjectImportedNames:
     """See module docstring."""
 
-    def test_maps_absolute_import_to_origin_file(self, project_tree: Path) -> None:
-        """A name imported by one file is recorded against the file it is imported from."""
-        files = [project_tree / "redis" / "typing.py", project_tree / "redis" / "commands" / "core.py"]
-        result = collect_project_imported_names(files, project_tree)
-        assert_that(result, has_entry(project_tree / "redis" / "typing.py", frozenset({"AnyKeyT"})))
-
-    def test_records_original_name_not_alias(self, tmp_path: Path) -> None:
-        """An aliased import is recorded under the name declared in the origin module."""
+    @pytest.mark.parametrize(
+        ("consumer_source", "expected"),
+        [
+            pytest.param("from origin import X\n", {"origin.py": frozenset({"X"})}, id="absolute-import"),
+            pytest.param("from .origin import X\n", {"origin.py": frozenset({"X"})}, id="relative-import"),
+            pytest.param("from origin import X as Z\n", {"origin.py": frozenset({"X"})}, id="aliased-import-records-original-name"),
+            pytest.param("from typing import TypeVar\n", {}, id="stdlib-import-not-recorded"),
+        ],
+    )
+    def test_records_imported_names_against_their_origin_file(
+        self,
+        tmp_path: Path,
+        consumer_source: str,
+        expected: dict[str, frozenset[str]],
+    ) -> None:
+        """A name imported from a project file is recorded against that file, under its declared name."""
         (tmp_path / "origin.py").write_text("X = 1\n")
-        (tmp_path / "consumer.py").write_text("from origin import X as Z\n")
-        files = [tmp_path / "origin.py", tmp_path / "consumer.py"]
-        result = collect_project_imported_names(files, tmp_path)
-        assert_that(result, has_entry(tmp_path / "origin.py", frozenset({"X"})))
+        (tmp_path / "consumer.py").write_text(consumer_source)
 
-    def test_does_not_record_stdlib_import(self, tmp_path: Path) -> None:
-        """An import that doesn't resolve inside the project is not recorded."""
-        (tmp_path / "consumer.py").write_text("from typing import TypeVar\n")
-        files = [tmp_path / "consumer.py"]
-        result = collect_project_imported_names(files, tmp_path)
-        assert_that(result, is_({}))
+        result = collect_project_imported_names([tmp_path / "origin.py", tmp_path / "consumer.py"], tmp_path)
+
+        assert_that(result, is_({tmp_path / name: names for name, names in expected.items()}))
 
 
 @pytest.fixture

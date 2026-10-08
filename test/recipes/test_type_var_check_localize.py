@@ -4,15 +4,18 @@ import ast
 import builtins
 import textwrap
 from pathlib import Path
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 import pytest
-from hamcrest import assert_that, contains_string, equal_to, has_entry, is_, not_
+from hamcrest import all_of, assert_that, contains_string, equal_to, has_entry, is_, not_
 from pytest_mock import MockerFixture
 
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
 from renaissance.recipes.type_var_check import PEP_695_MINIMUM, TypeVarCheck
 from renaissance.recipes.type_var_domain import UnsafeReason
+
+if TYPE_CHECKING:
+    from hamcrest.core.matcher import Matcher
 
 
 def _module_level_names(module: ast.Module) -> set[str]:
@@ -56,38 +59,16 @@ class TestTypeVarCheckLocalize:
         subject.min_python = PEP_695_MINIMUM
         return subject
 
-    def test_localizes_plain_function_generic_typevar(self, mocker: MockerFixture, tmp_path: Path) -> None:
-        """AI: Verify an imported TypeVar used only inside a plain function localizes into the importing file."""
-        subject = self._create_cross_file(
-            mocker,
-            tmp_path,
-            """
-            from typing import TypeVar
-            T = TypeVar("T")
-            def a(x: T) -> T:
-                return x
-            """,
-            """
-            from file_1 import T
-            def b(x: T) -> T:
-                return x
-            """,
-        )
-        result = subject.localize_imported_typevars()
-
-        assert_that(result, has_entry("T", "fixed"))
-        assert_that(subject.apply_to_string(), contains_string("T = TypeVar('T')"))
-        assert_that(subject.apply_to_string(), not_(contains_string("from file_1 import T")))
-
     @pytest.mark.parametrize(
         "origin_extra",
         [
+            pytest.param("def a(x: T) -> T:\n    return x", id="plain-origin"),
             pytest.param('__all__ = ["T"]', id="origin-exports-it"),
             pytest.param("class Box(Generic[T]):\n    pass", id="origin-class-is-generic-over-it"),
         ],
     )
     def test_localizes_typevar_whatever_its_origin_does_with_it(self, mocker: MockerFixture, tmp_path: Path, origin_extra: str) -> None:
-        """Verify an imported TypeVar is localized even when its origin exports it or has a class generic over it."""
+        """Verify an imported TypeVar is localized, also when its origin exports it or has a class generic over it."""
         origin = f"from typing import Generic, TypeVar\nT = TypeVar('T')\n{origin_extra}\n"
         subject = self._create_cross_file(
             mocker,
@@ -266,81 +247,33 @@ class TestTypeVarCheckLocalize:
         assert_that(output, contains_string("U = TypeVar('U')"))
         assert_that(output, not_(contains_string("from file_1 import")))
 
-    def test_adds_missing_typevar_import_when_localizing(self, mocker: MockerFixture, tmp_path: Path) -> None:
-        """AI: Verify localizing a TypeVar adds the "from typing import TypeVar" import if missing."""
-        subject = self._create_cross_file(
-            mocker,
-            tmp_path,
-            """
-            from typing import TypeVar
-            T = TypeVar("T")
-            def a(x: T) -> T:
-                return x
-            """,
-            """
-            from file_1 import T
-            def b(x: T) -> T:
-                return x
-            """,
-        )
-        result = subject.localize_imported_typevars()
-
-        assert_that(result, has_entry("T", "fixed"))
-        assert_that(subject.apply_to_string(), contains_string("from typing import TypeVar"))
-
-    def test_does_not_duplicate_already_present_typevar_import(self, mocker: MockerFixture, tmp_path: Path) -> None:
-        """AI: Verify localizing a TypeVar doesn't add a duplicate "from typing import TypeVar" when one already exists."""
-        subject = self._create_cross_file(
-            mocker,
-            tmp_path,
-            """
-            from typing import TypeVar
-            T = TypeVar("T")
-            def a(x: T) -> T:
-                return x
-            """,
-            """
-            from typing import TypeVar
-            from file_1 import T
-            U = TypeVar("U")
-            def b(x: T) -> T:
-                return x
-            """,
-        )
-        result = subject.localize_imported_typevars()
-
-        assert_that(result, has_entry("T", "fixed"))
-        output = subject.apply_to_string()
-        assert_that(output.count("from typing import TypeVar"), is_(1))
-
-    def test_localizes_when_origin_brings_typevar_into_scope_via_wildcard_import(
+    @pytest.mark.parametrize(
+        ("origin_import", "importing_header"),
+        [
+            pytest.param("from typing import TypeVar", "", id="missing-here"),
+            pytest.param("from typing import TypeVar", 'from typing import TypeVar\nU = TypeVar("U")', id="already-here"),
+            # find_import_source can't find "TypeVar" in the origin; only safe because this file imports it.
+            pytest.param("from typing import *", "from typing import TypeVar", id="origin-wildcard-import"),
+        ],
+    )
+    def test_localized_file_imports_the_constructor_exactly_once(
         self,
         mocker: MockerFixture,
         tmp_path: Path,
+        origin_import: str,
+        importing_header: str,
     ) -> None:
-        """AI: Verify localizing still succeeds when the origin brings TypeVar into scope via a wildcard import."""
-        # find_import_source can't find "TypeVar"; this is only safe because the importing file imports it.
+        """Verify localizing adds "from typing import TypeVar" when missing and never duplicates it."""
         subject = self._create_cross_file(
             mocker,
             tmp_path,
-            """
-            from typing import *
-            T = TypeVar("T")
-            def a(x: T) -> T:
-                return x
-            """,
-            """
-            from typing import TypeVar
-            from file_1 import T
-            def b(x: T) -> T:
-                return x
-            """,
+            f'{origin_import}\nT = TypeVar("T")\ndef a(x: T) -> T:\n    return x\n',
+            f"{importing_header}\nfrom file_1 import T\ndef b(x: T) -> T:\n    return x\n",
         )
         result = subject.localize_imported_typevars()
 
         assert_that(result, has_entry("T", "fixed"))
-        output = subject.apply_to_string()
-        assert_that(output.count("from typing import TypeVar"), is_(1))
+        assert_that(subject.apply_to_string().count("from typing import TypeVar"), is_(1))
 
     def test_does_not_localize_when_origin_imports_constructor_conditionally(
         self,
@@ -418,8 +351,32 @@ class TestTypeVarCheckLocalize:
 
         assert_that(result, is_({}))
 
-    def test_check_localizes_and_converts_in_one_pass(self, mocker: MockerFixture, tmp_path: Path) -> None:
-        """AI: Verify check() localizes a cross-file TypeVar and converts it to PEP 695 in the same run."""
+    @pytest.mark.parametrize(
+        ("min_python", "expected_converted", "output_matcher"),
+        [
+            pytest.param(
+                PEP_695_MINIMUM,
+                "fixed",
+                all_of(contains_string("def b[T](x: T) -> T:"), not_(contains_string("T = TypeVar"))),
+                id="converts-on-3.12",
+            ),
+            pytest.param(
+                (3, 10),
+                "unsafe",
+                all_of(contains_string("def b(x: T) -> T:"), contains_string("T = TypeVar('T')")),
+                id="only-localizes-below-3.12",
+            ),
+        ],
+    )
+    def test_check_localizes_then_converts_when_the_target_allows(
+        self,
+        mocker: MockerFixture,
+        tmp_path: Path,
+        min_python: tuple[int, int],
+        expected_converted: str,
+        output_matcher: Matcher[str],
+    ) -> None:
+        """Verify check() localizes a cross-file TypeVar, then converts it only if the target supports PEP 695."""
         subject = self._create_cross_file(
             mocker,
             tmp_path,
@@ -435,10 +392,9 @@ class TestTypeVarCheckLocalize:
                 return x
             """,
         )
+        subject.min_python = min_python
         subject.run()
 
         assert_that(subject.result["cross_file"], has_entry("T", "fixed"))
-        assert_that(subject.result["converted"], has_entry("T", "fixed"))
-        output = subject.apply_to_string()
-        assert_that(output, contains_string("def b[T](x: T) -> T:"))
-        assert_that(output, not_(contains_string("T = TypeVar")))
+        assert_that(subject.result["converted"], has_entry("T", expected_converted))
+        assert_that(subject.apply_to_string(), output_matcher)
