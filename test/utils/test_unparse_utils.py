@@ -4,7 +4,8 @@ import ast
 import textwrap
 from typing import cast
 
-from hamcrest import assert_that, contains_string, is_
+import pytest
+from hamcrest import assert_that, is_
 
 from renaissance.utils.unparse_utils import (
     _bracket_end_offset,  # pyright: ignore[reportPrivateUsage]
@@ -17,129 +18,90 @@ from renaissance.utils.unparse_utils import (
 class TestNameEndOffset:
     """See module docstring."""
 
-    def test_finds_a_plain_def(self) -> None:
-        """AI: Verify the offset right after the function name in an undecorated "def" line."""
-        assert_that(_name_end_offset("def f(x: int) -> int:\n    return x\n", "f"), is_(5))
-
-    def test_finds_an_async_def(self) -> None:
-        """AI: Verify the offset right after the function name in an "async def" line."""
-        source = "async def g(x: int) -> int:\n    return x\n"
-        assert_that(_name_end_offset(source, "g"), is_(11))
-
-    def test_finds_a_def_indented_after_a_decorator(self) -> None:
-        """AI: Verify the offset is found correctly when the "def" line is indented after a decorator."""
-        source = "@overload\n    def __call__(self, x: int) -> int: ...\n"
-        assert_that(_name_end_offset(source, "__call__"), is_(26))
+    @pytest.mark.parametrize(
+        ("source", "name", "expected"),
+        [
+            pytest.param("def f(x: int) -> int:\n    return x\n", "f", 5, id="plain-def"),
+            pytest.param("async def g(x: int) -> int:\n    return x\n", "g", 11, id="async-def"),
+            pytest.param("@overload\n    def __call__(self, x: int) -> int: ...\n", "__call__", 26, id="indented-after-decorator"),
+        ],
+    )
+    def test_finds_the_offset_after_the_name(self, source: str, name: str, expected: int) -> None:
+        """Verify the offset right after the function name in its "def" line."""
+        assert_that(_name_end_offset(source, name), is_(expected))
 
     def test_raises_when_name_not_found(self) -> None:
-        """AI: Verify a ValueError is raised when the function name doesn't appear in the source."""
-        try:
+        """Verify a ValueError is raised when the function name doesn't appear in the source."""
+        with pytest.raises(ValueError, match="no 'def f' header found"):
             _name_end_offset("x = 1\n", "f")
-        except ValueError:
-            return
-        raise AssertionError("expected ValueError")
 
 
 class TestBracketEndOffset:
     """See module docstring."""
 
-    def test_finds_a_simple_bracket(self) -> None:
-        """AI: Verify the closing bracket offset for a simple, unnested type-param bracket."""
-        source = "def f[T](x: T) -> T:\n    return x\n"
-        assert_that(_bracket_end_offset(source, 5), is_(8))
-
-    def test_tracks_a_nested_bracket_in_a_bound(self) -> None:
-        """AI: Verify the closing bracket offset tracks nesting depth correctly across a bound's own brackets."""
-        source = "def f[T: list[int]](x: T) -> T:\n    return x\n"
-        assert_that(_bracket_end_offset(source, 5), is_(19))
+    @pytest.mark.parametrize(
+        ("source", "expected"),
+        [
+            pytest.param("def f[T](x: T) -> T:\n    return x\n", 8, id="simple"),
+            pytest.param("def f[T: list[int]](x: T) -> T:\n    return x\n", 19, id="nested-bracket-in-bound"),
+        ],
+    )
+    def test_finds_the_matching_closing_bracket(self, source: str, expected: int) -> None:
+        """Verify the offset right after the "]" matching the type-param bracket, across nested brackets."""
+        assert_that(_bracket_end_offset(source, 5), is_(expected))
 
 
 class TestHeaderEndLine:
     """See module docstring."""
 
-    def test_one_line_signature(self) -> None:
-        """AI: Verify a one-line signature's header ends on line 1."""
-        assert_that(_header_end_line("def f(x: int) -> int:\n    return x\n"), is_(1))
-
-    def test_multi_line_signature(self) -> None:
-        """AI: Verify a multi-line signature's header ends on the line with the terminating colon."""
-        source = "def f(\n    a: int,\n    b: str,\n) -> None:\n    pass\n"
-        assert_that(_header_end_line(source), is_(4))
-
-    def test_ignores_colon_inside_a_string_default(self) -> None:
-        """AI: Verify a colon inside a string default value isn't mistaken for the header-terminating colon."""
-        source = 'def f(\n    b: str = "x:y",\n) -> None:\n    pass\n'
-        assert_that(_header_end_line(source), is_(3))
-
-    def test_ignores_colon_inside_a_lambda_default(self) -> None:
-        """AI: Verify a lambda default value's colon isn't mistaken for the header-terminating colon."""
-        source = "def f(cb=lambda: 1) -> int:\n    return cb()\n"
-        assert_that(_header_end_line(source), is_(1))
+    @pytest.mark.parametrize(
+        ("source", "expected"),
+        [
+            pytest.param("def f(x: int) -> int:\n    return x\n", 1, id="one-line-signature"),
+            pytest.param("def f(\n    a: int,\n    b: str,\n) -> None:\n    pass\n", 4, id="multi-line-signature"),
+            pytest.param('def f(\n    b: str = "x:y",\n) -> None:\n    pass\n', 3, id="colon-in-string-default"),
+            pytest.param("def f(cb=lambda: 1) -> int:\n    return cb()\n", 1, id="colon-in-lambda-default"),
+        ],
+    )
+    def test_finds_the_line_of_the_header_terminating_colon(self, source: str, expected: int) -> None:
+        """Verify the header ends on the line of its own ":", not one inside a default value."""
+        assert_that(_header_end_line(source), is_(expected))
 
     def test_raises_when_no_header_terminating_colon(self) -> None:
-        """AI: Verify a ValueError is raised when the source has no header-terminating colon at all."""
-        try:
+        """Verify a ValueError is raised when the source has no header-terminating colon at all."""
+        with pytest.raises(ValueError, match="no header-terminating ':' found"):
             _header_end_line("x = 1\n")
-        except ValueError:
-            return
-        raise AssertionError("expected ValueError")
 
 
 class TestUnparseSignatureOnly:
     """See module docstring."""
 
-    def test_preserves_a_body_comment(self) -> None:
-        """AI: Verify splicing a new type-param bracket into the header preserves a comment in the body."""
-        original = textwrap.dedent("""\
-            def f(x):
-                # explains something
-                return x
-        """)
-        node = cast(ast.FunctionDef, ast.parse(original).body[0])
-        node.type_params = [ast.TypeVar(name="T")]
-
-        result = unparse_signature_only(node, original)
-
-        assert_that(result, contains_string("def f[T](x):"))
-        assert_that(result, contains_string("# explains something"))
-
-    def test_renormalizes_a_method_bodys_absolute_indent_to_four_spaces(self) -> None:
-        """AI: Verify a method's real 8-space absolute body indent is renormalized to the 4-space baseline."""
-        # 8 spaces: one level for the class, one for the method body.
-        original = "def f(x):\n        return x"
-        node = cast(ast.FunctionDef, ast.parse(original).body[0])
-        node.type_params = [ast.TypeVar(name="T")]
-
-        result = unparse_signature_only(node, original)
-
-        assert_that(result, is_("def f[T](x):\n    return x"))
-
-    def test_preserves_an_inline_single_line_body(self) -> None:
-        """AI: Verify an inline "def f(x): ..." body stays on the header's own line after splicing."""
-        original = "def f(x): ...\n"
-        node = cast(ast.FunctionDef, ast.parse(original).body[0])
-        node.type_params = [ast.TypeVar(name="T")]
-
-        result = unparse_signature_only(node, original)
-
-        assert_that(result, is_("def f[T](x): ...\n"))
-
-    def test_preserves_a_multiline_signature(self) -> None:
-        """AI: Verify splicing a type-param bracket doesn't collapse a multi-line parameter list onto one line."""
-        original = "def f(\n    x: int,\n    y: int = 1,\n) -> int:\n    return x\n"
-        node = cast(ast.FunctionDef, ast.parse(original).body[0])
-        node.type_params = [ast.TypeVar(name="T")]
-
-        result = unparse_signature_only(node, original)
-
-        assert_that(result, is_("def f[T](\n    x: int,\n    y: int = 1,\n) -> int:\n    return x\n"))
-
-    def test_merges_into_an_existing_bracket(self) -> None:
-        """AI: Verify splicing a new type param into a header that already has one merges into the same bracket."""
-        original = "def f[U](x: U, y):\n    return x\n"
+    @pytest.mark.parametrize(
+        ("original", "expected"),
+        [
+            pytest.param(
+                textwrap.dedent("""\
+                    def f(x):
+                        # explains something
+                        return x
+                """),
+                "def f[T](x):\n    # explains something\n    return x\n",
+                id="body-comment",
+            ),
+            # 8 spaces: one level for the class, one for the method body.
+            pytest.param("def f(x):\n        return x", "def f[T](x):\n    return x", id="method-body-absolute-indent"),
+            pytest.param("def f(x): ...\n", "def f[T](x): ...\n", id="inline-body"),
+            pytest.param(
+                "def f(\n    x: int,\n    y: int = 1,\n) -> int:\n    return x\n",
+                "def f[T](\n    x: int,\n    y: int = 1,\n) -> int:\n    return x\n",
+                id="multi-line-signature",
+            ),
+            pytest.param("def f[U](x: U, y):\n    return x\n", "def f[U, T](x: U, y):\n    return x\n", id="existing-bracket"),
+        ],
+    )
+    def test_adds_the_bracket_and_keeps_everything_else(self, original: str, expected: str) -> None:
+        """Verify adding T inserts or extends the type-param bracket and keeps the rest of the source."""
         node = cast(ast.FunctionDef, ast.parse(original).body[0])
         node.type_params = [*node.type_params, ast.TypeVar(name="T")]
 
-        result = unparse_signature_only(node, original)
-
-        assert_that(result, is_("def f[U, T](x: U, y):\n    return x\n"))
+        assert_that(unparse_signature_only(node, original), is_(expected))
