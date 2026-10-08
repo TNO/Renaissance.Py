@@ -37,6 +37,8 @@ jobs:
         run: uv run pyright ./src ./test ./tools ./features
       - name: Check ruff and pyright issue budgets
         run: uv run python tools/lint_budget.py --check
+      - name: Check layer boundaries
+        run: uv run python tools/check_layering.py --check
       - name: Check spelling with codespell
         run: uv run codespell ./src ./test ./tools ./features --ignore-words-list=NotIn,ANC
       - name: Test with pytest and collect coverage

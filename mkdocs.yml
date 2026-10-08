@@ -145,6 +145,10 @@ nav:
       - Overview: developer/index.md
       - Coding conventions: developer/coding-conventions.md
 
+      - Guard rail tools:
+          - Overview: developer/tools/index.md
+          - Layering check: developer/tools/check-layering.md
+
       - Architecture:
           - Overview: developer/architecture/index.md
           - Code architecture: developer/architecture/code-architecture.md

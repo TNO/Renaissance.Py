@@ -186,6 +186,5 @@ so that a recipe needing semantics fails loudly rather than silently mis-transfo
 
 ## Suggested first three pull requests
 
-1. `tools/check_layering.py` plus its test, documenting the two known core-to-binding violations as a baseline.
-2. `lint-budget.json` split per package, with `core` declared strict at budget 0 once those two violations are fixed.
-3. Two ADRs: "Sequence over union in core APIs" and "ASTNode is a TextSegment".
+1. `lint-budget.json` split per package, with `core` declared strict at budget 0 once those two violations are fixed.
+1. Two ADRs: "Sequence over union in core APIs" and "ASTNode is a TextSegment".
