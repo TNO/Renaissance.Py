@@ -225,6 +225,7 @@ class ClangASTNode(ASTNode[Cursor, ClangTranslationUnit]):
         working_dir: Path = None,
     ) -> ClangASTNode:
         # Convert file_content to bytes
+        # TODO: see docs/developer/architecture/position-consistency.md - clang decides the encoding, not the host.
         file_content_bytes = text.encode(sys.getfilesystemencoding())
         # add to cache to avoid reading the file again
         ASTNode.cache[file_name] = file_content_bytes

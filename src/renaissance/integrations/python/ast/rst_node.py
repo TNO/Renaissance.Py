@@ -69,6 +69,7 @@ class PythonRstTranslationUnit:
 
     def __init__(self, content, file_name: str) -> None:
         """AI: Parse Python source into a stdlib ast tree with lazily-built reference caches."""
+        # TODO: see docs/developer/architecture/position-consistency.md - PEP 263 declares the encoding, not the host.
         self.content = content.encode(sys.getfilesystemencoding())
         self.atu = ast.parse(content, file_name)
         self.file_name = file_name
@@ -470,6 +471,7 @@ class PythonRstNode:
     @property
     def signature(self) -> str:
         """AI: Return the source code text of this node, prefixed with '@' for decorators."""
+        # TODO: see docs/developer/architecture/position-consistency.md - decodes with the host encoding, not the adapter's.
         sig = self.binary_file_content().decode(sys.getfilesystemencoding())
         if self.parent and self.parent.name == "decorator_list" and not sig.startswith("@"):
             sig = "@" + sig
@@ -477,6 +479,7 @@ class PythonRstNode:
 
     def binary_file_content(self) -> bytes:
         """AI: Return this node's source text as encoded bytes."""
+        # TODO: see docs/developer/architecture/position-consistency.md - the unparse fallback builds a buffer no offset indexes.
         return (
             self.translation_unit.content[self.offset : self.offset + self.length]
             if self.translation_unit

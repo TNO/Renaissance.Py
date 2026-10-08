@@ -6,11 +6,11 @@
 
 The source tree is divided into layers, and a layer may only import the layers below it.
 
-| Layer | Packages | May import |
-| --- | --- | --- |
-| `core` | `renaissance.syntax_tree`, `renaissance.common`, `renaissance.utils` | nothing outside the core |
-| `parser_bindings` | `renaissance.integrations` | `core` |
-| `recipes` | `renaissance.recipes`, `rejuvenation` | `core`, `parser_bindings` |
+| Layer             | Packages                                                             | May import                |
+| ----------------  | -------------------------------------------------------------------- | ------------------------- |
+| `core`            | `renaissance.syntax_tree`, `renaissance.common`, `renaissance.utils` | nothing outside the core  |
+| `parser_bindings` | `renaissance.integrations`                                           | `core`                    |
+| `recipes`         | `renaissance.recipes`, `rejuvenation`                                | `core`, `parser_bindings` |
 
 Imports within a layer are always allowed, and imports of the standard library or of third-party packages are ignored.
 
@@ -33,11 +33,11 @@ dependency is missing cannot make the check fail or pass by accident.
 
 Exit codes:
 
-| Code | Meaning |
-| --- | --- |
-| 0 | every violation found is covered by the allowlist |
-| 1 | a violation is not allowlisted, or an allowlist entry no longer matches a violation |
-| 2 | the sources could not be analysed, for example because a file does not parse |
+| Code | Meaning                                                                             |
+| ---- | ----------------------------------------------------------------------------------- |
+| 0    | every violation found is covered by the allowlist                                   |
+| 1    | a violation is not allowlisted, or an allowlist entry no longer matches a violation |
+| 2    | the sources could not be analysed, for example because a file does not parse        |
 
 ## Reading its output
 

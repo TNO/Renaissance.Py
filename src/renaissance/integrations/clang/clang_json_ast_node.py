@@ -295,6 +295,7 @@ class ClangJsonASTNode(ASTNode[dict[str, Any], ClangJsonTranslationUnit]):
                 length=length,
             )
             if code:
+                # TODO: see docs/developer/architecture/position-consistency.md - clang decides the encoding, not the host.
                 atu.cache[str(file_path)] = code.encode(sys.getfilesystemencoding())
             else:
                 with Path(working_dir / file_path).open("rb") as f:

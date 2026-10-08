@@ -100,6 +100,7 @@ class LSTNode:
 
     def binary_file_content(self):
         """AI: Return this node's source code encoded as bytes using the filesystem encoding."""
+        # TODO: see docs/developer/architecture/position-consistency.md - builds a per-node buffer, not the root's.
         src = cast("str", self.properties.get("source_code"))
         return src.encode(sys.getfilesystemencoding())
 
