@@ -95,6 +95,30 @@ class TestTypeVarCheckOrphaned:
         assert_that(subject.apply_to_string(), contains_string("T = TypeVar('T')"))
 
     @pytest.mark.parametrize(
+        "annotation",
+        [
+            pytest.param('"T"', id="whole-annotation"),
+            pytest.param('"list[T]"', id="inside-annotation"),
+        ],
+    )
+    @pytest.mark.xfail(reason="names inside string annotations aren't seen as references.", strict=True)
+    def test_keeps_declaration_used_in_a_string_annotation(
+        self, create_type_var_check: Callable[[str], TypeVarCheck], annotation: str
+    ) -> None:
+        """Verify a declaration referenced only from a string annotation is not removed as orphaned."""
+        subject = create_type_var_check(f"""
+            from typing import TypeVar
+            T = TypeVar('T')
+
+            def b(x: {annotation}) -> None:
+                pass
+        """)
+        result = subject.remove_orphaned_declarations()
+
+        assert_that(result, equal_to({}))
+        assert_that(subject.apply_to_string(), contains_string("T = TypeVar('T')"))
+
+    @pytest.mark.parametrize(
         ("imported_elsewhere", "expected_reason"),
         [
             pytest.param(frozenset(), UnsafeReason.DECLARED_TYPEVAR_EXPORTED, id="exported-via-dunder-all"),
