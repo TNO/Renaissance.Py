@@ -17,6 +17,7 @@ from renaissance.recipes.type_var_domain import (
 
 
 def _parse(source: str) -> ast.Module:
+    """Parse source after removing its common indentation."""
     return ast.parse(textwrap.dedent(source))
 
 
@@ -59,6 +60,22 @@ class TestIsSafeToRemove:
         """)
 
         assert_that(is_safe_to_remove(tree, "T", imported_elsewhere), is_(expected_reason))
+
+    @pytest.mark.parametrize(
+        "dunder_all",
+        [
+            pytest.param('__all__: list[str] = ["T"]', id="annotated"),
+            pytest.param('__all__ = []\n__all__ += ["T"]', id="augmented"),
+            pytest.param('__all__ = []\n__all__.extend(["T"])', id="extend"),
+            pytest.param('__all__ = []\n__all__.append("T")', id="append"),
+        ],
+    )
+    @pytest.mark.xfail(reason="_find_dunder_all only reads a plain `__all__ = [...]` assignment.", strict=True)
+    def test_exported_name_is_unsafe_whatever_form_dunder_all_takes(self, dunder_all: str) -> None:
+        """A TypeVar exported through any common form of `__all__` is reported as exported."""
+        tree = _parse(f'from typing import TypeVar\n{dunder_all}\nT = TypeVar("T")\n')
+
+        assert_that(is_safe_to_remove(tree, "T"), is_(UnsafeReason.DECLARED_TYPEVAR_EXPORTED))
 
 
 class TestIsSafeToLocalize:

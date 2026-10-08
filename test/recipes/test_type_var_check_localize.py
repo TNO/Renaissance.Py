@@ -275,6 +275,25 @@ class TestTypeVarCheckLocalize:
         assert_that(result, has_entry("T", "fixed"))
         assert_that(subject.apply_to_string().count("from typing import TypeVar"), is_(1))
 
+    @pytest.mark.xfail(
+        reason="find_import_source drops the import's level, so `from ._compat import TypeVar` is copied as `from _compat import TypeVar`.",
+        strict=True,
+    )
+    def test_localized_file_imports_a_relatively_imported_constructor_from_the_same_module(
+        self, mocker: MockerFixture, tmp_path: Path
+    ) -> None:
+        """Verify a constructor the origin imports relatively is imported here from that same module."""
+        subject = self._create_cross_file(
+            mocker,
+            tmp_path,
+            'from ._compat import TypeVar\nT = TypeVar("T")\n',
+            "from .file_1 import T\ndef b(x: T) -> T:\n    return x\n",
+        )
+        result = subject.localize_imported_typevars()
+
+        assert_that(result, has_entry("T", "fixed"))
+        assert_that(subject.apply_to_string(), contains_string("from ._compat import TypeVar"))
+
     def test_does_not_localize_when_origin_imports_constructor_conditionally(
         self,
         mocker: MockerFixture,
