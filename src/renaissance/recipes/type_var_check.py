@@ -52,19 +52,11 @@ class TypeVarCheck(PythonRefactoring):
         self.result = self.check()
 
     def _target_supports_pep695(self) -> bool:
-        """Return True only if min_python is known and is 3.12+.
-
-        An unknown minimum returns False: PEP 695 syntax (`def f[T](...)`) is a hard SyntaxError
-        before Python 3.12.
-        """
+        """Return True only if min_python is known and is 3.12+, where PEP 695 syntax (`def f[T](...)`) exists."""
         return self.min_python is not None and self.min_python >= PEP_695_MINIMUM
 
     def _target_supports_pep696(self) -> bool:
-        """Return True only if min_python is known and is 3.13+.
-
-        An unknown minimum returns False: a PEP 696 type parameter default (`def f[T = int](...)`) is a
-        hard SyntaxError before Python 3.13.
-        """
+        """Return True only if min_python is known and is 3.13+, where PEP 696 defaults (`def f[T = int](...)`) exist."""
         return self.min_python is not None and self.min_python >= PEP_696_MINIMUM
 
     def _conversion_refusal(self, decl_stmt: ast.Assign) -> UnsafeReason | None:
@@ -95,16 +87,11 @@ class TypeVarCheck(PythonRefactoring):
     def convert_declared_typevars(self) -> dict[str, str]:
         """Add a PEP 695 type parameter to every function using a module-level TypeVar/ParamSpec/TypeVarTuple.
 
-        The declaration itself is left in place; remove_orphaned_declarations removes it once it
-        is unused. A name whose references are all already shadowed by a same-named PEP 695 type
-        parameter, or that has none, needs no conversion and is skipped. Methods of a class generic
-        over the name (see functions_in_generic_classes) keep using the class's parameter and are
-        never converted. Bounds, constraints and `default=` are carried over, and type parameters with
-        a default are placed after those without one. A name that only such methods use, or whose
-        declaration _conversion_refusal rejects (min_python below 3.12, a `default=` while min_python
-        is below 3.13, or an argument with no PEP 695 equivalent, such as `covariant=True`), is
-        reported "unsafe", with its UnsafeReason recorded on
-        self.converted_unsafe_reasons. Returns {name: "fixed" | "unsafe"}.
+        The declaration is left in place. Names whose references are all shadowed by a same-named PEP 695
+        type parameter are skipped, and methods of a class generic over the name are never converted.
+        Bounds, constraints and `default=` are carried over, with defaulted type parameters placed last.
+        A name only such methods use, or whose declaration _conversion_refusal rejects, is reported
+        "unsafe", with its UnsafeReason on self.converted_unsafe_reasons. Returns {name: "fixed" | "unsafe"}.
         """
         root = cast("PythonRstNode", cast("object", self.root))
         tree = cast("ast.Module", root.node)
@@ -153,11 +140,10 @@ class TypeVarCheck(PythonRefactoring):
     def remove_orphaned_declarations(self) -> dict[str, str]:
         """Remove every module-level TypeVar/ParamSpec/TypeVarTuple declaration that nothing uses anymore.
 
-        A declaration is orphaned when every reference to its name is shadowed by a same-named
-        PEP 695 type parameter, or when there is none (see all_refs_shadowed_by_pep695). Removing
-        it adds no syntax, so it doesn't depend on min_python. A declaration that
-        is_safe_to_remove rejects is kept and reported "unsafe", with its UnsafeReason recorded
-        on self.orphaned_unsafe_reasons. Returns {name: "fixed" | "unsafe"}.
+        A declaration is orphaned when no reference to its name remains outside a same-named PEP 695 type
+        parameter (see all_refs_shadowed_by_pep695). One that is_safe_to_remove rejects is kept and
+        reported "unsafe", with its UnsafeReason on self.orphaned_unsafe_reasons. Returns
+        {name: "fixed" | "unsafe"}.
         """
         root = cast("PythonRstNode", cast("object", self.root))
         tree = cast("ast.Module", root.node)
@@ -194,13 +180,10 @@ class TypeVarCheck(PythonRefactoring):
     def localize_imported_typevars(self) -> dict[str, str]:
         """Replace imports of TypeVar/ParamSpec/TypeVarTuple names from the target project with local declarations.
 
-        Absolute and relative imports are resolved against project_root. Where safe, rewrites the
-        import into an equivalent local declaration, importing from the origin any name its arguments
-        use (e.g. `bound=Shape`). It isn't safe when is_safe_to_localize rejects the origin, or when a
-        name the declaration uses can't be imported from the origin as the same object
-        (DECLARATION_NAME_UNAVAILABLE, see _argument_names_to_import). Returns
-        {name: "fixed" | "unsafe"} for every candidate found; the specific UnsafeReason behind each
-        "unsafe" entry is recorded on self.cross_file_unsafe_reasons.
+        Imports are resolved against project_root. Where safe, the import becomes a copy of the origin's
+        declaration, plus imports from the origin for the names its arguments use (e.g. `bound=Shape`).
+        It is unsafe when is_safe_to_localize rejects the origin or _argument_names_to_import returns None.
+        Returns {name: "fixed" | "unsafe"}, with each UnsafeReason on self.cross_file_unsafe_reasons.
         """
         results: dict[str, str] = {}
         self.cross_file_unsafe_reasons: dict[str, UnsafeReason] = {}
@@ -243,11 +226,7 @@ class TypeVarCheck(PythonRefactoring):
         return results
 
     def _missing_constructor_import(self, origin_tree: ast.Module, decl_stmt: ast.Assign) -> str | None:
-        """Build the "from module import Ctor" text so the localized declaration's constructor is importable.
-
-        Prepend this to the declaration if the constructor call (TypeVar/ParamSpec/TypeVarTuple)
-        isn't already imported here; returns None if it already is.
-        """
+        """Return the "from module import Ctor" line the localized declaration needs, or None if this file has it."""
         ctor_name = type_param_constructor_name(decl_stmt)
         ctor_module = find_import_source(origin_tree, ctor_name)
         if ctor_module is None:

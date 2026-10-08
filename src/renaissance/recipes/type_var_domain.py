@@ -92,12 +92,7 @@ def find_type_param_declarations(tree: ast.Module) -> dict[str, ast.Assign]:
 
 
 def type_param_name(param: ast.type_param) -> str:
-    """Return a PEP 695 type parameter's name.
-
-    `ast.type_param`'s own stub doesn't declare `.name` - only its three concrete subclasses
-    (`ast.TypeVar`/`ast.ParamSpec`/`ast.TypeVarTuple`) do, and every real type_param is one of
-    them, so this narrows to get at it.
-    """
+    """Return a PEP 695 type parameter's name, narrowing to the subclasses whose stubs declare `.name`."""
     assert isinstance(param, ast.TypeVar | ast.ParamSpec | ast.TypeVarTuple)
     return param.name
 
@@ -129,7 +124,7 @@ def _inherits_type_param(class_node: ast.ClassDef, name: str) -> bool:
     """Return True if the class is generic over the module-level `name` through one of its bases.
 
     That is, a base mentions `name` (`Generic[T]`, `Protocol[T]`, `Mapping[T]`, `Base[int, T]`) and the
-    class doesn't declare its own `name`, which would be the one its bases refer to instead.
+    class doesn't declare its own `name`.
     """
     return not _declares_type_param(class_node, name) and any(
         isinstance(child, ast.Name) and child.id == name for base in class_node.bases for child in ast.walk(base)
@@ -218,9 +213,8 @@ def find_import_source(tree: ast.Module, name: str) -> str | None:
 def functions_using_nodes(tree: ast.Module, names: Iterable[str]) -> dict[str, list[ast.FunctionDef | ast.AsyncFunctionDef]]:
     """Map each of `names`, in the given order, to the outermost function/method node whose signature or body references it.
 
-    A name referenced inside a nested function (a closure) is attributed to the *outermost*
-    function in its nesting chain, never the nested one: a PEP 695 type parameter declared on the
-    enclosing function is already visible inside its closures.
+    A name used in a nested function (a closure) is attributed to the outermost one, never the nested
+    one: a PEP 695 type parameter on the enclosing function is already visible inside its closures.
     """
     usage: dict[str, list[ast.FunctionDef | ast.AsyncFunctionDef]] = {name: [] for name in names}
 
@@ -326,10 +320,10 @@ def has_unconvertible_argument(decl_stmt: ast.Assign) -> bool:
 def build_type_param(decl_stmt: ast.Assign) -> ast.type_param:
     """Translate a legacy declaration into the equivalent PEP 695 type_param node.
 
-    E.g. `T = TypeVar("T", bound=int, default=int)` becomes an `ast.TypeVar` rendering as `T: int = int`;
-    ParamSpec and TypeVarTuple map to `ast.ParamSpec`/`ast.TypeVarTuple`. Bounds, constraints and
-    `default=` are carried over; `infer_variance=` needs nothing, since the result always infers its
-    variance. Callers must first reject declarations for which has_unconvertible_argument() is True.
+    E.g. `T = TypeVar("T", bound=int, default=int)` becomes `T: int = int`. Bounds, constraints and
+    `default=` are carried over; `infer_variance=` needs nothing, since a PEP 695 type parameter always
+    infers its variance. Callers must first reject declarations for which
+    has_unconvertible_argument() is True.
     """
     # TODO: a default that uses another legacy declaration (`default=T`) still refers to it after conversion.
     call = cast("ast.Call", decl_stmt.value)

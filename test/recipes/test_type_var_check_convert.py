@@ -60,7 +60,6 @@ class TestTypeVarCheckConvert:
         self, create_type_var_check: Callable[[str], TypeVarCheck]
     ) -> None:
         """AI: Verify converting a signature doesn't double-indent its function's multi-line docstring."""
-        # A multi-line docstring's continuation lines must not get double-indented.
         subject = create_type_var_check("""
             from typing import TypeVar
 
@@ -91,8 +90,7 @@ class TestTypeVarCheckConvert:
 
     def test_converts_function_with_nested_docstring_indentation(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
         """AI: Verify converting a signature preserves a docstring's internal nested block's relative indentation."""
-        # A docstring with an internal nested block (e.g. Sphinx's ".. seealso::") must keep
-        # that block's *relative* extra indentation, not get flattened to one uniform level.
+        # For example a Sphinx ".. seealso::" block.
         subject = create_type_var_check("""
             from typing import TypeVar
 
@@ -173,7 +171,6 @@ class TestTypeVarCheckConvert:
 
     def test_converts_function_preserving_unusual_body_formatting(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
         """AI: Verify converting a signature never reformats or collapses its body's unusual formatting."""
-        # Converting a function's signature must never reformat or collapse its body.
         subject = create_type_var_check("""
             from typing import TypeVar
 
@@ -194,8 +191,7 @@ class TestTypeVarCheckConvert:
 
     def test_does_not_add_redundant_type_param_to_nested_closure(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
         """AI: Verify a nested closure referencing an enclosing function's converted type param doesn't get its own copy."""
-        # A nested closure merely referencing an enclosing function's type param must not get
-        # its own shadowing type param - PEP 695 params are already visible in nested scopes.
+        # PEP 695 type parameters are already visible in nested scopes.
         subject = create_type_var_check("""
             from typing import ParamSpec
             from collections.abc import Callable
@@ -219,8 +215,6 @@ class TestTypeVarCheckConvert:
 
     def test_merges_into_an_existing_type_params_bracket(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
         """AI: Verify converting a second TypeVar merges it into an existing PEP 695 bracket instead of adding a new one."""
-        # Regression test: a function that already declares one PEP 695 type parameter must gain
-        # the new one inside the same bracket, not a second bracket next to it.
         subject = create_type_var_check("""
             from typing import TypeVar
 
@@ -237,8 +231,6 @@ class TestTypeVarCheckConvert:
 
     def test_converts_a_decorated_overload(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
         """AI: Verify converting a decorated @overload signature accounts for its non-zero-column indentation."""
-        # A decorated function's "def" line isn't flush at column 0 like an undecorated one's -
-        # it's a continuation line carrying its own real indentation.
         subject = create_type_var_check("""
             from typing import TypeVar, overload
 

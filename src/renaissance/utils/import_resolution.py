@@ -1,9 +1,4 @@
-"""Resolve project-internal `from X import Y` statements to the .py file they import from.
-
-Used across an entire target codebase to check whether a declaration is still depended on by
-another file before it's removed/rewritten - unlike `__all__`, an explicit `from module import
-name` works regardless of whether the origin module declares `__all__`.
-"""
+"""Resolve project-internal `from X import Y` statements to the .py file they import from."""
 
 import ast
 from collections.abc import Sequence
@@ -19,10 +14,9 @@ def resolve_project_module(importing_file: Path, project_root: Path, module: str
     (`from ..module import x`); `module` is None for a bare `from . import x`, which resolves to
     the anchor directory's own `__init__.py`.
 
-    Tries `<path>.py` first, then `<path>/__init__.py` for a package-style import. Returns None
-    if neither exists, or if resolution would walk above `project_root` - the common case for a
-    stdlib/third-party import, which is exactly the signal used to exclude those as noise.
-    Relative input paths are made absolute first, so the returned path is always absolute.
+    Tries `<path>.py` first, then `<path>/__init__.py`. Returns None if neither exists or if
+    resolution would walk above `project_root`, as for a stdlib or third-party import. The returned
+    path is always absolute.
 
     # TODO: doesn't follow re-exports through an intermediate __init__.py, or handle namespace
     # packages (no __init__.py, PEP 420) - out of scope for now.
