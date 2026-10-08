@@ -102,6 +102,7 @@ class ASTNode[NodeT, TranslationUnitT](ABC):
     def content(self, start: int, end: int) -> str:
         """AI: Return the decoded source text between start and end offsets in the root's file content."""
         content = self.root.binary_file_content()
+        # TODO: see docs/developer/architecture/position-consistency.md - decodes with the host encoding, not the adapter's.
         return str(content[start:end], sys.getfilesystemencoding())
 
     def binary_file_content(self, file_path: str | None = None) -> bytes:
@@ -152,7 +153,7 @@ class ASTNode[NodeT, TranslationUnitT](ABC):
 
     def is_ancestor_of(self, descendant: Self) -> bool:
         """AI: Return whether this node is an ancestor of descendant."""
-        parent: Self = descendant.parent
+        parent: Self | None = descendant.parent
         if parent == self:
             return True
         if not parent:

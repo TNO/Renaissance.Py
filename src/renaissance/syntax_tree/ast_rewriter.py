@@ -19,12 +19,36 @@ from .semantic_kind import SemanticKind
 class Rewritable(Protocol):
     """AI: Structural protocol describing the offset/text shape required for byte-level rewriting."""
 
-    offset: int
-    end_offset: int
-    extended_end_offset: int
-    filename: str
-    parent: Self
-    text: str
+    # Read-only members keep the protocol covariant, so implementations may expose them as properties.
+    @property
+    def offset(self) -> int:
+        """Character offset at which this node starts."""
+        ...
+
+    @property
+    def end_offset(self) -> int:
+        """Character offset just past this node's own text."""
+        ...
+
+    @property
+    def extended_end_offset(self) -> int:
+        """Character offset just past this node including trailing trivia."""
+        ...
+
+    @property
+    def filename(self) -> str:
+        """Name of the source file this node was parsed from."""
+        ...
+
+    @property
+    def parent(self) -> Self | None:
+        """Enclosing node, or None at the root."""
+        ...
+
+    @property
+    def text(self) -> str:
+        """Source text of this node."""
+        ...
 
 
 class _RewriteActionType(Enum):
@@ -43,6 +67,7 @@ class ASTRewriter:
     def __init__(
         self,
         node,
+        # TODO: see docs/developer/architecture/position-consistency.md - the encoding must come from the adapter, not the host.
         encoding: str = sys.getfilesystemencoding(),
         correct_indent: bool = True,
     ) -> None:
@@ -152,14 +177,13 @@ class _RewriteAction:
     def _get_nodes(
         target: Rewritable | Sequence[Rewritable] | PatternMatch | Sequence[PatternMatch],
     ) -> Sequence[Rewritable]:
-        if isinstance(target, Rewritable) or type(target).__name__ == "PythonASTNode":
+        if isinstance(target, Rewritable):
             return [target]
         if isinstance(target, PatternMatch):
             return target.nodes
         assert isinstance(target, Sequence), "type of target violates its type requirements " + type(target).__name__
         if len(target) > 0:
-            if isinstance(target[0], Rewritable):  # TODO Why is part missing That is present on line 140, i.e.,
-                # or type(target).__name__ == "PythonASTNode"
+            if isinstance(target[0], Rewritable):
                 return [n for n in target if isinstance(n, Rewritable)]
             last = target[-1]
             assert isinstance(last, PatternMatch), "type within Sequence violates its requirements " + type(last).__name__
@@ -182,6 +206,7 @@ class _RewriteActions:
         self.node = node
         self.encoding = encoding
         # self.content = self.node.root.binary_file_content()[self.node.offset : self.node.extended_end_offset]
+        # TODO: see docs/developer/architecture/position-consistency.md - re-encodes node text instead of using the root buffer.
         self.content = node.text.encode(sys.getfilesystemencoding())
         self.correct_indent = correct_indent
 
@@ -523,7 +548,7 @@ class _RewriteActions:
             node_list = target.nodes
         else:
             node_list = (
-                [target] if (isinstance(target, Rewritable) or type(target).__name__ == "PythonASTNode") else target
+                [target] if isinstance(target, Rewritable) else target
             )  # TODO How to make a Sequence[Rewritable] as type hints also show list[Rewritable]?
         return new_content, node_list
 

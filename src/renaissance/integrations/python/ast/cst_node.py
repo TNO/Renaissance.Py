@@ -18,6 +18,7 @@ class PythonCstTranslationUnit:
 
     def __init__(self, content, file_name: str) -> None:
         """AI: Parse Python source into a libcst tree with position lookups for AST-node wrapping."""
+        # TODO: see docs/developer/architecture/position-consistency.md - exposes no buffer, so the rewriter derives its own.
         self.content = content
         self.lines = content.splitlines()
         self.file_name = file_name
@@ -98,6 +99,11 @@ class PythonCstNode:
     def end_offset(self):
         """AI: Return the character offset where this node ends in the source text."""
         return self.translation_unit.end_of(self.node)
+
+    @property
+    def extended_end_offset(self) -> int:
+        """AI: Return the end offset; libcst attaches trailing trivia to the node itself, so there is nothing to extend."""
+        return self.end_offset
 
     @property
     def filename(self):

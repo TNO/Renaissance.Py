@@ -61,6 +61,32 @@ text that the parser used, rather than assuming or independently reconstructing 
 conversion logic from the adapter, rather than from the Renaissance core, keeps the core and the
 rewriter independent of how a particular parser natively represents positional information.
 
+### An offset does not carry its own unit
+
+An offset is a bare integer. Nothing about the value records whether it counts bytes, Unicode code
+points, or UTF-16 code units, nor which buffer it indexes. Navigating to the root through `parent`
+establishes *which* buffer a node belongs to, but not *how* that buffer is indexed. Root identity is
+therefore necessary but not sufficient: the relation between an offset and a buffer is not
+automatically satisfied by reaching a shared root.
+
+The two sides of that relation are chosen independently. A parser integration adopts the unit its
+parser uses; the rewriter adopts the unit its splicing implementation uses. Neither choice is visible
+at the call site, where only an `int` is passed. A mismatch consequently produces no type error and
+no diagnostic at the point of the mistake - the first observable symptom is incorrect or corrupted
+output. It is also easy to miss: ASCII text satisfies every unit convention at once, so positions
+that disagree about units still behave correctly until the source contains a character the units
+count differently.
+
+#### Decision - The unit is part of the position
+
+1. The unit in which an adapter expresses offsets is stated explicitly, alongside the content
+   representation required by the preceding decision, rather than left to be inferred from the
+   parser or assumed by the caller.
+1. Code consuming an offset indexes the content representation the adapter declares, never a buffer
+   it reconstructed itself.
+1. Tests covering positions exercise at least one source containing a character whose byte and
+   character offsets differ, since ASCII-only input cannot distinguish the units.
+
 ### Guaranteeing agreement between parser and rewriter
 
 A rewrite reads a node's position and splices replacement text into a byte buffer at that position.
@@ -77,7 +103,10 @@ the two sides can silently disagree, producing incorrect or corrupted output.
   not every parser provides a lossless printer.
 * Wrap positions in a new value type (e.g. `Span`/`SourceFile`) that binds an offset to the buffer
   it was computed from. Rejected as redundant: the node already carries everything needed (offset,
-  length, and a path to its root) without introducing a new type.
+  length, and a path to its root) without introducing a new type. This rejection depends on the
+  adapter also stating the unit and content representation those offsets apply to, as required
+  above. A node exposing an offset alone does not carry everything needed, and the case for a
+  dedicated value type returns.
 * Compare source file paths to decide whether two nodes' positions are comparable. Rejected: the
   same path can back different buffers at different times (e.g. a stale tree held before a reparse,
   a file re-read after an on-disk edit, or two different node representations for the same language
@@ -101,6 +130,8 @@ the two sides can silently disagree, producing incorrect or corrupted output.
 * A node's positional information (offset and/or line/column) and the content representation it was
   computed from are exposed by the adapter exactly as the parser produced them, not independently
   re-derived or assumed.
+* Root identity establishes which buffer a node belongs to; the adapter's declared unit and content
+  representation establish how that buffer is indexed. An offset is usable only once both hold.
 
 ## Related features
 
@@ -110,7 +141,22 @@ the two sides can silently disagree, producing incorrect or corrupted output.
 
 ## Related tests
 
+* `test/python/ast/test_offset_encoding.py` - checks, per Python adapter, that `offset` and
+  `end_offset` address the same units the rewriter splices. The ASCII cases are the control that
+  isolates unit mismatches from unrelated defects; the non-ASCII cases record which adapters
+  currently deviate from the decisions above.
+
 ## Related code
+
+* `src/renaissance/syntax_tree/ast_rewriter.py` - derives the buffer a rewrite batch is applied to.
+* `src/renaissance/common/rewriter.py` - splices replacement text into that buffer, in bytes.
+* `src/renaissance/syntax_tree/ast_node.py` - `binary_file_content`, the root-owned buffer accessor.
+* `src/renaissance/integrations/python/ast/rst_node.py`, `src/renaissance/integrations/python/ast/cst_node.py`
+  and `src/renaissance/integrations/python/ast/util.py` - the Python adapters and the line/column to
+  offset conversion they share.
+* `src/renaissance/integrations/tree_sitter/lst.py` - the tree-sitter adapter.
+* `src/renaissance/integrations/clang/clang_ast_node.py` and
+  `src/renaissance/integrations/clang/clang_json_ast_node.py` - the clang adapters.
 
 ## Notes
 
@@ -119,6 +165,11 @@ the two sides can silently disagree, producing incorrect or corrupted output.
 but de facto, location format such as `file:line` or `file:line:column`.
 The location in a `file` is specified using the one-based `line` and one-based `column` offset.
 This is a practical convention used by compiler tooling, not a single universal formal standard.
+* [PEP 263](https://peps.python.org/pep-0263/) makes the encoding of Python source a property declared within the file itself,
+defaulting to UTF-8.
+It is therefore unrelated to the host's filesystem encoding, which describes the platform rather than the source being processed.
+Using the latter to encode or decode source text is an instance of the ambient encoding warned about above:
+it happens to agree with the declared encoding on most systems for ASCII input, and silently disagrees otherwise.
 * [Visual Studio Code](https://github.com/microsoft/vscode/issues/196067)
 also supports the location format `file::offset` that uses the one-based `offset`.
 * [Clang diagnostics docs](https://clang.llvm.org/docs/UsersManual.html#diagnostics) also use location and range formats

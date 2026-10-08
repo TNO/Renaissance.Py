@@ -1,7 +1,7 @@
 """AI: Protocol for a contiguous range of sibling syntax nodes."""
 
 from collections.abc import Sequence
-from typing import Protocol, Self, runtime_checkable
+from typing import Protocol, runtime_checkable
 
 from renaissance.syntax_tree.syntax_node import SyntaxNode
 from renaissance.syntax_tree.text_segment import TextSegment
@@ -28,8 +28,11 @@ class Siblings[NodeType](TextSegment, Protocol):
         ...
 
     @property
-    def parent(self) -> Self:
-        """The parent of these siblings.
+    def parent(self) -> SyntaxNode[NodeType]:
+        """The syntax node containing these siblings.
+
+        Siblings only exist relative to a containing node, so the parent is never None,
+        even when the range of siblings is empty.
 
         The property 'parent' is not used to compare siblings.
         """

@@ -6,6 +6,7 @@ from renaissance.integrations.python.ast.cst_node import PythonCstNode
 from renaissance.integrations.python.ast.factory import PythonFactory
 from renaissance.integrations.python.ast.kinds import PYTHON_KIND_MAP
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
+from renaissance.syntax_tree.ast_rewriter import Rewritable
 from renaissance.syntax_tree.semantic_kind import SemanticKind
 
 
@@ -27,6 +28,15 @@ def test_every_python_statement_type_is_classified() -> None:
     )
 
     assert not unclassified, f"PYTHON_KIND_MAP has no entry for {unclassified}"
+
+
+def test_python_nodes_satisfy_rewritable() -> None:
+    """AI: Assert Python CST and RST nodes satisfy Rewritable; the annotations also gate this statically."""
+    cst: Rewritable = PythonCstNode.load_from_text("f(1)")
+    rst: Rewritable = PythonRstNode.load_from_text("f(1)")
+
+    assert isinstance(cst, Rewritable)
+    assert isinstance(rst, Rewritable)
 
 
 def test_native_ast_exposes_protocol_metadata() -> None:

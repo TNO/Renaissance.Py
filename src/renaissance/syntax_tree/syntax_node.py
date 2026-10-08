@@ -1,5 +1,6 @@
 """Protocol defining syntax nodes such as AST, CST, and parse tree nodes."""
 
+from collections.abc import Mapping, Sequence
 from typing import Any, Protocol, Self, runtime_checkable
 
 from renaissance.syntax_tree.text_segment import TextSegment
@@ -25,16 +26,20 @@ class SyntaxNode[NodeType](TextSegment, Protocol):
         ...
 
     @property
-    def children(self) -> list[Self]:
+    def children(self) -> Sequence[Self]:
         """The children of this node.
+
+        The read-only Sequence keeps the protocol covariant, so implementations may return a list.
 
         The property 'children' is used to compare syntax nodes.
         """
         ...
 
     @property
-    def syntax_attributes(self) -> dict[str, Any]:
+    def syntax_attributes(self) -> Mapping[str, Any]:
         """The syntax attributes of this node.
+
+        The read-only Mapping keeps the protocol covariant, so implementations may return a dict.
 
         The property 'syntax_attributes' is used to compare syntax nodes.
         """
