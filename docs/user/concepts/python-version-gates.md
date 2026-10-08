@@ -18,6 +18,7 @@ recipe uses this today:
 | Feature | PEP | Minimum Python | Recipe |
 | --- | --- | --- | --- |
 | Generic type-parameter syntax (`def f[T](...)`) | [PEP 695](https://peps.python.org/pep-0695/) | 3.12 | [TypeVar modernization](../features/typevar-modernization.md) (`TypeVarCheck`) |
+| Type parameter defaults (`def f[T = int](...)`) | [PEP 696](https://peps.python.org/pep-0696/) | 3.13 | [TypeVar modernization](../features/typevar-modernization.md) (`TypeVarCheck`) |
 
 ## Definition
 
@@ -25,8 +26,10 @@ Each version-gated recipe has a `min_python` attribute (`tuple[int, int] | None`
 target codebase's minimum supported Python version. The tool never detects it: `migration-type-recipes.py`
 requires it through its `--py MAJOR.MINOR` flag and sets it on every recipe it runs; tests set it directly.
 
-A gate (`TypeVarCheck._target_supports_pep695()`) returns `True` only if `min_python` is set *and* meets the
-feature's own threshold (`PEP_695_MINIMUM = (3, 12)`).
+Each gate (`TypeVarCheck._target_supports_pep695()`, `TypeVarCheck._target_supports_pep696()`) returns `True`
+only if `min_python` is set *and* meets the feature's own threshold (`PEP_695_MINIMUM = (3, 12)` /
+`PEP_696_MINIMUM = (3, 13)`). The PEP 696 gate applies per declaration rather than per file: only a declaration
+passing `default=` needs 3.13, so on a 3.12 target the rest of the file is still converted.
 
 ## Invariants / guarantees
 
@@ -45,13 +48,15 @@ feature's own threshold (`PEP_695_MINIMUM = (3, 12)`).
 
 ## Related tests
 
-- `test/recipes/test_type_var_check_convert.py` (`test_version_gate_below_pep695_reports_unsafe_with_reason`)
+- `test/recipes/test_type_var_check_convert.py` (`test_version_gate_below_pep695_reports_unsafe_with_reason`,
+  `test_refuses_argument_it_cannot_carry_over`)
 - `test/rejuvenation/test_migration_type_recipes.py` (`test_py_flag_gates_rewrites`)
 
 ## Related code
 
 - `rejuvenation/migration-type-recipes.py` (the `--py` flag)
-- `renaissance/recipes/type_var_check.py` (`min_python`, `_target_supports_pep695`, `PEP_695_MINIMUM`)
+- `renaissance/recipes/type_var_check.py` (`min_python`, `_target_supports_pep695`, `PEP_695_MINIMUM`,
+  `_target_supports_pep696`, `PEP_696_MINIMUM`)
 
 ## Notes
 

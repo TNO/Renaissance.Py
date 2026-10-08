@@ -20,8 +20,13 @@ clean up at all:
    shared across several (`ruff` can't safely do this at all, since converting one function at a time never lets it
    confirm every use site is covered). A function is converted even when the name is also used outside functions
    (a `Generic[T]` base, a module-level alias): its own `[T]` means the same thing there. The methods of a class
-   that is generic over the name are left alone, since their `T` is the class's. This phase only adds the type
-   parameters; the module-level declaration is removed by the next one once nothing uses it anymore.
+   that is generic over the name are left alone, since their `T` is the class's. A declaration's bound,
+   constraints and `default=` are carried over (`T = TypeVar("T", bound=str, default=str)` becomes
+   `def f[T: str = str](...)`), and `infer_variance=True` needs nothing, since a PEP 695 type parameter always
+   infers its variance. A declaration passing an argument with no PEP 695 equivalent, such as `covariant=True`,
+   is left untouched (see Constraints below). Type parameters with a default are placed after those without
+   one, as Python requires. This phase only adds the type parameters; the module-level
+   declaration is removed by the next one once nothing uses it anymore.
 3. **Orphaned declaration cleanup.** Removes every module-level declaration nothing uses anymore: the ones phase 2
    just made redundant, and ones left dead by outside means - e.g. a signature already converted to PEP 695
    syntax by hand, or by running `ruff` before this recipe; `ruff`'s `UP047`, by its own documentation, never
@@ -41,7 +46,8 @@ valid as it is. To rewrite them to native `*Ts` syntax, run `ruff`'s `UP044` rul
 
 A Python file or directory, and the target project's minimum supported Python version (`--py`).
 
-Supports `TypeVar` (including `bound=` and constraint forms), `ParamSpec`, and `TypeVarTuple` declarations.
+Supports `TypeVar` (including `bound=`, constraint and `default=` forms), `ParamSpec` and `TypeVarTuple`
+(including `default=`) declarations.
 
 The cross-file phase resolves absolute and relative imports against the target directory passed to the CLI (the
 file's own folder when a single file is passed). Imports that don't resolve to a file inside it (stdlib,
@@ -93,6 +99,38 @@ syntax.
 **To fix this yourself:** if the project actually supports 3.12+, re-run with `--py 3.12` (or higher). If it
 has to keep supporting older Pythons, there's no manual PEP 695 rewrite either, since the syntax doesn't exist
 before 3.12.
+
+### PEP 696 version gate { #feature-typevar-modernization-pep696-version-gate }
+
+A declaration passing `default=` (`T = TypeVar("T", default=int)`, also accepted by `ParamSpec` and
+`TypeVarTuple`) converts to a type parameter default, `def f[T = int](...)`, which is
+[PEP 696](https://peps.python.org/pep-0696/) syntax and did not exist before Python 3.13. On a 3.13+ target the
+default is carried over into the converted signature. Below 3.13 that declaration is reported `"unsafe"` and
+left untouched, since converting it **without** its default would silently change what a type checker infers
+(for example, a call returning `list[T]` that leaves `T` unsolved goes from `list[int]` to a bare `list` in
+pyright). Other declarations in the
+same file are unaffected.
+
+**To fix this yourself:** re-run with `--py 3.13` (or higher) if the project supports it. Otherwise keep the
+module-level declaration; there's no 3.12 syntax that expresses a type parameter default.
+
+### A declaration passes an argument with no PEP 695 equivalent { #feature-typevar-modernization-no-pep695-equivalent }
+
+Conversion carries over a declaration's bound, constraints, `default=` and `infer_variance=True` (a PEP 695
+type parameter always infers its variance). An argument the `[...]` syntax has no way to write would be lost,
+so a declaration passing one is reported `"unsafe"` and left untouched instead:
+
+- **Explicit variance**, `covariant=` or `contravariant=`: PEP 695 has no syntax to declare variance.
+- **`bound=` on a `ParamSpec` or `TypeVarTuple`**: accepted at runtime (on `TypeVarTuple` since Python 3.15),
+  but `[**P: X]` and `[*Ts: X]` are a `SyntaxError`. Its meaning is not defined yet either, see
+  [PEP 612](https://peps.python.org/pep-0612/) and the
+  [`typing` documentation](https://docs.python.org/3.15/library/typing.html#typing.TypeVarTuple).
+- **A `**mapping` of options**, whose contents the tool can't see.
+- **A keyword added by a later Python version.**
+
+**To fix this yourself:** decide whether the argument matters. A type parameter used only by functions gets
+nothing from `covariant=`/`contravariant=`, since variance only affects generic classes; if that's the case,
+drop it from the declaration and re-run. Otherwise keep the module-level declaration.
 
 ### A declared TypeVar is exported via `__all__` { #feature-typevar-modernization-declared-typevar-exported }
 
@@ -174,6 +212,11 @@ A function whose body contains a multi-line string literal with a continuation l
 tool does not report it. Review modified files with `git diff`, or convert such functions by hand. See
 [Python AST known limitations](../../developer/modules/python-ast-known-limitations.md).
 
+A declaration whose `default=` uses another legacy declaration (`U = TypeVar("U", default=T)`) is converted
+with that default as it is, so `def f[U = T](...)` refers to the module-level `T` rather than a type parameter
+of the function. The tool does not report it; review such functions with `git diff` and correct the converted
+signature by hand, adding `T` to the same bracket before `U` (`def f[T, U = T](...)`).
+
 A localized type parameter is a new object with the same definition as the origin's. Type checkers treat it the
 same, but runtime code that compares type parameters by identity (for example `MyBox.__parameters__[0] is
 origin.T`) sees two different objects. A file that imports `T` from a file the tool localized (directly or
@@ -217,7 +260,7 @@ python src/rejuvenation/migration-type-recipes.py <path> --py MAJOR.MINOR [--rep
 
 - `<path>`: a `.py` file or a directory, scanned recursively (`.git`/`__pycache__`/`.venv`/`venv` excluded).
 - `--py` (required): the minimum Python version the target project supports, not the one running the tool.
-  PEP 695 rewrites need 3.12+.
+  PEP 695 rewrites need 3.12+, and type parameter defaults (PEP 696) 3.13+.
 - `--report`: also write the report to a file. The same report is always printed to the console.
 - `--no-ruff`: skip the final `ruff` pass, leaving every unused import in the modified files in place, including
   the ones the recipe made unused.
@@ -240,5 +283,8 @@ a malformed `--py`, and 3 if any file raised an unhandled exception, which is li
 
 - Supporting a future type-parameter-declaring construct means extending `_is_type_param_call` and
   `build_type_param` in `type_var_domain.py` together.
+- A constructor keyword added by a later Python version is refused (`NO_PEP695_EQUIVALENT`) until
+  it is added to `_CONVERTIBLE_KEYWORDS` in `type_var_domain.py` and carried over by `build_type_param`. The
+  same applies if PEP 695 syntax ever gains a way to write variance, or a bound on `**P`/`*Ts`.
 - Following re-exports through an intermediate `__init__.py`, or supporting namespace packages (PEP 420), means
   extending `resolve_project_module` in `renaissance/utils/import_resolution.py`.
