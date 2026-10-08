@@ -17,6 +17,8 @@ class UnsafeReason(StrEnum):
     """
 
     PEP695_VERSION_GATE = "pep695_version_gate"
+    PEP696_VERSION_GATE = "pep696_version_gate"
+    NO_PEP695_EQUIVALENT = "no_pep695_equivalent"
     DECLARED_TYPEVAR_EXPORTED = "declared_typevar_exported"
     USED_IN_GENERIC_CLASS = "used_in_generic_class"
     DECLARATION_NAME_UNAVAILABLE = "declaration_name_unavailable"
@@ -34,20 +36,32 @@ class UnsafeRule:
 
 UNSAFE_RULES: dict[UnsafeReason, UnsafeRule] = {
     UnsafeReason.PEP695_VERSION_GATE: UnsafeRule(
-        "target's minimum Python version is unknown or below 3.12", "feature-typevar-modernization-pep695-version-gate",
+        "target's minimum Python version is unknown or below 3.12",
+        "feature-typevar-modernization-pep695-version-gate",
+    ),
+    UnsafeReason.PEP696_VERSION_GATE: UnsafeRule(
+        "declares a default= (PEP 696), which needs the target's minimum Python to be 3.13+",
+        "feature-typevar-modernization-pep696-version-gate",
+    ),
+    UnsafeReason.NO_PEP695_EQUIVALENT: UnsafeRule(
+        "declaration passes an argument with no PEP 695 equivalent, e.g. covariant=True or bound= on a ParamSpec",
+        "feature-typevar-modernization-no-pep695-equivalent",
     ),
     UnsafeReason.DECLARED_TYPEVAR_EXPORTED: UnsafeRule(
-        "exported via __all__", "feature-typevar-modernization-declared-typevar-exported",
+        "exported via __all__",
+        "feature-typevar-modernization-declared-typevar-exported",
     ),
     UnsafeReason.USED_IN_GENERIC_CLASS: UnsafeRule(
-        "only used inside a class that is generic over it", "feature-typevar-modernization-used-in-generic-class",
+        "only used inside a class that is generic over it",
+        "feature-typevar-modernization-used-in-generic-class",
     ),
     UnsafeReason.DECLARATION_NAME_UNAVAILABLE: UnsafeRule(
         "a name its declaration uses can't be imported here as the same object",
         "feature-typevar-modernization-declaration-name-unavailable",
     ),
     UnsafeReason.IMPORTED_ELSEWHERE_IN_PROJECT: UnsafeRule(
-        "imported directly by another file in the target project", "feature-typevar-modernization-imported-elsewhere-in-project",
+        "imported directly by another file in the target project",
+        "feature-typevar-modernization-imported-elsewhere-in-project",
     ),
     UnsafeReason.ORIGIN_IMPORTS_CONSTRUCTOR_CONDITIONALLY: UnsafeRule(
         "origin module imports TypeVar/ParamSpec/TypeVarTuple conditionally, e.g. per Python version",
@@ -63,11 +77,7 @@ def doc_link(reason: UnsafeReason) -> str:
 
 def _is_type_param_call(value: ast.expr) -> bool:
     """Return True if `value` is a call to TypeVar/ParamSpec/TypeVarTuple."""
-    return (
-        isinstance(value, ast.Call)
-        and isinstance(value.func, ast.Name)
-        and value.func.id in ("TypeVar", "ParamSpec", "TypeVarTuple")
-    )
+    return isinstance(value, ast.Call) and isinstance(value.func, ast.Name) and value.func.id in ("TypeVar", "ParamSpec", "TypeVarTuple")
 
 
 def find_type_param_declarations(tree: ast.Module) -> dict[str, ast.Assign]:
@@ -106,11 +116,7 @@ def _find_dunder_all(tree: ast.Module) -> set[str] | None:
             and any(isinstance(t, ast.Name) and t.id == "__all__" for t in stmt.targets)
             and isinstance(stmt.value, ast.List | ast.Tuple | ast.Set)
         ):
-            return {
-                elt.value
-                for elt in stmt.value.elts
-                if isinstance(elt, ast.Constant) and isinstance(elt.value, str)
-            }
+            return {elt.value for elt in stmt.value.elts if isinstance(elt, ast.Constant) and isinstance(elt.value, str)}
     return None
 
 
@@ -209,9 +215,7 @@ def find_import_source(tree: ast.Module, name: str) -> str | None:
     return None
 
 
-def functions_using_nodes(
-    tree: ast.Module, names: Iterable[str]
-) -> dict[str, list[ast.FunctionDef | ast.AsyncFunctionDef]]:
+def functions_using_nodes(tree: ast.Module, names: Iterable[str]) -> dict[str, list[ast.FunctionDef | ast.AsyncFunctionDef]]:
     """Map each of `names`, in the given order, to the outermost function/method node whose signature or body references it.
 
     A name referenced inside a nested function (a closure) is attributed to the *outermost*
@@ -239,12 +243,10 @@ def functions_in_generic_classes(tree: ast.Module, name: str) -> list[ast.Functi
     A class is generic over `name` when it declares it as a PEP 695 type parameter (`class Box[T]:`)
     or inherits it through one of its bases (see _inherits_type_param).
     """
-    # TODO: try to come up with a smart solution for when Generic can be safely changed, but don't touch it for now.
     return [
         function
         for node in ast.walk(tree)
-        if isinstance(node, ast.ClassDef)
-        and (_declares_type_param(node, name) or _inherits_type_param(node, name))
+        if isinstance(node, ast.ClassDef) and (_declares_type_param(node, name) or _inherits_type_param(node, name))
         for function in ast.walk(node)
         if isinstance(function, ast.FunctionDef | ast.AsyncFunctionDef)
     ]
@@ -296,22 +298,66 @@ def all_refs_shadowed_by_pep695(tree: ast.Module, name: str, decl_stmt: ast.Assi
     return not found_live_use
 
 
+# infer_variance needs no syntax of its own: a PEP 695 type parameter always infers its variance.
+_CONVERTIBLE_KEYWORDS: dict[str, frozenset[str]] = {
+    "TypeVar": frozenset({"bound", "default", "infer_variance"}),
+    "ParamSpec": frozenset({"default", "infer_variance"}),
+    "TypeVarTuple": frozenset({"default", "infer_variance"}),
+}
+
+
+def declared_default(decl_stmt: ast.Assign) -> ast.expr | None:
+    """Return the value a legacy declaration passes as `default=` (PEP 696), or None if it passes none."""
+    call = cast("ast.Call", decl_stmt.value)
+    return next((keyword.value for keyword in call.keywords if keyword.arg == "default"), None)
+
+
+def has_unconvertible_argument(decl_stmt: ast.Assign) -> bool:
+    """Return True if a legacy declaration passes a keyword build_type_param can't carry over.
+
+    That is any keyword outside the constructor's known set, e.g. `covariant=`/`contravariant=`,
+    `bound=` on a ParamSpec or TypeVarTuple, a keyword added by a later Python version, or a `**mapping`.
+    """
+    call = cast("ast.Call", decl_stmt.value)
+    convertible = _CONVERTIBLE_KEYWORDS[type_param_constructor_name(decl_stmt)]
+    return any(keyword.arg is None or keyword.arg not in convertible for keyword in call.keywords)
+
+
 def build_type_param(decl_stmt: ast.Assign) -> ast.type_param:
     """Translate a legacy declaration into the equivalent PEP 695 type_param node.
 
-    E.g. `T = TypeVar("T", bound=int)` becomes an `ast.TypeVar`/`ast.ParamSpec`/`ast.TypeVarTuple`.
+    E.g. `T = TypeVar("T", bound=int, default=int)` becomes an `ast.TypeVar` rendering as `T: int = int`;
+    ParamSpec and TypeVarTuple map to `ast.ParamSpec`/`ast.TypeVarTuple`. Bounds, constraints and
+    `default=` are carried over; `infer_variance=` needs nothing, since the result always infers its
+    variance. Callers must first reject declarations for which has_unconvertible_argument() is True.
     """
-    call = cast(ast.Call, decl_stmt.value)
-    ctor = cast(ast.Name, call.func).id
-    name = cast(str, cast(ast.Constant, call.args[0]).value)
+    # TODO: a default that uses another legacy declaration (`default=T`) still refers to it after conversion.
+    call = cast("ast.Call", decl_stmt.value)
+    ctor = type_param_constructor_name(decl_stmt)
+    name = cast("str", cast("ast.Constant", call.args[0]).value)
+    default = declared_default(decl_stmt)
 
     if ctor == "ParamSpec":
-        return ast.ParamSpec(name=name)
+        return ast.ParamSpec(name=name, default_value=default)
     if ctor == "TypeVarTuple":
-        return ast.TypeVarTuple(name=name)
+        return ast.TypeVarTuple(name=name, default_value=default)
 
     bound = next((kw.value for kw in call.keywords if kw.arg == "bound"), None)
     constraints = call.args[1:]
     if bound is None and constraints:
         bound = ast.Tuple(elts=list(constraints), ctx=ast.Load())
-    return ast.TypeVar(name=name, bound=bound)
+    return ast.TypeVar(name=name, bound=bound, default_value=default)
+
+
+def type_params_defaults_last(params: list[ast.type_param]) -> list[ast.type_param]:
+    """Return `params` with every type parameter that has a default moved after those without one.
+
+    The relative order within each group is kept. A non-default type parameter following a defaulted
+    one is a SyntaxError.
+    """
+
+    def has_default(param: ast.type_param) -> bool:
+        """Return True if `param` declares a default (`T = int`)."""
+        return isinstance(param, ast.TypeVar | ast.ParamSpec | ast.TypeVarTuple) and param.default_value is not None
+
+    return sorted(params, key=has_default)
