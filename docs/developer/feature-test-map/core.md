@@ -30,7 +30,7 @@
 ## 3. TypeVar modernization
 
 - **Feature:** [TypeVar modernization](../../user/features/typevar-modernization.md)
-- **Concepts:** [Python version gates](../../user/concepts/python-version-gates.md)
+- **Concepts:** [Rewrite semantics](../../user/concepts/rewrite-semantics.md)
 - **Code modules:** [Refactoring recipes](../../developer/modules/recipes.md)
 - **Test file(s):**
     - `test/recipes/test_type_var_check.py`

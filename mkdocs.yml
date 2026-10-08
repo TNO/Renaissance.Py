@@ -118,8 +118,7 @@ nav:
           - 7. Analysis: user/concepts/analysis.md
           - 8. Transformation: user/concepts/transformation.md
           - 9. Composition: user/concepts/composition.md
-          - 10. Python version gates: user/concepts/python-version-gates.md
-          - 11. Standard analyses and transformations: user/concepts/standard-libraries.md
+          - 10. Standard analyses and transformations: user/concepts/standard-libraries.md
 
       - Features:
           - Overview: user/features/index.md
