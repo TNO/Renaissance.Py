@@ -128,13 +128,57 @@ By following these steps, you will have configured, installed, and verified the 
 
 An incomplete list of todo's:
 
-- The get_properties methods of both `ClangASTNode` and `ClangJsonASTNode` are not complete yet. This might cause mismatches in the `Match_Finder`
-- C++ constructs have not been tested yet
-- An example of how to use includes in a `Pattern` must be added
-- Tests need to be added for macro handling
-- The methods `get_references` and `referred_by` must be added to `ASTNode` and implemented in the concrete classes
-- Test cases for multiple match patterns need to be added. Currently, there is only one working case in the examples
-- Comments in Clang appear incorrectly in the `ASTShower`. This seems to be a Clang issue, which is surprising
+- Improve the structure of the archive. The structure is reflected in both code and documentation.
+  The last three items are absent in the user's documentation / only present in the developer's documentation as
+  they are implementation details.
+  See [110](https://github.com/TNO/Renaissance.Py/issues/110) and
+  [187](https://github.com/TNO/Renaissance.Py/issues/187) for background information.
+    - The renaissance core, the language agnostic part, containing among others AST-based pattern matching.
+    - Recipes that analyse and/or transform code. Recipes can use other recipes - for higher efficiency and quality.
+    - Parser bindings to connect different parsers to the core.
+    - Tools that are needed in the development: They safe guard the renaissance development.
+    - Tests including unit and feature tests, which internal structure reflects the structure of the whole archive.
+- Improve the nodeprotocol
+    - The nodeprotocol currently has mutable attributes, while most parser have readonly attributes - The protocol must get readonly attributes.
+    - The nodeprotocol doesn't link an AST node to a TextSegment of the code - This link has to be added
+      (probably through inheritance as an ASTNode is a TextSegment).
+- Remove all issues detected by Ruff and Pyright
+    - Do we want a union, e.g., X &#124; Sequence[X], or just a Sequence[X] as type hint -
+      as a single element of X can always be turned into a sequence of X elements?
+- Introduce the pattern class. Currently a pattern is just an ASTNode, yet a pattern is NOT an ASTNode.
+  A pattern has placeholders.
+    - A pattern should also have a semantic kind to ensure that exotic patterns, like created with PatternFactory.create_statement("$placeholder"),
+      will only match a statement node and not every AST node.
+- Improve rewriter to support both AST-based and character-based code rewritting
+  (see [user documentation for details.](https://tno.github.io/Renaissance.Py/user/concepts/rewrite-semantics/))
+- Improve the rewriter such that the rewriter and the parser have exactly the same (internal) representation of the code,
+  as difference in representations can result in subtle errors.
+- Improve pattern matcher to report multiple assignments to placeholders.
+  This aspect is crucial for quality. For example, when looking for instances of
+
+  ```python
+    if $cond:
+      $f($$before, $trueArg, $$after)
+    else:
+      $f($$before, $falseArg, $$after)
+  ```
+
+  we didn't considered the corner cases where both branches were identical.
+  Fortunately, we assert that we expected only one match, and hence were pointed to these unexpected corner cases.
+- Make a recursive find and replace.
+    - Repeat until convergence and recursive find and replace can yield different results.
+    - See the implementation in Renaissance-Ada as example.
+- Make interface and implementation in Python for variable read and written by a code snippet (sequence of AST Node)
+- Add tools for guard railing
+    - A tool should check that the code in the renaissance core is independent of all other code.
+- Minor
+    - The get_properties methods of both `ClangASTNode` and `ClangJsonASTNode` are not complete yet. This might cause mismatches in the `Match_Finder`
+    - C++ constructs have not been tested yet
+    - An example of how to use includes in a `Pattern` must be added
+    - Tests need to be added for macro handling
+    - The methods `get_references` and `referred_by` must be added to `ASTNode` and implemented in the concrete classes
+    - Test cases for multiple match patterns need to be added. Currently, there is only one working case in the examples
+    - Comments in Clang appear incorrectly in the `ASTShower`. This seems to be a Clang issue, which is surprising
 
 ## Usage
 
