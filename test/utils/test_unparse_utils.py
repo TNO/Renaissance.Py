@@ -5,7 +5,7 @@ import textwrap
 from typing import cast
 
 import pytest
-from hamcrest import assert_that, is_
+from hamcrest import assert_that, equal_to
 
 from renaissance.utils.unparse_utils import (
     _bracket_end_offset,  # pyright: ignore[reportPrivateUsage]
@@ -28,7 +28,7 @@ class TestNameEndOffset:
     )
     def test_finds_the_offset_after_the_name(self, source: str, name: str, expected: int) -> None:
         """Verify the offset right after the function name in its "def" line."""
-        assert_that(_name_end_offset(source, name), is_(expected))
+        assert_that(_name_end_offset(source, name), equal_to(expected))
 
     def test_raises_when_name_not_found(self) -> None:
         """Verify a ValueError is raised when the function name doesn't appear in the source."""
@@ -48,7 +48,7 @@ class TestBracketEndOffset:
     )
     def test_finds_the_matching_closing_bracket(self, source: str, expected: int) -> None:
         """Verify the offset right after the "]" matching the type-param bracket, across nested brackets."""
-        assert_that(_bracket_end_offset(source, 5), is_(expected))
+        assert_that(_bracket_end_offset(source, 5), equal_to(expected))
 
 
 class TestHeaderEndLine:
@@ -65,7 +65,7 @@ class TestHeaderEndLine:
     )
     def test_finds_the_line_of_the_header_terminating_colon(self, source: str, expected: int) -> None:
         """Verify the header ends on the line of its own ":", not one inside a default value."""
-        assert_that(_header_end_line(source), is_(expected))
+        assert_that(_header_end_line(source), equal_to(expected))
 
     def test_raises_when_no_header_terminating_colon(self) -> None:
         """Verify a ValueError is raised when the source has no header-terminating colon at all."""
@@ -101,7 +101,7 @@ class TestUnparseSignatureOnly:
     )
     def test_adds_the_bracket_and_keeps_everything_else(self, original: str, expected: str) -> None:
         """Verify adding T inserts or extends the type-param bracket and keeps the rest of the source."""
-        node = cast(ast.FunctionDef, ast.parse(original).body[0])
+        node = cast("ast.FunctionDef", ast.parse(original).body[0])
         node.type_params = [*node.type_params, ast.TypeVar(name="T")]
 
-        assert_that(unparse_signature_only(node, original), is_(expected))
+        assert_that(unparse_signature_only(node, original), equal_to(expected))
