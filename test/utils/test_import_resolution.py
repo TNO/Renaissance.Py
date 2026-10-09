@@ -3,7 +3,7 @@
 from pathlib import Path
 
 import pytest
-from hamcrest import assert_that, has_entry, has_item, has_key, is_, is_not
+from hamcrest import assert_that, equal_to, has_item, has_key, not_
 
 from renaissance.utils.import_resolution import collect_project_imported_names, resolve_project_module
 
@@ -45,7 +45,7 @@ class TestResolveProjectModule:
         """Absolute, relative and package imports resolve to their project file, or None outside the project."""
         importing_file = project_tree / importing_file_rel
         expected = project_tree / expected_rel if expected_rel is not None else None
-        assert_that(resolve_project_module(importing_file, project_tree, module, level), is_(expected))
+        assert_that(resolve_project_module(importing_file, project_tree, module, level), equal_to(expected))
 
     @pytest.mark.parametrize(
         ("module", "level"),
@@ -66,7 +66,7 @@ class TestResolveProjectModule:
         (tmp_path / "__init__.py").write_text("")
         monkeypatch.chdir(tmp_path)
 
-        assert_that(resolve_project_module(Path("top.py"), Path(), module, level), is_(None))
+        assert_that(resolve_project_module(Path("top.py"), Path(), module, level), equal_to(None))
 
 
 class TestCollectProjectImportedNames:
@@ -93,7 +93,7 @@ class TestCollectProjectImportedNames:
 
         result = collect_project_imported_names([tmp_path / "origin.py", tmp_path / "consumer.py"], tmp_path)
 
-        assert_that(result, is_({tmp_path / name: names for name, names in expected.items()}))
+        assert_that(result, equal_to({tmp_path / name: names for name, names in expected.items()}))
 
 
 @pytest.fixture
@@ -132,7 +132,7 @@ class TestCollectModuleAttributeAccess:
 
         result = collect_project_imported_names([consumer], module_tree)
 
-        assert_that(result, has_entry(module_tree / origin_rel, has_item(expected)))
+        assert_that(sorted(result.get(module_tree / origin_rel, frozenset[str]())), has_item(expected))
 
     @pytest.mark.parametrize(
         "consumer_source",
@@ -150,4 +150,4 @@ class TestCollectModuleAttributeAccess:
 
         result = collect_project_imported_names([consumer], module_tree)
 
-        assert_that(result, is_not(has_key(module_tree / "pkg" / "mod.py")))
+        assert_that(result, not_(has_key(module_tree / "pkg" / "mod.py")))

@@ -6,7 +6,7 @@ import textwrap
 from pathlib import Path
 
 import pytest
-from hamcrest import assert_that, is_
+from hamcrest import assert_that, equal_to, not_
 
 from renaissance.recipes.type_var_domain import (
     UNSAFE_RULES,
@@ -35,12 +35,12 @@ class TestIsSafeToRemove:
             T = TypeVar("T")
         """)
 
-        assert_that(is_safe_to_remove(tree, "T", frozenset({"U"})), is_(None))
+        assert_that(is_safe_to_remove(tree, "T", frozenset({"U"})), equal_to(None))
 
     @pytest.mark.parametrize(
         ("dunder_all", "imported_elsewhere", "expected_reason"),
         [
-            pytest.param('__all__ = ["T"]', frozenset(), UnsafeReason.DECLARED_TYPEVAR_EXPORTED, id="exported-via-dunder-all"),
+            pytest.param('__all__ = ["T"]', frozenset[str](), UnsafeReason.DECLARED_TYPEVAR_EXPORTED, id="exported-via-dunder-all"),
             pytest.param("", frozenset({"T"}), UnsafeReason.IMPORTED_ELSEWHERE_IN_PROJECT, id="imported-elsewhere"),
         ],
     )
@@ -59,7 +59,7 @@ class TestIsSafeToRemove:
             T = TypeVar("T")
         """)
 
-        assert_that(is_safe_to_remove(tree, "T", imported_elsewhere), is_(expected_reason))
+        assert_that(is_safe_to_remove(tree, "T", imported_elsewhere), equal_to(expected_reason))
 
     @pytest.mark.parametrize(
         "dunder_all",
@@ -75,7 +75,7 @@ class TestIsSafeToRemove:
         """A TypeVar exported through any common form of `__all__` is reported as exported."""
         tree = _parse(f'from typing import TypeVar\n{dunder_all}\nT = TypeVar("T")\n')
 
-        assert_that(is_safe_to_remove(tree, "T"), is_(UnsafeReason.DECLARED_TYPEVAR_EXPORTED))
+        assert_that(is_safe_to_remove(tree, "T"), equal_to(UnsafeReason.DECLARED_TYPEVAR_EXPORTED))
 
 
 class TestIsSafeToLocalize:
@@ -96,7 +96,7 @@ class TestIsSafeToLocalize:
     )
     def test_returns_none_when_safe(self, source: str) -> None:
         """A TypeVar whose constructor its origin imports unconditionally is safe to localize, whatever else is conditional."""
-        assert_that(is_safe_to_localize(_parse(source), "T"), is_(None))
+        assert_that(is_safe_to_localize(_parse(source), "T"), equal_to(None))
 
     @pytest.mark.parametrize(
         ("source", "expected_reason"),
@@ -133,7 +133,7 @@ class TestIsSafeToLocalize:
         """Each unsafe condition is distinguishable, not collapsed into one generic reason."""
         tree = _parse(source)
 
-        assert_that(is_safe_to_localize(tree, "T"), is_(expected_reason))
+        assert_that(is_safe_to_localize(tree, "T"), equal_to(expected_reason))
 
 
 _FEATURE_DOC = Path(__file__).resolve().parents[2] / "docs" / "user" / "features" / "typevar-modernization.md"
@@ -148,4 +148,4 @@ class TestUnsafeRuleDocAnchors:
         anchor = UNSAFE_RULES[reason].doc_anchor
         heading = re.compile(rf"^#+ .+ \{{ #{re.escape(anchor)} \}}$", re.MULTILINE)
 
-        assert_that(bool(heading.search(_FEATURE_DOC.read_text(encoding="utf-8"))), is_(True))
+        assert_that(heading.search(_FEATURE_DOC.read_text(encoding="utf-8")), not_(None))
