@@ -153,6 +153,8 @@ class TypeVarCheck(PythonRefactoring):
             if not all_refs_shadowed_by_pep695(tree, name, decl_stmt):
                 continue
 
+            # TODO: a public TypeVar no file in the project uses (e.g. redis.typing.AnyKeyT) is removed,
+            # though other projects may import it.
             reason = is_safe_to_remove(tree, name, self.project_wide_imported_names)
             if reason is not None:
                 self._mark_unsafe(results, self.orphaned_unsafe_reasons, name, reason)
