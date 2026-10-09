@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
 import pytest
-from hamcrest import all_of, assert_that, contains_string, equal_to, has_entry, not_
+from hamcrest import all_of, assert_that, contains_string, equal_to, has_entry, has_length, not_
 from pytest_mock import MockerFixture
 
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
@@ -206,30 +206,88 @@ class TestTypeVarCheckLocalize:
         assert_that(output, contains_string("T = TypeVar('T')"))
         assert_that(output, not_(contains_string("from file_1 import T")))
 
-    def test_keeps_other_names_when_localizing_one_of_several_imports(self, mocker: MockerFixture, tmp_path: Path) -> None:
-        """AI: Verify localizing one imported name from a multi-name import statement keeps the other names imported."""
+    @pytest.mark.parametrize(
+        ("layout", "importing_import", "expected_line"),
+        [
+            pytest.param(("file_1.py", "file_2.py"), "from file_1 import T, helper", "from file_1 import helper", id="absolute"),
+            pytest.param(("file_1.py", "file_2.py"), "from .file_1 import T, helper", "from .file_1 import helper", id="relative"),
+            pytest.param(
+                ("file_1.py", "sub/use.py"),
+                "from ..file_1 import T, helper",
+                "from ..file_1 import helper",
+                id="relative-parent",
+            ),
+            pytest.param(("__init__.py", "file_2.py"), "from . import T, helper", "from . import helper", id="bare-package"),
+            pytest.param(
+                ("file_1.py", "file_2.py"),
+                "from file_1 import T, helper as h",
+                "from file_1 import helper as h",
+                id="alias-kept",
+            ),
+        ],
+    )
+    def test_keeps_other_names_when_localizing_one_of_several_imports(
+        self,
+        mocker: MockerFixture,
+        tmp_path: Path,
+        layout: tuple[str, str],
+        importing_import: str,
+        expected_line: str,
+    ) -> None:
+        """Verify localizing one imported name keeps the other names imported from the same module, alias included."""
         subject = self._create_cross_file(
             mocker,
             tmp_path,
-            """
-            from typing import TypeVar
-            T = TypeVar("T")
-            def helper() -> None:
-                pass
-            """,
-            """
-            from file_1 import T, helper
-            def b(x: T) -> T:
-                helper()
-                return x
-            """,
+            'from typing import TypeVar\nT = TypeVar("T")\ndef helper() -> None:\n    pass\n',
+            f"{importing_import}\ndef b(x: T) -> T:\n    return x\n",
+            layout,
         )
         result = subject.localize_imported_typevars()
 
         assert_that(result, has_entry("T", "fixed"))
         output = subject.apply_to_string()
-        assert_that(output, contains_string("from file_1 import helper"))
+        assert_that(output.splitlines().count(expected_line), equal_to(1))
         assert_that(output, contains_string("T = TypeVar('T')"))
+
+    @pytest.mark.parametrize(
+        ("importing_import", "comments"),
+        [
+            pytest.param("from file_1 import T, helper  # noqa: F401", ["# noqa: F401"], id="trailing-comment"),
+            pytest.param(
+                "from file_1 import (  # header\n    T,  # the typevar\n    helper,  # the helper\n)",
+                ["# header", "# the helper"],
+                id="multi-line",
+            ),
+        ],
+    )
+    @pytest.mark.xfail(
+        reason="The narrowed import is rebuilt with ast.unparse, which has no comments: comments inside the import are "
+        "lost and a trailing comment stays after the replacement's last line, the localized declaration.",
+        raises=AssertionError,
+        strict=True,
+    )
+    def test_narrowing_an_import_keeps_its_comments(
+        self,
+        mocker: MockerFixture,
+        tmp_path: Path,
+        importing_import: str,
+        comments: list[str],
+    ) -> None:
+        """Verify each comment of a narrowed import is kept once, and never on the localized declaration's line."""
+        subject = self._create_cross_file(
+            mocker,
+            tmp_path,
+            'from typing import TypeVar\nT = TypeVar("T")\ndef helper() -> None:\n    pass\n',
+            f"{importing_import}\ndef b(x: T) -> T:\n    helper()\n    return x\n",
+        )
+        result = subject.localize_imported_typevars()
+
+        assert_that(result, has_entry("T", "fixed"))
+        lines = subject.apply_to_string().splitlines()
+        for comment in comments:
+            holders = [line for line in lines if comment in line]
+            assert_that(holders, has_length(1), comment)
+            assert_that(holders[0], not_(contains_string("TypeVar(")), comment)
 
     @pytest.mark.parametrize(
         ("origin_extra", "importing_import", "expected_lines"),
