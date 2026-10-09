@@ -4,7 +4,7 @@ import ast
 from unittest.mock import patch
 
 import hypothesmith
-from hypothesis import assume, given, settings
+from hypothesis import given, reject, settings
 
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
 from renaissance.recipes.type_var_check import TypeVarCheck
@@ -20,7 +20,7 @@ class TestTypeVarCheckProperties:
         try:
             ast.parse(source)
         except SyntaxError:
-            assume(False)
+            reject()
 
         with patch(
             "renaissance.integrations.python.ast.factory.PythonFactory.create",
