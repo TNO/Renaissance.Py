@@ -200,30 +200,54 @@ class TypeVarCheck(PythonRefactoring):
                 continue
 
             origin_tree = ast.parse(origin_path.read_text(encoding="utf-8"), str(origin_path))
-            declarations = find_type_param_declarations(origin_tree)
-
-            for alias in raw.names:
-                # TODO: `from x import T as U` is not currently being caught, tbd
-                if alias.asname is not None or alias.name not in declarations:
-                    continue
-
-                decl_stmt = declarations[alias.name]
-                reason = is_safe_to_localize(origin_tree, alias.name)
-                argument_names = self._argument_names_to_import(importing_tree, origin_tree, raw, decl_stmt)
-                if reason is None and argument_names is None:
-                    reason = UnsafeReason.DECLARATION_NAME_UNAVAILABLE
-                if reason is not None:
-                    self._mark_unsafe(results, self.cross_file_unsafe_reasons, alias.name, reason)
-                    continue
-
-                needed_imports = [self._missing_constructor_import(origin_tree, decl_stmt)]
-                if argument_names:
-                    needed_imports.append(f"from {'.' * raw.level}{raw.module or ''} import {', '.join(sorted(argument_names))}")
-                # TODO: queues one replace per alias on the same import node, which conflicts when a statement localizes 2+ names.
-                self._localize_import(import_node, raw, alias.name, decl_stmt, [line for line in needed_imports if line is not None])
-                results[alias.name] = "fixed"
+            self._localize_names_from(import_node, raw, importing_tree, origin_tree, results)
 
         return results
+
+    def _localize_names_from(
+        self,
+        import_node: PythonRstNode,
+        raw: ast.ImportFrom,
+        importing_tree: ast.Module,
+        origin_tree: ast.Module,
+        results: dict[str, str],
+    ) -> None:
+        """Localize every safe type parameter name that raw imports from origin_tree, in one edit of import_node.
+
+        Records each name in results as "fixed" or, via _mark_unsafe, as "unsafe".
+        """
+        declarations = find_type_param_declarations(origin_tree)
+        localized: dict[str, ast.Assign] = {}
+        needed_imports: list[str] = []
+        needed_argument_names: set[str] = set()
+
+        for alias in raw.names:
+            # TODO: `from x import T as U` is not currently being caught, tbd
+            if alias.asname is not None or alias.name not in declarations:
+                continue
+
+            decl_stmt = declarations[alias.name]
+            reason = is_safe_to_localize(origin_tree, alias.name)
+            if reason is not None:
+                self._mark_unsafe(results, self.cross_file_unsafe_reasons, alias.name, reason)
+                continue
+            argument_names = self._argument_names_to_import(importing_tree, origin_tree, raw, decl_stmt)
+            if argument_names is None:
+                self._mark_unsafe(results, self.cross_file_unsafe_reasons, alias.name, UnsafeReason.DECLARATION_NAME_UNAVAILABLE)
+                continue
+
+            constructor_import = self._missing_constructor_import(origin_tree, decl_stmt)
+            if constructor_import is not None and constructor_import not in needed_imports:
+                needed_imports.append(constructor_import)
+            needed_argument_names |= argument_names
+            localized[alias.name] = decl_stmt
+            results[alias.name] = "fixed"
+
+        if not localized:
+            return
+        if needed_argument_names:
+            needed_imports.append(f"from {'.' * raw.level}{raw.module or ''} import {', '.join(sorted(needed_argument_names))}")
+        self._localize_import(import_node, raw, localized, needed_imports)
 
     def _missing_constructor_import(self, origin_tree: ast.Module, decl_stmt: ast.Assign) -> str | None:
         """Return the "from module import Ctor" line the localized declaration needs, or None if this file has it."""
@@ -279,18 +303,18 @@ class TypeVarCheck(PythonRefactoring):
         self,
         import_node: PythonRstNode,
         raw: ast.ImportFrom,
-        name: str,
-        decl_stmt: ast.Assign,
+        declarations: dict[str, ast.Assign],
         needed_imports: list[str],
     ) -> None:
-        """Replace import_node with decl_stmt's text as a local declaration.
+        """Replace import_node with the text of declarations' statements as local declarations, in one edit.
 
-        Narrows or removes the original import for name, and prepends needed_imports: the imports the
-        declaration needs (its constructor, names its arguments use) that this file doesn't have yet.
+        Narrows or removes the original import for declarations' names, and prepends needed_imports: the
+        imports the declarations need (their constructors, names their arguments use) that this file
+        doesn't have yet.
         """
-        decl_text = "\n".join([*needed_imports, ast.unparse(decl_stmt)])
+        decl_text = "\n".join([*needed_imports, *(ast.unparse(decl_stmt) for decl_stmt in declarations.values())])
 
-        new_import = narrowed_import_text(raw, name)
+        new_import = narrowed_import_text(raw, set(declarations))
         if new_import is not None:
             self.replace(f"{new_import}\n{decl_text}", import_node, include_whitespace=False, include_comments=False)
         else:
