@@ -98,9 +98,9 @@ See *Verified by test modules* in [TypeVar modernization](../../user/features/ty
 - Re-exports, namespace packages, `import *` and renamed imports (`from .origin import T as U`) are not followed.
 - Imported names are collected once before the run, so removing a declaration whose importers were all localized
   needs a second run.
+- Only a plain `__all__ = [...]` is read to detect an exported declaration.
 - `Unpack[Ts]` → `*Ts` is left to `ruff`'s `UP044`, see [Rejected recipes](rejected-recipes.md).
 - Known bugs, tracked as `xfail` tests:
     - `test_does_not_convert_default_referencing_another_declaration` (`test_type_var_check_convert.py`)
     - `test_converts_function_preserving_multiline_string_literal` (`test_type_var_check_convert.py`)
     - `test_keeps_declaration_used_in_a_string_annotation` (`test_type_var_check_orphaned.py`)
-    - `test_exported_name_is_unsafe_whatever_form_dunder_all_takes` (`test_type_var_domain.py`)

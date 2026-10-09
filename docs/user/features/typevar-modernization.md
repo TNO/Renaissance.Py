@@ -57,8 +57,8 @@ These cases are **not** reported, so review the changes with `git diff`:
   A file importing `T` from a localized file gets that copy too.
 - A declaration whose importers are all localized in a run is only removed by a second run.
 - A `T` used only in string annotations (`def f(x: "T")`) is seen as unused, so its declaration is removed.
-- Only a plain `__all__ = [...]` protects an exported `T`. Annotated (`__all__: list[str] = ...`) or extended
-  (`+=`, `.extend()`, `.append()`) forms don't, so the declaration can be removed.
+- Only a plain `__all__ = [...]` marks `T` as exported. Annotated (`__all__: list[str] = ...`), `+=`, `.extend()`
+  and `.append()` forms are not read, so the declaration can be removed.
 - Removing a line can leave extra blank lines. Run your formatter afterwards.
 
 ## Constraints
@@ -100,7 +100,7 @@ remove `covariant=`/`contravariant=` and run again.
 
 ### A declared TypeVar is exported via `__all__` { #feature-typevar-modernization-declared-typevar-exported }
 
-`T` is in its file's `__all__`, so it is public API. The functions are converted, the declaration is kept.
+`T` is in its file's plain `__all__ = [...]`, so it is public API. The functions are converted, the declaration is kept.
 
 **To remove it yourself:** remove `T` from `__all__` (a breaking change for importers), then delete the declaration.
 
