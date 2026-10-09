@@ -23,15 +23,6 @@ ASCII_SOURCE = 'x = "abc"\ny = f(1)\n'
 # Each 'e-acute' is one character but two UTF-8 bytes, so character and byte offsets diverge after it.
 NON_ASCII_SOURCE = 'x = "\u00e9\u00e9\u00e9"\ny = f(1)\n'
 
-CST_ENCODING_REASON = (
-    "PythonCstTranslationUnit keeps `content` as str and splits str lines, so convert() returns "
-    "character offsets, while _RewriteActions slices node.text.encode(...), i.e. UTF-8 bytes. The "
-    "two units drift apart by one per extra byte, here cutting the slice short mid-codepoint."
-)
-CST_SPAN_REASON = (
-    "WhitespaceInclusivePositionProvider resolves no span for the trailing SimpleStatementLine, so "
-    "PythonCstTranslationUnit.end_of falls back to 0 and the node reports an end before its start."
-)
 LST_ENCODING_REASON = (
     "LSTNode.offset is a byte offset from tree-sitter, but length is len(signature) in characters "
     "and the signature itself is cut out of the source with byte offsets applied to str, so both "
@@ -81,7 +72,7 @@ def test_offsets_address_bytes_for_ascii_source(load: Callable[[str], PythonNode
     "load",
     [
         pytest.param(_rst_root, id="rst"),
-        pytest.param(_cst_root, id="cst", marks=pytest.mark.xfail(reason=CST_ENCODING_REASON, strict=True)),
+        pytest.param(_cst_root, id="cst"),
         pytest.param(_lst_root, id="lst", marks=pytest.mark.xfail(reason=LST_ENCODING_REASON, strict=True)),
     ],
 )
@@ -94,7 +85,7 @@ def test_offsets_address_bytes_for_non_ascii_source(load: Callable[[str], Python
     "load",
     [
         pytest.param(_rst_root, id="rst"),
-        pytest.param(_cst_root, id="cst", marks=pytest.mark.xfail(reason=CST_SPAN_REASON, strict=True)),
+        pytest.param(_cst_root, id="cst"),
         pytest.param(_lst_root, id="lst"),
     ],
 )
@@ -109,7 +100,7 @@ def test_trailing_statement_ends_after_it_starts(load: Callable[[str], PythonNod
     "load",
     [
         pytest.param(_rst_root, id="rst"),
-        pytest.param(_cst_root, id="cst", marks=pytest.mark.xfail(reason=CST_ENCODING_REASON, strict=True)),
+        pytest.param(_cst_root, id="cst"),
         pytest.param(_lst_root, id="lst", marks=pytest.mark.xfail(reason=LST_ENCODING_REASON, strict=True)),
     ],
 )

@@ -1,14 +1,16 @@
 """AI: ASTNode implementation backed by libcst's concrete syntax tree."""
 
+import io
+import itertools
+import sys
 from pathlib import Path
 from typing import Self
 
 import libcst
 from libcst import BaseCompoundStatement, BaseSmallStatement, ClassDef, CSTNode, FunctionDef, MetadataWrapper
-from libcst.metadata import WhitespaceInclusivePositionProvider
+from libcst.metadata import CodePosition, PositionProvider
 
 from renaissance.integrations.python.ast.kinds import PYTHON_KIND_MAP
-from renaissance.integrations.python.ast.util import convert
 from renaissance.syntax_tree.semantic_kind import SemanticKind
 from renaissance.utils.ast_utils import next_sibling, preceding_sibling
 
@@ -20,22 +22,40 @@ class PythonCstTranslationUnit:
         """AI: Parse Python source into a libcst tree with position lookups for AST-node wrapping."""
         # TODO: see docs/developer/architecture/position-consistency.md - exposes no buffer, so the rewriter derives its own.
         self.content = content
-        self.lines = content.splitlines()
+        self.encoding = sys.getfilesystemencoding()
+        # newline="" splits on \n, \r\n and \r only, like libcst, and keeps each line ending.
+        self._lines = io.StringIO(content, newline="").readlines()
+        self._line_starts = list(itertools.accumulate((len(line.encode(self.encoding)) for line in self._lines), initial=0))
         self.file_name = file_name
         self.references_initialized = False
         self.wrapper = MetadataWrapper(libcst.parse_module(content))
         self.atu = self.wrapper.module
-        self.spans = self.wrapper.resolve(WhitespaceInclusivePositionProvider)
+        self.spans = self.wrapper.resolve(PositionProvider)
+
+    def _byte_offset(self, position: CodePosition) -> int:
+        """Return the offset, in bytes of self.encoding, of a libcst position whose column counts characters.
+
+        A position on the line after the last one (the end of a node that ends with the file) maps to the file's length.
+        """
+        line_index = position.line - 1
+        if line_index >= len(self._lines):
+            return self._line_starts[-1]
+        return self._line_starts[line_index] + len(self._lines[line_index][: position.column].encode(self.encoding))
 
     def start_of(self, node: CSTNode) -> int:
-        """AI: Return the character offset where node begins in the source text."""
+        """Return the byte offset where node begins in the source text, or 0 if it has no position.
+
+        A decorated function or class begins at its first decorator.
+        """
+        if isinstance(node, (ClassDef, FunctionDef)) and node.decorators:
+            node = node.decorators[0]
         span = self.spans.get(node)
-        return convert(self.lines, span.start.line, span.start.column) if span else 0
+        return self._byte_offset(span.start) if span else 0
 
     def end_of(self, node: CSTNode) -> int:
-        """AI: Return the character offset where node ends in the source text."""
+        """Return the byte offset where node's code ends in the source text, or 0 if it has no position."""
         span = self.spans.get(node)
-        return convert(self.lines, span.end.line, span.end.column) if span else 0
+        return self._byte_offset(span.end) if span else 0
 
     def signature_of(self, node: CSTNode) -> str:
         """AI: Return the source code text corresponding to node, or an empty string on failure."""
@@ -102,7 +122,7 @@ class PythonCstNode:
 
     @property
     def extended_end_offset(self) -> int:
-        """AI: Return the end offset; libcst attaches trailing trivia to the node itself, so there is nothing to extend."""
+        """Return the end offset; trailing comments are found by the rewriter, as for the RST backend."""
         return self.end_offset
 
     @property
