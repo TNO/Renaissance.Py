@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import cast
 
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
-from renaissance.recipes.python_refactoring import PythonRefactoring, narrowed_import_text
+from renaissance.recipes.python_refactoring import PythonRefactoring
 from renaissance.recipes.step_runner import Step, run_steps
 from renaissance.recipes.type_var_domain import (
     UnsafeReason,
@@ -329,8 +329,11 @@ class TypeVarCheck(PythonRefactoring):
         """
         decl_text = "\n".join([*needed_imports, *(ast.unparse(decl_stmt) for decl_stmt in declarations.values())])
 
-        new_import = narrowed_import_text(raw, set(declarations))
-        if new_import is not None:
-            self.replace(f"{new_import}\n{decl_text}", import_node, include_whitespace=False, include_comments=False)
+        # TODO: the narrowed import is rebuilt with ast.unparse, so comments inside it are lost and a trailing
+        # comment ends up on the last declaration's line.
+        kept: list[ast.alias] = [alias for alias in raw.names if (alias.asname or alias.name) not in declarations]
+        if kept:
+            narrowed = ast.unparse(ast.ImportFrom(module=raw.module, names=kept, level=raw.level))
+            self.replace(f"{narrowed}\n{decl_text}", import_node, include_whitespace=False, include_comments=False)
         else:
             self.replace(decl_text, import_node, include_whitespace=False, include_comments=False)
