@@ -49,8 +49,6 @@ methods.
 
 These cases are **not** reported, so review the changes with `git diff`:
 
-- Two localizable names in one import (`from .shapes import T, U`) make the file fail under `ERRORS`. Split it into
-  one import per name.
 - A multi-line string literal in a converted function, with a line indented less than the body, has its contents
   changed (see [Python AST known limitations](../../developer/modules/python-ast-known-limitations.md)).
 - `U = TypeVar("U", default=T)` becomes `def f[U = T]`, where `T` still means the module-level one. Fix it by hand

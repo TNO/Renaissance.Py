@@ -60,7 +60,8 @@ safely cover. This page covers `TypeVarCheck`, the recipe behind
   whose own type parameters declare the same name. Conversion uses it too, to skip names that need no work.
 - **Localization.** The origin's declaration is copied with `ast.unparse`, and the names its arguments use
   (`declaration_argument_names`) are imported from the origin. `DECLARATION_NAME_UNAVAILABLE` if the origin only
-  binds a name under `if TYPE_CHECKING:` or this file binds it to something else (`from_import_sources`).
+  binds a name under `if TYPE_CHECKING:` or this file binds it to something else (`from_import_sources`). All
+  names localized from one import statement go into one `replace()`, with each needed import added once.
 - **Imports.** Narrowing an import because a name is now declared locally is done by `narrowed_import_text`.
   Removing imports that became unused is left to the CLI's `ruff check --fix --select F401` pass.
 
@@ -96,7 +97,6 @@ See *Verified by test modules* in [TypeVar modernization](../../user/features/ty
   needs a second run.
 - `Unpack[Ts]` → `*Ts` is left to `ruff`'s `UP044`, see [Rejected recipes](rejected-recipes.md).
 - Known bugs, tracked as `xfail` tests:
-    - `test_localizes_two_names_from_one_import_statement` (`test_type_var_check_localize.py`)
     - `test_does_not_convert_default_referencing_another_declaration` (`test_type_var_check_convert.py`)
     - `test_converts_function_preserving_multiline_string_literal` (`test_type_var_check_convert.py`)
     - `test_localized_file_imports_a_relatively_imported_constructor_from_the_same_module`
