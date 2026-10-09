@@ -8,8 +8,11 @@ class TextSegment(Protocol):
     """Protocol for anything that represents a text segment.
 
     A text segment is a consecutive piece, a.k.a. a slice, within a text.
-    Instances include comments, whitespace (incl. empty lines), syntax nodes, and
-    combinations thereof.
+    Any consecutive piece of text qualifies;
+    it need not correspond to a single syntactic construct.
+    Instances include comments, whitespace (incl. empty lines), syntax nodes,
+    combinations thereof, such as a syntax node together with its associated trivia,
+    and even a regular expression match, which has no relation to a syntax tree at all.
 
     Read-only access is enforced "as much as possible" by
     exposing only @property getters in the protocol.
