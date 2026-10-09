@@ -121,7 +121,7 @@ class TestTypeVarCheckOrphaned:
     @pytest.mark.parametrize(
         ("imported_elsewhere", "expected_reason"),
         [
-            pytest.param(frozenset(), UnsafeReason.DECLARED_TYPEVAR_EXPORTED, id="exported-via-dunder-all"),
+            pytest.param(frozenset[str](), UnsafeReason.DECLARED_TYPEVAR_EXPORTED, id="exported-via-dunder-all"),
             pytest.param(frozenset({"T"}), UnsafeReason.IMPORTED_ELSEWHERE_IN_PROJECT, id="imported-elsewhere"),
         ],
     )

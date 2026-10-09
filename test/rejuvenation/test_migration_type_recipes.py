@@ -10,7 +10,7 @@ from pathlib import Path
 from types import ModuleType
 
 import pytest
-from hamcrest import assert_that, contains_string, equal_to, is_, is_not
+from hamcrest import assert_that, contains_string, equal_to, not_
 from hamcrest.core.matcher import Matcher
 
 from renaissance.recipes.type_var_domain import UnsafeReason, doc_link
@@ -61,7 +61,7 @@ class TestProcessFile:
     @pytest.mark.parametrize(
         ("source", "imported_elsewhere", "expected_reason"),
         [
-            pytest.param(UNSAFE_TYPEVAR_SOURCE, frozenset(), UnsafeReason.DECLARED_TYPEVAR_EXPORTED, id="exported-via-dunder-all"),
+            pytest.param(UNSAFE_TYPEVAR_SOURCE, frozenset[str](), UnsafeReason.DECLARED_TYPEVAR_EXPORTED, id="exported-via-dunder-all"),
             pytest.param(LEGACY_TYPEVAR_SOURCE, frozenset({"T"}), UnsafeReason.IMPORTED_ELSEWHERE_IN_PROJECT, id="imported-elsewhere"),
         ],
     )
@@ -74,8 +74,8 @@ class TestProcessFile:
 
         report = migration.process_file(target, min_python=(3, 12), project_root=tmp_path, project_wide_imported_names=imported_elsewhere)
 
-        assert_that(migration.has_fixed(report), is_(True))
-        assert_that(report.reasons, is_not(None))
+        assert_that(migration.has_fixed(report), equal_to(obj=True))
+        assert_that(report.reasons, not_(None))
         assert_that((report.reasons or {})["orphaned"], equal_to({"T": expected_reason}))
         written = target.read_text(encoding="utf-8")
         assert_that(written, contains_string("def identity[T](x: T) -> T:"))
@@ -86,10 +86,10 @@ class TestProcessFile:
         target = tmp_path / "broken.py"
         target.write_text("def broken(:\n", encoding="utf-8")
 
-        report = migration.process_file(target, min_python=(3, 12), project_root=tmp_path, project_wide_imported_names=frozenset())
+        report = migration.process_file(target, min_python=(3, 12), project_root=tmp_path, project_wide_imported_names=frozenset[str]())
 
-        assert_that(report.error, is_not(None))
-        assert_that(report.result, is_(None))
+        assert_that(report.error, not_(None))
+        assert_that(report.result, equal_to(None))
 
 
 class TestRuffImportCleanup:
@@ -100,14 +100,14 @@ class TestRuffImportCleanup:
         [
             pytest.param(
                 [],
-                is_not(contains_string("TypeVar")),
+                not_(contains_string("TypeVar")),
                 contains_string("cleaned up via `ruff"),
                 id="default-drops-import",
             ),
             pytest.param(
                 ["--no-ruff"],
                 contains_string("from typing import TypeVar"),
-                is_not(contains_string("cleaned up via `ruff")),
+                not_(contains_string("cleaned up via `ruff")),
                 id="no-ruff-keeps-import",
             ),
         ],
@@ -213,7 +213,7 @@ class TestPerFileProgressFeedback:
 
         output = capsys.readouterr().out
         assert_that(output, contains_string(f"File {good} checked."))
-        assert_that(output, is_not(contains_string("..")))
+        assert_that(output, not_(contains_string("..")))
 
 
 class TestMainBatchErrorIsolation:
@@ -270,7 +270,7 @@ class TestMainProjectWideImportSafety:
         assert_that(exit_code, equal_to(0))
         consumer_text = consumer.read_text(encoding="utf-8")
         assert_that(consumer_text, contains_string("def use[T](x: T) -> T:"))
-        assert_that(consumer_text, is_not(contains_string(import_line)))
+        assert_that(consumer_text, not_(contains_string(import_line)))
         assert_that((pkg / "typing_mod.py").read_text(encoding="utf-8"), contains_string('T = TypeVar("T")'))
 
     @pytest.mark.parametrize("target_arg", [pytest.param(".", id="dot"), pytest.param("pkg", id="subdirectory")])
@@ -327,7 +327,7 @@ class TestPyVersionFlag:
         assert_that(exit_code, equal_to(0))
         written = target.read_text(encoding="utf-8")
         assert_that(written, contains_string(expected))
-        assert_that(written, is_not(contains_string(unexpected)))
+        assert_that(written, not_(contains_string(unexpected)))
 
     @pytest.mark.parametrize(
         ("bad_args", "expected_error"),
