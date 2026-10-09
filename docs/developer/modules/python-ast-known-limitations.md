@@ -5,7 +5,7 @@
 **Stable ID:** `CODEMOD-PYTHON_AST_KNOWN_LIMITATIONS`
 
 Two limitations of the Python AST layer and the rewriter that any recipe has to work around. `TypeVarCheck` avoids
-both; see [Refactoring recipes](recipes.md).
+the second, and the first everywhere except when it narrows an import; see [Refactoring recipes](recipes.md).
 
 ## 1. `ast.unparse()` and `shift_right` lose comments and indentation
 
@@ -20,6 +20,10 @@ original text. It still re-indents the function from the smallest indentation in
 so a multi-line string literal with a line indented less than the body has its contents changed. Tracked by the
 `xfail` test `test_converts_function_preserving_multiline_string_literal` in
 `test/recipes/test_type_var_check_convert.py`.
+
+Localization still replaces a narrowed import with `ast.unparse` output. Comments inside the import are deleted, and
+a trailing comment such as `# noqa` ends up on the last localized declaration's line. Tracked by the `xfail` test
+`test_narrowing_an_import_keeps_its_comments` in `test/recipes/test_type_var_check_localize.py`.
 
 ## 2. `__is_ancestor_in_nodes` can't just drop its `and False`
 

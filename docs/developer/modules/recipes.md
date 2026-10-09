@@ -16,7 +16,7 @@ safely cover. This page covers `TypeVarCheck`, the recipe behind
 - `src/renaissance/recipes/type_var_domain.py`: domain model and safety analysis.
 - `src/renaissance/recipes/step_runner.py`: `Step`/`run_steps`, runs fix actions in order and commits only the ones
   that fixed something.
-- `src/renaissance/recipes/python_refactoring.py`: the base class, with `find_rst_node` and `narrowed_import_text`.
+- `src/renaissance/recipes/python_refactoring.py`: the base class, with `find_rst_node`.
 - `src/renaissance/utils/unparse_utils.py`: `unparse_signature_only`, adds the type-parameter bracket to a signature.
 - `src/renaissance/utils/import_resolution.py`: resolves `from X import Y` to a file in the project, and re-anchors
   one file's relative import on another file.
@@ -65,8 +65,8 @@ safely cover. This page covers `TypeVarCheck`, the recipe behind
   names localized from one import statement go into one `replace()`, with each needed import added once. A
   constructor the origin imports relatively is re-anchored on this file by `rebase_relative_module`, or imported
   from the origin itself when that is not possible.
-- **Imports.** Narrowing an import because a name is now declared locally is done by `narrowed_import_text`.
-  Removing imports that became unused is left to the CLI's `ruff check --fix --select F401` pass.
+- **Imports.** An import whose names are now declared locally is narrowed with `ast.unparse`, or replaced by the
+  declarations when no name remains. Removing imports that became unused is left to the CLI's `ruff check --fix --select F401` pass.
 
 ## Related features
 
@@ -104,3 +104,4 @@ See *Verified by test modules* in [TypeVar modernization](../../user/features/ty
     - `test_does_not_convert_default_referencing_another_declaration` (`test_type_var_check_convert.py`)
     - `test_converts_function_preserving_multiline_string_literal` (`test_type_var_check_convert.py`)
     - `test_keeps_declaration_used_in_a_string_annotation` (`test_type_var_check_orphaned.py`)
+    - `test_narrowing_an_import_keeps_its_comments` (`test_type_var_check_localize.py`)

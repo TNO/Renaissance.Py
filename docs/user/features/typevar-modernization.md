@@ -55,6 +55,8 @@ These cases are **not** reported, so review the changes with `git diff`:
   as `def f[T, U = T]`.
 - A localized `T` is a new object: code comparing type parameters by identity (`is`) sees two different objects.
   A file importing `T` from a localized file gets that copy too.
+- When localizing narrows an import, the comments inside it are lost and a trailing comment moves to the declaration's
+  line (see [Python AST known limitations](../../developer/modules/python-ast-known-limitations.md)).
 - A declaration whose importers are all localized in a run is only removed by a second run.
 - A `T` used only in string annotations (`def f(x: "T")`) is seen as unused, so its declaration is removed.
 - Only a plain `__all__ = [...]` marks `T` as exported. Annotated (`__all__: list[str] = ...`), `+=`, `.extend()`
