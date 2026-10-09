@@ -1,11 +1,13 @@
 """Tests for renaissance.utils.import_resolution."""
 
+import ast
 from pathlib import Path
+from typing import cast
 
 import pytest
 from hamcrest import assert_that, equal_to, has_item, has_key, not_
 
-from renaissance.utils.import_resolution import collect_project_imported_names, resolve_project_module
+from renaissance.utils.import_resolution import collect_project_imported_names, rebase_relative_module, resolve_project_module
 
 
 @pytest.fixture
@@ -67,6 +69,34 @@ class TestResolveProjectModule:
         monkeypatch.chdir(tmp_path)
 
         assert_that(resolve_project_module(Path("top.py"), Path(), module, level), equal_to(None))
+
+
+class TestRebaseRelativeModule:
+    """Tests for rebase_relative_module."""
+
+    @pytest.mark.parametrize(
+        ("via", "origin_file", "origin_import", "expected"),
+        [
+            pytest.param("from .file_1 import T", "file_1.py", "from ._compat import X", "._compat", id="same-dir"),
+            pytest.param("from .sub.file_1 import T", "sub/file_1.py", "from ._compat import X", ".sub._compat", id="origin-in-subpackage"),
+            pytest.param("from .sub.file_1 import T", "sub/file_1.py", "from .._compat import X", "._compat", id="origin-climbs-back"),
+            pytest.param("from .file_1 import T", "file_1.py", "from .._compat import X", ".._compat", id="origin-climbs-above-via"),
+            pytest.param("from .sub import T", "sub/__init__.py", "from ._compat import X", ".sub._compat", id="origin-is-package"),
+            pytest.param("from . import T", "__init__.py", "from ._compat import X", "._compat", id="origin-is-current-package"),
+            pytest.param("from pkg.file_1 import T", "pkg/file_1.py", "from ._compat import X", "pkg._compat", id="absolute-via"),
+            pytest.param("from .file_1 import T", "file_1.py", "from typing import X", "typing", id="absolute-import"),
+            pytest.param("from .file_1 import T", "file_1.py", "from . import X", ".", id="origin-imports-its-own-package"),
+            pytest.param("from file_1 import T", "file_1.py", "from ._compat import X", None, id="origin-at-top-level"),
+        ],
+    )
+    def test_rebase(self, via: str, origin_file: str, origin_import: str, expected: str | None) -> None:
+        """The origin's `from <module> import` is rewritten to name the same module from the importing file, or None."""
+        via_stmt = cast("ast.ImportFrom", ast.parse(via).body[0])
+        origin_stmt = cast("ast.ImportFrom", ast.parse(origin_import).body[0])
+
+        rebased = rebase_relative_module(via_stmt.module, via_stmt.level, Path(origin_file), origin_stmt.module, origin_stmt.level)
+
+        assert_that(rebased, equal_to(expected))
 
 
 class TestCollectProjectImportedNames:

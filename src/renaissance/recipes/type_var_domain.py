@@ -201,16 +201,6 @@ def is_safe_to_localize(origin_tree: ast.Module, name: str) -> UnsafeReason | No
     return None
 
 
-def find_import_source(tree: ast.Module, name: str) -> str | None:
-    """Which module a bare name (e.g. "TypeVar") was imported from in this file, e.g. "typing"."""
-    for stmt in tree.body:
-        if isinstance(stmt, ast.ImportFrom) and stmt.module is not None:
-            for alias in stmt.names:
-                if (alias.asname or alias.name) == name:
-                    return stmt.module
-    return None
-
-
 def functions_using_nodes(tree: ast.Module, names: Iterable[str]) -> dict[str, list[ast.FunctionDef | ast.AsyncFunctionDef]]:
     """Map each of `names`, in the given order, to the outermost function/method node whose signature or body references it.
 

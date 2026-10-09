@@ -13,7 +13,6 @@ from renaissance.recipes.type_var_domain import (
     build_type_param,
     declaration_argument_names,
     declared_default,
-    find_import_source,
     find_type_param_declarations,
     from_import_sources,
     functions_in_generic_classes,
@@ -25,7 +24,7 @@ from renaissance.recipes.type_var_domain import (
     type_param_name,
     type_params_defaults_last,
 )
-from renaissance.utils.import_resolution import resolve_project_module
+from renaissance.utils.import_resolution import rebase_relative_module, resolve_project_module
 from renaissance.utils.unparse_utils import unparse_signature_only
 
 PEP_695_MINIMUM = (3, 12)
@@ -199,8 +198,7 @@ class TypeVarCheck(PythonRefactoring):
             if origin_path is None:
                 continue
 
-            origin_tree = ast.parse(origin_path.read_text(encoding="utf-8"), str(origin_path))
-            self._localize_names_from(import_node, raw, importing_tree, origin_tree, results)
+            self._localize_names_from(import_node, raw, importing_tree, origin_path, results)
 
         return results
 
@@ -209,13 +207,14 @@ class TypeVarCheck(PythonRefactoring):
         import_node: PythonRstNode,
         raw: ast.ImportFrom,
         importing_tree: ast.Module,
-        origin_tree: ast.Module,
+        origin_path: Path,
         results: dict[str, str],
     ) -> None:
-        """Localize every safe type parameter name that raw imports from origin_tree, in one edit of import_node.
+        """Localize every safe type parameter name that raw imports from the origin_path file, in one edit of import_node.
 
         Records each name in results as "fixed" or, via _mark_unsafe, as "unsafe".
         """
+        origin_tree = ast.parse(origin_path.read_text(encoding="utf-8"), str(origin_path))
         declarations = find_type_param_declarations(origin_tree)
         localized: dict[str, ast.Assign] = {}
         needed_imports: list[str] = []
@@ -236,7 +235,7 @@ class TypeVarCheck(PythonRefactoring):
                 self._mark_unsafe(results, self.cross_file_unsafe_reasons, alias.name, UnsafeReason.DECLARATION_NAME_UNAVAILABLE)
                 continue
 
-            constructor_import = self._missing_constructor_import(origin_tree, decl_stmt)
+            constructor_import = self._missing_constructor_import(origin_tree, origin_path, raw, decl_stmt)
             if constructor_import is not None and constructor_import not in needed_imports:
                 needed_imports.append(constructor_import)
             needed_argument_names |= argument_names
@@ -249,15 +248,29 @@ class TypeVarCheck(PythonRefactoring):
             needed_imports.append(f"from {'.' * raw.level}{raw.module or ''} import {', '.join(sorted(needed_argument_names))}")
         self._localize_import(import_node, raw, localized, needed_imports)
 
-    def _missing_constructor_import(self, origin_tree: ast.Module, decl_stmt: ast.Assign) -> str | None:
-        """Return the "from module import Ctor" line the localized declaration needs, or None if this file has it."""
+    def _missing_constructor_import(
+        self,
+        origin_tree: ast.Module,
+        origin_path: Path,
+        via: ast.ImportFrom,
+        decl_stmt: ast.Assign,
+    ) -> str | None:
+        """Return the "from module import Ctor" line the localized declaration needs, or None if this file has it.
+
+        The module is the one the origin imports the constructor from, as named from this file, which
+        reaches the origin (origin_path) through via. If this file can't name that module, the
+        constructor is imported from the origin module itself.
+        """
         ctor_name = type_param_constructor_name(decl_stmt)
-        ctor_module = find_import_source(origin_tree, ctor_name)
-        if ctor_module is None:
+        ctor_source = from_import_sources(origin_tree).get(ctor_name)
+        if ctor_source is None:
             # TODO: an origin using `from typing import *` lands here,
             # so a file not importing the constructor itself gets a NameError.
             # TBD - needs a fix
             return None
+
+        via_module = "." * via.level + (via.module or "")
+        ctor_module = rebase_relative_module(via.module, via.level, origin_path, ctor_source[0] or None, ctor_source[1]) or via_module
 
         # TODO: the constructor already imported here from another module (e.g. `typing` vs the origin's
         # `typing_extensions`) isn't matched, so a second, shadowing import of the same name is added.
@@ -265,7 +278,7 @@ class TypeVarCheck(PythonRefactoring):
             raw = import_node.node
             if (
                 isinstance(raw, ast.ImportFrom)
-                and raw.module == ctor_module
+                and "." * raw.level + (raw.module or "") == ctor_module
                 and any((alias.asname or alias.name) == ctor_name for alias in raw.names)
             ):
                 return None
