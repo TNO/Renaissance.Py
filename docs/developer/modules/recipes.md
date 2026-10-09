@@ -18,7 +18,8 @@ safely cover. This page covers `TypeVarCheck`, the recipe behind
   that fixed something.
 - `src/renaissance/recipes/python_refactoring.py`: the base class, with `find_rst_node` and `narrowed_import_text`.
 - `src/renaissance/utils/unparse_utils.py`: `unparse_signature_only`, adds the type-parameter bracket to a signature.
-- `src/renaissance/utils/import_resolution.py`: resolves `from X import Y` to a file in the project.
+- `src/renaissance/utils/import_resolution.py`: resolves `from X import Y` to a file in the project, and re-anchors
+  one file's relative import on another file.
 
 ## Public entry points
 
@@ -61,7 +62,9 @@ safely cover. This page covers `TypeVarCheck`, the recipe behind
 - **Localization.** The origin's declaration is copied with `ast.unparse`, and the names its arguments use
   (`declaration_argument_names`) are imported from the origin. `DECLARATION_NAME_UNAVAILABLE` if the origin only
   binds a name under `if TYPE_CHECKING:` or this file binds it to something else (`from_import_sources`). All
-  names localized from one import statement go into one `replace()`, with each needed import added once.
+  names localized from one import statement go into one `replace()`, with each needed import added once. A
+  constructor the origin imports relatively is re-anchored on this file by `rebase_relative_module`, or imported
+  from the origin itself when that is not possible.
 - **Imports.** Narrowing an import because a name is now declared locally is done by `narrowed_import_text`.
   Removing imports that became unused is left to the CLI's `ruff check --fix --select F401` pass.
 
@@ -99,7 +102,5 @@ See *Verified by test modules* in [TypeVar modernization](../../user/features/ty
 - Known bugs, tracked as `xfail` tests:
     - `test_does_not_convert_default_referencing_another_declaration` (`test_type_var_check_convert.py`)
     - `test_converts_function_preserving_multiline_string_literal` (`test_type_var_check_convert.py`)
-    - `test_localized_file_imports_a_relatively_imported_constructor_from_the_same_module`
-      (`test_type_var_check_localize.py`)
     - `test_keeps_declaration_used_in_a_string_annotation` (`test_type_var_check_orphaned.py`)
     - `test_exported_name_is_unsafe_whatever_form_dunder_all_takes` (`test_type_var_domain.py`)

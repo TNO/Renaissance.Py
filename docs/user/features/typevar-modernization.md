@@ -59,8 +59,6 @@ These cases are **not** reported, so review the changes with `git diff`:
 - A `T` used only in string annotations (`def f(x: "T")`) is seen as unused, so its declaration is removed.
 - Only a plain `__all__ = [...]` protects an exported `T`. Annotated (`__all__: list[str] = ...`) or extended
   (`+=`, `.extend()`, `.append()`) forms don't, so the declaration can be removed.
-- A constructor the origin imports relatively (`from ._compat import TypeVar`) is imported in the localized file
-  without the dot (`from _compat import TypeVar`). Fix the import by hand.
 - Removing a line can leave extra blank lines. Run your formatter afterwards.
 
 ## Constraints

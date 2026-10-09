@@ -45,12 +45,25 @@ def _names_used_by(call: ast.Call) -> set[str]:
 class TestTypeVarCheckLocalize:
     """See module docstring."""
 
-    def _create_cross_file(self, mocker: MockerFixture, tmp_path: Path, origin_text: str, importing_text: str) -> TypeVarCheck:
-        """Write origin_text to file_1.py and return an in-memory TypeVarCheck on file_2.py holding importing_text."""
-        (tmp_path / "file_1.py").write_text(textwrap.dedent(origin_text))
+    def _create_cross_file(
+        self,
+        mocker: MockerFixture,
+        tmp_path: Path,
+        origin_text: str,
+        importing_text: str,
+        layout: tuple[str, str] = ("file_1.py", "file_2.py"),
+    ) -> TypeVarCheck:
+        """Write origin_text to the origin file and return an in-memory TypeVarCheck on the importing file holding importing_text.
+
+        layout gives the (origin, importing) file paths, relative to tmp_path, which is the project root.
+        """
+        origin_rel_path, importing_rel_path = layout
+        origin_file = tmp_path / origin_rel_path
+        origin_file.parent.mkdir(parents=True, exist_ok=True)
+        origin_file.write_text(textwrap.dedent(origin_text))
 
         importing_code = textwrap.dedent(importing_text)
-        importing_file = str(tmp_path / "file_2.py")
+        importing_file = str(tmp_path / importing_rel_path)
         mocker.patch(
             "renaissance.integrations.python.ast.factory.PythonFactory.create",
             return_value=PythonRstNode.load_from_text(importing_code, importing_file),
@@ -58,6 +71,7 @@ class TestTypeVarCheckLocalize:
         subject = TypeVarCheck(importing_file)
         subject.in_memory = True
         subject.min_python = PEP_695_MINIMUM
+        subject.project_root = tmp_path
         return subject
 
     @pytest.mark.parametrize(
@@ -279,7 +293,7 @@ class TestTypeVarCheckLocalize:
         [
             pytest.param("from typing import TypeVar", "", id="missing-here"),
             pytest.param("from typing import TypeVar", 'from typing import TypeVar\nU = TypeVar("U")', id="already-here"),
-            # find_import_source can't find "TypeVar" in the origin; only safe because this file imports it.
+            # The origin has no from-import of "TypeVar"; only safe because this file imports it.
             pytest.param("from typing import *", "from typing import TypeVar", id="origin-wildcard-import"),
         ],
     )
@@ -302,24 +316,53 @@ class TestTypeVarCheckLocalize:
         assert_that(result, has_entry("T", "fixed"))
         assert_that(subject.apply_to_string().count("from typing import TypeVar"), equal_to(1))
 
-    @pytest.mark.xfail(
-        reason="find_import_source drops the import's level, so `from ._compat import TypeVar` is copied as `from _compat import TypeVar`.",
-        strict=True,
+    @pytest.mark.parametrize(
+        ("layout", "importing_header", "expected_line"),
+        [
+            pytest.param(("file_1.py", "file_2.py"), "from .file_1 import T", "from ._compat import TypeVar", id="same-dir"),
+            pytest.param(
+                ("sub/file_1.py", "use.py"),
+                "from .sub.file_1 import T",
+                "from .sub._compat import TypeVar",
+                id="origin-in-subpackage",
+            ),
+            pytest.param(
+                ("file_1.py", "sub/use.py"),
+                "from ..file_1 import T",
+                "from .._compat import TypeVar",
+                id="importing-in-subpackage",
+            ),
+            pytest.param(("sub/file_1.py", "use.py"), "from sub.file_1 import T", "from sub._compat import TypeVar", id="absolute-via"),
+            pytest.param(
+                ("file_1.py", "file_2.py"),
+                "from ._compat import TypeVar\nfrom .file_1 import T",
+                "from ._compat import TypeVar",
+                id="already-here",
+            ),
+            # A top-level origin's `._compat` names no package from here, so the origin itself provides TypeVar.
+            pytest.param(("file_1.py", "use.py"), "from file_1 import T", "from file_1 import TypeVar", id="not-rebasable"),
+        ],
     )
     def test_localized_file_imports_a_relatively_imported_constructor_from_the_same_module(
-        self, mocker: MockerFixture, tmp_path: Path
+        self,
+        mocker: MockerFixture,
+        tmp_path: Path,
+        layout: tuple[str, str],
+        importing_header: str,
+        expected_line: str,
     ) -> None:
-        """Verify a constructor the origin imports relatively is imported here from that same module."""
+        """Verify a constructor the origin imports relatively is imported once, from that same module as seen from here."""
         subject = self._create_cross_file(
             mocker,
             tmp_path,
             'from ._compat import TypeVar\nT = TypeVar("T")\n',
-            "from .file_1 import T\ndef b(x: T) -> T:\n    return x\n",
+            f"{importing_header}\ndef b(x: T) -> T:\n    return x\n",
+            layout,
         )
         result = subject.localize_imported_typevars()
 
         assert_that(result, has_entry("T", "fixed"))
-        assert_that(subject.apply_to_string(), contains_string("from ._compat import TypeVar"))
+        assert_that(subject.apply_to_string().splitlines().count(expected_line), equal_to(1))
 
     def test_does_not_localize_when_origin_imports_constructor_conditionally(
         self,
