@@ -93,14 +93,13 @@ def find_type_param_declarations(tree: ast.Module) -> dict[str, ast.Assign]:
 
 def type_param_name(param: ast.type_param) -> str:
     """Return a PEP 695 type parameter's name, narrowing to the subclasses whose stubs declare `.name`."""
-    assert isinstance(param, ast.TypeVar | ast.ParamSpec | ast.TypeVarTuple)
-    return param.name
+    return cast("ast.TypeVar | ast.ParamSpec | ast.TypeVarTuple", param).name
 
 
 def type_param_constructor_name(decl_stmt: ast.Assign) -> str:
     """Return the name of the call a declaration uses, e.g. "TypeVar" for `T = TypeVar("T")`."""
-    call = cast(ast.Call, decl_stmt.value)
-    return cast(ast.Name, call.func).id
+    call = cast("ast.Call", decl_stmt.value)
+    return cast("ast.Name", call.func).id
 
 
 def _find_dunder_all(tree: ast.Module) -> set[str] | None:
@@ -166,12 +165,14 @@ def from_import_sources(tree: ast.Module) -> dict[str, tuple[str, int] | None]:
         elif isinstance(stmt, ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef):
             sources[stmt.name] = None
         elif isinstance(stmt, ast.Assign | ast.AnnAssign):
-            targets = stmt.targets if isinstance(stmt, ast.Assign) else [stmt.target]
-            for target in targets:
-                for node in ast.walk(target):
-                    if isinstance(node, ast.Name):
-                        sources[node.id] = None
+            sources.update(dict.fromkeys(_assigned_names(stmt)))
     return sources
+
+
+def _assigned_names(stmt: ast.Assign | ast.AnnAssign) -> list[str]:
+    """Return every name an assignment binds, including inside tuple or list targets."""
+    targets = stmt.targets if isinstance(stmt, ast.Assign) else [stmt.target]
+    return [node.id for target in targets for node in ast.walk(target) if isinstance(node, ast.Name)]
 
 
 def _imports_name_conditionally(tree: ast.Module, name: str) -> bool:
@@ -274,7 +275,7 @@ def all_refs_shadowed_by_pep695(tree: ast.Module, name: str, decl_stmt: ast.Assi
     """
     found_live_use = False
 
-    def visit(node: ast.AST, shadowed: bool) -> None:
+    def visit(node: ast.AST, *, shadowed: bool) -> None:
         nonlocal found_live_use
         if node is decl_stmt or found_live_use:
             return
@@ -286,9 +287,9 @@ def all_refs_shadowed_by_pep695(tree: ast.Module, name: str, decl_stmt: ast.Assi
         if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
             current = shadowed or any(type_param_name(param) == name for param in node.type_params)
         for child in ast.iter_child_nodes(node):
-            visit(child, current)
+            visit(child, shadowed=current)
 
-    visit(tree, False)
+    visit(tree, shadowed=False)
     return not found_live_use
 
 

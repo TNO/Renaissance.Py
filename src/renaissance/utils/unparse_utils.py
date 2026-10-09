@@ -16,7 +16,8 @@ def _name_end_offset(source: str, name: str) -> int:
     """
     match = re.search(rf"^[ \t]*(async\s+)?def\s+{re.escape(name)}\b", source, re.MULTILINE)
     if match is None:
-        raise ValueError(f"no 'def {name}' header found")
+        message = f"no 'def {name}' header found"
+        raise ValueError(message)
     return match.end()
 
 
@@ -34,7 +35,8 @@ def _bracket_end_offset(source: str, open_offset: int) -> int:
             depth -= 1
             if depth == 0:
                 return offset + 1
-    raise ValueError("no closing ']' found")
+    message = "no closing ']' found"
+    raise ValueError(message)
 
 
 def _type_params_bracket(node: ast.FunctionDef | ast.AsyncFunctionDef) -> str:
@@ -65,7 +67,8 @@ def _header_end_line(source: str) -> int:
             depth -= 1
         elif tok.type == tokenize.OP and tok.string == ":" and depth == 0:
             return tok.end[0]
-    raise ValueError("no header-terminating ':' found")
+    message = "no header-terminating ':' found"
+    raise ValueError(message)
 
 
 def unparse_signature_only(node: ast.FunctionDef | ast.AsyncFunctionDef, original_text: str) -> str:

@@ -4,7 +4,7 @@ import ast
 import importlib
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, cast
+from typing import cast
 
 from termcolor import colored
 
@@ -128,18 +128,18 @@ class PythonRefactoring(ASTProcessor):
         """AI: Return the root node's body statements."""
         return cast("PythonRstNode", cast("object", self.root)).body
 
-    def find_rst_node(self, target: ast.AST) -> Any:
+    def find_rst_node(self, target: ast.AST) -> PythonRstNode:
         """Return the PythonRstNode wrapping the raw ast node `target`, e.g. to pass to self.replace()."""
         # TODO: Drop once recipes can navigate wrapper nodes via the unified node protocol?
         # decided during 24-09 discussion over future Node Protocol implementation
-        found: list[Any] = []
+        found: list[PythonRstNode] = []
 
-        def visit(node: Any) -> None:
+        def visit(node: PythonRstNode) -> None:
             if node.node is target:
                 found.append(node)
 
         cast("PythonRstNode", cast("object", self.root)).process(visit)
         return found[0]
 
-    def run(self):
+    def run(self) -> None:
         """Perform this recipe's refactoring; a no-op unless a subclass overrides it."""

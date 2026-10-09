@@ -2,7 +2,7 @@
 
 import ast
 from pathlib import Path
-from typing import Any, cast
+from typing import cast
 
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
 from renaissance.recipes.python_refactoring import PythonRefactoring, narrowed_import_text
@@ -133,7 +133,7 @@ class TypeVarCheck(PythonRefactoring):
         for function in touched_functions.values():
             function.type_params = type_params_defaults_last(function.type_params)
             rst_node = self.find_rst_node(function)
-            self.replace(unparse_signature_only(function, rst_node.text), rst_node, False, False)
+            self.replace(unparse_signature_only(function, rst_node.text), rst_node, include_whitespace=False, include_comments=False)
 
         return results
 
@@ -275,7 +275,14 @@ class TypeVarCheck(PythonRefactoring):
                 return None
         return missing
 
-    def _localize_import(self, import_node: Any, raw: ast.ImportFrom, name: str, decl_stmt: ast.Assign, needed_imports: list[str]) -> None:
+    def _localize_import(
+        self,
+        import_node: PythonRstNode,
+        raw: ast.ImportFrom,
+        name: str,
+        decl_stmt: ast.Assign,
+        needed_imports: list[str],
+    ) -> None:
         """Replace import_node with decl_stmt's text as a local declaration.
 
         Narrows or removes the original import for name, and prepends needed_imports: the imports the
@@ -285,6 +292,6 @@ class TypeVarCheck(PythonRefactoring):
 
         new_import = narrowed_import_text(raw, name)
         if new_import is not None:
-            self.replace(f"{new_import}\n{decl_text}", import_node, False, False)
+            self.replace(f"{new_import}\n{decl_text}", import_node, include_whitespace=False, include_comments=False)
         else:
-            self.replace(decl_text, import_node, False, False)
+            self.replace(decl_text, import_node, include_whitespace=False, include_comments=False)
