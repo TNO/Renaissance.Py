@@ -4,9 +4,30 @@ import ast
 
 from renaissance.integrations.python.ast.cst_node import PythonCstNode
 from renaissance.integrations.python.ast.factory import PythonFactory
+from renaissance.integrations.python.ast.kinds import PYTHON_KIND_MAP
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
 from renaissance.syntax_tree.ast_rewriter import Rewritable
 from renaissance.syntax_tree.semantic_kind import SemanticKind
+
+
+def _all_subclasses(base: type) -> list[type]:
+    """Collect every subclass of base, recursively."""
+    found: list[type] = []
+    for subclass in base.__subclasses__():
+        found.append(subclass)
+        found.extend(_all_subclasses(subclass))
+    return found
+
+
+def test_every_python_statement_type_is_classified() -> None:
+    """Assert no ast statement type falls through to NODE, so a new Python grammar cannot add one unnoticed."""
+    unclassified = sorted(
+        statement.__name__
+        for statement in _all_subclasses(ast.stmt)
+        if PYTHON_KIND_MAP.get(statement.__name__, SemanticKind.NODE) is SemanticKind.NODE
+    )
+
+    assert not unclassified, f"PYTHON_KIND_MAP has no entry for {unclassified}"
 
 
 def test_python_nodes_satisfy_rewritable() -> None:
