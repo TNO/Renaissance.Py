@@ -3,7 +3,7 @@
 from collections.abc import Callable
 
 import pytest
-from hamcrest import assert_that, equal_to, is_
+from hamcrest import assert_that, equal_to
 from pytest_mock import MockerFixture
 
 from renaissance.recipes.python_refactoring import PythonRefactoring
@@ -47,4 +47,4 @@ class TestRunSteps:
 
         run_steps([Step("only", recipe, action)])
 
-        assert_that(recipe.commit.called, is_(expect_commit))
+        assert_that(recipe.commit.called, equal_to(expect_commit))

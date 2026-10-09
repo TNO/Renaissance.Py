@@ -8,7 +8,7 @@ import pytest
 from hamcrest import assert_that, contains_string, equal_to, has_entry, not_
 
 from renaissance.recipes.type_var_check import PEP_695_MINIMUM, PEP_696_MINIMUM, TypeVarCheck
-from renaissance.recipes.type_var_domain import UnsafeReason
+from renaissance.recipes.type_var_domain import UnsafeReason, type_param_name
 
 
 class TestTypeVarCheckConvert:
@@ -66,7 +66,7 @@ class TestTypeVarCheckConvert:
     @pytest.mark.parametrize(
         ("extra_line", "imported_elsewhere"),
         [
-            pytest.param('__all__ = ["T"]', frozenset(), id="exported-via-dunder-all"),
+            pytest.param('__all__ = ["T"]', frozenset[str](), id="exported-via-dunder-all"),
             pytest.param("", frozenset({"T"}), id="imported-elsewhere"),
         ],
     )
@@ -197,8 +197,8 @@ class TestTypeVarCheckConvert:
         assert_that(result["converted"], has_entry("T", "fixed"))
         assert_that(result["orphaned"], equal_to({"P": "fixed", "T": "fixed"}))
         functions = {node.name: node for node in ast.parse(subject.apply_to_string()).body if isinstance(node, ast.FunctionDef)}
-        assert_that([param.name for param in functions["run_in_threadpool"].type_params], equal_to(["P", "T"]))
-        assert_that([param.name for param in functions["identity"].type_params], equal_to(["T"]))
+        assert_that([type_param_name(param) for param in functions["run_in_threadpool"].type_params], equal_to(["P", "T"]))
+        assert_that([type_param_name(param) for param in functions["identity"].type_params], equal_to(["T"]))
 
     def test_orders_type_params_by_declaration(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
         """Verify the added type parameters follow the order their declarations appear in the file."""

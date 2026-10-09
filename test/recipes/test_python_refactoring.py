@@ -313,7 +313,7 @@ class TestPythonRefactoring:
 
         subject = UnitToPytest("test_foo.py")
         root = cast("PythonRstNode", cast("object", subject.root))
-        module = cast(ast.Module, root.node)
+        module = cast("ast.Module", root.node)
         target = next(node for node in ast.walk(module) if isinstance(node, ast.FunctionDef))
 
         found = subject.find_rst_node(target)

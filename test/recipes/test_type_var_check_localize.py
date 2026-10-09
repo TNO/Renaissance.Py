@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
 import pytest
-from hamcrest import all_of, assert_that, contains_string, equal_to, has_entry, is_, not_
+from hamcrest import all_of, assert_that, contains_string, equal_to, has_entry, not_
 from pytest_mock import MockerFixture
 
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
@@ -35,9 +35,10 @@ def _names_used_by(call: ast.Call) -> set[str]:
     """Return the non-builtin names a TypeVar call's arguments use, including inside string forward references."""
     names: set[str] = set()
     for argument in [*call.args[1:], *(keyword.value for keyword in call.keywords)]:
+        expression = argument
         if isinstance(argument, ast.Constant) and isinstance(argument.value, str):
-            argument = ast.parse(argument.value, mode="eval").body
-        names.update(node.id for node in ast.walk(argument) if isinstance(node, ast.Name))
+            expression = ast.parse(argument.value, mode="eval").body
+        names.update(node.id for node in ast.walk(expression) if isinstance(node, ast.Name))
     return names - set(dir(builtins))
 
 
@@ -156,7 +157,7 @@ class TestTypeVarCheckLocalize:
     @pytest.mark.parametrize(
         ("dunder_all", "imported_elsewhere"),
         [
-            pytest.param('__all__ = ["T"]', frozenset(), id="re-exported-via-dunder-all"),
+            pytest.param('__all__ = ["T"]', frozenset[str](), id="re-exported-via-dunder-all"),
             pytest.param("", frozenset({"T"}), id="imported-from-here-elsewhere"),
         ],
     )
@@ -273,7 +274,7 @@ class TestTypeVarCheckLocalize:
         result = subject.localize_imported_typevars()
 
         assert_that(result, has_entry("T", "fixed"))
-        assert_that(subject.apply_to_string().count("from typing import TypeVar"), is_(1))
+        assert_that(subject.apply_to_string().count("from typing import TypeVar"), equal_to(1))
 
     @pytest.mark.xfail(
         reason="find_import_source drops the import's level, so `from ._compat import TypeVar` is copied as `from _compat import TypeVar`.",
@@ -349,7 +350,7 @@ class TestTypeVarCheckLocalize:
         with pytest.raises(SyntaxError) as excinfo:
             subject.localize_imported_typevars()
 
-        assert_that(excinfo.value.filename, is_(str(tmp_path / "file_1.py")))
+        assert_that(excinfo.value.filename, equal_to(str(tmp_path / "file_1.py")))
 
     def test_no_typevar_import_found(self, mocker: MockerFixture, tmp_path: Path) -> None:
         """AI: Verify localize_imported_typevars reports nothing when the importing file has no cross-file TypeVar."""
@@ -368,7 +369,7 @@ class TestTypeVarCheckLocalize:
         )
         result = subject.localize_imported_typevars()
 
-        assert_that(result, is_({}))
+        assert_that(result, equal_to({}))
 
     @pytest.mark.parametrize(
         ("min_python", "expected_converted", "output_matcher"),
