@@ -209,6 +209,18 @@ class Parent:
         assert_that(node.children[0].semantic_kind is not SemanticKind.NODE, is_(True))
 
     @pytest.mark.parametrize(
+        "code",
+        [
+            "type Alias = int\n",
+            "type Alias[T] = list[T]\n",
+        ],
+    )
+    def test_type_alias_statement_is_classified(self, code: str) -> None:
+        """Verify a PEP 695 type alias statement is classified as a statement rather than an unclassified node."""
+        node = PythonRstNode.load_from_text(code)
+        assert_that(node[0].semantic_kind, is_(SemanticKind.STATEMENT))
+
+    @pytest.mark.parametrize(
         "code, expected_kind",
         [
             ("for a, (b, c) in x():\n    pass\n", "For"),

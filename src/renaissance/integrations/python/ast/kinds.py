@@ -70,6 +70,7 @@ PYTHON_KIND_MAP = {
     "Try": SemanticKind.STATEMENT,
     "TryStar": SemanticKind.STATEMENT,
     "Delete": SemanticKind.STATEMENT,
+    "TypeAlias": SemanticKind.STATEMENT,
     "Expr": SemanticKind.EXPRESSION,
     "Await": SemanticKind.EXPRESSION,
     "Yield": SemanticKind.EXPRESSION,
