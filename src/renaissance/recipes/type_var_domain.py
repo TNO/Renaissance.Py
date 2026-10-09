@@ -103,7 +103,10 @@ def type_param_constructor_name(decl_stmt: ast.Assign) -> str:
 
 
 def _find_dunder_all(tree: ast.Module) -> set[str] | None:
-    """Return the names listed in this module's `__all__`, or None if it doesn't declare one."""
+    """Return the names in this module's plain `__all__ = [...]` assignment, or None if it has none.
+
+    Only a list, tuple or set literal is read; annotated, `+=`, `.extend()` and `.append()` forms are ignored.
+    """
     for stmt in tree.body:
         if (
             isinstance(stmt, ast.Assign)
@@ -244,7 +247,7 @@ def is_safe_to_remove(
 ) -> UnsafeReason | None:
     """Return None if this file's own binding of `name` may be removed or replaced.
 
-    Otherwise returns the reason it may not: DECLARED_TYPEVAR_EXPORTED if exported via `__all__`,
+    Otherwise returns the reason it may not: DECLARED_TYPEVAR_EXPORTED if exported via a plain `__all__ = [...]`,
     or IMPORTED_ELSEWHERE_IN_PROJECT if `name` is in `project_wide_imported_names` (another file in
     the target project imports it directly, regardless of `__all__`).
     """
