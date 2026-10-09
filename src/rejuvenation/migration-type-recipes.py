@@ -1,0 +1,285 @@
+"""CLI that modernizes type parameters (TypeVar, ParamSpec, TypeVarTuple) to PEP 695 syntax.
+
+Runs TypeVarCheck on a file or directory, and reports which files were modified and which need
+manual review.
+
+Examples:
+    python src/rejuvenation/migration-type-recipes.py ./some_repo --py 3.12 --report review.md
+    python src/rejuvenation/migration-type-recipes.py ./some_repo/file.py --py 3.10
+    python src/rejuvenation/migration-type-recipes.py ./some_repo --py 3.12 --no-ruff
+
+"""
+
+# Printing the report is this CLI's purpose.
+# ruff: noqa: T201
+
+import argparse
+import subprocess
+import sys
+import textwrap
+from collections.abc import Sequence
+from dataclasses import dataclass
+from pathlib import Path
+
+from termcolor import colored
+
+from renaissance.project.project_scanner import PythonScanner
+from renaissance.recipes.type_var_check import TypeVarCheck
+from renaissance.recipes.type_var_domain import UNSAFE_RULES, UnsafeReason, doc_link
+from renaissance.utils.import_resolution import collect_project_imported_names
+
+_MAJOR_MINOR_PART_COUNT = 2
+
+
+@dataclass
+class FileReport:
+    """Outcome of running TypeVarCheck against a single file."""
+
+    path: Path
+    result: dict[str, dict[str, str]] | None
+    error: str | None
+    reasons: dict[str, dict[str, UnsafeReason]] | None = None
+
+
+def resolve_target_files(target: Path) -> list[Path]:
+    """Return the .py files to process for `target`.
+
+    A single .py file is returned as-is; a directory is scanned recursively with PythonScanner over
+    the whole tree (no package_dirs allowlist), so any project layout works.
+    """
+    if target.is_file():
+        return [target]
+    return [Path(path) for path in PythonScanner(str(target)).find_sources()]
+
+
+def _parse_py_version(text: str) -> tuple[int, int]:
+    """Parse a "MAJOR.MINOR" string into a (major, minor) tuple for argparse's type=.
+
+    Raises:
+        argparse.ArgumentTypeError: If text is not in MAJOR.MINOR form.
+
+    """
+    parts = text.split(".")
+    if len(parts) != _MAJOR_MINOR_PART_COUNT or not all(part.isdigit() for part in parts):
+        message = f"expected MAJOR.MINOR (e.g. 3.12), got {text!r}"
+        raise argparse.ArgumentTypeError(message)
+    return (int(parts[0]), int(parts[1]))
+
+
+def has_fixed(report: FileReport) -> bool:
+    """Return True if any phase of report.result fixed at least one name."""
+    if report.result is None:
+        return False
+    return any("fixed" in phase.values() for phase in report.result.values())
+
+
+def has_unsafe(report: FileReport) -> bool:
+    """Return True if any phase of report.result left at least one name unsafe to touch."""
+    if report.result is None:
+        return False
+    return any("unsafe" in phase.values() for phase in report.result.values())
+
+
+def is_clean(report: FileReport) -> bool:
+    """Return True if report.result found no type parameter usage at all."""
+    if report.result is None:
+        return False
+    return not any(phase for phase in report.result.values())
+
+
+def process_file(
+    path: Path,
+    *,
+    min_python: tuple[int, int],
+    project_root: Path,
+    project_wide_imported_names: frozenset[str],
+) -> FileReport:
+    """Run TypeVarCheck's three phases on one file and return its FileReport.
+
+    Any exception is caught and stored on FileReport.error, so one bad file never aborts a batch run.
+    """
+    try:
+        recipe = TypeVarCheck(path)
+        recipe.min_python = min_python
+        recipe.project_root = project_root
+        recipe.project_wide_imported_names = project_wide_imported_names
+        result = recipe.check()
+        reasons = {
+            "cross_file": recipe.cross_file_unsafe_reasons,
+            "converted": recipe.converted_unsafe_reasons,
+            "orphaned": recipe.orphaned_unsafe_reasons,
+        }
+    except Exception as exc:  # noqa: BLE001 - isolate one bad file, never abort the whole batch
+        return FileReport(path=path, result=None, error=f"{type(exc).__name__}: {exc}")
+    return FileReport(path=path, result=result, error=None, reasons=reasons)
+
+
+def _run_ruff_unused_import_cleanup(paths: list[Path]) -> None:
+    """Run `ruff check --fix --select F401` over every path, dropping any now-unused import.
+
+    Best-effort: if ruff can't be invoked (e.g. not installed), prints a warning instead of raising.
+    The files are already valid without this cleanup.
+    """
+    try:
+        subprocess.run(  # noqa: S603 - fixed argv list (sys.executable + literals + our own discovered paths), no shell
+            [sys.executable, "-m", "ruff", "check", "--fix", "--select", "F401", *(str(path) for path in paths)],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except OSError as exc:
+        print(colored(f"warning: could not run ruff for import cleanup: {exc}", "yellow"))
+
+
+def _format_commit_summary(reports: list[FileReport]) -> str:
+    """Build the short, copy-pasteable commit-message-style summary."""
+    modified = sum(1 for report in reports if has_fixed(report))
+    needs_review = sum(1 for report in reports if has_unsafe(report))
+    clean = sum(1 for report in reports if is_clean(report))
+    errors = sum(1 for report in reports if report.error is not None)
+    return (
+        "Modernize TypeVar/ParamSpec/TypeVarTuple usage to PEP 695 syntax\n\n"
+        f"{modified} files modified, {needs_review} need manual review, {clean} clean, "
+        f"{errors} errors (of {len(reports)} processed)"
+    )
+
+
+def _format_console_report(reports: list[FileReport], *, ruff_ran: bool) -> str:
+    """Build the full per-file report: MODIFIED / NEEDS MANUAL REVIEW / ERRORS sections.
+
+    Clean files (no type parameter usage at all) are only counted, not listed, so the report shows
+    what needs attention. Under MODIFIED, a converted name isn't repeated as orphaned. The ruff
+    import-cleanup line is only included when ruff_ran is True.
+    """
+    modified = [report for report in reports if has_fixed(report)]
+    needs_review = [report for report in reports if has_unsafe(report)]
+    errors = [report for report in reports if report.error is not None]
+    clean_count = sum(1 for report in reports if is_clean(report))
+
+    lines = [
+        "Renaissance TypeVarCheck migration report",
+        (
+            f"Processed {len(reports)} files: {len(modified)} modified, {len(needs_review)} need "
+            f"manual review, {clean_count} clean, {len(errors)} errors"
+        ),
+    ]
+    if ruff_ran:
+        lines.append(
+            "Unused imports across the modified files above were also cleaned up via `ruff check --fix --select F401`.",
+        )
+    lines.extend(["", f"MODIFIED ({len(modified)})"])
+    for report in modified:
+        lines.append(f"  {report.path}")
+        result = report.result or {}
+        converted = {name for name, status in result.get("converted", {}).items() if status == "fixed"}
+        for phase, names in result.items():
+            # A converted name's declaration is always removed afterwards; listing it under orphaned too would repeat it.
+            fixed = [name for name, status in names.items() if status == "fixed" and not (phase == "orphaned" and name in converted)]
+            if fixed:
+                lines.append(f"    {phase}: {', '.join(fixed)}")
+
+    lines.extend(["", f"NEEDS MANUAL REVIEW ({len(needs_review)})"])
+    for report in needs_review:
+        lines.append(f"  {report.path}")
+        for phase, names in (report.result or {}).items():
+            phase_reasons = (report.reasons or {}).get(phase, {})
+            unsafe = [name for name, status in names.items() if status == "unsafe"]
+            if unsafe:
+                lines.append(f"    {phase}: {', '.join(unsafe)}")
+            for name in unsafe:
+                reason = phase_reasons.get(name)
+                if reason is not None:
+                    lines.append(f"      {name}: {UNSAFE_RULES[reason].message} -> {doc_link(reason)}")
+
+    lines.extend(["", f"ERRORS ({len(errors)})"])
+    lines.extend(f"  {report.path}: {report.error}" for report in errors)
+
+    return "\n".join(lines)
+
+
+def build_arg_parser() -> argparse.ArgumentParser:
+    """Build the argument parser for this CLI's --help/usage text and flags."""
+    parser = argparse.ArgumentParser(
+        prog="migration-type-recipes.py",
+        description="Modernize legacy TypeVar/ParamSpec/TypeVarTuple usage to PEP 695 syntax.",
+        epilog=textwrap.dedent("""\
+            Examples:
+              python src/rejuvenation/migration-type-recipes.py ./some_repo --py 3.12 --report review.md
+              python src/rejuvenation/migration-type-recipes.py ./some_repo/file.py --py 3.10
+              python src/rejuvenation/migration-type-recipes.py ./some_repo --py 3.12 --no-ruff
+            """),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument("path", type=Path, help="A .py file or a directory to scan.")
+    parser.add_argument(
+        "--py",
+        type=_parse_py_version,
+        required=True,
+        metavar="MAJOR.MINOR",
+        help=(
+            "Minimum Python version the target project supports (not the one running this tool), e.g. 3.12. "
+            "PEP 695 rewrites need 3.12+, PEP 696 type parameter defaults 3.13+."
+        ),
+    )
+    parser.add_argument("--report", type=Path, metavar="PATH", help="Also write the full report to this file.")
+    parser.add_argument(
+        "--no-ruff",
+        action="store_true",
+        help="Skip the final `ruff check --fix --select F401` pass that drops imports made unused.",
+    )
+    return parser
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    """Parse arguments, run TypeVarCheck across the target, print/save the report, return an exit code.
+
+    Exit codes: 0 on normal completion (files needing manual review are informational, not a
+    failure), 2 on a usage error (bad path/argument), 3 if any file hit an unhandled exception.
+    """
+    parser = build_arg_parser()
+    args = parser.parse_args(argv)
+
+    target: Path = args.path
+    if not target.exists():
+        parser.error(f"path does not exist: {target}")
+    if target.is_file() and target.suffix != ".py":
+        parser.error(f"not a Python file: {target}")
+
+    # Absolute and normalized, so file paths match the keys collect_project_imported_names returns.
+    target = target.resolve()
+    files = resolve_target_files(target)
+    project_root = target if target.is_dir() else target.parent
+    # TODO: computed once upfront, so an origin whose importers all get localized this run is only converted on a second run.
+    imported_names_by_file = collect_project_imported_names(files, project_root)
+
+    reports: list[FileReport] = []
+    for path in files:
+        project_wide_imported_names = imported_names_by_file.get(path, frozenset())
+        report = process_file(
+            path,
+            min_python=args.py,
+            project_root=project_root,
+            project_wide_imported_names=project_wide_imported_names,
+        )
+        reports.append(report)
+        print(f"File {path} checked.")
+
+    modified_paths = [report.path for report in reports if has_fixed(report)]
+    ruff_ran = bool(modified_paths) and not args.no_ruff
+    if ruff_ran:
+        # TODO: removed statements leave their blank lines behind; ruff's E303 (preview) collapses them, but not at file start.
+        _run_ruff_unused_import_cleanup(modified_paths)
+
+    console_report = _format_console_report(reports, ruff_ran=ruff_ran)
+    print(console_report)
+    print()
+    print(colored(_format_commit_summary(reports), "green", attrs=["bold"]))
+
+    if args.report is not None:
+        args.report.write_text(console_report, encoding="utf-8")
+
+    return 3 if any(report.error is not None for report in reports) else 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

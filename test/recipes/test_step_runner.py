@@ -1,0 +1,50 @@
+"""Tests for Step/run_steps."""
+
+from collections.abc import Callable
+
+import pytest
+from hamcrest import assert_that, equal_to
+from pytest_mock import MockerFixture
+
+from renaissance.recipes.python_refactoring import PythonRefactoring
+from renaissance.recipes.step_runner import Step, run_steps
+
+
+class TestRunSteps:
+    """See module docstring."""
+
+    def test_collects_each_steps_result_under_its_own_label_in_order(self, mocker: MockerFixture) -> None:
+        """AI: Verify run_steps returns each step's result keyed by its label, preserving step order."""
+        recipe = mocker.Mock(spec=PythonRefactoring)
+        steps = [
+            Step("first", recipe, lambda: {"A": "fixed"}),
+            Step("second", recipe, lambda: {"B": "unsafe"}),
+        ]
+
+        result = run_steps(steps)
+
+        assert_that(result, equal_to({"first": {"A": "fixed"}, "second": {"B": "unsafe"}}))
+        assert_that(list(result.keys()), equal_to(["first", "second"]))
+
+    @pytest.mark.parametrize(
+        ("action_result", "expect_commit"),
+        [
+            ({"A": "fixed"}, True),
+            ({"A": "unsafe"}, False),
+            ({}, False),
+            ({"A": "fixed", "B": "unsafe"}, True),
+        ],
+    )
+    def test_commits_only_when_a_step_fixed_something(
+        self,
+        mocker: MockerFixture,
+        action_result: dict[str, str],
+        expect_commit: bool,  # noqa: FBT001
+    ) -> None:
+        """AI: Verify a step's recipe is committed only when its action reports at least one "fixed" result."""
+        recipe = mocker.Mock(spec=PythonRefactoring)
+        action: Callable[[], dict[str, str]] = lambda: action_result  # noqa: E731
+
+        run_steps([Step("only", recipe, action)])
+
+        assert_that(recipe.commit.called, equal_to(expect_commit))
