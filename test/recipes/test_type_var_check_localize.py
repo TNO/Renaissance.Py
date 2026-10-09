@@ -217,36 +217,62 @@ class TestTypeVarCheckLocalize:
         assert_that(output, contains_string("from file_1 import helper"))
         assert_that(output, contains_string("T = TypeVar('T')"))
 
-    @pytest.mark.xfail(
-        reason="localize_imported_typevars queues one replace per localized name on the same import "
-        "statement, which the rewriter rejects as conflicting rewrites.",
-        raises=ValueError,
-        strict=True,
+    @pytest.mark.parametrize(
+        ("origin_extra", "importing_import", "expected_lines"),
+        [
+            pytest.param(
+                'T = TypeVar("T")\nU = TypeVar("U")',
+                "from file_1 import T, U",
+                ["from typing import TypeVar", "T = TypeVar('T')", "U = TypeVar('U')"],
+                id="two-names",
+            ),
+            pytest.param(
+                'T = TypeVar("T")\nU = TypeVar("U")\ndef helper() -> None:\n    pass',
+                "from file_1 import T, helper, U",
+                ["from file_1 import helper", "from typing import TypeVar", "T = TypeVar('T')", "U = TypeVar('U')"],
+                id="keeps-other-name",
+            ),
+            pytest.param(
+                'class Shape:\n    pass\nclass Circle(Shape):\n    pass\nT = TypeVar("T", bound=Shape)\nU = TypeVar("U", bound=Circle)',
+                "from file_1 import T, U",
+                [
+                    "from file_1 import Circle, Shape",
+                    "from typing import TypeVar",
+                    "T = TypeVar('T', bound=Shape)",
+                    "U = TypeVar('U', bound=Circle)",
+                ],
+                id="bounds-share-one-import",
+            ),
+        ],
     )
-    def test_localizes_two_names_from_one_import_statement(self, mocker: MockerFixture, tmp_path: Path) -> None:
-        """Verify one import statement bringing in two localizable names localizes both."""
+    def test_localizes_two_names_from_one_import_statement(
+        self,
+        mocker: MockerFixture,
+        tmp_path: Path,
+        origin_extra: str,
+        importing_import: str,
+        expected_lines: list[str],
+    ) -> None:
+        """Verify one import statement bringing in two localizable names localizes both, adding each needed import once."""
         subject = self._create_cross_file(
             mocker,
             tmp_path,
-            """
-            from typing import TypeVar
-            T = TypeVar("T")
-            U = TypeVar("U")
-            """,
-            """
-            from file_1 import T, U
-            def b(x: T, y: U) -> T:
-                return x
-            """,
+            f"from typing import TypeVar\n{origin_extra}\n",
+            f"{importing_import}\ndef b(x: T, y: U) -> T:\n    return x\n",
         )
         result = subject.localize_imported_typevars()
 
-        assert_that(result, has_entry("T", "fixed"))
-        assert_that(result, has_entry("U", "fixed"))
+        assert_that(result, equal_to({"T": "fixed", "U": "fixed"}))
         output = subject.apply_to_string()
-        assert_that(output, contains_string("T = TypeVar('T')"))
-        assert_that(output, contains_string("U = TypeVar('U')"))
-        assert_that(output, not_(contains_string("from file_1 import")))
+        for line in expected_lines:
+            assert_that(output.splitlines().count(line), equal_to(1), line)
+        still_imported = {
+            alias.name
+            for node in ast.parse(output).body
+            if isinstance(node, ast.ImportFrom) and node.module == "file_1"
+            for alias in node.names
+        }
+        assert_that(still_imported & {"T", "U"}, equal_to(set()))
 
     @pytest.mark.parametrize(
         ("origin_import", "importing_header"),
