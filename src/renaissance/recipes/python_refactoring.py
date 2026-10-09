@@ -17,24 +17,6 @@ from renaissance.syntax_tree.semantic_kind import SemanticKind
 from renaissance.utils.text_utils import snake_case
 
 
-def narrowed_import_text(raw: ast.ImportFrom, names: str | set[str]) -> str | None:
-    """Build the "from module import ..." text for `raw` with `names`' aliases dropped.
-
-    A relative import keeps its leading dots, e.g. "from ..pkg import x" or "from . import x".
-
-    Returns None if nothing would remain (meaning the whole import statement should be removed
-    instead).
-    """
-    targets = {names} if isinstance(names, str) else names
-    remaining = [
-        alias.name if alias.asname is None else f"{alias.name} as {alias.asname}"
-        for alias in raw.names
-        if (alias.asname or alias.name) not in targets
-    ]
-    module = "." * raw.level + (raw.module or "")
-    return f"from {module} import {', '.join(remaining)}" if remaining else None
-
-
 class PythonRefactoring(ASTProcessor):
     """AI: Base processor for Python-specific source refactoring recipes."""
 
