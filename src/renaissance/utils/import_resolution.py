@@ -1,4 +1,4 @@
-"""Resolve project-internal `from X import Y` statements to the .py file they import from."""
+"""Resolve project-internal `from X import Y` statements to the .py file they import from, and re-anchor them on other files."""
 
 import ast
 from collections.abc import Sequence
@@ -41,6 +41,37 @@ def resolve_project_module(importing_file: Path, project_root: Path, module: str
         if candidate_package.is_file():
             return candidate_package
     return None
+
+
+def rebase_relative_module(via_module: str | None, via_level: int, origin_file: Path, module: str | None, level: int) -> str | None:
+    """Rewrite an import target of the origin module so that the importing file names the same module.
+
+    The importing file reaches the origin (`origin_file`) with `from <via> import ...`, where `via` is
+    `via_level` dots followed by `via_module`. The origin's own `from <module> import ...` with `level`
+    dots is re-anchored on that same path, e.g. via ".sub.file_1" and "._compat" give ".sub._compat".
+    An absolute import (`level == 0`) is returned unchanged.
+
+    Returns the text that follows `from`, or None if the importing file can't name the module: an
+    absolute `via` to a top-level origin leaves no package for the relative import to start from.
+    """
+    if level == 0:
+        return module
+    parts = via_module.split(".") if via_module is not None else []
+    if origin_file.name != "__init__.py":
+        parts = parts[:-1]
+    dots = via_level
+    for _ in range(level - 1):
+        if parts:
+            parts.pop()
+        elif dots > 0:
+            dots += 1
+        else:
+            return None
+    if dots == 0 and not parts:
+        return None
+    if module is not None:
+        parts.append(module)
+    return "." * dots + ".".join(parts)
 
 
 def collect_project_imported_names(files: Sequence[Path], project_root: Path) -> dict[Path, frozenset[str]]:
