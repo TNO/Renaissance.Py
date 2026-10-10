@@ -3,16 +3,33 @@
 import io
 import itertools
 import sys
+from collections import defaultdict
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Self
 
 import libcst
 from libcst import BaseCompoundStatement, BaseSmallStatement, ClassDef, CSTNode, FunctionDef, MetadataWrapper
-from libcst.metadata import CodePosition, PositionProvider
+from libcst.metadata import Access, Assignment, CodePosition, PositionProvider, ScopeProvider
 
 from renaissance.integrations.python.ast.kinds import PYTHON_KIND_MAP
 from renaissance.syntax_tree.semantic_kind import SemanticKind
 from renaissance.utils.ast_utils import next_sibling, preceding_sibling
+
+
+@dataclass(frozen=True)
+class PythonCstReference:
+    """A link from a node to the definition it uses, or from a definition to one of its uses.
+
+    properties holds the bound "name" and whether the use sits in an annotation ("is_annotation") or another type
+    hint such as `cast("T", x)` ("is_type_hint").
+    """
+
+    node: PythonCstNode
+    ref_kind: str
+    properties: dict[str, str | bool]
+
+
+type _Link = tuple[CSTNode, str, Access]
 
 
 class PythonCstTranslationUnit:
@@ -27,10 +44,55 @@ class PythonCstTranslationUnit:
         self._lines = io.StringIO(content, newline="").readlines()
         self._line_starts = list(itertools.accumulate((len(line.encode(self.encoding)) for line in self._lines), initial=0))
         self.file_name = file_name
-        self.references_initialized = False
         self.wrapper = MetadataWrapper(libcst.parse_module(content))
         self.atu = self.wrapper.module
         self.spans = self.wrapper.resolve(PositionProvider)
+        self.wrappers: dict[CSTNode, PythonCstNode] = {}
+        self._uses_of: dict[CSTNode, list[_Link]] | None = None
+        self._definitions_of: dict[CSTNode, list[_Link]] = {}
+
+    def _index_references(self) -> dict[CSTNode, list[_Link]]:
+        """Resolve libcst's scopes once, linking every definition to its uses; return the definition-to-uses map.
+
+        Also fills self._definitions_of, the use-to-definitions map. Builtins, which have no defining node, are skipped.
+        """
+        if self._uses_of is not None:
+            return self._uses_of
+        uses_of: defaultdict[CSTNode, list[_Link]] = defaultdict(list)
+        definitions_of: defaultdict[CSTNode, list[_Link]] = defaultdict(list)
+        scopes = {scope for scope in self.wrapper.resolve(ScopeProvider).values() if scope is not None}
+        for scope in scopes:
+            for assignment in scope.assignments:
+                if not isinstance(assignment, Assignment):
+                    continue
+                for access in assignment.references:
+                    uses_of[assignment.node].append((access.node, assignment.name, access))
+                    definitions_of[access.node].append((assignment.node, assignment.name, access))
+        self._uses_of = dict(uses_of)
+        self._definitions_of = dict(definitions_of)
+        return self._uses_of
+
+    def _to_references(self, links: list[_Link], ref_kind: str) -> list[PythonCstReference]:
+        """Wrap links as PythonCstReference objects, ordered by the position of the node each points at."""
+        references = [
+            PythonCstReference(
+                self.wrappers[node],
+                ref_kind,
+                {"name": name, "is_annotation": access.is_annotation, "is_type_hint": access.is_type_hint},
+            )
+            for node, name, access in links
+            if node in self.wrappers
+        ]
+        return sorted(references, key=lambda reference: reference.node.offset)
+
+    def uses_of(self, node: CSTNode) -> list[PythonCstReference]:
+        """Return the uses of the name(s) that node defines; empty if node defines nothing."""
+        return self._to_references(self._index_references().get(node, []), "use")
+
+    def definitions_of(self, node: CSTNode) -> list[PythonCstReference]:
+        """Return the definitions that node, a use of a name, resolves to; empty if node is not a resolved use."""
+        self._index_references()
+        return self._to_references(self._definitions_of.get(node, []), "definition")
 
     def _byte_offset(self, position: CodePosition) -> int:
         """Return the offset, in bytes of self.encoding, of a libcst position whose column counts characters.
@@ -68,7 +130,7 @@ class PythonCstTranslationUnit:
 class PythonCstNode:
     """AI: ASTNode implementation backed by libcst's concrete syntax tree."""
 
-    def __init__(self, node: CSTNode, translation_unit: PythonCstTranslationUnit, parent=None) -> None:
+    def __init__(self, node: CSTNode, translation_unit: PythonCstTranslationUnit, parent: PythonCstNode | None = None) -> None:
         """AI: Wrap a libcst node as an AST node within the given translation unit."""
         self.parent = parent
         if parent and parent.root:
@@ -77,12 +139,13 @@ class PythonCstNode:
             self.root = self
         self.translation_unit = translation_unit
         self.node = node
+        translation_unit.wrappers[node] = self
 
         self.is_statement = isinstance(self.node, (BaseSmallStatement, BaseCompoundStatement))
         self.parser_kind = type(node).__name__
         self.semantic_kind = PYTHON_KIND_MAP.get(self.parser_kind, SemanticKind.NODE)
 
-        self.children: list[Self] = [PythonCstNode(node, translation_unit, self) for node in node.children]
+        self.children: list[PythonCstNode] = [PythonCstNode(node, translation_unit, self) for node in node.children]
         self.properties = {}
 
         # for shower
@@ -139,12 +202,22 @@ class PythonCstNode:
         self.name = ""  # self._derive_name()
 
     @property
-    def next_sibling(self) -> Self | None:
+    def references(self) -> list[PythonCstReference]:
+        """Return the definitions this node uses, resolved with libcst's scope analysis (empty if it uses none)."""
+        return self.translation_unit.definitions_of(self.node)
+
+    @property
+    def referenced_by(self) -> list[PythonCstReference]:
+        """Return the uses of the name(s) this node defines, resolved with libcst's scope analysis (empty if none)."""
+        return self.translation_unit.uses_of(self.node)
+
+    @property
+    def next_sibling(self) -> PythonCstNode | None:
         """AI: Return the sibling node immediately following this one, or None."""
         return next_sibling(self)
 
     @property
-    def preceding_sibling(self) -> Self | None:
+    def preceding_sibling(self) -> PythonCstNode | None:
         """AI: Return the sibling node immediately preceding this one, or None."""
         return preceding_sibling(self)
 
