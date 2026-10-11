@@ -4,7 +4,6 @@ import io
 import itertools
 import sys
 from collections import defaultdict
-from dataclasses import dataclass
 from pathlib import Path
 
 import libcst
@@ -12,22 +11,9 @@ from libcst import BaseCompoundStatement, BaseSmallStatement, ClassDef, CSTNode,
 from libcst.metadata import Access, Assignment, CodePosition, PositionProvider, ScopeProvider
 
 from renaissance.integrations.python.ast.kinds import PYTHON_KIND_MAP
+from renaissance.syntax_tree.ast_node import ASTReference
 from renaissance.syntax_tree.semantic_kind import SemanticKind
 from renaissance.utils.ast_utils import next_sibling, preceding_sibling
-
-
-@dataclass(frozen=True)
-class PythonCstReference:
-    """A link from a node to the definition it uses, or from a definition to one of its uses.
-
-    properties holds the bound "name" and whether the use sits in an annotation ("is_annotation") or another type
-    hint such as `cast("T", x)` ("is_type_hint").
-    """
-
-    node: PythonCstNode
-    ref_kind: str
-    properties: dict[str, str | bool]
-
 
 type _Link = tuple[CSTNode, str, Access]
 
@@ -72,10 +58,14 @@ class PythonCstTranslationUnit:
         self._definitions_of = dict(definitions_of)
         return self._uses_of
 
-    def _to_references(self, links: list[_Link], ref_kind: str) -> list[PythonCstReference]:
-        """Wrap links as PythonCstReference objects, ordered by the position of the node each points at."""
+    def _to_references(self, links: list[_Link], ref_kind: str) -> list[ASTReference[PythonCstNode]]:
+        """Wrap links as references, ordered by the position of the node each points at.
+
+        Each reference's properties hold the bound "name" and whether the use sits in an annotation ("is_annotation")
+        or another type hint such as `cast("T", x)` ("is_type_hint").
+        """
         references = [
-            PythonCstReference(
+            ASTReference(
                 self.wrappers[node],
                 ref_kind,
                 {"name": name, "is_annotation": access.is_annotation, "is_type_hint": access.is_type_hint},
@@ -85,11 +75,11 @@ class PythonCstTranslationUnit:
         ]
         return sorted(references, key=lambda reference: reference.node.offset)
 
-    def uses_of(self, node: CSTNode) -> list[PythonCstReference]:
+    def uses_of(self, node: CSTNode) -> list[ASTReference[PythonCstNode]]:
         """Return the uses of the name(s) that node defines; empty if node defines nothing."""
         return self._to_references(self._index_references().get(node, []), "use")
 
-    def definitions_of(self, node: CSTNode) -> list[PythonCstReference]:
+    def definitions_of(self, node: CSTNode) -> list[ASTReference[PythonCstNode]]:
         """Return the definitions that node, a use of a name, resolves to; empty if node is not a resolved use."""
         self._index_references()
         return self._to_references(self._definitions_of.get(node, []), "definition")
@@ -202,12 +192,12 @@ class PythonCstNode:
         self.name = ""  # self._derive_name()
 
     @property
-    def references(self) -> list[PythonCstReference]:
+    def references(self) -> list[ASTReference[PythonCstNode]]:
         """Return the definitions this node uses, resolved with libcst's scope analysis (empty if it uses none)."""
         return self.translation_unit.definitions_of(self.node)
 
     @property
-    def referenced_by(self) -> list[PythonCstReference]:
+    def referenced_by(self) -> list[ASTReference[PythonCstNode]]:
         """Return the uses of the name(s) this node defines, resolved with libcst's scope analysis (empty if none)."""
         return self.translation_unit.uses_of(self.node)
 
