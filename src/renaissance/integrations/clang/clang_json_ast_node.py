@@ -384,7 +384,7 @@ class ClangJsonASTNode(ASTNode[dict[str, Any], ClangJsonTranslationUnit]):
 
     @override
     @property
-    def referenced_by(self) -> Sequence[ASTReference[dict[str, Any], ClangJsonTranslationUnit]]:
+    def referenced_by(self) -> Sequence[ASTReference[ClangJsonASTNode]]:
         if self.inserted:
             return []
         self.translation_unit.lazy_create_references(self)
@@ -408,7 +408,7 @@ class ClangJsonASTNode(ASTNode[dict[str, Any], ClangJsonTranslationUnit]):
 
     @override
     @property
-    def references(self) -> list[ASTReference[dict[str, Any], ClangJsonTranslationUnit]]:
+    def references(self) -> list[ASTReference[ClangJsonASTNode]]:
         if self.inserted:
             return []
         self.translation_unit.lazy_create_references(self)

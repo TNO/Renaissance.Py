@@ -8,7 +8,7 @@ import renaissance.syntax_tree.match_finder
 from renaissance.syntax_tree import ASTNode
 from renaissance.syntax_tree.ast_factory import ASTFactory
 from renaissance.syntax_tree.ast_finder import ASTFinder, find_semantic_kind
-from renaissance.syntax_tree.ast_rewriter import ASTRewriter
+from renaissance.syntax_tree.ast_rewriter import ASTRewriter, Rewritable
 from renaissance.syntax_tree.match_finder import PatternMatch
 from renaissance.syntax_tree.node_protocol import NodeProtocol
 from renaissance.syntax_tree.semantic_kind import SemanticKind
@@ -53,7 +53,7 @@ class ASTProcessor:
     def replace(
         self,
         new_content: str,
-        target: ASTNode | Sequence[ASTNode] | PatternMatch | Sequence[PatternMatch],
+        target: Rewritable | Sequence[Rewritable] | PatternMatch | Sequence[PatternMatch],
         include_whitespace: bool = True,
         include_comments: bool = True,
     ) -> None:
@@ -62,7 +62,7 @@ class ASTProcessor:
 
     def remove(
         self,
-        target: ASTNode | Sequence[ASTNode] | PatternMatch | Sequence[PatternMatch],
+        target: Rewritable | Sequence[Rewritable] | PatternMatch | Sequence[PatternMatch],
         include_whitespace: bool = True,
         include_comments: bool = True,
     ) -> None:
@@ -72,7 +72,7 @@ class ASTProcessor:
     def insert_before(
         self,
         new_content: str,
-        target: ASTNode | Sequence[ASTNode] | PatternMatch | Sequence[PatternMatch],
+        target: Rewritable | Sequence[Rewritable] | PatternMatch | Sequence[PatternMatch],
         include_whitespace: bool = True,
         include_comments: bool = True,
     ) -> None:
@@ -82,7 +82,7 @@ class ASTProcessor:
     def insert_after(
         self,
         new_content: str,
-        target: ASTNode | Sequence[ASTNode] | PatternMatch | Sequence[PatternMatch],
+        target: Rewritable | Sequence[Rewritable] | PatternMatch | Sequence[PatternMatch],
         include_whitespace: bool = True,
         include_comments: bool = True,
     ) -> None:
