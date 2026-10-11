@@ -376,7 +376,7 @@ class ClangASTNode(ASTNode[Cursor, ClangTranslationUnit]):
 
     @override
     @property
-    def referenced_by(self) -> Sequence[ASTReference[Cursor, ClangTranslationUnit]]:
+    def referenced_by(self) -> Sequence[ASTReference[ClangASTNode]]:
         self.translation_unit.lazy_create_references(self)
         node_id = self.node.hash
         ref_by = self.translation_unit._referenced_by.get(node_id, EMPTY_LIST)
@@ -428,7 +428,7 @@ class ClangASTNode(ASTNode[Cursor, ClangTranslationUnit]):
 
     @override
     @property
-    def references(self) -> Sequence[ASTReference[Cursor, ClangTranslationUnit]]:
+    def references(self) -> Sequence[ASTReference[ClangASTNode]]:
         self.translation_unit.lazy_create_references(self)
         return list(
             ASTReference(
