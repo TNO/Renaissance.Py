@@ -29,7 +29,12 @@ class PythonCstTranslationUnit:
 
     def __init__(self, content, file_name: str) -> None:
         """AI: Parse Python source into a libcst tree with position lookups for AST-node wrapping."""
-        # TODO: see docs/developer/architecture/position-consistency.md - exposes no buffer, so the rewriter derives its own.
+        # TODO(pjljvandelaar): see docs/developer/architecture/position-consistency.md - exposes no buffer, so the rewriter
+        #  derives its own.
+        #  https://github.com/TNO/Renaissance.Py/issues/153
+        # TODO(FrancescoPezzella): content is a str while offset/end_offset count bytes of self.encoding, so never slice
+        #  content with them. self.encoding is the filesystem encoding, not the file's (#153, #188).
+        #  https://github.com/TNO/Renaissance.Py/issues/188
         self.content = content
         self.encoding = sys.getfilesystemencoding()
         # newline="" splits on \n, \r\n and \r only, like libcst, and keeps each line ending.
@@ -167,16 +172,25 @@ class PythonCstNode:
     @property
     def offset(self):
         """AI: Return the character offset where this node begins in the source text."""
+        # TODO(FrancescoPezzella): the docstring says characters, but is this really counting characters? Since the
+        #  UTF-8 offsets fix it counts bytes of translation_unit.encoding, so shouldn't the docstring say bytes?
+        #  https://github.com/TNO/Renaissance.Py/issues/153
         return self.translation_unit.start_of(self.node)
 
     @property
     def length(self):
         """AI: Return the length in characters of this node's source text."""
+        # TODO(FrancescoPezzella): the docstring says characters, but is this really counting characters? Since the
+        #  UTF-8 offsets fix the length is in bytes of translation_unit.encoding, so shouldn't the docstring say bytes?
+        #  https://github.com/TNO/Renaissance.Py/issues/153
         return self.end_offset - self.offset
 
     @property
     def end_offset(self):
         """AI: Return the character offset where this node ends in the source text."""
+        # TODO(FrancescoPezzella): the docstring says characters, but is this really counting characters? Since the
+        #  UTF-8 offsets fix it counts bytes of translation_unit.encoding, so shouldn't the docstring say bytes?
+        #  https://github.com/TNO/Renaissance.Py/issues/153
         return self.translation_unit.end_of(self.node)
 
     @property
