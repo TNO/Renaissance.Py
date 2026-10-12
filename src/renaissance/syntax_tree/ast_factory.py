@@ -23,6 +23,8 @@ class ASTFactory:
         working_dir: Path | None = None,
     ) -> None:
         """AI: Configure a factory that creates AST nodes of the given node-implementation type."""
+        # TODO: Make ASTFactory generic over the node class (clazz: type[NodeT], returning NodeT) so callers get the
+        #  concrete node type instead of ASTNode[Unknown, Unknown]; needs load/load_from_text as classmethods returning Self.
         self.clazz = clazz
         self.extra_args: Sequence[str] = extra_args if isinstance(extra_args, Sequence) else []
         # TODO: Why not
