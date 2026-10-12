@@ -107,11 +107,15 @@ preserves comments and whitespace, or reparses source. Each adapter supplies
 those behaviors individually. Reference and data-flow collections
 (`references`, `referenced_by`) are also parser-specific because not every
 parser can provide the same analysis. Keep the original parser node available
-when callers need parser-specific data.
+when callers need parser-specific data. The Python CST adapter resolves them
+with libcst's scope analysis, which also finds names used inside string
+annotations.
 
 The native Python `ast.AST` adapter is a lightweight structural adapter and
 does not preserve source trivia in the same way as the lossless Python RST/CST
 adapters. Use the lossless adapter when source-preserving rewriting is needed.
+`PythonRefactoring` parses with the RST adapter by default; pass
+`node_class=PythonCstNode` to use the CST adapter instead.
 
 ## Classify nodes
 
