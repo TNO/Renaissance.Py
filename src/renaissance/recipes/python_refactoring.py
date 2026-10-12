@@ -117,8 +117,9 @@ class PythonRefactoring[NodeT: PythonRstNode | PythonCstNode = PythonRstNode](AS
 
     def find_rst_node(self, target: ast.AST) -> PythonRstNode:
         """Return the PythonRstNode wrapping the raw ast node `target`, e.g. to pass to self.replace()."""
-        # TODO: Drop once recipes can navigate wrapper nodes via the unified node protocol?
-        # decided during 24-09 discussion over future Node Protocol implementation
+        # TODO(FrancescoPezzella): Drop once recipes can navigate wrapper nodes via the unified node protocol?
+        #  decided during 24-09 discussion over future Node Protocol implementation
+        #  https://github.com/TNO/Renaissance.Py/issues/269
         found: list[PythonRstNode] = []
 
         def visit(node: PythonRstNode) -> None:
