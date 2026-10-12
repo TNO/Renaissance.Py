@@ -1,3 +1,4 @@
+# Copyright (c) 2026 PLACEHOLDER
 """End-to-end tests for TypeVarCheck.check() across its phases."""
 
 from collections.abc import Callable

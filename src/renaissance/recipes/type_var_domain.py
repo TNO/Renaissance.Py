@@ -1,3 +1,4 @@
+# Copyright (c) 2026 PLACEHOLDER
 """TypeVar/ParamSpec/TypeVarTuple domain model and safety analysis."""
 
 import ast
@@ -319,7 +320,8 @@ def build_type_param(decl_stmt: ast.Assign) -> ast.type_param:
     infers its variance. Callers must first reject declarations for which
     has_unconvertible_argument() is True.
     """
-    # TODO: a default that uses another legacy declaration (`default=T`) still refers to it after conversion.
+    # TODO(FrancescoPezzella): a default that uses another legacy declaration (`default=T`) still refers to it after conversion.
+    #  https://github.com/TNO/Renaissance.Py/issues/279
     call = cast("ast.Call", decl_stmt.value)
     ctor = type_param_constructor_name(decl_stmt)
     name = cast("str", cast("ast.Constant", call.args[0]).value)
