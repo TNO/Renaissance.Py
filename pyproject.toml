@@ -115,13 +115,14 @@ select = [
 ]
 #select = ["ALL"]  # goal of issue 
 ignore = [
-    "D203",  # conflicts with D211 (no blank line before class) — keep D211
-    "D213",  # conflicts with D212 (summary on the first line) — keep D212
+    "D203",   # conflicts with D211 (no blank line before class) — keep D211
+    "D213",   # conflicts with D212 (summary on the first line) — keep D212
     "COM812", # conflicts when used with the formatter - use formatter
     "UP037",  # Python 3.14+ evaluates annotations lazily
     "TC001",  # Python 3.14+ no longer requires TYPE_CHECKING for annotations
     "TC002",  # Python 3.14+ no longer requires TYPE_CHECKING for annotations
     "TC003",  # Python 3.14+ no longer requires TYPE_CHECKING for annotations
+    "FIX",    # FIXMEs, TODOs etc mark out-of-scope work from said PR
 ]
 
 [tool.ruff.lint.flake8-annotations]
