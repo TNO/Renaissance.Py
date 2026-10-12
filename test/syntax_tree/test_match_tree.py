@@ -75,7 +75,9 @@ class TestMatchTree:
 
         assert_that(is_match_tree(src, pattern), is_(False))
 
-    # TODO: passes only after another test has run PythonFactory(ast.AST), which patches parser_kind onto every ast class.
+    # TODO(FrancescoPezzella): passes only after another test has run PythonFactory(ast.AST), which patches parser_kind onto
+    #  every ast class.
+    #  https://github.com/TNO/Renaissance.Py/issues/280
     @pytest.mark.xfail(
         reason="pattern_kind() reads parser_kind, which a raw ast.Name only has once PythonFactory(ast.AST) has patched "
         "ast.AST, so the result depends on test order.",

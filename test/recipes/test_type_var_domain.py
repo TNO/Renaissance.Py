@@ -1,3 +1,4 @@
+# Copyright (c) 2026 PLACEHOLDER
 """Tests for type_var_domain's safety predicates and their UnsafeReason results."""
 
 import ast
