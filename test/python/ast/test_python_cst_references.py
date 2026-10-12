@@ -1,3 +1,4 @@
+# Copyright (c) 2026 PLACEHOLDER
 """Tests for PythonCstNode.references and referenced_by, resolved with libcst's scope analysis."""
 
 from typing import TYPE_CHECKING
@@ -7,6 +8,8 @@ from hamcrest import assert_that, contains_inanyorder, equal_to
 
 from renaissance.integrations.python.ast.cst_node import PythonCstNode
 
+# TODO(FrancescoPezzella): Replace with a lazy import in Python 3.15.
+#  https://github.com/TNO/Renaissance.Py/issues/275
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
