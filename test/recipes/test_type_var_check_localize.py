@@ -1,3 +1,4 @@
+# Copyright (c) 2026 PLACEHOLDER
 """Tests for TypeVarCheck.localize_imported_typevars."""
 
 import ast

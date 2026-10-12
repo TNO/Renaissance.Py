@@ -1,3 +1,4 @@
+# Copyright (c) 2026 PLACEHOLDER
 """Recipe that modernizes legacy TypeVar/ParamSpec/TypeVarTuple usage to PEP 695 syntax."""
 
 import ast
@@ -153,8 +154,9 @@ class TypeVarCheck(PythonRefactoring):
             if not all_refs_shadowed_by_pep695(tree, name, decl_stmt):
                 continue
 
-            # TODO: a public TypeVar no file in the project uses (e.g. redis.typing.AnyKeyT) is removed,
-            # though other projects may import it.
+            # TODO(FrancescoPezzella): a public TypeVar no file in the project uses (e.g. redis.typing.AnyKeyT) is removed,
+            #  though other projects may import it.
+            #  https://github.com/TNO/Renaissance.Py/issues/279
             reason = is_safe_to_remove(tree, name, self.project_wide_imported_names)
             if reason is not None:
                 self._mark_unsafe(results, self.orphaned_unsafe_reasons, name, reason)
@@ -174,7 +176,8 @@ class TypeVarCheck(PythonRefactoring):
         """Remove decl_stmt's statement from the file."""
         for stmt_node in self.body:
             if stmt_node.node is decl_stmt:
-                # TODO - enable once comment blocks get correctly deleted
+                # TODO(FrancescoPezzella): enable once comment blocks get correctly deleted
+                #  https://github.com/TNO/Renaissance.Py/issues/189
                 self.remove(stmt_node, include_comments=False)
                 break
 
@@ -223,7 +226,8 @@ class TypeVarCheck(PythonRefactoring):
         needed_argument_names: set[str] = set()
 
         for alias in raw.names:
-            # TODO: `from x import T as U` is not currently being caught, tbd
+            # TODO(FrancescoPezzella): `from x import T as U` is not currently being caught, tbd
+            #  https://github.com/TNO/Renaissance.Py/issues/279
             if alias.asname is not None or alias.name not in declarations:
                 continue
 
@@ -266,16 +270,18 @@ class TypeVarCheck(PythonRefactoring):
         ctor_name = type_param_constructor_name(decl_stmt)
         ctor_source = from_import_sources(origin_tree).get(ctor_name)
         if ctor_source is None:
-            # TODO: an origin using `from typing import *` lands here,
-            # so a file not importing the constructor itself gets a NameError.
-            # TBD - needs a fix
+            # TODO(FrancescoPezzella): an origin using `from typing import *` lands here,
+            #  so a file not importing the constructor itself gets a NameError.
+            #  TBD - needs a fix
+            #  https://github.com/TNO/Renaissance.Py/issues/279
             return None
 
         via_module = "." * via.level + (via.module or "")
         ctor_module = rebase_relative_module(via.module, via.level, origin_path, ctor_source[0] or None, ctor_source[1]) or via_module
 
-        # TODO: the constructor already imported here from another module (e.g. `typing` vs the origin's
-        # `typing_extensions`) isn't matched, so a second, shadowing import of the same name is added.
+        # TODO(FrancescoPezzella): the constructor already imported here from another module (e.g. `typing` vs the origin's
+        #  `typing_extensions`) isn't matched, so a second, shadowing import of the same name is added.
+        #  https://github.com/TNO/Renaissance.Py/issues/279
         for import_node in self.body:
             raw = import_node.node
             if (
@@ -329,8 +335,9 @@ class TypeVarCheck(PythonRefactoring):
         """
         decl_text = "\n".join([*needed_imports, *(ast.unparse(decl_stmt) for decl_stmt in declarations.values())])
 
-        # TODO: the narrowed import is rebuilt with ast.unparse, so comments inside it are lost and a trailing
-        # comment ends up on the last declaration's line.
+        # TODO(FrancescoPezzella): the narrowed import is rebuilt with ast.unparse, so comments inside it are lost and a trailing
+        #  comment ends up on the last declaration's line.
+        #  https://github.com/TNO/Renaissance.Py/issues/279
         kept: list[ast.alias] = [alias for alias in raw.names if (alias.asname or alias.name) not in declarations]
         if kept:
             narrowed = ast.unparse(ast.ImportFrom(module=raw.module, names=kept, level=raw.level))

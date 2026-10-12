@@ -1,3 +1,4 @@
+# Copyright (c) 2026 PLACEHOLDER
 """A small, generic way to sequence independently-committable fix actions across one or more recipes."""
 
 from collections.abc import Callable, Sequence

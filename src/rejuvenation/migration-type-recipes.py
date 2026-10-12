@@ -1,3 +1,4 @@
+# Copyright (c) 2026 PLACEHOLDER
 """CLI that modernizes type parameters (TypeVar, ParamSpec, TypeVarTuple) to PEP 695 syntax.
 
 Runs TypeVarCheck on a file or directory, and reports which files were modified and which need
@@ -249,7 +250,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     target = target.resolve()
     files = resolve_target_files(target)
     project_root = target if target.is_dir() else target.parent
-    # TODO: computed once upfront, so an origin whose importers all get localized this run is only converted on a second run.
+    # TODO(FrancescoPezzella): computed once upfront, so an origin whose importers all get localized this run is only converted
+    #  on a second run.
+    #  https://github.com/TNO/Renaissance.Py/issues/279
     imported_names_by_file = collect_project_imported_names(files, project_root)
 
     reports: list[FileReport] = []
@@ -267,7 +270,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     modified_paths = [report.path for report in reports if has_fixed(report)]
     ruff_ran = bool(modified_paths) and not args.no_ruff
     if ruff_ran:
-        # TODO: removed statements leave their blank lines behind; ruff's E303 (preview) collapses them, but not at file start.
+        # TODO(FrancescoPezzella): removed statements leave their blank lines behind; ruff's E303 (preview) collapses them, but not
+        #  at file start.
+        #  https://github.com/TNO/Renaissance.Py/issues/279
         _run_ruff_unused_import_cleanup(modified_paths)
 
     console_report = _format_console_report(reports, ruff_ran=ruff_ran)

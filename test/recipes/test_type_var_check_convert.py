@@ -1,3 +1,4 @@
+# Copyright (c) 2026 PLACEHOLDER
 """Tests for TypeVarCheck.convert_declared_typevars."""
 
 import ast

@@ -1,3 +1,4 @@
+# Copyright (c) 2026 PLACEHOLDER
 """Tests for the migration-type-recipes.py CLI script (src/rejuvenation).
 
 The script's filename is hyphenated (not a legal dotted module path), so it's loaded via

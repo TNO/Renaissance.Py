@@ -1,3 +1,4 @@
+# Copyright (c) 2026 PLACEHOLDER
 """Resolve project-internal `from X import Y` statements to the .py file they import from, and re-anchor them on other files."""
 
 import ast
@@ -111,7 +112,8 @@ def _record_from_import(
     module_bindings: dict[str, Path],
 ) -> None:
     """Record `stmt`'s imported names against their origin, and bind any alias that is itself a project module."""
-    # TODO: `from pkg.mod import *` isn't expanded to the names it actually pulls in.
+    # TODO(FrancescoPezzella): `from pkg.mod import *` isn't expanded to the names it actually pulls in.
+    #  https://github.com/TNO/Renaissance.Py/issues/279
     origin = resolve_project_module(file, project_root, stmt.module, stmt.level)
     if origin is not None:
         imported.setdefault(origin, set()).update(alias.name for alias in stmt.names)

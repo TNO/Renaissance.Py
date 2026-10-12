@@ -1,3 +1,4 @@
+# Copyright (c) 2026 PLACEHOLDER
 """Tests for TypeVarCheck.remove_orphaned_declarations."""
 
 import textwrap

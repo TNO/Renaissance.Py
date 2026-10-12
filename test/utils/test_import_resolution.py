@@ -1,3 +1,4 @@
+# Copyright (c) 2026 PLACEHOLDER
 """Tests for renaissance.utils.import_resolution."""
 
 import ast
