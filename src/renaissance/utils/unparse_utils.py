@@ -1,3 +1,4 @@
+# Copyright (c) 2026 PLACEHOLDER
 """Splice a PEP 695 type-params bracket into a function's original source, changing nothing else.
 
 The function's formatting and comments are kept.
@@ -106,7 +107,8 @@ def _renormalize_indent(lines: list[str], target_indent: int) -> list[str]:
     non_blank = [line for line in lines if line.strip()]
     if not non_blank:
         return lines
-    # TODO: this minimum also counts lines inside multi-line string literals, which can change a literal's value.
+    # TODO(FrancescoPezzella): this minimum also counts lines inside multi-line string literals, which can change a literal's value.
+    #  https://github.com/TNO/Renaissance.Py/issues/279
     common = min(len(line) - len(line.lstrip(" ")) for line in non_blank)
     shift = common - target_indent
     if shift > 0:
