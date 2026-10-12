@@ -1,3 +1,4 @@
+# Copyright (c) 2026 PLACEHOLDER
 """Property-based tests for TypeVarCheck.check."""
 
 import ast

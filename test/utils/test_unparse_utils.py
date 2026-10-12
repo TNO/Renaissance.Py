@@ -1,3 +1,4 @@
+# Copyright (c) 2026 PLACEHOLDER
 """Tests for the signature-only PEP 695 bracket-splice helpers."""
 
 import ast

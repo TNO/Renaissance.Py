@@ -1,3 +1,4 @@
+# Copyright (c) 2026 PLACEHOLDER
 """Shared fixtures for the refactoring recipe test suite."""
 
 import textwrap
