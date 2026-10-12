@@ -99,6 +99,8 @@ See *Verified by test modules* in [TypeVar modernization](../../user/features/ty
 - Imported names are collected once before the run, so removing a declaration whose importers were all localized
   needs a second run.
 - Only a plain `__all__ = [...]` is read to detect an exported declaration.
+- A name used only in the string value of a `TypeAlias` (`A: TypeAlias = "list[T]"`) is not seen as a use, so its
+  declaration can be removed as orphaned.
 - `Unpack[Ts]` → `*Ts` is left to `ruff`'s `UP044`, see [Rejected recipes](rejected-recipes.md).
 - Known bugs, tracked as `xfail` tests:
     - `test_does_not_convert_default_referencing_another_declaration` (`test_type_var_check_convert.py`)
