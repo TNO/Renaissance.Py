@@ -2,13 +2,18 @@
 
 import keyword
 import textwrap
+from pathlib import Path
+from typing import cast
 from unittest.mock import patch
 
-from hamcrest import assert_that, contains_string, is_
+import pytest
+from hamcrest import assert_that, contains_string, equal_to, is_
 from hypothesis import given, settings
 from hypothesis import strategies as st
 from pytest_mock import MockerFixture
 
+from renaissance.integrations.python.ast.cst_node import PythonCstNode
+from renaissance.integrations.python.ast.factory import PythonFactory
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
 from renaissance.recipes.python_refactoring import PythonRefactoring
 from renaissance.recipes.unit_to_pytest import UnitToPytest
@@ -37,11 +42,18 @@ class TestPythonRefactoring:
         .filter(lambda name: not keyword.iskeyword(name))
     )
 
-    def _patch_factory(self, mocker: MockerFixture, text="pass", filename="test_foo.py") -> None:
+    def _patch_factory(
+        self,
+        mocker: MockerFixture,
+        text: str = "pass",
+        filename: str = "test_foo.py",
+        node_class: type[PythonRstNode | PythonCstNode] = PythonRstNode,
+    ) -> None:
+        """Make PythonFactory.create return text parsed by node_class instead of reading filename from disk."""
         code = textwrap.dedent(text)
         mocker.patch(
             "renaissance.integrations.python.ast.factory.PythonFactory.create",
-            return_value=PythonRstNode.load_from_text(code, filename),
+            return_value=node_class.load_from_text(code, filename),
         )
 
     # ------------------------------------------------------------------
@@ -279,15 +291,23 @@ class TestPythonRefactoring:
     # body property
     # ------------------------------------------------------------------
 
-    def test_body_returns_module_level_statements(self, mocker: MockerFixture) -> None:
-        """AI: Verify the body property returns the module's top-level statements."""
-        self._patch_factory(
-            mocker,
-            """
-            x = 1
-            y = 2
-            """,
-            "test_foo.py",
-        )
-        subject = UnitToPytest("test_foo.py")
-        assert_that(len(subject.body), is_(2))
+    @pytest.mark.parametrize("node_class", [PythonRstNode, PythonCstNode], ids=["rst", "cst"])
+    def test_body_returns_module_level_statements(self, mocker: MockerFixture, node_class: type[PythonRstNode | PythonCstNode]) -> None:
+        """Verify the body property returns the module's top-level statements, whichever backend parsed the file."""
+        self._patch_factory(mocker, "import os\nx = 1\ndef f():\n    return x\n", "test_foo.py", node_class)
+        subject = PythonRefactoring(Path("test_foo.py"), node_class=node_class)
+
+        statements: list[str] = [str(statement.signature).strip() for statement in subject.body]
+
+        assert_that(statements, equal_to(["import os", "x = 1", "def f():\n    return x"]))
+
+    @pytest.mark.parametrize("node_class", [PythonRstNode, PythonCstNode], ids=["rst", "cst"])
+    def test_recipe_rewrites_with_the_chosen_backend(self, mocker: MockerFixture, node_class: type[PythonRstNode | PythonCstNode]) -> None:
+        """Verify a recipe parses with the node class it is given and rewrites through that backend's nodes."""
+        self._patch_factory(mocker, "x = 1\ny = 2\n", "test_foo.py", node_class)
+        subject = PythonRefactoring(Path("test_foo.py"), node_class=node_class)
+
+        subject.replace("x = 3", subject.body[0], include_whitespace=False, include_comments=False)
+
+        assert_that(cast("PythonFactory", subject.factory).clazz is node_class, is_(True))
+        assert_that(subject.apply_to_string(), is_("x = 3\ny = 2\n"))

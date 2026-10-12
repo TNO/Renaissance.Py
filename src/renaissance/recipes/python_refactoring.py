@@ -7,6 +7,7 @@ from typing import cast
 
 from termcolor import colored
 
+from renaissance.integrations.python.ast.cst_node import PythonCstNode
 from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
 from renaissance.integrations.python.ast.util import to_str
@@ -16,12 +17,12 @@ from renaissance.syntax_tree.semantic_kind import SemanticKind
 from renaissance.utils.text_utils import snake_case
 
 
-class PythonRefactoring(ASTProcessor):
+class PythonRefactoring[NodeT: PythonRstNode | PythonCstNode = PythonRstNode](ASTProcessor):
     """AI: Base processor for Python-specific source refactoring recipes."""
 
-    def __init__(self, file) -> None:
-        """AI: Prepare a Python-specific refactoring processor for the given source file."""
-        factory = PythonFactory(PythonRstNode)
+    def __init__(self, file: Path, node_class: type[NodeT] = PythonRstNode) -> None:
+        """Prepare a refactoring processor for file, parsed with node_class (the RST backend by default)."""
+        factory = PythonFactory(node_class)
         atu = factory.create(file)
         super().__init__(atu, factory, False)
         self.pattern_factory = PythonPatternFactory(self.factory)
@@ -105,9 +106,13 @@ class PythonRefactoring(ASTProcessor):
         return [child.signature for child in bases_implicit.children]
 
     @property
-    def body(self) -> Sequence[PythonRstNode]:
-        """AI: Return the root node's body statements."""
-        return cast("PythonRstNode", cast("object", self.root)).body
+    def body(self) -> Sequence[NodeT]:
+        """Return the module's top-level statements; with the CST backend, a simple statement comes as its whole line."""
+        root = cast("NodeT", cast("object", self.root))
+        if isinstance(root, PythonCstNode):
+            wrappers = root.translation_unit.wrappers
+            return cast("Sequence[NodeT]", [wrappers[statement] for statement in root.translation_unit.atu.body])
+        return cast("Sequence[NodeT]", root.body)
 
     def run(self) -> None:
         """AI: Run this refactoring recipe. Subclasses override this to perform the refactoring."""
