@@ -15,6 +15,8 @@ from renaissance.integrations.python.ast.rst_node import PythonRstNode
 from renaissance.recipes.type_var_check import PEP_695_MINIMUM, TypeVarCheck
 from renaissance.recipes.type_var_domain import UnsafeReason
 
+# TODO(FrancescoPezzella): Replace with a lazy import in Python 3.15.
+#  https://github.com/TNO/Renaissance.Py/issues/275
 if TYPE_CHECKING:
     from hamcrest.core.matcher import Matcher
 
