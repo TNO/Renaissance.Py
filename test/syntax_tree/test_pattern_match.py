@@ -5,6 +5,7 @@ import textwrap
 
 import pytest
 from hamcrest import assert_that, empty, has_length, is_
+from pytest_mock import MockerFixture
 
 from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
@@ -85,7 +86,7 @@ class TestPatternMatch:
         assert_that(match.offset_of("$$other"), is_(3))
         assert_that(match.length_of("$$other"), is_(7))
 
-    def test_match_referenced_by(self, mocker) -> None:
+    def test_match_referenced_by(self, mocker: MockerFixture) -> None:
         """AI: Verify match_referenced_by calls match_pattern once per referencing node."""
         node = mocker.Mock()
         reference = mocker.Mock()
@@ -99,7 +100,7 @@ class TestPatternMatch:
         pattern_match.match_referenced_by([[node]], False)
         assert_that(mock_matcher.call_count, is_(6))
 
-    def test_get_key_redirect_to_expansion_signature(self, mocker) -> None:
+    def test_get_key_redirect_to_expansion_signature(self, mocker: MockerFixture) -> None:
         """AI: Verify __getitem__ resolves plain keys, placeholder node signatures, and missing keys to an empty string."""
         node = mocker.Mock()
         node.signature = "name_1"

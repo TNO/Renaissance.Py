@@ -6,6 +6,7 @@ import networkx as nx
 import pytest
 import tree_sitter_python
 from hamcrest import assert_that, has_item, instance_of, is_, not_
+from pytest_mock import MockerFixture
 
 from renaissance.integrations.tree_sitter.extractor import (
     BaseCodeGraphExtractor,
@@ -40,7 +41,7 @@ class TestBaseCodeGraphExtractor:
             with pytest.raises(NotImplementedError):
                 extractor._process_file("file.py", MagicMock())
 
-    def test_extract_calls_process_file_for_each_file(self, mocker, tmp_path) -> None:
+    def test_extract_calls_process_file_for_each_file(self, mocker: MockerFixture, tmp_path) -> None:
         """AI: Verify extract() calls _process_file once per input file."""
         f1 = tmp_path / "a.py"
         f1.write_text("x = 1")
@@ -69,7 +70,7 @@ class TestBaseCodeGraphExtractor:
             # Should not raise
             extractor.extract([str(tmp_path / "nonexistent.py")])
 
-    def test_save_graph_writes_file(self, tmp_path, mocker) -> None:
+    def test_save_graph_writes_file(self, tmp_path, mocker: MockerFixture) -> None:
         """AI: Verify save_graph writes the graph to a graphml file."""
         with patch("renaissance.integrations.tree_sitter.adapter.TreeSitterAdapter"):
             extractor = PythonCodeGraphExtractor("python", tree_sitter_python)

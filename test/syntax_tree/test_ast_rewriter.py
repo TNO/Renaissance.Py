@@ -5,6 +5,7 @@ from collections.abc import Callable, Sequence
 
 import pytest
 from hamcrest import assert_that, has_length, is_
+from pytest_mock import MockerFixture
 
 from c_cpp.factories import Factories
 from renaissance.integrations.clang import ClangASTNode, CPatternFactory
@@ -1010,7 +1011,7 @@ class TestComposeReplacement:
             actual = rewriter.apply_to_string()
             assert_that(compress(expected), is_(compress(actual)))
 
-    def test_get_node_in_match_pattern(self, mocker) -> None:
+    def test_get_node_in_match_pattern(self, mocker: MockerFixture) -> None:
         """AI: Verify _RewriteAction._get_nodes resolves a node's referenced_by chain back to the original node."""
         node = mocker.Mock()
         reference = mocker.Mock()
@@ -1027,7 +1028,7 @@ class TestComposeReplacement:
         text = it._RewriteActions__get_texts([])
         assert_that(text, is_("node"))
 
-    def test_get_text_from_rewrite(self, mocker) -> None:
+    def test_get_text_from_rewrite(self, mocker: MockerFixture) -> None:
         """AI: Verify __get_texts extracts the node's text slice from its binary file content."""
         node = mocker.Mock()
         node.root = node

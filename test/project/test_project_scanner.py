@@ -6,6 +6,7 @@ from unittest.mock import Mock
 
 import pytest
 from hamcrest import assert_that, calling, contains_inanyorder, empty, equal_to, is_, raises
+from pytest_mock import MockerFixture
 
 from renaissance.project.project_scanner import (
     BearCppScanner,
@@ -270,7 +271,7 @@ class TestPythonScanner:
 class TestBearCppScanner:
     """AI: Tests generating a compilation database via Bear before discovering sources."""
 
-    def test_find_sources_calls_run_bear_when_compile_commands_missing(self, tmp_path, mocker) -> None:
+    def test_find_sources_calls_run_bear_when_compile_commands_missing(self, tmp_path, mocker: MockerFixture) -> None:
         """AI: Assert BearCppScanner.find_sources runs Bear when the compile database is missing."""
         scanner = BearCppScanner(
             build_dir=str(tmp_path),
@@ -285,7 +286,7 @@ class TestBearCppScanner:
 
         assert_that(mock_bear.call_count, is_(1))
 
-    def test_find_sources_does_not_call_run_bear_when_compile_commands_exists(self, tmp_path, mocker) -> None:
+    def test_find_sources_does_not_call_run_bear_when_compile_commands_exists(self, tmp_path, mocker: MockerFixture) -> None:
         """AI: Assert BearCppScanner.find_sources skips running Bear when the compile database already exists."""
         commands = [{"file": "/src/main.cpp"}]
         compile_commands = tmp_path / "compile_commands.json"
@@ -302,14 +303,14 @@ class TestBearCppScanner:
         mock_bear.assert_not_called()
         assert_that(result, equal_to(["/src/main.cpp"]))
 
-    def test_run_bear_raises_on_nonzero_exit(self, mocker) -> None:
+    def test_run_bear_raises_on_nonzero_exit(self, mocker: MockerFixture) -> None:
         """AI: Assert BearCppScanner.run_bear raises RuntimeError when the Bear subprocess exits non-zero."""
         scanner = BearCppScanner()
         mocker.patch("renaissance.project.project_scanner.subprocess.run", return_value=Mock(returncode=1))
 
         assert_that(calling(scanner.run_bear), raises(RuntimeError))
 
-    def test_run_bear_succeeds_on_zero_exit(self, mocker) -> None:
+    def test_run_bear_succeeds_on_zero_exit(self, mocker: MockerFixture) -> None:
         """AI: Assert BearCppScanner.run_bear does not raise when the Bear subprocess exits zero."""
         scanner = BearCppScanner()
         mocker.patch("renaissance.project.project_scanner.subprocess.run", return_value=Mock(returncode=0))
