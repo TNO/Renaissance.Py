@@ -32,6 +32,7 @@ class UnsafeReason(StrEnum):
     NO_PEP695_EQUIVALENT = "no_pep695_equivalent"
     DECLARED_TYPEVAR_EXPORTED = "declared_typevar_exported"
     USED_IN_GENERIC_CLASS = "used_in_generic_class"
+    SHARES_FUNCTION_WITH_UNCONVERTIBLE = "shares_function_with_unconvertible"
     DECLARATION_NAME_UNAVAILABLE = "declaration_name_unavailable"
     IMPORTED_ELSEWHERE_IN_PROJECT = "imported_elsewhere_in_project"
     ORIGIN_IMPORTS_CONSTRUCTOR_CONDITIONALLY = "origin_imports_constructor_conditionally"
@@ -65,6 +66,10 @@ UNSAFE_RULES: dict[UnsafeReason, UnsafeRule] = {
     UnsafeReason.USED_IN_GENERIC_CLASS: UnsafeRule(
         "only used inside a class that is generic over it",
         "feature-type-parameter-modernization-used-in-generic-class",
+    ),
+    UnsafeReason.SHARES_FUNCTION_WITH_UNCONVERTIBLE: UnsafeRule(
+        "every function using it also uses a type variable that can't be converted",
+        "feature-type-parameter-modernization-shares-function-with-unconvertible",
     ),
     UnsafeReason.DECLARATION_NAME_UNAVAILABLE: UnsafeRule(
         "a name its declaration uses can't be imported here as the same object",
