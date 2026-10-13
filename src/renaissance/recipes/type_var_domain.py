@@ -14,9 +14,9 @@ from typing import cast
 
 import libcst as cst
 from libcst import matchers
-from libcst.helpers import get_full_name_for_node
 
 from renaissance.integrations.python.ast.cst_node import PythonCstNode
+from renaissance.utils.import_resolution import import_from_module, imported_name
 
 DOCS_BASE_URL = "https://tno.github.io/Renaissance.Py/user/features/type-parameter-modernization/"
 
@@ -202,16 +202,6 @@ def declaration_argument_names(decl_stmt: cst.Assign) -> set[str]:
     return collector.names - set(dir(builtins))
 
 
-def import_from_module(statement: cst.ImportFrom) -> str | None:
-    """Return the dotted module an import-from names after its leading dots, or None for a bare `from . import x`."""
-    return get_full_name_for_node(statement.module) if statement.module is not None else None
-
-
-def imported_name(alias: cst.ImportAlias) -> str:
-    """Return the name an import alias binds: its `as` name if it has one, else the imported name."""
-    return alias.evaluated_alias or alias.evaluated_name
-
-
 def from_import_sources(module: cst.Module) -> dict[str, tuple[str, int] | None]:
     """Map every name bound at module level to its `from` import's (module, level), or None if bound otherwise.
 
@@ -295,6 +285,9 @@ def uses_of(root: PythonCstNode, name: str, decl_stmt: cst.Assign) -> list[Pytho
     A use inside a string annotation or `cast("T", x)` counts; a `T` that a PEP 695 type parameter of an
     enclosing function or class (`def f[T]`, `class C[T]`) declares does not.
     """
+    # TODO(FrancescoPezzella): libcst puts a function's decorators and parameter defaults inside its PEP 695 type
+    #  parameter scope, so a `T` read only there (`@dec(T)`, `y=T`) is missed and the declaration it needs is removed.
+    #  https://github.com/TNO/Renaissance.Py/issues/279
     target = next(target.target for target in decl_stmt.targets if isinstance(target.target, cst.Name) and target.target.value == name)
     return [reference.node for reference in root.translation_unit.wrappers[target].referenced_by]
 
@@ -372,6 +365,10 @@ def type_param_text(decl_stmt: cst.Assign, module: cst.Module) -> str:
     call = _call(decl_stmt)
     constructor = type_param_constructor_name(decl_stmt)
     positional = _positional_arguments(call)
+    # TODO(FrancescoPezzella): the type parameter is named after the string argument, not the variable, so
+    #  `T = TypeVar("U")` gives `def f[U](x: T)`; a non-literal name (`TypeVar(name)`, `TypeVar(*args)`) raises
+    #  AttributeError and stops every phase for the file.
+    #  https://github.com/TNO/Renaissance.Py/issues/279
     name = cast("str", cast("cst.SimpleString", positional[0].value).evaluated_value)
 
     if constructor == "ParamSpec":
