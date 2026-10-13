@@ -337,6 +337,11 @@ class _RewriteActions:
 
         result = any(no_conflict(node, rew) for rew in rewrite_nodes)
 
+        # TODO(FrancescoPezzella): an outer rewrite should suppress the rewrites nested inside it, but both are applied.
+        #  Dropping `and False` is not enough: no_conflict also matches each node with its own rewrite, so result is almost
+        #  always True and apply() would skip nearly every rewrite. A fix has to leave out the node's own rewrite and use a
+        #  true ancestor check such as __is_nested.
+        #  https://github.com/TNO/Renaissance.Py/issues/286
         return result and False  # TODO: Why `and False`
 
     def __replace(

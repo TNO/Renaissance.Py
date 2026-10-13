@@ -15,6 +15,16 @@ from libcst import matchers
 from libcst.helpers import get_full_name_for_node
 
 
+def import_from_module(statement: cst.ImportFrom) -> str | None:
+    """Return the dotted module an import-from names after its leading dots, or None for a bare `from . import x`."""
+    return get_full_name_for_node(statement.module) if statement.module is not None else None
+
+
+def imported_name(alias: cst.ImportAlias) -> str:
+    """Return the name an import alias binds: its `as` name if it has one, else the imported name."""
+    return alias.evaluated_alias or alias.evaluated_name
+
+
 def resolve_project_module(importing_file: Path, project_root: Path, module: str | None, level: int) -> Path | None:
     """Resolve one import-from's `(module, level)` to a concrete .py file under `project_root`.
 
@@ -123,7 +133,7 @@ def _record_from_import(
     """Record `statement`'s imported names against their origin, and bind any alias that is itself a project module."""
     # TODO(FrancescoPezzella): `from pkg.mod import *` isn't expanded to the names it actually pulls in.
     #  https://github.com/TNO/Renaissance.Py/issues/279
-    module = get_full_name_for_node(statement.module) if statement.module is not None else None
+    module = import_from_module(statement)
     level = len(statement.relative)
     aliases = [] if isinstance(statement.names, cst.ImportStar) else list(statement.names)
     origin = resolve_project_module(file, project_root, module, level)
@@ -133,7 +143,7 @@ def _record_from_import(
         submodule = f"{module}.{alias.evaluated_name}" if module is not None else alias.evaluated_name
         submodule_origin = resolve_project_module(file, project_root, submodule, level)
         if submodule_origin is not None:
-            module_bindings[alias.evaluated_alias or alias.evaluated_name] = submodule_origin
+            module_bindings[imported_name(alias)] = submodule_origin
 
 
 def _bind_imported_modules(file: Path, project_root: Path, statement: cst.Import, module_bindings: dict[str, Path]) -> None:
