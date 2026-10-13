@@ -101,7 +101,8 @@ those behaviors individually. Reference and data-flow collections
 parser can provide the same analysis. Keep the original parser node available
 when callers need parser-specific data. The Python CST adapter resolves them
 with libcst's scope analysis, which also finds names used inside string
-annotations.
+annotations. An annotation or type hint written above a definition in the
+same scope still refers to it, since it is evaluated lazily.
 
 The native Python `ast.AST` adapter is a lightweight structural adapter and
 does not preserve source trivia in the same way as the lossless Python RST/CST
