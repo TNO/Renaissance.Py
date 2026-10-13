@@ -255,9 +255,6 @@ def main(argv: Sequence[str] | None = None) -> int:
     target = target.resolve()
     files = resolve_target_files(target)
     project_root = target if target.is_dir() else target.parent
-    # TODO(FrancescoPezzella): computed once upfront, so an origin whose importers all get localized this run is only converted
-    #  on a second run.
-    #  https://github.com/TNO/Renaissance.Py/issues/279
     imported_names_by_file = collect_project_imported_names(files, project_root)
 
     reports: list[FileReport] = []

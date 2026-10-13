@@ -197,16 +197,11 @@ class TypeVarCheck(PythonRefactoring[PythonCstNode]):
             if uses_of(root, name, decl_stmt):
                 continue
 
-            # TODO(FrancescoPezzella): a public TypeVar no file in the project uses (e.g. redis.typing.AnyKeyT) is removed,
-            #  though other projects may import it.
-            #  https://github.com/TNO/Renaissance.Py/issues/279
             reason = is_safe_to_remove(module, name, self.project_wide_imported_names)
             if reason is not None:
                 self._mark_unsafe(results, self.orphaned_unsafe_reasons, name, reason)
                 continue
 
-            # TODO(FrancescoPezzella): `T = U = TypeVar("T")` is removed whole when T is unused, so U is no longer defined.
-            #  https://github.com/TNO/Renaissance.Py/issues/279
             self._remove_declaration(decl_stmt)
             results[name] = "fixed"
 
@@ -221,9 +216,6 @@ class TypeVarCheck(PythonRefactoring[PythonCstNode]):
         """Remove decl_stmt's statement from the file."""
         # TODO(FrancescoPezzella): enable once comment blocks get correctly deleted
         #  https://github.com/TNO/Renaissance.Py/issues/189
-        # TODO(FrancescoPezzella): a declaration that starts a `;` line leaves a leading `;`, a syntax error that commit()
-        #  writes to disk.
-        #  https://github.com/TNO/Renaissance.Py/issues/279
         self.remove(self._cst_root().translation_unit.wrappers[decl_stmt], include_comments=False)
 
     def localize_imported_typevars(self) -> dict[str, str]:
@@ -281,8 +273,6 @@ class TypeVarCheck(PythonRefactoring[PythonCstNode]):
         needed_argument_names: set[str] = set()
 
         for alias in raw.names:
-            # TODO(FrancescoPezzella): `from x import T as U` is not currently being caught, tbd
-            #  https://github.com/TNO/Renaissance.Py/issues/279
             name = alias.evaluated_name
             if alias.asname is not None or name not in declarations:
                 continue
@@ -331,10 +321,6 @@ class TypeVarCheck(PythonRefactoring[PythonCstNode]):
         ctor_name = type_param_constructor_name(decl_stmt)
         ctor_source = from_import_sources(origin).get(ctor_name)
         if ctor_source is None:
-            # TODO(FrancescoPezzella): an origin using `from typing import *` lands here,
-            #  so a file not importing the constructor itself gets a NameError.
-            #  TBD - needs a fix
-            #  https://github.com/TNO/Renaissance.Py/issues/279
             return None
 
         via_module = import_from_module(via)
