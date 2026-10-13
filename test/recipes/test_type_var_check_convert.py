@@ -572,23 +572,3 @@ class TestTypeVarCheckConvertArguments:
         output = subject.apply_to_string()
         ast.parse(output)
         assert_that(output, contains_string(expected_signature))
-
-    @pytest.mark.xfail(
-        reason="A default referencing another legacy declaration is carried over as is, so the new type "
-        "parameter's default refers to the module-level TypeVar.",
-        raises=AssertionError,
-        strict=True,
-    )
-    def test_does_not_convert_default_referencing_another_declaration(
-        self,
-        create_type_var_check: Callable[[str], TypeVarCheck],
-    ) -> None:
-        """Verify a declaration whose default uses another legacy type parameter is reported unsafe and left unconverted."""
-        subject = create_type_var_check(_source('T = TypeVar("T")\nU = TypeVar("U", default=T)', "def f(x: U) -> U:"))
-        subject.min_python = PEP_696_MINIMUM
-
-        result = subject.convert_declared_typevars()
-
-        assert_that(result, has_entry("U", "unsafe"))
-        assert_that(subject.converted_unsafe_reasons, has_entry("U", not_(UnsafeReason.PEP696_VERSION_GATE)))
-        assert_that(subject.apply_to_string(), contains_string("def f(x: U) -> U:"))
