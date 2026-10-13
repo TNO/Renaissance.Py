@@ -83,6 +83,28 @@ class TestPythonCstReferences:
         """A T that resolves to a type parameter, a local variable or a plain string is not a use of the module-level T."""
         assert_that(_declared_t(_load(body)).referenced_by, equal_to([]))
 
+    @pytest.mark.parametrize(
+        ("body", "expected_uses"),
+        [
+            pytest.param("def b(x: T) -> T: ...\n", ["T", "T"], id="annotations"),
+            pytest.param('def b(x: "list[T]") -> None: ...\n', ['"list[T]"'], id="string-annotation"),
+            pytest.param('y = cast("T", 1)\n', ['"T"'], id="cast"),
+            pytest.param("w = T\n", [], id="evaluated-at-once"),
+        ],
+    )
+    def test_lazily_evaluated_use_above_the_declaration_is_a_reference(self, body: str, expected_uses: list[str]) -> None:
+        """An annotation or type hint above `T = TypeVar("T")` is a use of it; a value read there at once is not."""
+        root = PythonCstNode.load_from_text(
+            f'from __future__ import annotations\nfrom typing import TypeVar, cast\n{body}T = TypeVar("T")\n', "refs.py"
+        )
+        declared = _declared_t(root)
+
+        uses = [reference.node for reference in declared.referenced_by]
+
+        assert_that([use.signature for use in uses], contains_inanyorder(*expected_uses))
+        for use in uses:
+            assert_that([reference.node for reference in use.references], equal_to([declared]))
+
     def test_import_reports_which_name_each_use_refers_to(self) -> None:
         """An import binding several names lists the uses of each, with the imported name in the reference properties."""
         root = _load('def b(x: object) -> None:\n    cast("int", x)\n')
