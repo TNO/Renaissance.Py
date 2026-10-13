@@ -37,9 +37,6 @@ def resolve_project_module(importing_file: Path, project_root: Path, module: str
     Tries `<path>.py` first, then `<path>/__init__.py`. Returns None if neither exists or if
     resolution would walk above `project_root`, as for a stdlib or third-party import. The returned
     path is always absolute.
-
-    # TODO: doesn't follow re-exports through an intermediate __init__.py, or handle namespace
-    # packages (no __init__.py, PEP 420) - out of scope for now.
     """
     # A relative path can't walk above itself: Path("a.py").parent.parent is still Path(".").
     importing_file = importing_file.absolute()
@@ -131,8 +128,6 @@ def _record_from_import(
     module_bindings: dict[str, Path],
 ) -> None:
     """Record `statement`'s imported names against their origin, and bind any alias that is itself a project module."""
-    # TODO(FrancescoPezzella): `from pkg.mod import *` isn't expanded to the names it actually pulls in.
-    #  https://github.com/TNO/Renaissance.Py/issues/279
     module = import_from_module(statement)
     level = len(statement.relative)
     aliases = [] if isinstance(statement.names, cst.ImportStar) else list(statement.names)
