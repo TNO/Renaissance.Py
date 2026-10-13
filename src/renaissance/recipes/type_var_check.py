@@ -24,8 +24,6 @@ from renaissance.recipes.type_var_domain import (
     from_import_sources,
     generic_classes,
     has_unconvertible_argument,
-    import_from_module,
-    imported_name,
     is_safe_to_localize,
     is_safe_to_remove,
     module_statements,
@@ -35,7 +33,7 @@ from renaissance.recipes.type_var_domain import (
     type_params_bracket,
     uses_of,
 )
-from renaissance.utils.import_resolution import rebase_relative_module, resolve_project_module
+from renaissance.utils.import_resolution import import_from_module, imported_name, rebase_relative_module, resolve_project_module
 
 PEP_695_MINIMUM = (3, 12)
 PEP_696_MINIMUM = (3, 13)
@@ -175,6 +173,8 @@ class TypeVarCheck(PythonRefactoring[PythonCstNode]):
                 node.name.value + type_params_bracket(params), unit.wrappers[node.name], include_whitespace=False, include_comments=False
             )
             return
+        # TODO(FrancescoPezzella): rebuilding the existing bracket drops its comments and line breaks.
+        #  https://github.com/TNO/Renaissance.Py/issues/279
         current = [
             (unit.atu.code_for_node(param.with_changes(comma=cst.MaybeSentinel.DEFAULT)), param.default is not None)
             for param in existing.params
@@ -205,6 +205,8 @@ class TypeVarCheck(PythonRefactoring[PythonCstNode]):
                 self._mark_unsafe(results, self.orphaned_unsafe_reasons, name, reason)
                 continue
 
+            # TODO(FrancescoPezzella): `T = U = TypeVar("T")` is removed whole when T is unused, so U is no longer defined.
+            #  https://github.com/TNO/Renaissance.Py/issues/279
             self._remove_declaration(decl_stmt)
             results[name] = "fixed"
 
@@ -219,6 +221,9 @@ class TypeVarCheck(PythonRefactoring[PythonCstNode]):
         """Remove decl_stmt's statement from the file."""
         # TODO(FrancescoPezzella): enable once comment blocks get correctly deleted
         #  https://github.com/TNO/Renaissance.Py/issues/189
+        # TODO(FrancescoPezzella): a declaration that starts a `;` line leaves a leading `;`, a syntax error that commit()
+        #  writes to disk.
+        #  https://github.com/TNO/Renaissance.Py/issues/279
         self.remove(self._cst_root().translation_unit.wrappers[decl_stmt], include_comments=False)
 
     def localize_imported_typevars(self) -> dict[str, str]:
