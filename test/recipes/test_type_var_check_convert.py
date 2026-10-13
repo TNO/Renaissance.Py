@@ -335,6 +335,57 @@ class TestTypeVarCheckConvert:
         assert_that(result, has_entry("T", "fixed"))
         assert_that(subject.apply_to_string(), contains_string("    def get[T](self, x: T) -> T:"))
 
+    @pytest.mark.parametrize(
+        ("functions", "expected_converted", "expected_unchanged"),
+        [
+            pytest.param(
+                "def f(x: U) -> U:\n    return x\ndef g(x: U, y: T_co) -> T_co:\n    return y\n",
+                "def f[U](x: U) -> U:",
+                "def g(x: U, y: T_co) -> T_co:",
+                id="functions",
+            ),
+            pytest.param(
+                "class Util:\n    def f(self, x: U) -> U:\n        return x\n    def g(self, x: U, y: T_co) -> T_co:\n        return y\n",
+                "    def f[U](self, x: U) -> U:",
+                "    def g(self, x: U, y: T_co) -> T_co:",
+                id="methods",
+            ),
+        ],
+    )
+    def test_converts_only_functions_free_of_unconvertible_typevars(
+        self, create_type_var_check: Callable[[str], TypeVarCheck], functions: str, expected_converted: str, expected_unchanged: str
+    ) -> None:
+        """Verify a function that also uses an unconvertible TypeVar is left whole, while the others using U get [U]."""
+        subject = create_type_var_check(
+            f'from typing import TypeVar\n\nT_co = TypeVar("T_co", covariant=True)\nU = TypeVar("U")\n\n{functions}'
+        )
+        result = subject.convert_declared_typevars()
+
+        assert_that(result, equal_to({"T_co": "unsafe", "U": "fixed"}))
+        output = subject.apply_to_string()
+        assert_that(output, contains_string(expected_converted))
+        assert_that(output, contains_string(expected_unchanged))
+
+    @pytest.mark.parametrize(
+        "class_declaration",
+        [
+            pytest.param('T = TypeVar("T")', id="plain"),
+            pytest.param('T = TypeVar("T", covariant=True)', id="covariant"),
+        ],
+    )
+    def test_converts_method_mixing_with_its_class_type_parameter(
+        self, create_type_var_check: Callable[[str], TypeVarCheck], class_declaration: str
+    ) -> None:
+        """Verify a method of a class generic over T gets [U] while keeping the class's legacy T."""
+        subject = create_type_var_check(
+            f'from typing import Generic, TypeVar\n\n{class_declaration}\nU = TypeVar("U")\n\n'
+            "class Box(Generic[T]):\n    def pair(self, x: T, y: U) -> tuple[T, U]:\n        return x, y\n"
+        )
+        result = subject.convert_declared_typevars()
+
+        assert_that(result, has_entry("U", "fixed"))
+        assert_that(subject.apply_to_string(), contains_string("    def pair[U](self, x: T, y: U) -> tuple[T, U]:"))
+
     def test_converts_function_when_typevar_is_also_used_outside_functions(
         self, create_type_var_check: Callable[[str], TypeVarCheck]
     ) -> None:
@@ -531,6 +582,51 @@ class TestTypeVarCheckConvertArguments:
 
         assert_that(result, has_entry(name, "unsafe"))
         assert_that(subject.converted_unsafe_reasons, has_entry(name, expected_reason))
+        assert_that(subject.apply_to_string(), equal_to(source))
+
+    @pytest.mark.parametrize(
+        ("declarations", "signature", "min_python", "expected_reasons"),
+        [
+            pytest.param(
+                'T_co = TypeVar("T_co", covariant=True)\nTs = TypeVarTuple("Ts")',
+                "def a(func: Callable[[*Ts], T_co], *args: *Ts) -> T_co:",
+                PEP_696_MINIMUM,
+                {"T_co": UnsafeReason.NO_PEP695_EQUIVALENT, "Ts": UnsafeReason.SHARES_FUNCTION_WITH_UNCONVERTIBLE},
+                id="covariant-typevar-with-typevartuple",
+            ),
+            pytest.param(
+                'T = TypeVar("T")\nD = TypeVar("D", default=int)',
+                "def a(x: T, y: D) -> T | D:",
+                PEP_695_MINIMUM,
+                {"D": UnsafeReason.PEP696_VERSION_GATE, "T": UnsafeReason.SHARES_FUNCTION_WITH_UNCONVERTIBLE},
+                id="version-gated-default-declared-last",
+            ),
+            pytest.param(
+                'P = ParamSpec("P", bound=int)\nT = TypeVar("T")',
+                "def a(f: Callable[P, T]) -> Callable[P, T]:",
+                PEP_696_MINIMUM,
+                {"P": UnsafeReason.NO_PEP695_EQUIVALENT, "T": UnsafeReason.SHARES_FUNCTION_WITH_UNCONVERTIBLE},
+                id="bound-paramspec-with-typevar",
+            ),
+        ],
+    )
+    def test_leaves_function_using_an_unconvertible_typevar_unchanged(
+        self,
+        create_type_var_check: Callable[[str], TypeVarCheck],
+        declarations: str,
+        signature: str,
+        min_python: tuple[int, int],
+        expected_reasons: dict[str, UnsafeReason],
+    ) -> None:
+        """Verify a function using one unconvertible TypeVar gets none of its TypeVars converted, so it never mixes syntaxes."""
+        source = _source(declarations, signature)
+        subject = create_type_var_check(source)
+        subject.min_python = min_python
+
+        result = subject.convert_declared_typevars()
+
+        assert_that(result, equal_to(dict.fromkeys(expected_reasons, "unsafe")))
+        assert_that(subject.converted_unsafe_reasons, equal_to(expected_reasons))
         assert_that(subject.apply_to_string(), equal_to(source))
 
     @pytest.mark.parametrize(
