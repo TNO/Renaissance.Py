@@ -451,6 +451,8 @@ class _RewriteActions:
             else spaces
         )
         # indent the new content except the first line
+        # TODO(FrancescoPezzella): unlike __replace, this ignores correct_indent, so the re-indentation can't be turned off.
+        #  https://github.com/TNO/Renaissance.Py/issues/283
         new_content = TextUtils.shift_right(new_content, indent, start_line=1)
 
         if before:
@@ -499,6 +501,8 @@ class _RewriteActions:
                         if regex_match:
                             raw_signature = "".join(regex_match.groups())
                         place_holder_length = end_index - index + 1
+                    # TODO(FrancescoPezzella): this also indents the lines inside a multi-line string in the captured text.
+                    #  https://github.com/TNO/Renaissance.Py/issues/283
                     indent_replacement = raw_signature.replace("\n", "\n" + spaces)
                     if (
                         placeholder.startswith("$$")
@@ -535,6 +539,9 @@ class _RewriteActions:
         # the descendants may need to be rewritten as well
         #        rewrites = [rewrite for rewrite in self.rewrites if any(node.is_ancestor_of(rewrite_node)
         #                            for rewrite_node in rewrite.nodes)]
+        # TODO(FrancescoPezzella): is_ancestor_of only exists on ASTNode, so a PatternMatch replacement with placeholders raises
+        #  AttributeError on Python RST and CST nodes.
+        #  https://github.com/TNO/Renaissance.Py/issues/284
         rewrites = [rewrite for rewrite in self.rewrites if any(node.is_ancestor_of(rewrite_node) for rewrite_node in rewrite.nodes)]
         if rewrites:
             rewriter = _RewriteActions(node, self.encoding, self.correct_indent, rewrites)
