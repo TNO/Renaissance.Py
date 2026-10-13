@@ -23,6 +23,8 @@ class TextUtils:
     @staticmethod
     def shift_left(text: str, shift: int, start_line: int = 0) -> str:
         """Shifts each line of the given text to the left by the specified number of spaces. Only spaces are shifted."""
+        # TODO(FrancescoPezzella): every line is shifted, also inside a multi-line string literal, changing its value.
+        #  https://github.com/TNO/Renaissance.Py/issues/283
         if shift == 0:
             return text
         pattern = re.compile(r"\s{0," + str(shift) + "}(.*)")
@@ -57,7 +59,9 @@ class TextUtils:
 
     @staticmethod
     def shift_right(text: str, shift: int, start_line: int = 0) -> str:
-        """Shifts each line of the given text to the left by the specified number of spaces. Only spaces are shifted."""
+        """Shifts each line of the given text to the right by the specified number of spaces."""
+        # TODO(FrancescoPezzella): every line is shifted, also inside a multi-line string literal, changing its value.
+        #  https://github.com/TNO/Renaissance.Py/issues/283
         if shift == 0:
             return text
         lines = text.split("\n")
