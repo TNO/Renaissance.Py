@@ -104,9 +104,11 @@ class TypeVarCheck(PythonRefactoring[PythonCstNode]):
 
         The declaration is left in place. A use is attributed to the outermost function containing it; a `T`
         that a same-named PEP 695 type parameter of a function or class declares is not a use. Methods of a
-        class generic over the name are never converted. Bounds, constraints and `default=` are carried over
-        in their original formatting, with defaulted type parameters placed last. A name only such methods
-        use, or whose declaration _conversion_refusal rejects, is reported "unsafe", with its UnsafeReason on
+        class generic over the name are never converted. A function that also uses a name whose declaration
+        _conversion_refusal rejects is left unchanged, so no function mixes legacy and PEP 695 type parameters.
+        Bounds, constraints and `default=` are carried over in their original formatting, with defaulted type
+        parameters placed last. A name only methods of such a class use, whose declaration is rejected, or whose
+        every function is left unchanged is reported "unsafe", with its UnsafeReason on
         self.converted_unsafe_reasons. Returns {name: "fixed" | "unsafe"}.
         """
         root = self._cst_root()
@@ -114,9 +116,8 @@ class TypeVarCheck(PythonRefactoring[PythonCstNode]):
 
         results: dict[str, str] = {}
         self.converted_unsafe_reasons: dict[str, UnsafeReason] = {}
-        # One self.replace() per function: a function using two converted names would otherwise get two
-        # rewrites of the same node, which the rewriter rejects as conflicting.
-        new_params: dict[int, tuple[PythonCstNode, list[tuple[str, bool]]]] = {}
+        convertible: dict[str, tuple[tuple[str, bool], list[PythonCstNode]]] = {}
+        blocked: set[int] = set()
         for name, decl_stmt in find_type_param_declarations(module).items():
             uses = uses_of(root, name, decl_stmt)
             functions = list(dict.fromkeys(function for use in uses if (function := outermost_function(use)) is not None))
@@ -137,10 +138,20 @@ class TypeVarCheck(PythonRefactoring[PythonCstNode]):
             reason = self._conversion_refusal(decl_stmt)
             if reason is not None:
                 self._mark_unsafe(results, self.converted_unsafe_reasons, name, reason)
+                blocked.update(id(function) for function in candidates)
                 continue
 
-            param = (type_param_text(decl_stmt, module), declared_default(decl_stmt) is not None)
-            for function in candidates:
+            convertible[name] = ((type_param_text(decl_stmt, module), declared_default(decl_stmt) is not None), candidates)
+
+        # One self.replace() per function: a function using two converted names would otherwise get two
+        # rewrites of the same node, which the rewriter rejects as conflicting.
+        new_params: dict[int, tuple[PythonCstNode, list[tuple[str, bool]]]] = {}
+        for name, (param, candidates) in convertible.items():
+            allowed = [function for function in candidates if id(function) not in blocked]
+            if not allowed:
+                self._mark_unsafe(results, self.converted_unsafe_reasons, name, UnsafeReason.SHARES_FUNCTION_WITH_UNCONVERTIBLE)
+                continue
+            for function in allowed:
                 new_params.setdefault(id(function), (function, []))[1].append(param)
             results[name] = "fixed"
 
