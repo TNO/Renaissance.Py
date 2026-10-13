@@ -52,6 +52,8 @@ class PythonCstTranslationUnit:
         """Resolve libcst's scopes once, linking every definition to its uses; return the definition-to-uses map.
 
         Also fills self._definitions_of, the use-to-definitions map. Builtins, which have no defining node, are skipped.
+        An annotation or type hint above a definition in the same scope is linked to it too, since it is evaluated
+        lazily (PEP 563, PEP 649); a value read there at once is not.
         """
         if self._uses_of is not None:
             return self._uses_of
@@ -62,7 +64,13 @@ class PythonCstTranslationUnit:
             for assignment in scope.assignments:
                 if not isinstance(assignment, Assignment):
                     continue
-                for access in assignment.references:
+                lazy_accesses_above = {
+                    access
+                    for access in scope.accesses[assignment.name]
+                    if not access.referents and (access.is_annotation or access.is_type_hint)
+                }
+                # libcst only links an access to the definitions above it in the same scope.
+                for access in [*assignment.references, *lazy_accesses_above]:
                     uses_of[assignment.node].append((access.node, assignment.name, access))
                     definitions_of[access.node].append((assignment.node, assignment.name, access))
         self._uses_of = dict(uses_of)
