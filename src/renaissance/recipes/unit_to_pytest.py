@@ -225,6 +225,8 @@ class UnitToPytest(PythonRefactoring):
             # file does not contain any test class,  create a new class and add function in class
             cls = f"class {self.convert_file_to_test_class()}:\n"
             for fun in funs:
+                # TODO(FrancescoPezzella): textwrap.indent also indents the lines inside a multi-line string, changing its value.
+                #  https://github.com/TNO/Renaissance.Py/issues/283
                 cls += textwrap.indent(convert_function(fun), "    ")
                 self.remove([fun])
             self.insert_before(cls, funs[0])
