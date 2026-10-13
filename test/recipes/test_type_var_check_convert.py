@@ -152,6 +152,68 @@ class TestTypeVarCheckConvert:
         assert_that(output, contains_string("def wrapper(*args: P.args, **kwargs: P.kwargs) -> int:"))
         assert_that(output, not_(contains_string("wrapper[**P]")))
 
+    @pytest.mark.parametrize(
+        ("declarations", "functions", "expected_lines"),
+        [
+            pytest.param(
+                'T = TypeVar("T")',
+                "def handle(scope: int) -> None:\n    def wrap(func: Callable[[], T]) -> T:\n        return func()\n",
+                ["def handle(scope: int) -> None:", "    def wrap[T](func: Callable[[], T]) -> T:"],
+                id="only-nested-signature",
+            ),
+            pytest.param(
+                'K = TypeVar("K")\nF = TypeVar("F")',
+                'def keyword(name: "K | None" = None) -> "K | None":\n    def decorator(func: F) -> F:\n        return func\n',
+                ['def keyword[K](name: "K | None" = None) -> "K | None":', "    def decorator[F](func: F) -> F:"],
+                id="outer-and-nested-own-one-each",
+            ),
+            pytest.param(
+                'T = TypeVar("T")',
+                (
+                    "def outer() -> None:\n"
+                    "    def middle(x: T) -> T:\n"
+                    "        def inner(y: T) -> T:\n"
+                    "            return y\n"
+                    "        return inner(x)\n"
+                ),
+                ["def outer() -> None:", "    def middle[T](x: T) -> T:", "        def inner(y: T) -> T:"],
+                id="outermost-signature-of-three-levels",
+            ),
+        ],
+    )
+    def test_binds_typevar_to_the_outermost_function_whose_signature_uses_it(
+        self, create_type_var_check: Callable[[str], TypeVarCheck], declarations: str, functions: str, expected_lines: list[str]
+    ) -> None:
+        """Verify [T] goes on the outermost function whose own signature uses T, never on an enclosing one that doesn't."""
+        subject = create_type_var_check(
+            f"from collections.abc import Callable\nfrom typing import TypeVar\n\n{declarations}\n\n{functions}"
+        )
+        result = subject.convert_declared_typevars()
+
+        names = [declaration.split(" = ", maxsplit=1)[0] for declaration in declarations.splitlines()]
+        assert_that(result, equal_to(dict.fromkeys(names, "fixed")))
+        output = subject.apply_to_string()
+        for line in expected_lines:
+            assert_that(output, contains_string(f"{line}\n"))
+
+    @pytest.mark.parametrize(
+        "body",
+        [
+            pytest.param("    y: list[T] = []\n", id="local-annotation"),
+            pytest.param('    y = cast("T", x)\n', id="cast"),
+        ],
+    )
+    def test_leaves_typevar_used_only_in_a_function_body_unattributed(
+        self, create_type_var_check: Callable[[str], TypeVarCheck], body: str
+    ) -> None:
+        """Verify a T that no enclosing signature uses gives no function a [T]."""
+        source = f'from typing import TypeVar, cast\n\nT = TypeVar("T")\n\n\ndef f(x: int) -> None:\n{body}'
+        subject = create_type_var_check(source)
+        result = subject.convert_declared_typevars()
+
+        assert_that(result, equal_to({}))
+        assert_that(subject.apply_to_string(), equal_to(source))
+
     def test_merges_into_an_existing_type_params_bracket(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
         """AI: Verify converting a second TypeVar merges it into an existing PEP 695 bracket instead of adding a new one."""
         subject = create_type_var_check("""

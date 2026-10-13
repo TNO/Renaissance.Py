@@ -27,7 +27,8 @@ from renaissance.recipes.type_var_domain import (
     is_safe_to_localize,
     is_safe_to_remove,
     module_statements,
-    outermost_function,
+    owning_function,
+    signature_function,
     type_param_constructor_name,
     type_param_text,
     type_params_bracket,
@@ -102,14 +103,14 @@ class TypeVarCheck(PythonRefactoring[PythonCstNode]):
     def convert_declared_typevars(self) -> dict[str, str]:
         """Add a PEP 695 type parameter to every function using a module-level TypeVar/ParamSpec/TypeVarTuple.
 
-        The declaration is left in place. A use is attributed to the outermost function containing it; a `T`
-        that a same-named PEP 695 type parameter of a function or class declares is not a use. Methods of a
-        class generic over the name are never converted. A function that also uses a name whose declaration
-        _conversion_refusal rejects is left unchanged, so no function mixes legacy and PEP 695 type parameters.
-        Bounds, constraints and `default=` are carried over in their original formatting, with defaulted type
-        parameters placed last. A name only methods of such a class use, whose declaration is rejected, or whose
-        every function is left unchanged is reported "unsafe", with its UnsafeReason on
-        self.converted_unsafe_reasons. Returns {name: "fixed" | "unsafe"}.
+        The declaration is left in place. A use is attributed to the outermost enclosing function whose signature
+        uses the name; a use outside every such signature is not attributed. A `T` that a same-named PEP 695 type
+        parameter of a function or class declares is not a use. Methods of a class generic over the name are never
+        converted. A function that also uses a name whose declaration _conversion_refusal rejects is left unchanged,
+        so no function mixes legacy and PEP 695 type parameters. Bounds, constraints and `default=` are carried over
+        in their original formatting, with defaulted type parameters placed last. A name only methods of such a class
+        use, whose declaration is rejected, or whose every function is left unchanged is reported "unsafe", with its
+        UnsafeReason on self.converted_unsafe_reasons. Returns {name: "fixed" | "unsafe"}.
         """
         root = self._cst_root()
         module = root.translation_unit.atu
@@ -120,7 +121,8 @@ class TypeVarCheck(PythonRefactoring[PythonCstNode]):
         blocked: set[int] = set()
         for name, decl_stmt in find_type_param_declarations(module).items():
             uses = uses_of(root, name, decl_stmt)
-            functions = list(dict.fromkeys(function for use in uses if (function := outermost_function(use)) is not None))
+            signature_users = {id(function) for use in uses if (function := signature_function(use)) is not None}
+            functions = list(dict.fromkeys(function for use in uses if (function := owning_function(use, signature_users)) is not None))
             if not functions:
                 continue
 

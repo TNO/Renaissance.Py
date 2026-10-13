@@ -294,15 +294,31 @@ def uses_of(root: PythonCstNode, name: str, decl_stmt: cst.Assign) -> list[Pytho
     return [reference.node for reference in root.translation_unit.wrappers[target].referenced_by]
 
 
-def outermost_function(node: PythonCstNode) -> PythonCstNode | None:
-    """Return the outermost function or method enclosing node, or None if node is outside every function."""
-    outermost = None
+def signature_function(use: PythonCstNode) -> PythonCstNode | None:
+    """Return the function whose parameter or return annotation contains use, or None if no signature does.
+
+    A use in a function's body, a parameter default or a decorator is in no signature.
+    """
+    in_annotation = False
+    child, current = use, use.parent
+    while current is not None:
+        if isinstance(current.node, cst.Annotation):
+            in_annotation = True
+        elif isinstance(current.node, cst.FunctionDef):
+            return current if in_annotation and child.node is not current.node.body else None
+        child, current = current, current.parent
+    return None
+
+
+def owning_function(node: PythonCstNode, signature_users: set[int]) -> PythonCstNode | None:
+    """Return the outermost function enclosing node whose id is in signature_users, or None if there is none."""
+    owner = None
     current = node.parent
     while current is not None:
-        if isinstance(current.node, cst.FunctionDef):
-            outermost = current
+        if isinstance(current.node, cst.FunctionDef) and id(current) in signature_users:
+            owner = current
         current = current.parent
-    return outermost
+    return owner
 
 
 def generic_classes(uses: Iterable[PythonCstNode]) -> list[PythonCstNode]:
