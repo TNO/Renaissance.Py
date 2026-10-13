@@ -3,12 +3,10 @@
 
 import textwrap
 from collections.abc import Callable
-from typing import cast
 
 import pytest
 from hamcrest import assert_that, contains_string, equal_to, has_entry, not_
 
-from renaissance.recipes.python_refactoring import PythonRefactoring
 from renaissance.recipes.type_var_check import TypeVarCheck
 from renaissance.recipes.type_var_domain import UnsafeReason
 
@@ -47,6 +45,15 @@ def outer[T](x: T) -> T:
     return inner(x)
 """
 
+CLASS_WITH_OWN_TYPE_PARAMETER_SOURCE = """
+from typing import TypeVar
+T = TypeVar('T')
+
+class Box[T]:
+    def get(self, x: T) -> T:
+        return x
+"""
+
 
 class TestTypeVarCheckOrphaned:
     """See module docstring."""
@@ -59,16 +66,17 @@ class TestTypeVarCheckOrphaned:
             pytest.param(UNREFERENCED_SOURCE, (3, 11), id="unreferenced-below-pep695"),
             pytest.param(NESTED_ONLY_CONVERTED_SOURCE, (3, 12), id="only-nested-function-converted"),
             pytest.param(CLOSURE_IN_CONVERTED_FUNCTION_SOURCE, (3, 12), id="closure-inside-converted-function"),
+            pytest.param(CLASS_WITH_OWN_TYPE_PARAMETER_SOURCE, (3, 12), id="class-with-own-type-parameter"),
         ],
     )
     def test_removes_declaration_whose_references_are_all_shadowed(
         self,
-        make_recipe: Callable[[type[PythonRefactoring], str], PythonRefactoring],
+        create_type_var_check: Callable[[str], TypeVarCheck],
         source: str,
         min_python: tuple[int, int],
     ) -> None:
         """Verify a declaration whose references are all shadowed by PEP 695 parameters, or absent, is removed."""
-        subject = cast("TypeVarCheck", make_recipe(TypeVarCheck, source))
+        subject = create_type_var_check(source)
         subject.min_python = min_python
 
         result = subject.remove_orphaned_declarations()
@@ -102,7 +110,6 @@ class TestTypeVarCheckOrphaned:
             pytest.param('"list[T]"', id="inside-annotation"),
         ],
     )
-    @pytest.mark.xfail(reason="names inside string annotations aren't seen as references.", strict=True)
     def test_keeps_declaration_used_in_a_string_annotation(
         self, create_type_var_check: Callable[[str], TypeVarCheck], annotation: str
     ) -> None:

@@ -4,12 +4,18 @@
 import ast
 import textwrap
 from collections.abc import Callable
+from typing import cast
 
 import pytest
 from hamcrest import assert_that, contains_string, equal_to, has_entry, not_
 
 from renaissance.recipes.type_var_check import PEP_695_MINIMUM, PEP_696_MINIMUM, TypeVarCheck
-from renaissance.recipes.type_var_domain import UnsafeReason, type_param_name
+from renaissance.recipes.type_var_domain import UnsafeReason
+
+
+def _type_param_name(param: ast.type_param) -> str:
+    """Return a parsed PEP 695 type parameter's name."""
+    return cast("ast.TypeVar | ast.ParamSpec | ast.TypeVarTuple", param).name
 
 
 class TestTypeVarCheckConvert:
@@ -198,8 +204,8 @@ class TestTypeVarCheckConvert:
         assert_that(result["converted"], has_entry("T", "fixed"))
         assert_that(result["orphaned"], equal_to({"P": "fixed", "T": "fixed"}))
         functions = {node.name: node for node in ast.parse(subject.apply_to_string()).body if isinstance(node, ast.FunctionDef)}
-        assert_that([type_param_name(param) for param in functions["run_in_threadpool"].type_params], equal_to(["P", "T"]))
-        assert_that([type_param_name(param) for param in functions["identity"].type_params], equal_to(["T"]))
+        assert_that([_type_param_name(param) for param in functions["run_in_threadpool"].type_params], equal_to(["P", "T"]))
+        assert_that([_type_param_name(param) for param in functions["identity"].type_params], equal_to(["T"]))
 
     def test_orders_type_params_by_declaration(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
         """Verify the added type parameters follow the order their declarations appear in the file."""
@@ -212,12 +218,6 @@ class TestTypeVarCheckConvert:
 
         assert_that(subject.apply_to_string(), contains_string(f"def f[{', '.join(names)}]({parameters}) -> None: ..."))
 
-    @pytest.mark.xfail(
-        reason="_renormalize_indent takes the body's minimum indent over every line, including the lines "
-        "inside a multi-line string literal, so the literal's value changes.",
-        raises=AssertionError,
-        strict=True,
-    )
     def test_converts_function_preserving_multiline_string_literal(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
         """Verify converting a function keeps a multi-line string literal whose continuation line is at column 0."""
         # Built line by line: textwrap.dedent in the fixture would otherwise be blocked by the column-0 line.
@@ -272,22 +272,13 @@ class TestTypeVarCheckConvert:
         assert_that(output, contains_string("def first[T](items: list[T]) -> T:"))
         assert_that(output, contains_string("    def get(self, x: T) -> T:"))
 
-    @pytest.mark.parametrize(
-        "class_header",
-        [
-            pytest.param("class Box(Generic[T]):", id="generic-base"),
-            pytest.param("class Box[T]:", id="pep695-class"),
-        ],
-    )
-    def test_reports_typevar_used_only_in_a_generic_class(
-        self, create_type_var_check: Callable[[str], TypeVarCheck], class_header: str
-    ) -> None:
+    def test_reports_typevar_used_only_in_a_generic_class(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
         """Verify a TypeVar only a generic class uses is reported unsafe with its reason and left as it is."""
-        subject = create_type_var_check(f"""
+        subject = create_type_var_check("""
             from typing import Generic, TypeVar
             T = TypeVar('T')
 
-            {class_header}
+            class Box(Generic[T]):
                 def get(self, x: T) -> T:
                     return x
         """)
@@ -295,6 +286,22 @@ class TestTypeVarCheckConvert:
 
         assert_that(result, equal_to({"T": "unsafe"}))
         assert_that(subject.converted_unsafe_reasons, equal_to({"T": UnsafeReason.USED_IN_GENERIC_CLASS}))
+        assert_that(subject.apply_to_string(), contains_string("    def get(self, x: T) -> T:"))
+
+    def test_ignores_methods_using_their_class_type_parameter(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
+        """Verify a T that is the class's own type parameter (`class Box[T]`) is not a use of the module-level T."""
+        subject = create_type_var_check("""
+            from typing import TypeVar
+            T = TypeVar('T')
+
+            class Box[T]:
+                def get(self, x: T) -> T:
+                    return x
+        """)
+        result = subject.convert_declared_typevars()
+
+        assert_that(result, equal_to({}))
+        assert_that(subject.converted_unsafe_reasons, equal_to({}))
         assert_that(subject.apply_to_string(), contains_string("    def get(self, x: T) -> T:"))
 
     @pytest.mark.parametrize(

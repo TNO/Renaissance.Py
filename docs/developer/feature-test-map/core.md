@@ -41,11 +41,9 @@
     - `test/recipes/test_type_var_domain.py`
     - `test/recipes/test_step_runner.py`
     - `test/recipes/test_python_refactoring.py`
-    - `test/recipes/conftest.py`
-    - `test/utils/test_unparse_utils.py`
     - `test/utils/test_import_resolution.py`
     - `test/rejuvenation/test_migration_type_recipes.py`
 - **Code file(s):** `src/renaissance/recipes/type_var_check.py`, `src/renaissance/recipes/type_var_domain.py`,
   `src/renaissance/recipes/step_runner.py`,
-  `src/renaissance/recipes/python_refactoring.py`, `src/renaissance/utils/unparse_utils.py`,
+  `src/renaissance/recipes/python_refactoring.py`,
   `src/renaissance/utils/import_resolution.py`, `src/rejuvenation/migration-type-recipes.py`

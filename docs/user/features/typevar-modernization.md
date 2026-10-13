@@ -37,7 +37,8 @@ skipped without a report:
 
 A class is *generic over* `T` when it declares `T` itself (`class Box[T]:`) or has `T` in a base (`Generic[T]`,
 `Protocol[T]`, `Base[int, T]`). Inside such a class, `T` belongs to the class, so the tool never adds `[T]` to its
-methods.
+methods. With `class Box[T]:`, the methods don't use the module-level `T` at all, so a declaration nothing else uses
+is removed.
 
 ## Outputs / effects
 
@@ -49,16 +50,13 @@ methods.
 
 These cases are **not** reported, so review the changes with `git diff`:
 
-- A multi-line string literal in a converted function, with a line indented less than the body, has its contents
-  changed (see [Python AST known limitations](../../developer/modules/python-ast-known-limitations.md)).
 - `U = TypeVar("U", default=T)` becomes `def f[U = T]`, where `T` still means the module-level one. Fix it by hand
   as `def f[T, U = T]`.
 - A localized `T` is a new object: code comparing type parameters by identity (`is`) sees two different objects.
   A file importing `T` from a localized file gets that copy too.
-- When localizing narrows an import, the comments inside it are lost and a trailing comment moves to the declaration's
-  line (see [Python AST known limitations](../../developer/modules/python-ast-known-limitations.md)).
 - A declaration whose importers are all localized in a run is only removed by a second run.
-- A `T` used only in string annotations (`def f(x: "T")`) is seen as unused, so its declaration is removed.
+- A `T` used only in the string value of a `TypeAlias` (`A: TypeAlias = "list[T]"`) is seen as unused, so its
+  declaration is removed.
 - Only a plain `__all__ = [...]` marks `T` as exported. Annotated (`__all__: list[str] = ...`), `+=`, `.extend()`
   and `.append()` forms are not read, so the declaration can be removed.
 - Removing a line can leave extra blank lines. Run your formatter afterwards.
@@ -108,11 +106,11 @@ remove `covariant=`/`contravariant=` and run again.
 
 ### A declared TypeVar is only used inside a generic class { #feature-typevar-modernization-used-in-generic-class }
 
-Only methods of a generic class (see *Generic classes* above) use `T`, so there is nothing to
+Only methods of a class with `T` in a base (see *Generic classes* above) use `T`, so there is nothing to
 convert. Standalone functions that also use `T` are still converted.
 
-**To fix this yourself:** `ruff`'s `UP046` rewrites `Generic[T]` to `class Box[T]:`. Then delete the unused
-`T = TypeVar("T")`.
+**To fix this yourself:** `ruff`'s `UP046` rewrites `Generic[T]` to `class Box[T]:`. Run the tool again afterwards:
+it removes the now unused `T = TypeVar("T")`.
 
 ### A name the declaration uses can't be imported here { #feature-typevar-modernization-declaration-name-unavailable }
 
@@ -151,8 +149,6 @@ run the tool again.
 - `test/recipes/test_type_var_domain.py`
 - `test/recipes/test_step_runner.py`
 - `test/recipes/test_python_refactoring.py`
-- `test/recipes/conftest.py`
-- `test/utils/test_unparse_utils.py`
 - `test/utils/test_import_resolution.py`
 - `test/rejuvenation/test_migration_type_recipes.py`
 
@@ -160,7 +156,7 @@ run the tool again.
 
 - [Refactoring recipes](../../developer/modules/recipes.md)
 - `src/renaissance/recipes/type_var_check.py`, `type_var_domain.py`, `step_runner.py` and `python_refactoring.py`
-- `src/renaissance/utils/import_resolution.py` and `unparse_utils.py`
+- `src/renaissance/utils/import_resolution.py`
 - `src/rejuvenation/migration-type-recipes.py` (the CLI)
 
 ## API entry points

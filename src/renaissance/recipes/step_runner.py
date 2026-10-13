@@ -4,7 +4,7 @@
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 
-from renaissance.recipes.python_refactoring import PythonRefactoring
+from renaissance.syntax_tree import ASTProcessor
 
 
 @dataclass(frozen=True)
@@ -12,7 +12,7 @@ class Step:
     """One independently-runnable, independently-committable fix action."""
 
     label: str
-    recipe: PythonRefactoring
+    recipe: ASTProcessor
     action: Callable[[], dict[str, str]]
 
 
