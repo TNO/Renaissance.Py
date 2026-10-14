@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
 import pytest
-from hamcrest import all_of, assert_that, contains_string, equal_to, has_entry, has_length, not_
+from hamcrest import all_of, assert_that, contains_string, equal_to, has_entry, has_item, has_length, not_
 from pytest_mock import MockerFixture
 
 from renaissance.integrations.python.ast.cst_node import PythonCstNode
@@ -148,6 +148,37 @@ class TestTypeVarCheckLocalize:
         origin_call = cast("ast.Assign", ast.parse(origin).body[-1]).value
         assert_that(ast.dump(local_call), equal_to(ast.dump(origin_call)))
         assert_that(_names_used_by(cast("ast.Call", local_call)) - _module_level_names(module), equal_to(set()))
+
+    @pytest.mark.parametrize(
+        ("origin_imports", "expected_line"),
+        [
+            pytest.param("from typing import Any", "from typing import Any", id="absolute-module"),
+            pytest.param("from ._shapes import Shape", "from sub._shapes import Shape", id="relative-module-in-origin"),
+            pytest.param("from shapes import Base as Shape", "from shapes import Base as Shape", id="aliased-in-origin"),
+        ],
+    )
+    def test_names_a_declaration_uses_are_imported_from_where_the_origin_gets_them(
+        self,
+        mocker: MockerFixture,
+        tmp_path: Path,
+        origin_imports: str,
+        expected_line: str,
+    ) -> None:
+        """Verify a name the declaration uses is imported from the module the origin imports it from, not from the origin."""
+        name = expected_line.rsplit(" ", maxsplit=1)[-1]
+        subject = self._create_cross_file(
+            mocker,
+            tmp_path,
+            f'from typing import TypeVar\n{origin_imports}\nT = TypeVar("T", bound={name})\n',
+            "from sub.file_1 import T\ndef b(x: T) -> T:\n    return x\n",
+            ("sub/file_1.py", "use.py"),
+        )
+        result = subject.localize_imported_typevars()
+
+        assert_that(result, equal_to({"T": "fixed"}))
+        lines = subject.apply_to_string().splitlines()
+        assert_that(lines.count(expected_line), equal_to(1))
+        assert_that(lines, not_(has_item(f"from sub.file_1 import {name}")))
 
     @pytest.mark.parametrize(
         ("origin", "importing_extra"),
@@ -317,12 +348,13 @@ class TestTypeVarCheckLocalize:
                 'class Shape:\n    pass\nclass Circle(Shape):\n    pass\nT = TypeVar("T", bound=Shape)\nU = TypeVar("U", bound=Circle)',
                 "from file_1 import T, U",
                 [
-                    "from file_1 import Circle, Shape",
+                    "from file_1 import Circle",
+                    "from file_1 import Shape",
                     "from typing import TypeVar",
                     'T = TypeVar("T", bound=Shape)',
                     'U = TypeVar("U", bound=Circle)',
                 ],
-                id="bounds-share-one-import",
+                id="bounds-each-imported-once",
             ),
         ],
     )
