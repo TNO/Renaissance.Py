@@ -119,6 +119,22 @@ def find_type_param_declarations(module: cst.Module) -> dict[str, cst.Assign]:
     return declarations
 
 
+def declaration_text(module: cst.Module, decl_stmt: cst.Assign) -> str:
+    """Return decl_stmt as written in module, without its `;`.
+
+    The comment trailing its line follows it when it is the only statement there, since on a shared
+    line the comment may belong to another statement.
+    """
+    text = module.code_for_node(decl_stmt.with_changes(semicolon=cst.MaybeSentinel.DEFAULT))
+    for line in module.body:
+        if isinstance(line, cst.SimpleStatementLine) and len(line.body) == 1 and line.body[0] is decl_stmt:
+            trailing = line.trailing_whitespace
+            if trailing.comment is not None:
+                text += module.code_for_node(trailing.whitespace) + module.code_for_node(trailing.comment)
+            break
+    return text
+
+
 def _call(decl_stmt: cst.Assign) -> cst.Call:
     """Return the TypeVar/ParamSpec/TypeVarTuple call a declaration assigns."""
     return cast("cst.Call", decl_stmt.value)
