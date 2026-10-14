@@ -138,6 +138,55 @@ class TestRuffImportCleanup:
         assert_that(written, import_matcher)
         assert_that(capsys.readouterr().out, report_matcher)
 
+    @pytest.mark.parametrize(
+        ("extra_args", "import_lines"),
+        [
+            pytest.param([], ["from typing import Any, TypeVar", "from xarray_types import Alignable, JoinOptions"], id="default-merges"),
+            pytest.param(
+                ["--no-ruff"],
+                [
+                    "from typing import Any",
+                    "from typing import TypeVar",
+                    "from xarray_types import JoinOptions",
+                    "from xarray_types import Alignable",
+                ],
+                id="no-ruff-keeps-them-apart",
+            ),
+        ],
+    )
+    def test_localized_imports_are_merged_with_existing_ones(
+        self,
+        tmp_path: Path,
+        extra_args: list[str],
+        import_lines: list[str],
+    ) -> None:
+        """The localized TypeVar's import joins the file's own `typing` import, unless --no-ruff; Python < 3.12 only localizes."""
+        (tmp_path / "xarray_types.py").write_text(
+            'from typing import TypeVar\n\nJoinOptions = str\nAlignable = int\nT = TypeVar("T")\n',
+            encoding="utf-8",
+        )
+        target = tmp_path / "use.py"
+        target.write_text(
+            textwrap.dedent("""\
+                from typing import Any
+                from xarray_types import JoinOptions
+                from xarray_types import T
+                from xarray_types import Alignable
+
+
+                def pick(x: T, how: JoinOptions, other: Alignable) -> Any:
+                    return x
+                """),
+            encoding="utf-8",
+        )
+
+        exit_code = migration.main([str(target), "--py", "3.11", *extra_args])
+
+        assert_that(exit_code, equal_to(0))
+        lines = target.read_text(encoding="utf-8").splitlines()
+        for import_line in import_lines:
+            assert_that(lines.count(import_line), equal_to(1), import_line)
+
     def test_unmodified_sibling_file_is_left_untouched(self, tmp_path: Path) -> None:
         """A sibling file with no TypeVar usage - and its own genuinely-unused import - survives main() byte-for-byte."""
         (tmp_path / "mod.py").write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")

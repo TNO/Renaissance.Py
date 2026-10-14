@@ -7,6 +7,7 @@
 """Recipe that modernizes legacy TypeVar/ParamSpec/TypeVarTuple usage to PEP 695 syntax."""
 
 from collections.abc import Sequence
+from dataclasses import dataclass
 from pathlib import Path
 from typing import cast
 
@@ -27,6 +28,7 @@ from renaissance.recipes.type_var_domain import (
     is_safe_to_localize,
     is_safe_to_remove,
     module_statements,
+    names_read_by,
     owning_function,
     signature_function,
     type_param_constructor_name,
@@ -38,6 +40,18 @@ from renaissance.utils.import_resolution import import_from_module, imported_nam
 
 PEP_695_MINIMUM = (3, 12)
 PEP_696_MINIMUM = (3, 13)
+
+
+@dataclass(frozen=True)
+class _Localization:
+    """The type parameter names one import statement brings in that are localized, and the text that replaces them."""
+
+    line: cst.SimpleStatementLine
+    raw: cst.ImportFrom
+    names: frozenset[str]
+    kept: list[cst.ImportAlias]
+    imports: list[str]
+    declarations: list[str]
 
 
 class TypeVarCheck(PythonRefactoring[PythonCstNode]):
@@ -234,8 +248,10 @@ class TypeVarCheck(PythonRefactoring[PythonCstNode]):
     def localize_imported_typevars(self) -> dict[str, str]:
         """Replace imports of TypeVar/ParamSpec/TypeVarTuple names from the target project with local declarations.
 
-        Imports are resolved against project_root. Where safe, the import becomes a copy of the origin's
-        declaration, plus imports from the origin for the names its arguments use (e.g. `bound=Shape`).
+        Imports are resolved against project_root. Where safe, the import is dropped and a copy of the origin's
+        declaration is added, plus imports from the origin for the names its arguments use (e.g. `bound=Shape`).
+        The added imports (each once per file) and declarations go after the file's last import, so no
+        import is left below code. A declaration stays where its import was when a statement in between uses it.
         It is unsafe when is_safe_to_localize rejects the origin or _argument_names_to_import returns None.
         Returns {name: "fixed" | "unsafe"}, with each UnsafeReason on self.cross_file_unsafe_reasons.
         """
@@ -244,6 +260,7 @@ class TypeVarCheck(PythonRefactoring[PythonCstNode]):
         module = self._cst_root().translation_unit.atu
 
         project_root = self.project_root if self.project_root is not None else Path(self.filename).parent
+        localizations: list[_Localization] = []
         for line in module.body:
             if not isinstance(line, cst.SimpleStatementLine):
                 continue
@@ -255,8 +272,9 @@ class TypeVarCheck(PythonRefactoring[PythonCstNode]):
                 )
                 if origin_path is None:
                     continue
-                self._localize_names_from(line, statement, origin_path, results)
+                self._localize_names_from(line, statement, origin_path, results, localizations)
 
+        self._place_localizations(localizations)
         return results
 
     def _localize_names_from(
@@ -265,10 +283,12 @@ class TypeVarCheck(PythonRefactoring[PythonCstNode]):
         raw: cst.ImportFrom,
         origin_path: Path,
         results: dict[str, str],
+        localizations: list[_Localization],
     ) -> None:
-        """Localize every safe type parameter name that raw, on line, imports from the origin_path file.
+        """Queue the localization of every safe type parameter name that raw, on line, imports from the origin_path file.
 
-        Records each name in results as "fixed" or, via _mark_unsafe, as "unsafe".
+        Records each name in results as "fixed" or, via _mark_unsafe, as "unsafe", and appends what to
+        write for the "fixed" ones to localizations.
 
         Raises:
             SyntaxError: if the origin file can't be parsed, with the origin's path as its filename.
@@ -311,7 +331,7 @@ class TypeVarCheck(PythonRefactoring[PythonCstNode]):
             return
         if needed_argument_names:
             needed_imports.append(f"from {self._import_from_text(raw)} import {', '.join(sorted(needed_argument_names))}")
-        self._localize_import(line, raw, origin, localized, needed_imports)
+        localizations.append(self._localization(line, raw, origin, localized, needed_imports))
 
     @staticmethod
     def _import_from_text(raw: cst.ImportFrom) -> str:
@@ -379,34 +399,124 @@ class TypeVarCheck(PythonRefactoring[PythonCstNode]):
                 return None
         return missing
 
-    def _localize_import(
-        self,
+    @staticmethod
+    def _localization(
         line: cst.SimpleStatementLine,
         raw: cst.ImportFrom,
         origin: cst.Module,
         declarations: dict[str, cst.Assign],
         needed_imports: list[str],
-    ) -> None:
-        """Replace the import raw, on line, with local copies of declarations from the origin module.
+    ) -> _Localization:
+        """Return what replaces the names of declarations that the import raw, on line, brings in.
 
-        The declarations keep their original formatting and come after needed_imports: the imports they need
-        (their constructors, names their arguments use) that this file doesn't have yet. If raw imports other
-        names too, it is narrowed to those, keeping its comments, and the declarations go after line;
-        otherwise they replace raw.
+        The declarations keep their original formatting. needed_imports are the imports they need (their
+        constructors, names their arguments use) that this file doesn't have yet. The kept aliases are the
+        names raw imports that are not localized.
         """
         no_semicolon = cst.MaybeSentinel.DEFAULT
-        decl_text = "\n".join(
-            [*needed_imports, *(origin.code_for_node(decl.with_changes(semicolon=no_semicolon)) for decl in declarations.values())]
-        )
-        wrappers = self._cst_root().translation_unit.wrappers
-
         kept = [alias for alias in cast("Sequence[cst.ImportAlias]", raw.names) if imported_name(alias) not in declarations]
-        if not kept:
-            self.replace(decl_text, wrappers[raw], include_whitespace=False, include_comments=False)
-            return
-        if raw.rpar is None:
+        if kept and raw.rpar is None:
             # Without parentheses, a trailing comma after the last name is a syntax error.
             kept[-1] = kept[-1].with_changes(comma=cst.MaybeSentinel.DEFAULT)
-        narrowed = self._cst_root().translation_unit.atu.code_for_node(raw.with_changes(names=kept, semicolon=no_semicolon))
-        self.replace(narrowed, wrappers[raw], include_whitespace=False, include_comments=False)
-        self.insert_after(f"\n{decl_text}", wrappers[line], include_whitespace=False, include_comments=True)
+        texts = [origin.code_for_node(decl.with_changes(semicolon=no_semicolon)) for decl in declarations.values()]
+        return _Localization(line, raw, frozenset(declarations), kept, needed_imports, texts)
+
+    @staticmethod
+    def _is_import_line(statement: cst.BaseStatement) -> bool:
+        """Return True if statement is a line made only of import statements."""
+        return isinstance(statement, cst.SimpleStatementLine) and all(
+            isinstance(small, cst.Import | cst.ImportFrom) for small in statement.body
+        )
+
+    def _place_localizations(self, localizations: list[_Localization]) -> None:
+        """Write each localization: its import is narrowed or dropped, and what replaces its names goes after the last import.
+
+        The needed imports come first, each once, then the declarations. If every import of the file is dropped, they
+        take the place of the last one. A localization is written where its import is when that import shares its
+        line with other statements and would be dropped, when no import remains to go after, or when a statement
+        between it and the last import reads one of its names.
+        """
+        body = self._cst_root().translation_unit.atu.body
+        wrappers = self._cst_root().translation_unit.wrappers
+        dropped = {id(item.line) for item in localizations if not item.kept}
+        anchor = max(
+            (index for index, statement in enumerate(body) if self._is_import_line(statement) and id(statement) not in dropped),
+            default=None,
+        )
+        replaces_anchor = anchor is None
+        if anchor is None:
+            anchor = max(
+                (
+                    index
+                    for index, statement in enumerate(body)
+                    if id(statement) in dropped and isinstance(statement, cst.SimpleStatementLine) and len(statement.body) == 1
+                ),
+                default=None,
+            )
+        if anchor is None:
+            for item in localizations:
+                self._write_in_place(item)
+            return
+
+        imports: list[str] = []
+        declarations: list[str] = []
+        anchor_raw: cst.ImportFrom | None = None
+        for item in localizations:
+            if not self._goes_after_last_import(item, body, anchor):
+                self._write_in_place(item)
+                continue
+            imports.extend(item.imports)
+            declarations.extend(item.declarations)
+            if replaces_anchor and item.line is body[anchor]:
+                anchor_raw = item.raw
+            elif item.kept:
+                self._narrow(item)
+            else:
+                self._drop(item)
+
+        if not declarations:
+            return
+        text = "\n".join([*dict.fromkeys(imports), *declarations])
+        if anchor_raw is not None:
+            self.replace(text, wrappers[anchor_raw], include_whitespace=False, include_comments=False)
+        else:
+            self.insert_after(f"\n{text}", wrappers[body[anchor]], include_whitespace=False, include_comments=True)
+
+    def _write_in_place(self, item: _Localization) -> None:
+        """Replace the names of item where its import is: its needed imports and declarations follow the kept names, if any."""
+        wrappers = self._cst_root().translation_unit.wrappers
+        text = "\n".join([*item.imports, *item.declarations])
+        if not item.kept:
+            self.replace(text, wrappers[item.raw], include_whitespace=False, include_comments=False)
+            return
+        self._narrow(item)
+        self.insert_after(f"\n{text}", wrappers[item.line], include_whitespace=False, include_comments=True)
+
+    def _drop(self, item: _Localization) -> None:
+        """Remove the import of item, with the comment trailing it, from its line."""
+        wrappers = self._cst_root().translation_unit.wrappers
+        targets = [wrappers[item.raw]]
+        comment = item.line.trailing_whitespace.comment
+        if comment is not None:
+            targets.append(wrappers[comment])
+        self.remove(targets, include_comments=False)
+
+    def _narrow(self, item: _Localization) -> None:
+        """Replace the import of item with one that only imports its kept names, keeping its comments."""
+        module = self._cst_root().translation_unit.atu
+        narrowed = module.code_for_node(item.raw.with_changes(names=item.kept, semicolon=cst.MaybeSentinel.DEFAULT))
+        self.replace(narrowed, self._cst_root().translation_unit.wrappers[item.raw], include_whitespace=False, include_comments=False)
+
+    def _goes_after_last_import(self, item: _Localization, body: Sequence[cst.BaseStatement], anchor: int) -> bool:
+        """Return True if item can be written after body[anchor], the last import that stays.
+
+        It can't when its import would be dropped from a line with other statements, or when a statement
+        between it and the anchor that isn't an import reads one of its names: moving the declaration
+        down would define it after that use.
+        """
+        if not item.kept and len(item.line.body) != 1:
+            return False
+        index = next(position for position, statement in enumerate(body) if statement is item.line)
+        return not any(
+            not self._is_import_line(statement) and item.names & names_read_by(statement) for statement in body[index + 1 : anchor]
+        )
