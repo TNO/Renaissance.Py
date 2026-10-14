@@ -23,6 +23,7 @@ from renaissance.recipes.type_var_domain import (
     declared_default,
     declares_type_param,
     find_type_param_declarations,
+    from_import_binding,
     from_import_sources,
     generic_classes,
     has_unconvertible_argument,
@@ -32,6 +33,7 @@ from renaissance.recipes.type_var_domain import (
     names_read_by,
     owning_function,
     signature_function,
+    trailing_of_sole_statement,
     type_param_constructor_name,
     type_param_text,
     type_params_bracket,
@@ -241,19 +243,25 @@ class TypeVarCheck(PythonRefactoring[PythonCstNode]):
         reasons[name] = reason
 
     def _remove_declaration(self, decl_stmt: cst.Assign) -> None:
-        """Remove decl_stmt's statement from the file."""
+        """Remove decl_stmt's statement from the file, with the comment trailing it when it is alone on its line."""
+        unit = self._cst_root().translation_unit
+        targets: list[cst.CSTNode] = [decl_stmt]
+        trailing = trailing_of_sole_statement(unit.atu, decl_stmt)
+        if trailing is not None and trailing.comment is not None:
+            targets.append(trailing.comment)
         # TODO(FrancescoPezzella): enable once comment blocks get correctly deleted
         #  https://github.com/TNO/Renaissance.Py/issues/189
-        self.remove(self._cst_root().translation_unit.wrappers[decl_stmt], include_comments=False)
+        self.remove([unit.wrappers[target] for target in targets], include_comments=False)
 
     def localize_imported_typevars(self) -> dict[str, str]:
         """Replace imports of TypeVar/ParamSpec/TypeVarTuple names from the target project with local declarations.
 
         Imports are resolved against project_root. Where safe, the import is dropped and a copy of the origin's
-        declaration is added, plus imports from the origin for the names its arguments use (e.g. `bound=Shape`).
-        The added imports (each once per file) and declarations go after the file's last import, so no
-        import is left below code. A declaration stays where its import was when a statement in between uses it.
-        It is unsafe when is_safe_to_localize rejects the origin or _argument_names_to_import returns None.
+        declaration is added, plus imports for the names its arguments use (e.g. `bound=Shape`), from the module
+        the origin gets each one from. The added imports (each once per file) and declarations go after the
+        file's last import, so no import is left below code. A declaration stays where its import was when a
+        statement in between uses it.
+        It is unsafe when is_safe_to_localize rejects the origin or _argument_imports returns None.
         Returns {name: "fixed" | "unsafe"}, with each UnsafeReason on self.cross_file_unsafe_reasons.
         """
         results: dict[str, str] = {}
@@ -304,7 +312,6 @@ class TypeVarCheck(PythonRefactoring[PythonCstNode]):
         declarations = find_type_param_declarations(origin)
         localized: dict[str, cst.Assign] = {}
         needed_imports: list[str] = []
-        needed_argument_names: set[str] = set()
 
         for alias in raw.names:
             name = alias.evaluated_name
@@ -316,22 +323,20 @@ class TypeVarCheck(PythonRefactoring[PythonCstNode]):
             if reason is not None:
                 self._mark_unsafe(results, self.cross_file_unsafe_reasons, name, reason)
                 continue
-            argument_names = self._argument_names_to_import(origin, raw, decl_stmt)
-            if argument_names is None:
+            argument_imports = self._argument_imports(origin, origin_path, raw, decl_stmt)
+            if argument_imports is None:
                 self._mark_unsafe(results, self.cross_file_unsafe_reasons, name, UnsafeReason.DECLARATION_NAME_UNAVAILABLE)
                 continue
 
             constructor_import = self._missing_constructor_import(origin, origin_path, raw, decl_stmt)
-            if constructor_import is not None and constructor_import not in needed_imports:
-                needed_imports.append(constructor_import)
-            needed_argument_names |= argument_names
+            for needed in [constructor_import, *argument_imports]:
+                if needed is not None and needed not in needed_imports:
+                    needed_imports.append(needed)
             localized[name] = decl_stmt
             results[name] = "fixed"
 
         if not localized:
             return
-        if needed_argument_names:
-            needed_imports.append(f"from {self._import_from_text(raw)} import {', '.join(sorted(needed_argument_names))}")
         localizations.append(self._localization(line, raw, origin, localized, needed_imports))
 
     @staticmethod
@@ -375,22 +380,28 @@ class TypeVarCheck(PythonRefactoring[PythonCstNode]):
 
         return f"from {ctor_module} import {ctor_name}"
 
-    def _argument_names_to_import(self, origin: cst.Module, raw: cst.ImportFrom, decl_stmt: cst.Assign) -> set[str] | None:
-        """Return the names decl_stmt's arguments use that this file must import from the origin module.
+    def _argument_imports(
+        self,
+        origin: cst.Module,
+        origin_path: Path,
+        raw: cst.ImportFrom,
+        decl_stmt: cst.Assign,
+    ) -> list[str] | None:
+        """Return the import lines for the names decl_stmt's arguments use that this file doesn't have, sorted by name.
 
         A name this file already imports from the origin module (or from the same absolute module the
-        origin imports it from) is fine and not returned. Returns None if one of those names can't be
-        imported from the origin as the same object: the origin doesn't bind it at module level at
-        runtime (e.g. only under `if TYPE_CHECKING:`), or this file binds it to something else.
+        origin imports it from) is fine and not returned. Returns None if one of the names can't be
+        imported as the same object: the origin doesn't bind it at module level at runtime (e.g. only
+        under `if TYPE_CHECKING:`), or this file binds it to something else.
         """
         origin_sources = from_import_sources(origin)
         importing_sources = from_import_sources(self._cst_root().translation_unit.atu)
-        missing: set[str] = set()
-        for name in declaration_argument_names(decl_stmt):
+        imports: list[str] = []
+        for name in sorted(declaration_argument_names(decl_stmt)):
             if name not in origin_sources:
                 return None
             if name not in importing_sources:
-                missing.add(name)
+                imports.append(self._argument_import(origin, origin_path, raw, name))
                 continue
             origin_source = origin_sources[name]
             accepted = {(import_from_module(raw) or "", len(raw.relative))}
@@ -398,7 +409,29 @@ class TypeVarCheck(PythonRefactoring[PythonCstNode]):
                 accepted.add(origin_source)
             if importing_sources[name] not in accepted:
                 return None
-        return missing
+        return imports
+
+    def _argument_import(self, origin: cst.Module, origin_path: Path, via: cst.ImportFrom, name: str) -> str:
+        """Return the import line for name, which a localized declaration uses and the origin binds at module level.
+
+        A name the origin imports is imported from the module it gets it from, as named from this file, which
+        reaches the origin (origin_path) through via. Any other name, or one this file can't name the module
+        of, is imported from the origin module itself.
+        """
+        binding = from_import_binding(origin, name)
+        if binding is not None:
+            statement, alias = binding
+            module = rebase_relative_module(
+                import_from_module(via),
+                len(via.relative),
+                origin_path,
+                import_from_module(statement) or None,
+                len(statement.relative),
+            )
+            if module is not None:
+                imported = alias.evaluated_name
+                return f"from {module} import {name if imported == name else f'{imported} as {name}'}"
+        return f"from {self._import_from_text(via)} import {name}"
 
     @staticmethod
     def _localization(
