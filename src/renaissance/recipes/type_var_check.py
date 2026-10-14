@@ -19,6 +19,7 @@ from renaissance.recipes.step_runner import Step, run_steps
 from renaissance.recipes.type_var_domain import (
     UnsafeReason,
     declaration_argument_names,
+    declaration_text,
     declared_default,
     declares_type_param,
     find_type_param_declarations,
@@ -409,16 +410,17 @@ class TypeVarCheck(PythonRefactoring[PythonCstNode]):
     ) -> _Localization:
         """Return what replaces the names of declarations that the import raw, on line, brings in.
 
-        The declarations keep their original formatting. needed_imports are the imports they need (their
-        constructors, names their arguments use) that this file doesn't have yet. The kept aliases are the
-        names raw imports that are not localized.
+        The declarations keep their original formatting and the comment trailing them. needed_imports are the
+        imports they need (their constructors, names their arguments use) that this file doesn't have yet. The
+        kept aliases are the names raw imports that are not localized.
         """
-        no_semicolon = cst.MaybeSentinel.DEFAULT
         kept = [alias for alias in cast("Sequence[cst.ImportAlias]", raw.names) if imported_name(alias) not in declarations]
         if kept and raw.rpar is None:
             # Without parentheses, a trailing comma after the last name is a syntax error.
             kept[-1] = kept[-1].with_changes(comma=cst.MaybeSentinel.DEFAULT)
-        texts = [origin.code_for_node(decl.with_changes(semicolon=no_semicolon)) for decl in declarations.values()]
+        # TODO(FrancescoPezzella): the comment lines above a declaration are not copied: the rewriter only handles a one-line comment.
+        #  https://github.com/TNO/Renaissance.Py/issues/189
+        texts = [declaration_text(origin, decl) for decl in declarations.values()]
         return _Localization(line, raw, frozenset(declarations), kept, needed_imports, texts)
 
     @staticmethod
