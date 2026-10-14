@@ -207,6 +207,13 @@ def declaration_argument_names(decl_stmt: cst.Assign) -> set[str]:
     return collector.names - set(dir(builtins))
 
 
+def names_read_by(node: cst.CSTNode) -> set[str]:
+    """Return every name `node` reads, built-ins included; attribute names and keyword argument names are not reads."""
+    collector = _NameCollector()
+    node.visit(collector)
+    return collector.names
+
+
 def from_import_sources(module: cst.Module) -> dict[str, tuple[str, int] | None]:
     """Map every name bound at module level to its `from` import's (module, level), or None if bound otherwise.
 
