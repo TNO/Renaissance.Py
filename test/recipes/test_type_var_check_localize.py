@@ -483,6 +483,38 @@ class TestTypeVarCheckLocalize:
         exec(compile(output, "importing.py", "exec"), {})  # noqa: S102
 
     @pytest.mark.parametrize(
+        ("origin_declaration", "expected_comment_lines"),
+        [
+            pytest.param('T = TypeVar("T")  # noqa: PLC0105', ['T = TypeVar("T")  # noqa: PLC0105'], id="noqa"),
+            pytest.param(
+                'T = TypeVar(\n    "T",\n    bound=int,\n)  # noqa: PLC0105',
+                [")  # noqa: PLC0105"],
+                id="multi-line-declaration",
+            ),
+            pytest.param('T = TypeVar("T"); U = 1  # unrelated', [], id="shares-line-with-another-statement"),
+        ],
+    )
+    def test_localized_declaration_keeps_the_comment_trailing_it(
+        self,
+        mocker: MockerFixture,
+        tmp_path: Path,
+        origin_declaration: str,
+        expected_comment_lines: list[str],
+    ) -> None:
+        """Verify the comment trailing a declaration's line is copied with it, unless the line holds another statement."""
+        subject = self._create_cross_file(
+            mocker,
+            tmp_path,
+            f"from typing import TypeVar\n{origin_declaration}\n",
+            "from file_1 import T\ndef b(x: T) -> T:\n    return x\n",
+        )
+        result = subject.localize_imported_typevars()
+
+        assert_that(result, equal_to({"T": "fixed"}))
+        output = subject.apply_to_string()
+        assert_that([line for line in output.splitlines() if "#" in line], equal_to(expected_comment_lines))
+
+    @pytest.mark.parametrize(
         ("layout", "importing_header", "expected_line"),
         [
             pytest.param(("file_1.py", "file_2.py"), "from .file_1 import T", "from ._compat import TypeVar", id="same-dir"),
