@@ -92,6 +92,27 @@ class TestTypeVarCheckOrphaned:
         for def_line in (line.strip() for line in textwrap.dedent(source).splitlines() if line.strip().startswith("def ")):
             assert_that(output, contains_string(def_line))
 
+    @pytest.mark.parametrize(
+        "declaration",
+        [
+            pytest.param("T = TypeVar('T')  # noqa: PLC0105", id="trailing-comment"),
+            pytest.param("T = TypeVar(\n    'T',\n    bound=int,\n)  # noqa: PLC0105", id="multi-line-trailing-comment"),
+        ],
+    )
+    def test_removing_a_declaration_removes_the_comment_trailing_it(
+        self,
+        create_type_var_check: Callable[[str], TypeVarCheck],
+        declaration: str,
+    ) -> None:
+        """Verify the comment trailing a removed declaration goes with it instead of staying behind on a line of its own."""
+        subject = create_type_var_check(f"from typing import TypeVar\n{declaration}\n\ndef b() -> None:\n    pass\n")
+
+        result = subject.remove_orphaned_declarations()
+
+        assert_that(result, equal_to({"T": "fixed"}))
+        output = subject.apply_to_string()
+        assert_that(output, not_(contains_string("noqa")))
+
     def test_keeps_declaration_still_used_without_pep695(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
         """Verify a declaration still used by a function without its own type parameter is left alone, unreported."""
         subject = create_type_var_check("""
