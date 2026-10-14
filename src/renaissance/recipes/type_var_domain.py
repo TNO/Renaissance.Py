@@ -126,13 +126,18 @@ def declaration_text(module: cst.Module, decl_stmt: cst.Assign) -> str:
     line the comment may belong to another statement.
     """
     text = module.code_for_node(decl_stmt.with_changes(semicolon=cst.MaybeSentinel.DEFAULT))
-    for line in module.body:
-        if isinstance(line, cst.SimpleStatementLine) and len(line.body) == 1 and line.body[0] is decl_stmt:
-            trailing = line.trailing_whitespace
-            if trailing.comment is not None:
-                text += module.code_for_node(trailing.whitespace) + module.code_for_node(trailing.comment)
-            break
+    trailing = trailing_of_sole_statement(module, decl_stmt)
+    if trailing is not None and trailing.comment is not None:
+        text += module.code_for_node(trailing.whitespace) + module.code_for_node(trailing.comment)
     return text
+
+
+def trailing_of_sole_statement(module: cst.Module, statement: cst.BaseSmallStatement) -> cst.TrailingWhitespace | None:
+    """Return the whitespace and comment trailing the line of statement in module, or None if the line holds others."""
+    for line in module.body:
+        if isinstance(line, cst.SimpleStatementLine) and len(line.body) == 1 and line.body[0] is statement:
+            return line.trailing_whitespace
+    return None
 
 
 def _call(decl_stmt: cst.Assign) -> cst.Call:
@@ -252,6 +257,17 @@ def from_import_sources(module: cst.Module) -> dict[str, tuple[str, int] | None]
         elif isinstance(statement, cst.Assign | cst.AnnAssign):
             sources.update(dict.fromkeys(_assigned_names(statement)))
     return sources
+
+
+def from_import_binding(module: cst.Module, name: str) -> tuple[cst.ImportFrom, cst.ImportAlias] | None:
+    """Return the module-level `from` import and the alias that bind name, or None if another statement binds it last."""
+    if from_import_sources(module).get(name) is None:
+        return None
+    binding: tuple[cst.ImportFrom, cst.ImportAlias] | None = None
+    for statement in module_statements(module):
+        if isinstance(statement, cst.ImportFrom) and not isinstance(statement.names, cst.ImportStar):
+            binding = next(((statement, alias) for alias in statement.names if imported_name(alias) == name), binding)
+    return binding
 
 
 def _assigned_names(statement: cst.Assign | cst.AnnAssign) -> set[str]:
