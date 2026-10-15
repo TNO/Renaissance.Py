@@ -149,6 +149,7 @@ nav:
           - Overview: developer/tools/index.md
           - Layering check: developer/tools/check-layering.md
           - Encoding check: developer/tools/check-encoding.md
+          - Line ending check: developer/tools/check-line-endings.md
 
       - Architecture:
           - Overview: developer/architecture/index.md

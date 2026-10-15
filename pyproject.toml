@@ -103,6 +103,10 @@ extend-exclude = [
 ]
 force-exclude = true
 
+[tool.ruff.format]
+# Ruff's default keeps each file's own line ending; LF matches .gitattributes, also on Windows.
+line-ending = "lf"
+
 [tool.ruff.lint]
 select = [
     "A","AIR", "ASYNC", "COM", "D", "DJ", "DTZ", "E", "EXE",
