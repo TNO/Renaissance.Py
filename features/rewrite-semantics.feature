@@ -1,3 +1,9 @@
+# Copyright (C) 2024-2026 TNO
+#
+# Licensed under the terms specified in the LICENSE file in the root directory
+# of this repository, also available at:
+# https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
+
 Feature: Rewrite semantics
   Use this feature to understand how the tool applies multiple edits — insertions
   and replacements — to a source file in one pass, and which combinations of edits

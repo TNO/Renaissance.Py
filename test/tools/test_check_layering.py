@@ -1,3 +1,9 @@
+# Copyright (C) 2024-2026 TNO
+#
+# Licensed under the terms specified in the LICENSE file in the root directory
+# of this repository, also available at:
+# https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
+
 """Tests for the layer-boundary guard rail in tools/check_layering.py.
 
 The `tools` directory is not on the pytest `pythonpath`, so the script is loaded from its path.

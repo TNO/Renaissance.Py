@@ -1,3 +1,9 @@
+# Copyright (C) 2024-2026 TNO
+#
+# Licensed under the terms specified in the LICENSE file in the root directory
+# of this repository, also available at:
+# https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
+
 """Guard rail that keeps the copyright notice of `COPYRIGHT.txt` at the top of every tracked file.
 
 `COPYRIGHT.txt` is the single source of truth for the notice. Every git-tracked file carries it as a
