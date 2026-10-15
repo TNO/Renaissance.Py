@@ -1,3 +1,9 @@
+# Copyright (C) 2024-2026 TNO
+#
+# Licensed under the terms specified in the LICENSE file in the root directory
+# of this repository, also available at:
+# https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
+
 """AI: Report the ruff violation counts grouped by the prefix used in `select` and `ignore`.
 
 `tools/lint_budget.py` counts the issues per rule code; this script aggregates the same counts per

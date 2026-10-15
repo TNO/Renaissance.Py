@@ -1,3 +1,9 @@
+# Copyright (C) 2024-2026 TNO
+#
+# Licensed under the terms specified in the LICENSE file in the root directory
+# of this repository, also available at:
+# https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
+
 """Guard rail that requires every text file in the repository to be UTF-8 without a byte order mark.
 
 One encoding for the whole repository keeps the sources readable on every platform: Windows still

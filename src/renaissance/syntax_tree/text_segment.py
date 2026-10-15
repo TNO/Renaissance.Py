@@ -1,3 +1,9 @@
+# Copyright (C) 2024-2026 TNO
+#
+# Licensed under the terms specified in the LICENSE file in the root directory
+# of this repository, also available at:
+# https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
+
 """Protocol defining a text segment: a consecutive piece of text within a larger text."""
 
 from typing import Protocol, runtime_checkable

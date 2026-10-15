@@ -1,3 +1,9 @@
+# Copyright (C) 2024-2026 TNO
+#
+# Licensed under the terms specified in the LICENSE file in the root directory
+# of this repository, also available at:
+# https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
+
 [build-system]
 requires = ["hatchling>=1.27"]  # PEP 639 license metadata
 build-backend = "hatchling.build"
@@ -94,13 +100,9 @@ skip_covered = false
 [tool.ruff]
 line-length = 140
 src = ["src", "test", "features"]
-extend-exclude = [
-    "features/targets/taut/taut_test.py",  # legacy example, not real code
-    "features/targets/invalid.py",  # deliberately invalid Python (syntax errors); per docs/developer/
-                                    # coding-conventions.md we prefer line-based `# noqa` suppression,
-                                    # but invalid-syntax has no rule code so it can't be suppressed
-                                    # that way (or via per-file-ignores) — file-level exclusion only
-]
+# Test inputs: tests can assert their content (including line numbers), so neither Ruff nor the guard rails may change them.
+# tools/check_copyright.py reads this list too; it holds the test inputs only.
+extend-exclude = ["features/targets", "test/test_data"]
 force-exclude = true
 
 [tool.ruff.format]
@@ -109,7 +111,7 @@ line-ending = "lf"
 
 [tool.ruff.lint]
 select = [
-    "A","AIR", "ASYNC", "COM", "D", "DJ", "DTZ", "E", "EXE",
+    "A","AIR", "ASYNC", "COM", "CPY", "D", "DJ", "DTZ", "E", "EXE",
     "F", "FA", "FAST", "FLY", "FURB", "G", "I", "ICN", "INT", "ISC",
     "LOG", "N", "NPY", "PTH", "PD", "PERF", "PGH", "PIE", "PLC", "PLE", "PYI",
     "Q", "RSE", "SIM", "SLOT", "T10", "TC", "TID", "UP", "W", "YTT",
@@ -132,6 +134,9 @@ ignore = [
 [tool.ruff.lint.flake8-annotations]
 # ANN002/ANN003 require variadics to be annotated; forwarding ones are genuinely heterogeneous, so Any is allowed there.
 allow-star-arg-any = true
+
+[tool.ruff.lint.flake8-copyright]
+author = "TNO"
 
 [tool.pyright]
 typeCheckingMode = "off"

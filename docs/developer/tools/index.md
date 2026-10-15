@@ -1,3 +1,11 @@
+<!--
+Copyright (C) 2024-2026 TNO
+
+Licensed under the terms specified in the LICENSE file in the root directory
+of this repository, also available at:
+https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
+-->
+
 # Guard rail tools
 
 Guard rail tools safeguard the development of Renaissance.Py.
@@ -14,6 +22,8 @@ They are kept in the `tools` directory, can all be run locally before a pull req
    requires every file that `git` tracks to be UTF-8, without a byte order mark.
 1. [Line ending check](check-line-endings.md) (`tools/check_line_endings.py`):
    requires every text file that `git` tracks to be stored with LF line endings.
+1. [Copyright check](check-copyright.md) (`tools/check_copyright.py`):
+   checks, inserts and removes the copyright notice of `COPYRIGHT.txt` at the top of every tracked file.
 1. [Lint and type-check budget](../coding-conventions.md#lint-and-type-check-budgets) (`tools/lint_budget.py`):
    counts the `ruff` and `pyright` issues per kind and fails when a change introduces a new one.
 1. [Image policy check](../../documentation-system/enforcement/image-policy-enforcement.md) (`tools/check_doc_images_policy.py`):

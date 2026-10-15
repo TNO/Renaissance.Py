@@ -1,3 +1,9 @@
+# Copyright (C) 2024-2026 TNO
+#
+# Licensed under the terms specified in the LICENSE file in the root directory
+# of this repository, also available at:
+# https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
+
 # This workflow will install Python dependencies, run tests and lint with a variety of Python versions
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
 
@@ -43,6 +49,8 @@ jobs:
         run: uv run python tools/check_encoding.py --check
       - name: Check line endings
         run: uv run python tools/check_line_endings.py --check
+      - name: Check copyright notices
+        run: uv run python tools/check_copyright.py check
       - name: Check spelling with codespell
         run: uv run codespell ./src ./test ./tools ./features --ignore-words-list=NotIn,ANC
       - name: Test with pytest and collect coverage

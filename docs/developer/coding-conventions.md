@@ -1,3 +1,11 @@
+<!--
+Copyright (C) 2024-2026 TNO
+
+Licensed under the terms specified in the LICENSE file in the root directory
+of this repository, also available at:
+https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
+-->
+
 # Coding conventions
 
 This page captures conventions that are smaller in scope than an [architecture decision](architecture/adr/README.md):

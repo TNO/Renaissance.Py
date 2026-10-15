@@ -1,3 +1,9 @@
+# Copyright (C) 2024-2026 TNO
+#
+# Licensed under the terms specified in the LICENSE file in the root directory
+# of this repository, also available at:
+# https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
+
 # Fixing a ruff or pyright issue drops its count below the budget in lint-budget.json. A pull
 # request is never failed for that, so this workflow ratchets the budgets down on main instead and
 # proposes the lowered lint-budget.json in a pull request of its own, like a dependency bump.

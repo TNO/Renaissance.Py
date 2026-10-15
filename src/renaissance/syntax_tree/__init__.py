@@ -1,3 +1,9 @@
+# Copyright (C) 2024-2026 TNO
+#
+# Licensed under the terms specified in the LICENSE file in the root directory
+# of this repository, also available at:
+# https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
+
 """AI: Language-agnostic AST abstraction layer (finder, rewriter, processor) used by all parser integrations."""
 
 from renaissance.utils.text_utils import TextUtils

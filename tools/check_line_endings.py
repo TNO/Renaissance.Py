@@ -1,3 +1,9 @@
+# Copyright (C) 2024-2026 TNO
+#
+# Licensed under the terms specified in the LICENSE file in the root directory
+# of this repository, also available at:
+# https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
+
 """Guard rail that requires every text file in the repository to be stored with LF line endings.
 
 `.gitattributes` makes git convert CRLF to LF whenever a text file is committed, so on its own it
