@@ -39,6 +39,10 @@ jobs:
         run: uv run python tools/lint_budget.py --check
       - name: Check layer boundaries
         run: uv run python tools/check_layering.py --check
+      - name: Check file encodings
+        run: uv run python tools/check_encoding.py --check
+      - name: Check line endings
+        run: uv run python tools/check_line_endings.py --check
       - name: Check spelling with codespell
         run: uv run codespell ./src ./test ./tools ./features --ignore-words-list=NotIn,ANC
       - name: Test with pytest and collect coverage

@@ -1,0 +1,5 @@
+# Text files are stored and checked out with LF; tools/check_line_endings.py fails the build when one is not.
+* text=auto eol=lf
+
+*.png  binary
+*.pptx binary
