@@ -1,0 +1,5 @@
+root = true
+
+# Every file in the repository is UTF-8; tools/check_encoding.py fails the build when one is not.
+[*]
+charset = utf-8
