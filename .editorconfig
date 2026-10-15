@@ -1,0 +1,13 @@
+# Copyright (C) 2024-2026 TNO
+#
+# Licensed under the terms specified in the LICENSE file in the root directory
+# of this repository, also available at:
+# https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
+
+root = true
+
+# Every file in the repository is UTF-8; tools/check_encoding.py fails the build when one is not.
+# Every text file ends its lines with LF; .gitattributes and tools/check_line_endings.py enforce it.
+[*]
+charset = utf-8
+end_of_line = lf

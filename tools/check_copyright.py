@@ -57,7 +57,9 @@ HTML = CommentStyle(block=("<!--", "-->"))
 
 # The comment style per file name or suffix; a file name entry wins over a suffix entry.
 COMMENT_STYLES: dict[str, CommentStyle] = {
+    ".editorconfig": HASH,
     ".feature": HASH,
+    ".gitattributes": HASH,
     ".gitignore": HASH,
     ".md": HTML,
     ".py": HASH,

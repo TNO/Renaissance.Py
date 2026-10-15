@@ -18,12 +18,16 @@ They are kept in the `tools` directory, can all be run locally before a pull req
 
 1. [Layering check](check-layering.md) (`tools/check_layering.py`):
    forbids imports that cross a layer boundary, which keeps the core independent of the parser bindings and the recipes.
+1. [Encoding check](check-encoding.md) (`tools/check_encoding.py`):
+   requires every file that `git` tracks to be UTF-8, without a byte order mark.
+1. [Line ending check](check-line-endings.md) (`tools/check_line_endings.py`):
+   requires every text file that `git` tracks to be stored with LF line endings.
+1. [Copyright check](check-copyright.md) (`tools/check_copyright.py`):
+   checks, inserts and removes the copyright notice of `COPYRIGHT.txt` at the top of every tracked file.
 1. [Lint and type-check budget](../coding-conventions.md#lint-and-type-check-budgets) (`tools/lint_budget.py`):
    counts the `ruff` and `pyright` issues per kind and fails when a change introduces a new one.
 1. [Image policy check](../../documentation-system/enforcement/image-policy-enforcement.md) (`tools/check_doc_images_policy.py`):
    enforces the naming and the location of documentation image assets.
-1. [Copyright check](check-copyright.md) (`tools/check_copyright.py`):
-   checks, inserts and removes the copyright notice of `COPYRIGHT.txt` at the top of every tracked file.
 
 ## Adding a guard rail
 

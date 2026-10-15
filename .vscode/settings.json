@@ -8,12 +8,7 @@
         }
     },
     "ruff.configuration": "${workspaceFolder}/pyproject.toml",
-    "python.analysis.typeCheckingMode": "strict",
-    "python.analysis.extraPaths": [
-        "src",
-        "test",
-        "features"
-    ],
+    "files.eol": "\n",
     "python.testing.pytestArgs": [
         "."
     ],

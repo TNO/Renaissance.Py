@@ -16,8 +16,8 @@ notice, inserts it where it is missing, and removes it again.
 `COPYRIGHT.txt` in the repository root is the single source of truth for the notice. Every tracked file carries that notice exactly,
 written as a comment in the style of its file type:
 
-- `.py`, `.toml`, `.yml`, `.feature` and `.gitignore` files: every line prefixed by `#` and a space; an empty notice line becomes a
-  bare `#`;
+- `.py`, `.toml`, `.yml`, `.feature`, `.editorconfig`, `.gitattributes` and `.gitignore` files: every line prefixed by `#` and a
+  space; an empty notice line becomes a bare `#`;
 - `.md` files: one HTML comment, with its opening `<!--` and its closing `-->` on lines of their own.
 
 The notice is the first thing in the file. Only the lines that must stay first may precede it, in this order:
