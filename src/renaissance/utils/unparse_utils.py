@@ -1,4 +1,9 @@
-# Copyright (c) 2026 PLACEHOLDER
+# Copyright (C) 2024-2026 TNO
+#
+# Licensed under the terms specified in the LICENSE file in the root directory
+# of this repository, also available at:
+# https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
+
 """Splice a PEP 695 type-params bracket into a function's original source, changing nothing else.
 
 The function's formatting and comments are kept.
