@@ -27,6 +27,9 @@ safely cover. This page covers `TypeVarCheck`, the recipe behind
 - `src/renaissance/recipes/python_refactoring.py`: the base class.
 - `src/renaissance/utils/import_resolution.py`: resolves `from X import Y` to a file in the project, re-anchors one
   file's relative import on another file, and collects the names each project file imports from the others.
+- `src/renaissance/recipes/python_refactoring.py`: the base class.
+- `src/renaissance/utils/import_resolution.py`: resolves `from X import Y` to a file in the project, re-anchors one
+  file's relative import on another file, and collects the names each project file imports from the others.
 
 ## Public entry points
 
@@ -119,10 +122,13 @@ See *Verified by test modules* in [Type parameter modernization](../../user/feat
 - A new recipe is a `PythonRefactoring` subclass in its own `snake_case`-named module in `src/renaissance/recipes/`;
   no registration is needed.
 - A new type-parameter-declaring construct: extend `_is_type_param_call` and `type_param_text` together.
+- A new type-parameter-declaring construct: extend `_is_type_param_call` and `type_param_text` together.
 - A keyword added by a later Python, or future PEP 695 syntax for variance or a bound on `**P`/`*Ts`: add it to
+  `_CONVERTIBLE_KEYWORDS` and carry it over in `type_param_text`.
   `_CONVERTIBLE_KEYWORDS` and carry it over in `type_param_text`.
 - A new version gate uses the syntax's own minimum Python from its PEP, not a value copied from another gate.
 - Re-exports through `__init__.py` or namespace packages (PEP 420): extend `resolve_project_module`.
+- `Step`/`run_steps` is generic and can be reused by any recipe.
 - `Step`/`run_steps` is generic and can be reused by any recipe.
 
 ## Non-goals
