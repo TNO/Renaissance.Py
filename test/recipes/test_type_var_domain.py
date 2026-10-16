@@ -126,7 +126,7 @@ class TestIsSafeToLocalize:
         assert_that(is_safe_to_localize(tree, "T"), equal_to(expected_reason))
 
 
-_FEATURE_DOC = Path(__file__).resolve().parents[2] / "docs" / "user" / "features" / "typevar-modernization.md"
+_FEATURE_DOC = Path(__file__).resolve().parents[2] / "docs" / "user" / "features" / "type-parameter-modernization.md"
 
 
 class TestUnsafeRuleDocAnchors:
