@@ -33,7 +33,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7.0.1
       - name: Set up uv
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
       # uv installs the interpreter pinned by requires-python in pyproject.toml.
       - name: Install dependencies
         run: uv sync --group dev
