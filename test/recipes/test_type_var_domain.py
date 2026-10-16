@@ -6,11 +6,11 @@
 
 """Tests for type_var_domain's safety predicates and their UnsafeReason results."""
 
-import ast
 import re
 import textwrap
 from pathlib import Path
 
+import libcst as cst
 import pytest
 from hamcrest import assert_that, equal_to, not_
 
@@ -22,9 +22,9 @@ from renaissance.recipes.type_var_domain import (
 )
 
 
-def _parse(source: str) -> ast.Module:
+def _parse(source: str) -> cst.Module:
     """Parse source after removing its common indentation."""
-    return ast.parse(textwrap.dedent(source))
+    return cst.parse_module(textwrap.dedent(source))
 
 
 class TestIsSafeToRemove:
