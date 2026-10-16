@@ -34,3 +34,7 @@ This section introduces the conceptual model of the repository.
 ## 5. Reusable libraries
 
 1. [Standard analyses and transformations](standard-libraries.md)
+
+## 6. Python typing terms
+
+1. [Type parameters](type-parameters.md)
