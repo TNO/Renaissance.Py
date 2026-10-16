@@ -1,4 +1,9 @@
-# Copyright (c) 2026 PLACEHOLDER
+# Copyright (C) 2024-2026 TNO
+#
+# Licensed under the terms specified in the LICENSE file in the root directory
+# of this repository, also available at:
+# https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
+
 """CLI that modernizes type parameters (TypeVar, ParamSpec, TypeVarTuple) to PEP 695 syntax.
 
 Runs TypeVarCheck on a file or directory, and reports which files were modified and which need
