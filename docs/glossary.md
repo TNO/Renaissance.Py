@@ -36,6 +36,10 @@ proper ancestor.
 An [insertion](#insertion) that adds text immediately after the end location of an AST node.
 See [Rewrite semantics](user/concepts/rewrite-semantics.md).
 
+### Around
+
+See [Surround](#surround).
+
 ### AST (Abstract Syntax Tree)
 
 A hierarchical representation of source code produced by a compiler front-end,
@@ -264,3 +268,21 @@ See [Transformation](user/concepts/transformation.md).
 ### Trivia
 
 White spaces and comments.
+
+### Type hint
+
+An annotation that states the expected type of a variable, parameter or return value, such as `x: list[int]`.
+Type checkers read it; Python does not enforce it at runtime.
+See [Type parameters](user/concepts/type-parameters.md).
+
+### Type parameter
+
+A name in a type hint that stands for a type chosen later, declared on a generic function, class or type alias.
+Three kinds exist: [type variable](#type-variable), type variable tuple (`*Ts`) and parameter specification (`**P`).
+See [Type parameters](user/concepts/type-parameters.md).
+
+### Type variable
+
+The kind of [type parameter](#type-parameter) that stands for a single type.
+Also called *TypeVar*, after the legacy class that declares it (`T = TypeVar("T")`).
+See [Type parameters](user/concepts/type-parameters.md).

@@ -15,3 +15,6 @@ https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 1. [Transformation modules](transformation.md)
 1. [Observability modules](observability.md)
 1. [Strategy modules](strategy.md)
+1. [Rewrite semantics module](rewrite-semantics.md)
+1. [Refactoring recipes](recipes.md)
+1. [Rejected recipes](rejected-recipes.md)
