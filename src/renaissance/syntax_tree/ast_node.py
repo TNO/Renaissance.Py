@@ -31,18 +31,25 @@ class VisitorResult(Enum):
     SKIP = 2
 
 
-class ASTReference[ReferencedT: NodeProtocol]:
-    """AI: Represent a reference from one AST node to another, along with the kind of reference."""
+class ASTReference[NodeProtocolT: NodeProtocol]:
+    """Reference between two AST nodes, with its kind and additional properties."""
 
-    def __init__(self, ast_node: ReferencedT, ref_kind: str, properties: dict[str, Any]) -> None:
-        """AI: Represent a reference from one AST node to another, along with the kind of reference."""
+    def __init__(self, ast_node: NodeProtocolT, ref_kind: str, properties: dict[str, Any]) -> None:
+        """Initialise the reference.
+
+        Args:
+            ast_node: Node at the other end of the reference.
+            ref_kind: Kind of the reference.
+            properties: Additional properties of the reference.
+
+        """
         self._node = ast_node
         self._ref_kind = ref_kind
         self._properties = properties
 
     @property
-    def node(self) -> ReferencedT:
-        """AI: Return the AST node this reference points from."""
+    def node(self) -> NodeProtocolT:
+        """Return the node at the other end of the reference."""
         return self._node
 
     @property
