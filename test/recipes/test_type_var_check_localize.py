@@ -16,7 +16,7 @@ import pytest
 from hamcrest import all_of, assert_that, contains_string, equal_to, has_entry, has_length, not_
 from pytest_mock import MockerFixture
 
-from renaissance.integrations.python.ast.rst_node import PythonRstNode
+from renaissance.integrations.python.ast.cst_node import PythonCstNode
 from renaissance.recipes.type_var_check import PEP_695_MINIMUM, TypeVarCheck
 from renaissance.recipes.type_var_domain import UnsafeReason
 
@@ -74,7 +74,7 @@ class TestTypeVarCheckLocalize:
         importing_file = str(tmp_path / importing_rel_path)
         mocker.patch(
             "renaissance.integrations.python.ast.factory.PythonFactory.create",
-            return_value=PythonRstNode.load_from_text(importing_code, importing_file),
+            return_value=PythonCstNode.load_from_text(importing_code, importing_file),
         )
         subject = TypeVarCheck(importing_file)
         subject.in_memory = True
@@ -211,7 +211,7 @@ class TestTypeVarCheckLocalize:
 
         assert_that(result, equal_to({"T": "fixed"}))
         output = subject.apply_to_string()
-        assert_that(output, contains_string("T = TypeVar('T')"))
+        assert_that(output, contains_string('T = TypeVar("T")'))
         assert_that(output, not_(contains_string("from file_1 import T")))
 
     @pytest.mark.parametrize(
@@ -255,7 +255,7 @@ class TestTypeVarCheckLocalize:
         assert_that(result, has_entry("T", "fixed"))
         output = subject.apply_to_string()
         assert_that(output.splitlines().count(expected_line), equal_to(1))
-        assert_that(output, contains_string("T = TypeVar('T')"))
+        assert_that(output, contains_string('T = TypeVar("T")'))
 
     @pytest.mark.parametrize(
         ("importing_import", "comments"),
@@ -267,12 +267,6 @@ class TestTypeVarCheckLocalize:
                 id="multi-line",
             ),
         ],
-    )
-    @pytest.mark.xfail(
-        reason="The narrowed import is rebuilt with ast.unparse, which has no comments: comments inside the import are "
-        "lost and a trailing comment stays after the replacement's last line, the localized declaration.",
-        raises=AssertionError,
-        strict=True,
     )
     def test_narrowing_an_import_keeps_its_comments(
         self,
@@ -303,13 +297,13 @@ class TestTypeVarCheckLocalize:
             pytest.param(
                 'T = TypeVar("T")\nU = TypeVar("U")',
                 "from file_1 import T, U",
-                ["from typing import TypeVar", "T = TypeVar('T')", "U = TypeVar('U')"],
+                ["from typing import TypeVar", 'T = TypeVar("T")', 'U = TypeVar("U")'],
                 id="two-names",
             ),
             pytest.param(
                 'T = TypeVar("T")\nU = TypeVar("U")\ndef helper() -> None:\n    pass',
                 "from file_1 import T, helper, U",
-                ["from file_1 import helper", "from typing import TypeVar", "T = TypeVar('T')", "U = TypeVar('U')"],
+                ["from file_1 import helper", "from typing import TypeVar", 'T = TypeVar("T")', 'U = TypeVar("U")'],
                 id="keeps-other-name",
             ),
             pytest.param(
@@ -318,8 +312,8 @@ class TestTypeVarCheckLocalize:
                 [
                     "from file_1 import Circle, Shape",
                     "from typing import TypeVar",
-                    "T = TypeVar('T', bound=Shape)",
-                    "U = TypeVar('U', bound=Circle)",
+                    'T = TypeVar("T", bound=Shape)',
+                    'U = TypeVar("U", bound=Circle)',
                 ],
                 id="bounds-share-one-import",
             ),
@@ -518,7 +512,7 @@ class TestTypeVarCheckLocalize:
             pytest.param(
                 (3, 10),
                 "unsafe",
-                all_of(contains_string("def b(x: T) -> T:"), contains_string("T = TypeVar('T')")),
+                all_of(contains_string("def b(x: T) -> T:"), contains_string('T = TypeVar("T")')),
                 id="only-localizes-below-3.12",
             ),
         ],
