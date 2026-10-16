@@ -17,7 +17,7 @@ from hamcrest import all_of, assert_that, contains_string, equal_to, has_entry, 
 from pytest_mock import MockerFixture
 
 from renaissance.integrations.python.ast.cst_node import PythonCstNode
-from renaissance.recipes.type_var_check import TypeVarCheck
+from renaissance.recipes.type_var_check import PEP_695_MINIMUM, TypeVarCheck
 from renaissance.recipes.type_var_domain import UnsafeReason
 
 

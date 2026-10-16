@@ -14,9 +14,9 @@ from typing import cast
 
 import libcst as cst
 from libcst import matchers
+from libcst.helpers import get_full_name_for_node
 
 from renaissance.integrations.python.ast.cst_node import PythonCstNode
-from renaissance.utils.import_resolution import import_from_module, imported_name
 
 DOCS_BASE_URL = "https://tno.github.io/Renaissance.Py/user/features/type-parameter-modernization/"
 
@@ -84,6 +84,9 @@ UNSAFE_RULES: dict[UnsafeReason, UnsafeRule] = {
 _CONSTRUCTORS = frozenset({"TypeVar", "ParamSpec", "TypeVarTuple"})
 
 
+_CONSTRUCTORS = frozenset({"TypeVar", "ParamSpec", "TypeVarTuple"})
+
+
 def _is_type_param_call(value: cst.BaseExpression) -> bool:
     """Return True if `value` is a call to TypeVar/ParamSpec/TypeVarTuple."""
     return isinstance(value, cst.Call) and isinstance(value.func, cst.Name) and value.func.value in _CONSTRUCTORS
@@ -107,27 +110,6 @@ def find_type_param_declarations(module: cst.Module) -> dict[str, cst.Assign]:
                 if isinstance(target.target, cst.Name):
                     declarations[target.target.value] = statement
     return declarations
-
-
-def declaration_text(module: cst.Module, decl_stmt: cst.Assign) -> str:
-    """Return decl_stmt as written in module, without its `;`.
-
-    The comment trailing its line follows it when it is the only statement there, since on a shared
-    line the comment may belong to another statement.
-    """
-    text = module.code_for_node(decl_stmt.with_changes(semicolon=cst.MaybeSentinel.DEFAULT))
-    trailing = trailing_of_sole_statement(module, decl_stmt)
-    if trailing is not None and trailing.comment is not None:
-        text += module.code_for_node(trailing.whitespace) + module.code_for_node(trailing.comment)
-    return text
-
-
-def trailing_of_sole_statement(module: cst.Module, statement: cst.BaseSmallStatement) -> cst.TrailingWhitespace | None:
-    """Return the whitespace and comment trailing the line of statement in module, or None if the line holds others."""
-    for line in module.body:
-        if isinstance(line, cst.SimpleStatementLine) and len(line.body) == 1 and line.body[0] is statement:
-            return line.trailing_whitespace
-    return None
 
 
 def _call(decl_stmt: cst.Assign) -> cst.Call:
@@ -218,11 +200,14 @@ def declaration_argument_names(decl_stmt: cst.Assign) -> set[str]:
     return collector.names - set(dir(builtins))
 
 
-def names_read_by(node: cst.CSTNode) -> set[str]:
-    """Return every name `node` reads, built-ins included; attribute names and keyword argument names are not reads."""
-    collector = _NameCollector()
-    node.visit(collector)
-    return collector.names
+def import_from_module(statement: cst.ImportFrom) -> str | None:
+    """Return the dotted module an import-from names after its leading dots, or None for a bare `from . import x`."""
+    return get_full_name_for_node(statement.module) if statement.module is not None else None
+
+
+def imported_name(alias: cst.ImportAlias) -> str:
+    """Return the name an import alias binds: its `as` name if it has one, else the imported name."""
+    return alias.evaluated_alias or alias.evaluated_name
 
 
 def from_import_sources(module: cst.Module) -> dict[str, tuple[str, int] | None]:
@@ -322,6 +307,40 @@ def uses_of(root: PythonCstNode, name: str, decl_stmt: cst.Assign) -> list[Pytho
     """
     target = next(target.target for target in decl_stmt.targets if isinstance(target.target, cst.Name) and target.target.value == name)
     return [reference.node for reference in root.translation_unit.wrappers[target].referenced_by]
+
+
+def outermost_function(node: PythonCstNode) -> PythonCstNode | None:
+    """Return the outermost function or method enclosing node, or None if node is outside every function."""
+    outermost = None
+    current = node.parent
+    while current is not None:
+        if isinstance(current.node, cst.FunctionDef):
+            outermost = current
+        current = current.parent
+    return outermost
+
+
+def generic_classes(uses: Iterable[PythonCstNode]) -> list[PythonCstNode]:
+    """Return the classes that have one of `uses` in a base (`Generic[T]`, `Protocol[T]`, `Base[int, T]`).
+
+    Such a class is generic over the used name.
+    """
+    classes: list[PythonCstNode] = []
+    for use in uses:
+        child, current = use, use.parent
+        while current is not None:
+            if isinstance(current.node, cst.ClassDef) and any(child.node is base for base in current.node.bases):
+                if current not in classes:
+                    classes.append(current)
+                break
+            child, current = current, current.parent
+    return classes
+
+
+def declares_type_param(function: cst.FunctionDef, name: str) -> bool:
+    """Return True if the function declares `name` as its own PEP 695 type parameter (`def f[T](...)`)."""
+    parameters = function.type_parameters
+    return parameters is not None and any(parameter.param.name.value == name for parameter in parameters.params)
 
 
 def signature_function(use: PythonCstNode) -> PythonCstNode | None:
