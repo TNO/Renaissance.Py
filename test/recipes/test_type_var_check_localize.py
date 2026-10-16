@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
 import pytest
-from hamcrest import all_of, assert_that, contains_string, equal_to, has_entry, has_length, not_
+from hamcrest import all_of, assert_that, contains_string, equal_to, has_entry, has_item, has_length, not_
 from pytest_mock import MockerFixture
 
 from renaissance.integrations.python.ast.cst_node import PythonCstNode
@@ -48,6 +48,13 @@ def _names_used_by(call: ast.Call) -> set[str]:
             expression = ast.parse(argument.value, mode="eval").body
         names.update(node.id for node in ast.walk(expression) if isinstance(node, ast.Name))
     return names - set(dir(builtins))
+
+
+def _imports_after_code(module_text: str) -> list[str]:
+    """Return the module-level imports of module_text that come after its first non-import statement."""
+    body = ast.parse(module_text).body
+    first_code = next((index for index, node in enumerate(body) if not isinstance(node, ast.Import | ast.ImportFrom)), len(body))
+    return [ast.unparse(node) for node in body[first_code:] if isinstance(node, ast.Import | ast.ImportFrom)]
 
 
 class TestTypeVarCheckLocalize:
@@ -141,6 +148,37 @@ class TestTypeVarCheckLocalize:
         origin_call = cast("ast.Assign", ast.parse(origin).body[-1]).value
         assert_that(ast.dump(local_call), equal_to(ast.dump(origin_call)))
         assert_that(_names_used_by(cast("ast.Call", local_call)) - _module_level_names(module), equal_to(set()))
+
+    @pytest.mark.parametrize(
+        ("origin_imports", "expected_line"),
+        [
+            pytest.param("from typing import Any", "from typing import Any", id="absolute-module"),
+            pytest.param("from ._shapes import Shape", "from sub._shapes import Shape", id="relative-module-in-origin"),
+            pytest.param("from shapes import Base as Shape", "from shapes import Base as Shape", id="aliased-in-origin"),
+        ],
+    )
+    def test_names_a_declaration_uses_are_imported_from_where_the_origin_gets_them(
+        self,
+        mocker: MockerFixture,
+        tmp_path: Path,
+        origin_imports: str,
+        expected_line: str,
+    ) -> None:
+        """Verify a name the declaration uses is imported from the module the origin imports it from, not from the origin."""
+        name = expected_line.rsplit(" ", maxsplit=1)[-1]
+        subject = self._create_cross_file(
+            mocker,
+            tmp_path,
+            f'from typing import TypeVar\n{origin_imports}\nT = TypeVar("T", bound={name})\n',
+            "from sub.file_1 import T\ndef b(x: T) -> T:\n    return x\n",
+            ("sub/file_1.py", "use.py"),
+        )
+        result = subject.localize_imported_typevars()
+
+        assert_that(result, equal_to({"T": "fixed"}))
+        lines = subject.apply_to_string().splitlines()
+        assert_that(lines.count(expected_line), equal_to(1))
+        assert_that(lines, not_(has_item(f"from sub.file_1 import {name}")))
 
     @pytest.mark.parametrize(
         ("origin", "importing_extra"),
@@ -310,12 +348,13 @@ class TestTypeVarCheckLocalize:
                 'class Shape:\n    pass\nclass Circle(Shape):\n    pass\nT = TypeVar("T", bound=Shape)\nU = TypeVar("U", bound=Circle)',
                 "from file_1 import T, U",
                 [
-                    "from file_1 import Circle, Shape",
+                    "from file_1 import Circle",
+                    "from file_1 import Shape",
                     "from typing import TypeVar",
                     'T = TypeVar("T", bound=Shape)',
                     'U = TypeVar("U", bound=Circle)',
                 ],
-                id="bounds-share-one-import",
+                id="bounds-each-imported-once",
             ),
         ],
     )
@@ -375,6 +414,137 @@ class TestTypeVarCheckLocalize:
 
         assert_that(result, has_entry("T", "fixed"))
         assert_that(subject.apply_to_string().count("from typing import TypeVar"), equal_to(1))
+
+    @pytest.mark.parametrize(
+        "importing_text",
+        [
+            pytest.param("from file_1 import T\nimport os\nfrom collections import OrderedDict\n", id="import-after-removed"),
+            pytest.param("import os\nfrom file_1 import T\n", id="removed-is-last-import"),
+            pytest.param("from __future__ import annotations\nfrom file_1 import T\nimport os\n", id="future-import-present"),
+            pytest.param("from file_1 import T, helper\nimport os\n", id="narrowed-import"),
+            pytest.param("from file_1 import T\n", id="only-import"),
+        ],
+    )
+    def test_localized_declaration_comes_after_every_import(self, mocker: MockerFixture, tmp_path: Path, importing_text: str) -> None:
+        """Verify the declaration is placed after the import block, so no import is left below code (E402)."""
+        subject = self._create_cross_file(
+            mocker,
+            tmp_path,
+            'from typing import TypeVar\nT = TypeVar("T")\ndef helper() -> None:\n    pass\n',
+            f"{importing_text}def b(x: T) -> T:\n    return x\n",
+        )
+        result = subject.localize_imported_typevars()
+
+        assert_that(result, equal_to({"T": "fixed"}))
+        output = subject.apply_to_string()
+        assert_that(output, contains_string('T = TypeVar("T")'))
+        assert_that(_imports_after_code(output), equal_to([]))
+        assert_that(output.count("from typing import TypeVar"), equal_to(1))
+
+    @pytest.mark.parametrize(
+        "dropped_import",
+        [
+            pytest.param("from file_1 import T  # noqa: F401", id="trailing-comment"),
+            pytest.param("from file_1 import (\n    T,\n)  # noqa: F401", id="multi-line-trailing-comment"),
+        ],
+    )
+    def test_dropping_an_import_drops_the_comment_on_its_line(self, mocker: MockerFixture, tmp_path: Path, dropped_import: str) -> None:
+        """Verify a comment trailing a fully localized import goes with it instead of staying behind on a line of its own."""
+        subject = self._create_cross_file(
+            mocker,
+            tmp_path,
+            'from typing import TypeVar\nT = TypeVar("T")\n',
+            f"import os\n{dropped_import}\nimport sys\ndef b(x: T) -> T:\n    return x\n",
+        )
+        result = subject.localize_imported_typevars()
+
+        assert_that(result, equal_to({"T": "fixed"}))
+        output = subject.apply_to_string()
+        assert_that(output, not_(contains_string("noqa")))
+        assert_that(_imports_after_code(output), equal_to([]))
+
+    @pytest.mark.parametrize(
+        ("origin_extra", "expected_once"),
+        [
+            pytest.param('T = TypeVar("T")\nU = TypeVar("U")', ["from typing import TypeVar"], id="constructor"),
+            pytest.param(
+                'class Shape:\n    pass\nT = TypeVar("T", bound=Shape)\nU = TypeVar("U", bound=Shape)',
+                ["from typing import TypeVar", "from file_1 import Shape"],
+                id="constructor-and-bound-name",
+            ),
+        ],
+    )
+    def test_each_needed_import_is_added_once_per_file(
+        self,
+        mocker: MockerFixture,
+        tmp_path: Path,
+        origin_extra: str,
+        expected_once: list[str],
+    ) -> None:
+        """Verify names localized from separate import statements share the imports they need, one line each per file."""
+        subject = self._create_cross_file(
+            mocker,
+            tmp_path,
+            f"from typing import TypeVar\n{origin_extra}\n",
+            "from file_1 import T\nfrom file_1 import U\ndef b(x: T, y: U) -> T:\n    return x\n",
+        )
+        result = subject.localize_imported_typevars()
+
+        assert_that(result, equal_to({"T": "fixed", "U": "fixed"}))
+        output = subject.apply_to_string()
+        for line in expected_once:
+            assert_that(output.splitlines().count(line), equal_to(1), line)
+
+    def test_declaration_stays_before_a_statement_that_uses_it_between_imports(
+        self,
+        mocker: MockerFixture,
+        tmp_path: Path,
+    ) -> None:
+        """Verify a declaration is not moved below a module-level statement that already needs it."""
+        subject = self._create_cross_file(
+            mocker,
+            tmp_path,
+            'from typing import TypeVar\nT = TypeVar("T")\n',
+            "from typing import Generic\nfrom file_1 import T\nclass Box(Generic[T]):\n    pass\nimport os\n",
+        )
+        result = subject.localize_imported_typevars()
+
+        assert_that(result, equal_to({"T": "fixed"}))
+        output = subject.apply_to_string()
+        # Running the module is what proves the declaration is bound before `Box` uses it.
+        exec(compile(output, "importing.py", "exec"), {})  # noqa: S102
+
+    @pytest.mark.parametrize(
+        ("origin_declaration", "expected_comment_lines"),
+        [
+            pytest.param('T = TypeVar("T")  # noqa: PLC0105', ['T = TypeVar("T")  # noqa: PLC0105'], id="noqa"),
+            pytest.param(
+                'T = TypeVar(\n    "T",\n    bound=int,\n)  # noqa: PLC0105',
+                [")  # noqa: PLC0105"],
+                id="multi-line-declaration",
+            ),
+            pytest.param('T = TypeVar("T"); U = 1  # unrelated', [], id="shares-line-with-another-statement"),
+        ],
+    )
+    def test_localized_declaration_keeps_the_comment_trailing_it(
+        self,
+        mocker: MockerFixture,
+        tmp_path: Path,
+        origin_declaration: str,
+        expected_comment_lines: list[str],
+    ) -> None:
+        """Verify the comment trailing a declaration's line is copied with it, unless the line holds another statement."""
+        subject = self._create_cross_file(
+            mocker,
+            tmp_path,
+            f"from typing import TypeVar\n{origin_declaration}\n",
+            "from file_1 import T\ndef b(x: T) -> T:\n    return x\n",
+        )
+        result = subject.localize_imported_typevars()
+
+        assert_that(result, equal_to({"T": "fixed"}))
+        output = subject.apply_to_string()
+        assert_that([line for line in output.splitlines() if "#" in line], equal_to(expected_comment_lines))
 
     @pytest.mark.parametrize(
         ("layout", "importing_header", "expected_line"),
