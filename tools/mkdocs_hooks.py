@@ -8,7 +8,7 @@
 
 from __future__ import annotations
 
-import datetime
+import datetime as dt
 from typing import Any
 
 from mkdocs.config.defaults import MkDocsConfig
@@ -18,7 +18,7 @@ from mkdocs.utils.cache import download_and_cache_url
 log = get_plugin_logger(__name__)
 
 # Matches the cache duration mkdocstrings itself uses, so a successful probe warms its cache.
-_CACHE_DURATION = datetime.timedelta(days=1)
+_CACHE_DURATION = dt.timedelta(days=1)
 
 
 @event_priority(100)  # Must run before the mkdocstrings plugin reads its own configuration.
