@@ -6,12 +6,17 @@
 
 """TypeVar/ParamSpec/TypeVarTuple domain model and safety analysis."""
 
-import ast
 import builtins
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
 from enum import StrEnum
 from typing import cast
+
+import libcst as cst
+from libcst import matchers
+from libcst.helpers import get_full_name_for_node
+
+from renaissance.integrations.python.ast.cst_node import PythonCstNode
 
 DOCS_BASE_URL = "https://tno.github.io/Renaissance.Py/user/features/type-parameter-modernization/"
 
@@ -81,173 +86,192 @@ def doc_link(reason: UnsafeReason) -> str:
     return f"{DOCS_BASE_URL}#{UNSAFE_RULES[reason].doc_anchor}"
 
 
-def _is_type_param_call(value: ast.expr) -> bool:
+_CONSTRUCTORS = frozenset({"TypeVar", "ParamSpec", "TypeVarTuple"})
+
+
+def _is_type_param_call(value: cst.BaseExpression) -> bool:
     """Return True if `value` is a call to TypeVar/ParamSpec/TypeVarTuple."""
-    return isinstance(value, ast.Call) and isinstance(value.func, ast.Name) and value.func.id in ("TypeVar", "ParamSpec", "TypeVarTuple")
+    return isinstance(value, cst.Call) and isinstance(value.func, cst.Name) and value.func.value in _CONSTRUCTORS
 
 
-def find_type_param_declarations(tree: ast.Module) -> dict[str, ast.Assign]:
+def module_statements(module: cst.Module) -> Iterator[cst.BaseSmallStatement | cst.BaseCompoundStatement]:
+    """Yield the module's top-level statements in order, one per small statement of a line like `a = 1; b = 2`."""
+    for statement in module.body:
+        if isinstance(statement, cst.SimpleStatementLine):
+            yield from statement.body
+        else:
+            yield statement
+
+
+def find_type_param_declarations(module: cst.Module) -> dict[str, cst.Assign]:
     """Find every module-level "NAME = TypeVar/ParamSpec/TypeVarTuple(...)" declaration."""
-    declarations: dict[str, ast.Assign] = {}
-    for stmt in tree.body:
-        if isinstance(stmt, ast.Assign) and _is_type_param_call(stmt.value):
-            for target in stmt.targets:
-                if isinstance(target, ast.Name):
-                    declarations[target.id] = stmt
+    declarations: dict[str, cst.Assign] = {}
+    for statement in module_statements(module):
+        if isinstance(statement, cst.Assign) and _is_type_param_call(statement.value):
+            for target in statement.targets:
+                if isinstance(target.target, cst.Name):
+                    declarations[target.target.value] = statement
     return declarations
 
 
-def type_param_name(param: ast.type_param) -> str:
-    """Return a PEP 695 type parameter's name, narrowing to the subclasses whose stubs declare `.name`."""
-    return cast("ast.TypeVar | ast.ParamSpec | ast.TypeVarTuple", param).name
+def _call(decl_stmt: cst.Assign) -> cst.Call:
+    """Return the TypeVar/ParamSpec/TypeVarTuple call a declaration assigns."""
+    return cast("cst.Call", decl_stmt.value)
 
 
-def type_param_constructor_name(decl_stmt: ast.Assign) -> str:
+def _positional_arguments(call: cst.Call) -> list[cst.Arg]:
+    """Return the call's positional arguments, `*args` included."""
+    return [argument for argument in call.args if argument.keyword is None and argument.star != "**"]
+
+
+def _keyword_value(call: cst.Call, keyword: str) -> cst.BaseExpression | None:
+    """Return the value the call passes as `keyword=`, or None if it passes none."""
+    return next((argument.value for argument in call.args if argument.keyword is not None and argument.keyword.value == keyword), None)
+
+
+def type_param_constructor_name(decl_stmt: cst.Assign) -> str:
     """Return the name of the call a declaration uses, e.g. "TypeVar" for `T = TypeVar("T")`."""
-    call = cast("ast.Call", decl_stmt.value)
-    return cast("ast.Name", call.func).id
+    return cast("cst.Name", _call(decl_stmt).func).value
 
 
-def _find_dunder_all(tree: ast.Module) -> set[str] | None:
+def _string_value(expression: cst.BaseExpression) -> str | None:
+    """Return the value of a plain or concatenated string literal, or None for any other expression."""
+    if isinstance(expression, cst.SimpleString | cst.ConcatenatedString):
+        value = expression.evaluated_value
+        return value if isinstance(value, str) else None
+    return None
+
+
+def _find_dunder_all(module: cst.Module) -> set[str] | None:
     """Return the names in this module's plain `__all__ = [...]` assignment, or None if it has none.
 
     Only a list, tuple or set literal is read; annotated, `+=`, `.extend()` and `.append()` forms are ignored.
     """
-    for stmt in tree.body:
+    for statement in module_statements(module):
         if (
-            isinstance(stmt, ast.Assign)
-            and any(isinstance(t, ast.Name) and t.id == "__all__" for t in stmt.targets)
-            and isinstance(stmt.value, ast.List | ast.Tuple | ast.Set)
+            isinstance(statement, cst.Assign)
+            and any(isinstance(target.target, cst.Name) and target.target.value == "__all__" for target in statement.targets)
+            and isinstance(statement.value, cst.List | cst.Tuple | cst.Set)
         ):
-            return {elt.value for elt in stmt.value.elts if isinstance(elt, ast.Constant) and isinstance(elt.value, str)}
+            values = (_string_value(element.value) for element in statement.value.elements if isinstance(element, cst.Element))
+            return {value for value in values if value is not None}
     return None
 
 
-def _declares_type_param(class_node: ast.ClassDef, name: str) -> bool:
-    """Return True if the class declares `name` as its own PEP 695 type parameter (`class Box[T]:`)."""
-    return any(type_param_name(param) == name for param in class_node.type_params)
+class _NameCollector(cst.CSTVisitor):
+    """Collect the names an expression reads: every `Name` except an attribute's or a keyword argument's own name."""
+
+    def __init__(self) -> None:
+        """Start with no names collected."""
+        super().__init__()
+        self.names: set[str] = set()
+
+    def visit_Name(self, node: cst.Name) -> None:  # noqa: N802 - libcst dispatches on this exact name
+        """Record the name."""
+        self.names.add(node.value)
+
+    def visit_Attribute(self, node: cst.Attribute) -> bool:  # noqa: N802 - libcst dispatches on this exact name
+        """Visit only the attribute's object: in `np.integer`, `integer` is not a name read here."""
+        node.value.visit(self)
+        return False
+
+    def visit_Arg(self, node: cst.Arg) -> bool:  # noqa: N802 - libcst dispatches on this exact name
+        """Visit only the argument's value, not the keyword it is passed as."""
+        node.value.visit(self)
+        return False
 
 
-def _inherits_type_param(class_node: ast.ClassDef, name: str) -> bool:
-    """Return True if the class is generic over the module-level `name` through one of its bases.
-
-    That is, a base mentions `name` (`Generic[T]`, `Protocol[T]`, `Mapping[T]`, `Base[int, T]`) and the
-    class doesn't declare its own `name`.
-    """
-    return not _declares_type_param(class_node, name) and any(
-        isinstance(child, ast.Name) and child.id == name for base in class_node.bases for child in ast.walk(base)
-    )
-
-
-def declaration_argument_names(decl_stmt: ast.Assign) -> set[str]:
+def declaration_argument_names(decl_stmt: cst.Assign) -> set[str]:
     """Return the non-builtin names a declaration's arguments use, e.g. {"Shape"} for `TypeVar("T", bound=Shape)`.
 
     The first positional argument (the type parameter's own name) is skipped; a string argument is read as a
     forward reference (`bound="Shape"`). A string that isn't a valid expression contributes no names.
     """
-    call = cast("ast.Call", decl_stmt.value)
-    names: set[str] = set()
-    for argument in [*call.args[1:], *(keyword.value for keyword in call.keywords)]:
-        expression = argument
-        if isinstance(argument, ast.Constant) and isinstance(argument.value, str):
+    call = _call(decl_stmt)
+    keyword_arguments = [argument for argument in call.args if argument.keyword is not None or argument.star == "**"]
+    collector = _NameCollector()
+    for argument in [*_positional_arguments(call)[1:], *keyword_arguments]:
+        expression = argument.value
+        text = _string_value(expression)
+        if text is not None:
             try:
-                expression = ast.parse(argument.value, mode="eval").body
-            except SyntaxError:
+                expression = cst.parse_expression(text)
+            except cst.ParserSyntaxError:
                 continue
-        names.update(node.id for node in ast.walk(expression) if isinstance(node, ast.Name))
-    return names - set(dir(builtins))
+        expression.visit(collector)
+    return collector.names - set(dir(builtins))
 
 
-def from_import_sources(tree: ast.Module) -> dict[str, tuple[str, int] | None]:
+def import_from_module(statement: cst.ImportFrom) -> str | None:
+    """Return the dotted module an import-from names after its leading dots, or None for a bare `from . import x`."""
+    return get_full_name_for_node(statement.module) if statement.module is not None else None
+
+
+def imported_name(alias: cst.ImportAlias) -> str:
+    """Return the name an import alias binds: its `as` name if it has one, else the imported name."""
+    return alias.evaluated_alias or alias.evaluated_name
+
+
+def from_import_sources(module: cst.Module) -> dict[str, tuple[str, int] | None]:
     """Map every name bound at module level to its `from` import's (module, level), or None if bound otherwise.
 
     Names bound by a class, function, assignment or plain `import` map to None.
     """
     sources: dict[str, tuple[str, int] | None] = {}
-    for stmt in tree.body:
-        if isinstance(stmt, ast.ImportFrom):
-            for alias in stmt.names:
-                sources[alias.asname or alias.name] = (stmt.module or "", stmt.level)
-        elif isinstance(stmt, ast.Import):
-            for alias in stmt.names:
-                sources[(alias.asname or alias.name).split(".")[0]] = None
-        elif isinstance(stmt, ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef):
-            sources[stmt.name] = None
-        elif isinstance(stmt, ast.Assign | ast.AnnAssign):
-            sources.update(dict.fromkeys(_assigned_names(stmt)))
+    for statement in module_statements(module):
+        if isinstance(statement, cst.ImportFrom):
+            source = (import_from_module(statement) or "", len(statement.relative))
+            if isinstance(statement.names, cst.ImportStar):
+                sources["*"] = source
+            else:
+                for alias in statement.names:
+                    sources[imported_name(alias)] = source
+        elif isinstance(statement, cst.Import):
+            for alias in statement.names:
+                sources[imported_name(alias).split(".")[0]] = None
+        elif isinstance(statement, cst.ClassDef | cst.FunctionDef):
+            sources[statement.name.value] = None
+        elif isinstance(statement, cst.Assign | cst.AnnAssign):
+            sources.update(dict.fromkeys(_assigned_names(statement)))
     return sources
 
 
-def _assigned_names(stmt: ast.Assign | ast.AnnAssign) -> list[str]:
-    """Return every name an assignment binds, including inside tuple or list targets."""
-    targets = stmt.targets if isinstance(stmt, ast.Assign) else [stmt.target]
-    return [node.id for target in targets for node in ast.walk(target) if isinstance(node, ast.Name)]
+def _assigned_names(statement: cst.Assign | cst.AnnAssign) -> set[str]:
+    """Return every name an assignment's targets use, including inside tuple or list targets."""
+    targets = [target.target for target in statement.targets] if isinstance(statement, cst.Assign) else [statement.target]
+    collector = _NameCollector()
+    for target in targets:
+        target.visit(collector)
+    return collector.names
 
 
-def _imports_name_conditionally(tree: ast.Module, name: str) -> bool:
+def _imports_name_conditionally(module: cst.Module, name: str) -> bool:
     """Return True if an import inside a module-level `if`/`try` block binds `name`."""
-    for stmt in tree.body:
-        if not isinstance(stmt, ast.If | ast.Try | ast.TryStar):
+    for statement in module.body:
+        if not isinstance(statement, cst.If | cst.Try | cst.TryStar):
             continue
-        for node in ast.walk(stmt):
-            if isinstance(node, ast.Import | ast.ImportFrom) and any(
-                (alias.asname or alias.name.split(".")[0]) == name for alias in node.names
-            ):
+        for node in matchers.findall(statement, matchers.Import() | matchers.ImportFrom()):
+            names = cast("cst.Import | cst.ImportFrom", node).names
+            if not isinstance(names, cst.ImportStar) and any(imported_name(alias).split(".")[0] == name for alias in names):
                 return True
     return False
 
 
-def is_safe_to_localize(origin_tree: ast.Module, name: str) -> UnsafeReason | None:
+def is_safe_to_localize(origin: cst.Module, name: str) -> UnsafeReason | None:
     """Return None if `name` is safe to duplicate as a local declaration, else the reason it isn't.
 
     Its constructor (TypeVar/ParamSpec/TypeVarTuple) must not be imported inside a module-level
     `if`/`try` block at the origin (ORIGIN_IMPORTS_CONSTRUCTOR_CONDITIONALLY), since which
     implementation it binds then depends on the runtime, e.g. `typing_extensions` below 3.13.
     """
-    declaration = find_type_param_declarations(origin_tree).get(name)
-    if declaration is not None and _imports_name_conditionally(origin_tree, type_param_constructor_name(declaration)):
+    declaration = find_type_param_declarations(origin).get(name)
+    if declaration is not None and _imports_name_conditionally(origin, type_param_constructor_name(declaration)):
         return UnsafeReason.ORIGIN_IMPORTS_CONSTRUCTOR_CONDITIONALLY
     return None
 
 
-def functions_using_nodes(tree: ast.Module, names: Iterable[str]) -> dict[str, list[ast.FunctionDef | ast.AsyncFunctionDef]]:
-    """Map each of `names`, in the given order, to the outermost function/method node whose signature or body references it.
-
-    A name used in a nested function (a closure) is attributed to the outermost one, never the nested
-    one: a PEP 695 type parameter on the enclosing function is already visible inside its closures.
-    """
-    usage: dict[str, list[ast.FunctionDef | ast.AsyncFunctionDef]] = {name: [] for name in names}
-
-    def visit(node: ast.AST, enclosing: ast.FunctionDef | ast.AsyncFunctionDef | None) -> None:
-        current = enclosing
-        if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef) and enclosing is None:
-            current = node
-        if isinstance(node, ast.Name) and current is not None and node.id in usage and current not in usage[node.id]:
-            usage[node.id].append(current)
-        for child in ast.iter_child_nodes(node):
-            visit(child, current)
-
-    visit(tree, None)
-    return usage
-
-
-def functions_in_generic_classes(tree: ast.Module, name: str) -> list[ast.FunctionDef | ast.AsyncFunctionDef]:
-    """Return every function or method defined inside a class that is generic over `name`.
-
-    A class is generic over `name` when it declares it as a PEP 695 type parameter (`class Box[T]:`)
-    or inherits it through one of its bases (see _inherits_type_param).
-    """
-    return [
-        function
-        for node in ast.walk(tree)
-        if isinstance(node, ast.ClassDef) and (_declares_type_param(node, name) or _inherits_type_param(node, name))
-        for function in ast.walk(node)
-        if isinstance(function, ast.FunctionDef | ast.AsyncFunctionDef)
-    ]
-
-
 def is_safe_to_remove(
-    tree: ast.Module,
+    module: cst.Module,
     name: str,
     project_wide_imported_names: frozenset[str] = frozenset(),
 ) -> UnsafeReason | None:
@@ -257,7 +281,7 @@ def is_safe_to_remove(
     or IMPORTED_ELSEWHERE_IN_PROJECT if `name` is in `project_wide_imported_names` (another file in
     the target project imports it directly, regardless of `__all__`).
     """
-    dunder_all = _find_dunder_all(tree)
+    dunder_all = _find_dunder_all(module)
     if dunder_all is not None and name in dunder_all:
         return UnsafeReason.DECLARED_TYPEVAR_EXPORTED
     if name in project_wide_imported_names:
@@ -265,31 +289,48 @@ def is_safe_to_remove(
     return None
 
 
-def all_refs_shadowed_by_pep695(tree: ast.Module, name: str, decl_stmt: ast.Assign) -> bool:
-    """Return True if every remaining reference to `name` is shadowed by a PEP 695 type parameter.
+def uses_of(root: PythonCstNode, name: str, decl_stmt: cst.Assign) -> list[PythonCstNode]:
+    """Return the nodes that use the module-level `name` that decl_stmt declares, resolved with libcst's scope analysis.
 
-    E.g. `def b[T](x: T) -> T:`, where `T` resolves to the function's own parameter rather than
-    the module-level declaration, making it dead. Also true (vacuously) if `name` isn't
-    referenced anywhere at all.
+    A use inside a string annotation or `cast("T", x)` counts; a `T` that a PEP 695 type parameter of an
+    enclosing function or class (`def f[T]`, `class C[T]`) declares does not.
     """
-    found_live_use = False
+    target = next(target.target for target in decl_stmt.targets if isinstance(target.target, cst.Name) and target.target.value == name)
+    return [reference.node for reference in root.translation_unit.wrappers[target].referenced_by]
 
-    def visit(node: ast.AST, *, shadowed: bool) -> None:
-        nonlocal found_live_use
-        if node is decl_stmt or found_live_use:
-            return
-        if isinstance(node, ast.Name) and node.id == name:
-            if not shadowed:
-                found_live_use = True
-            return
-        current = shadowed
-        if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
-            current = shadowed or any(type_param_name(param) == name for param in node.type_params)
-        for child in ast.iter_child_nodes(node):
-            visit(child, shadowed=current)
 
-    visit(tree, shadowed=False)
-    return not found_live_use
+def outermost_function(node: PythonCstNode) -> PythonCstNode | None:
+    """Return the outermost function or method enclosing node, or None if node is outside every function."""
+    outermost = None
+    current = node.parent
+    while current is not None:
+        if isinstance(current.node, cst.FunctionDef):
+            outermost = current
+        current = current.parent
+    return outermost
+
+
+def generic_classes(uses: Iterable[PythonCstNode]) -> list[PythonCstNode]:
+    """Return the classes that have one of `uses` in a base (`Generic[T]`, `Protocol[T]`, `Base[int, T]`).
+
+    Such a class is generic over the used name.
+    """
+    classes: list[PythonCstNode] = []
+    for use in uses:
+        child, current = use, use.parent
+        while current is not None:
+            if isinstance(current.node, cst.ClassDef) and any(child.node is base for base in current.node.bases):
+                if current not in classes:
+                    classes.append(current)
+                break
+            child, current = current, current.parent
+    return classes
+
+
+def declares_type_param(function: cst.FunctionDef, name: str) -> bool:
+    """Return True if the function declares `name` as its own PEP 695 type parameter (`def f[T](...)`)."""
+    parameters = function.type_parameters
+    return parameters is not None and any(parameter.param.name.value == name for parameter in parameters.params)
 
 
 # infer_variance needs no syntax of its own: a PEP 695 type parameter always infers its variance.
@@ -300,59 +341,64 @@ _CONVERTIBLE_KEYWORDS: dict[str, frozenset[str]] = {
 }
 
 
-def declared_default(decl_stmt: ast.Assign) -> ast.expr | None:
+def declared_default(decl_stmt: cst.Assign) -> cst.BaseExpression | None:
     """Return the value a legacy declaration passes as `default=` (PEP 696), or None if it passes none."""
-    call = cast("ast.Call", decl_stmt.value)
-    return next((keyword.value for keyword in call.keywords if keyword.arg == "default"), None)
+    return _keyword_value(_call(decl_stmt), "default")
 
 
-def has_unconvertible_argument(decl_stmt: ast.Assign) -> bool:
-    """Return True if a legacy declaration passes a keyword build_type_param can't carry over.
+def has_unconvertible_argument(decl_stmt: cst.Assign) -> bool:
+    """Return True if a legacy declaration passes a keyword type_param_text can't carry over.
 
     That is any keyword outside the constructor's known set, e.g. `covariant=`/`contravariant=`,
     `bound=` on a ParamSpec or TypeVarTuple, a keyword added by a later Python version, or a `**mapping`.
     """
-    call = cast("ast.Call", decl_stmt.value)
     convertible = _CONVERTIBLE_KEYWORDS[type_param_constructor_name(decl_stmt)]
-    return any(keyword.arg is None or keyword.arg not in convertible for keyword in call.keywords)
+    return any(
+        argument.star == "**" or (argument.keyword is not None and argument.keyword.value not in convertible)
+        for argument in _call(decl_stmt).args
+    )
 
 
-def build_type_param(decl_stmt: ast.Assign) -> ast.type_param:
-    """Translate a legacy declaration into the equivalent PEP 695 type_param node.
+def type_param_text(decl_stmt: cst.Assign, module: cst.Module) -> str:
+    """Return the PEP 695 type parameter equivalent to a legacy declaration from `module`, in its original formatting.
 
-    E.g. `T = TypeVar("T", bound=int, default=int)` becomes `T: int = int`. Bounds, constraints and
+    E.g. `T = TypeVar("T", bound=int, default=int)` gives `T: int = int`. Bounds, constraints and
     `default=` are carried over; `infer_variance=` needs nothing, since a PEP 695 type parameter always
     infers its variance. Callers must first reject declarations for which
     has_unconvertible_argument() is True.
     """
     # TODO(FrancescoPezzella): a default that uses another legacy declaration (`default=T`) still refers to it after conversion.
     #  https://github.com/TNO/Renaissance.Py/issues/279
-    call = cast("ast.Call", decl_stmt.value)
-    ctor = type_param_constructor_name(decl_stmt)
-    name = cast("str", cast("ast.Constant", call.args[0]).value)
+    call = _call(decl_stmt)
+    constructor = type_param_constructor_name(decl_stmt)
+    positional = _positional_arguments(call)
+    name = cast("str", cast("cst.SimpleString", positional[0].value).evaluated_value)
+
+    if constructor == "ParamSpec":
+        text = f"**{name}"
+    elif constructor == "TypeVarTuple":
+        text = f"*{name}"
+    else:
+        text = name
+        bound = _keyword_value(call, "bound")
+        constraints = [f"{argument.star}{module.code_for_node(argument.value)}" for argument in positional[1:]]
+        if bound is not None:
+            text += f": {module.code_for_node(bound)}"
+        elif constraints:
+            # A single constraint keeps a trailing comma, or the parentheses would make it a bound.
+            text += f": ({', '.join(constraints)}{',' if len(constraints) == 1 else ''})"
+
     default = declared_default(decl_stmt)
-
-    if ctor == "ParamSpec":
-        return ast.ParamSpec(name=name, default_value=default)
-    if ctor == "TypeVarTuple":
-        return ast.TypeVarTuple(name=name, default_value=default)
-
-    bound = next((kw.value for kw in call.keywords if kw.arg == "bound"), None)
-    constraints = call.args[1:]
-    if bound is None and constraints:
-        bound = ast.Tuple(elts=list(constraints), ctx=ast.Load())
-    return ast.TypeVar(name=name, bound=bound, default_value=default)
+    if default is not None:
+        text += f" = {module.code_for_node(default)}"
+    return text
 
 
-def type_params_defaults_last(params: list[ast.type_param]) -> list[ast.type_param]:
-    """Return `params` with every type parameter that has a default moved after those without one.
+def type_params_bracket(params: Iterable[tuple[str, bool]]) -> str:
+    """Return the `[...]` bracket for type parameters given as (text, has_default), with the defaulted ones last.
 
     The relative order within each group is kept. A non-default type parameter following a defaulted
     one is a SyntaxError.
     """
-
-    def has_default(param: ast.type_param) -> bool:
-        """Return True if `param` declares a default (`T = int`)."""
-        return isinstance(param, ast.TypeVar | ast.ParamSpec | ast.TypeVarTuple) and param.default_value is not None
-
-    return sorted(params, key=has_default)
+    ordered = sorted(params, key=lambda param: param[1])
+    return f"[{', '.join(text for text, _ in ordered)}]"

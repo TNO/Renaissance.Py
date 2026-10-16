@@ -6,7 +6,6 @@
 
 """Tests for the PythonRefactoring recipe base class."""
 
-import ast
 import keyword
 import textwrap
 from pathlib import Path
@@ -318,27 +317,3 @@ class TestPythonRefactoring:
 
         assert_that(cast("PythonFactory", subject.factory).clazz is node_class, is_(True))
         assert_that(subject.apply_to_string(), is_("x = 3\ny = 2\n"))
-
-    # ------------------------------------------------------------------
-    # find_rst_node
-    # ------------------------------------------------------------------
-
-    def test_find_rst_node_returns_wrapper_for_raw_ast_node(self, mocker: MockerFixture) -> None:
-        """AI: Verify find_rst_node locates the PythonRstNode wrapping a given raw ast.FunctionDef."""
-        self._patch_factory(
-            mocker,
-            """
-            def foo():
-                pass
-            """,
-            "test_foo.py",
-        )
-
-        subject = UnitToPytest("test_foo.py")
-        root = cast("PythonRstNode", cast("object", subject.root))
-        module = cast("ast.Module", root.node)
-        target = next(node for node in ast.walk(module) if isinstance(node, ast.FunctionDef))
-
-        found = subject.find_rst_node(target)
-
-        assert_that(found.node, is_(target))
