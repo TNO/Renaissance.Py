@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 from typing import cast
 
-DOCS_BASE_URL = "https://tno.github.io/Renaissance.Py/user/features/typevar-modernization/"
+DOCS_BASE_URL = "https://tno.github.io/Renaissance.Py/user/features/type-parameter-modernization/"
 
 
 class UnsafeReason(StrEnum):
@@ -43,35 +43,35 @@ class UnsafeRule:
 UNSAFE_RULES: dict[UnsafeReason, UnsafeRule] = {
     UnsafeReason.PEP695_VERSION_GATE: UnsafeRule(
         "target's minimum Python version is unknown or below 3.12",
-        "feature-typevar-modernization-pep695-version-gate",
+        "feature-type-parameter-modernization-pep695-version-gate",
     ),
     UnsafeReason.PEP696_VERSION_GATE: UnsafeRule(
         "declares a default= (PEP 696), which needs the target's minimum Python to be 3.13+",
-        "feature-typevar-modernization-pep696-version-gate",
+        "feature-type-parameter-modernization-pep696-version-gate",
     ),
     UnsafeReason.NO_PEP695_EQUIVALENT: UnsafeRule(
         "declaration passes an argument with no PEP 695 equivalent, e.g. covariant=True or bound= on a ParamSpec",
-        "feature-typevar-modernization-no-pep695-equivalent",
+        "feature-type-parameter-modernization-no-pep695-equivalent",
     ),
     UnsafeReason.DECLARED_TYPEVAR_EXPORTED: UnsafeRule(
         "exported via __all__",
-        "feature-typevar-modernization-declared-typevar-exported",
+        "feature-type-parameter-modernization-declared-type-parameter-exported",
     ),
     UnsafeReason.USED_IN_GENERIC_CLASS: UnsafeRule(
         "only used inside a class that is generic over it",
-        "feature-typevar-modernization-used-in-generic-class",
+        "feature-type-parameter-modernization-used-in-generic-class",
     ),
     UnsafeReason.DECLARATION_NAME_UNAVAILABLE: UnsafeRule(
         "a name its declaration uses can't be imported here as the same object",
-        "feature-typevar-modernization-declaration-name-unavailable",
+        "feature-type-parameter-modernization-declaration-name-unavailable",
     ),
     UnsafeReason.IMPORTED_ELSEWHERE_IN_PROJECT: UnsafeRule(
         "imported directly by another file in the target project",
-        "feature-typevar-modernization-imported-elsewhere-in-project",
+        "feature-type-parameter-modernization-imported-elsewhere-in-project",
     ),
     UnsafeReason.ORIGIN_IMPORTS_CONSTRUCTOR_CONDITIONALLY: UnsafeRule(
         "origin module imports TypeVar/ParamSpec/TypeVarTuple conditionally, e.g. per Python version",
-        "feature-typevar-modernization-origin-imports-constructor-conditionally",
+        "feature-type-parameter-modernization-origin-imports-constructor-conditionally",
     ),
 }
 
