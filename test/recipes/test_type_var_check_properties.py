@@ -12,7 +12,7 @@ from unittest.mock import patch
 import hypothesmith
 from hypothesis import given, reject, settings
 
-from renaissance.integrations.python.ast.rst_node import PythonRstNode
+from renaissance.integrations.python.ast.cst_node import PythonCstNode
 from renaissance.recipes.type_var_check import TypeVarCheck
 
 
@@ -30,7 +30,7 @@ class TestTypeVarCheckProperties:
 
         with patch(
             "renaissance.integrations.python.ast.factory.PythonFactory.create",
-            return_value=PythonRstNode.load_from_text(source),
+            return_value=PythonCstNode.load_from_text(source),
         ):
             subject = TypeVarCheck("x.py")
             subject.in_memory = True
