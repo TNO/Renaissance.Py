@@ -152,6 +152,7 @@ See *Verified by test modules* in [Type parameter modernization](../../user/feat
 - Re-exports through `__init__.py`, and a namespace package (PEP 420) as an import's origin: extend
   `resolve_project_module`.
 - `Step`/`run_steps` is generic and can be reused by any recipe.
+- `Step`/`run_steps` is generic and can be reused by any recipe.
 
 ## Non-goals
 
