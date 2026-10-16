@@ -7,6 +7,7 @@
 """Tests for the RecipeASTProcessor and its decorator helpers."""
 
 from hamcrest import assert_that, has_length, is_
+from pytest_mock import MockerFixture
 
 from renaissance.syntax_tree.recipe_ast_processor import (
     BatchASTProcessor,
@@ -26,7 +27,7 @@ class TestRecipeASTProcessor:
         it = RecipeASTProcessor(lambda n: n, lambda: (), "")
         assert_that(it, is_(RecipeASTProcessor))
 
-    def test_run(self, mocker) -> None:
+    def test_run(self, mocker: MockerFixture) -> None:
         """AI: Verify run() invokes each recipe_step-decorated method via BatchASTProcessor.repeat."""
 
         # define a simple recipe class with one recipe_step

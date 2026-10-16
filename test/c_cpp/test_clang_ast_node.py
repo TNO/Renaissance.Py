@@ -8,6 +8,7 @@
 
 import pytest
 from hamcrest import assert_that, has_length, has_string, is_
+from pytest_mock import MockerFixture
 
 from renaissance.integrations.clang import ClangASTNode, CPatternFactory
 from renaissance.syntax_tree import ASTFactory
@@ -68,7 +69,7 @@ class TestClangAstNode:
         "so slicing the (differently-sized) cached byte array with clang's offsets returns "
         "corrupted text.",
     )
-    def test_signature_after_multibyte_char_when_filesystem_encoding_is_not_utf8(self, mocker) -> None:
+    def test_signature_after_multibyte_char_when_filesystem_encoding_is_not_utf8(self, mocker: MockerFixture) -> None:
         """AI: Verify a node's signature offsets remain correct after a multi-byte character when the filesystem encoding isn't UTF-8."""
         # 'é' encodes as 1 byte in latin-1 but 2 bytes in UTF-8. libclang parses/reports
         # offsets against a UTF-8 encoding of the source regardless of the platform's
