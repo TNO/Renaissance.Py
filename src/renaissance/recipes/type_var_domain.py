@@ -33,7 +33,7 @@ class UnsafeReason(StrEnum):
     DECLARED_TYPEVAR_EXPORTED = "declared_typevar_exported"
     USED_IN_GENERIC_CLASS = "used_in_generic_class"
     SHARES_FUNCTION_WITH_UNCONVERTIBLE = "shares_function_with_unconvertible"
-    DECLARATION_NAME_UNAVAILABLE = "declaration_name_unavailable"
+    NAME_NOT_AT_MODULE_LEVEL = "name_not_at_module_level"
     IMPORTED_ELSEWHERE_IN_PROJECT = "imported_elsewhere_in_project"
     ORIGIN_IMPORTS_CONSTRUCTOR_CONDITIONALLY = "origin_imports_constructor_conditionally"
 
@@ -71,9 +71,9 @@ UNSAFE_RULES: dict[UnsafeReason, UnsafeRule] = {
         "every function using it also uses a type variable that can't be converted",
         "feature-type-parameter-modernization-shares-function-with-unconvertible",
     ),
-    UnsafeReason.DECLARATION_NAME_UNAVAILABLE: UnsafeRule(
-        "a name its declaration uses can't be imported here as the same object",
-        "feature-type-parameter-modernization-declaration-name-unavailable",
+    UnsafeReason.NAME_NOT_AT_MODULE_LEVEL: UnsafeRule(
+        "declaration uses a name that isn't available at module level as the same object",
+        "feature-type-parameter-modernization-name-not-at-module-level",
     ),
     UnsafeReason.IMPORTED_ELSEWHERE_IN_PROJECT: UnsafeRule(
         "imported directly by another file in the target project",
