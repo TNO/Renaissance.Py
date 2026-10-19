@@ -60,7 +60,8 @@ safely cover. This page covers `TypeVarCheck`, the recipe behind
 
 - **Version gates.** `_conversion_refusal` checks `min_python` against `PEP_695_MINIMUM = (3, 12)` and, for a
   `default=`, `PEP_696_MINIMUM = (3, 13)`. `None` never passes. A keyword outside `_CONVERTIBLE_KEYWORDS` is refused
-  (`NO_PEP695_EQUIVALENT`) instead of dropped.
+  (`NO_PEP695_EQUIVALENT`) instead of dropped. `covariant` and `contravariant` are in the set and are dropped, because
+  a function's type parameter has no variance; converting classes would have to refuse them.
 
 - **Uses.** `uses_of` takes a declaration's uses from libcst's scope analysis (`referenced_by`). A use inside a
   string annotation or `cast("T", x)` counts; a `T` that a PEP 695 type parameter of an enclosing function or class

@@ -46,6 +46,7 @@ https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
     - `test/recipes/test_type_var_check_localize.py`
     - `test/recipes/test_type_var_check_orphaned.py`
     - `test/recipes/test_type_var_check_properties.py`
+    - `test/recipes/test_type_var_check_variance.py`
     - `test/recipes/test_type_var_domain.py`
     - `test/recipes/test_step_runner.py`
     - `test/recipes/test_python_refactoring.py`

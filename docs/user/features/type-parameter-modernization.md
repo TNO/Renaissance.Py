@@ -31,7 +31,8 @@ The tool runs three phases:
 1. **Localize cross-file imports.** A type parameter imported from another file in the project
    (`from .shapes import T`) is replaced by an exact local copy of its declaration, placed after the file's imports.
 2. **Convert to PEP 695.** Every function whose signature uses a declared type parameter gets its own `[T]`, with
-   bounds, constraints and `default=` carried over (`def f[T: str = str](...)`). A nested function gets none when an
+   bounds, constraints and `default=` carried over (`def f[T: str = str](...)`). `covariant=` and `contravariant=` are
+   dropped, since only generic classes have a variance. A nested function gets none when an
    enclosing function's signature uses `T` too. If `T` is also used outside functions (a `Generic[T]` base, an alias),
    the declaration is kept. A function that also uses a type parameter that can't be
    converted is left unchanged.
@@ -164,20 +165,19 @@ With `--py 3.12` the file is unchanged. With `--py 3.13` it becomes `def first[T
 
 ### A declaration passes an argument with no PEP 695 equivalent { #feature-type-parameter-modernization-no-pep695-equivalent }
 
-The `[...]` syntax cannot write `covariant=`/`contravariant=`, a `bound=` on a `ParamSpec` or `TypeVarTuple`, a
-`**mapping` of options, or a keyword added by a later Python version. (`infer_variance=True` is fine: a PEP 695
-type parameter always infers its variance.)
+The `[...]` syntax cannot write a `bound=` on a `ParamSpec` or `TypeVarTuple`, a `**mapping` of options, or a keyword
+added by a later Python version. (`covariant=`, `contravariant=` and `infer_variance=` are fine: a function's type
+parameter has no variance.)
 
 ```python
-T_co = TypeVar("T_co", covariant=True)
+P = ParamSpec("P", bound=int)
 
-def first(items: Sequence[T_co]) -> T_co: ...
+def run(func: Callable[P, int]) -> Callable[P, int]: ...
 ```
 
 The file is unchanged.
 
-**To fix this yourself:** variance only matters for generic classes. If only functions use the type parameter,
-remove `covariant=`/`contravariant=` and run again.
+**To fix this yourself:** keep the declaration.
 
 ### A function also uses a type variable that can't be converted { #feature-type-parameter-modernization-shares-function-with-unconvertible }
 
@@ -187,14 +187,14 @@ declaration refused for a version gate or an argument with no PEP 695 equivalent
 legacy. A legacy type parameter of an enclosing generic class is not the method's own, so it blocks nothing.
 
 ```python
-T_co = TypeVar("T_co", covariant=True)
+P = ParamSpec("P", bound=int)
 Ts = TypeVarTuple("Ts")
 
-def run(func: Callable[[*Ts], T_co], *args: *Ts) -> T_co: ...
+def run(func: Callable[P, tuple[*Ts]]) -> Callable[P, tuple[*Ts]]: ...
 ```
 
-The file is unchanged. `T_co` is reported for its own reason. `Ts` is reported for this one, because every function
-using it is left unchanged. Functions that use `Ts` without `T_co` are still converted.
+The file is unchanged. `P` is reported for its own reason. `Ts` is reported for this one, because every function
+using it is left unchanged. Functions that use `Ts` without `P` are still converted.
 
 **To fix this yourself:** fix the refused declaration as its section describes, then run again.
 
@@ -328,6 +328,7 @@ run the tool again.
 - `test/recipes/test_type_var_check_localize.py`
 - `test/recipes/test_type_var_check_orphaned.py`
 - `test/recipes/test_type_var_check_properties.py`
+- `test/recipes/test_type_var_check_variance.py`
 - `test/recipes/test_type_var_domain.py`
 - `test/recipes/test_step_runner.py`
 - `test/recipes/test_python_refactoring.py`
