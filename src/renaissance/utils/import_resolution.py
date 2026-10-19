@@ -6,13 +6,27 @@
 
 """Resolve project-internal `from X import Y` statements to the .py file they import from, and re-anchor them on other files."""
 
-import ast
 from collections.abc import Sequence
 from pathlib import Path
+from typing import cast
+
+import libcst as cst
+from libcst import matchers
+from libcst.helpers import get_full_name_for_node
+
+
+def import_from_module(statement: cst.ImportFrom) -> str | None:
+    """Return the dotted module an import-from names after its leading dots, or None for a bare `from . import x`."""
+    return get_full_name_for_node(statement.module) if statement.module is not None else None
+
+
+def imported_name(alias: cst.ImportAlias) -> str:
+    """Return the name an import alias binds: its `as` name if it has one, else the imported name."""
+    return alias.evaluated_alias or alias.evaluated_name
 
 
 def resolve_project_module(importing_file: Path, project_root: Path, module: str | None, level: int) -> Path | None:
-    """Resolve one `ast.ImportFrom`'s `(module, level)` to a concrete .py file under `project_root`.
+    """Resolve one import-from's `(module, level)` to a concrete .py file under `project_root`.
 
     `level == 0` is an absolute import (`module` is dotted from `project_root`, e.g.
     "redis.typing"). `level >= 1` is relative (PEP 328): anchor at `importing_file`'s own
@@ -96,49 +110,52 @@ def collect_project_imported_names(files: Sequence[Path], project_root: Path) ->
     imported: dict[Path, set[str]] = {}
     for file in files:
         try:
-            tree = ast.parse(file.read_text(encoding="utf-8"))
-        except OSError, SyntaxError:
+            module = cst.parse_module(file.read_text(encoding="utf-8"))
+        except OSError, cst.ParserSyntaxError:
             continue
         module_bindings: dict[str, Path] = {}
-        for stmt in ast.walk(tree):
-            if isinstance(stmt, ast.ImportFrom):
-                _record_from_import(file, project_root, stmt, imported, module_bindings)
-            elif isinstance(stmt, ast.Import):
-                _bind_imported_modules(file, project_root, stmt, module_bindings)
-        _record_module_attribute_reads(tree, module_bindings, imported)
+        for statement in matchers.findall(module, matchers.ImportFrom() | matchers.Import()):
+            if isinstance(statement, cst.ImportFrom):
+                _record_from_import(file, project_root, statement, imported, module_bindings)
+            else:
+                _bind_imported_modules(file, project_root, cast("cst.Import", statement), module_bindings)
+        _record_module_attribute_reads(module, module_bindings, imported)
     return {path: frozenset(names) for path, names in imported.items()}
 
 
 def _record_from_import(
     file: Path,
     project_root: Path,
-    stmt: ast.ImportFrom,
+    statement: cst.ImportFrom,
     imported: dict[Path, set[str]],
     module_bindings: dict[str, Path],
 ) -> None:
-    """Record `stmt`'s imported names against their origin, and bind any alias that is itself a project module."""
+    """Record `statement`'s imported names against their origin, and bind any alias that is itself a project module."""
     # TODO(FrancescoPezzella): `from pkg.mod import *` isn't expanded to the names it actually pulls in.
     #  https://github.com/TNO/Renaissance.Py/issues/279
-    origin = resolve_project_module(file, project_root, stmt.module, stmt.level)
+    module = import_from_module(statement)
+    level = len(statement.relative)
+    aliases = [] if isinstance(statement.names, cst.ImportStar) else list(statement.names)
+    origin = resolve_project_module(file, project_root, module, level)
     if origin is not None:
-        imported.setdefault(origin, set()).update(alias.name for alias in stmt.names)
-    for alias in stmt.names:
-        submodule = f"{stmt.module}.{alias.name}" if stmt.module is not None else alias.name
-        submodule_origin = resolve_project_module(file, project_root, submodule, stmt.level)
+        imported.setdefault(origin, set()).update([alias.evaluated_name for alias in aliases] or ["*"])
+    for alias in aliases:
+        submodule = f"{module}.{alias.evaluated_name}" if module is not None else alias.evaluated_name
+        submodule_origin = resolve_project_module(file, project_root, submodule, level)
         if submodule_origin is not None:
-            module_bindings[alias.asname or alias.name] = submodule_origin
+            module_bindings[imported_name(alias)] = submodule_origin
 
 
-def _bind_imported_modules(file: Path, project_root: Path, stmt: ast.Import, module_bindings: dict[str, Path]) -> None:
-    """Bind the dotted name(s) `stmt` makes available to the project module file each one refers to."""
-    for alias in stmt.names:
-        if alias.asname is not None:
-            origin = resolve_project_module(file, project_root, alias.name, 0)
+def _bind_imported_modules(file: Path, project_root: Path, statement: cst.Import, module_bindings: dict[str, Path]) -> None:
+    """Bind the dotted name(s) `statement` makes available to the project module file each one refers to."""
+    for alias in statement.names:
+        if alias.evaluated_alias is not None:
+            origin = resolve_project_module(file, project_root, alias.evaluated_name, 0)
             if origin is not None:
-                module_bindings[alias.asname] = origin
+                module_bindings[alias.evaluated_alias] = origin
             continue
         # `import a.b.c` binds `a`, and makes `a.b` and `a.b.c` reachable through it.
-        parts = alias.name.split(".")
+        parts = alias.evaluated_name.split(".")
         for end in range(1, len(parts) + 1):
             prefix = ".".join(parts[:end])
             origin = resolve_project_module(file, project_root, prefix, 0)
@@ -146,24 +163,23 @@ def _bind_imported_modules(file: Path, project_root: Path, stmt: ast.Import, mod
                 module_bindings[prefix] = origin
 
 
-def _record_module_attribute_reads(tree: ast.Module, module_bindings: dict[str, Path], imported: dict[Path, set[str]]) -> None:
-    """Record every `<bound module>.<attr>` in `tree` as a dependency on `attr` in that module's file."""
+def _record_module_attribute_reads(module: cst.Module, module_bindings: dict[str, Path], imported: dict[Path, set[str]]) -> None:
+    """Record every `<bound module>.<attr>` in `module` as a dependency on `attr` in that module's file."""
     if not module_bindings:
         return
-    for node in ast.walk(tree):
-        if not isinstance(node, ast.Attribute):
-            continue
-        dotted = _dotted_name(node.value)
+    for node in matchers.findall(module, matchers.Attribute()):
+        attribute = cast("cst.Attribute", node)
+        dotted = _dotted_name(attribute.value)
         origin = module_bindings.get(dotted) if dotted is not None else None
         if origin is not None:
-            imported.setdefault(origin, set()).add(node.attr)
+            imported.setdefault(origin, set()).add(attribute.attr.value)
 
 
-def _dotted_name(expr: ast.expr) -> str | None:
-    """Return `expr` as a dotted name (`a.b.c`) if it is a plain name/attribute chain, else None."""
-    if isinstance(expr, ast.Name):
-        return expr.id
-    if isinstance(expr, ast.Attribute):
-        base = _dotted_name(expr.value)
-        return f"{base}.{expr.attr}" if base is not None else None
+def _dotted_name(expression: cst.BaseExpression) -> str | None:
+    """Return `expression` as a dotted name (`a.b.c`) if it is a plain name/attribute chain, else None."""
+    if isinstance(expression, cst.Name):
+        return expression.value
+    if isinstance(expression, cst.Attribute):
+        base = _dotted_name(expression.value)
+        return f"{base}.{expression.attr.value}" if base is not None else None
     return None
