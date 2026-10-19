@@ -13,6 +13,7 @@ from unittest.mock import patch
 from hamcrest import assert_that, contains_string, is_
 from hypothesis import given, settings
 from hypothesis import strategies as st
+from pytest_mock import MockerFixture
 
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
 from renaissance.recipes.python_refactoring import PythonRefactoring
@@ -42,7 +43,7 @@ class TestPythonRefactoring:
         .filter(lambda name: not keyword.iskeyword(name))
     )
 
-    def _patch_factory(self, mocker, text="pass", filename="test_foo.py") -> None:
+    def _patch_factory(self, mocker: MockerFixture, text="pass", filename="test_foo.py") -> None:
         code = textwrap.dedent(text)
         mocker.patch(
             "renaissance.integrations.python.ast.factory.PythonFactory.create",
@@ -53,7 +54,7 @@ class TestPythonRefactoring:
     # __init__ / replace_stmt
     # ------------------------------------------------------------------
 
-    def test_init_sets_default_list_patterns(self, mocker) -> None:
+    def test_init_sets_default_list_patterns(self, mocker: MockerFixture) -> None:
         """AI: Verify a subclass's __init__ sets its black/white list patterns from subclass defaults."""
         self._patch_factory(mocker)
         subject = UnitToPytest("test_foo.py")
@@ -61,7 +62,7 @@ class TestPythonRefactoring:
         assert_that(subject.black_list_pattern, is_("utils_for_test"))
         assert_that(subject.white_list_pattern, is_("test"))
 
-    def test_replace_stmt_rewrites_matching_pattern(self, mocker) -> None:
+    def test_replace_stmt_rewrites_matching_pattern(self, mocker: MockerFixture) -> None:
         """AI: Verify replace_stmt rewrites a statement matching an exact pattern."""
         self._patch_factory(
             mocker,
@@ -76,7 +77,7 @@ class TestPythonRefactoring:
         assert_that(subject.apply_to_string(), contains_string("import pytest"))
         assert_that(subject.apply_to_string(), contains_string("from hamcrest import *"))
 
-    def test_replace_stmt_expands_variadic_captures(self, mocker) -> None:
+    def test_replace_stmt_expands_variadic_captures(self, mocker: MockerFixture) -> None:
         """AI: Verify replace_stmt rewrites a statement matched via a variadic ($$symbols) capture."""
         self._patch_factory(
             mocker,
@@ -97,7 +98,7 @@ class TestPythonRefactoring:
     # extract_call_arguments()
     # ------------------------------------------------------------------
 
-    def test_extract_call_arguments_positional_only(self, mocker) -> None:
+    def test_extract_call_arguments_positional_only(self, mocker: MockerFixture) -> None:
         """Verify extract_call_arguments returns only positional values for positional-only calls."""
         self._patch_factory(mocker, "fun(1, 'x')")
         subject = UnitToPytest("test_foo.py")
@@ -108,7 +109,7 @@ class TestPythonRefactoring:
         assert_that(positional, is_(["1", "'x'"]))
         assert_that(keyword, is_({}))
 
-    def test_extract_call_arguments_keyword_only(self, mocker) -> None:
+    def test_extract_call_arguments_keyword_only(self, mocker: MockerFixture) -> None:
         """Verify extract_call_arguments returns only keyword values for keyword-only calls."""
         self._patch_factory(mocker, "fun(a=1, b='x')")
         subject = UnitToPytest("test_foo.py")
@@ -119,7 +120,7 @@ class TestPythonRefactoring:
         assert_that(positional, is_([]))
         assert_that(keyword, is_({"a": "1", "b": "'x'"}))
 
-    def test_extract_call_arguments_mixed(self, mocker) -> None:
+    def test_extract_call_arguments_mixed(self, mocker: MockerFixture) -> None:
         """Verify extract_call_arguments splits mixed positional and keyword arguments correctly."""
         self._patch_factory(mocker, "fun(1, 2, b='x', c=other)")
         subject = UnitToPytest("test_foo.py")
@@ -130,7 +131,7 @@ class TestPythonRefactoring:
         assert_that(positional, is_(["1", "2"]))
         assert_that(keyword, is_({"b": "'x'", "c": "other"}))
 
-    def test_extract_call_arguments_accepts_node_inside_call(self, mocker) -> None:
+    def test_extract_call_arguments_accepts_node_inside_call(self, mocker: MockerFixture) -> None:
         """Verify extract_call_arguments works when given a child node nested inside a call."""
         self._patch_factory(mocker, "fun(1, k='v')")
         subject = UnitToPytest("test_foo.py")
@@ -142,7 +143,7 @@ class TestPythonRefactoring:
         assert_that(positional, is_(["1"]))
         assert_that(keyword, is_({"k": "'v'"}))
 
-    def test_extract_call_arguments_walks_parent_chain_to_first_call(self, mocker) -> None:
+    def test_extract_call_arguments_walks_parent_chain_to_first_call(self, mocker: MockerFixture) -> None:
         """Verify extract_call_arguments climbs ancestors and uses the first enclosing call node."""
         self._patch_factory(mocker, "outer(inner(1), k=2)")
         subject = UnitToPytest("test_foo.py")
@@ -156,7 +157,7 @@ class TestPythonRefactoring:
         assert_that(positional, is_(["1"]))
         assert_that(keyword, is_({}))
 
-    def test_extract_call_arguments_returns_empty_for_non_call_node(self, mocker) -> None:
+    def test_extract_call_arguments_returns_empty_for_non_call_node(self, mocker: MockerFixture) -> None:
         """Verify extract_call_arguments returns empty positional/keyword results for non-call nodes."""
         self._patch_factory(mocker, "x = 1")
         subject = UnitToPytest("test_foo.py")
@@ -194,7 +195,7 @@ class TestPythonRefactoring:
     # class_declares_base() / class_base_arguments()
     # ------------------------------------------------------------------
 
-    def test_class_base_arguments_returns_declared_bases(self, mocker) -> None:
+    def test_class_base_arguments_returns_declared_bases(self, mocker: MockerFixture) -> None:
         """Verify class_base_arguments returns all explicitly declared base classes."""
         self._patch_factory(mocker, "class Child(Base1, Base2):\n    pass")
         subject = UnitToPytest("test_foo.py")
@@ -204,7 +205,7 @@ class TestPythonRefactoring:
 
         assert_that(bases, is_(["Base1", "Base2"]))
 
-    def test_class_base_arguments_returns_empty_without_bases(self, mocker) -> None:
+    def test_class_base_arguments_returns_empty_without_bases(self, mocker: MockerFixture) -> None:
         """Verify class_base_arguments returns an empty list for classes without base classes."""
         self._patch_factory(mocker, "class Child:\n    pass")
         subject = UnitToPytest("test_foo.py")
@@ -214,7 +215,7 @@ class TestPythonRefactoring:
 
         assert_that(bases, is_([]))
 
-    def test_class_declares_base_checks_base_membership(self, mocker) -> None:
+    def test_class_declares_base_checks_base_membership(self, mocker: MockerFixture) -> None:
         """Verify class_declares_base reports whether a requested base class is present."""
         self._patch_factory(mocker, "class Child(Base):\n    pass")
         subject = UnitToPytest("test_foo.py")
@@ -223,7 +224,7 @@ class TestPythonRefactoring:
         assert_that(subject.class_declares_base(class_node, "Base"), is_(True))
         assert_that(subject.class_declares_base(class_node, "Other"), is_(False))
 
-    def test_class_declares_base_does_not_follow_transitive_inheritance(self, mocker) -> None:
+    def test_class_declares_base_does_not_follow_transitive_inheritance(self, mocker: MockerFixture) -> None:
         """Verify class_declares_base checks only direct bases, not transitive ancestors."""
         self._patch_factory(
             mocker,
@@ -249,7 +250,7 @@ class TestPythonRefactoring:
     # process() — skip branch
     # ------------------------------------------------------------------
 
-    def test_process_skips_file_matching_black_list(self, mocker, capsys) -> None:
+    def test_process_skips_file_matching_black_list(self, mocker: MockerFixture, capsys) -> None:
         """AI: Verify process() skips and does not run the refactor when the filename matches the black list."""
         self._patch_factory(mocker, "pass", "utils_for_test_foo.py")
         run_spy = mocker.patch("renaissance.recipes.unit_to_pytest.UnitToPytest.run")
@@ -258,7 +259,7 @@ class TestPythonRefactoring:
         assert_that(captured.out, contains_string("skipping"))
         assert_that(run_spy.call_count, is_(0))
 
-    def test_process_skips_file_not_matching_white_list(self, mocker, capsys) -> None:
+    def test_process_skips_file_not_matching_white_list(self, mocker: MockerFixture, capsys) -> None:
         """AI: Verify process() skips and does not run the refactor when the filename doesn't match the white list."""
         self._patch_factory(mocker, "pass", "my_module.py")
         run_spy = mocker.patch("renaissance.recipes.unit_to_pytest.UnitToPytest.run")
@@ -271,7 +272,7 @@ class TestPythonRefactoring:
     # process() — run branch
     # ------------------------------------------------------------------
 
-    def test_process_runs_refactor_on_matching_file(self, mocker, capsys) -> None:
+    def test_process_runs_refactor_on_matching_file(self, mocker: MockerFixture, capsys) -> None:
         """AI: Verify process() runs the refactor when the filename matches both white and black list patterns."""
         self._patch_factory(mocker, "pass", "test_foo.py")
         run_spy = mocker.patch("renaissance.recipes.unit_to_pytest.UnitToPytest.run")
@@ -284,7 +285,7 @@ class TestPythonRefactoring:
     # body property
     # ------------------------------------------------------------------
 
-    def test_body_returns_module_level_statements(self, mocker) -> None:
+    def test_body_returns_module_level_statements(self, mocker: MockerFixture) -> None:
         """AI: Verify the body property returns the module's top-level statements."""
         self._patch_factory(
             mocker,
