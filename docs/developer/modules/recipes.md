@@ -104,10 +104,8 @@ safely cover. This page covers `TypeVarCheck`, the recipe behind
   a statement between it and the last import reads one of its names. Merging and sorting the added imports, and
   removing imports that became unused, is left to the CLI's `ruff check --fix --select F401,I001` pass.
 
-- **Line endings.** Files are read with universal newlines, so the tree and every edit use LF, and a modified file is
-  written back with LF, also on the lines the recipe did not change. A file the recipe does not modify is not
-  rewritten. LF is what git and the Python ecosystem normalise to. A repository that stores CRLF shows every line of a
-  modified file as changed in `git diff`.
+- **Line endings.** Files are read with universal newlines and a modified file is written back with LF, also on the
+  lines the recipe did not change. A file the recipe does not modify is not rewritten.
 
 ## Related features
 
@@ -316,25 +314,21 @@ See *Verified by test modules* in [Type parameter modernization](../../user/feat
 
     becomes `def first[U = T](items: list[U]) -> U: ...`, whose default still refers to the module-level `T`.
 
-- A declaration written with a qualified constructor, such as `typing.TypeVar`, is not recognised. This is rare. In:
+- A constructor written with its module, such as `typing.TypeVar`, is not recognised. This is rare. In:
 
     ```python
-    import typing
-
     T = typing.TypeVar("T")
 
     def first(items: list[T]) -> T: ...
     ```
 
-    `first` is left unchanged and the file is reported as clean.
+    `first` is left unchanged and the file is reported clean.
 
-- Absolute imports are resolved from the path given to the tool. In a `src/` layout run on the repository root,
-  `from pkg.typing import T` is not matched to `src/pkg/typing.py`. This is rare. In:
+- Absolute imports are resolved from the given path, so in a `src/` layout run on the repository root,
+  `from pkg.typing import T` does not find `src/pkg/typing.py`. This is rare. In:
 
     ```python
     # src/pkg/typing.py
-    from typing import TypeVar
-
     T = TypeVar("T")
 
     # src/pkg/other.py
@@ -343,7 +337,7 @@ See *Verified by test modules* in [Type parameter modernization](../../user/feat
     def first(items: list[T]) -> T: ...
     ```
 
-    `T = TypeVar("T")` is removed from `typing.py` and `other.py` is left importing it: `ImportError`.
+    `T = TypeVar("T")` is removed and `other.py` fails with `ImportError`.
 
 ## Need to fix
 

@@ -109,8 +109,7 @@ example under *Non-goals* or *Need to fix* in [Refactoring recipes](../../develo
 - Removing a line can leave extra blank lines. Run your formatter afterwards.
 - With `--no-ruff`, the imports added by localizing are not merged into the file's existing `from` imports and not
   sorted.
-- A modified CRLF file is written back with LF. In a repository that stores CRLF, `git diff` then shows all its lines as
-  changed.
+- A modified CRLF file is written back with LF, so `git diff` shows all its lines changed in a repository that stores CRLF.
 - The comment lines above a localized declaration are not copied. The comment trailing its line, such as
   `# noqa: PLC0105`, is.
 - `Unpack[Ts]` is left as it is. Run `ruff`'s `UP044` to rewrite it to `*Ts` (see
