@@ -316,6 +316,35 @@ See *Verified by test modules* in [Type parameter modernization](../../user/feat
 
     becomes `def first[U = T](items: list[U]) -> U: ...`, whose default still refers to the module-level `T`.
 
+- A declaration written with a qualified constructor, such as `typing.TypeVar`, is not recognised. This is rare. In:
+
+    ```python
+    import typing
+
+    T = typing.TypeVar("T")
+
+    def first(items: list[T]) -> T: ...
+    ```
+
+    `first` is left unchanged and the file is reported as clean.
+
+- Absolute imports are resolved from the path given to the tool. In a `src/` layout run on the repository root,
+  `from pkg.typing import T` is not matched to `src/pkg/typing.py`. This is rare. In:
+
+    ```python
+    # src/pkg/typing.py
+    from typing import TypeVar
+
+    T = TypeVar("T")
+
+    # src/pkg/other.py
+    from pkg.typing import T
+
+    def first(items: list[T]) -> T: ...
+    ```
+
+    `T = TypeVar("T")` is removed from `typing.py` and `other.py` is left importing it: `ImportError`.
+
 ## Need to fix
 
 Errors that should be fixed, not accepted.
