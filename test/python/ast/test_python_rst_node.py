@@ -161,6 +161,23 @@ class Parent:
         atu = PythonRstNode.load(Path(targets.__file__).parent / "demo.py")
         assert_that(atu.translation_unit.atu.type_ignores, is_(empty()))
 
+    @pytest.mark.parametrize(
+        "source",
+        [
+            pytest.param('x = "“quoted”"\n', id="undecodable-in-cp1252"),
+            pytest.param('x = "café"\n', id="two-byte-character"),
+            pytest.param('x = "\U0001f600"\n', id="four-byte-character"),
+        ],
+    )
+    def test_load_file_decodes_utf8(self, tmp_path: Path, source: str) -> None:
+        """Verify load reads the file as UTF-8, whatever the locale's default encoding is."""
+        path = tmp_path / "utf8.py"
+        path.write_bytes(source.encode("utf-8"))
+
+        atu = PythonRstNode.load(path)
+
+        assert_that(atu.signature, is_(source))
+
     def test_load_invalid_file(self) -> None:
         """AI: Verify loading a syntactically invalid Python file raises an IndentationError."""
         with pytest.raises(IndentationError, match="unexpected indent"):

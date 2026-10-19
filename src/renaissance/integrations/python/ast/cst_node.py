@@ -242,7 +242,9 @@ class PythonCstNode:
     @staticmethod
     def load(file_path: Path) -> PythonCstNode:
         """AI: Parse the Python source file at file_path into a PythonCstNode tree."""
-        with Path(file_path).open() as file:
+        # TODO(FrancescoPezzella): drop the explicit encoding with Python 3.15, where UTF-8 is the default.
+        #  https://github.com/TNO/Renaissance.Py/issues/188
+        with Path(file_path).open(encoding="utf-8") as file:
             content = file.read()
             return PythonCstNode.load_from_text(content, str(file_path))
 

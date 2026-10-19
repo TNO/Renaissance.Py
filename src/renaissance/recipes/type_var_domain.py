@@ -32,6 +32,7 @@ class UnsafeReason(StrEnum):
     NO_PEP695_EQUIVALENT = "no_pep695_equivalent"
     DECLARED_TYPEVAR_EXPORTED = "declared_typevar_exported"
     USED_IN_GENERIC_CLASS = "used_in_generic_class"
+    SHARES_FUNCTION_WITH_UNCONVERTIBLE = "shares_function_with_unconvertible"
     DECLARATION_NAME_UNAVAILABLE = "declaration_name_unavailable"
     IMPORTED_ELSEWHERE_IN_PROJECT = "imported_elsewhere_in_project"
     ORIGIN_IMPORTS_CONSTRUCTOR_CONDITIONALLY = "origin_imports_constructor_conditionally"
@@ -65,6 +66,10 @@ UNSAFE_RULES: dict[UnsafeReason, UnsafeRule] = {
     UnsafeReason.USED_IN_GENERIC_CLASS: UnsafeRule(
         "only used inside a class that is generic over it",
         "feature-type-parameter-modernization-used-in-generic-class",
+    ),
+    UnsafeReason.SHARES_FUNCTION_WITH_UNCONVERTIBLE: UnsafeRule(
+        "every function using it also uses a type variable that can't be converted",
+        "feature-type-parameter-modernization-shares-function-with-unconvertible",
     ),
     UnsafeReason.DECLARATION_NAME_UNAVAILABLE: UnsafeRule(
         "a name its declaration uses can't be imported here as the same object",
@@ -112,6 +117,27 @@ def find_type_param_declarations(module: cst.Module) -> dict[str, cst.Assign]:
                 if isinstance(target.target, cst.Name):
                     declarations[target.target.value] = statement
     return declarations
+
+
+def declaration_text(module: cst.Module, decl_stmt: cst.Assign) -> str:
+    """Return decl_stmt as written in module, without its `;`.
+
+    The comment trailing its line follows it when it is the only statement there, since on a shared
+    line the comment may belong to another statement.
+    """
+    text = module.code_for_node(decl_stmt.with_changes(semicolon=cst.MaybeSentinel.DEFAULT))
+    trailing = trailing_of_sole_statement(module, decl_stmt)
+    if trailing is not None and trailing.comment is not None:
+        text += module.code_for_node(trailing.whitespace) + module.code_for_node(trailing.comment)
+    return text
+
+
+def trailing_of_sole_statement(module: cst.Module, statement: cst.BaseSmallStatement) -> cst.TrailingWhitespace | None:
+    """Return the whitespace and comment trailing the line of statement in module, or None if the line holds others."""
+    for line in module.body:
+        if isinstance(line, cst.SimpleStatementLine) and len(line.body) == 1 and line.body[0] is statement:
+            return line.trailing_whitespace
+    return None
 
 
 def _call(decl_stmt: cst.Assign) -> cst.Call:
@@ -202,6 +228,13 @@ def declaration_argument_names(decl_stmt: cst.Assign) -> set[str]:
     return collector.names - set(dir(builtins))
 
 
+def names_read_by(node: cst.CSTNode) -> set[str]:
+    """Return every name `node` reads, built-ins included; attribute names and keyword argument names are not reads."""
+    collector = _NameCollector()
+    node.visit(collector)
+    return collector.names
+
+
 def from_import_sources(module: cst.Module) -> dict[str, tuple[str, int] | None]:
     """Map every name bound at module level to its `from` import's (module, level), or None if bound otherwise.
 
@@ -224,6 +257,17 @@ def from_import_sources(module: cst.Module) -> dict[str, tuple[str, int] | None]
         elif isinstance(statement, cst.Assign | cst.AnnAssign):
             sources.update(dict.fromkeys(_assigned_names(statement)))
     return sources
+
+
+def from_import_binding(module: cst.Module, name: str) -> tuple[cst.ImportFrom, cst.ImportAlias] | None:
+    """Return the module-level `from` import and the alias that bind name, or None if another statement binds it last."""
+    if from_import_sources(module).get(name) is None:
+        return None
+    binding: tuple[cst.ImportFrom, cst.ImportAlias] | None = None
+    for statement in module_statements(module):
+        if isinstance(statement, cst.ImportFrom) and not isinstance(statement.names, cst.ImportStar):
+            binding = next(((statement, alias) for alias in statement.names if imported_name(alias) == name), binding)
+    return binding
 
 
 def _assigned_names(statement: cst.Assign | cst.AnnAssign) -> set[str]:
@@ -285,22 +329,35 @@ def uses_of(root: PythonCstNode, name: str, decl_stmt: cst.Assign) -> list[Pytho
     A use inside a string annotation or `cast("T", x)` counts; a `T` that a PEP 695 type parameter of an
     enclosing function or class (`def f[T]`, `class C[T]`) declares does not.
     """
-    # TODO(FrancescoPezzella): libcst puts a function's decorators and parameter defaults inside its PEP 695 type
-    #  parameter scope, so a `T` read only there (`@dec(T)`, `y=T`) is missed and the declaration it needs is removed.
-    #  https://github.com/TNO/Renaissance.Py/issues/279
     target = next(target.target for target in decl_stmt.targets if isinstance(target.target, cst.Name) and target.target.value == name)
     return [reference.node for reference in root.translation_unit.wrappers[target].referenced_by]
 
 
-def outermost_function(node: PythonCstNode) -> PythonCstNode | None:
-    """Return the outermost function or method enclosing node, or None if node is outside every function."""
-    outermost = None
+def signature_function(use: PythonCstNode) -> PythonCstNode | None:
+    """Return the function whose parameter or return annotation contains use, or None if no signature does.
+
+    A use in a function's body, a parameter default or a decorator is in no signature.
+    """
+    in_annotation = False
+    child, current = use, use.parent
+    while current is not None:
+        if isinstance(current.node, cst.Annotation):
+            in_annotation = True
+        elif isinstance(current.node, cst.FunctionDef):
+            return current if in_annotation and child.node is not current.node.body else None
+        child, current = current, current.parent
+    return None
+
+
+def owning_function(node: PythonCstNode, signature_users: set[int]) -> PythonCstNode | None:
+    """Return the outermost function enclosing node whose id is in signature_users, or None if there is none."""
+    owner = None
     current = node.parent
     while current is not None:
-        if isinstance(current.node, cst.FunctionDef):
-            outermost = current
+        if isinstance(current.node, cst.FunctionDef) and id(current) in signature_users:
+            owner = current
         current = current.parent
-    return outermost
+    return owner
 
 
 def generic_classes(uses: Iterable[PythonCstNode]) -> list[PythonCstNode]:
@@ -360,15 +417,9 @@ def type_param_text(decl_stmt: cst.Assign, module: cst.Module) -> str:
     infers its variance. Callers must first reject declarations for which
     has_unconvertible_argument() is True.
     """
-    # TODO(FrancescoPezzella): a default that uses another legacy declaration (`default=T`) still refers to it after conversion.
-    #  https://github.com/TNO/Renaissance.Py/issues/279
     call = _call(decl_stmt)
     constructor = type_param_constructor_name(decl_stmt)
     positional = _positional_arguments(call)
-    # TODO(FrancescoPezzella): the type parameter is named after the string argument, not the variable, so
-    #  `T = TypeVar("U")` gives `def f[U](x: T)`; a non-literal name (`TypeVar(name)`, `TypeVar(*args)`) raises
-    #  AttributeError and stops every phase for the file.
-    #  https://github.com/TNO/Renaissance.Py/issues/279
     name = cast("str", cast("cst.SimpleString", positional[0].value).evaluated_value)
 
     if constructor == "ParamSpec":
