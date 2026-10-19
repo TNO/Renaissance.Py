@@ -29,7 +29,7 @@ class ASTFactory:
         working_dir: Path | None = None,
     ) -> None:
         """AI: Configure a factory that creates AST nodes of the given node-implementation type."""
-        # TODO(UNKNOWN): Make ASTFactory generic over the node class (clazz: type[NodeT], returning NodeT) so callers get the
+        # TODO(FrancescoPezzella): Make ASTFactory generic over the node class (clazz: type[NodeT], returning NodeT) so callers get the
         #  concrete node type instead of ASTNode[Unknown, Unknown]. The bound must also accept PythonRstNode, which is not an ASTNode.
         #  https://github.com/TNO/Renaissance.Py/issues/149
         self.clazz = clazz
