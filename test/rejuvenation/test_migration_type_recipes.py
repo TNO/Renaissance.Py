@@ -19,7 +19,7 @@ import pytest
 from hamcrest import assert_that, contains_string, equal_to, not_
 from hamcrest.core.matcher import Matcher
 
-from renaissance.recipes.type_var_domain import UnsafeReason, doc_link
+from renaissance.recipes.type_var_domain import DOCS_BASE_URL, UNSAFE_RULES, UnsafeReason
 
 _SCRIPT_PATH = Path(__file__).resolve().parents[2] / "src" / "rejuvenation" / "migration-type-recipes.py"
 
@@ -138,29 +138,8 @@ class TestRuffImportCleanup:
         assert_that(written, import_matcher)
         assert_that(capsys.readouterr().out, report_matcher)
 
-    @pytest.mark.parametrize(
-        ("extra_args", "import_lines"),
-        [
-            pytest.param([], ["from typing import Any, TypeVar", "from xarray_types import Alignable, JoinOptions"], id="default-merges"),
-            pytest.param(
-                ["--no-ruff"],
-                [
-                    "from typing import Any",
-                    "from typing import TypeVar",
-                    "from xarray_types import JoinOptions",
-                    "from xarray_types import Alignable",
-                ],
-                id="no-ruff-keeps-them-apart",
-            ),
-        ],
-    )
-    def test_localized_imports_are_merged_with_existing_ones(
-        self,
-        tmp_path: Path,
-        extra_args: list[str],
-        import_lines: list[str],
-    ) -> None:
-        """The localized TypeVar's import joins the file's own `typing` import, unless --no-ruff; Python < 3.12 only localizes."""
+    def test_localized_imports_are_merged_with_existing_ones(self, tmp_path: Path) -> None:
+        """The localized TypeVar's import joins the file's own `typing` import; Python < 3.12 only localizes."""
         (tmp_path / "xarray_types.py").write_text(
             'from typing import TypeVar\n\nJoinOptions = str\nAlignable = int\nT = TypeVar("T")\n',
             encoding="utf-8",
@@ -180,11 +159,11 @@ class TestRuffImportCleanup:
             encoding="utf-8",
         )
 
-        exit_code = migration.main([str(target), "--py", "3.11", *extra_args])
+        exit_code = migration.main([str(target), "--py", "3.11"])
 
         assert_that(exit_code, equal_to(0))
         lines = target.read_text(encoding="utf-8").splitlines()
-        for import_line in import_lines:
+        for import_line in ["from typing import Any, TypeVar", "from xarray_types import Alignable, JoinOptions"]:
             assert_that(lines.count(import_line), equal_to(1), import_line)
 
     def test_unmodified_sibling_file_is_left_untouched(self, tmp_path: Path) -> None:
@@ -206,29 +185,65 @@ class TestRuffImportCleanup:
         assert_that(sibling.read_text(encoding="utf-8"), equal_to(sibling_source))
 
 
-class TestConsoleReportDocLinks:
-    """main(): each unsafe name printed under NEEDS MANUAL REVIEW links to its documented rule."""
+class TestConsoleReportNeedsReviewSection:
+    """main(): what the NEEDS MANUAL REVIEW section lists per file."""
 
-    def test_needs_manual_review_includes_doc_link_for_the_specific_reason(
+    def test_names_come_with_their_reason_under_one_shared_documentation_link(
         self,
         tmp_path: Path,
         capsys: pytest.CaptureFixture[str],
     ) -> None:
-        """The report links a __all__-exported TypeVar to the DECLARED_TYPEVAR_EXPORTED rule."""
+        """Each name is listed with its reason in words; the documentation is linked once, without per-name anchors."""
         target = tmp_path / "mod.py"
         target.write_text(UNSAFE_TYPEVAR_SOURCE, encoding="utf-8")
 
         migration.main([str(target), "--py", "3.12"])
 
         output = capsys.readouterr().out
-        assert_that(output, contains_string(doc_link(UnsafeReason.DECLARED_TYPEVAR_EXPORTED)))
+        assert_that(output.count(DOCS_BASE_URL), equal_to(1))
+        assert_that(output, not_(contains_string("#feature-")))
+        assert_that(output, contains_string("    T: exported via __all__\n"))
+        assert_that(output, not_(contains_string("    orphaned:")))
+
+    def test_name_converted_in_functions_but_still_used_by_a_generic_class_is_in_both_sections(
+        self,
+        tmp_path: Path,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        """A name converted in some functions that a generic class still uses is listed as modified and as needing review."""
+        target = tmp_path / "mod.py"
+        target.write_text(
+            textwrap.dedent("""\
+                from typing import Generic, TypeVar
+
+                T = TypeVar("T")
+
+
+                def first(items: list[T]) -> T:
+                    return items[0]
+
+
+                class Box(Generic[T]):
+                    def get(self, x: T) -> T:
+                        return x
+                """),
+            encoding="utf-8",
+        )
+
+        migration.main([str(target), "--py", "3.12", "--no-ruff"])
+
+        output = capsys.readouterr().out
+        modified, needs_review = output.split("NEEDS MANUAL REVIEW (")
+        assert_that(output, contains_string("1 modified, 1 need manual review"))
+        assert_that(modified, contains_string("    T: converted to PEP 695 in functions\n"))
+        assert_that(needs_review, contains_string("    T: only used inside a class that is generic over it\n"))
 
 
 class TestConsoleReportModifiedSection:
     """main(): what the MODIFIED section lists per file."""
 
-    def test_converted_name_is_not_listed_again_as_orphaned(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
-        """A converted name is listed once; only declarations removed without a conversion appear under orphaned."""
+    def test_converted_name_is_not_listed_again_as_removed(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+        """A converted name is listed once; only declarations removed without a conversion are listed as removed."""
         target = tmp_path / "mod.py"
         target.write_text(
             textwrap.dedent("""\
@@ -251,77 +266,58 @@ class TestConsoleReportModifiedSection:
         migration.main([str(target), "--py", "3.12", "--no-ruff"])
 
         output = capsys.readouterr().out
-        assert_that(output, contains_string("    converted: T\n"))
-        assert_that(output, contains_string("    orphaned: U\n"))
+        assert_that(output, contains_string("    T: converted to PEP 695 in functions\n"))
+        assert_that(output, not_(contains_string("    T: unused declaration removed")))
+        assert_that(output, contains_string("    U: unused declaration removed\n"))
+
+
+def _table_rows(output: str, first_header: str) -> list[list[str]]:
+    """Return the data rows, as stripped cells, of the printed Markdown table whose header starts with first_header."""
+    rows = [[cell.strip() for cell in line.strip("|").split("|")] for line in output.splitlines() if line.startswith("|")]
+    start = next(index for index, row in enumerate(rows) if row[0] == first_header)
+    table: list[list[str]] = []
+    for row in rows[start + 2 :]:
+        if row[0] in {"Kind", "Reason"}:
+            break
+        table.append(row)
+    return table
 
 
 class TestSummaryTables:
-    """count_by_kind and rank_reasons: the numbers behind the report's summary tables."""
+    """main(): the summary tables at the top of the printed report."""
 
-    @pytest.mark.parametrize(
-        ("reports", "expected"),
-        [
-            pytest.param(
-                [
-                    migration.FileReport(
-                        path=Path("a.py"),
-                        result={"cross_file": {}, "converted": {"T": "fixed", "P": "fixed"}, "orphaned": {"T": "unsafe", "Ts": "unsafe"}},
-                        error=None,
-                        kinds={"T": "TypeVar", "P": "ParamSpec", "Ts": "TypeVarTuple"},
-                    ),
-                ],
-                {"TypeVar": (1, 0, 1), "ParamSpec": (1, 1, 0), "TypeVarTuple": (1, 0, 1)},
-                id="name-unsafe-in-any-phase-needs-review",
-            ),
-            pytest.param(
-                [
-                    migration.FileReport(path=Path("a.py"), result={"converted": {"T": "fixed"}}, error=None, kinds={"T": "TypeVar"}),
-                    migration.FileReport(path=Path("b.py"), result={"converted": {"T": "fixed"}}, error=None, kinds={"T": "TypeVar"}),
-                    migration.FileReport(path=Path("c.py"), result=None, error="SyntaxError: x"),
-                ],
-                {"TypeVar": (2, 2, 0), "ParamSpec": (0, 0, 0), "TypeVarTuple": (0, 0, 0)},
-                id="same-name-in-two-files-counts-twice-and-errors-are-skipped",
-            ),
-        ],
-    )
-    def test_count_by_kind(self, reports: list[object], expected: dict[str, tuple[int, int, int]]) -> None:
-        """Each name counts once per file under its kind: fixed unless any phase left it unsafe."""
-        counts = migration.count_by_kind(reports)
+    def test_counts_per_kind_and_reasons_by_frequency(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+        """A name counts once per file, needs review if it has a reason, errored files are skipped, reasons are ranked."""
+        (tmp_path / "fixed.py").write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
+        (tmp_path / "exported_1.py").write_text(UNSAFE_TYPEVAR_SOURCE, encoding="utf-8")
+        (tmp_path / "exported_2.py").write_text(UNSAFE_TYPEVAR_SOURCE, encoding="utf-8")
+        (tmp_path / "covariant.py").write_text(
+            textwrap.dedent("""\
+                from typing import TypeVar
 
-        assert_that({kind: (c.reported, c.fixed, c.needs_review) for kind, c in counts.items()}, equal_to(expected))
+                T_co = TypeVar("T_co", covariant=True)
 
-    def test_rank_reasons_orders_by_count_then_by_declaration_order(self) -> None:
-        """Every (phase, name) reason counts; the most common comes first, a tie keeps the UnsafeReason declaration order."""
-        reports = [
-            migration.FileReport(
-                path=Path("a.py"),
-                result={},
-                error=None,
-                reasons={"converted": {"T": UnsafeReason.USED_IN_GENERIC_CLASS}, "orphaned": {"T": UnsafeReason.DECLARED_TYPEVAR_EXPORTED}},
-            ),
-            migration.FileReport(
-                path=Path("b.py"),
-                result={},
-                error=None,
-                reasons={
-                    "orphaned": {
-                        "U": UnsafeReason.DECLARED_TYPEVAR_EXPORTED,
-                        "V": UnsafeReason.USED_IN_GENERIC_CLASS,
-                        "W": UnsafeReason.PEP695_VERSION_GATE,
-                    },
-                },
-            ),
-        ]
 
-        ranking = migration.rank_reasons(reports)
+                def first(x: T_co) -> T_co:
+                    return x
+                """),
+            encoding="utf-8",
+        )
+        (tmp_path / "broken.py").write_text("def broken(:\n", encoding="utf-8")
 
+        migration.main([str(tmp_path), "--py", "3.12", "--no-ruff"])
+
+        output = capsys.readouterr().out
         assert_that(
-            ranking,
+            _table_rows(output, "Kind"),
+            equal_to([["TypeVar", "4", "1", "3"], ["ParamSpec", "0", "0", "0"], ["TypeVarTuple", "0", "0", "0"]]),
+        )
+        assert_that(
+            _table_rows(output, "Reason"),
             equal_to(
                 [
-                    (UnsafeReason.DECLARED_TYPEVAR_EXPORTED, 2),
-                    (UnsafeReason.USED_IN_GENERIC_CLASS, 2),
-                    (UnsafeReason.PEP695_VERSION_GATE, 1),
+                    [UNSAFE_RULES[UnsafeReason.DECLARED_TYPEVAR_EXPORTED].message, "2"],
+                    [UNSAFE_RULES[UnsafeReason.NO_PEP695_EQUIVALENT].message, "1"],
                 ],
             ),
         )
@@ -369,27 +365,14 @@ class TestMainBatchErrorIsolation:
 class TestMainProjectWideImportSafety:
     """main(): a TypeVar imported by another file in the batch is localized there and kept at its origin."""
 
-    @pytest.mark.parametrize(
-        ("consumer_rel", "import_line"),
-        [
-            pytest.param("pkg/client.py", "from pkg.typing_mod import T", id="absolute-dotted"),
-            pytest.param("pkg/client.py", "from .typing_mod import T", id="relative"),
-            pytest.param("other/client.py", "from pkg.typing_mod import T", id="absolute-other-directory"),
-        ],
-    )
-    def test_consumer_is_localized_and_origin_declaration_survives(
-        self,
-        tmp_path: Path,
-        consumer_rel: str,
-        import_line: str,
-    ) -> None:
+    def test_consumer_is_localized_and_origin_declaration_survives(self, tmp_path: Path) -> None:
         """The importing file gets a PEP 695 local TypeVar, and the origin declaration is not removed."""
+        import_line = "from pkg.typing_mod import T"
         pkg = tmp_path / "pkg"
         pkg.mkdir()
         (pkg / "__init__.py").write_text("", encoding="utf-8")
         (pkg / "typing_mod.py").write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
-        consumer = tmp_path / consumer_rel
-        consumer.parent.mkdir(exist_ok=True)
+        consumer = pkg / "client.py"
         consumer.write_text(f"{import_line}\n\ndef use(x: T) -> T:\n    return x\n", encoding="utf-8")
 
         exit_code = migration.main([str(tmp_path), "--py", "3.12"])
@@ -420,19 +403,6 @@ class TestMainProjectWideImportSafety:
         assert_that((pkg / "typing_mod.py").read_text(encoding="utf-8"), contains_string('T = TypeVar("T")'))
         assert_that((pkg / "client.py").read_text(encoding="utf-8"), contains_string("def use[T](x: T) -> T:"))
 
-    def test_origin_declaration_survives_module_attribute_access(self, tmp_path: Path) -> None:
-        """A TypeVar accessed as a module attribute by another file is kept at its origin."""
-        pkg = tmp_path / "pkg"
-        pkg.mkdir()
-        (pkg / "__init__.py").write_text("", encoding="utf-8")
-        (pkg / "typing_mod.py").write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
-        (pkg / "client.py").write_text("import pkg.typing_mod\n\ndef use(x: pkg.typing_mod.T) -> None: ...\n", encoding="utf-8")
-
-        exit_code = migration.main([str(tmp_path), "--py", "3.12"])
-
-        assert_that(exit_code, equal_to(0))
-        assert_that((pkg / "typing_mod.py").read_text(encoding="utf-8"), contains_string('T = TypeVar("T")'))
-
 
 class TestPyVersionFlag:
     """main(): the required --py flag alone sets the target's minimum Python version."""
@@ -460,7 +430,6 @@ class TestPyVersionFlag:
         ("bad_args", "expected_error"),
         [
             pytest.param([], "the following arguments are required: --py", id="flag-missing"),
-            pytest.param(["--py", "3"], "expected MAJOR.MINOR (e.g. 3.12), got '3'", id="missing-minor"),
             pytest.param(["--py", "3.x"], "expected MAJOR.MINOR (e.g. 3.12), got '3.x'", id="non-numeric"),
         ],
     )

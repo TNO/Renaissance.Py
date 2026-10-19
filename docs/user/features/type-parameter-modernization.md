@@ -72,7 +72,7 @@ class Box[T]:
 
 - Every safe change is written to the file in place.
 - Every candidate left unchanged for one of the reasons under *Constraints* is listed in the report as **needs manual
-  review**, with a link to the section that explains it.
+  review**, with its reason. The report links this page once, at the top of that section.
 - A file listed under `ERRORS` may already be changed: each phase is written before the next one runs, so a failure
   keeps the earlier phases. Check it with `git diff`.
 
@@ -118,7 +118,7 @@ example under *Non-goals* or *Need to fix* in [Refactoring recipes](../../develo
 
 ## Constraints
 
-Each case below stops one change and is reported as **unsafe** under *needs manual review*, with a link to its section.
+Each case below stops one change and is reported under *needs manual review*.
 
 ### Python version gates { #feature-type-parameter-modernization-version-gates }
 
@@ -225,7 +225,8 @@ def first[T](items: list[T]) -> T: ...
 ### A declared type parameter is only used inside a generic class { #feature-type-parameter-modernization-used-in-generic-class }
 
 Only methods of a class with `T` in a base (see *Generic classes* above) use `T`, so there is nothing to
-convert. Standalone functions that also use `T` are still converted.
+convert. Standalone functions that also use `T` are still converted, and `T` is then listed both as modified and as
+needing review, because its declaration stays.
 
 ```python
 T = TypeVar("T")
@@ -236,8 +237,9 @@ class Box(Generic[T]):
 
 The file is unchanged.
 
-**To fix this yourself:** `ruff`'s `UP046` rewrites `Generic[T]` to `class Box[T]:`. Run the tool again afterwards:
-it removes the now unused `T = TypeVar("T")`.
+**To fix this yourself:** `ruff`'s `UP046` rewrites `Generic[T]` and `Protocol[T]` to `class Box[T]:`. Run the tool
+again afterwards: it removes the now unused `T = TypeVar("T")`. `UP046` does not touch a `T` in any other base, so
+write `class Box[T](MutableSet[T]):` by hand.
 
 ### A name the declaration uses can't be imported here { #feature-type-parameter-modernization-declaration-name-unavailable }
 
@@ -359,7 +361,9 @@ the report still says the pass ran. Files are changed directly, so run it on a g
 
 The report has a summary line, two summary tables and the sections `MODIFIED`, `NEEDS MANUAL REVIEW` and `ERRORS`.
 The tables count the type parameters per kind (`TypeVar`, `ParamSpec`, `TypeVarTuple`) and rank the reasons for manual
-review from most to least common. A name counts once per file, as needing review if any phase left it unsafe. Files are
+review from most to least common. A name counts once per file, as needing review if it has a reason to review. `MODIFIED`
+says what was done to each name: converted in functions, import replaced by a local declaration, or unused declaration
+removed. `NEEDS MANUAL REVIEW` gives each name its reason, and a name can be in both sections. Files are
 listed relative to `<path>`. Exit codes: 0 when the run completes (manual review is not a failure), 2 for a usage error,
 3 if any file raised an exception.
 

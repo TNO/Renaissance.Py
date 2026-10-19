@@ -24,7 +24,7 @@ DOCS_BASE_URL = "https://tno.github.io/Renaissance.Py/user/features/type-paramet
 class UnsafeReason(StrEnum):
     """Every distinct, permanent reason a TypeVar/ParamSpec/TypeVarTuple candidate is left unconverted.
 
-    Each member has a matching documented rule under DOCS_BASE_URL - see UNSAFE_RULES and doc_link().
+    Each member has a matching documented rule under DOCS_BASE_URL - see UNSAFE_RULES.
     """
 
     PEP695_VERSION_GATE = "pep695_version_gate"
@@ -84,11 +84,6 @@ UNSAFE_RULES: dict[UnsafeReason, UnsafeRule] = {
         "feature-type-parameter-modernization-origin-imports-constructor-conditionally",
     ),
 }
-
-
-def doc_link(reason: UnsafeReason) -> str:
-    """Return the full URL to the documented rule explaining why `reason` makes a candidate unsafe."""
-    return f"{DOCS_BASE_URL}#{UNSAFE_RULES[reason].doc_anchor}"
 
 
 _CONSTRUCTORS = frozenset({"TypeVar", "ParamSpec", "TypeVarTuple"})

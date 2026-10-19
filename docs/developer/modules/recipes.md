@@ -55,8 +55,8 @@ safely cover. This page covers `TypeVarCheck`, the recipe behind
   replaces only the node it changes, so formatting and comments elsewhere are kept.
 
 - **Unsafe reasons.** `is_safe_to_remove`/`is_safe_to_localize` and `_conversion_refusal` return an `UnsafeReason`
-  or `None`. Each of the 9 reasons has an `UnsafeRule` (message + docs anchor) in `UNSAFE_RULES`; `doc_link()` turns
-  it into the URL that the CLI report prints.
+  or `None`. Each of the 9 reasons has an `UnsafeRule` (message + docs anchor) in `UNSAFE_RULES`. The CLI report prints
+  each message and links `DOCS_BASE_URL` once.
 
 - **Version gates.** `_conversion_refusal` checks `min_python` against `PEP_695_MINIMUM = (3, 12)` and, for a
   `default=`, `PEP_696_MINIMUM = (3, 13)`. `None` never passes. A keyword outside `_CONVERTIBLE_KEYWORDS` is refused
