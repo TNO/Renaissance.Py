@@ -368,6 +368,70 @@ def _summary_tables(reports: Sequence[FileReport], *, show_ignored: bool) -> lis
     return lines
 
 
+def _name_statuses(report: FileReport) -> dict[str, str]:
+    """Return {name: "fixed" | "unsafe"} over all phases of report.result; "unsafe" wins if any phase left the name unsafe."""
+    statuses: dict[str, str] = {}
+    for phase in (report.result or {}).values():
+        for name, status in phase.items():
+            if statuses.get(name) != "unsafe":
+                statuses[name] = status
+    return statuses
+
+
+def count_by_kind(reports: Sequence[FileReport]) -> dict[str, KindCount]:
+    """Count the type parameters the reports list, per kind (TypeVar, ParamSpec, TypeVarTuple).
+
+    A name counts once per file, as needing review if any phase left it unsafe and as fixed otherwise.
+    Files that errored are skipped.
+    """
+    counts = {kind: KindCount() for kind in _TYPE_PARAM_KINDS}
+    for report in reports:
+        kinds = report.kinds or {}
+        for name, status in _name_statuses(report).items():
+            count = counts[kinds[name]]
+            count.reported += 1
+            if status == "unsafe":
+                count.needs_review += 1
+            else:
+                count.fixed += 1
+    return counts
+
+
+def rank_reasons(reports: Sequence[FileReport]) -> list[tuple[UnsafeReason, int]]:
+    """Return each UnsafeReason the reports hit with its count, most common first, ties in UnsafeReason order.
+
+    Every (phase, name) reason counts, so a name unsafe for two reasons counts under both.
+    """
+    counter = Counter(reason for report in reports for phase in (report.reasons or {}).values() for reason in phase.values())
+    order = list(UnsafeReason)
+    return sorted(counter.items(), key=lambda item: (-item[1], order.index(item[0])))
+
+
+def _table_row(cells: Sequence[str], widths: Sequence[int]) -> str:
+    """Return one Markdown table row with each cell padded to its column width."""
+    return "| " + " | ".join(cell.ljust(width) for cell, width in zip(cells, widths, strict=True)) + " |"
+
+
+def _format_table(headers: Sequence[str], rows: Sequence[Sequence[str]]) -> list[str]:
+    """Return a Markdown table as lines, with every column padded to its widest cell and the dash row to the same width."""
+    widths = [max(len(cell) for cell in column) for column in zip(headers, *rows, strict=True)]
+    return [_table_row(headers, widths), _table_row(["-" * width for width in widths], widths), *(_table_row(row, widths) for row in rows)]
+
+
+def _summary_tables(reports: Sequence[FileReport]) -> list[str]:
+    """Return the report's summary tables: type parameters per kind, then the unsafe reasons by frequency.
+
+    The reasons table is left out when no reason was hit.
+    """
+    kind_rows = [[kind, str(c.reported), str(c.fixed), str(c.needs_review)] for kind, c in count_by_kind(reports).items()]
+    lines = ["", "TYPE PARAMETERS BY KIND", "", *_format_table(["Kind", "Reported", "Fixed", "Needs review"], kind_rows)]
+    ranking = rank_reasons(reports)
+    if ranking:
+        reason_rows = [[UNSAFE_RULES[reason].message, str(count)] for reason, count in ranking]
+        lines.extend(["", "UNSAFE REASONS, MOST COMMON FIRST", "", *_format_table(["Reason", "Count"], reason_rows)])
+    return lines
+
+
 def _join_with_blank_lines(entries: list[list[str]]) -> list[str]:
     """Flatten entries into one list of lines, with a blank line between consecutive entries."""
     lines: list[str] = []

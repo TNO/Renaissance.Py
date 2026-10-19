@@ -75,8 +75,12 @@ class TypeVarCheck(PythonRefactoring[PythonCstNode]):
     project_root: Path | None = None
 
     def __init__(self, file: Path) -> None:
-        """Prepare the recipe for file, parsed with the CST backend."""
+        """Prepare the recipe for file, parsed with the CST backend.
+
+        type_param_kinds maps each type parameter name the phases see to "TypeVar", "ParamSpec" or "TypeVarTuple".
+        """
         super().__init__(file, PythonCstNode)
+        self.type_param_kinds: dict[str, str] = {}
 
     def run(self) -> None:
         """Entry point called by PythonRefactoring.process(); stores check()'s result."""
@@ -116,12 +120,15 @@ class TypeVarCheck(PythonRefactoring[PythonCstNode]):
     def convert_declared_typevars(self) -> dict[str, str]:
         """Add a PEP 695 type parameter to every function using a module-level TypeVar/ParamSpec/TypeVarTuple.
 
-        The declaration is left in place. A use is attributed to the outermost function containing it; a `T`
-        that a same-named PEP 695 type parameter of a function or class declares is not a use. Methods of a
-        class generic over the name are never converted. Bounds, constraints and `default=` are carried over
-        in their original formatting, with defaulted type parameters placed last. A name only such methods
-        use, or whose declaration _conversion_refusal rejects, is reported "unsafe", with its UnsafeReason on
-        self.converted_unsafe_reasons. Returns {name: "fixed" | "unsafe"}.
+        The declaration is left in place. A use is attributed to the outermost enclosing function whose signature
+        uses the name; a use outside every such signature is not attributed. A `T` that a same-named PEP 695 type
+        parameter of a function or class declares is not a use. Methods of a class generic over the name are never
+        converted. A function that also uses a name whose declaration _conversion_refusal rejects is left unchanged,
+        so no function mixes legacy and PEP 695 type parameters. Bounds, constraints and `default=` are carried over
+        in their original formatting, with defaulted type parameters placed last. A name only methods of such a class
+        use, whose declaration is rejected, or whose every function is left unchanged is reported "unsafe", with its
+        UnsafeReason on self.converted_unsafe_reasons. Records each declaration's kind on self.type_param_kinds.
+        Returns {name: "fixed" | "unsafe"}.
         """
         root = self._cst_root()
         module = root.translation_unit.atu
@@ -220,7 +227,8 @@ class TypeVarCheck(PythonRefactoring[PythonCstNode]):
 
         A declaration is orphaned when uses_of finds no use of its name: every `T` left belongs to a PEP 695
         type parameter, or there is none. One that is_safe_to_remove rejects is kept and reported "unsafe",
-        with its UnsafeReason on self.orphaned_unsafe_reasons. Returns {name: "fixed" | "unsafe"}.
+        with its UnsafeReason on self.orphaned_unsafe_reasons. Records each declaration's kind on
+        self.type_param_kinds. Returns {name: "fixed" | "unsafe"}.
         """
         root = self._cst_root()
         module = root.translation_unit.atu
@@ -301,7 +309,8 @@ class TypeVarCheck(PythonRefactoring[PythonCstNode]):
     ) -> None:
         """Localize every safe type parameter name that raw, on line, imports from the origin_path file.
 
-        Records each name in results as "fixed" or, via _mark_unsafe, as "unsafe".
+        Records each name in results as "fixed" or, via _mark_unsafe, as "unsafe", its kind on
+        self.type_param_kinds, and appends what to write for the "fixed" ones to localizations.
 
         Raises:
             SyntaxError: if the origin file can't be parsed, with the origin's path as its filename.
@@ -325,6 +334,7 @@ class TypeVarCheck(PythonRefactoring[PythonCstNode]):
                 continue
 
             decl_stmt = declarations[name]
+            self.type_param_kinds[name] = type_param_constructor_name(decl_stmt)
             reason = is_safe_to_localize(origin, name)
             if reason is not None:
                 self._mark_unsafe(results, self.cross_file_unsafe_reasons, name, reason)
