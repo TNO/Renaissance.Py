@@ -6,6 +6,7 @@
 
 """AI: Base processor for Python-specific source refactoring recipes."""
 
+import ast
 import importlib
 from collections.abc import Sequence
 from pathlib import Path
@@ -120,5 +121,19 @@ class PythonRefactoring[NodeT: PythonRstNode | PythonCstNode = PythonRstNode](AS
             return cast("Sequence[NodeT]", [wrappers[statement] for statement in root.translation_unit.atu.body])
         return cast("Sequence[NodeT]", root.body)
 
+    def find_rst_node(self, target: ast.AST) -> PythonRstNode:
+        """Return the PythonRstNode wrapping the raw ast node `target`, e.g. to pass to self.replace()."""
+        # TODO(FrancescoPezzella): Drop once recipes can navigate wrapper nodes via the unified node protocol?
+        #  decided during 24-09 discussion over future Node Protocol implementation
+        #  https://github.com/TNO/Renaissance.Py/issues/269
+        found: list[PythonRstNode] = []
+
+        def visit(node: PythonRstNode) -> None:
+            if node.node is target:
+                found.append(node)
+
+        cast("PythonRstNode", cast("object", self.root)).process(visit)
+        return found[0]
+
     def run(self) -> None:
-        """AI: Run this refactoring recipe. Subclasses override this to perform the refactoring."""
+        """Perform this recipe's refactoring; a no-op unless a subclass overrides it."""
