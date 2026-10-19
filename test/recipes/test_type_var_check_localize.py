@@ -201,7 +201,7 @@ class TestTypeVarCheckLocalize:
     def test_does_not_localize_when_a_name_the_declaration_uses_cant_be_imported_safely(
         self, mocker: MockerFixture, tmp_path: Path, origin: str, importing_extra: str
     ) -> None:
-        """Verify a declaration using a name that can't be imported from the origin as the same object stays imported."""
+        """Verify a declaration using a name that isn't available at module level as the same object stays imported."""
         subject = self._create_cross_file(
             mocker,
             tmp_path,
@@ -211,7 +211,7 @@ class TestTypeVarCheckLocalize:
         result = subject.localize_imported_typevars()
 
         assert_that(result, equal_to({"T": "unsafe"}))
-        assert_that(subject.cross_file_unsafe_reasons, equal_to({"T": UnsafeReason.DECLARATION_NAME_UNAVAILABLE}))
+        assert_that(subject.cross_file_unsafe_reasons, equal_to({"T": UnsafeReason.NAME_NOT_AT_MODULE_LEVEL}))
         assert_that(subject.apply_to_string(), contains_string("from file_1 import T"))
 
     @pytest.mark.parametrize(
