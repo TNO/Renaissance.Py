@@ -124,6 +124,7 @@ Each of the three combinations holds regardless of collection order.
    | When        | that node is prepended by a concatenation of that string with "node"                                                                      |
    | and         | that descendant is prepended by a concatenation of that string with "descendant"                                                          |
    | Then        | in the modified source file the concatenation of that string with "node" occurs before the concatenation of that string with "descendant" |
+
 1. on unrelated nodes: No interaction possible, so nothing to specify
 
 ## Scenario: Combination of multiple appends
@@ -168,6 +169,7 @@ Surround has before- and after-text.
    | and         | that descendant is surrounded with a before-text and an after-text                            |
    | Then        | in the modified source file the node's before-text occurs before the descendant's before-text |
    | and         | the descendant's after-text occurs before the node's after-text                               |
+
 1. on unrelated nodes: No interaction possible, so nothing to specify
 
 For example, given the addition `a + b` and two changes
