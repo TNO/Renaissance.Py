@@ -73,8 +73,12 @@ class TypeVarCheck(PythonRefactoring[PythonCstNode]):
     project_root: Path | None = None
 
     def __init__(self, file: Path) -> None:
-        """Prepare the recipe for file, parsed with the CST backend."""
+        """Prepare the recipe for file, parsed with the CST backend.
+
+        type_param_kinds maps each type parameter name the phases see to "TypeVar", "ParamSpec" or "TypeVarTuple".
+        """
         super().__init__(file, PythonCstNode)
+        self.type_param_kinds: dict[str, str] = {}
 
     def run(self) -> None:
         """Entry point called by PythonRefactoring.process(); stores check()'s result."""
@@ -127,7 +131,8 @@ class TypeVarCheck(PythonRefactoring[PythonCstNode]):
         so no function mixes legacy and PEP 695 type parameters. Bounds, constraints and `default=` are carried over
         in their original formatting, with defaulted type parameters placed last. A name only methods of such a class
         use, whose declaration is rejected, or whose every function is left unchanged is reported "unsafe", with its
-        UnsafeReason on self.converted_unsafe_reasons. Returns {name: "fixed" | "unsafe"}.
+        UnsafeReason on self.converted_unsafe_reasons. Records each declaration's kind on self.type_param_kinds.
+        Returns {name: "fixed" | "unsafe"}.
         """
         root = self._cst_root()
         module = root.translation_unit.atu
@@ -137,6 +142,7 @@ class TypeVarCheck(PythonRefactoring[PythonCstNode]):
         convertible: dict[str, tuple[tuple[str, bool], list[PythonCstNode]]] = {}
         blocked: set[int] = set()
         for name, decl_stmt in find_type_param_declarations(module).items():
+            self.type_param_kinds[name] = type_param_constructor_name(decl_stmt)
             uses = uses_of(root, name, decl_stmt)
             signature_users = {id(function) for use in uses if (function := signature_function(use)) is not None}
             functions = list(dict.fromkeys(function for use in uses if (function := owning_function(use, signature_users)) is not None))
@@ -216,7 +222,8 @@ class TypeVarCheck(PythonRefactoring[PythonCstNode]):
 
         A declaration is orphaned when uses_of finds no use of its name: every `T` left belongs to a PEP 695
         type parameter, or there is none. One that is_safe_to_remove rejects is kept and reported "unsafe",
-        with its UnsafeReason on self.orphaned_unsafe_reasons. Returns {name: "fixed" | "unsafe"}.
+        with its UnsafeReason on self.orphaned_unsafe_reasons. Records each declaration's kind on
+        self.type_param_kinds. Returns {name: "fixed" | "unsafe"}.
         """
         root = self._cst_root()
         module = root.translation_unit.atu
@@ -224,6 +231,7 @@ class TypeVarCheck(PythonRefactoring[PythonCstNode]):
         results: dict[str, str] = {}
         self.orphaned_unsafe_reasons: dict[str, UnsafeReason] = {}
         for name, decl_stmt in find_type_param_declarations(module).items():
+            self.type_param_kinds[name] = type_param_constructor_name(decl_stmt)
             if uses_of(root, name, decl_stmt):
                 continue
 
@@ -296,8 +304,8 @@ class TypeVarCheck(PythonRefactoring[PythonCstNode]):
     ) -> None:
         """Queue the localization of every safe type parameter name that raw, on line, imports from the origin_path file.
 
-        Records each name in results as "fixed" or, via _mark_unsafe, as "unsafe", and appends what to
-        write for the "fixed" ones to localizations.
+        Records each name in results as "fixed" or, via _mark_unsafe, as "unsafe", its kind on
+        self.type_param_kinds, and appends what to write for the "fixed" ones to localizations.
 
         Raises:
             SyntaxError: if the origin file can't be parsed, with the origin's path as its filename.
@@ -319,6 +327,7 @@ class TypeVarCheck(PythonRefactoring[PythonCstNode]):
                 continue
 
             decl_stmt = declarations[name]
+            self.type_param_kinds[name] = type_param_constructor_name(decl_stmt)
             reason = is_safe_to_localize(origin, name)
             if reason is not None:
                 self._mark_unsafe(results, self.cross_file_unsafe_reasons, name, reason)
