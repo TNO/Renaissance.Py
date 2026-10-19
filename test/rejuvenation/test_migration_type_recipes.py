@@ -512,13 +512,14 @@ class TestSummaryTables:
         (tmp_path / "exported_2.py").write_text(UNSAFE_TYPEVAR_SOURCE, encoding="utf-8")
         (tmp_path / "covariant.py").write_text(
             textwrap.dedent("""\
-                from typing import TypeVar
+                from collections.abc import Callable
+                from typing import ParamSpec
 
-                T_co = TypeVar("T_co", covariant=True)
+                P = ParamSpec("P", bound=int)
 
 
-                def first(x: T_co) -> T_co:
-                    return x
+                def wrap(f: Callable[P, int]) -> Callable[P, int]:
+                    return f
                 """),
             encoding="utf-8",
         )
@@ -529,7 +530,7 @@ class TestSummaryTables:
         output = capsys.readouterr().out
         assert_that(
             _table_rows(output, "Kind"),
-            equal_to([["TypeVar", "4", "1", "3"], ["ParamSpec", "0", "0", "0"], ["TypeVarTuple", "0", "0", "0"]]),
+            equal_to([["TypeVar", "3", "1", "2"], ["ParamSpec", "1", "0", "1"], ["TypeVarTuple", "0", "0", "0"]]),
         )
         assert_that(
             _table_rows(output, "Reason"),
