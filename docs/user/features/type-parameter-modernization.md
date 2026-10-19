@@ -364,7 +364,8 @@ The report has a summary line, two summary tables and the sections `MODIFIED`, `
 The tables count the type parameters per kind (`TypeVar`, `ParamSpec`, `TypeVarTuple`) and rank the reasons for manual
 review from most to least common. A name counts once per file, as needing review if it has a reason to review. `MODIFIED`
 says what was done to each name: converted in functions, import replaced by a local declaration, or unused declaration
-removed. `NEEDS MANUAL REVIEW` gives each name its reason, and a name can be in both sections. Files are
+removed; a name localized and then removed is listed only as removed. `NEEDS MANUAL REVIEW` gives each name its
+reason, and a name can be in both sections. Files are
 listed relative to `<path>`. Exit codes: 0 when the run completes (manual review is not a failure), 2 for a usage error,
 3 if any file raised an exception.
 

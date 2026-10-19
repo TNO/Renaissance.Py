@@ -366,7 +366,7 @@ class TestMainBatchErrorIsolation:
 class TestMainProjectWideImportSafety:
     """main(): a TypeVar imported by another file in the batch is localized there and kept at its origin."""
 
-    def test_consumer_is_localized_and_origin_declaration_survives(self, tmp_path: Path) -> None:
+    def test_consumer_is_localized_and_origin_declaration_survives(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
         """The importing file gets a PEP 695 local TypeVar, and the origin declaration is not removed."""
         import_line = "from pkg.typing_mod import T"
         pkg = tmp_path / "pkg"
@@ -375,6 +375,7 @@ class TestMainProjectWideImportSafety:
         (pkg / "typing_mod.py").write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
         consumer = pkg / "client.py"
         consumer.write_text(f"{import_line}\n\ndef use(x: T) -> T:\n    return x\n", encoding="utf-8")
+        (pkg / "unused.py").write_text(f"{import_line}\n", encoding="utf-8")
 
         exit_code = migration.main([str(tmp_path), "--py", "3.12"])
 
@@ -382,6 +383,7 @@ class TestMainProjectWideImportSafety:
         consumer_text = consumer.read_text(encoding="utf-8")
         assert_that(consumer_text, contains_string("def use[T](x: T) -> T:"))
         assert_that(consumer_text, not_(contains_string(import_line)))
+        assert_that(capsys.readouterr().out, contains_string("    T: unused declaration removed\n"))
         assert_that((pkg / "typing_mod.py").read_text(encoding="utf-8"), contains_string('T = TypeVar("T")'))
 
     @pytest.mark.parametrize("target_arg", [pytest.param(".", id="dot"), pytest.param("pkg", id="subdirectory")])
