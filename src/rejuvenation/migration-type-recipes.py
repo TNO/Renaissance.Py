@@ -247,15 +247,17 @@ def _join_with_blank_lines(entries: list[list[str]]) -> list[str]:
 def _modified_entry(report: FileReport, project_root: Path) -> list[str]:
     """Return the MODIFIED lines for one file: its path relative to project_root, then what was done to each name.
 
-    A converted name isn't described as removed, because its declaration is always removed afterwards.
+    A converted name isn't described as removed, because its declaration is always removed afterwards,
+    and a removed name isn't described as localized.
     """
     lines = [f"  {report.path.relative_to(project_root)}"]
     result = report.result or {}
     converted = {name for name, status in result.get("converted", {}).items() if status == "fixed"}
+    removed = {name for name, status in result.get("orphaned", {}).items() if status == "fixed"} - converted
     descriptions: dict[str, list[str]] = {}
     for phase, names in result.items():
         for name, status in names.items():
-            if status == "fixed" and not (phase == "orphaned" and name in converted):
+            if status == "fixed" and not (phase == "orphaned" and name in converted) and not (phase == "cross_file" and name in removed):
                 descriptions.setdefault(name, []).append(_FIXED_DESCRIPTIONS[phase])
     lines.extend(f"    {name}: {', '.join(texts)}" for name, texts in descriptions.items())
     return lines
