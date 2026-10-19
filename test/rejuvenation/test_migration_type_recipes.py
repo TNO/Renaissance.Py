@@ -255,6 +255,78 @@ class TestConsoleReportModifiedSection:
         assert_that(output, contains_string("    orphaned: U\n"))
 
 
+class TestSummaryTables:
+    """count_by_kind and rank_reasons: the numbers behind the report's summary tables."""
+
+    @pytest.mark.parametrize(
+        ("reports", "expected"),
+        [
+            pytest.param(
+                [
+                    migration.FileReport(
+                        path=Path("a.py"),
+                        result={"cross_file": {}, "converted": {"T": "fixed", "P": "fixed"}, "orphaned": {"T": "unsafe", "Ts": "unsafe"}},
+                        error=None,
+                        kinds={"T": "TypeVar", "P": "ParamSpec", "Ts": "TypeVarTuple"},
+                    ),
+                ],
+                {"TypeVar": (1, 0, 1), "ParamSpec": (1, 1, 0), "TypeVarTuple": (1, 0, 1)},
+                id="name-unsafe-in-any-phase-needs-review",
+            ),
+            pytest.param(
+                [
+                    migration.FileReport(path=Path("a.py"), result={"converted": {"T": "fixed"}}, error=None, kinds={"T": "TypeVar"}),
+                    migration.FileReport(path=Path("b.py"), result={"converted": {"T": "fixed"}}, error=None, kinds={"T": "TypeVar"}),
+                    migration.FileReport(path=Path("c.py"), result=None, error="SyntaxError: x"),
+                ],
+                {"TypeVar": (2, 2, 0), "ParamSpec": (0, 0, 0), "TypeVarTuple": (0, 0, 0)},
+                id="same-name-in-two-files-counts-twice-and-errors-are-skipped",
+            ),
+        ],
+    )
+    def test_count_by_kind(self, reports: list[object], expected: dict[str, tuple[int, int, int]]) -> None:
+        """Each name counts once per file under its kind: fixed unless any phase left it unsafe."""
+        counts = migration.count_by_kind(reports)
+
+        assert_that({kind: (c.reported, c.fixed, c.needs_review) for kind, c in counts.items()}, equal_to(expected))
+
+    def test_rank_reasons_orders_by_count_then_by_declaration_order(self) -> None:
+        """Every (phase, name) reason counts; the most common comes first, a tie keeps the UnsafeReason declaration order."""
+        reports = [
+            migration.FileReport(
+                path=Path("a.py"),
+                result={},
+                error=None,
+                reasons={"converted": {"T": UnsafeReason.USED_IN_GENERIC_CLASS}, "orphaned": {"T": UnsafeReason.DECLARED_TYPEVAR_EXPORTED}},
+            ),
+            migration.FileReport(
+                path=Path("b.py"),
+                result={},
+                error=None,
+                reasons={
+                    "orphaned": {
+                        "U": UnsafeReason.DECLARED_TYPEVAR_EXPORTED,
+                        "V": UnsafeReason.USED_IN_GENERIC_CLASS,
+                        "W": UnsafeReason.PEP695_VERSION_GATE,
+                    },
+                },
+            ),
+        ]
+
+        ranking = migration.rank_reasons(reports)
+
+        assert_that(
+            ranking,
+            equal_to(
+                [
+                    (UnsafeReason.DECLARED_TYPEVAR_EXPORTED, 2),
+                    (UnsafeReason.USED_IN_GENERIC_CLASS, 2),
+                    (UnsafeReason.PEP695_VERSION_GATE, 1),
+                ],
+            ),
+        )
+
+
 class TestPerFileProgressFeedback:
     """main(): prints a per-file progress line as each file is checked."""
 
