@@ -147,6 +147,7 @@ class TypeVarCheck(PythonRefactoring[PythonCstNode]):
                 continue
 
             classes = generic_classes(uses)
+            # TODO: convert a class with the name in a base (`class Box(Base[T])`) to `class Box[T](Base[T])`, still refusing `covariant=`.
             in_generic_class = [function for function in functions if self._is_inside(function, classes)]
             candidates = [
                 function
