@@ -503,72 +503,40 @@ class TestNoLocalization:
 
 
 class TestSummaryTables:
-    """count_by_kind and rank_reasons: the numbers behind the report's summary tables."""
+    """main(): the summary tables at the top of the printed report."""
 
-    @pytest.mark.parametrize(
-        ("reports", "expected"),
-        [
-            pytest.param(
-                [
-                    migration.FileReport(
-                        path=Path("a.py"),
-                        result={"cross_file": {}, "converted": {"T": "fixed", "P": "fixed"}, "orphaned": {"T": "unsafe", "Ts": "unsafe"}},
-                        error=None,
-                        kinds={"T": "TypeVar", "P": "ParamSpec", "Ts": "TypeVarTuple"},
-                    ),
-                ],
-                {"TypeVar": (1, 0, 1), "ParamSpec": (1, 1, 0), "TypeVarTuple": (1, 0, 1)},
-                id="name-unsafe-in-any-phase-needs-review",
-            ),
-            pytest.param(
-                [
-                    migration.FileReport(path=Path("a.py"), result={"converted": {"T": "fixed"}}, error=None, kinds={"T": "TypeVar"}),
-                    migration.FileReport(path=Path("b.py"), result={"converted": {"T": "fixed"}}, error=None, kinds={"T": "TypeVar"}),
-                    migration.FileReport(path=Path("c.py"), result=None, error="SyntaxError: x"),
-                ],
-                {"TypeVar": (2, 2, 0), "ParamSpec": (0, 0, 0), "TypeVarTuple": (0, 0, 0)},
-                id="same-name-in-two-files-counts-twice-and-errors-are-skipped",
-            ),
-        ],
-    )
-    def test_count_by_kind(self, reports: list[object], expected: dict[str, tuple[int, int, int]]) -> None:
-        """Each name counts once per file under its kind: fixed unless any phase left it unsafe."""
-        counts = migration.count_by_kind(reports)
+    def test_counts_per_kind_and_reasons_by_frequency(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+        """A name counts once per file, needs review if it has a reason, errored files are skipped, reasons are ranked."""
+        (tmp_path / "fixed.py").write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
+        (tmp_path / "exported_1.py").write_text(UNSAFE_TYPEVAR_SOURCE, encoding="utf-8")
+        (tmp_path / "exported_2.py").write_text(UNSAFE_TYPEVAR_SOURCE, encoding="utf-8")
+        (tmp_path / "covariant.py").write_text(
+            textwrap.dedent("""\
+                from typing import TypeVar
 
-        assert_that({kind: (c.reported, c.fixed, c.needs_review) for kind, c in counts.items()}, equal_to(expected))
+                T_co = TypeVar("T_co", covariant=True)
 
-    def test_rank_reasons_orders_by_count_then_by_declaration_order(self) -> None:
-        """Every (phase, name) reason counts; the most common comes first, a tie keeps the UnsafeReason declaration order."""
-        reports = [
-            migration.FileReport(
-                path=Path("a.py"),
-                result={},
-                error=None,
-                reasons={"converted": {"T": UnsafeReason.USED_IN_GENERIC_CLASS}, "orphaned": {"T": UnsafeReason.DECLARED_TYPEVAR_EXPORTED}},
-            ),
-            migration.FileReport(
-                path=Path("b.py"),
-                result={},
-                error=None,
-                reasons={
-                    "orphaned": {
-                        "U": UnsafeReason.DECLARED_TYPEVAR_EXPORTED,
-                        "V": UnsafeReason.USED_IN_GENERIC_CLASS,
-                        "W": UnsafeReason.PEP695_VERSION_GATE,
-                    },
-                },
-            ),
-        ]
 
-        ranking = migration.rank_reasons(reports)
+                def first(x: T_co) -> T_co:
+                    return x
+                """),
+            encoding="utf-8",
+        )
+        (tmp_path / "broken.py").write_text("def broken(:\n", encoding="utf-8")
 
+        migration.main([str(tmp_path), "--py", "3.12", "--no-ruff"])
+
+        output = capsys.readouterr().out
         assert_that(
-            ranking,
+            _table_rows(output, "Kind"),
+            equal_to([["TypeVar", "4", "1", "3"], ["ParamSpec", "0", "0", "0"], ["TypeVarTuple", "0", "0", "0"]]),
+        )
+        assert_that(
+            _table_rows(output, "Reason"),
             equal_to(
                 [
-                    (UnsafeReason.DECLARED_TYPEVAR_EXPORTED, 2),
-                    (UnsafeReason.USED_IN_GENERIC_CLASS, 2),
-                    (UnsafeReason.PEP695_VERSION_GATE, 1),
+                    [UNSAFE_RULES[UnsafeReason.DECLARED_TYPEVAR_EXPORTED].message, "2"],
+                    [UNSAFE_RULES[UnsafeReason.NO_PEP695_EQUIVALENT].message, "1"],
                 ],
             ),
         )

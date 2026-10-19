@@ -29,18 +29,17 @@ from pathlib import Path
 from termcolor import colored
 
 from renaissance.project.project_scanner import PythonScanner
-from renaissance.recipes.type_var_check import MIN_SUPPORTED_PYTHON, TypeVarCheck
+from renaissance.recipes.type_var_check import TypeVarCheck
 from renaissance.recipes.type_var_domain import DOCS_BASE_URL, UNSAFE_RULES, UnsafeReason
 from renaissance.utils.import_resolution import collect_project_imported_names
 
 _MAJOR_MINOR_PART_COUNT = 2
 _TYPE_PARAM_KINDS = ("TypeVar", "ParamSpec", "TypeVarTuple")
 _FIXED_DESCRIPTIONS = {
+    "cross_file": "import replaced by a local declaration",
     "converted": "converted to PEP 695 in functions",
     "orphaned": "unused declaration removed",
-    "cross_file": "import replaced by a local declaration",
 }
-_MAX_LISTED_NAMES = 10
 
 
 @dataclass
@@ -369,12 +368,14 @@ def _summary_tables(reports: Sequence[FileReport], *, show_ignored: bool) -> lis
 
 
 def _name_statuses(report: FileReport) -> dict[str, str]:
-    """Return {name: "fixed" | "unsafe"} over all phases of report.result; "unsafe" wins if any phase left the name unsafe."""
+    """Return {name: "fixed" | "unsafe"} over all phases of report.result; "unsafe" wins if any phase gave the name a reason."""
     statuses: dict[str, str] = {}
     for phase in (report.result or {}).values():
         for name, status in phase.items():
             if statuses.get(name) != "unsafe":
                 statuses[name] = status
+    for phase_reasons in (report.reasons or {}).values():
+        statuses.update(dict.fromkeys(phase_reasons, "unsafe"))
     return statuses
 
 
