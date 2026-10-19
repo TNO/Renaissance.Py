@@ -237,8 +237,8 @@ class Box(Generic[T]):
 
 The file is unchanged.
 
-**To fix this yourself:** `ruff`'s `UP046` rewrites `Generic[T]` and `Protocol[T]` to `class Box[T]:`. Run the tool
-again afterwards: it removes the now unused `T = TypeVar("T")`. `UP046` does not touch a `T` in any other base, so
+**To fix this yourself:** `ruff`'s `UP046` rewrites `Generic[T]` to `class Box[T]:`. Run the tool again afterwards:
+it removes the now unused `T = TypeVar("T")`. `UP046` does not touch `Protocol[T]` or a `T` in any other base, so
 write `class Box[T](MutableSet[T]):` by hand.
 
 ### A name the declaration uses can't be imported here { #feature-type-parameter-modernization-declaration-name-unavailable }
