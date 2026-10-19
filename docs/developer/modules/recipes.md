@@ -104,6 +104,11 @@ safely cover. This page covers `TypeVarCheck`, the recipe behind
   a statement between it and the last import reads one of its names. Merging and sorting the added imports, and
   removing imports that became unused, is left to the CLI's `ruff check --fix --select F401,I001` pass.
 
+- **Line endings.** Files are read with universal newlines, so the tree and every edit use LF, and a modified file is
+  written back with LF, also on the lines the recipe did not change. A file the recipe does not modify is not
+  rewritten. LF is what git and the Python ecosystem normalise to. A repository that stores CRLF shows every line of a
+  modified file as changed in `git diff`.
+
 ## Related features
 
 - [Type parameter modernization](../../user/features/type-parameter-modernization.md)
@@ -332,8 +337,3 @@ Errors that should be fixed, not accepted.
 
     `main.py` gets `T = TypeVar("T")  # noqa: PLC0105` without the comment above it. The origin keeps its comment
     when it drops the declaration.
-
-- Line endings are not preserved: a modified CRLF file is written back with LF. This causes no problem when the
-  repository stores LF and git converts on checkout, the usual case, since git commits the same content. A
-  repository that stores CRLF gets a diff on every line of a modified file, so a pull request may be rejected
-  ([issue 279](https://github.com/TNO/Renaissance.Py/issues/279)).
