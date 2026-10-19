@@ -305,10 +305,7 @@ class _RewriteActions:
 
     @staticmethod
     def __is_nested(node: Rewritable, maybe_ancestor: Rewritable) -> bool:
-        """Return True if maybe_ancestor is an ancestor of node, walking .parent.
-
-        Not node.is_ancestor_of() - not every Rewritable implements it (e.g. PythonRstNode).
-        """
+        """Return True if maybe_ancestor is an ancestor of node, walking .parent (works for every Rewritable)."""
         parent = node.parent
         while parent:
             if parent is maybe_ancestor:

@@ -42,4 +42,4 @@
 
 ### Naming
 
-21. **Type parameter modernization: rename the recipe and update its code references** — The page is `user/features/type-parameter-modernization.md`, but the recipe is still `TypeVarCheck` (`type_var_check.py`, `type_var_domain.py`, `test_type_var_*`). `type_var_domain.py` hard-codes the old page URL (`.../typevar-modernization/`) and 9 old anchors (`feature-typevar-modernization-*`, and `...-declared-typevar-exported` is now `...-declared-type-parameter-exported`), and `test_type_var_domain.py` reads the old file path. Rename the recipe to `TypeParameterCheck` and update those references in one change (ADR 15 resolves recipe names with `snake_case()`), then update the docs that name the recipe.
+21. **Type parameter modernization: rename the recipe and update its code references** — The page and rule links use `type-parameter-modernization`, but the recipe is still `TypeVarCheck` (`type_var_check.py`, `type_var_domain.py`, `test_type_var_*`). Rename the recipe to `TypeParameterCheck` and update its implementation and tests in one change (ADR 15 resolves recipe names with `snake_case()`), then update the docs that name the recipe.
