@@ -42,6 +42,7 @@ safely cover. This page covers `TypeVarCheck`, the recipe behind
     | `convert_declared_typevars()` (only adds type parameters)    | `converted_unsafe_reasons`  |
     | `remove_orphaned_declarations()` (only removes declarations) | `orphaned_unsafe_reasons`   |
 
+- `type_param_kinds`: maps each type parameter name the phases see to `"TypeVar"`, `"ParamSpec"` or `"TypeVarTuple"`.
 - Attributes set by the CLI (`migration-type-recipes.py`): `min_python`, `project_root` (falls back to the file's
   folder) and `project_wide_imported_names` (from `collect_project_imported_names`).
 - `PythonRefactoring.process("TypeVarCheck", file)`, used by `cli.py refactor`, never sets those attributes, so every

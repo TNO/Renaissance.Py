@@ -45,6 +45,18 @@ class TestTypeVarCheck:
         assert_that(output, contains_string("def b[T](x: T) -> T:"))
         assert_that(output, not_(contains_string("T = TypeVar")))
 
+    def test_check_records_the_kind_of_every_declaration(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
+        """Verify check() exposes each declared name's constructor (TypeVar, ParamSpec or TypeVarTuple) on type_param_kinds."""
+        subject = create_type_var_check("""
+            from typing import ParamSpec, TypeVar, TypeVarTuple
+            T = TypeVar('T')
+            P = ParamSpec('P')
+            Ts = TypeVarTuple('Ts')
+        """)
+        subject.run()
+
+        assert_that(subject.type_param_kinds, equal_to({"T": "TypeVar", "P": "ParamSpec", "Ts": "TypeVarTuple"}))
+
     def test_check_keeps_declaration_still_used_by_a_generic_class(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
         """Verify check() converts a standalone function but keeps the declaration a Generic[...] base still needs."""
         subject = create_type_var_check("""

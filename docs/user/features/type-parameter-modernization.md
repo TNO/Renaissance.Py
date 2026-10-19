@@ -357,8 +357,11 @@ declaration is gone). It also merges and sorts **every** import block in them, i
 before, using the `ruff` settings of the project. `ruff` must be installed in the same environment; if it cannot run,
 the report still says the pass ran. Files are changed directly, so run it on a git checkout.
 
-The report has a summary line and the sections `MODIFIED`, `NEEDS MANUAL REVIEW` and `ERRORS`. Exit codes: 0 when
-the run completes (manual review is not a failure), 2 for a usage error, 3 if any file raised an exception.
+The report has a summary line, two summary tables and the sections `MODIFIED`, `NEEDS MANUAL REVIEW` and `ERRORS`.
+The tables count the type parameters per kind (`TypeVar`, `ParamSpec`, `TypeVarTuple`) and rank the reasons for manual
+review from most to least common. A name counts once per file, as needing review if any phase left it unsafe. Files are
+listed relative to `<path>`. Exit codes: 0 when the run completes (manual review is not a failure), 2 for a usage error,
+3 if any file raised an exception.
 
 ## Change considerations
 
