@@ -16,6 +16,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Self
 
+from renaissance.syntax_tree.node_protocol import NodeProtocol
+from renaissance.syntax_tree.semantic_kind import SemanticKind
 from renaissance.utils.ast_utils import format_node, next_sibling, preceding_sibling, process_node
 from renaissance.utils.text_utils import TextUtils
 
@@ -29,18 +31,25 @@ class VisitorResult(Enum):
     SKIP = 2
 
 
-class ASTReference[NodeT, TranslationUnitT]:
-    """AI: Represent a reference from one AST node to another, along with the kind of reference."""
+class ASTReference[NodeProtocolT: NodeProtocol]:
+    """Reference between two AST nodes, with its kind and additional properties."""
 
-    def __init__(self, ast_node: ASTNode[NodeT, TranslationUnitT], ref_kind: str, properties: dict[str, Any]) -> None:
-        """AI: Represent a reference from one AST node to another, along with the kind of reference."""
+    def __init__(self, ast_node: NodeProtocolT, ref_kind: str, properties: dict[str, Any]) -> None:
+        """Initialise the reference.
+
+        Args:
+            ast_node: Node at the other end of the reference.
+            ref_kind: Kind of the reference.
+            properties: Additional properties of the reference.
+
+        """
         self._node = ast_node
         self._ref_kind = ref_kind
         self._properties = properties
 
     @property
-    def node(self) -> ASTNode[NodeT, TranslationUnitT]:
-        """AI: Return the AST node this reference points from."""
+    def node(self) -> NodeProtocolT:
+        """Return the node at the other end of the reference."""
         return self._node
 
     @property
@@ -62,6 +71,8 @@ class ASTNode[NodeT, TranslationUnitT](ABC):
     """
 
     cache: dict[str, bytes] = {}
+    parser_kind: str
+    semantic_kind: SemanticKind
 
     def __init__(self, root: Self) -> None:
         """AI: Initialize a new AST node rooted at the given translation-unit-level node."""
@@ -135,12 +146,12 @@ class ASTNode[NodeT, TranslationUnitT](ABC):
 
     @property
     @abstractmethod
-    def references(self) -> list[ASTReference[NodeT, TranslationUnitT]]:
+    def references(self) -> Sequence[ASTReference[ASTNode[NodeT, TranslationUnitT]]]:
         """AI: Return the references that this node points to."""
 
     @property
     @abstractmethod
-    def referenced_by(self) -> list[ASTReference[NodeT, TranslationUnitT]]:
+    def referenced_by(self) -> Sequence[ASTReference[ASTNode[NodeT, TranslationUnitT]]]:
         """AI: Return the references that point to this node."""
 
     def get_ancestor(self, kind: str | re.Pattern[str]) -> Self | None:
