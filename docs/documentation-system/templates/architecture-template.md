@@ -74,14 +74,12 @@ Use this template for pages in `docs/developer/architecture/` that record design
 ### Anchor and stable ID conventions
 
 <!-- pyml disable md060-->
-
 | Element     | Pattern                    | Example                       |
 | ----------- | -------------------------- | ----------------------------- |
 | Page anchor | `#dev-architecture-<slug>` | `#dev-architecture-code-find` |
 | Stable ID   | `ARCH-<AREA>-<NAME>`       | `ARCH-CODE-FIND`              |
 
 <!-- pyml enable md060-->
-
 The `<AREA>` segment groups related architecture pages (e.g., `CODE`, `TEST`, `PROJECT`).
 
 ### Decision sub-sections
