@@ -405,15 +405,15 @@ class TestTypeVarCheckConvert:
         ("functions", "expected_converted", "expected_unchanged"),
         [
             pytest.param(
-                "def f(x: U) -> U:\n    return x\ndef g(x: U, y: T_co) -> T_co:\n    return y\n",
+                "def f(x: U) -> U:\n    return x\ndef g(x: U, y: Bad) -> Bad:\n    return y\n",
                 "def f[U](x: U) -> U:",
-                "def g(x: U, y: T_co) -> T_co:",
+                "def g(x: U, y: Bad) -> Bad:",
                 id="functions",
             ),
             pytest.param(
-                "class Util:\n    def f(self, x: U) -> U:\n        return x\n    def g(self, x: U, y: T_co) -> T_co:\n        return y\n",
+                "class Util:\n    def f(self, x: U) -> U:\n        return x\n    def g(self, x: U, y: Bad) -> Bad:\n        return y\n",
                 "    def f[U](self, x: U) -> U:",
-                "    def g(self, x: U, y: T_co) -> T_co:",
+                "    def g(self, x: U, y: Bad) -> Bad:",
                 id="methods",
             ),
         ],
@@ -422,12 +422,10 @@ class TestTypeVarCheckConvert:
         self, create_type_var_check: Callable[[str], TypeVarCheck], functions: str, expected_converted: str, expected_unchanged: str
     ) -> None:
         """Verify a function that also uses an unconvertible TypeVar is left whole, while the others using U get [U]."""
-        subject = create_type_var_check(
-            f'from typing import TypeVar\n\nT_co = TypeVar("T_co", covariant=True)\nU = TypeVar("U")\n\n{functions}'
-        )
+        subject = create_type_var_check(f'from typing import TypeVar\n\nBad = TypeVar("Bad", future_kw=1)\nU = TypeVar("U")\n\n{functions}')
         result = subject.convert_declared_typevars()
 
-        assert_that(result, equal_to({"T_co": "unsafe", "U": "fixed"}))
+        assert_that(result, equal_to({"Bad": "unsafe", "U": "fixed"}))
         output = subject.apply_to_string()
         assert_that(output, contains_string(expected_converted))
         assert_that(output, contains_string(expected_unchanged))
@@ -508,6 +506,20 @@ class TestTypeVarCheckConvertArguments:
                 id="typevar-constraints-default",
             ),
             pytest.param('T = TypeVar("T", infer_variance=True)', _TYPEVAR_USE, "def a[T](x: T) -> T:", id="typevar-infer-variance"),
+            pytest.param('T = TypeVar("T", covariant=True)', _TYPEVAR_USE, "def a[T](x: T) -> T:", id="typevar-covariant"),
+            pytest.param('T = TypeVar("T", contravariant=True)', _TYPEVAR_USE, "def a[T](x: T) -> T:", id="typevar-contravariant"),
+            pytest.param(
+                'T = TypeVar("T", bound=int, covariant=True)',
+                _TYPEVAR_USE,
+                "def a[T: int](x: T) -> T:",
+                id="typevar-bound-covariant",
+            ),
+            pytest.param(
+                'P = ParamSpec("P", covariant=True)',
+                _PARAMSPEC_USE,
+                "def a[**P](f: Callable[P, int]) -> Callable[P, int]:",
+                id="paramspec-covariant",
+            ),
             pytest.param(
                 'P = ParamSpec("P")',
                 _PARAMSPEC_USE,
@@ -536,7 +548,7 @@ class TestTypeVarCheckConvertArguments:
         signature: str,
         expected_signature: str,
     ) -> None:
-        """Verify bounds, constraints, defaults and inferred variance are carried over."""
+        """Verify bounds, constraints and defaults are carried over, and variance arguments are dropped."""
         name = declaration.split(" = ", maxsplit=1)[0]
         subject = create_type_var_check(_source(declaration, signature))
         subject.min_python = PEP_696_MINIMUM
@@ -580,32 +592,11 @@ class TestTypeVarCheckConvertArguments:
                 id="typevartuple-default-3.12",
             ),
             pytest.param(
-                'T = TypeVar("T", covariant=True)',
-                _TYPEVAR_USE,
-                PEP_696_MINIMUM,
-                UnsafeReason.NO_PEP695_EQUIVALENT,
-                id="typevar-covariant",
-            ),
-            pytest.param(
-                'T = TypeVar("T", contravariant=True)',
-                _TYPEVAR_USE,
-                PEP_696_MINIMUM,
-                UnsafeReason.NO_PEP695_EQUIVALENT,
-                id="typevar-contravariant",
-            ),
-            pytest.param(
-                'P = ParamSpec("P", covariant=True)',
-                _PARAMSPEC_USE,
-                PEP_696_MINIMUM,
-                UnsafeReason.NO_PEP695_EQUIVALENT,
-                id="paramspec-covariant",
-            ),
-            pytest.param(
-                'Ts = TypeVarTuple("Ts", bound=int, covariant=True)',
+                'Ts = TypeVarTuple("Ts", bound=int)',
                 _TYPEVARTUPLE_USE,
                 PEP_696_MINIMUM,
                 UnsafeReason.NO_PEP695_EQUIVALENT,
-                id="typevartuple-bound-covariant",
+                id="typevartuple-bound",
             ),
             pytest.param(
                 'P = ParamSpec("P", bound=int)',
@@ -654,11 +645,11 @@ class TestTypeVarCheckConvertArguments:
         ("declarations", "signature", "min_python", "expected_reasons"),
         [
             pytest.param(
-                'T_co = TypeVar("T_co", covariant=True)\nTs = TypeVarTuple("Ts")',
-                "def a(func: Callable[[*Ts], T_co], *args: *Ts) -> T_co:",
+                'Bad = TypeVar("Bad", future_kw=1)\nTs = TypeVarTuple("Ts")',
+                "def a(func: Callable[[*Ts], Bad], *args: *Ts) -> Bad:",
                 PEP_696_MINIMUM,
-                {"T_co": UnsafeReason.NO_PEP695_EQUIVALENT, "Ts": UnsafeReason.SHARES_FUNCTION_WITH_UNCONVERTIBLE},
-                id="covariant-typevar-with-typevartuple",
+                {"Bad": UnsafeReason.NO_PEP695_EQUIVALENT, "Ts": UnsafeReason.SHARES_FUNCTION_WITH_UNCONVERTIBLE},
+                id="unconvertible-typevar-with-typevartuple",
             ),
             pytest.param(
                 'T = TypeVar("T")\nD = TypeVar("D", default=int)',

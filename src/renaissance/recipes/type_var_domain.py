@@ -56,7 +56,7 @@ UNSAFE_RULES: dict[UnsafeReason, UnsafeRule] = {
         "feature-type-parameter-modernization-pep696-version-gate",
     ),
     UnsafeReason.NO_PEP695_EQUIVALENT: UnsafeRule(
-        "declaration passes an argument with no PEP 695 equivalent, e.g. covariant=True or bound= on a ParamSpec",
+        "declaration passes an argument with no PEP 695 equivalent, e.g. bound= on a ParamSpec or a **mapping",
         "feature-type-parameter-modernization-no-pep695-equivalent",
     ),
     UnsafeReason.DECLARED_TYPEVAR_EXPORTED: UnsafeRule(
@@ -378,10 +378,10 @@ def declares_type_param(function: cst.FunctionDef, name: str) -> bool:
     return parameters is not None and any(parameter.param.name.value == name for parameter in parameters.params)
 
 
-# infer_variance needs no syntax of its own: a PEP 695 type parameter always infers its variance.
+# Variance needs no syntax of its own: a PEP 695 type parameter always infers it, and a function's has none.
 _CONVERTIBLE_KEYWORDS: dict[str, frozenset[str]] = {
-    "TypeVar": frozenset({"bound", "default", "infer_variance"}),
-    "ParamSpec": frozenset({"default", "infer_variance"}),
+    "TypeVar": frozenset({"bound", "default", "infer_variance", "covariant", "contravariant"}),
+    "ParamSpec": frozenset({"default", "infer_variance", "covariant", "contravariant"}),
     "TypeVarTuple": frozenset({"default", "infer_variance"}),
 }
 
@@ -394,8 +394,8 @@ def declared_default(decl_stmt: cst.Assign) -> cst.BaseExpression | None:
 def has_unconvertible_argument(decl_stmt: cst.Assign) -> bool:
     """Return True if a legacy declaration passes a keyword type_param_text can't carry over.
 
-    That is any keyword outside the constructor's known set, e.g. `covariant=`/`contravariant=`,
-    `bound=` on a ParamSpec or TypeVarTuple, a keyword added by a later Python version, or a `**mapping`.
+    That is any keyword outside the constructor's known set, e.g. `bound=` on a ParamSpec or TypeVarTuple,
+    a keyword added by a later Python version, or a `**mapping`.
     """
     convertible = _CONVERTIBLE_KEYWORDS[type_param_constructor_name(decl_stmt)]
     return any(
@@ -408,9 +408,8 @@ def type_param_text(decl_stmt: cst.Assign, module: cst.Module) -> str:
     """Return the PEP 695 type parameter equivalent to a legacy declaration from `module`, in its original formatting.
 
     E.g. `T = TypeVar("T", bound=int, default=int)` gives `T: int = int`. Bounds, constraints and
-    `default=` are carried over; `infer_variance=` needs nothing, since a PEP 695 type parameter always
-    infers its variance. Callers must first reject declarations for which
-    has_unconvertible_argument() is True.
+    `default=` are carried over; `infer_variance=`, `covariant=` and `contravariant=` are dropped. Callers must
+    first reject declarations for which has_unconvertible_argument() is True.
     """
     call = _call(decl_stmt)
     constructor = type_param_constructor_name(decl_stmt)
