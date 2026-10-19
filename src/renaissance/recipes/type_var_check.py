@@ -344,7 +344,7 @@ class TypeVarCheck(PythonRefactoring[PythonCstNode]):
                 continue
             argument_imports = self._argument_imports(origin, origin_path, raw, decl_stmt)
             if argument_imports is None:
-                self._mark_unsafe(results, self.cross_file_unsafe_reasons, name, UnsafeReason.DECLARATION_NAME_UNAVAILABLE)
+                self._mark_unsafe(results, self.cross_file_unsafe_reasons, name, UnsafeReason.NAME_NOT_AT_MODULE_LEVEL)
                 continue
 
             constructor_import = self._missing_constructor_import(origin, origin_path, raw, decl_stmt)
@@ -409,9 +409,9 @@ class TypeVarCheck(PythonRefactoring[PythonCstNode]):
         """Return the import lines for the names decl_stmt's arguments use that this file doesn't have, sorted by name.
 
         A name this file already imports from the origin module (or from the same absolute module the
-        origin imports it from) is fine and not returned. Returns None if one of the names can't be
-        imported as the same object: the origin doesn't bind it at module level at runtime (e.g. only
-        under `if TYPE_CHECKING:`), or this file binds it to something else.
+        origin imports it from) is fine and not returned. Returns None if one of the names isn't available
+        as the same object at module level: the origin doesn't bind it at runtime (e.g. only under
+        `if TYPE_CHECKING:`), or this file binds it to something else.
         """
         origin_sources = from_import_sources(origin)
         importing_sources = from_import_sources(self._cst_root().translation_unit.atu)
