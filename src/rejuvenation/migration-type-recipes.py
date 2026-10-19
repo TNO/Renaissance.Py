@@ -32,11 +32,16 @@ from termcolor import colored
 
 from renaissance.project.project_scanner import PythonScanner
 from renaissance.recipes.type_var_check import TypeVarCheck
-from renaissance.recipes.type_var_domain import UNSAFE_RULES, UnsafeReason, doc_link
+from renaissance.recipes.type_var_domain import DOCS_BASE_URL, UNSAFE_RULES, UnsafeReason
 from renaissance.utils.import_resolution import collect_project_imported_names
 
 _MAJOR_MINOR_PART_COUNT = 2
 _TYPE_PARAM_KINDS = ("TypeVar", "ParamSpec", "TypeVarTuple")
+_FIXED_DESCRIPTIONS = {
+    "cross_file": "import replaced by a local declaration",
+    "converted": "converted to PEP 695 in functions",
+    "orphaned": "unused declaration removed",
+}
 
 
 @dataclass
@@ -92,10 +97,8 @@ def has_fixed(report: FileReport) -> bool:
 
 
 def has_unsafe(report: FileReport) -> bool:
-    """Return True if any phase of report.result left at least one name unsafe to touch."""
-    if report.result is None:
-        return False
-    return any("unsafe" in phase.values() for phase in report.result.values())
+    """Return True if any phase of report.result gave at least one name a reason to review."""
+    return any(report.reasons.values()) if report.reasons else False
 
 
 def is_clean(report: FileReport) -> bool:
@@ -166,12 +169,14 @@ def _format_commit_summary(reports: list[FileReport]) -> str:
 
 
 def _name_statuses(report: FileReport) -> dict[str, str]:
-    """Return {name: "fixed" | "unsafe"} over all phases of report.result; "unsafe" wins if any phase left the name unsafe."""
+    """Return {name: "fixed" | "unsafe"} over all phases of report.result; "unsafe" wins if any phase gave the name a reason."""
     statuses: dict[str, str] = {}
     for phase in (report.result or {}).values():
         for name, status in phase.items():
             if statuses.get(name) != "unsafe":
                 statuses[name] = status
+    for phase_reasons in (report.reasons or {}).values():
+        statuses.update(dict.fromkeys(phase_reasons, "unsafe"))
     return statuses
 
 
@@ -240,35 +245,27 @@ def _join_with_blank_lines(entries: list[list[str]]) -> list[str]:
 
 
 def _modified_entry(report: FileReport, project_root: Path) -> list[str]:
-    """Return the MODIFIED lines for one file: its path relative to project_root, then the names fixed per phase.
+    """Return the MODIFIED lines for one file: its path relative to project_root, then what was done to each name.
 
-    A converted name isn't repeated under orphaned, because its declaration is always removed afterwards.
+    A converted name isn't described as removed, because its declaration is always removed afterwards.
     """
     lines = [f"  {report.path.relative_to(project_root)}"]
     result = report.result or {}
     converted = {name for name, status in result.get("converted", {}).items() if status == "fixed"}
+    descriptions: dict[str, list[str]] = {}
     for phase, names in result.items():
-        fixed = [name for name, status in names.items() if status == "fixed" and not (phase == "orphaned" and name in converted)]
-        if fixed:
-            lines.append(f"    {phase}: {', '.join(fixed)}")
+        for name, status in names.items():
+            if status == "fixed" and not (phase == "orphaned" and name in converted):
+                descriptions.setdefault(name, []).append(_FIXED_DESCRIPTIONS[phase])
+    lines.extend(f"    {name}: {', '.join(texts)}" for name, texts in descriptions.items())
     return lines
 
 
 def _needs_review_entry(report: FileReport, project_root: Path) -> list[str]:
-    """Return the NEEDS MANUAL REVIEW lines for one file.
-
-    The path relative to project_root comes first, then each unsafe name per phase with its reason.
-    """
+    """Return the NEEDS MANUAL REVIEW lines for one file: its path relative to project_root, then each name with its reason."""
     lines = [f"  {report.path.relative_to(project_root)}"]
-    for phase, names in (report.result or {}).items():
-        phase_reasons = (report.reasons or {}).get(phase, {})
-        unsafe = [name for name, status in names.items() if status == "unsafe"]
-        if unsafe:
-            lines.append(f"    {phase}: {', '.join(unsafe)}")
-        for name in unsafe:
-            reason = phase_reasons.get(name)
-            if reason is not None:
-                lines.append(f"      {name}: {UNSAFE_RULES[reason].message} -> {doc_link(reason)}")
+    for phase_reasons in (report.reasons or {}).values():
+        lines.extend(f"    {name}: {UNSAFE_RULES[reason].message}" for name, reason in phase_reasons.items())
     return lines
 
 
@@ -302,6 +299,8 @@ def _format_console_report(reports: list[FileReport], *, ruff_ran: bool, project
     lines.extend(_join_with_blank_lines([_modified_entry(report, project_root) for report in modified]))
 
     lines.extend(["", f"NEEDS MANUAL REVIEW ({len(needs_review)})"])
+    if needs_review:
+        lines.extend([f"  {DOCS_BASE_URL}", ""])
     lines.extend(_join_with_blank_lines([_needs_review_entry(report, project_root) for report in needs_review]))
 
     lines.extend(["", f"ERRORS ({len(errors)})"])
