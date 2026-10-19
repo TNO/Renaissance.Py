@@ -153,12 +153,56 @@ def _format_commit_summary(reports: list[FileReport]) -> str:
     )
 
 
-def _format_console_report(reports: list[FileReport], *, ruff_ran: bool) -> str:
+def _join_with_blank_lines(entries: list[list[str]]) -> list[str]:
+    """Flatten entries into one list of lines, with a blank line between consecutive entries."""
+    lines: list[str] = []
+    for index, entry in enumerate(entries):
+        if index:
+            lines.append("")
+        lines.extend(entry)
+    return lines
+
+
+def _modified_entry(report: FileReport, project_root: Path) -> list[str]:
+    """Return the MODIFIED lines for one file: its path relative to project_root, then the names fixed per phase.
+
+    A converted name isn't repeated under orphaned, because its declaration is always removed afterwards.
+    """
+    lines = [f"  {report.path.relative_to(project_root)}"]
+    result = report.result or {}
+    converted = {name for name, status in result.get("converted", {}).items() if status == "fixed"}
+    for phase, names in result.items():
+        fixed = [name for name, status in names.items() if status == "fixed" and not (phase == "orphaned" and name in converted)]
+        if fixed:
+            lines.append(f"    {phase}: {', '.join(fixed)}")
+    return lines
+
+
+def _needs_review_entry(report: FileReport, project_root: Path) -> list[str]:
+    """Return the NEEDS MANUAL REVIEW lines for one file.
+
+    The path relative to project_root comes first, then each unsafe name per phase with its reason.
+    """
+    lines = [f"  {report.path.relative_to(project_root)}"]
+    for phase, names in (report.result or {}).items():
+        phase_reasons = (report.reasons or {}).get(phase, {})
+        unsafe = [name for name, status in names.items() if status == "unsafe"]
+        if unsafe:
+            lines.append(f"    {phase}: {', '.join(unsafe)}")
+        for name in unsafe:
+            reason = phase_reasons.get(name)
+            if reason is not None:
+                lines.append(f"      {name}: {UNSAFE_RULES[reason].message} -> {doc_link(reason)}")
+    return lines
+
+
+def _format_console_report(reports: list[FileReport], *, ruff_ran: bool, project_root: Path) -> str:
     """Build the full per-file report: MODIFIED / NEEDS MANUAL REVIEW / ERRORS sections.
 
-    Clean files (no type parameter usage at all) are only counted, not listed, so the report shows
-    what needs attention. Under MODIFIED, a converted name isn't repeated as orphaned. The ruff
-    import-cleanup line is only included when ruff_ran is True.
+    Files are listed by their path relative to project_root, separated by a blank line in the MODIFIED
+    and NEEDS MANUAL REVIEW sections. Clean files (no type parameter usage at all) are only counted,
+    not listed, so the report shows what needs attention. The ruff import-cleanup line is only
+    included when ruff_ran is True.
     """
     modified = [report for report in reports if has_fixed(report)]
     needs_review = [report for report in reports if has_unsafe(report)]
@@ -178,31 +222,13 @@ def _format_console_report(reports: list[FileReport], *, ruff_ran: bool) -> str:
             "unused ones dropped, the rest merged and sorted.",
         )
     lines.extend(["", f"MODIFIED ({len(modified)})"])
-    for report in modified:
-        lines.append(f"  {report.path}")
-        result = report.result or {}
-        converted = {name for name, status in result.get("converted", {}).items() if status == "fixed"}
-        for phase, names in result.items():
-            # A converted name's declaration is always removed afterwards; listing it under orphaned too would repeat it.
-            fixed = [name for name, status in names.items() if status == "fixed" and not (phase == "orphaned" and name in converted)]
-            if fixed:
-                lines.append(f"    {phase}: {', '.join(fixed)}")
+    lines.extend(_join_with_blank_lines([_modified_entry(report, project_root) for report in modified]))
 
     lines.extend(["", f"NEEDS MANUAL REVIEW ({len(needs_review)})"])
-    for report in needs_review:
-        lines.append(f"  {report.path}")
-        for phase, names in (report.result or {}).items():
-            phase_reasons = (report.reasons or {}).get(phase, {})
-            unsafe = [name for name, status in names.items() if status == "unsafe"]
-            if unsafe:
-                lines.append(f"    {phase}: {', '.join(unsafe)}")
-            for name in unsafe:
-                reason = phase_reasons.get(name)
-                if reason is not None:
-                    lines.append(f"      {name}: {UNSAFE_RULES[reason].message} -> {doc_link(reason)}")
+    lines.extend(_join_with_blank_lines([_needs_review_entry(report, project_root) for report in needs_review]))
 
     lines.extend(["", f"ERRORS ({len(errors)})"])
-    lines.extend(f"  {report.path}: {report.error}" for report in errors)
+    lines.extend(f"  {report.path.relative_to(project_root)}: {report.error}" for report in errors)
 
     return "\n".join(lines)
 
@@ -281,7 +307,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         #  https://github.com/TNO/Renaissance.Py/issues/279
         _run_ruff_import_cleanup(modified_paths)
 
-    console_report = _format_console_report(reports, ruff_ran=ruff_ran)
+    console_report = _format_console_report(reports, ruff_ran=ruff_ran, project_root=project_root)
     print(console_report)
     print()
     print(colored(_format_commit_summary(reports), "green", attrs=["bold"]))
