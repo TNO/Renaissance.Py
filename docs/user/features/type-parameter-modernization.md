@@ -241,11 +241,14 @@ The file is unchanged.
 it removes the now unused `T = TypeVar("T")`. `UP046` does not touch `Protocol[T]` or a `T` in any other base, so
 write `class Box[T](MutableSet[T]):` by hand.
 
-### A name the declaration uses can't be imported here { #feature-type-parameter-modernization-declaration-name-unavailable }
+### The declaration uses a name that isn't available at module level { #feature-type-parameter-modernization-name-not-at-module-level }
 
-Localizing copies the declaration and imports the names it uses (`bound=Shape`) from the module the origin gets them
-from, or from the origin when it defines them. That fails when the origin only imports `Shape` under
-`if TYPE_CHECKING:`, or when this file already has a different `Shape`.
+Localizing copies the declaration into this file, so every name it uses (`bound=Shape`) must be available at module
+level, as the same object, in both files. The file is left unchanged when:
+
+- **The origin binds the name only under `if TYPE_CHECKING:`**, or inside a function or class. The copy could not
+  import it at runtime.
+- **This file binds the name to something else.** It already has a different `Shape`.
 
 ```python
 # shapes.py
@@ -264,8 +267,8 @@ def biggest(items: list[T]) -> T: ...
 
 `main.py` is unchanged and keeps importing `T` from `shapes.py`.
 
-**To fix this yourself:** import the name the same way the origin does, or rename one of the two, then copy the
-declaration by hand.
+**To fix this yourself:** import the name at module level the same way the origin does, or rename one of the two,
+then copy the declaration by hand.
 
 ### The origin imports `TypeVar` conditionally { #feature-type-parameter-modernization-origin-imports-constructor-conditionally }
 

@@ -90,7 +90,7 @@ safely cover. This page covers `TypeVarCheck`, the recipe behind
 - **Orphans.** A declaration with no uses left (`uses_of` is empty) is orphaned. Conversion skips such names too.
 
 - **Localization.** The origin's declaration is copied as written, with the comment trailing it when it is alone on
-  its line (`declaration_text`). `DECLARATION_NAME_UNAVAILABLE` if the origin only binds a name its arguments use
+  its line (`declaration_text`). `NAME_NOT_AT_MODULE_LEVEL` if the origin only binds a name its arguments use
   (`declaration_argument_names`) under `if TYPE_CHECKING:` or this file binds it to something else
   (`from_import_sources`). All names localized from one import statement are handled together.
 
