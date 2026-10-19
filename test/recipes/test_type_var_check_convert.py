@@ -309,16 +309,19 @@ class TestTypeVarCheckConvert:
         assert_that(ast.literal_eval(text_assign.value), equal_to("first\nsecond\n    third"))
 
     @pytest.mark.parametrize(
-        "class_header",
+        ("class_header", "expected_reasons"),
         [
-            pytest.param("class Box(Generic[T]):", id="generic-base"),
-            pytest.param("class Box(Protocol[T]):", id="protocol-base"),
-            pytest.param("class Sub(Base[T]):", id="generic-subclass"),
-            pytest.param("class Box[T]:", id="pep695-class"),
+            pytest.param("class Box(Generic[T]):", {"T": UnsafeReason.USED_IN_GENERIC_CLASS}, id="generic-base"),
+            pytest.param("class Box(Protocol[T]):", {"T": UnsafeReason.USED_IN_GENERIC_CLASS}, id="protocol-base"),
+            pytest.param("class Sub(Base[T]):", {"T": UnsafeReason.USED_IN_GENERIC_CLASS}, id="generic-subclass"),
+            pytest.param("class Box[T]:", {}, id="pep695-class"),
         ],
     )
     def test_converts_function_but_not_methods_of_a_generic_class(
-        self, create_type_var_check: Callable[[str], TypeVarCheck], class_header: str
+        self,
+        create_type_var_check: Callable[[str], TypeVarCheck],
+        class_header: str,
+        expected_reasons: dict[str, UnsafeReason],
     ) -> None:
         """Verify a standalone function gets [T] while the methods of a class generic over T keep using the class's T."""
         subject = create_type_var_check(f"""
@@ -335,6 +338,7 @@ class TestTypeVarCheckConvert:
         result = subject.convert_declared_typevars()
 
         assert_that(result, equal_to({"T": "fixed"}))
+        assert_that(subject.converted_unsafe_reasons, equal_to(expected_reasons))
         output = subject.apply_to_string()
         assert_that(output, contains_string("def first[T](items: list[T]) -> T:"))
         assert_that(output, contains_string("    def get(self, x: T) -> T:"))

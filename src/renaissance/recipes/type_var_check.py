@@ -140,6 +140,7 @@ class TypeVarCheck(PythonRefactoring[PythonCstNode]):
         results: dict[str, str] = {}
         self.converted_unsafe_reasons: dict[str, UnsafeReason] = {}
         convertible: dict[str, tuple[tuple[str, bool], list[PythonCstNode]]] = {}
+        generic_classes_by_name: dict[str, list[PythonCstNode]] = {}
         blocked: set[int] = set()
         for name, decl_stmt in find_type_param_declarations(module).items():
             self.type_param_kinds[name] = type_param_constructor_name(decl_stmt)
@@ -167,6 +168,7 @@ class TypeVarCheck(PythonRefactoring[PythonCstNode]):
                 continue
 
             convertible[name] = ((type_param_text(decl_stmt, module), declared_default(decl_stmt) is not None), candidates)
+            generic_classes_by_name[name] = classes
 
         # One self.replace() per function: a function using two converted names would otherwise get two
         # rewrites of the same node, which the rewriter rejects as conflicting.
@@ -183,7 +185,14 @@ class TypeVarCheck(PythonRefactoring[PythonCstNode]):
         for function, params in new_params.values():
             self._add_type_params(function, params)
 
+        self._report_generic_class_leftovers(results, generic_classes_by_name)
         return results
+
+    def _report_generic_class_leftovers(self, results: dict[str, str], generic_classes_by_name: dict[str, list[PythonCstNode]]) -> None:
+        """Add USED_IN_GENERIC_CLASS to converted_unsafe_reasons for each "fixed" name a generic class still uses."""
+        for name, classes in generic_classes_by_name.items():
+            if classes and results.get(name) == "fixed":
+                self.converted_unsafe_reasons[name] = UnsafeReason.USED_IN_GENERIC_CLASS
 
     @staticmethod
     def _is_inside(node: PythonCstNode, containers: Sequence[PythonCstNode]) -> bool:
