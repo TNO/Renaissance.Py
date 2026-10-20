@@ -123,29 +123,13 @@ Each case below stops one change and is reported under *needs manual review*.
 
 ### Python version gates { #feature-type-parameter-modernization-version-gates }
 
-PEP 695 syntax is a `SyntaxError` on older Pythons, so the tool only writes it when `--py` (the oldest version the
-target supports, not the one running the tool) is new enough. The version is never guessed: unknown counts as too
-old. Removing a declaration that is already unused needs no new syntax, so it never depends on `--py`.
+PEP 695 syntax (`def f[T](...)`) is a `SyntaxError` before Python 3.12, so `--py` (the oldest version the target
+supports, not the one running the tool) must be 3.12 or higher. A lower value is a usage error and nothing is
+changed. The version is never guessed. Newer syntax is written only when `--py` is new enough:
 
 | Syntax                | PEP                                          | Minimum Python |
 | --------------------- | -------------------------------------------- | -------------- |
-| `def f[T](...)`       | [PEP 695](https://peps.python.org/pep-0695/) | 3.12           |
 | `def f[T = int](...)` | [PEP 696](https://peps.python.org/pep-0696/) | 3.13           |
-
-#### PEP 695 version gate { #feature-type-parameter-modernization-pep695-version-gate }
-
-Below 3.12 nothing is converted. Localization and orphan removal still run.
-
-```python
-T = TypeVar("T")
-
-def first(items: list[T]) -> T: ...
-```
-
-With `--py 3.11` the file is unchanged. With `--py 3.12` it becomes `def first[T](items: list[T]) -> T: ...` and the
-declaration is removed.
-
-**To fix this yourself:** if the project supports 3.12+, run again with `--py 3.12`. Otherwise keep the old syntax.
 
 #### PEP 696 version gate { #feature-type-parameter-modernization-pep696-version-gate }
 
@@ -353,7 +337,7 @@ python src/rejuvenation/migration-type-recipes.py <path> --py MAJOR.MINOR [--rep
 ```
 
 - `<path>`: a `.py` file or a directory, scanned recursively (`.git`, `__pycache__`, `.venv` and `venv` skipped).
-- `--py` (required): the oldest Python version the target project supports.
+- `--py` (required): the oldest Python version the target project supports, 3.12 or higher.
 - `--report`: also write the report to a file.
 - `--no-ruff`: skip the final `ruff` pass.
 

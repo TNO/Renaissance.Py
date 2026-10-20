@@ -45,8 +45,8 @@ safely cover. This page covers `TypeVarCheck`, the recipe behind
 - `type_param_kinds`: maps each type parameter name the phases see to `"TypeVar"`, `"ParamSpec"` or `"TypeVarTuple"`.
 - Attributes set by the CLI (`migration-type-recipes.py`): `min_python`, `project_root` (falls back to the file's
   folder) and `project_wide_imported_names` (from `collect_project_imported_names`).
-- `PythonRefactoring.process("TypeVarCheck", file)`, used by `cli.py refactor`, never sets those attributes, so every
-  version-gated rewrite is reported `"unsafe"` there.
+- `PythonRefactoring.process("TypeVarCheck", file)`, used by `cli.py refactor`, never sets those attributes, so
+  `min_python` stays `MIN_SUPPORTED_PYTHON` there and a `default=` declaration is reported `"unsafe"`.
 
 ## Internal structure
 
@@ -55,11 +55,12 @@ safely cover. This page covers `TypeVarCheck`, the recipe behind
   replaces only the node it changes, so formatting and comments elsewhere are kept.
 
 - **Unsafe reasons.** `is_safe_to_remove`/`is_safe_to_localize` and `_conversion_refusal` return an `UnsafeReason`
-  or `None`. Each of the 9 reasons has an `UnsafeRule` (message + docs anchor) in `UNSAFE_RULES`. The CLI report prints
+  or `None`. Each of the 8 reasons has an `UnsafeRule` (message + docs anchor) in `UNSAFE_RULES`. The CLI report prints
   each message and links `DOCS_BASE_URL` once.
 
-- **Version gates.** `_conversion_refusal` checks `min_python` against `PEP_695_MINIMUM = (3, 12)` and, for a
-  `default=`, `PEP_696_MINIMUM = (3, 13)`. `None` never passes. A keyword outside `_CONVERTIBLE_KEYWORDS` is refused
+- **Version gates.** `min_python` is never below `MIN_SUPPORTED_PYTHON = (3, 12)`, which the CLI enforces, so PEP 695
+  syntax is always available. `_conversion_refusal` checks it against `PEP_696_MINIMUM = (3, 13)` for a
+  `default=`. A keyword outside `_CONVERTIBLE_KEYWORDS` is refused
   (`NO_PEP695_EQUIVALENT`) instead of dropped. `covariant` and `contravariant` are in the set and are dropped, because
   a function's type parameter has no variance; converting classes would have to refuse them.
 
@@ -147,10 +148,10 @@ See *Verified by test modules* in [Type parameter modernization](../../user/feat
 
     ```toml
     [project]
-    requires-python = ">=3.12"
+    requires-python = ">=3.13"
     ```
 
-    run with `--py 3.11` is treated as below 3.12, so nothing is converted.
+    run with `--py 3.12` is treated as below 3.13, so a `default=` declaration is not converted.
 
 - Re-exports, namespace packages, `import *` and renamed imports are not followed. In:
 
