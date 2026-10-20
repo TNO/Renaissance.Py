@@ -392,23 +392,30 @@ class TestCommitSummary:
         assert_that(capsys.readouterr().out, not_(contains_string(_COMMIT_SUBJECT)))
 
 
-class TestIgnoreLocalize:
-    """main(): --ignore-localize keeps the imports of a shared declaration file and reports them."""
+class TestIgnore:
+    """main(): --ignore leaves a shared declaration file and the imports of its names untouched, and reports them."""
 
-    def test_importer_is_left_untouched_and_the_report_lists_it(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
-        """The importer is unchanged, the ignored file is listed, and its name counts as reported and ignored, not for review."""
-        (tmp_path / "shared.py").write_text('from typing import TypeVar\n\nT = TypeVar("T")\n', encoding="utf-8")
+    def test_ignored_file_and_its_importer_are_left_untouched_and_the_report_lists_it(
+        self,
+        tmp_path: Path,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        """Neither file changes, the ignored one is listed but not checked, and its name counts as reported and ignored."""
+        shared_source = 'from typing import TypeVar\n\nT = TypeVar("T")\n\n\ndef first(items: list[T]) -> T:\n    return items[0]\n'
         user_source = "from shared import T\n\n\ndef identity(x: T) -> T:\n    return x\n"
+        (tmp_path / "shared.py").write_text(shared_source, encoding="utf-8")
         (tmp_path / "user.py").write_text(user_source, encoding="utf-8")
 
-        migration.main([str(tmp_path), "--py", "3.12", "--no-ruff", "--ignore-localize", "shared.py"])
+        migration.main([str(tmp_path), "--py", "3.12", "--no-ruff", "--ignore", "shared.py"])
 
         output = capsys.readouterr().out
+        assert_that((tmp_path / "shared.py").read_text(encoding="utf-8"), equal_to(shared_source))
         assert_that((tmp_path / "user.py").read_text(encoding="utf-8"), equal_to(user_source))
-        assert_that(output, contains_string("NOT LOCALIZED FROM (1)\n  shared.py\n"))
+        assert_that(output, contains_string("IGNORED FILES (1)\n  shared.py\n"))
+        assert_that(output, not_(contains_string("shared.py checked")))
         assert_that(
             _table_rows(output, "Kind"),
-            equal_to([["TypeVar", "2", "0", "1", "1"], ["ParamSpec", "0", "0", "0", "0"], ["TypeVarTuple", "0", "0", "0", "0"]]),
+            equal_to([["TypeVar", "1", "0", "0", "1"], ["ParamSpec", "0", "0", "0", "0"], ["TypeVarTuple", "0", "0", "0", "0"]]),
         )
 
 
