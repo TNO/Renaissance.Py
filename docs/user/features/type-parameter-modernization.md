@@ -137,7 +137,8 @@ example under *Non-goals* or *Need to fix* in [Refactoring recipes](../../develo
 
 **Cosmetic or operational:**
 
-- A declaration whose importers are all localized in a run is only removed by a second run.
+- A declaration whose importers are all localized in a run is only removed by a second run, or by `--second-pass`.
+  A chain of three files, each importing from the previous one, can still need another run.
 - Removing a line can leave extra blank lines. Run your formatter afterwards.
 - With `--no-ruff`, the imports added by localizing are not merged into the file's existing `from` imports and not
   sorted.
@@ -368,7 +369,7 @@ run the tool again.
 
 ```shell
 python src/rejuvenation/migration-type-recipes.py <path> --py MAJOR.MINOR \
-    [--report PATH] [--no-ruff] [--ignore FILE...] [--no-localization]
+    [--report PATH] [--no-ruff] [--ignore FILE...] [--no-localization] [--second-pass]
 ```
 
 - `<path>`: a `.py` file or a directory, scanned recursively (`.git`, `__pycache__`, `.venv` and `venv` skipped).
@@ -378,6 +379,8 @@ python src/rejuvenation/migration-type-recipes.py <path> --py MAJOR.MINOR \
 - `--ignore`: files left untouched, whose type parameters are never copied into the files importing them (see
   *Shared declaration files*).
 - `--no-localization`: keep every project import of a type parameter (see *Disabling localization*).
+- `--second-pass`: process again only the files that kept a declaration because another file imported it when the run
+  started, and merge the result into the same report.
 
 After the recipe, the CLI runs `ruff check --fix --select F401,I001` on the changed files. This removes **every**
 unused import in them, including ones that were unused before (such as `from typing import TypeVar` after the

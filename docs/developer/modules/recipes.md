@@ -188,7 +188,7 @@ See *Verified by test modules* in [Type parameter modernization](../../user/feat
     report an error.
 
 - Imported names are collected once before the run, so removing a declaration whose importers were all localized
-  needs a second run. With `origin.py` as above and:
+  needs a second run, which `--second-pass` does for the files concerned. With `origin.py` as above and:
 
     ```python
     # main.py

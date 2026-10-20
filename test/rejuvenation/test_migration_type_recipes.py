@@ -450,6 +450,37 @@ class TestIgnore:
         )
 
 
+class TestSecondPass:
+    """main(): --second-pass removes a declaration whose importers were all localized, and reports it in the same report."""
+
+    @pytest.mark.parametrize(
+        ("extra_args", "declaration_kept", "expected_review"),
+        [
+            pytest.param([], True, "NEEDS MANUAL REVIEW (1)", id="single-pass"),
+            pytest.param(["--second-pass"], False, "NEEDS MANUAL REVIEW (0)", id="second-pass"),
+        ],
+    )
+    def test_declaration_left_behind_by_localizing_is_removed_in_the_same_run(
+        self,
+        tmp_path: Path,
+        capsys: pytest.CaptureFixture[str],
+        extra_args: list[str],
+        *,
+        declaration_kept: bool,
+        expected_review: str,
+    ) -> None:
+        """Only the second pass removes the origin's declaration, and the one report counts both files once."""
+        (tmp_path / "origin.py").write_text('from typing import TypeVar\n\nT = TypeVar("T")\n', encoding="utf-8")
+        (tmp_path / "user.py").write_text("from origin import T\n\n\ndef identity(x: T) -> T:\n    return x\n", encoding="utf-8")
+
+        migration.main([str(tmp_path), "--py", "3.12", "--no-ruff", *extra_args])
+
+        output = capsys.readouterr().out
+        assert_that('T = TypeVar("T")' in (tmp_path / "origin.py").read_text(encoding="utf-8"), equal_to(declaration_kept))
+        assert_that(output, contains_string(expected_review))
+        assert_that(output, contains_string("Processed 2 files"))
+
+
 class TestNoLocalization:
     """main(): --no-localization keeps every project import of a type parameter and reports the names left."""
 
