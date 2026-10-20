@@ -36,10 +36,11 @@ from renaissance.utils.import_resolution import collect_project_imported_names
 _MAJOR_MINOR_PART_COUNT = 2
 _TYPE_PARAM_KINDS = ("TypeVar", "ParamSpec", "TypeVarTuple")
 _FIXED_DESCRIPTIONS = {
-    "cross_file": "import replaced by a local declaration",
     "converted": "converted to PEP 695 in functions",
     "orphaned": "unused declaration removed",
+    "cross_file": "import replaced by a local declaration",
 }
+_MAX_LISTED_NAMES = 10
 
 
 @dataclass
