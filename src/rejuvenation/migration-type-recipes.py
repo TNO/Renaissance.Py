@@ -10,7 +10,7 @@ Runs TypeVarCheck on a file or directory, and reports which files were modified 
 manual review.
 
 Example:
-    python src/rejuvenation/migration-type-recipes.py ./repo --py 3.12 --report review.md --ignore-localize repo/folder/types.py
+    python src/rejuvenation/migration-type-recipes.py ./repo --py 3.12 --report review.md --ignore folder/types.py
 
 """
 
@@ -120,7 +120,7 @@ def process_file(
     min_python: tuple[int, int],
     project_root: Path,
     project_wide_imported_names: frozenset[str],
-    ignore_localize_origins: frozenset[Path] = frozenset(),
+    ignored_files: frozenset[Path] = frozenset(),
 ) -> FileReport:
     """Run TypeVarCheck's three phases on one file and return its FileReport.
 
@@ -131,7 +131,7 @@ def process_file(
         recipe.min_python = min_python
         recipe.project_root = project_root
         recipe.project_wide_imported_names = project_wide_imported_names
-        recipe.ignore_localize_origins = ignore_localize_origins
+        recipe.ignore_localize_origins = ignored_files
         result = recipe.check()
         reasons = {
             "cross_file": recipe.cross_file_unsafe_reasons,
@@ -333,15 +333,15 @@ def _format_console_report(
     *,
     ruff_ran: bool,
     project_root: Path,
-    ignore_localize_origins: Collection[Path],
+    ignored_files: Collection[Path],
 ) -> str:
     """Build the full per-file report: MODIFIED / NEEDS MANUAL REVIEW / ERRORS sections.
 
     Files are listed by their path relative to project_root, separated by a blank line in the MODIFIED
     and NEEDS MANUAL REVIEW sections. Clean files (no type parameter usage at all) are only counted,
     not listed, so the report shows what needs attention. The ruff import-cleanup line is only
-    included when ruff_ran is True. The NOT LOCALIZED FROM section and the Ignored column are only
-    included when ignore_localize_origins is not empty.
+    included when ruff_ran is True. The IGNORED FILES section and the Ignored column are only
+    included when ignored_files is not empty.
     """
     modified = [report for report in reports if has_fixed(report)]
     needs_review = [report for report in reports if has_unsafe(report)]
@@ -360,10 +360,10 @@ def _format_console_report(
             "Imports across the modified files above were also cleaned up via `ruff check --fix --select F401,I001`: "
             "unused ones dropped, the rest merged and sorted.",
         )
-    if ignore_localize_origins:
-        lines.extend(["", f"NOT LOCALIZED FROM ({len(ignore_localize_origins)})"])
-        lines.extend(f"  {origin.relative_to(project_root)}" for origin in sorted(ignore_localize_origins))
-    lines.extend(_summary_tables(reports, show_ignored=bool(ignore_localize_origins)))
+    if ignored_files:
+        lines.extend(["", f"IGNORED FILES ({len(ignored_files)})"])
+        lines.extend(f"  {ignored.relative_to(project_root)}" for ignored in sorted(ignored_files))
+    lines.extend(_summary_tables(reports, show_ignored=bool(ignored_files)))
     lines.extend(["", f"MODIFIED ({len(modified)})"])
     lines.extend(_join_with_blank_lines([_modified_entry(report, project_root) for report in modified]))
 
@@ -385,7 +385,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
         description="Modernize legacy TypeVar/ParamSpec/TypeVarTuple usage to PEP 695 syntax.",
         epilog=textwrap.dedent("""\
             Examples:
-                python src/rejuvenation/migration-type-recipes.py ./repo --py 3.12 --report review.md --ignore-localize repo/folder/types.py
+                python src/rejuvenation/migration-type-recipes.py ./repo --py 3.12 --report review.md --ignore folder/types.py
             """),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -404,15 +404,16 @@ def build_arg_parser() -> argparse.ArgumentParser:
         help="Skip the final `ruff check --fix --select F401,I001` pass that drops imports made unused and sorts the rest.",
     )
     parser.add_argument(
-        "--ignore-localize",
+        "--ignore",
         action="extend",
         nargs="+",
         type=Path,
         default=[],
         metavar="FILE",
         help=(
-            "Files, relative to the scanned directory, whose type parameters are never copied into the files importing "
-            "them; those imports stay. Give the path argument first, since this option takes every value after it."
+            "Files, relative to the scanned directory, that are left untouched; their type parameters are not copied "
+            "into the files importing them, which keep those imports. Give the path argument first, since this option "
+            "takes every value after it."
         ),
     )
     return parser
@@ -439,20 +440,22 @@ def main(argv: Sequence[str] | None = None) -> int:
     project_root = target if target.is_dir() else target.parent
     imported_names_by_file = collect_project_imported_names(files, project_root)
 
-    for ignored in args.ignore_localize:
+    for ignored in args.ignore:
         if not (project_root / ignored).is_file():
-            parser.error(f"--ignore-localize: file does not exist: {ignored}")
-    ignore_localize_origins = frozenset((project_root / ignored).resolve() for ignored in args.ignore_localize)
+            parser.error(f"--ignore: file does not exist: {ignored}")
+    ignored_files = frozenset((project_root / ignored).resolve() for ignored in args.ignore)
 
     reports: list[FileReport] = []
     for path in files:
+        if path in ignored_files:
+            continue
         project_wide_imported_names = imported_names_by_file.get(path, frozenset())
         report = process_file(
             path,
             min_python=args.py,
             project_root=project_root,
             project_wide_imported_names=project_wide_imported_names,
-            ignore_localize_origins=ignore_localize_origins,
+            ignored_files=ignored_files,
         )
         reports.append(report)
         print(f"File {path} checked.")
@@ -469,7 +472,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         reports,
         ruff_ran=ruff_ran,
         project_root=project_root,
-        ignore_localize_origins=ignore_localize_origins,
+        ignored_files=ignored_files,
     )
     print(console_report)
     if modified_paths:
