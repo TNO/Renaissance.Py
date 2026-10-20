@@ -112,6 +112,42 @@ class TestTypeVarCheckLocalize:
         assert_that(output, not_(contains_string("from file_1 import T")))
 
     @pytest.mark.parametrize(
+        ("origin_ignored", "expected_result", "expected_ignored_names"),
+        [
+            pytest.param(True, {}, {"T"}, id="ignored-origin"),
+            pytest.param(False, {"T": "fixed"}, set[str](), id="origin-not-ignored"),
+        ],
+    )
+    def test_names_from_an_ignored_origin_are_not_localized(
+        self,
+        mocker: MockerFixture,
+        tmp_path: Path,
+        *,
+        origin_ignored: bool,
+        expected_result: dict[str, str],
+        expected_ignored_names: set[str],
+    ) -> None:
+        """Verify an import from an origin in ignore_localize_origins is kept and its names are recorded as ignored."""
+        subject = self._create_cross_file(
+            mocker,
+            tmp_path,
+            "from typing import TypeVar\nT = TypeVar('T')\n",
+            """
+            from file_1 import T
+            def b(x: T) -> T:
+                return x
+            """,
+        )
+        if origin_ignored:
+            subject.ignore_localize_origins = frozenset({tmp_path / "file_1.py"})
+
+        result = subject.localize_imported_typevars()
+
+        assert_that(result, equal_to(expected_result))
+        assert_that(subject.ignored_names, equal_to(expected_ignored_names))
+        assert_that("from file_1 import T" in subject.apply_to_string(), equal_to(origin_ignored))
+
+    @pytest.mark.parametrize(
         "declaration",
         [
             pytest.param('T = TypeVar("T", bound=Shape)', id="invariant-bound"),

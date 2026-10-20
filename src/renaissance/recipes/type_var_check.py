@@ -72,13 +72,18 @@ class TypeVarCheck(PythonRefactoring[PythonCstNode]):
     # Root that absolute imports resolve from; None falls back to this file's own directory.
     project_root: Path | None = None
 
+    # Absolute paths of the files whose declarations are never copied into the files importing them.
+    ignore_localize_origins: frozenset[Path] = frozenset()
+
     def __init__(self, file: Path) -> None:
         """Prepare the recipe for file, parsed with the CST backend.
 
         type_param_kinds maps each type parameter name the phases see to "TypeVar", "ParamSpec" or "TypeVarTuple".
+        ignored_names holds the names this file imports from an ignore_localize_origins file.
         """
         super().__init__(file, PythonCstNode)
         self.type_param_kinds: dict[str, str] = {}
+        self.ignored_names: set[str] = set()
 
     def run(self) -> None:
         """Entry point called by PythonRefactoring.process(); stores check()'s result."""
@@ -274,6 +279,7 @@ class TypeVarCheck(PythonRefactoring[PythonCstNode]):
         file's last import, so no import is left below code. A declaration stays where its import was when a
         statement in between uses it.
         It is unsafe when is_safe_to_localize rejects the origin or _argument_imports returns None.
+        Names from an ignore_localize_origins file keep their import and go to self.ignored_names instead.
         Returns {name: "fixed" | "unsafe"}, with each UnsafeReason on self.cross_file_unsafe_reasons.
         """
         results: dict[str, str] = {}
@@ -310,17 +316,10 @@ class TypeVarCheck(PythonRefactoring[PythonCstNode]):
 
         Records each name in results as "fixed" or, via _mark_unsafe, as "unsafe", its kind on
         self.type_param_kinds, and appends what to write for the "fixed" ones to localizations.
-
-        Raises:
-            SyntaxError: if the origin file can't be parsed, with the origin's path as its filename.
-
         """
         if isinstance(raw.names, cst.ImportStar):
             return
-        try:
-            origin = cst.parse_module(origin_path.read_text(encoding="utf-8"))
-        except cst.ParserSyntaxError as error:
-            raise SyntaxError(error.message, (str(origin_path), error.raw_line, error.raw_column + 1, None)) from error
+        origin = self._parse_origin(origin_path)
         declarations = find_type_param_declarations(origin)
         localized: dict[str, cst.Assign] = {}
         needed_imports: list[str] = []
@@ -332,6 +331,9 @@ class TypeVarCheck(PythonRefactoring[PythonCstNode]):
 
             decl_stmt = declarations[name]
             self.type_param_kinds[name] = type_param_constructor_name(decl_stmt)
+            if origin_path in self.ignore_localize_origins:
+                self.ignored_names.add(name)
+                continue
             reason = is_safe_to_localize(origin, name)
             if reason is not None:
                 self._mark_unsafe(results, self.cross_file_unsafe_reasons, name, reason)
@@ -351,6 +353,19 @@ class TypeVarCheck(PythonRefactoring[PythonCstNode]):
         if not localized:
             return
         localizations.append(self._localization(line, raw, origin, localized, needed_imports))
+
+    @staticmethod
+    def _parse_origin(origin_path: Path) -> cst.Module:
+        """Return the parsed origin_path file.
+
+        Raises:
+            SyntaxError: if the file can't be parsed, with origin_path as its filename.
+
+        """
+        try:
+            return cst.parse_module(origin_path.read_text(encoding="utf-8"))
+        except cst.ParserSyntaxError as error:
+            raise SyntaxError(error.message, (str(origin_path), error.raw_line, error.raw_column + 1, None)) from error
 
     @staticmethod
     def _import_from_text(raw: cst.ImportFrom) -> str:
