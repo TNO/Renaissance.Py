@@ -14,7 +14,7 @@ from typing import cast
 import pytest
 from hamcrest import assert_that, contains_string, equal_to, has_entry, not_
 
-from renaissance.recipes.type_var_check import PEP_695_MINIMUM, PEP_696_MINIMUM, TypeVarCheck
+from renaissance.recipes.type_var_check import MIN_SUPPORTED_PYTHON, PEP_696_MINIMUM, TypeVarCheck
 from renaissance.recipes.type_var_domain import UnsafeReason
 
 
@@ -564,30 +564,23 @@ class TestTypeVarCheckConvertArguments:
         ("declaration", "signature", "min_python", "expected_reason"),
         [
             pytest.param(
-                'T = TypeVar("T")',
-                _TYPEVAR_USE,
-                (3, 11),
-                UnsafeReason.PEP695_VERSION_GATE,
-                id="typevar-plain-3.11",
-            ),
-            pytest.param(
                 'T = TypeVar("T", default=int)',
                 _TYPEVAR_USE,
-                PEP_695_MINIMUM,
+                MIN_SUPPORTED_PYTHON,
                 UnsafeReason.PEP696_VERSION_GATE,
                 id="typevar-default-3.12",
             ),
             pytest.param(
                 'P = ParamSpec("P", default=[int, str])',
                 _PARAMSPEC_USE,
-                PEP_695_MINIMUM,
+                MIN_SUPPORTED_PYTHON,
                 UnsafeReason.PEP696_VERSION_GATE,
                 id="paramspec-default-3.12",
             ),
             pytest.param(
                 'Ts = TypeVarTuple("Ts", default=Unpack[tuple[int]])',
                 _TYPEVARTUPLE_USE,
-                PEP_695_MINIMUM,
+                MIN_SUPPORTED_PYTHON,
                 UnsafeReason.PEP696_VERSION_GATE,
                 id="typevartuple-default-3.12",
             ),
@@ -654,7 +647,7 @@ class TestTypeVarCheckConvertArguments:
             pytest.param(
                 'T = TypeVar("T")\nD = TypeVar("D", default=int)',
                 "def a(x: T, y: D) -> T | D:",
-                PEP_695_MINIMUM,
+                MIN_SUPPORTED_PYTHON,
                 {"D": UnsafeReason.PEP696_VERSION_GATE, "T": UnsafeReason.SHARES_FUNCTION_WITH_UNCONVERTIBLE},
                 id="version-gated-default-declared-last",
             ),

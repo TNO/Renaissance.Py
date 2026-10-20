@@ -14,12 +14,12 @@ import pytest
 from pytest_mock import MockerFixture
 
 from renaissance.integrations.python.ast.cst_node import PythonCstNode
-from renaissance.recipes.type_var_check import PEP_695_MINIMUM, TypeVarCheck
+from renaissance.recipes.type_var_check import TypeVarCheck
 
 
 @pytest.fixture
 def create_type_var_check(mocker: MockerFixture) -> Callable[[str], TypeVarCheck]:
-    """Build a TypeVarCheck for in-memory, dedented source text, with min_python 3.12 so PEP 695 conversion is enabled.
+    """Build a TypeVarCheck for in-memory, dedented source text.
 
     `PythonFactory.create` is mocked so nothing touches the filesystem.
     """
@@ -31,7 +31,6 @@ def create_type_var_check(mocker: MockerFixture) -> Callable[[str], TypeVarCheck
         )
         subject = TypeVarCheck(Path("x.py"))
         subject.in_memory = True
-        subject.min_python = PEP_695_MINIMUM
         return subject
 
     return _create

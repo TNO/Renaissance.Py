@@ -64,25 +64,22 @@ class TestTypeVarCheckOrphaned:
     """See module docstring."""
 
     @pytest.mark.parametrize(
-        ("source", "min_python"),
+        "source",
         [
-            pytest.param(ALREADY_CONVERTED_SOURCE, (3, 12), id="already-converted"),
-            pytest.param(ALREADY_CONVERTED_SOURCE, (3, 11), id="already-converted-below-pep695"),
-            pytest.param(UNREFERENCED_SOURCE, (3, 11), id="unreferenced-below-pep695"),
-            pytest.param(NESTED_ONLY_CONVERTED_SOURCE, (3, 12), id="only-nested-function-converted"),
-            pytest.param(CLOSURE_IN_CONVERTED_FUNCTION_SOURCE, (3, 12), id="closure-inside-converted-function"),
-            pytest.param(CLASS_WITH_OWN_TYPE_PARAMETER_SOURCE, (3, 12), id="class-with-own-type-parameter"),
+            pytest.param(ALREADY_CONVERTED_SOURCE, id="already-converted"),
+            pytest.param(UNREFERENCED_SOURCE, id="unreferenced"),
+            pytest.param(NESTED_ONLY_CONVERTED_SOURCE, id="only-nested-function-converted"),
+            pytest.param(CLOSURE_IN_CONVERTED_FUNCTION_SOURCE, id="closure-inside-converted-function"),
+            pytest.param(CLASS_WITH_OWN_TYPE_PARAMETER_SOURCE, id="class-with-own-type-parameter"),
         ],
     )
     def test_removes_declaration_whose_references_are_all_shadowed(
         self,
         create_type_var_check: Callable[[str], TypeVarCheck],
         source: str,
-        min_python: tuple[int, int],
     ) -> None:
         """Verify a declaration whose references are all shadowed by PEP 695 parameters, or absent, is removed."""
         subject = create_type_var_check(source)
-        subject.min_python = min_python
 
         result = subject.remove_orphaned_declarations()
 
