@@ -102,31 +102,19 @@ class TestRuffImportCleanup:
     """main(): the ruff F401 batch step actually drops now-unused imports end to end."""
 
     @pytest.mark.parametrize(
-        ("extra_args", "import_matcher", "report_matcher"),
+        ("extra_args", "import_matcher"),
         [
-            pytest.param(
-                [],
-                not_(contains_string("TypeVar")),
-                contains_string("cleaned up via `ruff"),
-                id="default-drops-import",
-            ),
-            pytest.param(
-                ["--no-ruff"],
-                contains_string("from typing import TypeVar"),
-                not_(contains_string("cleaned up via `ruff")),
-                id="no-ruff-keeps-import",
-            ),
+            pytest.param([], not_(contains_string("TypeVar")), id="default-drops-import"),
+            pytest.param(["--no-ruff"], contains_string("from typing import TypeVar"), id="no-ruff-keeps-import"),
         ],
     )
     def test_unused_typevar_import_cleanup(
         self,
         tmp_path: Path,
-        capsys: pytest.CaptureFixture[str],
         extra_args: list[str],
         import_matcher: Matcher[str],
-        report_matcher: Matcher[str],
     ) -> None:
-        """The redundant TypeVar import is dropped, and the report says so, unless --no-ruff; conversion runs either way."""
+        """The redundant TypeVar import is dropped unless --no-ruff; conversion runs either way."""
         target = tmp_path / "mod.py"
         target.write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
 
@@ -136,7 +124,6 @@ class TestRuffImportCleanup:
         written = target.read_text(encoding="utf-8")
         assert_that(written, contains_string("def identity[T]"))
         assert_that(written, import_matcher)
-        assert_that(capsys.readouterr().out, report_matcher)
 
     def test_localized_imports_are_merged_with_existing_ones(self, tmp_path: Path) -> None:
         """The localized TypeVar's import joins the file's own `typing` import."""
@@ -190,14 +177,14 @@ class TestRuffImportCleanup:
 
 
 class TestConsoleReportNeedsReviewSection:
-    """main(): what the NEEDS MANUAL REVIEW section lists per file."""
+    """main(): what the NEEDS MANUAL REVIEW section lists per reason."""
 
-    def test_names_come_with_their_reason_under_one_shared_documentation_link(
+    def test_names_are_listed_per_file_under_their_reason_and_the_documentation_is_linked_once(
         self,
         tmp_path: Path,
         capsys: pytest.CaptureFixture[str],
     ) -> None:
-        """Each name is listed with its reason in words; the documentation is linked once, without per-name anchors."""
+        """Each reason is a heading with its files and names below it; the documentation is linked once, without per-name anchors."""
         target = tmp_path / "mod.py"
         target.write_text(UNSAFE_TYPEVAR_SOURCE, encoding="utf-8")
 
@@ -206,8 +193,52 @@ class TestConsoleReportNeedsReviewSection:
         output = capsys.readouterr().out
         assert_that(output.count(DOCS_BASE_URL), equal_to(1))
         assert_that(output, not_(contains_string("#feature-")))
-        assert_that(output, contains_string("    T: exported via __all__\n"))
+        assert_that(output, contains_string("**Exported via __all__**\n  `mod.py`: `T`\n"))
         assert_that(output, not_(contains_string("    orphaned:")))
+
+    def test_files_and_names_sharing_a_reason_are_listed_under_one_heading(
+        self,
+        tmp_path: Path,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        """A reason is printed once, with every file it applies to, and a file lists all its names on one line."""
+        (tmp_path / "one.py").write_text(UNSAFE_TYPEVAR_SOURCE, encoding="utf-8")
+        (tmp_path / "two.py").write_text(
+            textwrap.dedent("""\
+                from typing import TypeVar
+
+                U = TypeVar("U")
+
+                __all__ = ["U"]
+
+
+                def identity(x: U) -> U:
+                    return x
+                """),
+            encoding="utf-8",
+        )
+        (tmp_path / "three.py").write_text(
+            textwrap.dedent("""\
+                from typing import TypeVar
+
+                A = TypeVar("A")
+                B = TypeVar("B")
+
+                __all__ = ["A", "B"]
+
+
+                def pair(a: A, b: B) -> tuple[A, B]:
+                    return a, b
+                """),
+            encoding="utf-8",
+        )
+
+        migration.main([str(tmp_path), "--py", "3.12", "--no-ruff"])
+
+        output = capsys.readouterr().out
+        assert_that(output.count("**Exported via __all__**"), equal_to(1))
+        for line in ["  `one.py`: `T`\n", "  `three.py`: `A`, `B`\n", "  `two.py`: `U`\n"]:
+            assert_that(output, contains_string(line))
 
     def test_name_converted_in_functions_but_still_used_by_a_generic_class_is_in_both_sections(
         self,
@@ -237,10 +268,10 @@ class TestConsoleReportNeedsReviewSection:
         migration.main([str(target), "--py", "3.12", "--no-ruff"])
 
         output = capsys.readouterr().out
-        modified, needs_review = output.split("NEEDS MANUAL REVIEW (")
+        modified, needs_review = output.split("**NEEDS MANUAL REVIEW (")
         assert_that(output, contains_string("1 modified, 1 need manual review"))
-        assert_that(modified, contains_string("    T: converted to PEP 695 in functions\n"))
-        assert_that(needs_review, contains_string("    T: only used inside a class that is generic over it\n"))
+        assert_that(modified, contains_string("    `T`: converted to PEP 695 in functions\n"))
+        assert_that(needs_review, contains_string("**Only used inside a class that is generic over it**\n  `mod.py`: `T`\n"))
 
 
 class TestConsoleReportModifiedSection:
@@ -270,14 +301,14 @@ class TestConsoleReportModifiedSection:
         migration.main([str(target), "--py", "3.12", "--no-ruff"])
 
         output = capsys.readouterr().out
-        assert_that(output, contains_string("    T: converted to PEP 695 in functions\n"))
-        assert_that(output, not_(contains_string("    T: unused declaration removed")))
-        assert_that(output, contains_string("    U: unused declaration removed\n"))
+        assert_that(output, contains_string("    `T`: converted to PEP 695 in functions\n"))
+        assert_that(output, not_(contains_string("    `T`: unused declaration removed")))
+        assert_that(output, contains_string("    `U`: unused declaration removed\n"))
 
 
 def _table_rows(output: str, first_header: str) -> list[list[str]]:
-    """Return the data rows, as stripped cells, of the printed Markdown table whose header starts with first_header."""
-    rows = [[cell.strip() for cell in line.strip("|").split("|")] for line in output.splitlines() if line.startswith("|")]
+    """Return the data rows, as cells without padding or backticks, of the printed Markdown table whose header starts with first_header."""
+    rows = [[cell.strip().strip("`") for cell in line.strip("|").split("|")] for line in output.splitlines() if line.startswith("|")]
     start = next(index for index, row in enumerate(rows) if row[0] == first_header)
     table: list[list[str]] = []
     for row in rows[start + 2 :]:
@@ -411,7 +442,7 @@ class TestIgnore:
         output = capsys.readouterr().out
         assert_that((tmp_path / "shared.py").read_text(encoding="utf-8"), equal_to(shared_source))
         assert_that((tmp_path / "user.py").read_text(encoding="utf-8"), equal_to(user_source))
-        assert_that(output, contains_string("IGNORED FILES (1)\n  shared.py\n"))
+        assert_that(output, contains_string("**IGNORED FILES (1)**\n  `shared.py`\n"))
         assert_that(output, not_(contains_string("shared.py checked")))
         assert_that(
             _table_rows(output, "Kind"),
@@ -499,7 +530,7 @@ class TestMainProjectWideImportSafety:
         consumer_text = consumer.read_text(encoding="utf-8")
         assert_that(consumer_text, contains_string("def use[T](x: T) -> T:"))
         assert_that(consumer_text, not_(contains_string(import_line)))
-        assert_that(capsys.readouterr().out, contains_string("    T: unused declaration removed\n"))
+        assert_that(capsys.readouterr().out, contains_string("    `T`: unused declaration removed\n"))
         assert_that((pkg / "typing_mod.py").read_text(encoding="utf-8"), contains_string('T = TypeVar("T")'))
 
     @pytest.mark.parametrize("target_arg", [pytest.param(".", id="dot"), pytest.param("pkg", id="subdirectory")])

@@ -382,19 +382,19 @@ python src/rejuvenation/migration-type-recipes.py <path> --py MAJOR.MINOR \
 After the recipe, the CLI runs `ruff check --fix --select F401,I001` on the changed files. This removes **every**
 unused import in them, including ones that were unused before (such as `from typing import TypeVar` after the
 declaration is gone). It also merges and sorts **every** import block in them, including imports that were unsorted
-before, using the `ruff` settings of the project. `ruff` must be installed in the same environment; if it cannot run,
-the report still says the pass ran. Files are changed directly, so run it on a git checkout.
+before, using the `ruff` settings of the project. `ruff` must be installed in the same environment. Files are changed
+directly, so run it on a git checkout.
 
-The report has a summary line, two summary tables and the sections `MODIFIED`, `NEEDS MANUAL REVIEW` and `ERRORS`.
-The tables count the type parameters per kind (`TypeVar`, `ParamSpec`, `TypeVarTuple`) and rank the reasons for manual
-review from most to least common. A name counts once per file, as needing review if it has a reason to review. `MODIFIED`
-says what was done to each name: converted in functions, import replaced by a local declaration, or unused declaration
-removed; a name localized and then removed is listed only as removed. `NEEDS MANUAL REVIEW` gives each name its
-reason, and a name can be in both sections. With `--ignore` the report also has the `IGNORED FILES` section, and with
-`--ignore` or `--no-localization` the `Ignored` column. Files are listed relative to `<path>`. When files were modified,
-the run ends with a commit message: the names grouped by what was done to them (with the number of files if above one,
-at most ten per group), then the files left for manual review by reason. Exit codes: 0 when the run completes (manual
-review is not a failure), 2 for a usage error, 3 if any file raised an exception.
+The report is Markdown, with a summary line, two summary tables and the sections `MODIFIED`, `NEEDS MANUAL REVIEW` and
+`ERRORS`. The tables count the type parameters per kind (`TypeVar`, `ParamSpec`, `TypeVarTuple`) and rank the reasons for
+manual review from most to least common. A name counts once per file, as needing review if it has a reason to review.
+`MODIFIED` says what was done to each name: converted in functions, import replaced by a local declaration, or unused
+declaration removed; a name localized and then removed is listed only as removed. `NEEDS MANUAL REVIEW` groups the files
+and names by reason, most common reason first, and a name can be in both sections. With `--ignore` the report also has
+the `IGNORED FILES` section, and with `--ignore` or `--no-localization` the `Ignored` column. Files are listed relative
+to `<path>`. When files were modified, the run ends with a commit message: the names grouped by what was done to them
+(with the number of files if above one, at most ten per group), then the files left for manual review by reason. Exit
+codes: 0 when the run completes (manual review is not a failure), 2 for a usage error, 3 if any file raised an exception.
 
 ## Change considerations
 
