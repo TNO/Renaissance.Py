@@ -423,6 +423,67 @@ class TestCommitSummary:
         assert_that(capsys.readouterr().out, not_(contains_string(_COMMIT_SUBJECT)))
 
 
+class TestIgnoreLocalize:
+    """main(): --ignore-localize keeps the imports of a shared declaration file and reports them."""
+
+
+class TestCommitSummary:
+    """main(): the commit-style message printed after the report."""
+
+    @pytest.mark.parametrize(
+        ("files", "expected"),
+        [
+            pytest.param(
+                {"a.py": LEGACY_TYPEVAR_SOURCE},
+                "Convert type parameters to PEP 695 syntax in 1 file (Python 3.12+).\n\n- converted to PEP 695 in functions: T",
+                id="converted-only",
+            ),
+            pytest.param(
+                {"a.py": LEGACY_TYPEVAR_SOURCE, "b.py": LEGACY_TYPEVAR_SOURCE},
+                "Convert type parameters to PEP 695 syntax in 2 files (Python 3.12+).\n\n- converted to PEP 695 in functions: T (2 files)",
+                id="name-counted-per-file",
+            ),
+            pytest.param(
+                {"a.py": UNSAFE_TYPEVAR_SOURCE, "b.py": _DEAD_TYPEVAR_SOURCE},
+                "Convert type parameters to PEP 695 syntax in 2 files (Python 3.12+).\n\n"
+                "- converted to PEP 695 in functions: T\n"
+                "- unused declaration removed: T_FreqStr\n\n"
+                f"1 file left for manual review: {UNSAFE_RULES[UnsafeReason.DECLARED_TYPEVAR_EXPORTED].message} (1).",
+                id="removed-and-left-for-review",
+            ),
+            pytest.param(
+                {"a.py": _TWELVE_TYPEVARS_SOURCE},
+                "Convert type parameters to PEP 695 syntax in 1 file (Python 3.12+).\n\n"
+                "- converted to PEP 695 in functions: T01, T02, T03, T04, T05, T06, T07, T08, T09, T10 and 2 more",
+                id="long-list-is-capped",
+            ),
+        ],
+    )
+    def test_lists_what_changed_per_action_and_what_is_left_for_review(
+        self,
+        tmp_path: Path,
+        capsys: pytest.CaptureFixture[str],
+        files: dict[str, str],
+        expected: str,
+    ) -> None:
+        """Names are grouped by what was done to them, with the files they were fixed in; leftover review is summarised by reason."""
+        for name, source in files.items():
+            (tmp_path / name).write_text(source, encoding="utf-8")
+
+        migration.main([str(tmp_path), "--py", "3.12", "--no-ruff"])
+
+        summary = capsys.readouterr().out.split(_COMMIT_SUBJECT, 1)[1].strip()
+        assert_that(summary, equal_to(expected))
+
+    def test_no_message_when_no_file_was_modified(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+        """A run that changes nothing prints no commit message."""
+        (tmp_path / "a.py").write_text("x = 1\n", encoding="utf-8")
+
+        migration.main([str(tmp_path), "--py", "3.12", "--no-ruff"])
+
+        assert_that(capsys.readouterr().out, not_(contains_string(_COMMIT_SUBJECT)))
+
+
 class TestIgnore:
     """main(): --ignore leaves a shared declaration file and the imports of its names untouched, and reports them."""
 
