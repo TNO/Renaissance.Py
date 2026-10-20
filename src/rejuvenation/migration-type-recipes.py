@@ -11,7 +11,7 @@ manual review.
 
 Examples:
     python src/rejuvenation/migration-type-recipes.py ./some_repo --py 3.12 --report review.md
-    python src/rejuvenation/migration-type-recipes.py ./some_repo/file.py --py 3.10
+    python src/rejuvenation/migration-type-recipes.py ./some_repo/file.py --py 3.13
     python src/rejuvenation/migration-type-recipes.py ./some_repo --py 3.12 --no-ruff
 
 """
@@ -31,7 +31,7 @@ from pathlib import Path
 from termcolor import colored
 
 from renaissance.project.project_scanner import PythonScanner
-from renaissance.recipes.type_var_check import TypeVarCheck
+from renaissance.recipes.type_var_check import MIN_SUPPORTED_PYTHON, TypeVarCheck
 from renaissance.recipes.type_var_domain import DOCS_BASE_URL, UNSAFE_RULES, UnsafeReason
 from renaissance.utils.import_resolution import collect_project_imported_names
 
@@ -79,14 +79,19 @@ def _parse_py_version(text: str) -> tuple[int, int]:
     """Parse a "MAJOR.MINOR" string into a (major, minor) tuple for argparse's type=.
 
     Raises:
-        argparse.ArgumentTypeError: If text is not in MAJOR.MINOR form.
+        argparse.ArgumentTypeError: If text is not in MAJOR.MINOR form or is below MIN_SUPPORTED_PYTHON.
 
     """
     parts = text.split(".")
     if len(parts) != _MAJOR_MINOR_PART_COUNT or not all(part.isdigit() for part in parts):
         message = f"expected MAJOR.MINOR (e.g. 3.12), got {text!r}"
         raise argparse.ArgumentTypeError(message)
-    return (int(parts[0]), int(parts[1]))
+    version = (int(parts[0]), int(parts[1]))
+    if version < MIN_SUPPORTED_PYTHON:
+        minimum = ".".join(map(str, MIN_SUPPORTED_PYTHON))
+        message = f"expected {minimum} or higher, since PEP 695 syntax does not exist below it, got {text!r}"
+        raise argparse.ArgumentTypeError(message)
+    return version
 
 
 def has_fixed(report: FileReport) -> bool:
@@ -319,7 +324,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
         epilog=textwrap.dedent("""\
             Examples:
               python src/rejuvenation/migration-type-recipes.py ./some_repo --py 3.12 --report review.md
-              python src/rejuvenation/migration-type-recipes.py ./some_repo/file.py --py 3.10
+              python src/rejuvenation/migration-type-recipes.py ./some_repo/file.py --py 3.13
               python src/rejuvenation/migration-type-recipes.py ./some_repo --py 3.12 --no-ruff
             """),
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -330,10 +335,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
         type=_parse_py_version,
         required=True,
         metavar="MAJOR.MINOR",
-        help=(
-            "Minimum Python version the target project supports (not the one running this tool), e.g. 3.12. "
-            "PEP 695 rewrites need 3.12+, PEP 696 type parameter defaults 3.13+."
-        ),
+        help=("Minimum Python version the target project supports is 3.12."),
     )
     parser.add_argument("--report", type=Path, metavar="PATH", help="Also write the full report to this file.")
     parser.add_argument(
