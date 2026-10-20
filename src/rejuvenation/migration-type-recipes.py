@@ -36,10 +36,11 @@ from renaissance.utils.import_resolution import collect_project_imported_names
 _MAJOR_MINOR_PART_COUNT = 2
 _TYPE_PARAM_KINDS = ("TypeVar", "ParamSpec", "TypeVarTuple")
 _FIXED_DESCRIPTIONS = {
-    "cross_file": "import replaced by a local declaration",
     "converted": "converted to PEP 695 in functions",
     "orphaned": "unused declaration removed",
+    "cross_file": "import replaced by a local declaration",
 }
+_MAX_LISTED_NAMES = 10
 
 
 @dataclass
@@ -169,17 +170,47 @@ def _run_ruff_import_cleanup(paths: list[Path]) -> None:
         print(colored(f"warning: could not run ruff for import cleanup: {exc}", "yellow"))
 
 
-def _format_commit_summary(reports: list[FileReport]) -> str:
-    """Build the short, copy-pasteable commit-message-style summary."""
-    modified = sum(1 for report in reports if has_fixed(report))
+def _files(count: int) -> str:
+    """Return count with "file" pluralized, e.g. "1 file" or "2 files"."""
+    return f"{count} file" if count == 1 else f"{count} files"
+
+
+def _format_names(file_counts: Counter[str]) -> str:
+    """Return the names, most files first then alphabetical, each with its file count if above one.
+
+    Lists at most _MAX_LISTED_NAMES names and summarises the rest as "and N more".
+    """
+    ranked = sorted(file_counts.items(), key=lambda item: (-item[1], item[0]))
+    listed = ", ".join(name if count == 1 else f"{name} ({_files(count)})" for name, count in ranked[:_MAX_LISTED_NAMES])
+    hidden = len(ranked) - _MAX_LISTED_NAMES
+    return f"{listed} and {hidden} more" if hidden > 0 else listed
+
+
+def _format_commit_summary(reports: Sequence[FileReport], min_python: tuple[int, int]) -> str:
+    """Build the copy-pasteable commit message: what was done to which names, and what is left for manual review.
+
+    Names are grouped by action with the number of files they were fixed in. The manual review line,
+    with the files needing it and their reasons by frequency, is left out when no file needs review.
+    """
+    modified = [report for report in reports if has_fixed(report)]
+    names_by_action = {action: Counter[str]() for action in _FIXED_DESCRIPTIONS.values()}
+    for report in modified:
+        for name, actions in _fixed_descriptions(report).items():
+            for action in actions:
+                names_by_action[action][name] += 1
+    version = ".".join(map(str, min_python))
+    lines = [
+        "Modernize TypeVar/ParamSpec/TypeVarTuple usage to PEP 695 syntax",
+        "",
+        f"Convert type parameters to PEP 695 syntax in {_files(len(modified))} (Python {version}+).",
+        "",
+        *(f"- {action}: {_format_names(file_counts)}" for action, file_counts in names_by_action.items() if file_counts),
+    ]
     needs_review = sum(1 for report in reports if has_unsafe(report))
-    clean = sum(1 for report in reports if is_clean(report))
-    errors = sum(1 for report in reports if report.error is not None)
-    return (
-        "Modernize TypeVar/ParamSpec/TypeVarTuple usage to PEP 695 syntax\n\n"
-        f"{modified} files modified, {needs_review} need manual review, {clean} clean, "
-        f"{errors} errors (of {len(reports)} processed)"
-    )
+    if needs_review:
+        reasons = ", ".join(f"{UNSAFE_RULES[reason].message} ({count})" for reason, count in rank_reasons(reports))
+        lines.extend(["", f"{_files(needs_review)} left for manual review: {reasons}."])
+    return "\n".join(lines)
 
 
 def _name_statuses(report: FileReport) -> dict[str, str]:
@@ -265,13 +296,12 @@ def _join_with_blank_lines(entries: list[list[str]]) -> list[str]:
     return lines
 
 
-def _modified_entry(report: FileReport, project_root: Path) -> list[str]:
-    """Return the MODIFIED lines for one file: its path relative to project_root, then what was done to each name.
+def _fixed_descriptions(report: FileReport) -> dict[str, list[str]]:
+    """Return {name: [what was done to it]} for the names report.result fixed.
 
     A converted name isn't described as removed, because its declaration is always removed afterwards,
     and a removed name isn't described as localized.
     """
-    lines = [f"  {report.path.relative_to(project_root)}"]
     result = report.result or {}
     converted = {name for name, status in result.get("converted", {}).items() if status == "fixed"}
     removed = {name for name, status in result.get("orphaned", {}).items() if status == "fixed"} - converted
@@ -280,7 +310,13 @@ def _modified_entry(report: FileReport, project_root: Path) -> list[str]:
         for name, status in names.items():
             if status == "fixed" and not (phase == "orphaned" and name in converted) and not (phase == "cross_file" and name in removed):
                 descriptions.setdefault(name, []).append(_FIXED_DESCRIPTIONS[phase])
-    lines.extend(f"    {name}: {', '.join(texts)}" for name, texts in descriptions.items())
+    return descriptions
+
+
+def _modified_entry(report: FileReport, project_root: Path) -> list[str]:
+    """Return the MODIFIED lines for one file: its path relative to project_root, then what was done to each name."""
+    lines = [f"  {report.path.relative_to(project_root)}"]
+    lines.extend(f"    {name}: {', '.join(texts)}" for name, texts in _fixed_descriptions(report).items())
     return lines
 
 
@@ -436,8 +472,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         ignore_localize_origins=ignore_localize_origins,
     )
     print(console_report)
-    print()
-    print(colored(_format_commit_summary(reports), "green", attrs=["bold"]))
+    if modified_paths:
+        print()
+        print(colored(_format_commit_summary(reports, args.py), "green", attrs=["bold"]))
 
     if args.report is not None:
         args.report.write_text(console_report, encoding="utf-8")
