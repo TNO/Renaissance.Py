@@ -139,7 +139,7 @@ class TestRuffImportCleanup:
         assert_that(capsys.readouterr().out, report_matcher)
 
     def test_localized_imports_are_merged_with_existing_ones(self, tmp_path: Path) -> None:
-        """The localized TypeVar's import joins the file's own `typing` import; Python < 3.12 only localizes."""
+        """The localized TypeVar's import joins the file's own `typing` import."""
         (tmp_path / "xarray_types.py").write_text(
             'from typing import TypeVar\n\nJoinOptions = str\nAlignable = int\nT = TypeVar("T")\n',
             encoding="utf-8",
@@ -155,11 +155,15 @@ class TestRuffImportCleanup:
 
                 def pick(x: T, how: JoinOptions, other: Alignable) -> Any:
                     return x
+
+
+                class Items(list[T]):
+                    pass
                 """),
             encoding="utf-8",
         )
 
-        exit_code = migration.main([str(target), "--py", "3.11"])
+        exit_code = migration.main([str(target), "--py", "3.12"])
 
         assert_that(exit_code, equal_to(0))
         lines = target.read_text(encoding="utf-8").splitlines()
@@ -413,14 +417,14 @@ class TestPyVersionFlag:
     @pytest.mark.parametrize(
         ("py_version", "expected", "unexpected"),
         [
-            pytest.param("3.11", 'T = TypeVar("T")', "def identity[", id="3.11-gated"),
-            pytest.param("3.12", "def identity[T]", 'T = TypeVar("T")', id="3.12-converted"),
+            pytest.param("3.12", 'T = TypeVar("T", default=int)', "def identity[", id="3.12-default-kept"),
+            pytest.param("3.13", "def identity[T = int]", 'T = TypeVar("T", default=int)', id="3.13-default-converted"),
         ],
     )
     def test_py_flag_gates_rewrites(self, tmp_path: Path, py_version: str, expected: str, unexpected: str) -> None:
-        """--py decides whether the PEP 695 rewrite runs."""
+        """--py decides whether a type parameter default (PEP 696) is converted."""
         target = tmp_path / "mod.py"
-        target.write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
+        target.write_text(LEGACY_TYPEVAR_SOURCE.replace('TypeVar("T")', 'TypeVar("T", default=int)'), encoding="utf-8")
 
         exit_code = migration.main([str(target), "--py", py_version])
 

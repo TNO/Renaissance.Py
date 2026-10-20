@@ -41,7 +41,7 @@ from renaissance.recipes.type_var_domain import (
 )
 from renaissance.utils.import_resolution import import_from_module, imported_name, rebase_relative_module, resolve_project_module
 
-PEP_695_MINIMUM = (3, 12)
+MIN_SUPPORTED_PYTHON = (3, 12)
 PEP_696_MINIMUM = (3, 13)
 
 
@@ -63,8 +63,8 @@ class TypeVarCheck(PythonRefactoring[PythonCstNode]):
     See check() for the three phases this runs, in order.
     """
 
-    # Minimum Python version the target codebase supports; None means unknown.
-    min_python: tuple[int, int] | None = None
+    # Minimum Python version the target codebase supports, where PEP 695 syntax exists.
+    min_python: tuple[int, int] = MIN_SUPPORTED_PYTHON
 
     # Names other files in the target project import directly from this file; never removed.
     project_wide_imported_names: frozenset[str] = frozenset()
@@ -88,18 +88,12 @@ class TypeVarCheck(PythonRefactoring[PythonCstNode]):
         """Return the root node of the file as it currently is (after the last commit)."""
         return cast("PythonCstNode", cast("object", self.root))
 
-    def _target_supports_pep695(self) -> bool:
-        """Return True only if min_python is known and is 3.12+, where PEP 695 syntax (`def f[T](...)`) exists."""
-        return self.min_python is not None and self.min_python >= PEP_695_MINIMUM
-
     def _target_supports_pep696(self) -> bool:
-        """Return True only if min_python is known and is 3.13+, where PEP 696 defaults (`def f[T = int](...)`) exist."""
-        return self.min_python is not None and self.min_python >= PEP_696_MINIMUM
+        """Return True only if min_python is 3.13+, where PEP 696 defaults (`def f[T = int](...)`) exist."""
+        return self.min_python >= PEP_696_MINIMUM
 
     def _conversion_refusal(self, decl_stmt: cst.Assign) -> UnsafeReason | None:
         """Return why decl_stmt can't be converted to a PEP 695 type parameter on this target, or None if it can."""
-        if not self._target_supports_pep695():
-            return UnsafeReason.PEP695_VERSION_GATE
         if has_unconvertible_argument(decl_stmt):
             return UnsafeReason.NO_PEP695_EQUIVALENT
         if declared_default(decl_stmt) is not None and not self._target_supports_pep696():

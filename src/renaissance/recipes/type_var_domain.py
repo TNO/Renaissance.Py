@@ -27,7 +27,6 @@ class UnsafeReason(StrEnum):
     Each member has a matching documented rule under DOCS_BASE_URL - see UNSAFE_RULES.
     """
 
-    PEP695_VERSION_GATE = "pep695_version_gate"
     PEP696_VERSION_GATE = "pep696_version_gate"
     NO_PEP695_EQUIVALENT = "no_pep695_equivalent"
     DECLARED_TYPEVAR_EXPORTED = "declared_typevar_exported"
@@ -47,10 +46,6 @@ class UnsafeRule:
 
 
 UNSAFE_RULES: dict[UnsafeReason, UnsafeRule] = {
-    UnsafeReason.PEP695_VERSION_GATE: UnsafeRule(
-        "target's minimum Python version is unknown or below 3.12",
-        "feature-type-parameter-modernization-pep695-version-gate",
-    ),
     UnsafeReason.PEP696_VERSION_GATE: UnsafeRule(
         "declares a default= (PEP 696), which needs the target's minimum Python to be 3.13+",
         "feature-type-parameter-modernization-pep696-version-gate",
