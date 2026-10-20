@@ -75,7 +75,7 @@ UNSAFE_RULES: dict[UnsafeReason, UnsafeRule] = {
         "feature-type-parameter-modernization-imported-elsewhere-in-project",
     ),
     UnsafeReason.ORIGIN_IMPORTS_CONSTRUCTOR_CONDITIONALLY: UnsafeRule(
-        "origin module imports TypeVar/ParamSpec/TypeVarTuple conditionally, e.g. per Python version",
+        "origin module imports TypeVar/ParamSpec/TypeVarTuple inside an if/try block, e.g. under TYPE_CHECKING or per Python version",
         "feature-type-parameter-modernization-origin-imports-constructor-conditionally",
     ),
 }
@@ -286,7 +286,8 @@ def is_safe_to_localize(origin: cst.Module, name: str) -> UnsafeReason | None:
 
     Its constructor (TypeVar/ParamSpec/TypeVarTuple) must not be imported inside a module-level
     `if`/`try` block at the origin (ORIGIN_IMPORTS_CONSTRUCTOR_CONDITIONALLY), since which
-    implementation it binds then depends on the runtime, e.g. `typing_extensions` below 3.13.
+    implementation it binds then depends on the runtime or the type checker, e.g. `typing_extensions`
+    below 3.13 or under `TYPE_CHECKING`.
     """
     declaration = find_type_param_declarations(origin).get(name)
     if declaration is not None and _imports_name_conditionally(origin, type_param_constructor_name(declaration)):
