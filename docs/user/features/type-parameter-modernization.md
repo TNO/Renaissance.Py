@@ -375,7 +375,9 @@ review from most to least common. A name counts once per file, as needing review
 says what was done to each name: converted in functions, import replaced by a local declaration, or unused declaration
 removed; a name localized and then removed is listed only as removed. `NEEDS MANUAL REVIEW` gives each name its
 reason, and a name can be in both sections. With `--ignore-localize` the report also has the `NOT LOCALIZED FROM`
-section and the `Ignored` column. Files are listed relative to `<path>`. Exit codes: 0 when the run completes (manual
+section and the `Ignored` column. Files are listed relative to `<path>`. When files were modified, the run ends with a
+commit message: the names grouped by what was done to them (with the number of files if above one, at most ten per
+group), then the files left for manual review by reason. Exit codes: 0 when the run completes (manual
 review is not a failure), 2 for a usage error, 3 if any file raised an exception.
 
 ## Change considerations
