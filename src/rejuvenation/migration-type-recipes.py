@@ -430,14 +430,14 @@ def _summary_tables(reports: Sequence[FileReport], *, show_ignored: bool) -> lis
     """
     headers = ["Kind", "Reported", "Fixed", "Needs review", *(["Ignored"] if show_ignored else [])]
     kind_rows = [
-        [kind, str(c.reported), str(c.fixed), str(c.needs_review), *([str(c.ignored)] if show_ignored else [])]
+        [_code(kind), str(c.reported), str(c.fixed), str(c.needs_review), *([str(c.ignored)] if show_ignored else [])]
         for kind, c in count_by_kind(reports).items()
     ]
-    lines = ["", "TYPE PARAMETERS BY KIND", "", *_format_table(headers, kind_rows)]
+    lines = ["", _heading("TYPE PARAMETERS BY KIND"), "", *_format_table(headers, kind_rows)]
     ranking = rank_reasons(reports)
     if ranking:
         reason_rows = [[UNSAFE_RULES[reason].message, str(count)] for reason, count in ranking]
-        lines.extend(["", "UNSAFE REASONS, MOST COMMON FIRST", "", *_format_table(["Reason", "Count"], reason_rows)])
+        lines.extend(["", _heading("UNSAFE REASONS, MOST COMMON FIRST"), "", *_format_table(["Reason", "Count"], reason_rows)])
     return lines
 
 
