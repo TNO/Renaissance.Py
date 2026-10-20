@@ -22,7 +22,7 @@ import subprocess
 import sys
 import textwrap
 from collections import Counter
-from collections.abc import Collection, Sequence
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
