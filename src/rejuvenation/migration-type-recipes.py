@@ -269,6 +269,16 @@ def rank_reasons(reports: Sequence[FileReport]) -> list[tuple[UnsafeReason, int]
     return sorted(counter.items(), key=lambda item: (-item[1], order.index(item[0])))
 
 
+def _code(text: object) -> str:
+    """Return text as a Markdown inline code span."""
+    return f"`{text}`"
+
+
+def _heading(text: str) -> str:
+    """Return text as a bold Markdown line, used for the report's section headings."""
+    return f"**{text}**"
+
+
 def _table_row(cells: Sequence[str], widths: Sequence[int]) -> str:
     """Return one Markdown table row with each cell padded to its column width."""
     return "| " + " | ".join(cell.ljust(width) for cell, width in zip(cells, widths, strict=True)) + " |"
@@ -287,14 +297,14 @@ def _summary_tables(reports: Sequence[FileReport], *, show_ignored: bool) -> lis
     """
     headers = ["Kind", "Reported", "Fixed", "Needs review", *(["Ignored"] if show_ignored else [])]
     kind_rows = [
-        [kind, str(c.reported), str(c.fixed), str(c.needs_review), *([str(c.ignored)] if show_ignored else [])]
+        [_code(kind), str(c.reported), str(c.fixed), str(c.needs_review), *([str(c.ignored)] if show_ignored else [])]
         for kind, c in count_by_kind(reports).items()
     ]
-    lines = ["", "TYPE PARAMETERS BY KIND", "", *_format_table(headers, kind_rows)]
+    lines = ["", _heading("TYPE PARAMETERS BY KIND"), "", *_format_table(headers, kind_rows)]
     ranking = rank_reasons(reports)
     if ranking:
         reason_rows = [[UNSAFE_RULES[reason].message, str(count)] for reason, count in ranking]
-        lines.extend(["", "UNSAFE REASONS, MOST COMMON FIRST", "", *_format_table(["Reason", "Count"], reason_rows)])
+        lines.extend(["", _heading("UNSAFE REASONS, MOST COMMON FIRST"), "", *_format_table(["Reason", "Count"], reason_rows)])
     return lines
 
 
@@ -327,33 +337,49 @@ def _fixed_descriptions(report: FileReport) -> dict[str, list[str]]:
 
 def _modified_entry(report: FileReport, project_root: Path) -> list[str]:
     """Return the MODIFIED lines for one file: its path relative to project_root, then what was done to each name."""
-    lines = [f"  {report.path.relative_to(project_root)}"]
-    lines.extend(f"    {name}: {', '.join(texts)}" for name, texts in _fixed_descriptions(report).items())
+    lines = [f"  {_code(report.path.relative_to(project_root))}"]
+    lines.extend(f"    {_code(name)}: {', '.join(texts)}" for name, texts in _fixed_descriptions(report).items())
     return lines
 
 
-def _needs_review_entry(report: FileReport, project_root: Path) -> list[str]:
-    """Return the NEEDS MANUAL REVIEW lines for one file: its path relative to project_root, then each name with its reason."""
-    lines = [f"  {report.path.relative_to(project_root)}"]
-    for phase_reasons in (report.reasons or {}).values():
-        lines.extend(f"    {name}: {UNSAFE_RULES[reason].message}" for name, reason in phase_reasons.items())
-    return lines
+def _needs_review_groups(reports: Sequence[FileReport], project_root: Path) -> list[list[str]]:
+    """Return one block of NEEDS MANUAL REVIEW lines per reason, most common reason first.
+
+    A block is the reason as a heading, then each file it applies to with the names it applies to.
+    """
+    names_by_reason: dict[UnsafeReason, dict[Path, list[str]]] = {}
+    for report in reports:
+        for phase_reasons in (report.reasons or {}).values():
+            for name, reason in phase_reasons.items():
+                names = names_by_reason.setdefault(reason, {}).setdefault(report.path, [])
+                if name not in names:
+                    names.append(name)
+    groups: list[list[str]] = []
+    for reason, _ in rank_reasons(reports):
+        message = UNSAFE_RULES[reason].message
+        files = names_by_reason[reason].items()
+        groups.append(
+            [
+                _heading(message[:1].upper() + message[1:]),
+                *(f"  {_code(path.relative_to(project_root))}: {', '.join(map(_code, names))}" for path, names in files),
+            ],
+        )
+    return groups
 
 
 def _format_console_report(
     reports: list[FileReport],
     *,
-    ruff_ran: bool,
     project_root: Path,
     localization: LocalizationSettings,
 ) -> str:
-    """Build the full per-file report: MODIFIED / NEEDS MANUAL REVIEW / ERRORS sections.
+    """Build the full report as Markdown: MODIFIED / NEEDS MANUAL REVIEW / ERRORS sections.
 
-    Files are listed by their path relative to project_root, separated by a blank line in the MODIFIED
-    and NEEDS MANUAL REVIEW sections. Clean files (no type parameter usage at all) are only counted,
-    not listed, so the report shows what needs attention. The ruff import-cleanup line is only
-    included when ruff_ran is True. The IGNORED FILES section is only included when
-    localization.ignored_files is not empty, and the Ignored column when it is not empty or localization is disabled.
+    Files are listed by their path relative to project_root. MODIFIED lists each file with what was done to
+    its names, separated by a blank line; NEEDS MANUAL REVIEW groups the files and names by reason. Clean
+    files (no type parameter usage at all) are only counted, not listed, so the report shows what needs
+    attention. The IGNORED FILES section is only included when localization.ignored_files is not empty,
+    and the Ignored column when it is not empty or localization is disabled.
     """
     modified = [report for report in reports if has_fixed(report)]
     needs_review = [report for report in reports if has_unsafe(report)]
@@ -367,25 +393,20 @@ def _format_console_report(
             f"manual review, {clean_count} clean, {len(errors)} errors"
         ),
     ]
-    if ruff_ran:
-        lines.append(
-            "Imports across the modified files above were also cleaned up via `ruff check --fix --select F401,I001`: "
-            "unused ones dropped, the rest merged and sorted.",
-        )
     if localization.ignored_files:
-        lines.extend(["", f"IGNORED FILES ({len(localization.ignored_files)})"])
-        lines.extend(f"  {ignored.relative_to(project_root)}" for ignored in sorted(localization.ignored_files))
+        lines.extend(["", _heading(f"IGNORED FILES ({len(localization.ignored_files)})")])
+        lines.extend(f"  {_code(ignored.relative_to(project_root))}" for ignored in sorted(localization.ignored_files))
     lines.extend(_summary_tables(reports, show_ignored=bool(localization.ignored_files) or not localization.enabled))
-    lines.extend(["", f"MODIFIED ({len(modified)})"])
+    lines.extend(["", _heading(f"MODIFIED ({len(modified)})")])
     lines.extend(_join_with_blank_lines([_modified_entry(report, project_root) for report in modified]))
 
-    lines.extend(["", f"NEEDS MANUAL REVIEW ({len(needs_review)})"])
+    lines.extend(["", _heading(f"NEEDS MANUAL REVIEW ({len(needs_review)})")])
     if needs_review:
         lines.extend([f"  {DOCS_BASE_URL}", ""])
-    lines.extend(_join_with_blank_lines([_needs_review_entry(report, project_root) for report in needs_review]))
+    lines.extend(_join_with_blank_lines(_needs_review_groups(needs_review, project_root)))
 
-    lines.extend(["", f"ERRORS ({len(errors)})"])
-    lines.extend(f"  {report.path.relative_to(project_root)}: {report.error}" for report in errors)
+    lines.extend(["", _heading(f"ERRORS ({len(errors)})")])
+    lines.extend(f"  {_code(report.path.relative_to(project_root))}: {report.error}" for report in errors)
 
     return "\n".join(lines)
 
@@ -493,7 +514,6 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     console_report = _format_console_report(
         reports,
-        ruff_ran=ruff_ran,
         project_root=project_root,
         localization=localization,
     )
