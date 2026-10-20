@@ -30,7 +30,7 @@ The tool runs three phases:
 
 1. **Localize cross-file imports.** A type parameter imported from another file in the project
    (`from .shapes import T`) is replaced by an exact local copy of its declaration, placed after the file's imports,
-   unless the origin is named by `--ignore-localize` (see *Shared declaration files* below).
+   unless the origin is named by `--ignore` (see *Shared declaration files* below).
 2. **Convert to PEP 695.** Every function whose signature uses a declared type parameter gets its own `[T]`, with
    bounds, constraints and `default=` carried over (`def f[T: str = str](...)`). `covariant=` and `contravariant=` are
    dropped, since only generic classes have a variance. A nested function gets none when an
@@ -52,20 +52,20 @@ skipped without a report:
 - re-exports through an intermediate `__init__.py`, and namespace packages;
 - a renamed import (`from .shapes import T as U`); a file whose only type parameters arrive that way counts as clean.
 
-### Shared declaration files { #feature-type-parameter-modernization-ignore-localize }
+### Shared declaration files { #feature-type-parameter-modernization-ignore }
 
-`--ignore-localize FILE...` names files, relative to `<path>` as the report lists them, whose type parameters are
-never copied into the files importing them. Those files keep their imports, so the functions using the imported names
-are not converted. Use it for a file that is shared on purpose, such as a `types.py`.
+`--ignore FILE...` names files, relative to `<path>` as the report lists them, that are left untouched: no phase runs
+on them, and their type parameters are never copied into the files importing them. Those files keep their imports, so
+the functions using the imported names are not converted. Use it for a file that other projects may import, such as a
+shared `types.py`.
 
 ```shell
-python src/rejuvenation/migration-type-recipes.py ./some_repo --py 3.12 --ignore-localize pkg/types.py pkg/aliases.py
+python src/rejuvenation/migration-type-recipes.py ./some_repo --py 3.12 --ignore pkg/types.py pkg/aliases.py
 ```
 
-The named files are processed as usual. Give `<path>` first, since the option takes every value after it. A file that
-does not exist is a usage error. The report lists the files under `NOT LOCALIZED FROM` and adds an `Ignored` column to
-the table, counting each ignored name once per importing file. A file whose only type parameters are ignored counts
-as clean.
+Give `<path>` first, since the option takes every value after it. A file that does not exist is a usage error. The
+report lists the files under `IGNORED FILES` and adds an `Ignored` column to the table, counting each name imported
+from an ignored file once per importing file. The ignored files are not in the processed count.
 
 ### Generic classes { #feature-type-parameter-modernization-generic-class }
 
@@ -109,8 +109,9 @@ example under *Non-goals* or *Need to fix* in [Refactoring recipes](../../develo
   `TypeVar(name)`) gets a wrong rewrite or is skipped with an error.
 - `U = TypeVar("U", default=T)` becomes `def f[U = T]`, where `T` still means the module-level one. Fix it by hand as
   `def f[T, U = T]`.
-- Only `__all__` marks a declaration as public. One that nothing in the project uses is removed, even if other
-  projects import it.
+- Only `__all__` marks a declaration as public, since the tool sees nothing outside the scanned project. One that
+  nothing in the project uses is removed, even if other projects import it, as with a shared `types.py`. Name such a
+  file with `--ignore` (see *Shared declaration files*).
 - Only a plain `__all__ = [...]` is read. Annotated (`__all__: list[str] = ...`), `+=`, `.extend()` and `.append()`
   forms are not.
 - A `T` used only in the string value of a `TypeAlias` (`A: TypeAlias = "list[T]"`) is seen as unused, so its
@@ -353,14 +354,14 @@ run the tool again.
 
 ```shell
 python src/rejuvenation/migration-type-recipes.py <path> --py MAJOR.MINOR \
-    [--report PATH] [--no-ruff] [--ignore-localize FILE...]
+    [--report PATH] [--no-ruff] [--ignore FILE...]
 ```
 
 - `<path>`: a `.py` file or a directory, scanned recursively (`.git`, `__pycache__`, `.venv` and `venv` skipped).
 - `--py` (required): the oldest Python version the target project supports, 3.12 or higher.
 - `--report`: also write the report to a file.
 - `--no-ruff`: skip the final `ruff` pass.
-- `--ignore-localize`: files whose type parameters are never copied into the files importing them (see
+- `--ignore`: files left untouched, whose type parameters are never copied into the files importing them (see
   *Shared declaration files*).
 
 After the recipe, the CLI runs `ruff check --fix --select F401,I001` on the changed files. This removes **every**
@@ -374,7 +375,7 @@ The tables count the type parameters per kind (`TypeVar`, `ParamSpec`, `TypeVarT
 review from most to least common. A name counts once per file, as needing review if it has a reason to review. `MODIFIED`
 says what was done to each name: converted in functions, import replaced by a local declaration, or unused declaration
 removed; a name localized and then removed is listed only as removed. `NEEDS MANUAL REVIEW` gives each name its
-reason, and a name can be in both sections. With `--ignore-localize` the report also has the `NOT LOCALIZED FROM`
+reason, and a name can be in both sections. With `--ignore` the report also has the `IGNORED FILES`
 section and the `Ignored` column. Files are listed relative to `<path>`. When files were modified, the run ends with a
 commit message: the names grouped by what was done to them (with the number of files if above one, at most ten per
 group), then the files left for manual review by reason. Exit codes: 0 when the run completes (manual

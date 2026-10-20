@@ -45,7 +45,7 @@ safely cover. This page covers `TypeVarCheck`, the recipe behind
 - `type_param_kinds`: maps each type parameter name the phases see to `"TypeVar"`, `"ParamSpec"` or `"TypeVarTuple"`.
 - Attributes set by the CLI (`migration-type-recipes.py`): `min_python`, `project_root` (falls back to the file's
   folder), `project_wide_imported_names` (from `collect_project_imported_names`) and `ignore_localize_origins`
-  (absolute paths of the files `--ignore-localize` names). `ignored_names` holds the names this file imports from them.
+  (absolute paths of the files `--ignore` names). `ignored_names` holds the names this file imports from them.
 - `PythonRefactoring.process("TypeVarCheck", file)`, used by `cli.py refactor`, never sets those attributes, so
   `min_python` stays `MIN_SUPPORTED_PYTHON` there and a `default=` declaration is reported `"unsafe"`.
 
@@ -211,8 +211,9 @@ See *Verified by test modules* in [Type parameter modernization](../../user/feat
 
     `first` is converted and `T = TypeVar("T")` is removed, although `__all__` exports it.
 
-- A declaration is only treated as public API when `__all__` lists it. One that nothing in the project uses is
-  removed, even if other projects import it. In:
+- A declaration is only treated as public API when `__all__` lists it, since the tool sees nothing outside the scanned
+  project. One that nothing in the project uses is removed, even if other projects import it. `--ignore` leaves
+  such a file untouched. In:
 
     ```python
     # mylib/typing.py
