@@ -22,7 +22,7 @@ import subprocess
 import sys
 import textwrap
 from collections import Counter
-from collections.abc import Collection, Sequence
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -63,6 +63,17 @@ class KindCount:
     fixed: int = 0
     needs_review: int = 0
     ignored: int = 0
+
+
+@dataclass(frozen=True)
+class LocalizationSettings:
+    """Whether imported type parameters are copied into the importing file, and the files they are never copied from."""
+
+    enabled: bool = True
+    ignored_files: frozenset[Path] = frozenset()
+
+
+_DEFAULT_LOCALIZATION = LocalizationSettings()
 
 
 def resolve_target_files(target: Path) -> list[Path]:
@@ -120,7 +131,7 @@ def process_file(
     min_python: tuple[int, int],
     project_root: Path,
     project_wide_imported_names: frozenset[str],
-    ignored_files: frozenset[Path] = frozenset(),
+    localization: LocalizationSettings = _DEFAULT_LOCALIZATION,
 ) -> FileReport:
     """Run TypeVarCheck's three phases on one file and return its FileReport.
 
@@ -131,7 +142,8 @@ def process_file(
         recipe.min_python = min_python
         recipe.project_root = project_root
         recipe.project_wide_imported_names = project_wide_imported_names
-        recipe.ignore_localize_origins = ignored_files
+        recipe.ignore_localize_origins = localization.ignored_files
+        recipe.localize_imports = localization.enabled
         result = recipe.check()
         reasons = {
             "cross_file": recipe.cross_file_unsafe_reasons,
@@ -333,15 +345,15 @@ def _format_console_report(
     *,
     ruff_ran: bool,
     project_root: Path,
-    ignored_files: Collection[Path],
+    localization: LocalizationSettings,
 ) -> str:
     """Build the full per-file report: MODIFIED / NEEDS MANUAL REVIEW / ERRORS sections.
 
     Files are listed by their path relative to project_root, separated by a blank line in the MODIFIED
     and NEEDS MANUAL REVIEW sections. Clean files (no type parameter usage at all) are only counted,
     not listed, so the report shows what needs attention. The ruff import-cleanup line is only
-    included when ruff_ran is True. The IGNORED FILES section and the Ignored column are only
-    included when ignored_files is not empty.
+    included when ruff_ran is True. The IGNORED FILES section is only included when
+    localization.ignored_files is not empty, and the Ignored column when it is not empty or localization is disabled.
     """
     modified = [report for report in reports if has_fixed(report)]
     needs_review = [report for report in reports if has_unsafe(report)]
@@ -360,10 +372,10 @@ def _format_console_report(
             "Imports across the modified files above were also cleaned up via `ruff check --fix --select F401,I001`: "
             "unused ones dropped, the rest merged and sorted.",
         )
-    if ignored_files:
-        lines.extend(["", f"IGNORED FILES ({len(ignored_files)})"])
-        lines.extend(f"  {ignored.relative_to(project_root)}" for ignored in sorted(ignored_files))
-    lines.extend(_summary_tables(reports, show_ignored=bool(ignored_files)))
+    if localization.ignored_files:
+        lines.extend(["", f"IGNORED FILES ({len(localization.ignored_files)})"])
+        lines.extend(f"  {ignored.relative_to(project_root)}" for ignored in sorted(localization.ignored_files))
+    lines.extend(_summary_tables(reports, show_ignored=bool(localization.ignored_files) or not localization.enabled))
     lines.extend(["", f"MODIFIED ({len(modified)})"])
     lines.extend(_join_with_blank_lines([_modified_entry(report, project_root) for report in modified]))
 
@@ -416,6 +428,14 @@ def build_arg_parser() -> argparse.ArgumentParser:
             "takes every value after it."
         ),
     )
+    parser.add_argument(
+        "--no-localization",
+        action="store_true",
+        help=(
+            "Keep the imports of project type parameters instead of copying their declarations into the importing file; "
+            "the functions using them are not converted."
+        ),
+    )
     return parser
 
 
@@ -443,11 +463,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     for ignored in args.ignore:
         if not (project_root / ignored).is_file():
             parser.error(f"--ignore: file does not exist: {ignored}")
-    ignored_files = frozenset((project_root / ignored).resolve() for ignored in args.ignore)
+    localization = LocalizationSettings(
+        enabled=not args.no_localization,
+        ignored_files=frozenset((project_root / ignored).resolve() for ignored in args.ignore),
+    )
 
     reports: list[FileReport] = []
     for path in files:
-        if path in ignored_files:
+        if path in localization.ignored_files:
             continue
         project_wide_imported_names = imported_names_by_file.get(path, frozenset())
         report = process_file(
@@ -455,7 +478,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             min_python=args.py,
             project_root=project_root,
             project_wide_imported_names=project_wide_imported_names,
-            ignored_files=ignored_files,
+            localization=localization,
         )
         reports.append(report)
         print(f"File {path} checked.")
@@ -472,7 +495,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         reports,
         ruff_ran=ruff_ran,
         project_root=project_root,
-        ignored_files=ignored_files,
+        localization=localization,
     )
     print(console_report)
     if modified_paths:
