@@ -553,13 +553,11 @@ class TestNoLocalization:
         """The importer is unchanged, no file is listed as ignored, and the imported name counts as reported and ignored."""
         (tmp_path / "shared.py").write_text('from typing import TypeVar\n\nT = TypeVar("T")\n', encoding="utf-8")
         user_source = "from shared import T\n\n\ndef identity(x: T) -> T:\n    return x\n"
-        (tmp_path / "shared.py").write_text(shared_source, encoding="utf-8")
         (tmp_path / "user.py").write_text(user_source, encoding="utf-8")
 
-        migration.main([str(tmp_path), "--py", "3.12", "--no-ruff", "--ignore", "shared.py"])
+        migration.main([str(tmp_path), "--py", "3.12", "--no-ruff", "--no-localization"])
 
         output = capsys.readouterr().out
-        assert_that((tmp_path / "shared.py").read_text(encoding="utf-8"), equal_to(shared_source))
         assert_that((tmp_path / "user.py").read_text(encoding="utf-8"), equal_to(user_source))
         assert_that(output, not_(contains_string("IGNORED FILES")))
         assert_that(_table_rows(output, "Kind")[0], equal_to(["TypeVar", "2", "0", "1", "1"]))
