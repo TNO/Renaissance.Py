@@ -44,8 +44,9 @@ safely cover. This page covers `TypeVarCheck`, the recipe behind
 
 - `type_param_kinds`: maps each type parameter name the phases see to `"TypeVar"`, `"ParamSpec"` or `"TypeVarTuple"`.
 - Attributes set by the CLI (`migration-type-recipes.py`): `min_python`, `project_root` (falls back to the file's
-  folder), `project_wide_imported_names` (from `collect_project_imported_names`) and `ignore_localize_origins`
-  (absolute paths of the files `--ignore` names). `ignored_names` holds the names this file imports from them.
+  folder), `project_wide_imported_names` (from `collect_project_imported_names`), `ignore_localize_origins` (absolute
+  paths of the files `--ignore` names) and `localize_imports` (`False` with `--no-localization`). `ignored_names` holds
+  the names this file imports from those files, or all its imported names when `localize_imports` is `False`.
 - `PythonRefactoring.process("TypeVarCheck", file)`, used by `cli.py refactor`, never sets those attributes, so
   `min_python` stays `MIN_SUPPORTED_PYTHON` there and a `default=` declaration is reported `"unsafe"`.
 
