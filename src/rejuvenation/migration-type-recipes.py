@@ -22,7 +22,7 @@ import subprocess
 import sys
 import textwrap
 from collections import Counter
-from collections.abc import Sequence
+from collections.abc import Collection, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -382,12 +382,15 @@ def _name_statuses(report: FileReport) -> dict[str, str]:
 def count_by_kind(reports: Sequence[FileReport]) -> dict[str, KindCount]:
     """Count the type parameters the reports list, per kind (TypeVar, ParamSpec, TypeVarTuple).
 
-    A name counts once per file, as needing review if any phase left it unsafe and as fixed otherwise.
-    Files that errored are skipped.
+    A name counts once per file, as needing review if any phase left it unsafe and as fixed otherwise. A name
+    the file imports from an ignored file counts as ignored. Files that errored are skipped.
     """
     counts = {kind: KindCount() for kind in _TYPE_PARAM_KINDS}
     for report in reports:
         kinds = report.kinds or {}
+        for name in report.ignored:
+            counts[kinds[name]].reported += 1
+            counts[kinds[name]].ignored += 1
         for name, status in _name_statuses(report).items():
             count = counts[kinds[name]]
             count.reported += 1
@@ -419,13 +422,17 @@ def _format_table(headers: Sequence[str], rows: Sequence[Sequence[str]]) -> list
     return [_table_row(headers, widths), _table_row(["-" * width for width in widths], widths), *(_table_row(row, widths) for row in rows)]
 
 
-def _summary_tables(reports: Sequence[FileReport]) -> list[str]:
+def _summary_tables(reports: Sequence[FileReport], *, show_ignored: bool) -> list[str]:
     """Return the report's summary tables: type parameters per kind, then the unsafe reasons by frequency.
 
-    The reasons table is left out when no reason was hit.
+    The Ignored column is only there when show_ignored is True. The reasons table is left out when no reason was hit.
     """
-    kind_rows = [[kind, str(c.reported), str(c.fixed), str(c.needs_review)] for kind, c in count_by_kind(reports).items()]
-    lines = ["", "TYPE PARAMETERS BY KIND", "", *_format_table(["Kind", "Reported", "Fixed", "Needs review"], kind_rows)]
+    headers = ["Kind", "Reported", "Fixed", "Needs review", *(["Ignored"] if show_ignored else [])]
+    kind_rows = [
+        [kind, str(c.reported), str(c.fixed), str(c.needs_review), *([str(c.ignored)] if show_ignored else [])]
+        for kind, c in count_by_kind(reports).items()
+    ]
+    lines = ["", "TYPE PARAMETERS BY KIND", "", *_format_table(headers, kind_rows)]
     ranking = rank_reasons(reports)
     if ranking:
         reason_rows = [[UNSAFE_RULES[reason].message, str(count)] for reason, count in ranking]

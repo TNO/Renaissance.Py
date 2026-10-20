@@ -139,15 +139,14 @@ class TestTypeVarCheckLocalize:
                 return x
             """,
         )
-        subject.localize_imports = localize_imports
         if origin_ignored:
             subject.ignore_localize_origins = frozenset({tmp_path / "file_1.py"})
 
         result = subject.localize_imported_typevars()
 
-        assert_that(result, equal_to({"T": "fixed"} if localized else {}))
-        assert_that(subject.ignored_names, equal_to(set[str]() if localized else {"T"}))
-        assert_that("from file_1 import T" in subject.apply_to_string(), equal_to(not localized))
+        assert_that(result, equal_to(expected_result))
+        assert_that(subject.ignored_names, equal_to(expected_ignored_names))
+        assert_that("from file_1 import T" in subject.apply_to_string(), equal_to(origin_ignored))
 
     @pytest.mark.parametrize(
         "declaration",
