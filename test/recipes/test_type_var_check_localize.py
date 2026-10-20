@@ -10,20 +10,15 @@ import ast
 import builtins
 import textwrap
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
+from typing import cast
 
 import pytest
 from hamcrest import all_of, assert_that, contains_string, equal_to, has_entry, has_item, has_length, not_
 from pytest_mock import MockerFixture
 
 from renaissance.integrations.python.ast.cst_node import PythonCstNode
-from renaissance.recipes.type_var_check import PEP_695_MINIMUM, TypeVarCheck
+from renaissance.recipes.type_var_check import TypeVarCheck
 from renaissance.recipes.type_var_domain import UnsafeReason
-
-# TODO(FrancescoPezzella): Replace with a lazy import in Python 3.15.
-#  https://github.com/TNO/Renaissance.Py/issues/275
-if TYPE_CHECKING:
-    from hamcrest.core.matcher import Matcher
 
 
 def _module_level_names(module: ast.Module) -> set[str]:
@@ -85,7 +80,6 @@ class TestTypeVarCheckLocalize:
         )
         subject = TypeVarCheck(importing_file)
         subject.in_memory = True
-        subject.min_python = PEP_695_MINIMUM
         subject.project_root = tmp_path
         return subject
 
@@ -670,32 +664,8 @@ class TestTypeVarCheckLocalize:
 
         assert_that(result, equal_to({}))
 
-    @pytest.mark.parametrize(
-        ("min_python", "expected_converted", "output_matcher"),
-        [
-            pytest.param(
-                PEP_695_MINIMUM,
-                "fixed",
-                all_of(contains_string("def b[T](x: T) -> T:"), not_(contains_string("T = TypeVar"))),
-                id="converts-on-3.12",
-            ),
-            pytest.param(
-                (3, 10),
-                "unsafe",
-                all_of(contains_string("def b(x: T) -> T:"), contains_string('T = TypeVar("T")')),
-                id="only-localizes-below-3.12",
-            ),
-        ],
-    )
-    def test_check_localizes_then_converts_when_the_target_allows(
-        self,
-        mocker: MockerFixture,
-        tmp_path: Path,
-        min_python: tuple[int, int],
-        expected_converted: str,
-        output_matcher: Matcher[str],
-    ) -> None:
-        """Verify check() localizes a cross-file TypeVar, then converts it only if the target supports PEP 695."""
+    def test_check_localizes_then_converts(self, mocker: MockerFixture, tmp_path: Path) -> None:
+        """Verify check() localizes a cross-file TypeVar, then converts it."""
         subject = self._create_cross_file(
             mocker,
             tmp_path,
@@ -711,9 +681,11 @@ class TestTypeVarCheckLocalize:
                 return x
             """,
         )
-        subject.min_python = min_python
         subject.run()
 
         assert_that(subject.result["cross_file"], has_entry("T", "fixed"))
-        assert_that(subject.result["converted"], has_entry("T", expected_converted))
-        assert_that(subject.apply_to_string(), output_matcher)
+        assert_that(subject.result["converted"], has_entry("T", "fixed"))
+        assert_that(
+            subject.apply_to_string(),
+            all_of(contains_string("def b[T](x: T) -> T:"), not_(contains_string("T = TypeVar"))),
+        )
