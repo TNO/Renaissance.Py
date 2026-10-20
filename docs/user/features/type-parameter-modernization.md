@@ -273,14 +273,17 @@ then copy the declaration by hand.
 ### The origin imports `TypeVar` conditionally { #feature-type-parameter-modernization-origin-imports-constructor-conditionally }
 
 The origin imports `TypeVar` inside an `if` or `try` (for example `typing` or `typing_extensions` per Python
-version). A copy would use whatever `TypeVar` this file has, which may fail on some versions.
+version, or `typing_extensions` under `TYPE_CHECKING` and `typing` otherwise). A copy would use whatever `TypeVar`
+this file has, which may fail on some versions or differ for the type checker.
 
 ```python
 # shapes.py
-try:
-    from typing import TypeVar
-except ImportError:
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
     from typing_extensions import TypeVar
+else:
+    from typing import TypeVar
 
 T = TypeVar("T")
 

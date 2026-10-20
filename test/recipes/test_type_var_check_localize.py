@@ -624,23 +624,42 @@ class TestTypeVarCheckLocalize:
         assert_that(result, has_entry("T", "fixed"))
         assert_that(subject.apply_to_string().splitlines().count(expected_line), equal_to(1))
 
+    @pytest.mark.parametrize(
+        "origin_imports",
+        [
+            pytest.param(
+                """
+                import sys
+                if sys.version_info >= (3, 13):
+                    from typing import TypeVar
+                else:
+                    from typing_extensions import TypeVar
+                """,
+                id="python-version",
+            ),
+            pytest.param(
+                """
+                from typing import TYPE_CHECKING
+                if TYPE_CHECKING:
+                    from typing_extensions import TypeVar
+                else:
+                    from typing import TypeVar
+                """,
+                id="type-checking",
+            ),
+        ],
+    )
     def test_does_not_localize_when_origin_imports_constructor_conditionally(
         self,
         mocker: MockerFixture,
         tmp_path: Path,
+        origin_imports: str,
     ) -> None:
-        """A TypeVar whose origin picks TypeVar per Python version stays imported, marked unsafe."""
+        """Verify a TypeVar whose origin imports TypeVar inside an `if` block stays imported, marked unsafe."""
         subject = self._create_cross_file(
             mocker,
             tmp_path,
-            """
-            import sys
-            if sys.version_info >= (3, 13):
-                from typing import TypeVar
-            else:
-                from typing_extensions import TypeVar
-            T = TypeVar("T", contravariant=True, default=None)
-            """,
+            textwrap.dedent(origin_imports) + 'T = TypeVar("T", contravariant=True, default=None)\n',
             """
             from typing import TypeVar
             from file_1 import T, helper
