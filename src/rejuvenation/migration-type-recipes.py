@@ -29,7 +29,7 @@ from pathlib import Path
 from termcolor import colored
 
 from renaissance.project.project_scanner import PythonScanner
-from renaissance.recipes.type_var_check import TypeVarCheck
+from renaissance.recipes.type_var_check import MIN_SUPPORTED_PYTHON, TypeVarCheck
 from renaissance.recipes.type_var_domain import DOCS_BASE_URL, UNSAFE_RULES, UnsafeReason
 from renaissance.utils.import_resolution import collect_project_imported_names
 

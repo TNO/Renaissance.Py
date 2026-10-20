@@ -80,7 +80,6 @@ class TestTypeVarCheckOrphaned:
     ) -> None:
         """Verify a declaration whose references are all shadowed by PEP 695 parameters, or absent, is removed."""
         subject = create_type_var_check(source)
-        subject.min_python = min_python
 
         result = subject.remove_orphaned_declarations()
 
