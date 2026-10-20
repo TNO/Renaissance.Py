@@ -14,7 +14,7 @@ from typing import cast
 import pytest
 from hamcrest import assert_that, contains_string, equal_to, has_entry, not_
 
-from renaissance.recipes.type_var_check import PEP_695_MINIMUM, PEP_696_MINIMUM, TypeVarCheck
+from renaissance.recipes.type_var_check import MIN_SUPPORTED_PYTHON, PEP_696_MINIMUM, TypeVarCheck
 from renaissance.recipes.type_var_domain import UnsafeReason
 
 
