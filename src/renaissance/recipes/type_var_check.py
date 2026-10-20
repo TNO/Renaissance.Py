@@ -77,11 +77,15 @@ class TypeVarCheck(PythonRefactoring[PythonCstNode]):
     # Absolute paths of the files whose declarations are never copied into the files importing them.
     ignore_localize_origins: frozenset[Path] = frozenset()
 
+    # When False, no declaration is copied into the files importing it.
+    localize_imports: bool = True
+
     def __init__(self, file: Path) -> None:
         """Prepare the recipe for file, parsed with the CST backend.
 
         type_param_kinds maps each type parameter name the phases see to "TypeVar", "ParamSpec" or "TypeVarTuple".
-        ignored_names holds the names this file imports from an ignore_localize_origins file.
+        ignored_names holds the names this file imports from an ignore_localize_origins file, or all of its
+        imported names when localize_imports is False.
         """
         super().__init__(file, PythonCstNode)
         self.type_param_kinds: dict[str, str] = {}
@@ -281,7 +285,8 @@ class TypeVarCheck(PythonRefactoring[PythonCstNode]):
         file's last import, so no import is left below code. A declaration stays where its import was when a
         statement in between uses it.
         It is unsafe when is_safe_to_localize rejects the origin or _argument_imports returns None.
-        Names from an ignore_localize_origins file keep their import and go to self.ignored_names instead.
+        Names from an ignore_localize_origins file, or all names when localize_imports is False, keep their import
+        and go to self.ignored_names instead.
         Returns {name: "fixed" | "unsafe"}, with each UnsafeReason on self.cross_file_unsafe_reasons.
         """
         results: dict[str, str] = {}
@@ -333,7 +338,7 @@ class TypeVarCheck(PythonRefactoring[PythonCstNode]):
 
             decl_stmt = declarations[name]
             self.type_param_kinds[name] = type_param_constructor_name(decl_stmt)
-            if origin_path in self.ignore_localize_origins:
+            if not self.localize_imports or origin_path in self.ignore_localize_origins:
                 self.ignored_names.add(name)
                 continue
             reason = is_safe_to_localize(origin, name)
