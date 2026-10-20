@@ -9,10 +9,8 @@
 Runs TypeVarCheck on a file or directory, and reports which files were modified and which need
 manual review.
 
-Examples:
-    python src/rejuvenation/migration-type-recipes.py ./some_repo --py 3.12 --report review.md
-    python src/rejuvenation/migration-type-recipes.py ./some_repo/file.py --py 3.13
-    python src/rejuvenation/migration-type-recipes.py ./some_repo --py 3.12 --no-ruff
+Example:
+    python src/rejuvenation/migration-type-recipes.py ./repo --py 3.12 --report review.md --ignore-localize repo/folder/types.py
 
 """
 
@@ -24,7 +22,7 @@ import subprocess
 import sys
 import textwrap
 from collections import Counter
-from collections.abc import Sequence
+from collections.abc import Collection, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -53,15 +51,17 @@ class FileReport:
     error: str | None
     reasons: dict[str, dict[str, UnsafeReason]] | None = None
     kinds: dict[str, str] | None = None
+    ignored: frozenset[str] = frozenset()
 
 
 @dataclass
 class KindCount:
-    """How many type parameters of one kind a run reported, and how many were fixed or need manual review."""
+    """How many type parameters of one kind a run reported, and how many were fixed, need manual review or were ignored."""
 
     reported: int = 0
     fixed: int = 0
     needs_review: int = 0
+    ignored: int = 0
 
 
 def resolve_target_files(target: Path) -> list[Path]:
@@ -119,6 +119,7 @@ def process_file(
     min_python: tuple[int, int],
     project_root: Path,
     project_wide_imported_names: frozenset[str],
+    ignore_localize_origins: frozenset[Path] = frozenset(),
 ) -> FileReport:
     """Run TypeVarCheck's three phases on one file and return its FileReport.
 
@@ -129,6 +130,7 @@ def process_file(
         recipe.min_python = min_python
         recipe.project_root = project_root
         recipe.project_wide_imported_names = project_wide_imported_names
+        recipe.ignore_localize_origins = ignore_localize_origins
         result = recipe.check()
         reasons = {
             "cross_file": recipe.cross_file_unsafe_reasons,
@@ -137,7 +139,14 @@ def process_file(
         }
     except Exception as exc:  # noqa: BLE001 - isolate one bad file, never abort the whole batch
         return FileReport(path=path, result=None, error=f"{type(exc).__name__}: {exc}")
-    return FileReport(path=path, result=result, error=None, reasons=reasons, kinds=recipe.type_param_kinds)
+    return FileReport(
+        path=path,
+        result=result,
+        error=None,
+        reasons=reasons,
+        kinds=recipe.type_param_kinds,
+        ignored=frozenset(recipe.ignored_names),
+    )
 
 
 def _run_ruff_import_cleanup(paths: list[Path]) -> None:
@@ -188,12 +197,15 @@ def _name_statuses(report: FileReport) -> dict[str, str]:
 def count_by_kind(reports: Sequence[FileReport]) -> dict[str, KindCount]:
     """Count the type parameters the reports list, per kind (TypeVar, ParamSpec, TypeVarTuple).
 
-    A name counts once per file, as needing review if any phase left it unsafe and as fixed otherwise.
-    Files that errored are skipped.
+    A name counts once per file, as needing review if any phase left it unsafe and as fixed otherwise. A name
+    the file imports from an ignored file counts as ignored. Files that errored are skipped.
     """
     counts = {kind: KindCount() for kind in _TYPE_PARAM_KINDS}
     for report in reports:
         kinds = report.kinds or {}
+        for name in report.ignored:
+            counts[kinds[name]].reported += 1
+            counts[kinds[name]].ignored += 1
         for name, status in _name_statuses(report).items():
             count = counts[kinds[name]]
             count.reported += 1
@@ -225,13 +237,17 @@ def _format_table(headers: Sequence[str], rows: Sequence[Sequence[str]]) -> list
     return [_table_row(headers, widths), _table_row(["-" * width for width in widths], widths), *(_table_row(row, widths) for row in rows)]
 
 
-def _summary_tables(reports: Sequence[FileReport]) -> list[str]:
+def _summary_tables(reports: Sequence[FileReport], *, show_ignored: bool) -> list[str]:
     """Return the report's summary tables: type parameters per kind, then the unsafe reasons by frequency.
 
-    The reasons table is left out when no reason was hit.
+    The Ignored column is only there when show_ignored is True. The reasons table is left out when no reason was hit.
     """
-    kind_rows = [[kind, str(c.reported), str(c.fixed), str(c.needs_review)] for kind, c in count_by_kind(reports).items()]
-    lines = ["", "TYPE PARAMETERS BY KIND", "", *_format_table(["Kind", "Reported", "Fixed", "Needs review"], kind_rows)]
+    headers = ["Kind", "Reported", "Fixed", "Needs review", *(["Ignored"] if show_ignored else [])]
+    kind_rows = [
+        [kind, str(c.reported), str(c.fixed), str(c.needs_review), *([str(c.ignored)] if show_ignored else [])]
+        for kind, c in count_by_kind(reports).items()
+    ]
+    lines = ["", "TYPE PARAMETERS BY KIND", "", *_format_table(headers, kind_rows)]
     ranking = rank_reasons(reports)
     if ranking:
         reason_rows = [[UNSAFE_RULES[reason].message, str(count)] for reason, count in ranking]
@@ -276,13 +292,20 @@ def _needs_review_entry(report: FileReport, project_root: Path) -> list[str]:
     return lines
 
 
-def _format_console_report(reports: list[FileReport], *, ruff_ran: bool, project_root: Path) -> str:
+def _format_console_report(
+    reports: list[FileReport],
+    *,
+    ruff_ran: bool,
+    project_root: Path,
+    ignore_localize_origins: Collection[Path],
+) -> str:
     """Build the full per-file report: MODIFIED / NEEDS MANUAL REVIEW / ERRORS sections.
 
     Files are listed by their path relative to project_root, separated by a blank line in the MODIFIED
     and NEEDS MANUAL REVIEW sections. Clean files (no type parameter usage at all) are only counted,
     not listed, so the report shows what needs attention. The ruff import-cleanup line is only
-    included when ruff_ran is True.
+    included when ruff_ran is True. The NOT LOCALIZED FROM section and the Ignored column are only
+    included when ignore_localize_origins is not empty.
     """
     modified = [report for report in reports if has_fixed(report)]
     needs_review = [report for report in reports if has_unsafe(report)]
@@ -301,7 +324,10 @@ def _format_console_report(reports: list[FileReport], *, ruff_ran: bool, project
             "Imports across the modified files above were also cleaned up via `ruff check --fix --select F401,I001`: "
             "unused ones dropped, the rest merged and sorted.",
         )
-    lines.extend(_summary_tables(reports))
+    if ignore_localize_origins:
+        lines.extend(["", f"NOT LOCALIZED FROM ({len(ignore_localize_origins)})"])
+        lines.extend(f"  {origin.relative_to(project_root)}" for origin in sorted(ignore_localize_origins))
+    lines.extend(_summary_tables(reports, show_ignored=bool(ignore_localize_origins)))
     lines.extend(["", f"MODIFIED ({len(modified)})"])
     lines.extend(_join_with_blank_lines([_modified_entry(report, project_root) for report in modified]))
 
@@ -323,9 +349,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
         description="Modernize legacy TypeVar/ParamSpec/TypeVarTuple usage to PEP 695 syntax.",
         epilog=textwrap.dedent("""\
             Examples:
-              python src/rejuvenation/migration-type-recipes.py ./some_repo --py 3.12 --report review.md
-              python src/rejuvenation/migration-type-recipes.py ./some_repo/file.py --py 3.13
-              python src/rejuvenation/migration-type-recipes.py ./some_repo --py 3.12 --no-ruff
+                python src/rejuvenation/migration-type-recipes.py ./repo --py 3.12 --report review.md --ignore-localize repo/folder/types.py
             """),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -342,6 +366,18 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "--no-ruff",
         action="store_true",
         help="Skip the final `ruff check --fix --select F401,I001` pass that drops imports made unused and sorts the rest.",
+    )
+    parser.add_argument(
+        "--ignore-localize",
+        action="extend",
+        nargs="+",
+        type=Path,
+        default=[],
+        metavar="FILE",
+        help=(
+            "Files, relative to the scanned directory, whose type parameters are never copied into the files importing "
+            "them; those imports stay. Give the path argument first, since this option takes every value after it."
+        ),
     )
     return parser
 
@@ -367,6 +403,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     project_root = target if target.is_dir() else target.parent
     imported_names_by_file = collect_project_imported_names(files, project_root)
 
+    for ignored in args.ignore_localize:
+        if not (project_root / ignored).is_file():
+            parser.error(f"--ignore-localize: file does not exist: {ignored}")
+    ignore_localize_origins = frozenset((project_root / ignored).resolve() for ignored in args.ignore_localize)
+
     reports: list[FileReport] = []
     for path in files:
         project_wide_imported_names = imported_names_by_file.get(path, frozenset())
@@ -375,6 +416,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             min_python=args.py,
             project_root=project_root,
             project_wide_imported_names=project_wide_imported_names,
+            ignore_localize_origins=ignore_localize_origins,
         )
         reports.append(report)
         print(f"File {path} checked.")
@@ -387,7 +429,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         #  https://github.com/TNO/Renaissance.Py/issues/279
         _run_ruff_import_cleanup(modified_paths)
 
-    console_report = _format_console_report(reports, ruff_ran=ruff_ran, project_root=project_root)
+    console_report = _format_console_report(
+        reports,
+        ruff_ran=ruff_ran,
+        project_root=project_root,
+        ignore_localize_origins=ignore_localize_origins,
+    )
     print(console_report)
     print()
     print(colored(_format_commit_summary(reports), "green", attrs=["bold"]))
