@@ -328,6 +328,26 @@ class TestSummaryTables:
         )
 
 
+class TestIgnoreLocalize:
+    """main(): --ignore-localize keeps the imports of a shared declaration file and reports them."""
+
+    def test_importer_is_left_untouched_and_the_report_lists_it(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+        """The importer is unchanged, the ignored file is listed, and its name counts as reported and ignored, not for review."""
+        (tmp_path / "shared.py").write_text('from typing import TypeVar\n\nT = TypeVar("T")\n', encoding="utf-8")
+        user_source = "from shared import T\n\n\ndef identity(x: T) -> T:\n    return x\n"
+        (tmp_path / "user.py").write_text(user_source, encoding="utf-8")
+
+        migration.main([str(tmp_path), "--py", "3.12", "--no-ruff", "--ignore-localize", "shared.py"])
+
+        output = capsys.readouterr().out
+        assert_that((tmp_path / "user.py").read_text(encoding="utf-8"), equal_to(user_source))
+        assert_that(output, contains_string("NOT LOCALIZED FROM (1)\n  shared.py\n"))
+        assert_that(
+            _table_rows(output, "Kind"),
+            equal_to([["TypeVar", "2", "0", "1", "1"], ["ParamSpec", "0", "0", "0", "0"], ["TypeVarTuple", "0", "0", "0", "0"]]),
+        )
+
+
 class TestPerFileProgressFeedback:
     """main(): prints a per-file progress line as each file is checked."""
 
