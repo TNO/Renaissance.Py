@@ -162,6 +162,66 @@ def process_file(
     )
 
 
+def _merge_reports(first: FileReport, second: FileReport) -> FileReport:
+    """Return the report of a file processed twice: second's names replace first's, and first's other names stay.
+
+    A reason from first is dropped when second evaluated the same name again. A second that errored is returned as it is.
+    """
+    if second.error is not None or first.result is None or second.result is None:
+        return second
+    first_reasons = first.reasons or {}
+    second_reasons = second.reasons or {}
+    return FileReport(
+        path=first.path,
+        result={phase: {**names, **second.result.get(phase, {})} for phase, names in first.result.items()},
+        error=None,
+        reasons={
+            phase: {name: reason for name, reason in reasons.items() if name not in second.result.get(phase, {})}
+            | second_reasons.get(phase, {})
+            for phase, reasons in first_reasons.items()
+        },
+        kinds={**(first.kinds or {}), **(second.kinds or {})},
+        ignored=first.ignored | second.ignored,
+    )
+
+
+def _run_second_pass(
+    reports: list[FileReport],
+    files: Sequence[Path],
+    project_root: Path,
+    min_python: tuple[int, int],
+    localization: LocalizationSettings,
+) -> list[FileReport]:
+    """Process again the files that kept a declaration because another file imported it, and merge the two reports of each.
+
+    The imported names are collected again, so a declaration whose importers were all localized in the first pass is
+    no longer protected. Every other report is returned as it was.
+    """
+    candidates = {
+        report.path
+        for report in reports
+        if any(UnsafeReason.IMPORTED_ELSEWHERE_IN_PROJECT in reasons.values() for reasons in (report.reasons or {}).values())
+    }
+    if not candidates:
+        return reports
+    imported_names_by_file = collect_project_imported_names(files, project_root)
+    merged: list[FileReport] = []
+    for report in reports:
+        if report.path not in candidates:
+            merged.append(report)
+            continue
+        second = process_file(
+            report.path,
+            min_python=min_python,
+            project_root=project_root,
+            project_wide_imported_names=imported_names_by_file.get(report.path, frozenset()),
+            localization=localization,
+        )
+        merged.append(_merge_reports(report, second))
+        print(f"File {report.path} checked again.")
+    return merged
+
+
 def _run_ruff_import_cleanup(paths: list[Path]) -> None:
     """Run `ruff check --fix --select F401,I001` over every path.
 
@@ -457,7 +517,29 @@ def build_arg_parser() -> argparse.ArgumentParser:
             "the functions using them are not converted."
         ),
     )
+    parser.add_argument(
+        "--second-pass",
+        action="store_true",
+        help=(
+            "Process again the files that kept a declaration only because another file imported it when the run started, "
+            "and report both passes together."
+        ),
+    )
     return parser
+
+
+def _localization_settings(parser: argparse.ArgumentParser, args: argparse.Namespace, project_root: Path) -> LocalizationSettings:
+    """Build the LocalizationSettings from --no-localization and --ignore, the latter resolved against project_root.
+
+    Calls parser.error, which exits with code 2, if an --ignore file does not exist.
+    """
+    for ignored in args.ignore:
+        if not (project_root / ignored).is_file():
+            parser.error(f"--ignore: file does not exist: {ignored}")
+    return LocalizationSettings(
+        enabled=not args.no_localization,
+        ignored_files=frozenset((project_root / ignored).resolve() for ignored in args.ignore),
+    )
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -481,13 +563,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     project_root = target if target.is_dir() else target.parent
     imported_names_by_file = collect_project_imported_names(files, project_root)
 
-    for ignored in args.ignore:
-        if not (project_root / ignored).is_file():
-            parser.error(f"--ignore: file does not exist: {ignored}")
-    localization = LocalizationSettings(
-        enabled=not args.no_localization,
-        ignored_files=frozenset((project_root / ignored).resolve() for ignored in args.ignore),
-    )
+    localization = _localization_settings(parser, args, project_root)
 
     reports: list[FileReport] = []
     for path in files:
@@ -503,6 +579,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         reports.append(report)
         print(f"File {path} checked.")
+
+    if args.second_pass:
+        reports = _run_second_pass(reports, files, project_root, args.py, localization)
 
     modified_paths = [report.path for report in reports if has_fixed(report)]
     ruff_ran = bool(modified_paths) and not args.no_ruff
