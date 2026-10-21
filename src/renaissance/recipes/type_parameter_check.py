@@ -144,37 +144,7 @@ class TypeParameterCheck(PythonRefactoring[PythonCstNode]):
 
         results: dict[str, str] = {}
         self.converted_unsafe_reasons: dict[str, UnsafeReason] = {}
-        convertible: dict[str, tuple[tuple[str, bool], list[PythonCstNode]]] = {}
-        generic_classes_by_name: dict[str, list[PythonCstNode]] = {}
-        blocked: set[int] = set()
-        for name, decl_stmt in find_type_param_declarations(module).items():
-            self.type_param_kinds[name] = type_param_constructor_name(decl_stmt)
-            uses = uses_of(root, name, decl_stmt)
-            signature_users = {id(function) for use in uses if (function := signature_function(use)) is not None}
-            functions = list(dict.fromkeys(function for use in uses if (function := owning_function(use, signature_users)) is not None))
-            if not functions:
-                continue
-
-            classes = generic_classes(uses)
-            # TODO: convert a class with the name in a base (`class Box(Base[T])`) to `class Box[T](Base[T])`, still refusing `covariant=`.
-            in_generic_class = [function for function in functions if self._is_inside(function, classes)]
-            candidates = [
-                function
-                for function in functions
-                if function not in in_generic_class and not declares_type_param(cast("cst.FunctionDef", function.node), name)
-            ]
-            if not candidates:
-                if in_generic_class:
-                    self._mark_unsafe(results, self.converted_unsafe_reasons, name, UnsafeReason.USED_IN_GENERIC_CLASS)
-                continue
-            reason = self._conversion_refusal(decl_stmt)
-            if reason is not None:
-                self._mark_unsafe(results, self.converted_unsafe_reasons, name, reason)
-                blocked.update(id(function) for function in candidates)
-                continue
-
-            convertible[name] = ((type_param_text(decl_stmt, module), declared_default(decl_stmt) is not None), candidates)
-            generic_classes_by_name[name] = classes
+        convertible, generic_classes_by_name, blocked = self._plan_conversions(root, module, results)
 
         # One self.replace() per function: a function using two converted names would otherwise get two
         # rewrites of the same node, which the rewriter rejects as conflicting.
@@ -193,6 +163,49 @@ class TypeParameterCheck(PythonRefactoring[PythonCstNode]):
 
         self._report_generic_class_leftovers(results, generic_classes_by_name)
         return results
+
+    def _plan_conversions(
+        self, root: PythonCstNode, module: cst.Module, results: dict[str, str]
+    ) -> tuple[dict[str, tuple[tuple[str, bool], list[PythonCstNode]]], dict[str, list[PythonCstNode]], set[int]]:
+        """Return what each declaration that can be converted needs, marking in results the ones that can't.
+
+        Returns {name: ((type parameter text, has default), functions to convert)}, {name: classes generic over it}
+        and the ids of the functions a refused declaration also uses, which must stay unchanged.
+        """
+        convertible: dict[str, tuple[tuple[str, bool], list[PythonCstNode]]] = {}
+        generic_classes_by_name: dict[str, list[PythonCstNode]] = {}
+        blocked: set[int] = set()
+        for name, decl_stmt in find_type_param_declarations(module).items():
+            self.type_param_kinds[name] = type_param_constructor_name(decl_stmt)
+            uses = uses_of(root, name, decl_stmt)
+            signature_users = {id(function) for use in uses if (function := signature_function(use)) is not None}
+            functions = list(dict.fromkeys(function for use in uses if (function := owning_function(use, signature_users)) is not None))
+            if not functions:
+                continue
+
+            classes = generic_classes(uses)
+            # TODO(FrancescoPezzella): convert a class with the name in a base (`class Box(Base[T])`) to
+            #  `class Box[T](Base[T])`, still refusing `covariant=`.
+            #  https://github.com/TNO/Renaissance.Py/issues/279
+            in_generic_class = [function for function in functions if self._is_inside(function, classes)]
+            candidates = [
+                function
+                for function in functions
+                if function not in in_generic_class and not declares_type_param(cast("cst.FunctionDef", function.node), name)
+            ]
+            if not candidates:
+                if in_generic_class:
+                    self._mark_unsafe(results, self.converted_unsafe_reasons, name, UnsafeReason.USED_IN_GENERIC_CLASS)
+                continue
+            reason = self._conversion_refusal(decl_stmt)
+            if reason is not None:
+                self._mark_unsafe(results, self.converted_unsafe_reasons, name, reason)
+                blocked.update(id(function) for function in candidates)
+                continue
+
+            convertible[name] = ((type_param_text(decl_stmt, module), declared_default(decl_stmt) is not None), candidates)
+            generic_classes_by_name[name] = classes
+        return convertible, generic_classes_by_name, blocked
 
     def _report_generic_class_leftovers(self, results: dict[str, str], generic_classes_by_name: dict[str, list[PythonCstNode]]) -> None:
         """Add USED_IN_GENERIC_CLASS to converted_unsafe_reasons for each "fixed" name a generic class still uses."""
@@ -509,20 +522,7 @@ class TypeParameterCheck(PythonRefactoring[PythonCstNode]):
         body = self._cst_root().translation_unit.atu.body
         wrappers = self._cst_root().translation_unit.wrappers
         dropped = {id(item.line) for item in localizations if not item.kept}
-        anchor = max(
-            (index for index, statement in enumerate(body) if self._is_import_line(statement) and id(statement) not in dropped),
-            default=None,
-        )
-        replaces_anchor = anchor is None
-        if anchor is None:
-            anchor = max(
-                (
-                    index
-                    for index, statement in enumerate(body)
-                    if id(statement) in dropped and isinstance(statement, cst.SimpleStatementLine) and len(statement.body) == 1
-                ),
-                default=None,
-            )
+        anchor, replaces_anchor = self._anchor_index(body, dropped)
         if anchor is None:
             for item in localizations:
                 self._write_in_place(item)
@@ -551,6 +551,28 @@ class TypeParameterCheck(PythonRefactoring[PythonCstNode]):
             self.replace(text, wrappers[anchor_raw], include_whitespace=False, include_comments=False)
         else:
             self.insert_after(f"\n{text}", wrappers[body[anchor]], include_whitespace=False, include_comments=True)
+
+    def _anchor_index(self, body: Sequence[cst.BaseStatement], dropped: set[int]) -> tuple[int | None, bool]:
+        """Return the index in body of the statement that localized text goes after, and whether it replaces that statement.
+
+        The anchor is the last import line that stays. If every import is dropped, it is the last dropped line holding
+        a single statement, whose place the text takes. The index is None when body has neither.
+        """
+        anchor = max(
+            (index for index, statement in enumerate(body) if self._is_import_line(statement) and id(statement) not in dropped),
+            default=None,
+        )
+        if anchor is not None:
+            return anchor, False
+        anchor = max(
+            (
+                index
+                for index, statement in enumerate(body)
+                if id(statement) in dropped and isinstance(statement, cst.SimpleStatementLine) and len(statement.body) == 1
+            ),
+            default=None,
+        )
+        return anchor, True
 
     def _write_in_place(self, item: _Localization) -> None:
         """Replace the names of item where its import is: its needed imports and declarations follow the kept names, if any."""
