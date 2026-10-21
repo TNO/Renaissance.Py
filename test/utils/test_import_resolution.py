@@ -10,10 +10,19 @@ import ast
 from pathlib import Path
 from typing import cast
 
+import libcst as cst
 import pytest
-from hamcrest import assert_that, equal_to, has_item, has_key, not_
+from hamcrest import assert_that, equal_to, has_item, has_key, is_, none, not_, not_none
 
-from renaissance.utils.import_resolution import collect_project_imported_names, rebase_relative_module, resolve_project_module
+from renaissance.utils.import_resolution import (
+    collect_project_imported_names,
+    from_import_binding,
+    from_import_sources,
+    import_from_module,
+    imports_name_conditionally,
+    rebase_relative_module,
+    resolve_project_module,
+)
 
 
 @pytest.fixture
@@ -187,3 +196,68 @@ class TestCollectModuleAttributeAccess:
         result = collect_project_imported_names([consumer], module_tree)
 
         assert_that(result, not_(has_key(module_tree / "pkg" / "mod.py")))
+
+
+class TestFromImportSources:
+    """See module docstring."""
+
+    @pytest.mark.parametrize(
+        ("source", "expected"),
+        [
+            pytest.param("from a.b import X\n", {"X": ("a.b", 0)}, id="absolute"),
+            pytest.param("from ..pkg import X as Y\n", {"Y": ("pkg", 2)}, id="relative-alias-keys-the-bound-name"),
+            pytest.param("from . import x\n", {"x": ("", 1)}, id="bare-relative"),
+            pytest.param("import os.path\n", {"os": None}, id="plain-import-binds-the-top-package"),
+            pytest.param("class C: ...\n", {"C": None}, id="class"),
+            pytest.param("from a import X\nX = 1\n", {"X": None}, id="later-assignment-rebinds"),
+        ],
+    )
+    def test_maps_each_bound_name_to_its_from_import(self, source: str, expected: dict[str, tuple[str, int] | None]) -> None:
+        """Verify a name maps to its `from` import's (module, level), or to None when anything else binds it last."""
+        assert_that(from_import_sources(cst.parse_module(source)), equal_to(expected))
+
+
+class TestFromImportBinding:
+    """See module docstring."""
+
+    def test_returns_the_import_and_alias_binding_the_name(self) -> None:
+        """Verify the alias that binds an aliased name is returned with its import statement."""
+        binding = from_import_binding(cst.parse_module("from a import X as Y\n"), "Y")
+
+        assert_that(binding, not_none())
+        statement, alias = cast("tuple[cst.ImportFrom, cst.ImportAlias]", binding)
+        assert_that(alias.evaluated_name, equal_to("X"))
+        assert_that(import_from_module(statement), equal_to("a"))
+
+    @pytest.mark.parametrize(
+        "source",
+        [
+            pytest.param("from a import X\nX = 1\n", id="rebound-by-assignment"),
+            pytest.param("import X\n", id="plain-import"),
+            pytest.param("A = 1\n", id="not-imported"),
+        ],
+    )
+    def test_is_none_when_no_from_import_binds_the_name_last(self, source: str) -> None:
+        """Verify None is returned when another statement binds the name, or nothing does."""
+        assert_that(from_import_binding(cst.parse_module(source), "X"), none())
+
+
+class TestImportsNameConditionally:
+    """See module docstring."""
+
+    @pytest.mark.parametrize(
+        ("source", "expected"),
+        [
+            pytest.param("if TYPE_CHECKING:\n    from typing import TypeVar\n", True, id="under-if"),
+            pytest.param(
+                "try:\n    from typing import TypeVar\nexcept ImportError:\n    from typing_extensions import TypeVar\n",
+                True,
+                id="under-try",
+            ),
+            pytest.param("from typing import TypeVar\n", False, id="unconditional"),
+            pytest.param("if TYPE_CHECKING:\n    from typing import ParamSpec\n", False, id="other-name"),
+        ],
+    )
+    def test_detects_an_import_of_the_name_inside_a_module_level_if_or_try(self, source: str, *, expected: bool) -> None:
+        """Verify only an import of the name inside a module-level `if` or `try` counts."""
+        assert_that(imports_name_conditionally(cst.parse_module(source), "TypeVar"), is_(expected))
