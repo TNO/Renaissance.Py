@@ -19,7 +19,7 @@ import pytest
 from hamcrest import assert_that, contains_string, equal_to, not_
 from hamcrest.core.matcher import Matcher
 
-from renaissance.recipes.type_var_domain import DOCS_BASE_URL, UNSAFE_RULES, UnsafeReason
+from renaissance.recipes.type_parameter_rules import DOCS_BASE_URL, UNSAFE_RULES, UnsafeReason
 
 _SCRIPT_PATH = Path(__file__).resolve().parents[2] / "src" / "rejuvenation" / "migration-type-recipes.py"
 

@@ -16,7 +16,7 @@ import libcst as cst
 from renaissance.integrations.python.ast.cst_node import PythonCstNode
 from renaissance.recipes.python_refactoring import PythonRefactoring
 from renaissance.recipes.step_runner import Step, run_steps
-from renaissance.recipes.type_var_domain import (
+from renaissance.recipes.type_parameter_rules import (
     UnsafeReason,
     declaration_argument_names,
     declaration_text,
@@ -57,7 +57,7 @@ class _Localization:
     declarations: list[str]
 
 
-class TypeVarCheck(PythonRefactoring[PythonCstNode]):
+class TypeParameterCheck(PythonRefactoring[PythonCstNode]):
     """Modernize legacy TypeVar/ParamSpec/TypeVarTuple usage in a Python file to PEP 695 syntax.
 
     See check() for the three phases this runs, in order.

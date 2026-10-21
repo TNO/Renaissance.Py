@@ -15,13 +15,13 @@ https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 ## Responsibility
 
 Recipes are `PythonRefactoring` subclasses that rewrite one Python file at a time, for gaps `ruff` does not fully or
-safely cover. This page covers `TypeVarCheck`, the recipe behind
+safely cover. This page covers `TypeParameterCheck`, the recipe behind
 [Type parameter modernization](../../user/features/type-parameter-modernization.md).
 
 ## Location
 
-- `src/renaissance/recipes/type_var_check.py`: the `TypeVarCheck` pipeline (orchestration only).
-- `src/renaissance/recipes/type_var_domain.py`: domain model and safety analysis.
+- `src/renaissance/recipes/type_parameter_check.py`: the `TypeParameterCheck` pipeline (orchestration only).
+- `src/renaissance/recipes/type_parameter_rules.py`: domain model and safety analysis.
 - `src/renaissance/recipes/step_runner.py`: `Step`/`run_steps`, runs fix actions in order and commits only the ones
   that fixed something.
 - `src/renaissance/recipes/python_refactoring.py`: the base class.
@@ -33,7 +33,7 @@ safely cover. This page covers `TypeVarCheck`, the recipe behind
 
 ## Public entry points
 
-- `TypeVarCheck.check()` (and `run()`): runs the three phases through `run_steps`, committing to disk between them.
+- `TypeParameterCheck.check()` (and `run()`): runs the three phases through `run_steps`, committing to disk between them.
 - The phases, each returning `{name: "fixed" | "unsafe"}` and recording the `UnsafeReason` of each unsafe name:
 
     | Phase                                                        | Reasons attribute           |
@@ -47,7 +47,7 @@ safely cover. This page covers `TypeVarCheck`, the recipe behind
   folder), `project_wide_imported_names` (from `collect_project_imported_names`), `ignore_localize_origins` (absolute
   paths of the files `--ignore` names) and `localize_imports` (`False` with `--no-localization`). `ignored_names` holds
   the names this file imports from those files, or all its imported names when `localize_imports` is `False`.
-- `PythonRefactoring.process("TypeVarCheck", file)`, used by `cli.py refactor`, never sets those attributes, so
+- `PythonRefactoring.process("TypeParameterCheck", file)`, used by `cli.py refactor`, never sets those attributes, so
   `min_python` stays `MIN_SUPPORTED_PYTHON` there and a `default=` declaration is reported `"unsafe"`.
 
 ## Internal structure
@@ -130,9 +130,7 @@ See *Verified by test modules* in [Type parameter modernization](../../user/feat
 - A new recipe is a `PythonRefactoring` subclass in its own `snake_case`-named module in `src/renaissance/recipes/`;
   no registration is needed.
 - A new type-parameter-declaring construct: extend `_is_type_param_call` and `type_param_text` together.
-- A new type-parameter-declaring construct: extend `_is_type_param_call` and `type_param_text` together.
 - A keyword added by a later Python, or future PEP 695 syntax for variance or a bound on `**P`/`*Ts`: add it to
-  `_CONVERTIBLE_KEYWORDS` and carry it over in `type_param_text`.
   `_CONVERTIBLE_KEYWORDS` and carry it over in `type_param_text`.
 - A new version gate uses the syntax's own minimum Python from its PEP, not a value copied from another gate.
 - Re-exports through `__init__.py` or namespace packages (PEP 420): extend `resolve_project_module`.

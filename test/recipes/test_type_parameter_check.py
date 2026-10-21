@@ -4,17 +4,17 @@
 # of this repository, also available at:
 # https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
-"""End-to-end tests for TypeVarCheck.check() across its phases."""
+"""End-to-end tests for TypeParameterCheck.check() across its phases."""
 
 from collections.abc import Callable
 
 import pytest
 from hamcrest import assert_that, contains_string, equal_to, not_
 
-from renaissance.recipes.type_var_check import TypeVarCheck
+from renaissance.recipes.type_parameter_check import TypeParameterCheck
 
 
-class TestTypeVarCheck:
+class TestTypeParameterCheck:
     """See module docstring."""
 
     @pytest.mark.parametrize(
@@ -26,12 +26,12 @@ class TestTypeVarCheck:
     )
     def test_check_converts_then_removes_the_declaration_end_to_end(
         self,
-        create_type_var_check: Callable[[str], TypeVarCheck],
+        create_type_parameter_check: Callable[[str], TypeParameterCheck],
         signature: str,
         expected_converted: dict[str, str],
     ) -> None:
         """Verify check() adds the type parameter where missing, then removes the now-orphaned declaration."""
-        subject = create_type_var_check(f"""
+        subject = create_type_parameter_check(f"""
             from typing import TypeVar
             T = TypeVar('T')
 
@@ -45,9 +45,9 @@ class TestTypeVarCheck:
         assert_that(output, contains_string("def b[T](x: T) -> T:"))
         assert_that(output, not_(contains_string("T = TypeVar")))
 
-    def test_check_records_the_kind_of_every_declaration(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
+    def test_check_records_the_kind_of_every_declaration(self, create_type_parameter_check: Callable[[str], TypeParameterCheck]) -> None:
         """Verify check() exposes each declared name's constructor (TypeVar, ParamSpec or TypeVarTuple) on type_param_kinds."""
-        subject = create_type_var_check("""
+        subject = create_type_parameter_check("""
             from typing import ParamSpec, TypeVar, TypeVarTuple
             T = TypeVar('T')
             P = ParamSpec('P')
@@ -57,9 +57,11 @@ class TestTypeVarCheck:
 
         assert_that(subject.type_param_kinds, equal_to({"T": "TypeVar", "P": "ParamSpec", "Ts": "TypeVarTuple"}))
 
-    def test_check_keeps_declaration_still_used_by_a_generic_class(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
+    def test_check_keeps_declaration_still_used_by_a_generic_class(
+        self, create_type_parameter_check: Callable[[str], TypeParameterCheck]
+    ) -> None:
         """Verify check() converts a standalone function but keeps the declaration a Generic[...] base still needs."""
-        subject = create_type_var_check("""
+        subject = create_type_parameter_check("""
             from typing import Generic, TypeVar
             T = TypeVar('T')
 

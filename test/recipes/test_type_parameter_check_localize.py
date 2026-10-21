@@ -4,7 +4,7 @@
 # of this repository, also available at:
 # https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
-"""Tests for TypeVarCheck.localize_imported_typevars."""
+"""Tests for TypeParameterCheck.localize_imported_typevars."""
 
 import ast
 import builtins
@@ -17,8 +17,8 @@ from hamcrest import all_of, assert_that, contains_string, equal_to, has_entry, 
 from pytest_mock import MockerFixture
 
 from renaissance.integrations.python.ast.cst_node import PythonCstNode
-from renaissance.recipes.type_var_check import TypeVarCheck
-from renaissance.recipes.type_var_domain import UnsafeReason
+from renaissance.recipes.type_parameter_check import TypeParameterCheck
+from renaissance.recipes.type_parameter_rules import UnsafeReason
 
 
 def _module_level_names(module: ast.Module) -> set[str]:
@@ -52,7 +52,7 @@ def _imports_after_code(module_text: str) -> list[str]:
     return [ast.unparse(node) for node in body[first_code:] if isinstance(node, ast.Import | ast.ImportFrom)]
 
 
-class TestTypeVarCheckLocalize:
+class TestTypeParameterCheckLocalize:
     """See module docstring."""
 
     def _create_cross_file(
@@ -62,8 +62,8 @@ class TestTypeVarCheckLocalize:
         origin_text: str,
         importing_text: str,
         layout: tuple[str, str] = ("file_1.py", "file_2.py"),
-    ) -> TypeVarCheck:
-        """Write origin_text to the origin file and return an in-memory TypeVarCheck on the importing file holding importing_text.
+    ) -> TypeParameterCheck:
+        """Write origin_text to the origin file and return an in-memory TypeParameterCheck on the importing file holding importing_text.
 
         layout gives the (origin, importing) file paths, relative to tmp_path, which is the project root.
         """
@@ -78,7 +78,7 @@ class TestTypeVarCheckLocalize:
             "renaissance.integrations.python.ast.factory.PythonFactory.create",
             return_value=PythonCstNode.load_from_text(importing_code, importing_file),
         )
-        subject = TypeVarCheck(importing_file)
+        subject = TypeParameterCheck(importing_file)
         subject.in_memory = True
         subject.project_root = tmp_path
         return subject

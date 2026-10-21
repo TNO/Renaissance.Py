@@ -345,13 +345,13 @@ run the tool again.
 
 ## Verified by test modules
 
-- `test/recipes/test_type_var_check.py`
-- `test/recipes/test_type_var_check_convert.py`
-- `test/recipes/test_type_var_check_localize.py`
-- `test/recipes/test_type_var_check_orphaned.py`
-- `test/recipes/test_type_var_check_properties.py`
-- `test/recipes/test_type_var_check_variance.py`
-- `test/recipes/test_type_var_domain.py`
+- `test/recipes/test_type_parameter_check.py`
+- `test/recipes/test_type_parameter_check_convert.py`
+- `test/recipes/test_type_parameter_check_localize.py`
+- `test/recipes/test_type_parameter_check_orphaned.py`
+- `test/recipes/test_type_parameter_check_properties.py`
+- `test/recipes/test_type_parameter_check_variance.py`
+- `test/recipes/test_type_parameter_rules.py`
 - `test/recipes/test_step_runner.py`
 - `test/recipes/test_python_refactoring.py`
 - `test/utils/test_import_resolution.py`
@@ -360,8 +360,7 @@ run the tool again.
 ## Implemented by code modules
 
 - [Refactoring recipes](../../developer/modules/recipes.md)
-- `src/renaissance/recipes/type_var_check.py`, `type_var_domain.py`, `step_runner.py` and `python_refactoring.py`.
-  The recipe class is still named `TypeVarCheck`.
+- `src/renaissance/recipes/type_parameter_check.py`, `type_parameter_rules.py`, `step_runner.py` and `python_refactoring.py`.
 - `src/renaissance/utils/import_resolution.py`
 - `src/rejuvenation/migration-type-recipes.py` (the CLI)
 

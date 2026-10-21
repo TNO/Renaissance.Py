@@ -41,18 +41,18 @@ https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 - **Concepts:** [Rewrite semantics](../../user/concepts/rewrite-semantics.md)
 - **Code modules:** [Refactoring recipes](../../developer/modules/recipes.md)
 - **Test file(s):**
-    - `test/recipes/test_type_var_check.py`
-    - `test/recipes/test_type_var_check_convert.py`
-    - `test/recipes/test_type_var_check_localize.py`
-    - `test/recipes/test_type_var_check_orphaned.py`
-    - `test/recipes/test_type_var_check_properties.py`
-    - `test/recipes/test_type_var_check_variance.py`
-    - `test/recipes/test_type_var_domain.py`
+    - `test/recipes/test_type_parameter_check.py`
+    - `test/recipes/test_type_parameter_check_convert.py`
+    - `test/recipes/test_type_parameter_check_localize.py`
+    - `test/recipes/test_type_parameter_check_orphaned.py`
+    - `test/recipes/test_type_parameter_check_properties.py`
+    - `test/recipes/test_type_parameter_check_variance.py`
+    - `test/recipes/test_type_parameter_rules.py`
     - `test/recipes/test_step_runner.py`
     - `test/recipes/test_python_refactoring.py`
     - `test/utils/test_import_resolution.py`
     - `test/rejuvenation/test_migration_type_recipes.py`
-- **Code file(s):** `src/renaissance/recipes/type_var_check.py`, `src/renaissance/recipes/type_var_domain.py`,
+- **Code file(s):** `src/renaissance/recipes/type_parameter_check.py`, `src/renaissance/recipes/type_parameter_rules.py`,
   `src/renaissance/recipes/step_runner.py`,
   `src/renaissance/recipes/python_refactoring.py`,
   `src/renaissance/utils/import_resolution.py`, `src/rejuvenation/migration-type-recipes.py`

@@ -6,7 +6,7 @@
 
 """CLI that modernizes type parameters (TypeVar, ParamSpec, TypeVarTuple) to PEP 695 syntax.
 
-Runs TypeVarCheck on a file or directory, and reports which files were modified and which need
+Runs TypeParameterCheck on a file or directory, and reports which files were modified and which need
 manual review.
 
 Example:
@@ -29,8 +29,8 @@ from pathlib import Path
 from termcolor import colored
 
 from renaissance.project.project_scanner import PythonScanner
-from renaissance.recipes.type_var_check import MIN_SUPPORTED_PYTHON, TypeVarCheck
-from renaissance.recipes.type_var_domain import DOCS_BASE_URL, UNSAFE_RULES, UnsafeReason
+from renaissance.recipes.type_parameter_check import MIN_SUPPORTED_PYTHON, TypeParameterCheck
+from renaissance.recipes.type_parameter_rules import DOCS_BASE_URL, UNSAFE_RULES, UnsafeReason
 from renaissance.utils.import_resolution import collect_project_imported_names
 
 _MAJOR_MINOR_PART_COUNT = 2
@@ -45,7 +45,7 @@ _MAX_LISTED_NAMES = 10
 
 @dataclass
 class FileReport:
-    """Outcome of running TypeVarCheck against a single file."""
+    """Outcome of running TypeParameterCheck against a single file."""
 
     path: Path
     result: dict[str, dict[str, str]] | None
@@ -133,12 +133,12 @@ def process_file(
     project_wide_imported_names: frozenset[str],
     localization: LocalizationSettings = _DEFAULT_LOCALIZATION,
 ) -> FileReport:
-    """Run TypeVarCheck's three phases on one file and return its FileReport.
+    """Run TypeParameterCheck's three phases on one file and return its FileReport.
 
     Any exception is caught and stored on FileReport.error, so one bad file never aborts a batch run.
     """
     try:
-        recipe = TypeVarCheck(path)
+        recipe = TypeParameterCheck(path)
         recipe.min_python = min_python
         recipe.project_root = project_root
         recipe.project_wide_imported_names = project_wide_imported_names
@@ -447,7 +447,7 @@ def _format_console_report(
     clean_count = sum(1 for report in reports if is_clean(report))
 
     lines = [
-        "Renaissance TypeVarCheck migration report",
+        "Renaissance TypeParameterCheck migration report",
         (
             f"Processed {len(reports)} files: {len(modified)} modified, {len(needs_review)} need "
             f"manual review, {clean_count} clean, {len(errors)} errors"
@@ -543,7 +543,7 @@ def _localization_settings(parser: argparse.ArgumentParser, args: argparse.Names
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """Parse arguments, run TypeVarCheck across the target, print/save the report, return an exit code.
+    """Parse arguments, run TypeParameterCheck across the target, print/save the report, return an exit code.
 
     Exit codes: 0 on normal completion (files needing manual review are informational, not a
     failure), 2 on a usage error (bad path/argument), 3 if any file hit an unhandled exception.
