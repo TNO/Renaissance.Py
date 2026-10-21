@@ -8,15 +8,22 @@
 
 import re
 import textwrap
+from collections import Counter
 from pathlib import Path
+from typing import cast
 
 import libcst as cst
 import pytest
 from hamcrest import assert_that, equal_to, not_
 
 from renaissance.recipes.type_parameter_rules import (
+    CONVERSION_RULES,
+    LOCALIZATION_RULES,
+    PEP_696_MINIMUM,
+    REMOVAL_RULES,
     UNSAFE_RULES,
     UnsafeReason,
+    conversion_refusal,
     is_safe_to_localize,
     is_safe_to_remove,
 )
@@ -139,3 +146,43 @@ class TestUnsafeRuleDocAnchors:
         heading = re.compile(rf"^#+ .+ \{{ #{re.escape(anchor)} \}}$", re.MULTILINE)
 
         assert_that(heading.search(_FEATURE_DOC.read_text(encoding="utf-8")), not_(None))
+
+
+class TestConversionRefusal:
+    """See module docstring."""
+
+    @pytest.mark.parametrize(
+        ("declaration", "min_python", "expected"),
+        [
+            pytest.param('T = TypeVar("T")', (3, 12), None, id="plain-declaration"),
+            pytest.param('T = TypeVar("T", default=int)', (3, 12), UnsafeReason.PEP696_VERSION_GATE, id="default-below-3.13"),
+            pytest.param('T = TypeVar("T", default=int)', PEP_696_MINIMUM, None, id="default-from-3.13"),
+            pytest.param('P = ParamSpec("P", bound=int)', (3, 12), UnsafeReason.NO_PEP695_EQUIVALENT, id="bound-on-a-param-spec"),
+            pytest.param(
+                'T = TypeVar("T", default=int, **options)',
+                (3, 12),
+                UnsafeReason.NO_PEP695_EQUIVALENT,
+                id="the-first-registered-rule-wins",
+            ),
+        ],
+    )
+    def test_returns_none_when_convertible_else_the_first_reason(
+        self,
+        declaration: str,
+        min_python: tuple[int, int],
+        expected: UnsafeReason | None,
+    ) -> None:
+        """Verify a declaration is refused only for a reason that applies to it, and the first registered reason wins."""
+        statement = cast("cst.SimpleStatementLine", cst.parse_statement(declaration))
+
+        assert_that(conversion_refusal(cast("cst.Assign", statement.body[0]), min_python), equal_to(expected))
+
+
+class TestRefusalRuleRegistry:
+    """See module docstring."""
+
+    def test_no_reason_is_registered_twice(self) -> None:
+        """Verify each UnsafeReason is enforced by at most one rule, so a report never has two rules for one reason."""
+        registered = [rule.reason for rules in (CONVERSION_RULES, REMOVAL_RULES, LOCALIZATION_RULES) for rule in rules]
+
+        assert_that(max(Counter(registered).values()), equal_to(1))
