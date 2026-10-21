@@ -18,13 +18,13 @@ from renaissance.recipes.python_refactoring import PythonRefactoring
 from renaissance.recipes.step_runner import Step, run_steps
 from renaissance.recipes.type_parameter_rules import (
     UnsafeReason,
+    conversion_refusal,
     declaration_argument_names,
     declaration_text,
     declared_default,
     declares_type_param,
     find_type_param_declarations,
     generic_classes,
-    has_unconvertible_argument,
     is_safe_to_localize,
     is_safe_to_remove,
     owning_function,
@@ -48,7 +48,6 @@ from renaissance.utils.import_resolution import (
 )
 
 MIN_SUPPORTED_PYTHON = (3, 12)
-PEP_696_MINIMUM = (3, 13)
 
 
 @dataclass(frozen=True)
@@ -103,18 +102,6 @@ class TypeParameterCheck(PythonRefactoring[PythonCstNode]):
         """Return the root node of the file as it currently is (after the last commit)."""
         return cast("PythonCstNode", cast("object", self.root))
 
-    def _target_supports_pep696(self) -> bool:
-        """Return True only if min_python is 3.13+, where PEP 696 defaults (`def f[T = int](...)`) exist."""
-        return self.min_python >= PEP_696_MINIMUM
-
-    def _conversion_refusal(self, decl_stmt: cst.Assign) -> UnsafeReason | None:
-        """Return why decl_stmt can't be converted to a PEP 695 type parameter on this target, or None if it can."""
-        if has_unconvertible_argument(decl_stmt):
-            return UnsafeReason.NO_PEP695_EQUIVALENT
-        if declared_default(decl_stmt) is not None and not self._target_supports_pep696():
-            return UnsafeReason.PEP696_VERSION_GATE
-        return None
-
     def check(self) -> dict[str, dict[str, str]]:
         """Run the three phases in order, committing each one that fixed something.
 
@@ -136,7 +123,7 @@ class TypeParameterCheck(PythonRefactoring[PythonCstNode]):
         The declaration is left in place. A use is attributed to the outermost enclosing function whose signature
         uses the name; a use outside every such signature is not attributed. A `T` that a same-named PEP 695 type
         parameter of a function or class declares is not a use. Methods of a class generic over the name are never
-        converted. A function that also uses a name whose declaration _conversion_refusal rejects is left unchanged,
+        converted. A function that also uses a name whose declaration conversion_refusal rejects is left unchanged,
         so no function mixes legacy and PEP 695 type parameters. Bounds, constraints and `default=` are carried over
         in their original formatting, with defaulted type parameters placed last. A name only methods of such a class
         use, whose declaration is rejected, or whose every function is left unchanged is reported "unsafe", with its
@@ -201,7 +188,7 @@ class TypeParameterCheck(PythonRefactoring[PythonCstNode]):
                 if in_generic_class:
                     self._mark_unsafe(results, self.converted_unsafe_reasons, name, UnsafeReason.USED_IN_GENERIC_CLASS)
                 continue
-            reason = self._conversion_refusal(decl_stmt)
+            reason = conversion_refusal(decl_stmt, self.min_python)
             if reason is not None:
                 self._mark_unsafe(results, self.converted_unsafe_reasons, name, reason)
                 blocked.update(id(function) for function in candidates)

@@ -21,7 +21,7 @@ safely cover. This page covers `TypeParameterCheck`, the recipe behind
 ## Location
 
 - `src/renaissance/recipes/type_parameter_check.py`: the `TypeParameterCheck` pipeline (orchestration only).
-- `src/renaissance/recipes/type_parameter_rules.py`: domain model and safety analysis.
+- `src/renaissance/recipes/type_parameter_rules.py`: the refusal rules and the analysis of declarations and their uses.
 - `src/renaissance/recipes/step_runner.py`: `Step`/`run_steps`, runs fix actions in order and commits only the ones
   that fixed something.
 - `src/renaissance/recipes/python_refactoring.py`: the base class.
@@ -55,12 +55,20 @@ safely cover. This page covers `TypeParameterCheck`, the recipe behind
   same libcst tree it rewrites; the cross-file phase parses the origin with `libcst.parse_module`. Each edit
   replaces only the node it changes, so formatting and comments elsewhere are kept.
 
-- **Unsafe reasons.** `is_safe_to_remove`/`is_safe_to_localize` and `_conversion_refusal` return an `UnsafeReason`
+- **Unsafe reasons.** `is_safe_to_remove`, `is_safe_to_localize` and `conversion_refusal` return an `UnsafeReason`
   or `None`. Each of the 8 reasons has an `UnsafeRule` (message + docs anchor) in `UNSAFE_RULES`. The CLI report prints
   each message and links `DOCS_BASE_URL` once.
 
+- **Refusal rules.** Five of the reasons are independent checks, listed as `RefusalRule` entries in
+  `CONVERSION_RULES`, `REMOVAL_RULES` and `LOCALIZATION_RULES`; the first rule of a stage that refuses decides the
+  reason. The other three (`USED_IN_GENERIC_CLASS`, `SHARES_FUNCTION_WITH_UNCONVERTIBLE`, `NAME_NOT_AT_MODULE_LEVEL`)
+  follow from how the phases work and are not listed. Commenting out an entry switches its rule off.
+  `NO_PEP695_EQUIVALENT`, `PEP696_VERSION_GATE` and `ORIGIN_IMPORTS_CONSTRUCTOR_CONDITIONALLY` then let the recipe write
+  code that fails or binds another object; `DECLARED_TYPEVAR_EXPORTED` and `IMPORTED_ELSEWHERE_IN_PROJECT` then let it
+  break the files that import the name.
+
 - **Version gates.** `min_python` is never below `MIN_SUPPORTED_PYTHON = (3, 12)`, which the CLI enforces, so PEP 695
-  syntax is always available. `_conversion_refusal` checks it against `PEP_696_MINIMUM = (3, 13)` for a
+  syntax is always available. `conversion_refusal` checks it against `PEP_696_MINIMUM = (3, 13)` for a
   `default=`. A keyword outside `_CONVERTIBLE_KEYWORDS` is refused
   (`NO_PEP695_EQUIVALENT`) instead of dropped. `covariant` and `contravariant` are in the set and are dropped, because
   a function's type parameter has no variance; converting classes would have to refuse them.
@@ -85,7 +93,7 @@ safely cover. This page covers `TypeParameterCheck`, the recipe behind
 - **Generic classes.** Methods of a class with the name in a base (`generic_classes`) are skipped. A generic class at
   the origin does not block localization.
 
-- **No mixed syntax.** A function using a declaration that `_conversion_refusal` rejects gets none of its type
+- **No mixed syntax.** A function using a declaration that `conversion_refusal` rejects gets none of its type
   parameters, since PEP 695 forbids mixing them with legacy ones. A name whose every function is blocked is
   `SHARES_FUNCTION_WITH_UNCONVERTIBLE`. This needs two passes: all refusals are known before any parameter is added.
 
@@ -131,6 +139,8 @@ See *Verified by test modules* in [Type parameter modernization](../../user/feat
 - A new type-parameter-declaring construct: extend `_is_type_param_call` and `type_param_text` together.
 - A keyword added by a later Python, or future PEP 695 syntax for variance or a bound on `**P`/`*Ts`: add it to
   `_CONVERTIBLE_KEYWORDS` and carry it over in `type_param_text`.
+- A new refusal rule: add a check function and a `RefusalRule` entry to the stage's tuple in `type_parameter_rules.py`,
+  a message and anchor to `UNSAFE_RULES`, and a section to the feature page.
 - A new version gate uses the syntax's own minimum Python from its PEP, not a value copied from another gate.
 - Re-exports through `__init__.py` or namespace packages (PEP 420): extend `resolve_project_module`.
 - `Step`/`run_steps` is generic and can be reused by any recipe.
