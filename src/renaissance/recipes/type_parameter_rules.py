@@ -7,16 +7,16 @@
 """TypeVar/ParamSpec/TypeVarTuple domain model and safety analysis."""
 
 import builtins
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterable
 from dataclasses import dataclass
 from enum import StrEnum
 from typing import cast
 
 import libcst as cst
-from libcst import matchers
 
 from renaissance.integrations.python.ast.cst_node import PythonCstNode
-from renaissance.utils.import_resolution import import_from_module, imported_name
+from renaissance.utils.cst_utils import module_statements, names_read_by
+from renaissance.utils.import_resolution import imports_name_conditionally
 
 DOCS_BASE_URL = "https://tno.github.io/Renaissance.Py/user/features/type-parameter-modernization/"
 
@@ -87,15 +87,6 @@ _CONSTRUCTORS = frozenset({"TypeVar", "ParamSpec", "TypeVarTuple"})
 def _is_type_param_call(value: cst.BaseExpression) -> bool:
     """Return True if `value` is a call to TypeVar/ParamSpec/TypeVarTuple."""
     return isinstance(value, cst.Call) and isinstance(value.func, cst.Name) and value.func.value in _CONSTRUCTORS
-
-
-def module_statements(module: cst.Module) -> Iterator[cst.BaseSmallStatement | cst.BaseCompoundStatement]:
-    """Yield the module's top-level statements in order, one per small statement of a line like `a = 1; b = 2`."""
-    for statement in module.body:
-        if isinstance(statement, cst.SimpleStatementLine):
-            yield from statement.body
-        else:
-            yield statement
 
 
 def find_type_param_declarations(module: cst.Module) -> dict[str, cst.Assign]:
@@ -174,29 +165,6 @@ def _find_dunder_all(module: cst.Module) -> set[str] | None:
     return None
 
 
-class _NameCollector(cst.CSTVisitor):
-    """Collect the names an expression reads: every `Name` except an attribute's or a keyword argument's own name."""
-
-    def __init__(self) -> None:
-        """Start with no names collected."""
-        super().__init__()
-        self.names: set[str] = set()
-
-    def visit_Name(self, node: cst.Name) -> None:  # noqa: N802 - libcst dispatches on this exact name
-        """Record the name."""
-        self.names.add(node.value)
-
-    def visit_Attribute(self, node: cst.Attribute) -> bool:  # noqa: N802 - libcst dispatches on this exact name
-        """Visit only the attribute's object: in `np.integer`, `integer` is not a name read here."""
-        node.value.visit(self)
-        return False
-
-    def visit_Arg(self, node: cst.Arg) -> bool:  # noqa: N802 - libcst dispatches on this exact name
-        """Visit only the argument's value, not the keyword it is passed as."""
-        node.value.visit(self)
-        return False
-
-
 def declaration_argument_names(decl_stmt: cst.Assign) -> set[str]:
     """Return the non-builtin names a declaration's arguments use, e.g. {"Shape"} for `TypeVar("T", bound=Shape)`.
 
@@ -205,7 +173,7 @@ def declaration_argument_names(decl_stmt: cst.Assign) -> set[str]:
     """
     call = _call(decl_stmt)
     keyword_arguments = [argument for argument in call.args if argument.keyword is not None or argument.star == "**"]
-    collector = _NameCollector()
+    names: set[str] = set()
     for argument in [*_positional_arguments(call)[1:], *keyword_arguments]:
         expression = argument.value
         text = _string_value(expression)
@@ -214,71 +182,8 @@ def declaration_argument_names(decl_stmt: cst.Assign) -> set[str]:
                 expression = cst.parse_expression(text)
             except cst.ParserSyntaxError:
                 continue
-        expression.visit(collector)
-    return collector.names - set(dir(builtins))
-
-
-def names_read_by(node: cst.CSTNode) -> set[str]:
-    """Return every name `node` reads, built-ins included; attribute names and keyword argument names are not reads."""
-    collector = _NameCollector()
-    node.visit(collector)
-    return collector.names
-
-
-def from_import_sources(module: cst.Module) -> dict[str, tuple[str, int] | None]:
-    """Map every name bound at module level to its `from` import's (module, level), or None if bound otherwise.
-
-    Names bound by a class, function, assignment or plain `import` map to None.
-    """
-    sources: dict[str, tuple[str, int] | None] = {}
-    for statement in module_statements(module):
-        if isinstance(statement, cst.ImportFrom):
-            source = (import_from_module(statement) or "", len(statement.relative))
-            if isinstance(statement.names, cst.ImportStar):
-                sources["*"] = source
-            else:
-                for alias in statement.names:
-                    sources[imported_name(alias)] = source
-        elif isinstance(statement, cst.Import):
-            for alias in statement.names:
-                sources[imported_name(alias).split(".")[0]] = None
-        elif isinstance(statement, cst.ClassDef | cst.FunctionDef):
-            sources[statement.name.value] = None
-        elif isinstance(statement, cst.Assign | cst.AnnAssign):
-            sources.update(dict.fromkeys(_assigned_names(statement)))
-    return sources
-
-
-def from_import_binding(module: cst.Module, name: str) -> tuple[cst.ImportFrom, cst.ImportAlias] | None:
-    """Return the module-level `from` import and the alias that bind name, or None if another statement binds it last."""
-    if from_import_sources(module).get(name) is None:
-        return None
-    binding: tuple[cst.ImportFrom, cst.ImportAlias] | None = None
-    for statement in module_statements(module):
-        if isinstance(statement, cst.ImportFrom) and not isinstance(statement.names, cst.ImportStar):
-            binding = next(((statement, alias) for alias in statement.names if imported_name(alias) == name), binding)
-    return binding
-
-
-def _assigned_names(statement: cst.Assign | cst.AnnAssign) -> set[str]:
-    """Return every name an assignment's targets use, including inside tuple or list targets."""
-    targets = [target.target for target in statement.targets] if isinstance(statement, cst.Assign) else [statement.target]
-    collector = _NameCollector()
-    for target in targets:
-        target.visit(collector)
-    return collector.names
-
-
-def _imports_name_conditionally(module: cst.Module, name: str) -> bool:
-    """Return True if an import inside a module-level `if`/`try` block binds `name`."""
-    for statement in module.body:
-        if not isinstance(statement, cst.If | cst.Try | cst.TryStar):
-            continue
-        for node in matchers.findall(statement, matchers.Import() | matchers.ImportFrom()):
-            names = cast("cst.Import | cst.ImportFrom", node).names
-            if not isinstance(names, cst.ImportStar) and any(imported_name(alias).split(".")[0] == name for alias in names):
-                return True
-    return False
+        names |= names_read_by(expression)
+    return names - set(dir(builtins))
 
 
 def is_safe_to_localize(origin: cst.Module, name: str) -> UnsafeReason | None:
@@ -290,7 +195,7 @@ def is_safe_to_localize(origin: cst.Module, name: str) -> UnsafeReason | None:
     below 3.13 or under `TYPE_CHECKING`.
     """
     declaration = find_type_param_declarations(origin).get(name)
-    if declaration is not None and _imports_name_conditionally(origin, type_param_constructor_name(declaration)):
+    if declaration is not None and imports_name_conditionally(origin, type_param_constructor_name(declaration)):
         return UnsafeReason.ORIGIN_IMPORTS_CONSTRUCTOR_CONDITIONALLY
     return None
 

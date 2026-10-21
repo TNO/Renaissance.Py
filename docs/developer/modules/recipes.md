@@ -25,11 +25,10 @@ safely cover. This page covers `TypeParameterCheck`, the recipe behind
 - `src/renaissance/recipes/step_runner.py`: `Step`/`run_steps`, runs fix actions in order and commits only the ones
   that fixed something.
 - `src/renaissance/recipes/python_refactoring.py`: the base class.
-- `src/renaissance/utils/import_resolution.py`: resolves `from X import Y` to a file in the project, re-anchors one
-  file's relative import on another file, and collects the names each project file imports from the others.
-- `src/renaissance/recipes/python_refactoring.py`: the base class.
-- `src/renaissance/utils/import_resolution.py`: resolves `from X import Y` to a file in the project, re-anchors one
-  file's relative import on another file, and collects the names each project file imports from the others.
+- `src/renaissance/utils/import_resolution.py`: the import statements of a module and what they bind, the resolution of
+  `from X import Y` to a file in the project, the re-anchoring of one file's relative import on another file, and the
+  names each project file imports from the others.
+- `src/renaissance/utils/cst_utils.py`: a module's top-level statements and the names they read or bind.
 
 ## Public entry points
 

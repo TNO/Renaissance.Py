@@ -55,4 +55,5 @@ https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 - **Code file(s):** `src/renaissance/recipes/type_parameter_check.py`, `src/renaissance/recipes/type_parameter_rules.py`,
   `src/renaissance/recipes/step_runner.py`,
   `src/renaissance/recipes/python_refactoring.py`,
-  `src/renaissance/utils/import_resolution.py`, `src/rejuvenation/migration-type-recipes.py`
+  `src/renaissance/utils/import_resolution.py`, `src/renaissance/utils/cst_utils.py`,
+  `src/rejuvenation/migration-type-recipes.py`
