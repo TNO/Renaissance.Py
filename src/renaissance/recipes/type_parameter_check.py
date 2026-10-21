@@ -23,16 +23,12 @@ from renaissance.recipes.type_parameter_rules import (
     declared_default,
     declares_type_param,
     find_type_param_declarations,
-    from_import_binding,
-    from_import_sources,
     generic_classes,
     has_unconvertible_argument,
     import_from_module,
     imported_name,
     is_safe_to_localize,
     is_safe_to_remove,
-    module_statements,
-    names_read_by,
     owning_function,
     signature_function,
     trailing_of_sole_statement,
@@ -41,7 +37,17 @@ from renaissance.recipes.type_parameter_rules import (
     type_params_bracket,
     uses_of,
 )
-from renaissance.utils.import_resolution import rebase_relative_module, resolve_project_module
+from renaissance.utils.cst_utils import module_statements, names_read_by
+from renaissance.utils.import_resolution import (
+    from_import_binding,
+    from_import_sources,
+    import_from_module,
+    import_from_text,
+    imported_name,
+    is_import_line,
+    rebase_relative_module,
+    resolve_project_module,
+)
 
 MIN_SUPPORTED_PYTHON = (3, 12)
 PEP_696_MINIMUM = (3, 13)
@@ -387,11 +393,6 @@ class TypeParameterCheck(PythonRefactoring[PythonCstNode]):
         except cst.ParserSyntaxError as error:
             raise SyntaxError(error.message, (str(origin_path), error.raw_line, error.raw_column + 1, None)) from error
 
-    @staticmethod
-    def _import_from_text(raw: cst.ImportFrom) -> str:
-        """Return what follows `from` in raw: its leading dots and dotted module, e.g. "..pkg.mod"."""
-        return "." * len(raw.relative) + (import_from_module(raw) or "")
-
     def _missing_constructor_import(
         self,
         origin: cst.Module,
@@ -412,7 +413,7 @@ class TypeParameterCheck(PythonRefactoring[PythonCstNode]):
 
         via_module = import_from_module(via)
         ctor_module = rebase_relative_module(via_module, len(via.relative), origin_path, ctor_source[0] or None, ctor_source[1])
-        ctor_module = ctor_module or self._import_from_text(via)
+        ctor_module = ctor_module or import_from_text(via)
 
         # TODO(FrancescoPezzella): the constructor already imported here from another module (e.g. `typing` vs the origin's
         #  `typing_extensions`) isn't matched, so a second, shadowing import of the same name is added.
@@ -421,7 +422,7 @@ class TypeParameterCheck(PythonRefactoring[PythonCstNode]):
             if (
                 isinstance(statement, cst.ImportFrom)
                 and not isinstance(statement.names, cst.ImportStar)
-                and self._import_from_text(statement) == ctor_module
+                and import_from_text(statement) == ctor_module
                 and any(imported_name(alias) == ctor_name for alias in statement.names)
             ):
                 return None
@@ -479,7 +480,7 @@ class TypeParameterCheck(PythonRefactoring[PythonCstNode]):
             if module is not None:
                 imported = alias.evaluated_name
                 return f"from {module} import {name if imported == name else f'{imported} as {name}'}"
-        return f"from {self._import_from_text(via)} import {name}"
+        return f"from {import_from_text(via)} import {name}"
 
     @staticmethod
     def _localization(
@@ -503,13 +504,6 @@ class TypeParameterCheck(PythonRefactoring[PythonCstNode]):
         #  https://github.com/TNO/Renaissance.Py/issues/189
         texts = [declaration_text(origin, decl) for decl in declarations.values()]
         return _Localization(line, raw, frozenset(declarations), kept, needed_imports, texts)
-
-    @staticmethod
-    def _is_import_line(statement: cst.BaseStatement) -> bool:
-        """Return True if statement is a line made only of import statements."""
-        return isinstance(statement, cst.SimpleStatementLine) and all(
-            isinstance(small, cst.Import | cst.ImportFrom) for small in statement.body
-        )
 
     def _place_localizations(self, localizations: list[_Localization]) -> None:
         """Write each localization: its import is narrowed or dropped, and what replaces its names goes after the last import.
@@ -559,7 +553,7 @@ class TypeParameterCheck(PythonRefactoring[PythonCstNode]):
         a single statement, whose place the text takes. The index is None when body has neither.
         """
         anchor = max(
-            (index for index, statement in enumerate(body) if self._is_import_line(statement) and id(statement) not in dropped),
+            (index for index, statement in enumerate(body) if is_import_line(statement) and id(statement) not in dropped),
             default=None,
         )
         if anchor is not None:
@@ -609,6 +603,4 @@ class TypeParameterCheck(PythonRefactoring[PythonCstNode]):
         if not item.kept and len(item.line.body) != 1:
             return False
         index = next(position for position, statement in enumerate(body) if statement is item.line)
-        return not any(
-            not self._is_import_line(statement) and item.names & names_read_by(statement) for statement in body[index + 1 : anchor]
-        )
+        return not any(not is_import_line(statement) and item.names & names_read_by(statement) for statement in body[index + 1 : anchor])
