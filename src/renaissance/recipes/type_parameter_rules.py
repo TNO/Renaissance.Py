@@ -4,18 +4,22 @@
 # of this repository, also available at:
 # https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
-"""TypeVar/ParamSpec/TypeVarTuple domain model and safety analysis."""
+"""The reasons a TypeVar/ParamSpec/TypeVarTuple is left unconverted, and the rules that decide them."""
 
-import builtins
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import cast
 
 import libcst as cst
 
-from renaissance.integrations.python.ast.cst_node import PythonCstNode
-from renaissance.utils.cst_utils import module_statements, names_read_by
+from renaissance.recipes.type_parameter_declarations import (
+    declared_default,
+    find_type_param_declarations,
+    has_unconvertible_argument,
+    string_value,
+    type_param_constructor_name,
+)
+from renaissance.utils.cst_utils import module_statements
 from renaissance.utils.import_resolution import imports_name_conditionally
 
 PEP_696_MINIMUM = (3, 13)
@@ -143,30 +147,9 @@ def _find_dunder_all(module: cst.Module) -> set[str] | None:
             and any(isinstance(target.target, cst.Name) and target.target.value == "__all__" for target in statement.targets)
             and isinstance(statement.value, cst.List | cst.Tuple | cst.Set)
         ):
-            values = (_string_value(element.value) for element in statement.value.elements if isinstance(element, cst.Element))
+            values = (string_value(element.value) for element in statement.value.elements if isinstance(element, cst.Element))
             return {value for value in values if value is not None}
     return None
-
-
-def declaration_argument_names(decl_stmt: cst.Assign) -> set[str]:
-    """Return the non-builtin names a declaration's arguments use, e.g. {"Shape"} for `TypeVar("T", bound=Shape)`.
-
-    The first positional argument (the type parameter's own name) is skipped; a string argument is read as a
-    forward reference (`bound="Shape"`). A string that isn't a valid expression contributes no names.
-    """
-    call = _call(decl_stmt)
-    keyword_arguments = [argument for argument in call.args if argument.keyword is not None or argument.star == "**"]
-    names: set[str] = set()
-    for argument in [*_positional_arguments(call)[1:], *keyword_arguments]:
-        expression = argument.value
-        text = _string_value(expression)
-        if text is not None:
-            try:
-                expression = cst.parse_expression(text)
-            except cst.ParserSyntaxError:
-                continue
-        names |= names_read_by(expression)
-    return names - set(dir(builtins))
 
 
 @dataclass(frozen=True)
