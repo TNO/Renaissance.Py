@@ -4,7 +4,7 @@
 # of this repository, also available at:
 # https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
-"""Shared fixture for the TypeVarCheck tests."""
+"""Shared fixture for the TypeParameterCheck tests."""
 
 import textwrap
 from collections.abc import Callable
@@ -14,22 +14,22 @@ import pytest
 from pytest_mock import MockerFixture
 
 from renaissance.integrations.python.ast.cst_node import PythonCstNode
-from renaissance.recipes.type_var_check import TypeVarCheck
+from renaissance.recipes.type_parameter_check import TypeParameterCheck
 
 
 @pytest.fixture
-def create_type_var_check(mocker: MockerFixture) -> Callable[[str], TypeVarCheck]:
-    """Build a TypeVarCheck for in-memory, dedented source text.
+def create_type_parameter_check(mocker: MockerFixture) -> Callable[[str], TypeParameterCheck]:
+    """Build a TypeParameterCheck for in-memory, dedented source text.
 
     `PythonFactory.create` is mocked so nothing touches the filesystem.
     """
 
-    def _create(text: str) -> TypeVarCheck:
+    def _create(text: str) -> TypeParameterCheck:
         mocker.patch(
             "renaissance.integrations.python.ast.factory.PythonFactory.create",
             return_value=PythonCstNode.load_from_text(textwrap.dedent(text), "x.py"),
         )
-        subject = TypeVarCheck(Path("x.py"))
+        subject = TypeParameterCheck(Path("x.py"))
         subject.in_memory = True
         return subject
 

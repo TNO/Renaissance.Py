@@ -4,7 +4,7 @@
 # of this repository, also available at:
 # https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
-"""Property-based tests for TypeVarCheck.check."""
+"""Property-based tests for TypeParameterCheck.check."""
 
 import ast
 from unittest.mock import patch
@@ -13,10 +13,10 @@ import hypothesmith
 from hypothesis import given, reject, settings
 
 from renaissance.integrations.python.ast.cst_node import PythonCstNode
-from renaissance.recipes.type_var_check import TypeVarCheck
+from renaissance.recipes.type_parameter_check import TypeParameterCheck
 
 
-class TestTypeVarCheckProperties:
+class TestTypeParameterCheckProperties:
     """See module docstring."""
 
     @given(source=hypothesmith.from_grammar())
@@ -32,6 +32,6 @@ class TestTypeVarCheckProperties:
             "renaissance.integrations.python.ast.factory.PythonFactory.create",
             return_value=PythonCstNode.load_from_text(source),
         ):
-            subject = TypeVarCheck("x.py")
+            subject = TypeParameterCheck("x.py")
             subject.in_memory = True
             subject.check()

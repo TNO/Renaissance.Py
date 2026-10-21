@@ -4,7 +4,7 @@
 # of this repository, also available at:
 # https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
-"""Tests for TypeVarCheck.remove_orphaned_declarations."""
+"""Tests for TypeParameterCheck.remove_orphaned_declarations."""
 
 import textwrap
 from collections.abc import Callable
@@ -12,8 +12,8 @@ from collections.abc import Callable
 import pytest
 from hamcrest import assert_that, contains_string, equal_to, has_entry, not_
 
-from renaissance.recipes.type_var_check import TypeVarCheck
-from renaissance.recipes.type_var_domain import UnsafeReason
+from renaissance.recipes.type_parameter_check import TypeParameterCheck
+from renaissance.recipes.type_parameter_rules import UnsafeReason
 
 ALREADY_CONVERTED_SOURCE = """
 from typing import TypeVar
@@ -60,7 +60,7 @@ class Box[T]:
 """
 
 
-class TestTypeVarCheckOrphaned:
+class TestTypeParameterCheckOrphaned:
     """See module docstring."""
 
     @pytest.mark.parametrize(
@@ -75,11 +75,11 @@ class TestTypeVarCheckOrphaned:
     )
     def test_removes_declaration_whose_references_are_all_shadowed(
         self,
-        create_type_var_check: Callable[[str], TypeVarCheck],
+        create_type_parameter_check: Callable[[str], TypeParameterCheck],
         source: str,
     ) -> None:
         """Verify a declaration whose references are all shadowed by PEP 695 parameters, or absent, is removed."""
-        subject = create_type_var_check(source)
+        subject = create_type_parameter_check(source)
 
         result = subject.remove_orphaned_declarations()
 
@@ -98,11 +98,11 @@ class TestTypeVarCheckOrphaned:
     )
     def test_removing_a_declaration_removes_the_comment_trailing_it(
         self,
-        create_type_var_check: Callable[[str], TypeVarCheck],
+        create_type_parameter_check: Callable[[str], TypeParameterCheck],
         declaration: str,
     ) -> None:
         """Verify the comment trailing a removed declaration goes with it instead of staying behind on a line of its own."""
-        subject = create_type_var_check(f"from typing import TypeVar\n{declaration}\n\ndef b() -> None:\n    pass\n")
+        subject = create_type_parameter_check(f"from typing import TypeVar\n{declaration}\n\ndef b() -> None:\n    pass\n")
 
         result = subject.remove_orphaned_declarations()
 
@@ -110,9 +110,9 @@ class TestTypeVarCheckOrphaned:
         output = subject.apply_to_string()
         assert_that(output, not_(contains_string("noqa")))
 
-    def test_keeps_declaration_still_used_without_pep695(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
+    def test_keeps_declaration_still_used_without_pep695(self, create_type_parameter_check: Callable[[str], TypeParameterCheck]) -> None:
         """Verify a declaration still used by a function without its own type parameter is left alone, unreported."""
-        subject = create_type_var_check("""
+        subject = create_type_parameter_check("""
             from typing import TypeVar
             T = TypeVar('T')
 
@@ -134,10 +134,10 @@ class TestTypeVarCheckOrphaned:
         ],
     )
     def test_keeps_declaration_used_in_a_string_annotation(
-        self, create_type_var_check: Callable[[str], TypeVarCheck], annotation: str
+        self, create_type_parameter_check: Callable[[str], TypeParameterCheck], annotation: str
     ) -> None:
         """Verify a declaration referenced only from a string annotation is not removed as orphaned."""
-        subject = create_type_var_check(f"""
+        subject = create_type_parameter_check(f"""
             from typing import TypeVar
             T = TypeVar('T')
 
@@ -158,13 +158,13 @@ class TestTypeVarCheckOrphaned:
     )
     def test_keeps_orphaned_declaration_that_is_unsafe_to_remove(
         self,
-        create_type_var_check: Callable[[str], TypeVarCheck],
+        create_type_parameter_check: Callable[[str], TypeParameterCheck],
         imported_elsewhere: frozenset[str],
         expected_reason: UnsafeReason,
     ) -> None:
         """Verify an orphaned declaration is kept and reported unsafe when removing it would break an importer."""
         source = ALREADY_CONVERTED_SOURCE if imported_elsewhere else '__all__ = ["T"]\n' + ALREADY_CONVERTED_SOURCE
-        subject = create_type_var_check(source)
+        subject = create_type_parameter_check(source)
         subject.project_wide_imported_names = imported_elsewhere
 
         result = subject.remove_orphaned_declarations()
@@ -174,10 +174,10 @@ class TestTypeVarCheckOrphaned:
         assert_that(subject.apply_to_string(), contains_string("T = TypeVar('T')"))
 
     def test_removing_orphaned_declaration_keeps_comment_shared_with_next_declaration(
-        self, create_type_var_check: Callable[[str], TypeVarCheck]
+        self, create_type_parameter_check: Callable[[str], TypeParameterCheck]
     ) -> None:
         """Verify removing an orphaned declaration keeps a leading comment that also documents the next declaration."""
-        subject = create_type_var_check("""
+        subject = create_type_parameter_check("""
             from typing import TypeVar
 
             # explains both T and U below

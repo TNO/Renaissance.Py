@@ -6,7 +6,7 @@
 
 """Tests that dropping `covariant=`/`contravariant=` is safe for functions and unsafe for classes.
 
-The type checker (pyright) and the interpreter judge the code before and after TypeVarCheck.convert_declared_typevars.
+The type checker (pyright) and the interpreter judge the code before and after TypeParameterCheck.convert_declared_typevars.
 """
 
 import importlib.util
@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING, NamedTuple
 import pytest
 from hamcrest import assert_that, contains_string, equal_to, has_item, has_property, not_
 
-from renaissance.recipes.type_var_domain import UnsafeReason
+from renaissance.recipes.type_parameter_rules import UnsafeReason
 
 # TODO(FrancescoPezzella): Replace with a lazy import in Python 3.15.
 #  https://github.com/TNO/Renaissance.Py/issues/275
@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     from pathlib import Path
     from types import ModuleType
 
-    from renaissance.recipes.type_var_check import TypeVarCheck
+    from renaissance.recipes.type_parameter_check import TypeParameterCheck
 
 
 class _Diagnostic(NamedTuple):
@@ -130,13 +130,13 @@ class TestVarianceOfFunctions:
     )
     def test_function_behaves_the_same_without_the_variance(
         self,
-        create_type_var_check: Callable[[str], TypeVarCheck],
+        create_type_parameter_check: Callable[[str], TypeParameterCheck],
         tmp_path: Path,
         declaration: str,
     ) -> None:
         """Verify the type checker accepts, rejects and infers exactly as before, and the function returns the same values."""
         before = _FUNCTION_TEMPLATE.format(declaration=declaration)
-        subject = create_type_var_check(before)
+        subject = create_type_parameter_check(before)
 
         result = subject.convert_declared_typevars()
 
@@ -168,14 +168,14 @@ class TestVarianceOfClasses:
     )
     def test_class_keeps_its_variance_and_dropping_it_changes_the_type_checking(
         self,
-        create_type_var_check: Callable[[str], TypeVarCheck],
+        create_type_parameter_check: Callable[[str], TypeParameterCheck],
         tmp_path: Path,
         class_definition: str,
         class_header: str,
     ) -> None:
         """Verify the class and its covariant declaration stay, the code still type checks, and dropping the variance does not."""
         covariant = _CLASS_TEMPLATE.format(covariant=", covariant=True", class_definition=class_definition)
-        subject = create_type_var_check(covariant)
+        subject = create_type_parameter_check(covariant)
 
         result = subject.convert_declared_typevars()
 

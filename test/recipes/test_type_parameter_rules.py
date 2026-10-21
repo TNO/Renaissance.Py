@@ -4,7 +4,7 @@
 # of this repository, also available at:
 # https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
-"""Tests for type_var_domain's safety predicates and their UnsafeReason results."""
+"""Tests for type_parameter_rules's safety predicates and their UnsafeReason results."""
 
 import re
 import textwrap
@@ -14,7 +14,7 @@ import libcst as cst
 import pytest
 from hamcrest import assert_that, equal_to, not_
 
-from renaissance.recipes.type_var_domain import (
+from renaissance.recipes.type_parameter_rules import (
     UNSAFE_RULES,
     UnsafeReason,
     is_safe_to_localize,

@@ -4,7 +4,7 @@
 # of this repository, also available at:
 # https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
-"""Tests for TypeVarCheck.convert_declared_typevars."""
+"""Tests for TypeParameterCheck.convert_declared_typevars."""
 
 import ast
 import textwrap
@@ -14,8 +14,8 @@ from typing import cast
 import pytest
 from hamcrest import assert_that, contains_string, equal_to, has_entry, not_
 
-from renaissance.recipes.type_var_check import MIN_SUPPORTED_PYTHON, PEP_696_MINIMUM, TypeVarCheck
-from renaissance.recipes.type_var_domain import UnsafeReason
+from renaissance.recipes.type_parameter_check import MIN_SUPPORTED_PYTHON, PEP_696_MINIMUM, TypeParameterCheck
+from renaissance.recipes.type_parameter_rules import UnsafeReason
 
 
 def _type_param_name(param: ast.type_param) -> str:
@@ -23,7 +23,7 @@ def _type_param_name(param: ast.type_param) -> str:
     return cast("ast.TypeVar | ast.ParamSpec | ast.TypeVarTuple", param).name
 
 
-class TestTypeVarCheckConvert:
+class TestTypeParameterCheckConvert:
     """See module docstring."""
 
     @pytest.mark.parametrize(
@@ -42,10 +42,10 @@ class TestTypeVarCheckConvert:
         ],
     )
     def test_converts_typevar_shared_by_two_functions(
-        self, create_type_var_check: Callable[[str], TypeVarCheck], functions: str, expected_signatures: list[str]
+        self, create_type_parameter_check: Callable[[str], TypeParameterCheck], functions: str, expected_signatures: list[str]
     ) -> None:
         """Verify a TypeVar shared by two functions, or two methods of one class, gives each its own [T]."""
-        subject = create_type_var_check(f'from typing import TypeVar\n\n{functions}\nT = TypeVar("T")\n')
+        subject = create_type_parameter_check(f'from typing import TypeVar\n\n{functions}\nT = TypeVar("T")\n')
         result = subject.convert_declared_typevars()
 
         assert_that(result, equal_to({"T": "fixed"}))
@@ -61,10 +61,12 @@ class TestTypeVarCheckConvert:
             pytest.param('"""Produce a cast.\n\n.. seealso::\n\n    :ref:`tutorial_casts`\n"""', id="nested-block"),
         ],
     )
-    def test_converts_method_keeping_its_docstring(self, create_type_var_check: Callable[[str], TypeVarCheck], docstring: str) -> None:
+    def test_converts_method_keeping_its_docstring(
+        self, create_type_parameter_check: Callable[[str], TypeParameterCheck], docstring: str
+    ) -> None:
         """Verify converting a method's signature keeps its docstring exactly, including any nested indentation."""
         body = textwrap.indent(f"{docstring}\nreturn x\n", " " * 8)
-        subject = create_type_var_check(
+        subject = create_type_parameter_check(
             "from typing import TypeVar\n\nclass Foo:\n"
             f"    def cast(self, x: T) -> T:\n{body}"
             "    def other(self, y: T) -> T:\n        return y\n\n"
@@ -84,12 +86,12 @@ class TestTypeVarCheckConvert:
     )
     def test_converts_functions_using_a_typevar_whose_declaration_must_stay(
         self,
-        create_type_var_check: Callable[[str], TypeVarCheck],
+        create_type_parameter_check: Callable[[str], TypeParameterCheck],
         extra_line: str,
         imported_elsewhere: frozenset[str],
     ) -> None:
         """Verify functions get [T] even when T's declaration can't be removed, and the declaration is kept."""
-        subject = create_type_var_check(f"""
+        subject = create_type_parameter_check(f"""
             from typing import TypeVar
 
             {extra_line}
@@ -108,9 +110,11 @@ class TestTypeVarCheckConvert:
         assert_that(output, contains_string("def a[T](x: T) -> T:"))
         assert_that(output, contains_string('T = TypeVar("T")'))
 
-    def test_converts_function_preserving_unusual_body_formatting(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
+    def test_converts_function_preserving_unusual_body_formatting(
+        self, create_type_parameter_check: Callable[[str], TypeParameterCheck]
+    ) -> None:
         """AI: Verify converting a signature never reformats or collapses its body's unusual formatting."""
-        subject = create_type_var_check("""
+        subject = create_type_parameter_check("""
             from typing import TypeVar
 
             def b(x: T) -> T:
@@ -128,10 +132,12 @@ class TestTypeVarCheckConvert:
         assert_that(output, contains_string("def b[T](x: T) -> T:"))
         assert_that(output, contains_string("return foo(\n        x,\n        extra=1,\n    )"))
 
-    def test_does_not_add_redundant_type_param_to_nested_closure(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
+    def test_does_not_add_redundant_type_param_to_nested_closure(
+        self, create_type_parameter_check: Callable[[str], TypeParameterCheck]
+    ) -> None:
         """AI: Verify a nested closure referencing an enclosing function's converted type param doesn't get its own copy."""
         # PEP 695 type parameters are already visible in nested scopes.
-        subject = create_type_var_check("""
+        subject = create_type_parameter_check("""
             from typing import ParamSpec
             from collections.abc import Callable
 
@@ -182,10 +188,10 @@ class TestTypeVarCheckConvert:
         ],
     )
     def test_binds_typevar_to_the_outermost_function_whose_signature_uses_it(
-        self, create_type_var_check: Callable[[str], TypeVarCheck], declarations: str, functions: str, expected_lines: list[str]
+        self, create_type_parameter_check: Callable[[str], TypeParameterCheck], declarations: str, functions: str, expected_lines: list[str]
     ) -> None:
         """Verify [T] goes on the outermost function whose own signature uses T, never on an enclosing one that doesn't."""
-        subject = create_type_var_check(
+        subject = create_type_parameter_check(
             f"from collections.abc import Callable\nfrom typing import TypeVar\n\n{declarations}\n\n{functions}"
         )
         result = subject.convert_declared_typevars()
@@ -204,19 +210,19 @@ class TestTypeVarCheckConvert:
         ],
     )
     def test_leaves_typevar_used_only_in_a_function_body_unattributed(
-        self, create_type_var_check: Callable[[str], TypeVarCheck], body: str
+        self, create_type_parameter_check: Callable[[str], TypeParameterCheck], body: str
     ) -> None:
         """Verify a T that no enclosing signature uses gives no function a [T]."""
         source = f'from typing import TypeVar, cast\n\nT = TypeVar("T")\n\n\ndef f(x: int) -> None:\n{body}'
-        subject = create_type_var_check(source)
+        subject = create_type_parameter_check(source)
         result = subject.convert_declared_typevars()
 
         assert_that(result, equal_to({}))
         assert_that(subject.apply_to_string(), equal_to(source))
 
-    def test_merges_into_an_existing_type_params_bracket(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
+    def test_merges_into_an_existing_type_params_bracket(self, create_type_parameter_check: Callable[[str], TypeParameterCheck]) -> None:
         """AI: Verify converting a second TypeVar merges it into an existing PEP 695 bracket instead of adding a new one."""
-        subject = create_type_var_check("""
+        subject = create_type_parameter_check("""
             from typing import TypeVar
 
             def f[U](x: U, y: T) -> T:
@@ -230,9 +236,9 @@ class TestTypeVarCheckConvert:
         output = subject.apply_to_string()
         assert_that(output, contains_string("def f[U, T](x: U, y: T) -> T:"))
 
-    def test_converts_a_decorated_overload(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
+    def test_converts_a_decorated_overload(self, create_type_parameter_check: Callable[[str], TypeParameterCheck]) -> None:
         """AI: Verify converting a decorated @overload signature accounts for its non-zero-column indentation."""
-        subject = create_type_var_check("""
+        subject = create_type_parameter_check("""
             from typing import TypeVar, overload
 
             class Config:
@@ -250,9 +256,9 @@ class TestTypeVarCheckConvert:
         assert_that(output, contains_string("@overload"))
         assert_that(output, contains_string("def get[T](self, key: str, default: T = ...) -> T: ..."))
 
-    def test_converts_function_using_two_new_type_params(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
+    def test_converts_function_using_two_new_type_params(self, create_type_parameter_check: Callable[[str], TypeParameterCheck]) -> None:
         """Verify a function using two declared type parameters gets both in one bracket."""
-        subject = create_type_var_check("""
+        subject = create_type_parameter_check("""
             from typing import ParamSpec, TypeVar
             from collections.abc import Callable
 
@@ -274,18 +280,20 @@ class TestTypeVarCheckConvert:
         assert_that([_type_param_name(param) for param in functions["run_in_threadpool"].type_params], equal_to(["P", "T"]))
         assert_that([_type_param_name(param) for param in functions["identity"].type_params], equal_to(["T"]))
 
-    def test_orders_type_params_by_declaration(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
+    def test_orders_type_params_by_declaration(self, create_type_parameter_check: Callable[[str], TypeParameterCheck]) -> None:
         """Verify the added type parameters follow the order their declarations appear in the file."""
         names = ["A", "B", "C", "D", "E", "F"]
         declarations = "\n".join(f'{name} = TypeVar("{name}")' for name in names)
         parameters = ", ".join(f"{name.lower()}: {name}" for name in names)
-        subject = create_type_var_check(f"from typing import TypeVar\n{declarations}\ndef f({parameters}) -> None: ...\n")
+        subject = create_type_parameter_check(f"from typing import TypeVar\n{declarations}\ndef f({parameters}) -> None: ...\n")
 
         subject.convert_declared_typevars()
 
         assert_that(subject.apply_to_string(), contains_string(f"def f[{', '.join(names)}]({parameters}) -> None: ..."))
 
-    def test_converts_function_preserving_multiline_string_literal(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
+    def test_converts_function_preserving_multiline_string_literal(
+        self, create_type_parameter_check: Callable[[str], TypeParameterCheck]
+    ) -> None:
         """Verify converting a function keeps a multi-line string literal whose continuation line is at column 0."""
         # Built line by line: textwrap.dedent in the fixture would otherwise be blocked by the column-0 line.
         source_lines = [
@@ -297,7 +305,7 @@ class TestTypeVarCheckConvert:
             '    third"""',
             "    return x",
         ]
-        subject = create_type_var_check("\n".join(source_lines) + "\n")
+        subject = create_type_parameter_check("\n".join(source_lines) + "\n")
         result = subject.convert_declared_typevars()
 
         assert_that(result, has_entry("T", "fixed"))
@@ -319,12 +327,12 @@ class TestTypeVarCheckConvert:
     )
     def test_converts_function_but_not_methods_of_a_generic_class(
         self,
-        create_type_var_check: Callable[[str], TypeVarCheck],
+        create_type_parameter_check: Callable[[str], TypeParameterCheck],
         class_header: str,
         expected_reasons: dict[str, UnsafeReason],
     ) -> None:
         """Verify a standalone function gets [T] while the methods of a class generic over T keep using the class's T."""
-        subject = create_type_var_check(f"""
+        subject = create_type_parameter_check(f"""
             from typing import Generic, Protocol, TypeVar
             T = TypeVar('T')
 
@@ -343,9 +351,9 @@ class TestTypeVarCheckConvert:
         assert_that(output, contains_string("def first[T](items: list[T]) -> T:"))
         assert_that(output, contains_string("    def get(self, x: T) -> T:"))
 
-    def test_reports_typevar_used_only_in_a_generic_class(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
+    def test_reports_typevar_used_only_in_a_generic_class(self, create_type_parameter_check: Callable[[str], TypeParameterCheck]) -> None:
         """Verify a TypeVar only a generic class uses is reported unsafe with its reason and left as it is."""
-        subject = create_type_var_check("""
+        subject = create_type_parameter_check("""
             from typing import Generic, TypeVar
             T = TypeVar('T')
 
@@ -359,9 +367,11 @@ class TestTypeVarCheckConvert:
         assert_that(subject.converted_unsafe_reasons, equal_to({"T": UnsafeReason.USED_IN_GENERIC_CLASS}))
         assert_that(subject.apply_to_string(), contains_string("    def get(self, x: T) -> T:"))
 
-    def test_ignores_methods_using_their_class_type_parameter(self, create_type_var_check: Callable[[str], TypeVarCheck]) -> None:
+    def test_ignores_methods_using_their_class_type_parameter(
+        self, create_type_parameter_check: Callable[[str], TypeParameterCheck]
+    ) -> None:
         """Verify a T that is the class's own type parameter (`class Box[T]`) is not a use of the module-level T."""
-        subject = create_type_var_check("""
+        subject = create_type_parameter_check("""
             from typing import TypeVar
             T = TypeVar('T')
 
@@ -384,10 +394,10 @@ class TestTypeVarCheckConvert:
         ],
     )
     def test_converts_method_of_a_class_not_generic_over_the_name(
-        self, create_type_var_check: Callable[[str], TypeVarCheck], class_header: str
+        self, create_type_parameter_check: Callable[[str], TypeParameterCheck], class_header: str
     ) -> None:
         """Verify a method gets [T] when its class isn't generic over T."""
-        subject = create_type_var_check(f"""
+        subject = create_type_parameter_check(f"""
             from typing import Generic, TypeVar
             T = TypeVar('T')
             U = TypeVar('U')
@@ -419,10 +429,16 @@ class TestTypeVarCheckConvert:
         ],
     )
     def test_converts_only_functions_free_of_unconvertible_typevars(
-        self, create_type_var_check: Callable[[str], TypeVarCheck], functions: str, expected_converted: str, expected_unchanged: str
+        self,
+        create_type_parameter_check: Callable[[str], TypeParameterCheck],
+        functions: str,
+        expected_converted: str,
+        expected_unchanged: str,
     ) -> None:
         """Verify a function that also uses an unconvertible TypeVar is left whole, while the others using U get [U]."""
-        subject = create_type_var_check(f'from typing import TypeVar\n\nBad = TypeVar("Bad", future_kw=1)\nU = TypeVar("U")\n\n{functions}')
+        subject = create_type_parameter_check(
+            f'from typing import TypeVar\n\nBad = TypeVar("Bad", future_kw=1)\nU = TypeVar("U")\n\n{functions}'
+        )
         result = subject.convert_declared_typevars()
 
         assert_that(result, equal_to({"Bad": "unsafe", "U": "fixed"}))
@@ -438,10 +454,10 @@ class TestTypeVarCheckConvert:
         ],
     )
     def test_converts_method_mixing_with_its_class_type_parameter(
-        self, create_type_var_check: Callable[[str], TypeVarCheck], class_declaration: str
+        self, create_type_parameter_check: Callable[[str], TypeParameterCheck], class_declaration: str
     ) -> None:
         """Verify a method of a class generic over T gets [U] while keeping the class's legacy T."""
-        subject = create_type_var_check(
+        subject = create_type_parameter_check(
             f'from typing import Generic, TypeVar\n\n{class_declaration}\nU = TypeVar("U")\n\n'
             "class Box(Generic[T]):\n    def pair(self, x: T, y: U) -> tuple[T, U]:\n        return x, y\n"
         )
@@ -451,10 +467,10 @@ class TestTypeVarCheckConvert:
         assert_that(subject.apply_to_string(), contains_string("    def pair[U](self, x: T, y: U) -> tuple[T, U]:"))
 
     def test_converts_function_when_typevar_is_also_used_outside_functions(
-        self, create_type_var_check: Callable[[str], TypeVarCheck]
+        self, create_type_parameter_check: Callable[[str], TypeParameterCheck]
     ) -> None:
         """Verify a function using T is converted even though a module-level alias also uses T."""
-        subject = create_type_var_check("""
+        subject = create_type_parameter_check("""
             from typing import TypeVar
             T = TypeVar('T')
 
@@ -483,7 +499,7 @@ def _source(declarations: str, signature: str) -> str:
     return f"{_HEADER}{declarations}\n\n\n{signature}\n    ...\n"
 
 
-class TestTypeVarCheckConvertArguments:
+class TestTypeParameterCheckConvertArguments:
     """Every constructor argument is carried over or refused with a reason, never lost silently."""
 
     @pytest.mark.parametrize(
@@ -543,14 +559,14 @@ class TestTypeVarCheckConvertArguments:
     )
     def test_converts_keeping_every_expressible_argument(
         self,
-        create_type_var_check: Callable[[str], TypeVarCheck],
+        create_type_parameter_check: Callable[[str], TypeParameterCheck],
         declaration: str,
         signature: str,
         expected_signature: str,
     ) -> None:
         """Verify bounds, constraints and defaults are carried over, and variance arguments are dropped."""
         name = declaration.split(" = ", maxsplit=1)[0]
-        subject = create_type_var_check(_source(declaration, signature))
+        subject = create_type_parameter_check(_source(declaration, signature))
         subject.min_python = PEP_696_MINIMUM
 
         result = subject.convert_declared_typevars()
@@ -616,7 +632,7 @@ class TestTypeVarCheckConvertArguments:
     )
     def test_refuses_argument_it_cannot_carry_over(
         self,
-        create_type_var_check: Callable[[str], TypeVarCheck],
+        create_type_parameter_check: Callable[[str], TypeParameterCheck],
         declaration: str,
         signature: str,
         min_python: tuple[int, int],
@@ -625,7 +641,7 @@ class TestTypeVarCheckConvertArguments:
         """Verify an argument the target can't express is reported unsafe with its reason and the file is left unchanged."""
         name = declaration.split(" = ", maxsplit=1)[0]
         source = _source(declaration, signature)
-        subject = create_type_var_check(source)
+        subject = create_type_parameter_check(source)
         subject.min_python = min_python
 
         result = subject.convert_declared_typevars()
@@ -662,7 +678,7 @@ class TestTypeVarCheckConvertArguments:
     )
     def test_leaves_function_using_an_unconvertible_typevar_unchanged(
         self,
-        create_type_var_check: Callable[[str], TypeVarCheck],
+        create_type_parameter_check: Callable[[str], TypeParameterCheck],
         declarations: str,
         signature: str,
         min_python: tuple[int, int],
@@ -670,7 +686,7 @@ class TestTypeVarCheckConvertArguments:
     ) -> None:
         """Verify a function using one unconvertible TypeVar gets none of its TypeVars converted, so it never mixes syntaxes."""
         source = _source(declarations, signature)
-        subject = create_type_var_check(source)
+        subject = create_type_parameter_check(source)
         subject.min_python = min_python
 
         result = subject.convert_declared_typevars()
@@ -704,13 +720,13 @@ class TestTypeVarCheckConvertArguments:
     )
     def test_places_defaulted_type_params_last(
         self,
-        create_type_var_check: Callable[[str], TypeVarCheck],
+        create_type_parameter_check: Callable[[str], TypeParameterCheck],
         declarations: str,
         signature: str,
         expected_signature: str,
     ) -> None:
         """Verify type parameters with a default come after those without one, which Python requires."""
-        subject = create_type_var_check(_source(declarations, signature))
+        subject = create_type_parameter_check(_source(declarations, signature))
         subject.min_python = PEP_696_MINIMUM
 
         subject.convert_declared_typevars()
