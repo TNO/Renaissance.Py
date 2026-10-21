@@ -351,9 +351,11 @@ run the tool again.
 - `test/recipes/test_type_parameter_check_orphaned.py`
 - `test/recipes/test_type_parameter_check_properties.py`
 - `test/recipes/test_type_parameter_check_variance.py`
+- `test/recipes/test_type_parameter_declarations.py`
 - `test/recipes/test_type_parameter_rules.py`
 - `test/recipes/test_step_runner.py`
 - `test/recipes/test_python_refactoring.py`
+- `test/utils/test_cst_utils.py`
 - `test/utils/test_import_resolution.py`
 - `test/rejuvenation/test_migration_type_recipes.py`
 
