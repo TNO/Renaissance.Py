@@ -7,7 +7,7 @@
 """TypeVar/ParamSpec/TypeVarTuple domain model and safety analysis."""
 
 import builtins
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from enum import StrEnum
 from typing import cast
@@ -18,6 +18,7 @@ from renaissance.integrations.python.ast.cst_node import PythonCstNode
 from renaissance.utils.cst_utils import module_statements, names_read_by
 from renaissance.utils.import_resolution import imports_name_conditionally
 
+PEP_696_MINIMUM = (3, 13)
 DOCS_BASE_URL = "https://tno.github.io/Renaissance.Py/user/features/type-parameter-modernization/"
 
 
@@ -168,18 +169,80 @@ def declaration_argument_names(decl_stmt: cst.Assign) -> set[str]:
     return names - set(dir(builtins))
 
 
-def is_safe_to_localize(origin: cst.Module, name: str) -> UnsafeReason | None:
-    """Return None if `name` is safe to duplicate as a local declaration, else the reason it isn't.
+@dataclass(frozen=True)
+class RefusalRule[**P]:
+    """One reason to refuse a type parameter, and the check that decides whether it applies.
 
-    Its constructor (TypeVar/ParamSpec/TypeVarTuple) must not be imported inside a module-level
-    `if`/`try` block at the origin (ORIGIN_IMPORTS_CONSTRUCTOR_CONDITIONALLY), since which
-    implementation it binds then depends on the runtime or the type checker, e.g. `typing_extensions`
-    below 3.13 or under `TYPE_CHECKING`.
+    Attributes:
+        reason: What the report says when the check refuses.
+        refuses: Return True if the reason applies to the arguments the rule's stage passes.
+
+    """
+
+    reason: UnsafeReason
+    refuses: Callable[P, bool]
+
+
+def _first_refusal[**P](rules: Iterable[RefusalRule[P]], *args: P.args, **kwargs: P.kwargs) -> UnsafeReason | None:
+    """Return the reason of the first rule that refuses, or None if none does."""
+    return next((rule.reason for rule in rules if rule.refuses(*args, **kwargs)), None)
+
+
+def _has_no_pep695_equivalent(declaration: cst.Assign, _min_python: tuple[int, int]) -> bool:
+    """Return True if the declaration passes an argument that PEP 695 syntax can't carry over."""
+    return has_unconvertible_argument(declaration)
+
+
+def _needs_newer_python(declaration: cst.Assign, min_python: tuple[int, int]) -> bool:
+    """Return True if the declaration has a `default=` (PEP 696) and min_python is below the 3.13 that introduced it."""
+    return declared_default(declaration) is not None and min_python < PEP_696_MINIMUM
+
+
+def _is_exported(module: cst.Module, name: str, _project_wide_imported_names: frozenset[str]) -> bool:
+    """Return True if the module lists `name` in a plain `__all__ = [...]`."""
+    dunder_all = _find_dunder_all(module)
+    return dunder_all is not None and name in dunder_all
+
+
+def _is_imported_elsewhere(_module: cst.Module, name: str, project_wide_imported_names: frozenset[str]) -> bool:
+    """Return True if another file in the target project imports `name` directly, regardless of `__all__`."""
+    return name in project_wide_imported_names
+
+
+def _origin_imports_constructor_conditionally(origin: cst.Module, name: str) -> bool:
+    """Return True if the origin imports the constructor of `name` inside a module-level `if`/`try` block.
+
+    Which implementation the constructor binds then depends on the runtime or the type checker, e.g.
+    `typing_extensions` below 3.13 or under `TYPE_CHECKING`.
     """
     declaration = find_type_param_declarations(origin).get(name)
-    if declaration is not None and imports_name_conditionally(origin, type_param_constructor_name(declaration)):
-        return UnsafeReason.ORIGIN_IMPORTS_CONSTRUCTOR_CONDITIONALLY
-    return None
+    return declaration is not None and imports_name_conditionally(origin, type_param_constructor_name(declaration))
+
+
+# Each stage reports the first rule that refuses, so the order is the order of precedence. Commenting out
+# a rule switches it off; the rules a pipeline step enforces by its own structure are not listed here
+# (USED_IN_GENERIC_CLASS, SHARES_FUNCTION_WITH_UNCONVERTIBLE, NAME_NOT_AT_MODULE_LEVEL).
+CONVERSION_RULES: tuple[RefusalRule[[cst.Assign, tuple[int, int]]], ...] = (
+    RefusalRule(UnsafeReason.NO_PEP695_EQUIVALENT, _has_no_pep695_equivalent),
+    RefusalRule(UnsafeReason.PEP696_VERSION_GATE, _needs_newer_python),
+)
+REMOVAL_RULES: tuple[RefusalRule[[cst.Module, str, frozenset[str]]], ...] = (
+    RefusalRule(UnsafeReason.DECLARED_TYPEVAR_EXPORTED, _is_exported),
+    RefusalRule(UnsafeReason.IMPORTED_ELSEWHERE_IN_PROJECT, _is_imported_elsewhere),
+)
+LOCALIZATION_RULES: tuple[RefusalRule[[cst.Module, str]], ...] = (
+    RefusalRule(UnsafeReason.ORIGIN_IMPORTS_CONSTRUCTOR_CONDITIONALLY, _origin_imports_constructor_conditionally),
+)
+
+
+def conversion_refusal(declaration: cst.Assign, min_python: tuple[int, int]) -> UnsafeReason | None:
+    """Return None if `declaration` can become a PEP 695 type parameter on a target with `min_python`, else why not."""
+    return _first_refusal(CONVERSION_RULES, declaration, min_python)
+
+
+def is_safe_to_localize(origin: cst.Module, name: str) -> UnsafeReason | None:
+    """Return None if `name` is safe to duplicate as a local declaration, else the reason it isn't."""
+    return _first_refusal(LOCALIZATION_RULES, origin, name)
 
 
 def is_safe_to_remove(
@@ -187,18 +250,11 @@ def is_safe_to_remove(
     name: str,
     project_wide_imported_names: frozenset[str] = frozenset(),
 ) -> UnsafeReason | None:
-    """Return None if this file's own binding of `name` may be removed or replaced.
+    """Return None if this file's own binding of `name` may be removed or replaced, else the reason it may not.
 
-    Otherwise returns the reason it may not: DECLARED_TYPEVAR_EXPORTED if exported via a plain `__all__ = [...]`,
-    or IMPORTED_ELSEWHERE_IN_PROJECT if `name` is in `project_wide_imported_names` (another file in
-    the target project imports it directly, regardless of `__all__`).
+    `project_wide_imported_names` holds the names other files of the target project import from this one.
     """
-    dunder_all = _find_dunder_all(module)
-    if dunder_all is not None and name in dunder_all:
-        return UnsafeReason.DECLARED_TYPEVAR_EXPORTED
-    if name in project_wide_imported_names:
-        return UnsafeReason.IMPORTED_ELSEWHERE_IN_PROJECT
-    return None
+    return _first_refusal(REMOVAL_RULES, module, name, project_wide_imported_names)
 
 
 def uses_of(root: PythonCstNode, name: str, decl_stmt: cst.Assign) -> list[PythonCstNode]:

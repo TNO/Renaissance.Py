@@ -14,8 +14,8 @@ from typing import cast
 import pytest
 from hamcrest import assert_that, contains_string, equal_to, has_entry, not_
 
-from renaissance.recipes.type_parameter_check import MIN_SUPPORTED_PYTHON, PEP_696_MINIMUM, TypeParameterCheck
-from renaissance.recipes.type_parameter_rules import UnsafeReason
+from renaissance.recipes.type_parameter_check import MIN_SUPPORTED_PYTHON, TypeParameterCheck
+from renaissance.recipes.type_parameter_rules import PEP_696_MINIMUM, UnsafeReason
 
 
 def _type_param_name(param: ast.type_param) -> str:
