@@ -374,7 +374,7 @@ python src/rejuvenation/migration-type-recipes.py <path> --py MAJOR.MINOR \
     [--report PATH] [--no-ruff] [--ignore FILE...] [--no-localization] [--second-pass]
 ```
 
-- `<path>`: a `.py` file or a directory, scanned recursively (`.git`, `__pycache__`, `.venv` and `venv` skipped).
+- `<path>`: a `.py` file or a directory, scanned recursively, skipping version-control, cache and environment directories.
 - `--py` (required): the oldest Python version the target project supports, 3.12 or higher.
 - `--report`: also write the report to a file.
 - `--no-ruff`: skip the final `ruff` pass.
