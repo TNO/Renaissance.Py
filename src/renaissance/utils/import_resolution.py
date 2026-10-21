@@ -4,7 +4,7 @@
 # of this repository, also available at:
 # https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
-"""Resolve project-internal `from X import Y` statements to the .py file they import from, and re-anchor them on other files."""
+"""Read the import statements of a module, and resolve project-internal `from X import Y` to the .py file they import from."""
 
 from collections.abc import Sequence
 from pathlib import Path
@@ -13,6 +13,8 @@ from typing import cast
 import libcst as cst
 from libcst import matchers
 from libcst.helpers import get_full_name_for_node
+
+from renaissance.utils.cst_utils import assigned_names, module_statements
 
 
 def import_from_module(statement: cst.ImportFrom) -> str | None:
@@ -23,6 +25,65 @@ def import_from_module(statement: cst.ImportFrom) -> str | None:
 def imported_name(alias: cst.ImportAlias) -> str:
     """Return the name an import alias binds: its `as` name if it has one, else the imported name."""
     return alias.evaluated_alias or alias.evaluated_name
+
+
+def import_from_text(statement: cst.ImportFrom) -> str:
+    """Return what follows `from` in an import-from: its leading dots and dotted module, e.g. "..pkg.mod"."""
+    return "." * len(statement.relative) + (import_from_module(statement) or "")
+
+
+def is_import_line(statement: cst.BaseStatement) -> bool:
+    """Return True if statement is a line made only of import statements."""
+    return isinstance(statement, cst.SimpleStatementLine) and all(
+        isinstance(small, cst.Import | cst.ImportFrom) for small in statement.body
+    )
+
+
+def from_import_sources(module: cst.Module) -> dict[str, tuple[str, int] | None]:
+    """Map every name bound at module level to its `from` import's (module, level), or None if bound otherwise.
+
+    Names bound by a class, function, assignment or plain `import` map to None.
+    """
+    sources: dict[str, tuple[str, int] | None] = {}
+    for statement in module_statements(module):
+        if isinstance(statement, cst.ImportFrom):
+            source = (import_from_module(statement) or "", len(statement.relative))
+            if isinstance(statement.names, cst.ImportStar):
+                sources["*"] = source
+            else:
+                for alias in statement.names:
+                    sources[imported_name(alias)] = source
+        elif isinstance(statement, cst.Import):
+            for alias in statement.names:
+                sources[imported_name(alias).split(".")[0]] = None
+        elif isinstance(statement, cst.ClassDef | cst.FunctionDef):
+            sources[statement.name.value] = None
+        elif isinstance(statement, cst.Assign | cst.AnnAssign):
+            sources.update(dict.fromkeys(assigned_names(statement)))
+    return sources
+
+
+def from_import_binding(module: cst.Module, name: str) -> tuple[cst.ImportFrom, cst.ImportAlias] | None:
+    """Return the module-level `from` import and the alias that bind name, or None if another statement binds it last."""
+    if from_import_sources(module).get(name) is None:
+        return None
+    binding: tuple[cst.ImportFrom, cst.ImportAlias] | None = None
+    for statement in module_statements(module):
+        if isinstance(statement, cst.ImportFrom) and not isinstance(statement.names, cst.ImportStar):
+            binding = next(((statement, alias) for alias in statement.names if imported_name(alias) == name), binding)
+    return binding
+
+
+def imports_name_conditionally(module: cst.Module, name: str) -> bool:
+    """Return True if an import inside a module-level `if`/`try` block binds `name`."""
+    for statement in module.body:
+        if not isinstance(statement, cst.If | cst.Try | cst.TryStar):
+            continue
+        for node in matchers.findall(statement, matchers.Import() | matchers.ImportFrom()):
+            names = cast("cst.Import | cst.ImportFrom", node).names
+            if not isinstance(names, cst.ImportStar) and any(imported_name(alias).split(".")[0] == name for alias in names):
+                return True
+    return False
 
 
 def resolve_project_module(importing_file: Path, project_root: Path, module: str | None, level: int) -> Path | None:
