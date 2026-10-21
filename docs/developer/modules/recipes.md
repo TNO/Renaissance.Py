@@ -21,7 +21,9 @@ safely cover. This page covers `TypeParameterCheck`, the recipe behind
 ## Location
 
 - `src/renaissance/recipes/type_parameter_check.py`: the `TypeParameterCheck` pipeline (orchestration only).
-- `src/renaissance/recipes/type_parameter_rules.py`: the refusal rules and the analysis of declarations and their uses.
+- `src/renaissance/recipes/type_parameter_rules.py`: the reasons a type parameter is left unconverted, and the refusal rules.
+- `src/renaissance/recipes/type_parameter_declarations.py`: reads and rewrites a declaration (`T = TypeVar(...)`).
+- `src/renaissance/recipes/type_parameter_uses.py`: finds where a declared name is used.
 - `src/renaissance/recipes/step_runner.py`: `Step`/`run_steps`, runs fix actions in order and commits only the ones
   that fixed something.
 - `src/renaissance/recipes/python_refactoring.py`: the base class.
@@ -136,7 +138,8 @@ See *Verified by test modules* in [Type parameter modernization](../../user/feat
 
 - A new recipe is a `PythonRefactoring` subclass in its own `snake_case`-named module in `src/renaissance/recipes/`;
   no registration is needed.
-- A new type-parameter-declaring construct: extend `_is_type_param_call` and `type_param_text` together.
+- A new type-parameter-declaring construct: extend `_is_type_param_call` and `type_param_text` together, both in
+  `type_parameter_declarations.py`.
 - A keyword added by a later Python, or future PEP 695 syntax for variance or a bound on `**P`/`*Ts`: add it to
   `_CONVERTIBLE_KEYWORDS` and carry it over in `type_param_text`.
 - A new refusal rule: add a check function and a `RefusalRule` entry to the stage's tuple in `type_parameter_rules.py`,

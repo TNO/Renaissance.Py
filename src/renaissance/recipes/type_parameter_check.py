@@ -16,23 +16,27 @@ import libcst as cst
 from renaissance.integrations.python.ast.cst_node import PythonCstNode
 from renaissance.recipes.python_refactoring import PythonRefactoring
 from renaissance.recipes.step_runner import Step, run_steps
-from renaissance.recipes.type_parameter_rules import (
-    UnsafeReason,
-    conversion_refusal,
+from renaissance.recipes.type_parameter_declarations import (
     declaration_argument_names,
     declaration_text,
     declared_default,
-    declares_type_param,
     find_type_param_declarations,
-    generic_classes,
-    is_safe_to_localize,
-    is_safe_to_remove,
-    owning_function,
-    signature_function,
     trailing_of_sole_statement,
     type_param_constructor_name,
     type_param_text,
     type_params_bracket,
+)
+from renaissance.recipes.type_parameter_rules import (
+    UnsafeReason,
+    conversion_refusal,
+    is_safe_to_localize,
+    is_safe_to_remove,
+)
+from renaissance.recipes.type_parameter_uses import (
+    declares_type_param,
+    generic_classes,
+    owning_function,
+    signature_function,
     uses_of,
 )
 from renaissance.utils.cst_utils import module_statements, names_read_by
