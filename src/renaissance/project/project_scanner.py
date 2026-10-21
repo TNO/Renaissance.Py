@@ -55,7 +55,7 @@ class JavaScanner(ProjectScanner):
 class PythonScanner(ProjectScanner):
     """Scan a directory tree for Python source files."""
 
-    EXCLUDED_DIRS = frozenset({".git", "__pycache__", ".venv", "venv"})
+    EXCLUDED_DIRS = frozenset({".git", "__pycache__", ".pixi", ".venv", "venv"})
     # TODO: incomplete list, extend this list with more files/directories that should always be ignored
 
     def __init__(self, root_dir: str = ".", package_dirs: list[str] | None = None) -> None:
