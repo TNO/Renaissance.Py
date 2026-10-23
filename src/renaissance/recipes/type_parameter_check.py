@@ -7,7 +7,6 @@
 """Recipe that modernizes legacy TypeVar/ParamSpec/TypeVarTuple usage to PEP 695 syntax."""
 
 from collections.abc import Sequence
-from dataclasses import dataclass
 from pathlib import Path
 from typing import cast
 
@@ -17,8 +16,6 @@ from renaissance.integrations.python.ast.cst_node import PythonCstNode
 from renaissance.recipes.python_refactoring import PythonRefactoring
 from renaissance.recipes.step_runner import Step, run_steps
 from renaissance.recipes.type_parameter_declarations import (
-    declaration_argument_names,
-    declaration_text,
     declared_default,
     find_type_param_declarations,
     generic_classes,
@@ -34,11 +31,12 @@ from renaissance.recipes.type_parameter_declarations import (
     type_param_text,
     type_params_bracket,
 )
+from renaissance.recipes.type_parameter_localization import Localization, plan_localizations
 from renaissance.recipes.type_parameter_rules import (
     UnsafeReason,
     conversion_refusal,
-    is_safe_to_localize,
     is_safe_to_remove,
+    mark_unsafe,
 )
 from renaissance.recipes.type_parameter_uses import (
     generic_classes,
@@ -46,31 +44,10 @@ from renaissance.recipes.type_parameter_uses import (
     signature_function,
     uses_of,
 )
-from renaissance.utils.cst_utils import module_statements, names_read_by, trailing_of_sole_statement
-from renaissance.utils.import_resolution import (
-    from_import_binding,
-    from_import_sources,
-    import_from_module,
-    import_from_text,
-    imported_name,
-    is_import_line,
-    rebase_relative_module,
-    resolve_project_module,
-)
+from renaissance.utils.cst_utils import names_read_by, trailing_of_sole_statement
+from renaissance.utils.import_resolution import is_import_line
 
 MIN_SUPPORTED_PYTHON = (3, 12)
-
-
-@dataclass(frozen=True)
-class _Localization:
-    """The type parameter names one import statement brings in that are localized, and the text that replaces them."""
-
-    line: cst.SimpleStatementLine
-    raw: cst.ImportFrom
-    names: frozenset[str]
-    kept: list[cst.ImportAlias]
-    imports: list[str]
-    declarations: list[str]
 
 
 class TypeParameterCheck(PythonRefactoring[PythonCstNode]):
@@ -154,7 +131,7 @@ class TypeParameterCheck(PythonRefactoring[PythonCstNode]):
         for name, (param, candidates) in convertible.items():
             allowed = [function for function in candidates if id(function) not in blocked]
             if not allowed:
-                self._mark_unsafe(results, self.converted_unsafe_reasons, name, UnsafeReason.SHARES_FUNCTION_WITH_UNCONVERTIBLE)
+                mark_unsafe(results, self.converted_unsafe_reasons, name, UnsafeReason.SHARES_FUNCTION_WITH_UNCONVERTIBLE)
                 continue
             for function in allowed:
                 new_params.setdefault(id(function), (function, []))[1].append(param)
@@ -193,11 +170,11 @@ class TypeParameterCheck(PythonRefactoring[PythonCstNode]):
             candidates = [function for function in functions if function not in in_generic_class]
             if not candidates:
                 if in_generic_class:
-                    self._mark_unsafe(results, self.converted_unsafe_reasons, name, UnsafeReason.USED_IN_GENERIC_CLASS)
+                    mark_unsafe(results, self.converted_unsafe_reasons, name, UnsafeReason.USED_IN_GENERIC_CLASS)
                 continue
             reason = conversion_refusal(decl_stmt, self.min_python)
             if reason is not None:
-                self._mark_unsafe(results, self.converted_unsafe_reasons, name, reason)
+                mark_unsafe(results, self.converted_unsafe_reasons, name, reason)
                 blocked.update(id(function) for function in candidates)
                 continue
 
@@ -263,18 +240,13 @@ class TypeParameterCheck(PythonRefactoring[PythonCstNode]):
 
             reason = is_safe_to_remove(module, name, self.project_wide_imported_names)
             if reason is not None:
-                self._mark_unsafe(results, self.orphaned_unsafe_reasons, name, reason)
+                mark_unsafe(results, self.orphaned_unsafe_reasons, name, reason)
                 continue
 
             self._remove_declaration(decl_stmt)
             results[name] = "fixed"
 
         return results
-
-    def _mark_unsafe(self, results: dict[str, str], reasons: dict[str, UnsafeReason], name: str, reason: UnsafeReason) -> None:
-        """Record `name` as unsafe with `reason` in both `results` (status) and `reasons` (why)."""
-        results[name] = "unsafe"
-        reasons[name] = reason
 
     def _remove_declaration(self, decl_stmt: cst.Assign) -> None:
         """Remove decl_stmt's statement from the file, with the comment trailing it when it is alone on its line."""
@@ -295,209 +267,27 @@ class TypeParameterCheck(PythonRefactoring[PythonCstNode]):
         the origin gets each one from. The added imports (each once per file) and declarations go after the
         file's last import, so no import is left below code. A declaration stays where its import was when a
         statement in between uses it.
-        It is unsafe when is_safe_to_localize rejects the origin or _argument_imports returns None.
+        It is unsafe when is_safe_to_localize rejects the origin or a name its declaration's arguments use isn't
+        available as the same object at module level.
         Names from an ignore_localize_origins file, or all names when localize_imports is False, keep their import
         and go to self.ignored_names instead.
         Returns {name: "fixed" | "unsafe"}, with each UnsafeReason on self.cross_file_unsafe_reasons.
         """
-        results: dict[str, str] = {}
-        self.cross_file_unsafe_reasons: dict[str, UnsafeReason] = {}
-        module = self._cst_root().translation_unit.atu
-
         project_root = self.project_root if self.project_root is not None else Path(self.filename).parent
-        for line in module.body:
-            if not isinstance(line, cst.SimpleStatementLine):
-                continue
-            for statement in line.body:
-                if not isinstance(statement, cst.ImportFrom):
-                    continue
-                origin_path = resolve_project_module(
-                    Path(self.filename), project_root, import_from_module(statement), len(statement.relative)
-                )
-                if origin_path is None:
-                    continue
-                self._localize_names_from(line, statement, origin_path, results)
+        plan = plan_localizations(
+            self._cst_root().translation_unit.atu,
+            Path(self.filename),
+            project_root,
+            localize_imports=self.localize_imports,
+            ignore_origins=self.ignore_localize_origins,
+        )
+        self.cross_file_unsafe_reasons: dict[str, UnsafeReason] = plan.unsafe_reasons
+        self.type_param_kinds.update(plan.kinds)
+        self.ignored_names |= plan.ignored_names
+        self._place_localizations(plan.localizations)
+        return plan.results
 
-        return results
-
-    def _localize_names_from(
-        self,
-        line: cst.SimpleStatementLine,
-        raw: cst.ImportFrom,
-        origin_path: Path,
-        results: dict[str, str],
-        localizations: list[_Localization],
-    ) -> None:
-        """Localize every safe type parameter name that raw, on line, imports from the origin_path file.
-
-        Records each name in results as "fixed" or, via _mark_unsafe, as "unsafe", its kind on
-        self.type_param_kinds, and appends what to write for the "fixed" ones to localizations.
-        """
-        if isinstance(raw.names, cst.ImportStar):
-            return
-        origin = self._parse_origin(origin_path)
-        declarations = find_type_param_declarations(origin)
-        localized: dict[str, cst.Assign] = {}
-        needed_imports: list[str] = []
-
-        for alias in raw.names:
-            # TODO(FrancescoPezzella): `from x import T as U` is not currently being caught, tbd
-            #  https://github.com/TNO/Renaissance.Py/issues/279
-            name = alias.evaluated_name
-            if alias.asname is not None or name not in declarations:
-                continue
-
-            decl_stmt = declarations[name]
-            self.type_param_kinds[name] = type_param_constructor_name(decl_stmt)
-            if not self.localize_imports or origin_path in self.ignore_localize_origins:
-                self.ignored_names.add(name)
-                continue
-            reason = is_safe_to_localize(origin, name)
-            if reason is not None:
-                self._mark_unsafe(results, self.cross_file_unsafe_reasons, name, reason)
-                continue
-            argument_imports = self._argument_imports(origin, origin_path, raw, decl_stmt)
-            if argument_imports is None:
-                self._mark_unsafe(results, self.cross_file_unsafe_reasons, name, UnsafeReason.NAME_NOT_AT_MODULE_LEVEL)
-                continue
-
-            constructor_import = self._missing_constructor_import(origin, origin_path, raw, decl_stmt)
-            for needed in [constructor_import, *argument_imports]:
-                if needed is not None and needed not in needed_imports:
-                    needed_imports.append(needed)
-            localized[name] = decl_stmt
-            results[name] = "fixed"
-
-        if not localized:
-            return
-        localizations.append(self._localization(line, raw, origin, localized, needed_imports))
-
-    @staticmethod
-    def _parse_origin(origin_path: Path) -> cst.Module:
-        """Return the parsed origin_path file.
-
-        Raises:
-            SyntaxError: if the file can't be parsed, with origin_path as its filename.
-
-        """
-        try:
-            return cst.parse_module(origin_path.read_text(encoding="utf-8"))
-        except cst.ParserSyntaxError as error:
-            raise SyntaxError(error.message, (str(origin_path), error.raw_line, error.raw_column + 1, None)) from error
-
-    def _missing_constructor_import(
-        self,
-        origin: cst.Module,
-        origin_path: Path,
-        via: cst.ImportFrom,
-        decl_stmt: cst.Assign,
-    ) -> str | None:
-        """Return the "from module import Ctor" line the localized declaration needs, or None if this file has it.
-
-        The module is the one the origin imports the constructor from, as named from this file, which
-        reaches the origin (origin_path) through via. If this file can't name that module, the
-        constructor is imported from the origin module itself.
-        """
-        ctor_name = type_param_constructor_name(decl_stmt)
-        ctor_source = from_import_sources(origin).get(ctor_name)
-        if ctor_source is None:
-            return None
-
-        via_module = import_from_module(via)
-        ctor_module = rebase_relative_module(via_module, len(via.relative), origin_path, ctor_source[0] or None, ctor_source[1])
-        ctor_module = ctor_module or import_from_text(via)
-
-        # TODO(FrancescoPezzella): the constructor already imported here from another module (e.g. `typing` vs the origin's
-        #  `typing_extensions`) isn't matched, so a second, shadowing import of the same name is added.
-        #  https://github.com/TNO/Renaissance.Py/issues/279
-        for statement in module_statements(self._cst_root().translation_unit.atu):
-            if (
-                isinstance(statement, cst.ImportFrom)
-                and not isinstance(statement.names, cst.ImportStar)
-                and import_from_text(statement) == ctor_module
-                and any(imported_name(alias) == ctor_name for alias in statement.names)
-            ):
-                return None
-
-        return f"from {ctor_module} import {ctor_name}"
-
-    def _argument_imports(
-        self,
-        origin: cst.Module,
-        origin_path: Path,
-        raw: cst.ImportFrom,
-        decl_stmt: cst.Assign,
-    ) -> list[str] | None:
-        """Return the import lines for the names decl_stmt's arguments use that this file doesn't have, sorted by name.
-
-        A name this file already imports from the origin module (or from the same absolute module the
-        origin imports it from) is fine and not returned. Returns None if one of the names isn't available
-        as the same object at module level: the origin doesn't bind it at runtime (e.g. only under
-        `if TYPE_CHECKING:`), or this file binds it to something else.
-        """
-        origin_sources = from_import_sources(origin)
-        importing_sources = from_import_sources(self._cst_root().translation_unit.atu)
-        imports: list[str] = []
-        for name in sorted(declaration_argument_names(decl_stmt)):
-            if name not in origin_sources:
-                return None
-            if name not in importing_sources:
-                imports.append(self._argument_import(origin, origin_path, raw, name))
-                continue
-            origin_source = origin_sources[name]
-            accepted = {(import_from_module(raw) or "", len(raw.relative))}
-            if origin_source is not None and origin_source[1] == 0:
-                accepted.add(origin_source)
-            if importing_sources[name] not in accepted:
-                return None
-        return imports
-
-    def _argument_import(self, origin: cst.Module, origin_path: Path, via: cst.ImportFrom, name: str) -> str:
-        """Return the import line for name, which a localized declaration uses and the origin binds at module level.
-
-        A name the origin imports is imported from the module it gets it from, as named from this file, which
-        reaches the origin (origin_path) through via. Any other name, or one this file can't name the module
-        of, is imported from the origin module itself.
-        """
-        binding = from_import_binding(origin, name)
-        if binding is not None:
-            statement, alias = binding
-            module = rebase_relative_module(
-                import_from_module(via),
-                len(via.relative),
-                origin_path,
-                import_from_module(statement) or None,
-                len(statement.relative),
-            )
-            if module is not None:
-                imported = alias.evaluated_name
-                return f"from {module} import {name if imported == name else f'{imported} as {name}'}"
-        return f"from {import_from_text(via)} import {name}"
-
-    @staticmethod
-    def _localization(
-        line: cst.SimpleStatementLine,
-        raw: cst.ImportFrom,
-        origin: cst.Module,
-        declarations: dict[str, cst.Assign],
-        needed_imports: list[str],
-    ) -> _Localization:
-        """Return what replaces the names of declarations that the import raw, on line, brings in.
-
-        The declarations keep their original formatting and the comment trailing them. needed_imports are the
-        imports they need (their constructors, names their arguments use) that this file doesn't have yet. The
-        kept aliases are the names raw imports that are not localized.
-        """
-        kept = [alias for alias in cast("Sequence[cst.ImportAlias]", raw.names) if imported_name(alias) not in declarations]
-        if kept and raw.rpar is None:
-            # Without parentheses, a trailing comma after the last name is a syntax error.
-            kept[-1] = kept[-1].with_changes(comma=cst.MaybeSentinel.DEFAULT)
-        # TODO(FrancescoPezzella): the comment lines above a declaration are not copied: the rewriter only handles a one-line comment.
-        #  https://github.com/TNO/Renaissance.Py/issues/189
-        texts = [declaration_text(origin, decl) for decl in declarations.values()]
-        return _Localization(line, raw, frozenset(declarations), kept, needed_imports, texts)
-
-    def _place_localizations(self, localizations: list[_Localization]) -> None:
+    def _place_localizations(self, localizations: list[Localization]) -> None:
         """Write each localization: its import is narrowed or dropped, and what replaces its names goes after the last import.
 
         The needed imports come first, each once, then the declarations. If every import of the file is dropped, they
@@ -560,7 +350,7 @@ class TypeParameterCheck(PythonRefactoring[PythonCstNode]):
         )
         return anchor, True
 
-    def _write_in_place(self, item: _Localization) -> None:
+    def _write_in_place(self, item: Localization) -> None:
         """Replace the names of item where its import is: its needed imports and declarations follow the kept names, if any."""
         wrappers = self._cst_root().translation_unit.wrappers
         text = "\n".join([*item.imports, *item.declarations])
@@ -570,7 +360,7 @@ class TypeParameterCheck(PythonRefactoring[PythonCstNode]):
         self._narrow(item)
         self.insert_after(f"\n{text}", wrappers[item.line], include_whitespace=False, include_comments=True)
 
-    def _drop(self, item: _Localization) -> None:
+    def _drop(self, item: Localization) -> None:
         """Remove the import of item, with the comment trailing it, from its line."""
         wrappers = self._cst_root().translation_unit.wrappers
         targets = [wrappers[item.raw]]
@@ -579,13 +369,13 @@ class TypeParameterCheck(PythonRefactoring[PythonCstNode]):
             targets.append(wrappers[comment])
         self.remove(targets, include_comments=False)
 
-    def _narrow(self, item: _Localization) -> None:
+    def _narrow(self, item: Localization) -> None:
         """Replace the import of item with one that only imports its kept names, keeping its comments."""
         module = self._cst_root().translation_unit.atu
         narrowed = module.code_for_node(item.raw.with_changes(names=item.kept, semicolon=cst.MaybeSentinel.DEFAULT))
         self.replace(narrowed, self._cst_root().translation_unit.wrappers[item.raw], include_whitespace=False, include_comments=False)
 
-    def _goes_after_last_import(self, item: _Localization, body: Sequence[cst.BaseStatement], anchor: int) -> bool:
+    def _goes_after_last_import(self, item: Localization, body: Sequence[cst.BaseStatement], anchor: int) -> bool:
         """Return True if item can be written after body[anchor], the last import that stays.
 
         It can't when its import would be dropped from a line with other statements, or when a statement
