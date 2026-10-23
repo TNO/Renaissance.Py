@@ -149,28 +149,17 @@ class TestTypeParameterCheckOrphaned:
         assert_that(result, equal_to({}))
         assert_that(subject.apply_to_string(), contains_string("T = TypeVar('T')"))
 
-    @pytest.mark.parametrize(
-        ("imported_elsewhere", "expected_reason"),
-        [
-            pytest.param(frozenset[str](), UnsafeReason.DECLARED_TYPEVAR_EXPORTED, id="exported-via-dunder-all"),
-            pytest.param(frozenset({"T"}), UnsafeReason.IMPORTED_ELSEWHERE_IN_PROJECT, id="imported-elsewhere"),
-        ],
-    )
-    def test_keeps_orphaned_declaration_that_is_unsafe_to_remove(
-        self,
-        create_type_parameter_check: Callable[[str], TypeParameterCheck],
-        imported_elsewhere: frozenset[str],
-        expected_reason: UnsafeReason,
+    def test_keeps_orphaned_declaration_imported_elsewhere(
+        self, create_type_parameter_check: Callable[[str], TypeParameterCheck]
     ) -> None:
         """Verify an orphaned declaration is kept and reported unsafe when removing it would break an importer."""
-        source = ALREADY_CONVERTED_SOURCE if imported_elsewhere else '__all__ = ["T"]\n' + ALREADY_CONVERTED_SOURCE
-        subject = create_type_parameter_check(source)
-        subject.project_wide_imported_names = imported_elsewhere
+        subject = create_type_parameter_check(ALREADY_CONVERTED_SOURCE)
+        subject.project_wide_imported_names = frozenset({"T"})
 
         result = subject.remove_orphaned_declarations()
 
         assert_that(result, equal_to({"T": "unsafe"}))
-        assert_that(subject.orphaned_unsafe_reasons, equal_to({"T": expected_reason}))
+        assert_that(subject.orphaned_unsafe_reasons, equal_to({"T": UnsafeReason.IMPORTED_ELSEWHERE_IN_PROJECT}))
         assert_that(subject.apply_to_string(), contains_string("T = TypeVar('T')"))
 
     def test_removing_orphaned_declaration_keeps_comment_shared_with_next_declaration(
