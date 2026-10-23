@@ -21,7 +21,6 @@ from renaissance.recipes.type_parameter_declarations import (
     declaration_text,
     declared_default,
     find_type_param_declarations,
-    trailing_of_sole_statement,
     type_param_constructor_name,
     type_param_text,
     type_params_bracket,
@@ -38,7 +37,7 @@ from renaissance.recipes.type_parameter_uses import (
     signature_function,
     uses_of,
 )
-from renaissance.utils.cst_utils import module_statements, names_read_by
+from renaissance.utils.cst_utils import module_statements, names_read_by, trailing_of_sole_statement
 from renaissance.utils.import_resolution import (
     from_import_binding,
     from_import_sources,

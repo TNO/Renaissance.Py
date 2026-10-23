@@ -30,7 +30,8 @@ safely cover. This page covers `TypeParameterCheck`, the recipe behind
 - `src/renaissance/utils/import_resolution.py`: the import statements of a module and what they bind, the resolution of
   `from X import Y` to a file in the project, the re-anchoring of one file's relative import on another file, and the
   names each project file imports from the others.
-- `src/renaissance/utils/cst_utils.py`: a module's top-level statements and the names they read or bind.
+- `src/renaissance/utils/cst_utils.py`: a module's top-level statements, the names they read or bind and the comment
+  trailing a statement's line.
 
 ## Public entry points
 
@@ -146,7 +147,6 @@ See *Verified by test modules* in [Type parameter modernization](../../user/feat
   a message and anchor to `UNSAFE_RULES`, and a section to the feature page.
 - A new version gate uses the syntax's own minimum Python from its PEP, not a value copied from another gate.
 - Re-exports through `__init__.py` or namespace packages (PEP 420): extend `resolve_project_module`.
-- `Step`/`run_steps` is generic and can be reused by any recipe.
 - `Step`/`run_steps` is generic and can be reused by any recipe.
 
 ## Non-goals
