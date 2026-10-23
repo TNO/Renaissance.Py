@@ -176,3 +176,9 @@ def is_safe_to_remove(
     `project_wide_imported_names` holds the names other files of the target project import from this one.
     """
     return _first_refusal(REMOVAL_RULES, module, name, project_wide_imported_names)
+
+
+def mark_unsafe(results: dict[str, str], reasons: dict[str, UnsafeReason], name: str, reason: UnsafeReason) -> None:
+    """Record `name` as unsafe with `reason` in both `results` (status) and `reasons` (why)."""
+    results[name] = "unsafe"
+    reasons[name] = reason

@@ -351,6 +351,7 @@ run the tool again.
 - `test/recipes/test_type_parameter_check_properties.py`
 - `test/recipes/test_type_parameter_check_variance.py`
 - `test/recipes/test_type_parameter_declarations.py`
+- `test/recipes/test_type_parameter_localization.py`
 - `test/recipes/test_type_parameter_rules.py`
 - `test/recipes/test_step_runner.py`
 - `test/recipes/test_python_refactoring.py`
@@ -362,7 +363,7 @@ run the tool again.
 
 - [Refactoring recipes](../../developer/modules/recipes.md)
 - `src/renaissance/recipes/type_parameter_check.py`, `type_parameter_rules.py`, `type_parameter_declarations.py`,
-  `type_parameter_uses.py`, `step_runner.py` and `python_refactoring.py`.
+  `type_parameter_localization.py`, `type_parameter_uses.py`, `step_runner.py` and `python_refactoring.py`.
 - `src/renaissance/utils/import_resolution.py` and `cst_utils.py`
 - `src/rejuvenation/migration-type-recipes.py` (the CLI)
 

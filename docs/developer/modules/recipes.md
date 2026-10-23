@@ -20,9 +20,11 @@ safely cover. This page covers `TypeParameterCheck`, the recipe behind
 
 ## Location
 
-- `src/renaissance/recipes/type_parameter_check.py`: the `TypeParameterCheck` pipeline (orchestration only).
+- `src/renaissance/recipes/type_parameter_check.py`: the `TypeParameterCheck` pipeline and the edits its phases write.
 - `src/renaissance/recipes/type_parameter_rules.py`: the reasons a type parameter is left unconverted, and the refusal rules.
 - `src/renaissance/recipes/type_parameter_declarations.py`: reads and rewrites a declaration (`T = TypeVar(...)`).
+- `src/renaissance/recipes/type_parameter_localization.py`: decides which imported type parameters get a local
+  declaration, and the imports and text that replace them.
 - `src/renaissance/recipes/type_parameter_uses.py`: finds where a declared name is used.
 - `src/renaissance/recipes/step_runner.py`: `Step`/`run_steps`, runs fix actions in order and commits only the ones
   that fixed something.
