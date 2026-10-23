@@ -12,7 +12,7 @@ from typing import cast
 
 import libcst as cst
 
-from renaissance.utils.cst_utils import module_statements, names_read_by
+from renaissance.utils.cst_utils import module_statements, names_read_by, trailing_of_sole_statement
 
 _CONSTRUCTORS = frozenset({"TypeVar", "ParamSpec", "TypeVarTuple"})
 
@@ -44,14 +44,6 @@ def declaration_text(module: cst.Module, decl_stmt: cst.Assign) -> str:
     if trailing is not None and trailing.comment is not None:
         text += module.code_for_node(trailing.whitespace) + module.code_for_node(trailing.comment)
     return text
-
-
-def trailing_of_sole_statement(module: cst.Module, statement: cst.BaseSmallStatement) -> cst.TrailingWhitespace | None:
-    """Return the whitespace and comment trailing the line of statement in module, or None if the line holds others."""
-    for line in module.body:
-        if isinstance(line, cst.SimpleStatementLine) and len(line.body) == 1 and line.body[0] is statement:
-            return line.trailing_whitespace
-    return None
 
 
 def _call(decl_stmt: cst.Assign) -> cst.Call:
