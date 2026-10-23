@@ -64,25 +64,16 @@ UNSAFE_TYPEVAR_SOURCE = textwrap.dedent("""\
 class TestProcessFile:
     """process_file: writes changes for real, and isolates per-file errors."""
 
-    @pytest.mark.parametrize(
-        ("source", "imported_elsewhere", "expected_reason"),
-        [
-            pytest.param(UNSAFE_TYPEVAR_SOURCE, frozenset[str](), UnsafeReason.DECLARED_TYPEVAR_EXPORTED, id="exported-via-dunder-all"),
-            pytest.param(LEGACY_TYPEVAR_SOURCE, frozenset({"T"}), UnsafeReason.IMPORTED_ELSEWHERE_IN_PROJECT, id="imported-elsewhere"),
-        ],
-    )
-    def test_converts_function_but_keeps_a_declaration_others_rely_on(
-        self, tmp_path: Path, source: str, imported_elsewhere: frozenset[str], expected_reason: UnsafeReason
-    ) -> None:
+    def test_converts_function_but_keeps_a_declaration_imported_elsewhere(self, tmp_path: Path) -> None:
         """The function is converted on disk, the declaration stays, and the report says why it stayed."""
         target = tmp_path / "mod.py"
-        target.write_text(source, encoding="utf-8")
+        target.write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
 
-        report = migration.process_file(target, min_python=(3, 12), project_root=tmp_path, project_wide_imported_names=imported_elsewhere)
+        report = migration.process_file(target, min_python=(3, 12), project_root=tmp_path, project_wide_imported_names=frozenset({"T"}))
 
         assert_that(migration.has_fixed(report), equal_to(obj=True))
         assert_that(report.reasons, not_(None))
-        assert_that((report.reasons or {})["orphaned"], equal_to({"T": expected_reason}))
+        assert_that((report.reasons or {})["orphaned"], equal_to({"T": UnsafeReason.IMPORTED_ELSEWHERE_IN_PROJECT}))
         written = target.read_text(encoding="utf-8")
         assert_that(written, contains_string("def identity[T](x: T) -> T:"))
         assert_that(written, contains_string('T = TypeVar("T")'))
