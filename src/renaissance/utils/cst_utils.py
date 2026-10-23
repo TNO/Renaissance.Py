@@ -4,7 +4,7 @@
 # of this repository, also available at:
 # https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
-"""Helpers over the libcst tree of one module: its top-level statements and the names they read or bind."""
+"""Helpers over the libcst tree of one module: its top-level statements, the names they read or bind and the comment trailing a line."""
 
 from collections.abc import Iterator
 
@@ -18,6 +18,14 @@ def module_statements(module: cst.Module) -> Iterator[cst.BaseSmallStatement | c
             yield from statement.body
         else:
             yield statement
+
+
+def trailing_of_sole_statement(module: cst.Module, statement: cst.BaseSmallStatement) -> cst.TrailingWhitespace | None:
+    """Return the whitespace and comment trailing the line of statement in module, or None if the line holds others."""
+    for line in module.body:
+        if isinstance(line, cst.SimpleStatementLine) and len(line.body) == 1 and line.body[0] is statement:
+            return line.trailing_whitespace
+    return None
 
 
 class _NameCollector(cst.CSTVisitor):
