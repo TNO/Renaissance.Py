@@ -33,7 +33,6 @@ from renaissance.recipes.type_parameter_rules import (
     is_safe_to_remove,
 )
 from renaissance.recipes.type_parameter_uses import (
-    declares_type_param,
     generic_classes,
     owning_function,
     signature_function,
@@ -183,11 +182,7 @@ class TypeParameterCheck(PythonRefactoring[PythonCstNode]):
             #  `class Box[T](Base[T])`, still refusing `covariant=`.
             #  https://github.com/TNO/Renaissance.Py/issues/279
             in_generic_class = [function for function in functions if self._is_inside(function, classes)]
-            candidates = [
-                function
-                for function in functions
-                if function not in in_generic_class and not declares_type_param(cast("cst.FunctionDef", function.node), name)
-            ]
+            candidates = [function for function in functions if function not in in_generic_class]
             if not candidates:
                 if in_generic_class:
                     self._mark_unsafe(results, self.converted_unsafe_reasons, name, UnsafeReason.USED_IN_GENERIC_CLASS)
