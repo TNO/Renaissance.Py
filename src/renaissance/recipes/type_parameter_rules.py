@@ -11,15 +11,15 @@ from dataclasses import dataclass
 from enum import StrEnum
 
 import libcst as cst
+from libcst.codemod import CodemodContext
+from libcst.codemod.visitors import GatherExportsVisitor
 
 from renaissance.recipes.type_parameter_declarations import (
     declared_default,
     find_type_param_declarations,
     has_unconvertible_argument,
-    string_value,
     type_param_constructor_name,
 )
-from renaissance.utils.cst_utils import module_statements
 from renaissance.utils.import_resolution import imports_name_conditionally
 
 PEP_696_MINIMUM = (3, 13)
@@ -182,9 +182,13 @@ def _needs_newer_python(declaration: cst.Assign, min_python: tuple[int, int]) ->
 
 
 def _is_exported(module: cst.Module, name: str, _project_wide_imported_names: frozenset[str]) -> bool:
-    """Return True if the module lists `name` in a plain `__all__ = [...]`."""
-    dunder_all = _find_dunder_all(module)
-    return dunder_all is not None and name in dunder_all
+    """Return True if the module lists `name` in `__all__`, assigned, annotated or extended with `+=`.
+
+    `__all__.extend(...)` and `__all__.append(...)` are not read.
+    """
+    exports = GatherExportsVisitor(CodemodContext())
+    module.visit(exports)
+    return name in exports.explicit_exported_objects
 
 
 def _is_imported_elsewhere(_module: cst.Module, name: str, project_wide_imported_names: frozenset[str]) -> bool:
