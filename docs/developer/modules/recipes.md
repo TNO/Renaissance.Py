@@ -210,10 +210,11 @@ See *Verified by test modules* in [Type parameter modernization](../../user/feat
     the first run turns `main.py` into `def first[T](items: list[T]) -> T: ...`, but keeps `T` in `origin.py`, since
     `main.py` imported it when the run started. A second run removes it.
 
-- Only a plain `__all__ = [...]` is read to detect an exported declaration. In:
+- `__all__.extend(...)` and `__all__.append(...)` are not read to detect an exported declaration. In:
 
     ```python
-    __all__: list[str] = ["T", "first"]
+    __all__ = ["first"]
+    __all__.extend(["T"])
 
     T = TypeVar("T")
 

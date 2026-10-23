@@ -126,8 +126,7 @@ example under *Non-goals* or *Need to fix* in [Refactoring recipes](../../develo
 - Only `__all__` marks a declaration as public, since the tool sees nothing outside the scanned project. One that
   nothing in the project uses is removed, even if other projects import it, as with a shared `types.py`. Name such a
   file with `--ignore` (see *Shared declaration files*).
-- Only a plain `__all__ = [...]` is read. Annotated (`__all__: list[str] = ...`), `+=`, `.extend()` and `.append()`
-  forms are not.
+- `__all__.extend(...)` and `__all__.append(...)` are not read.
 - A `T` used only in the string value of a `TypeAlias` (`A: TypeAlias = "list[T]"`) is seen as unused, so its
   declaration is removed.
 - A function that uses a legacy type parameter that stays imported (e.g. from another package) still gets `[...]`
@@ -216,7 +215,7 @@ using it is left unchanged. Functions that use `Ts` without `P` are still conver
 
 ### A declared type parameter is exported via `__all__` { #feature-type-parameter-modernization-declared-type-parameter-exported }
 
-`T` is in its file's plain `__all__ = [...]`, so it is public API. The functions are converted, the declaration is kept.
+`T` is in its file's `__all__`, so it is public API. The functions are converted, the declaration is kept.
 
 ```python
 __all__ = ["T", "first"]
