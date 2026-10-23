@@ -74,14 +74,6 @@ def type_param_constructor_name(decl_stmt: cst.Assign) -> str:
     return cast("cst.Name", _call(decl_stmt).func).value
 
 
-def string_value(expression: cst.BaseExpression) -> str | None:
-    """Return the value of a plain or concatenated string literal, or None for any other expression."""
-    if isinstance(expression, cst.SimpleString | cst.ConcatenatedString):
-        value = expression.evaluated_value
-        return value if isinstance(value, str) else None
-    return None
-
-
 def declaration_argument_names(decl_stmt: cst.Assign) -> set[str]:
     """Return the non-builtin names a declaration's arguments use, e.g. {"Shape"} for `TypeVar("T", bound=Shape)`.
 
@@ -93,8 +85,7 @@ def declaration_argument_names(decl_stmt: cst.Assign) -> set[str]:
     names: set[str] = set()
     for argument in [*_positional_arguments(call)[1:], *keyword_arguments]:
         expression = argument.value
-        text = string_value(expression)
-        if text is not None:
+        if isinstance(expression, cst.SimpleString | cst.ConcatenatedString) and isinstance(text := expression.evaluated_value, str):
             try:
                 expression = cst.parse_expression(text)
             except cst.ParserSyntaxError:
