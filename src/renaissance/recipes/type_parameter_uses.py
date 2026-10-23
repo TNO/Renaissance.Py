@@ -65,9 +65,3 @@ def generic_classes(uses: Iterable[PythonCstNode]) -> list[PythonCstNode]:
                 break
             child, current = current, current.parent
     return classes
-
-
-def declares_type_param(function: cst.FunctionDef, name: str) -> bool:
-    """Return True if the function declares `name` as its own PEP 695 type parameter (`def f[T](...)`)."""
-    parameters = function.type_parameters
-    return parameters is not None and any(parameter.param.name.value == name for parameter in parameters.params)
