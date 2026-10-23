@@ -54,6 +54,35 @@ class TestTypeParameterCheckConvert:
             assert_that(output, contains_string(signature))
 
     @pytest.mark.parametrize(
+        ("functions", "converted", "untouched"),
+        [
+            pytest.param(
+                "def a[T](x: T) -> T:\n    return x\ndef b(y: T) -> T:\n    return y\n",
+                "def b[T](y: T) -> T:",
+                "def a[T](x: T) -> T:",
+                id="function",
+            ),
+            pytest.param(
+                "class Foo:\n    def a[T](self, x: T) -> T:\n        return x\n    def b(self, y: T) -> T:\n        return y\n",
+                "def b[T](self, y: T) -> T:",
+                "def a[T](self, x: T) -> T:",
+                id="method",
+            ),
+        ],
+    )
+    def test_leaves_function_with_its_own_type_parameter_alone(
+        self, create_type_parameter_check: Callable[[str], TypeParameterCheck], functions: str, converted: str, untouched: str
+    ) -> None:
+        """Verify a function that already declares its own [T] is not rewritten, while another one using the module T is."""
+        subject = create_type_parameter_check(f'from typing import TypeVar\n\n{functions}\nT = TypeVar("T")\n')
+        result = subject.convert_declared_typevars()
+
+        assert_that(result, equal_to({"T": "fixed"}))
+        output = subject.apply_to_string()
+        assert_that(output, contains_string(converted))
+        assert_that(output.count(untouched), equal_to(1))
+
+    @pytest.mark.parametrize(
         "docstring",
         [
             pytest.param('"""One liner."""', id="single-line"),
