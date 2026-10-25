@@ -53,37 +53,35 @@ MIN_SUPPORTED_PYTHON = (3, 12)
 class TypeParameterCheck(PythonRefactoring[PythonCstNode]):
     """Modernize legacy TypeVar/ParamSpec/TypeVarTuple usage in a Python file to PEP 695 syntax.
 
-    See check() for the three phases this runs, in order.
+    Attributes:
+        min_python: Minimum Python version the target codebase supports (default 3.12, where PEP 695 syntax exists).
+        project_wide_imported_names: Names other project files import from this file; never removed.
+        project_root: Root that absolute imports resolve from; the file's own directory if None.
+        ignore_localize_origins: Absolute paths of files whose declarations are never copied into their importers.
+        localize_imports: When False, no declaration is copied into the files importing it.
+        type_param_kinds: Each declared name the phases see, mapped to "TypeVar", "ParamSpec" or "TypeVarTuple".
+        ignored_names: Type parameter names this file imports from an ignored origin, or from any project file when
+            localize_imports is False; they keep their import.
+        cross_file_unsafe_reasons: Why each "unsafe" name of the first phase was refused.
+        converted_unsafe_reasons: The same for the second phase; also holds "fixed" names a generic class still uses.
+        orphaned_unsafe_reasons: The same for the third phase.
+
     """
 
-    # Minimum Python version the target codebase supports, where PEP 695 syntax exists.
     min_python: tuple[int, int] = MIN_SUPPORTED_PYTHON
-
-    # Names other files in the target project import directly from this file; never removed.
     project_wide_imported_names: frozenset[str] = frozenset()
-
-    # Root that absolute imports resolve from; None falls back to this file's own directory.
     project_root: Path | None = None
-
-    # Absolute paths of the files whose declarations are never copied into the files importing them.
     ignore_localize_origins: frozenset[Path] = frozenset()
-
-    # When False, no declaration is copied into the files importing it.
     localize_imports: bool = True
 
     def __init__(self, file: Path) -> None:
-        """Prepare the recipe for file, parsed with the CST backend.
-
-        type_param_kinds maps each type parameter name the phases see to "TypeVar", "ParamSpec" or "TypeVarTuple".
-        ignored_names holds the names this file imports from an ignore_localize_origins file, or all of its
-        imported names when localize_imports is False.
-        """
+        """Prepare the recipe for file, parsed with the CST backend."""
         super().__init__(file, PythonCstNode)
         self.type_param_kinds: dict[str, str] = {}
         self.ignored_names: set[str] = set()
 
     def run(self) -> None:
-        """Entry point called by PythonRefactoring.process(); stores check()'s result."""
+        """Run check() and store its result on self.result."""
         self.result = self.check()
 
     def _cst_root(self) -> PythonCstNode:
@@ -106,17 +104,13 @@ class TypeParameterCheck(PythonRefactoring[PythonCstNode]):
         )
 
     def convert_declared_typevars(self) -> dict[str, str]:
-        """Add a PEP 695 type parameter to every function using a module-level TypeVar/ParamSpec/TypeVarTuple.
+        """Add PEP 695 type parameters to the functions whose signatures use a module-level TypeVar/ParamSpec/TypeVarTuple.
 
-        The declaration is left in place. A use is attributed to the outermost enclosing function whose signature
-        uses the name; a use outside every such signature is not attributed. A `T` that a same-named PEP 695 type
-        parameter of a function or class declares is not a use. Methods of a class generic over the name are never
-        converted. A function that also uses a name whose declaration conversion_refusal rejects is left unchanged,
-        so no function mixes legacy and PEP 695 type parameters. Bounds, constraints and `default=` are carried over
-        in their original formatting, with defaulted type parameters placed last. A name only methods of such a class
-        use, whose declaration is rejected, or whose every function is left unchanged is reported "unsafe", with its
-        UnsafeReason on self.converted_unsafe_reasons. Records each declaration's kind on self.type_param_kinds.
-        Returns {name: "fixed" | "unsafe"}.
+        The declaration stays. Methods of a class generic over the name are left unchanged, and so is a function that
+        also uses a declaration conversion_refusal rejects, so no function mixes legacy and PEP 695 type parameters.
+        Bounds, constraints and `default=` are carried over, defaulted ones last. Returns {name: "fixed" | "unsafe"},
+        with each UnsafeReason on self.converted_unsafe_reasons; a "fixed" name that a generic class still uses gets
+        USED_IN_GENERIC_CLASS there too.
         """
         root = self._cst_root()
         module = root.translation_unit.atu
@@ -199,10 +193,10 @@ class TypeParameterCheck(PythonRefactoring[PythonCstNode]):
         return False
 
     def _add_type_params(self, function: PythonCstNode, params: list[tuple[str, bool]]) -> None:
-        """Add params, given as (text, has_default), to function's PEP 695 type parameters, changing nothing else.
+        """Add params, given as (text, has_default), to function's PEP 695 type parameters.
 
-        A function without a bracket gets one after its name; an existing bracket is rewritten with its own
-        type parameters followed by params, the defaulted ones last.
+        A function without a bracket gets one after its name; an existing bracket is rebuilt with params after its own,
+        defaulted ones last, which drops its comments and line breaks.
         """
         node = cast("cst.FunctionDef", function.node)
         unit = function.translation_unit
@@ -221,12 +215,10 @@ class TypeParameterCheck(PythonRefactoring[PythonCstNode]):
         self.replace(type_params_bracket([*current, *params]), unit.wrappers[existing], include_whitespace=False, include_comments=False)
 
     def remove_orphaned_declarations(self) -> dict[str, str]:
-        """Remove every module-level TypeVar/ParamSpec/TypeVarTuple declaration that nothing uses anymore.
+        """Remove every module-level TypeVar/ParamSpec/TypeVarTuple declaration that nothing uses.
 
-        A declaration is orphaned when uses_of finds no use of its name: every `T` left belongs to a PEP 695
-        type parameter, or there is none. One that is_safe_to_remove rejects is kept and reported "unsafe",
-        with its UnsafeReason on self.orphaned_unsafe_reasons. Records each declaration's kind on
-        self.type_param_kinds. Returns {name: "fixed" | "unsafe"}.
+        A declaration that is_safe_to_remove rejects is kept and reported "unsafe", with its UnsafeReason on
+        self.orphaned_unsafe_reasons. Returns {name: "fixed" | "unsafe"}.
         """
         root = self._cst_root()
         module = root.translation_unit.atu
@@ -263,15 +255,14 @@ class TypeParameterCheck(PythonRefactoring[PythonCstNode]):
         """Replace imports of TypeVar/ParamSpec/TypeVarTuple names from the target project with local declarations.
 
         Imports are resolved against project_root. Where safe, the import is dropped and a copy of the origin's
-        declaration is added, plus imports for the names its arguments use (e.g. `bound=Shape`), from the module
-        the origin gets each one from. The added imports (each once per file) and declarations go after the
-        file's last import, so no import is left below code. A declaration stays where its import was when a
-        statement in between uses it.
-        It is unsafe when is_safe_to_localize rejects the origin or a name its declaration's arguments use isn't
-        available as the same object at module level.
-        Names from an ignore_localize_origins file, or all names when localize_imports is False, keep their import
-        and go to self.ignored_names instead.
-        Returns {name: "fixed" | "unsafe"}, with each UnsafeReason on self.cross_file_unsafe_reasons.
+        declaration, plus the imports it needs, is added after the file's last import. Names from an
+        ignore_localize_origins file, or all names when localize_imports is False, keep their import and go to
+        self.ignored_names. Returns {name: "fixed" | "unsafe"}, with each UnsafeReason on
+        self.cross_file_unsafe_reasons.
+
+        Raises:
+            SyntaxError: if an origin file can't be parsed.
+
         """
         project_root = self.project_root if self.project_root is not None else Path(self.filename).parent
         plan = plan_localizations(
@@ -288,12 +279,12 @@ class TypeParameterCheck(PythonRefactoring[PythonCstNode]):
         return plan.results
 
     def _place_localizations(self, localizations: list[Localization]) -> None:
-        """Write each localization: its import is narrowed or dropped, and what replaces its names goes after the last import.
+        """Write the localizations: narrow or drop each import, then add the needed imports and declarations after the last one.
 
-        The needed imports come first, each once, then the declarations. If every import of the file is dropped, they
-        take the place of the last one. A localization is written where its import is when that import shares its
-        line with other statements and would be dropped, when no import remains to go after, or when a statement
-        between it and the last import reads one of its names.
+        Each needed import is added once, before the declarations; if every import is dropped, they take the place of the
+        last one. A localization is written in place of its import instead when that import shares a line with other
+        statements and would be dropped, when no import remains to go after, or when a statement in between reads one
+        of its names.
         """
         body = self._cst_root().translation_unit.atu.body
         wrappers = self._cst_root().translation_unit.wrappers
@@ -378,9 +369,8 @@ class TypeParameterCheck(PythonRefactoring[PythonCstNode]):
     def _goes_after_last_import(self, item: Localization, body: Sequence[cst.BaseStatement], anchor: int) -> bool:
         """Return True if item can be written after body[anchor], the last import that stays.
 
-        It can't when its import would be dropped from a line with other statements, or when a statement
-        between it and the anchor that isn't an import reads one of its names: moving the declaration
-        down would define it after that use.
+        It can't if its import would be dropped from a line with other statements, or if a non-import statement between
+        that import and the anchor reads one of its names.
         """
         if not item.kept and len(item.line.body) != 1:
             return False
