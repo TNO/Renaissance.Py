@@ -72,10 +72,11 @@ def plan_localizations(
     localize_imports: bool,
     ignore_origins: frozenset[Path],
 ) -> LocalizationPlan:
-    """Decide, for every `from X import ...` of module that resolves to a project file, which type parameters to localize.
+    """Return the plan deciding which type parameters imported by module's `from X import ...` statements to localize.
 
-    Imports are resolved against project_root. Names from a file in ignore_origins, or all names when localize_imports
-    is False, are kept as imports and go to the plan's ignored_names.
+    X is resolved against project_root from filename; only imports that resolve to a project file are considered.
+    Names from a file in ignore_origins, or from any file when localize_imports is False, keep their import and go to
+    the plan's ignored_names. `import *` and aliased names are skipped.
 
     Raises:
         SyntaxError: if an origin file can't be parsed, with its path as the filename.
@@ -161,11 +162,11 @@ class _Planner:
         via: cst.ImportFrom,
         decl_stmt: cst.Assign,
     ) -> str | None:
-        """Return the "from module import Ctor" line the localized declaration needs, or None if this file has it.
+        """Return the "from module import Ctor" line the localized declaration needs, or None if it isn't needed.
 
-        The module is the one the origin imports the constructor from, as named from this file, which
-        reaches the origin (origin_path) through via. If this file can't name that module, the
-        constructor is imported from the origin module itself.
+        None when this file already imports the constructor from that module, or the origin doesn't import it. The
+        module is the one the origin imports the constructor from, as named from this file, which reaches origin_path
+        through via; if this file can't name it, the origin module itself.
         """
         ctor_name = type_param_constructor_name(decl_stmt)
         ctor_source = from_import_sources(origin).get(ctor_name)
@@ -197,12 +198,11 @@ class _Planner:
         raw: cst.ImportFrom,
         decl_stmt: cst.Assign,
     ) -> list[str] | None:
-        """Return the import lines for the names decl_stmt's arguments use that this file doesn't have, sorted by name.
+        """Return the import lines, sorted by name, for the names decl_stmt's arguments use that this file doesn't import yet.
 
-        A name this file already imports from the origin module (or from the same absolute module the
-        origin imports it from) is fine and not returned. Returns None if one of the names isn't available
-        as the same object at module level: the origin doesn't bind it at runtime (e.g. only under
-        `if TYPE_CHECKING:`), or this file binds it to something else.
+        A name already imported from the origin module, or from the module the origin gets it from, needs no line.
+        Returns None if a name isn't available as the same object at module level: the origin doesn't bind it at
+        runtime (e.g. only under `if TYPE_CHECKING:`), or this file binds it to something else.
         """
         origin_sources = from_import_sources(origin)
         importing_sources = from_import_sources(self.module)
