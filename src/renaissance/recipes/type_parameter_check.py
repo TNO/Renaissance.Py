@@ -160,6 +160,8 @@ class TypeParameterCheck(PythonRefactoring[PythonCstNode]):
             # TODO(FrancescoPezzella): convert a class with the name in a base (`class Box(Base[T])`) to
             #  `class Box[T](Base[T])`, still refusing `covariant=`.
             #  https://github.com/TNO/Renaissance.Py/issues/279
+            # Maybe ruff's UP046 could take over one day, if it handles bases other than `Generic`:
+            # https://github.com/astral-sh/ruff/issues/29481
             in_generic_class = [function for function in functions if self._is_inside(function, classes)]
             candidates = [function for function in functions if function not in in_generic_class]
             if not candidates:
