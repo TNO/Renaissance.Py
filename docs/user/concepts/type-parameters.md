@@ -69,4 +69,3 @@ Three kinds of type parameter exist:
 - A PEP 695 type parameter is also a `TypeVar`, `TypeVarTuple` or `ParamSpec` object at runtime (see
   `__type_params__`). This is why "TypeVar" is often used for all three kinds.
 - The documentation says *type parameter* for the general case and *type variable* only for the single-type kind.
-- The recipe class is still named `TypeVarCheck`.
