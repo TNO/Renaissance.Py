@@ -10,6 +10,8 @@ The script's filename is hyphenated (not a legal dotted module path), so it's lo
 importlib.util.spec_from_file_location instead of a normal import - see _load_script().
 """
 
+import ast
+import codecs
 import importlib.util
 import textwrap
 from pathlib import Path
@@ -634,6 +636,66 @@ class TestMainBatchErrorIsolation:
         assert_that(good.read_text(encoding="utf-8"), contains_string("def identity[T]"))
 
 
+class TestMainFileEncoding:
+    """main(): a file's encoding is never changed, and a file that is not UTF-8 is reported instead of aborting the run."""
+
+    @pytest.mark.xfail(
+        strict=True,
+        reason="A UTF-8 byte order mark corrupts the rewritten file: https://github.com/TNO/Renaissance.Py/issues/153",
+    )
+    @pytest.mark.parametrize(
+        "source",
+        [
+            pytest.param(LEGACY_TYPEVAR_SOURCE, id="lf"),
+            pytest.param(LEGACY_TYPEVAR_SOURCE.replace("\n", "\r\n"), id="crlf"),
+        ],
+    )
+    def test_modified_file_keeps_its_utf8_bom_and_still_parses(self, tmp_path: Path, source: str) -> None:
+        """A file that starts with a UTF-8 byte order mark is converted, keeps the mark, and is valid Python afterwards."""
+        target = tmp_path / "mod.py"
+        target.write_bytes(codecs.BOM_UTF8 + source.encode("utf-8"))
+
+        exit_code = migration.main([str(tmp_path), "--py", "3.12", "--no-ruff"])
+
+        assert_that(exit_code, equal_to(0))
+        written = target.read_bytes()
+        assert_that(written.startswith(codecs.BOM_UTF8), equal_to(obj=True))
+        text = written.decode("utf-8-sig")
+        ast.parse(text)
+        assert_that(text, contains_string("def identity[T](x: T) -> T:"))
+
+    @pytest.mark.xfail(
+        strict=True,
+        raises=UnicodeDecodeError,
+        reason="A file that is not UTF-8 aborts the whole run: https://github.com/TNO/Renaissance.Py/issues/188",
+    )
+    @pytest.mark.parametrize(
+        "content",
+        [
+            pytest.param("# café\nx = 1\n".encode("latin-1"), id="latin-1"),
+            pytest.param("# café\nx = 1\n".encode("utf-16"), id="utf-16"),
+        ],
+    )
+    def test_file_that_is_not_utf8_is_reported_and_the_rest_of_the_batch_is_converted(
+        self,
+        tmp_path: Path,
+        capsys: pytest.CaptureFixture[str],
+        content: bytes,
+    ) -> None:
+        """The undecodable file is listed under ERRORS and left byte-identical, and the other file is converted."""
+        good = tmp_path / "good.py"
+        good.write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
+        undecodable = tmp_path / "undecodable.py"
+        undecodable.write_bytes(content)
+
+        exit_code = migration.main([str(tmp_path), "--py", "3.12", "--no-ruff"])
+
+        assert_that(exit_code, equal_to(3))
+        assert_that(capsys.readouterr().out, contains_string("**ERRORS (1)**\n  `undecodable.py`"))
+        assert_that(undecodable.read_bytes(), equal_to(content))
+        assert_that(good.read_text(encoding="utf-8"), contains_string("def identity[T]"))
+
+
 class TestMainProjectWideImportSafety:
     """main(): a TypeVar imported by another file in the batch is localized there and kept at its origin."""
 
@@ -656,6 +718,36 @@ class TestMainProjectWideImportSafety:
         assert_that(consumer_text, not_(contains_string(import_line)))
         assert_that(capsys.readouterr().out, contains_string("    `T`: unused declaration removed\n"))
         assert_that((pkg / "typing_mod.py").read_text(encoding="utf-8"), contains_string('T = TypeVar("T")'))
+
+    @pytest.mark.xfail(
+        strict=True,
+        reason="`import *` is not checked when deciding whether a declaration is imported elsewhere in the project: "
+        "see 'imported by another project file' in docs/user/features/type-parameter-modernization.md",
+    )
+    @pytest.mark.parametrize(
+        ("package", "import_line"),
+        [
+            pytest.param("", "from origin import *", id="absolute"),
+            pytest.param("pkg", "from .origin import *", id="relative"),
+        ],
+    )
+    def test_origin_declaration_survives_a_star_import_of_its_module(self, tmp_path: Path, package: str, import_line: str) -> None:
+        """A declaration that another file reaches through `import *` is kept, and that file is left untouched."""
+        directory = tmp_path / package
+        directory.mkdir(exist_ok=True)
+        if package:
+            (directory / "__init__.py").write_text("", encoding="utf-8")
+        origin = directory / "origin.py"
+        origin.write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
+        consumer = directory / "consumer.py"
+        consumer_source = f"{import_line}\n\n\ndef use(x: T) -> T:\n    return x\n"
+        consumer.write_text(consumer_source, encoding="utf-8")
+
+        exit_code = migration.main([str(tmp_path), "--py", "3.12", "--no-ruff"])
+
+        assert_that(exit_code, equal_to(0))
+        assert_that(origin.read_text(encoding="utf-8"), contains_string('T = TypeVar("T")'))
+        assert_that(consumer.read_text(encoding="utf-8"), equal_to(consumer_source))
 
     @pytest.mark.parametrize("target_arg", [pytest.param(".", id="dot"), pytest.param("pkg", id="subdirectory")])
     def test_origin_declaration_survives_with_relative_target(
