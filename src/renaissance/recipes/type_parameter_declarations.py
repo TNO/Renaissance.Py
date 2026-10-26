@@ -90,6 +90,8 @@ def declaration_argument_names(decl_stmt: cst.Assign) -> set[str]:
 _CONVERTIBLE_KEYWORDS: dict[str, frozenset[str]] = {
     "TypeVar": frozenset({"bound", "default", "infer_variance", "covariant", "contravariant"}),
     "ParamSpec": frozenset({"default", "infer_variance", "covariant", "contravariant"}),
+    # (Py 3.15) TypeVarTuple now accepts bound, covariant, contravariant, and infer_variance keyword arguments,
+    # matching the interface of TypeVar and ParamSpec. bound semantics remain undefined in the specification.
     "TypeVarTuple": frozenset({"default", "infer_variance"}),
 }
 
