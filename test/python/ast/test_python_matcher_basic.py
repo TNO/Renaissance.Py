@@ -7,6 +7,7 @@
 """Tests documenting basic code-to-code matching for the Python pattern matcher."""
 
 from collections.abc import Sequence
+from typing import ClassVar
 
 import pytest
 
@@ -24,7 +25,7 @@ class TestPythonMatcherBasic:
     The test class high-lights the insensitivity of code to comments and white spaces.
     """
 
-    TRIVIA_CLASSES: list[list[str]] = [
+    TRIVIA_CLASSES: ClassVar[list[list[str]]] = [
         [
             "x = 1",
             "x = 1  # This is a comment",  # with comment
@@ -46,15 +47,15 @@ class TestPythonMatcherBasic:
     ]
 
     # generate test cases from equivalence classes
-    PATTERN_FACTORY = PythonPatternFactory(PythonFactory(PythonRstNode))
+    PATTERN_FACTORY: ClassVar[PythonPatternFactory] = PythonPatternFactory(PythonFactory(PythonRstNode))
 
     # a and b have the same type as the return type of PATTERN_FACTORY.create_statements,
     # which is Sequence[NodeProtocol]
     @pytest.mark.parametrize(
-        "a, b, expected",
+        ("a", "b", "expected"),
         make_parametersets_of_equivalence_classes("trivia", PATTERN_FACTORY.create_statements, TRIVIA_CLASSES),
     )
-    def test_pairs_of_equivalence_classes(self, a: Sequence[NodeProtocol], b: Sequence[NodeProtocol], expected: bool) -> None:
+    def test_pairs_of_equivalence_classes(self, a: Sequence[NodeProtocol], b: Sequence[NodeProtocol], *, expected: bool) -> None:
         """AI: Verify code snippet pairs differing only in comments/whitespace match as expected."""
         assert_pair_equivalence(a, b, expected)
 

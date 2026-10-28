@@ -6,6 +6,8 @@
 
 """Tests documenting basic code-to-code matching for the Python AST parser."""
 
+from typing import ClassVar
+
 import pytest
 
 from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
@@ -23,7 +25,7 @@ class TestPythonAstMatcherBasic:
     as used by the AST parser.
     """
 
-    IF_CLASSES: list[list[str]] = [
+    IF_CLASSES: ClassVar[list[list[str]]] = [
         [
             "if c1:\n    pass",  # if then statement
         ],
@@ -36,16 +38,30 @@ class TestPythonAstMatcherBasic:
         ],
     ]
 
+    TYPEHINT_CLASSES: ClassVar[list[list[str]]] = [
+        # type hints comments are ignored
+        # as False is the default value of type_comments in the [ast.parse](https://docs.python.org/3/library/ast.html#ast.parse) function.
+        [
+            "x = 0",  # Assign - no type hint
+            "x = 0 # type: ignore",  # Assign - with ignore type hint in comment
+            "x = 0 # type: int",  # Assign - with type hint `int` in comment
+        ],
+        [
+            "x: int = 0",  # AnnAssign - with type hint `int`
+        ],
+    ]
+
     # generate test cases from equivalence classes
-    PATTERN_FACTORY = PythonPatternFactory(PythonFactory(PythonRstNode))
+    PATTERN_FACTORY: ClassVar[PythonPatternFactory] = PythonPatternFactory(PythonFactory(PythonRstNode))
 
     # a and b have the same type as the return type of PATTERN_FACTORY.create_statement,
     # which is NodeProtocol
     @pytest.mark.parametrize(
-        "a, b, expected",
-        make_parametersets_of_equivalence_classes("if statement", PATTERN_FACTORY.create_statement, IF_CLASSES),
+        ("a", "b", "expected"),
+        make_parametersets_of_equivalence_classes("if statement", PATTERN_FACTORY.create_statement, IF_CLASSES)
+        + make_parametersets_of_equivalence_classes("type hint", PATTERN_FACTORY.create_statement, TYPEHINT_CLASSES),
     )
-    def test_pairs_of_equivalence_classes(self, a: NodeProtocol, b: NodeProtocol, expected: bool) -> None:
+    def test_pairs_of_equivalence_classes(self, a: NodeProtocol, b: NodeProtocol, *, expected: bool) -> None:
         """AI: Verify if-statement pairs from the same or different equivalence classes match as expected."""
         assert_pair_equivalence(a, b, expected)
 
