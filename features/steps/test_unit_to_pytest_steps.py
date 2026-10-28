@@ -9,17 +9,24 @@
 from pytest_bdd import scenario, when
 
 from renaissance.recipes.unit_to_pytest import UnitToPytest
-from steps.test_steps import *  # noqa: F403 -- pytest-bdd step aggregation
+from steps.conftest import FEATURES_BASE_DIR
 
 
-@scenario("convert-unit-to-pytest.feature", "convert unittest to pytest", "utf-8", "..")
+@scenario(
+    "convert-unit-to-pytest.feature",
+    "convert unittest to pytest",
+    encoding="utf-8",
+    features_base_dir=str(FEATURES_BASE_DIR),
+)
 def test_convert_unit_to_pytest() -> None:
     """AI: Scenario test for the 'convert unittest to pytest' scenario."""
 
 
 @when("I convert it to pytest")
 def step_when_convert(context) -> None:
-    """AI: Convert the scenario's unittest file to pytest and re-parse it."""
+    """AI: Convert the scenario's unittest file to pytest in memory and re-parse the result."""
     converter = UnitToPytest(context.file)
+    converter.in_memory = True
     converter.run()
-    context.atu = context.factory.create(context.file)
+    context.signature = converter.apply_to_string()
+    context.atu = context.factory.create_from_text(context.signature, context.file)

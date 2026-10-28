@@ -51,7 +51,7 @@ class TestUnitToPytest:
         assert_that(subject.apply_to_string(), contains_string("class TestClass1:"))
         assert_that(subject.apply_to_string(), contains_string("class TestClass2:"))
 
-    def _create(self, mocker: MockerFixture, text) -> UnitToPytest:
+    def _create(self, mocker: MockerFixture, text: str) -> UnitToPytest:
         code = textwrap.dedent(text)
         mocker.patch(
             "renaissance.integrations.python.ast.factory.PythonFactory.create",
@@ -64,7 +64,7 @@ class TestUnitToPytest:
     def test_convert_plain_assert_same_length_rewrites_to_has_length(self, mocker: MockerFixture) -> None:
         """AI: Verify convert_plain_assert_same_length rewrites a length-equality assert into assert_that/has_length."""
         expected = textwrap.dedent("""
-        def test_asert():
+        def test_assert():
             results = ['1']
             assert_that(results, has_length(1), f"length of results = {len(results)}")
         """)
@@ -72,7 +72,7 @@ class TestUnitToPytest:
         subject = self._create(
             mocker,
             """
-        def test_asert():
+        def test_assert():
             results = ['1']
             count: int = len(results)
             assert 1 == count, "count = " + str(count)
@@ -81,7 +81,27 @@ class TestUnitToPytest:
         subject.convert_plain_assert_same_length()
         assert_that(subject.apply_to_string(), is_(expected))
 
-    def test_restructure_module_injects_methods_when_class_exists(self, mocker: MockerFixture) -> None:
+    def test_convert_plain_assert_same_length_with_variable_on_left(self, mocker: MockerFixture) -> None:
+        """AI: Verify convert_plain_assert_same_length also rewrites 'assert count == 1' into assert_that/has_length."""
+        expected = textwrap.dedent("""
+        def test_assert():
+            results = ['1']
+            assert_that(results, has_length(1), f"length of results = {len(results)}")
+        """)
+
+        subject = self._create(
+            mocker,
+            """
+        def test_assert():
+            results = ['1']
+            count: int = len(results)
+            assert count == 1, "count = " + str(count)
+        """,
+        )
+        subject.convert_plain_assert_same_length()
+        assert_that(subject.apply_to_string(), is_(expected))
+
+    def test_restructure_module_injects_methods_when_class_exists(self, mocker) -> None:
         """AI: Verify restructure_module moves a module-level function into the existing test class as a method."""
         subject = self._create(
             mocker,
@@ -173,7 +193,7 @@ class TestUnitToPytest:
             """,
         )
         subject.convert_parameterized_test()
-        assert_that(subject.apply_to_string(), contains_string("@pytest.mark.parametrize"))
+        assert_that(subject.apply_to_string(), contains_string('@pytest.mark.parametrize("val",'))
 
     def test_convert_parameterized_test_inside_class(self, mocker: MockerFixture) -> None:
         """AI: Verify convert_parameterized_test rewrites a class-nested @parameterized.expand into @pytest.mark.parametrize."""
@@ -188,7 +208,22 @@ class TestUnitToPytest:
             """,
         )
         subject.convert_parameterized_test()
-        assert_that(subject.apply_to_string(), contains_string("@pytest.mark.parametrize"))
+        assert_that(subject.apply_to_string(), contains_string('@pytest.mark.parametrize("val",'))
+
+    def test_convert_parameterized_test_with_return_annotation(self, mocker: MockerFixture) -> None:
+        """AI: Verify convert_parameterized_test also rewrites functions with annotated parameters and return type."""
+        subject = self._create(
+            mocker,
+            """
+            class TestFoo:
+                @parameterized.expand([("a", 1), ("b", 2)])
+                def test_fun(self, name: str, val: int) -> None:
+                    pass
+            """,
+        )
+        subject.convert_parameterized_test()
+        assert_that(subject.apply_to_string(), contains_string('@pytest.mark.parametrize(("name", "val"),'))
+        assert_that(subject.apply_to_string(), not_(contains_string("@parameterized.expand")))
 
     def test_remove_print_removes_entire_function_when_only_statement(self, mocker: MockerFixture) -> None:
         """AI: Verify remove_print removes the entire function when print() is its only statement."""
@@ -320,8 +355,7 @@ class TestUnitToPytest:
             """,
         )
         subject.convert_parameterized_test()
-        assert_that(subject.apply_to_string(), contains_string("@pytest.mark.parametrize"))
-        assert_that(subject.apply_to_string(), contains_string("*rest"))
+        assert_that(subject.apply_to_string(), contains_string('@pytest.mark.parametrize(("val", "*rest"),'))
 
     def test_restructure_module_rewrites_call_sites_in_existing_class(self, mocker: MockerFixture) -> None:
         """AI: Verify restructure_module rewrites call sites of a moved helper function to use self."""
