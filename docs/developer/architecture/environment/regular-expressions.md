@@ -32,6 +32,7 @@ See the [`re` module documentation](https://docs.python.org/3/library/re.html) a
 
 <!-- MD060 is disabled because pymarkdown miscounts the width of `<` and `>` in code spans; RECHECK when pymarkdown is updated. -->
 <!-- pyml disable md060-->
+
 | Area                         | Support                                                                                                |
 | ---------------------------- | ------------------------------------------------------------------------------------------------------ |
 | Subject types                | `str` patterns on `str`; `bytes` patterns on bytes-like objects; the two cannot be mixed               |
