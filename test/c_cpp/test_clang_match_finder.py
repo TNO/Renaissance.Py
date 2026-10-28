@@ -14,7 +14,7 @@ from renaissance.syntax_tree.ast_finder import find_nodes
 from renaissance.syntax_tree.semantic_kind import SemanticKind
 
 
-class ClangMatchFinderTest:
+class TestClangMatchFinder:
     """AI: Tests matching patterns against Clang AST nodes."""
 
     def test_is_match(self) -> None:

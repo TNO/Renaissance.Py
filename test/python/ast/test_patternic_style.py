@@ -112,15 +112,15 @@ class TestPythonicStyle:
         assert_that(it.operator, is_("+="))
         assert_that(it.value, is_(5))
 
-    def python_does_not_parse_dollar(self) -> None:
-        """AI: Document that a bare '$pa' text is treated as a MATCH_ONE pattern rather than plain Python code."""
-        it = PythonRstNode.load_from_text("$pa")
-        assert_that(it.pattern_kind, is_(PatternKind.MATCH_ONE))
+    def test_python_does_not_parse_dollar(self) -> None:
+        """Verify plain Python parsing rejects a bare '$pa'; only the pattern factory accepts placeholders."""
+        with pytest.raises(SyntaxError):
+            PythonRstNode.load_from_text("$pa")
 
-    def python_does_not_parse_dollar_dollar(self) -> None:
-        """AI: Document that a bare '$$pa' text is treated as a MATCH_ALL pattern rather than plain Python code."""
-        it = PythonRstNode.load_from_text("$$pa")
-        assert_that(it.pattern_kind, is_(PatternKind.MATCH_ALL))
+    def test_python_does_not_parse_dollar_dollar(self) -> None:
+        """Verify plain Python parsing rejects a bare '$$pa'; only the pattern factory accepts placeholders."""
+        with pytest.raises(SyntaxError):
+            PythonRstNode.load_from_text("$$pa")
 
     def test_kind_is_match_all(self) -> None:
         """AI: Verify a '$$pa' statement pattern has MATCH_ALL pattern kind."""
