@@ -125,6 +125,7 @@ ignore = [
     "D213",   # conflicts with D212 (summary on the first line) — keep D212
     "COM812", # conflicts when used with the formatter - use formatter
     "UP037",  # Python 3.14+ evaluates annotations lazily
+    # When we move to 3.15, we will remove the TC001–TC003 ignores and use lazy imports where needed.
     "TC001",  # Python 3.14+ no longer requires TYPE_CHECKING for annotations
     "TC002",  # Python 3.14+ no longer requires TYPE_CHECKING for annotations
     "TC003",  # Python 3.14+ no longer requires TYPE_CHECKING for annotations

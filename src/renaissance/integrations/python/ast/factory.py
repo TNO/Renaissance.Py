@@ -23,6 +23,7 @@ from renaissance.integrations.tree_sitter.lst import LSTNode
 from renaissance.syntax_tree.match_finder import is_match
 from renaissance.syntax_tree.node_protocol import NodeProtocol
 from renaissance.syntax_tree.pattern_kind import PatternKind
+from renaissance.syntax_tree.semantic_kind import SemanticKind
 from renaissance.utils.ast_utils import replace_dollar, use_dollar
 
 _MATCH_ALL_RE = re.compile(r"^" + re.escape(MATCH_ALL) + r"\w+$")
@@ -41,7 +42,7 @@ class PythonPattern:
             print(node)
             return
         self.parser_kind = getattr(node, "parser_kind", type(node).__name__)
-        self.semantic_kind = getattr(node, "semantic_kind", None)
+        self.semantic_kind = getattr(node, "semantic_kind", SemanticKind.NODE)
         self.pattern_kind = None
         self._derive_pattern_kind(node)
 
