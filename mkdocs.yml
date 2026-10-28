@@ -173,6 +173,8 @@ nav:
           - Architecture images: developer/architecture/images/README.md
           - Test architecture: developer/architecture/test-architecture.md
           - Traceability model: developer/architecture/traceability-model.md
+          - Environment:
+              - Regular expressions in Python: developer/architecture/environment/regular-expressions.md
           - Architecture Decision Records:
               - Overview: developer/architecture/adr/README.md
               - 01. Children and properties: developer/architecture/adr/01_children_and_properties.md
