@@ -84,7 +84,7 @@ class TestBasic:
     extra_declarations_placeholder_text: list[str] = ["int $f();"]
 
     @pytest.mark.parametrize(
-        "_, factory, snippet, extra_declarations",
+        ("_", "factory", "snippet", "extra_declarations"),
         list(
             Factories.extend(
                 [
@@ -102,7 +102,7 @@ class TestBasic:
         results = match_pattern(code_pattern.children, [snippet_pattern])
         assert_that(results, has_length(1), f"length of results = {len(results)}")
 
-    @pytest.mark.parametrize("_, factory", Factories.factories)
+    @pytest.mark.parametrize(("_", "factory"), Factories.factories)
     def test_is_match_assignment_expression(self, _: str, factory: ASTFactory) -> None:
         """AI: Verify identical assignment expressions match themselves and each other."""
         pattern_factory = CPatternFactory(factory)
@@ -120,7 +120,7 @@ class TestBasic:
             "Identical expressions match",
         )
 
-    @pytest.mark.parametrize("_, factory", Factories.factories)
+    @pytest.mark.parametrize(("_", "factory"), Factories.factories)
     def test_is_match_call_expression(self, _: str, factory: ASTFactory) -> None:
         """AI: Verify identical call expressions match themselves and each other."""
         pattern_factory = CPatternFactory(factory)
@@ -138,7 +138,7 @@ class TestBasic:
             "Identical expressions match",
         )
 
-    @pytest.mark.parametrize("_, factory", Factories.factories)
+    @pytest.mark.parametrize(("_", "factory"), Factories.factories)
     def test_is_match_statement(self, _: str, factory: ASTFactory) -> None:
         """AI: Verify identical call statements match themselves and each other despite whitespace differences."""
         pattern_factory = CPatternFactory(factory)

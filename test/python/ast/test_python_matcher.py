@@ -80,7 +80,7 @@ class TestPythonMatcher:
         assert_that(variant_in_match_stmt(if_then_else_if_statement.children[2], if_then_statement.children[2], {}), is_([]))
 
     @pytest.mark.parametrize(
-        "stmt_txt, pattern_txt, expected",
+        ("stmt_txt", "pattern_txt", "expected"),
         [
             # return empty expression list (type None)
             ("return", "return", True),

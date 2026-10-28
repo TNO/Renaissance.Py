@@ -18,7 +18,7 @@ class TestCleanupRefactoring:
     """AI: Tests for the CleanupRefactoring recipe."""
 
     @pytest.mark.parametrize(
-        "name, factory, input_code, expected_code",
+        ("name", "factory", "input_code", "expected_code"),
         list(
             Factories.extend(
                 [

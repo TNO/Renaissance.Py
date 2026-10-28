@@ -31,14 +31,14 @@ class TestFinder:
 class TestKindFinder(TestFinder):
     """AI: Tests ASTFinder.find single-node lookups by semantic/parser kind."""
 
-    @pytest.mark.parametrize("_, factory", Factories.factories)
+    @pytest.mark.parametrize(("_", "factory"), Factories.factories)
     def test_find_bogus(self, _, factory) -> None:
         """AI: Verify find_nodes finds no matches for a bogus parser kind."""
         model = self.load_model(factory)
         total = len(find_nodes(model, lambda node: node.semantic_kind is SemanticKind.NODE and node.parser_kind == "BogusType"))
         assert_that(total, is_(0))
 
-    @pytest.mark.parametrize("_, factory", Factories.factories)
+    @pytest.mark.parametrize(("_", "factory"), Factories.factories)
     def test_find_expr(self, _, factory) -> None:
         """AI: Verify find_nodes finds expression nodes in the parsed model."""
         model = self.load_model(factory)
@@ -49,7 +49,7 @@ class TestKindFinder(TestFinder):
 class TestAllFinder(TestFinder):
     """AI: Tests ASTFinder.find_all lookups against a predicate."""
 
-    @pytest.mark.parametrize("_, factory", Factories.factories)
+    @pytest.mark.parametrize(("_", "factory"), Factories.factories)
     def test_find_all_bogus(self, _, factory) -> None:
         """AI: Verify ASTFinder.find_all finds no matches for a bogus parser kind."""
         model = self.load_model(factory)
@@ -60,7 +60,7 @@ class TestAllFinder(TestFinder):
 
         assert_that(ASTFinder.find_all(model, is_bogus), has_length(0))
 
-    @pytest.mark.parametrize("_, factory", Factories.factories)
+    @pytest.mark.parametrize(("_", "factory"), Factories.factories)
     def test_find_all_expr(self, _, factory) -> None:
         """AI: Verify ASTFinder.find_all finds binary operator expression nodes in the parsed model."""
         model = self.load_model(factory)

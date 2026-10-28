@@ -31,7 +31,7 @@ class TestShowNodeInMermaid:
         return mermaid
 
     @pytest.mark.parametrize(
-        "raw, module",
+        ("raw", "module"),
         [
             ("def foo():\n    return 42", tspython),
             ("int main() { return 0; }", tscpp),

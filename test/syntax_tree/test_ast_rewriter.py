@@ -27,7 +27,7 @@ class TestCommentLocation:
     """AI: Tests locating the trailing comment adjacent to a code range."""
 
     @pytest.mark.parametrize(
-        "_, start_offset, stop_offset, content, expected",
+        ("_", "start_offset", "stop_offset", "content", "expected"),
         [
             (
                 "single_line_comment",
@@ -194,7 +194,7 @@ class TestRemove(TestRewrites):
     """AI: Tests for ASTRewriter.remove."""
 
     @pytest.mark.parametrize(
-        "name, factory, code, include_whitespace, include_comments, expected",
+        ("name", "factory", "code", "include_whitespace", "include_comments", "expected"),
         list(
             Factories.extend(
                 [
@@ -250,7 +250,7 @@ class TestReplace(TestRewrites):
     """AI: Tests for ASTRewriter.replace."""
 
     @pytest.mark.parametrize(
-        "name, factory, code, include_whitespace, include_comments, expected",
+        ("name", "factory", "code", "include_whitespace", "include_comments", "expected"),
         list(
             Factories.extend(
                 [
@@ -387,7 +387,7 @@ class TestInsertBeforeSingleLine(TestRewrites):
     """AI: Tests for ASTRewriter.insert_before with a single-line insertion."""
 
     @pytest.mark.parametrize(
-        "name, factory, code, include_whitespace, include_comments, expected",
+        ("name", "factory", "code", "include_whitespace", "include_comments", "expected"),
         list(
             Factories.extend(
                 [
@@ -523,7 +523,7 @@ class TestInsertBeforeMultiLine(TestRewrites):
     """AI: Tests for ASTRewriter.insert_before with a multi-line insertion."""
 
     @pytest.mark.parametrize(
-        "name, factory, code, include_whitespace, include_comments, expected",
+        ("name", "factory", "code", "include_whitespace", "include_comments", "expected"),
         list(
             Factories.extend(
                 [
@@ -677,7 +677,7 @@ class TestInsertAfterSingleLine(TestRewrites):
     """AI: Tests for ASTRewriter.insert_after with a single-line insertion."""
 
     @pytest.mark.parametrize(
-        "name, factory, code, include_whitespace, include_comments, expected",
+        ("name", "factory", "code", "include_whitespace", "include_comments", "expected"),
         list(
             Factories.extend(
                 [
@@ -813,7 +813,7 @@ class TestInsertAfterMultiLine(TestRewrites):
     """AI: Tests for ASTRewriter.insert_after with a multi-line insertion."""
 
     @pytest.mark.parametrize(
-        "name, factory, code, include_whitespace, include_comments, expected",
+        ("name", "factory", "code", "include_whitespace", "include_comments", "expected"),
         list(
             Factories.extend(
                 [
@@ -967,7 +967,7 @@ class TestComposeReplacement:
     """AI: Tests composing a replacement pattern from a match's placeholder bindings."""
 
     @pytest.mark.parametrize(
-        "_, factory, statements, extra_declarations, replacement",
+        ("_", "factory", "statements", "extra_declarations", "replacement"),
         Factories.extend(
             [
                 (
@@ -1314,7 +1314,7 @@ class TestSyntaxAwareAdjacentComposition:
         # verify
         assert rewriter.apply_to_string() == "void f(int i, int j) { i++;++i;++j;j++; }", "Unexpected replacement"
 
-    @pytest.mark.parametrize("name, factory", Factories.factories)
+    @pytest.mark.parametrize(("name", "factory"), Factories.factories)
     @pytest.mark.skip("TODO: implement accordingly")
     def test_prepend_second_first_append(self, name: str, factory: ASTFactory) -> None:
         """AI: Verify prepend-before-second then append-after-first nests in source order, across factories (not yet implemented)."""
