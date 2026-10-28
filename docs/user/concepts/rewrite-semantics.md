@@ -148,7 +148,7 @@ Such changes do not affect each other, so no rule is needed to combine them.
         ///
 
     * same consecutive units:  
-        In the order in which the changes were collected.  
+        In the reverse order in which the changes were collected.  
         Example: *Prepend N - ... - Prepend 2 - Prepend 1 - text of consecutive units*.
 
 1. Multiple appends at the same text location
@@ -165,7 +165,7 @@ Such changes do not affect each other, so no rule is needed to combine them.
         ///
 
     * same consecutive units:  
-        In the reverse order in which the changes were collected.  
+        In the order in which the changes were collected.  
         Example: *text of consecutive units - Append 1 - Append 2 - ... - Append N*.
 
 1. Multiple surrounds at the same text location
@@ -251,3 +251,10 @@ Summary of the rewrite-semantics
 * Multiple applications rule - the direction depends on the operator:
     multiple prepends (and surround before-texts) follow the order of collection of the changes,
   while multiple appends (and surround after-texts) follow the reversed order of collection.
+
+## Open points
+
+* Different kinds of insertions on containing and contained units at the same location are not covered.
+    The containment rules only order insertions of the same kind,
+    and the rule for combinations of different kinds only covers the same consecutive units.
+    For example, the order of the before-text of a surround of a node and a prepend of its first descendant is undefined.
