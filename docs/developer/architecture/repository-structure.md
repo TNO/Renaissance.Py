@@ -170,13 +170,11 @@ A recipe holds its language-specific patterns itself, and may use other recipes.
 recipes/
 ├── cleanup_refactoring/
 ├── python_refactoring/
-├── simplify_renaissance/
-├── taut_to_python_unittest/
 ├── unit_to_pytest/
 ├── refactor_actions/       # ASTRefactorActions: reusable transformations are recipes, not core
 ├── python_extractor/       # PythonExtractor: parser specific, uses python.ast
 ├── code_graph_extractor/   # Extractor and the *CodeGraphExtractor classes: parser specific, use tree_sitter
-├── cli/                    # the rejuvenate and taut2test commands
+├── cli/                    # the rejuvenate command
 └── examples/               # the example applications that are now in src/rejuvenation
 ```
 
@@ -304,18 +302,16 @@ They are split, so that each binding has its own.
 
 Each recipe package exports its recipe; `renaissance.recipes` itself exports nothing.
 
-| Recipe                    | Public API                                                                        |
-| ------------------------- | --------------------------------------------------------------------------------- |
-| `cleanup_refactoring`     | `CleanupRefactoring`                                                              |
-| `python_refactoring`      | `PythonRefactoring`                                                               |
-| `simplify_renaissance`    | `SimplifyRenaissance`                                                             |
-| `taut_to_python_unittest` | `TautToPythonUnittest`                                                            |
-| `unit_to_pytest`          | `UnitToPytest`                                                                    |
-| `refactor_actions`        | `ASTRefactorActions`                                                              |
-| `python_extractor`        | `PythonExtractor`                                                                 |
-| `code_graph_extractor`    | `Extractor`, `BaseCodeGraphExtractor` and its subclasses for Python, Java and C++ |
-| `cli`                     | `refactor`                                                                        |
-| `examples`                | none                                                                              |
+| Recipe                 | Public API                                                                        |
+| ---------------------- | --------------------------------------------------------------------------------- |
+| `cleanup_refactoring`  | `CleanupRefactoring`                                                              |
+| `python_refactoring`   | `PythonRefactoring`                                                               |
+| `unit_to_pytest`       | `UnitToPytest`                                                                    |
+| `refactor_actions`     | `ASTRefactorActions`                                                              |
+| `python_extractor`     | `PythonExtractor`                                                                 |
+| `code_graph_extractor` | `Extractor`, `BaseCodeGraphExtractor` and its subclasses for Python, Java and C++ |
+| `cli`                  | `refactor`                                                                        |
+| `examples`             | none                                                                              |
 
 ### Tests
 

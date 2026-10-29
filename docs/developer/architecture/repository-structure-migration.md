@@ -320,26 +320,26 @@ binding by one contract per new binding.
 
 #### Phase 7: recipes
 
-**7.1 to 7.5 One package per recipe.** One step per recipe, in this order: `cleanup_refactoring`, `python_refactoring`,
-`simplify_renaissance`, `taut_to_python_unittest` and `unit_to_pytest`.
+**7.1 to 7.3 One package per recipe.** One step per recipe, in this order: `cleanup_refactoring`, `python_refactoring` and
+`unit_to_pytest`.
 
 - src: `recipes/<recipe>.py` to `recipes/<recipe>/`.
 - test: `test/recipes/test_<recipe>.py` to `test/unit/recipes/<recipe>/`. `test_refactor_with_rewrite.py` goes to the recipe it
   exercises.
 
-**7.6 The examples.**
+**7.4 The examples.**
 
 - src: the modules of `src/rejuvenation/`, except `cli.py`, to `recipes/examples/`. This includes the examples that show how
   one parser represents code, such as `python_ast_example.py`; rewriting them as unit tests of their binding is not a move, so
   it is an issue.
 - test: `test/examples/` to `test/unit/recipes/examples/`.
 
-**7.7 The command line.**
+**7.5 The command line.**
 
 - src: `src/rejuvenation/cli.py` to `recipes/cli/`; `src/rejuvenation/` no longer exists.
-- remaining: `[project.scripts]` points `rejuvenate` and `taut2test` to `renaissance.recipes.cli:refactor`; `rejuvenation` leaves
+- remaining: `[project.scripts]` points `rejuvenate` to `renaissance.recipes.cli:refactor`; `rejuvenation` leaves
   `root_packages`.
-- Checks: `uv run rejuvenate` and `uv run taut2test` start as before; `git grep -E "\brejuvenation\."` finds nothing in `src/`,
+- Checks: `uv run rejuvenate` starts as before; `git grep -E "\brejuvenation\."` finds nothing in `src/`,
   `test/` and `pyproject.toml`; the `layers` contract has a container `renaissance` with the layers `recipes`,
   `parser_bindings` and `core`, and `exhaustive = true`.
 

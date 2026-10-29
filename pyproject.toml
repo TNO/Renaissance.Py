@@ -295,8 +295,6 @@ ignore_imports = [
     "rejuvenation.cli -> renaissance.project.project_scanner",
     "test.recipes.test_python_refactoring -> renaissance.integrations.python.ast.rst_node",
     "test.recipes.test_refactor_with_rewrite -> renaissance.integrations.python.ast.rst_node",
-    "test.recipes.test_simplify_renaissance -> renaissance.integrations.python.ast.rst_node",
-    "test.recipes.test_taut_to_python_unittest -> renaissance.integrations.python.ast.rst_node",
     "test.recipes.test_unit_to_pytest -> renaissance.integrations.python.ast.rst_node",
     "test.recipes.test_cleanup_refactoring -> test.c_cpp.factories",
     # Access to the parameters of a function is missing in the core; convert_function reads stdlib ast.
