@@ -375,9 +375,12 @@ helper `python_type_and_value.py`.
 - docs: [repository structure](repository-structure.md) loses its *now in* columns and becomes *Implemented*, and no longer
   links to this page. This page and its entry in the `mkdocs.yml` nav are removed.
 - remaining: the comment in `pyproject.toml` that says the module lists shrink as the migration proceeds is gone, and so are
-  the references to the migration in the repository memory.
+  the references to the migration in the repository memory. The codespell ignore list applies to the code only again: it moves
+  from `[tool.codespell]` in `pyproject.toml` back to the codespell step of the code quality workflow, so the documentation is
+  checked without exceptions. It was shared only because this page quotes commands that contain the ignored words.
 - Checks: every unit under `src/renaissance/` has its test directory and its pages;
-  `git grep "repository-structure-migration"` finds nothing.
+  `git grep "repository-structure-migration"` finds nothing; `pyproject.toml` has no `[tool.codespell]`, and
+  `uv run codespell ./docs` passes.
 
 The pull request is then ready for review.
 
