@@ -368,14 +368,14 @@ See *Verified by test modules* in [Type parameter modernization](../../user/feat
     `first` is left unchanged and the file is reported clean.
 
 - Absolute imports are resolved from the given path, so in a `src/` layout run on the repository root,
-  `from pkg.typing import T` does not find `src/pkg/typing.py`. This is rare. In:
+  `from example.typing import T` does not find `src/example/typing.py`. This is rare. In:
 
     ```python
-    # src/pkg/typing.py
+    # src/example/typing.py
     T = TypeVar("T")
 
-    # src/pkg/other.py
-    from pkg.typing import T
+    # src/example/other.py
+    from example.typing import T
 
     def first(items: list[T]) -> T: ...
     ```

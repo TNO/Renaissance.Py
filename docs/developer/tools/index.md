@@ -26,6 +26,8 @@ may call another tool, and functionality that several tools share lives in `tool
    forbids imports that break the dependency rules of the repository structure, in the sources and in the tests.
 1. [Layout check](check-layout.md) (`tools/check_layout.py`, configured in `pyproject.toml`):
    requires the tests and the documentation to mirror the code.
+1. [Reference check](check-references.md) (`tools/check_references.py`, configured in `pyproject.toml`):
+   requires every repository path named in the documentation, the code and the tests to exist.
 1. [Encoding check](check-encoding.md) (`tools/check_encoding.py`):
    requires every file that `git` tracks to be UTF-8, without a byte order mark.
 1. [Line ending check](check-line-endings.md) (`tools/check_line_endings.py`):

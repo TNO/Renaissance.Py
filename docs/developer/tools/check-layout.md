@@ -45,8 +45,8 @@ A directory counterpart exists when it holds at least one file; a unit test dire
 The modules of a sub-package, such as `tools/shared/`, are no units of the mirror of `code`; the sub-package gets a mirror of its
 own.
 
-A path in the mirror is checked when it has the shape of the template, such as `test/tools/test_*.py`. Helpers such as
-`test/tools/conftest.py` do not have that shape and are left alone. A directory below a mirrored directory, such as a directory
+A path in the mirror is checked when it has the shape of the template, such as `test/tools/test_*.py`. Helpers such as a
+`conftest.py` in `test/tools/` do not have that shape and are left alone. A directory below a mirrored directory, such as a directory
 of test data, does have that shape, and is listed in `extra`.
 
 During the migration to the target structure, a mirror is added for each part of `src/renaissance` once that part is in its
@@ -77,9 +77,9 @@ Every violation is reported on one line:
 
 ```text
 The tests and the documentation do not mirror the code:
-  tools/check_foo.py: has no counterpart test/tools/test_check_foo.py
-  docs/developer/tools/check-bar.md: mirrors no unit of tools/
-  tools/ruff_stats: is exempt, but is not a unit: remove the exemption
+  tools/check_example.py: has no counterpart test/tools/test_check_example.py
+  docs/developer/tools/check-old-example.md: mirrors no unit of tools/
+  tools/removed_example: is exempt, but is not a unit: remove the exemption
 ```
 
 ## Known deviations

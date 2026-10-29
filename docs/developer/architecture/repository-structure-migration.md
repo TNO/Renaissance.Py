@@ -78,7 +78,8 @@ Every step consists of the same four substeps, in this order.
    moved package moves to its mirror page.
    Update every reference to a moved path: in the documentation, in `docs/developer/feature-test-map/`, and in docstrings,
    comments and feature files.
-1. **remaining:** update `[tool.importlinter]`, `[tool.check_layout]` and any other path in `pyproject.toml`, the CI workflows
+1. **remaining:** update `[tool.importlinter]`, `[tool.check_layout]`, `[tool.check_references]` and any other path in
+   `pyproject.toml`, the CI workflows
    and the repository memory; run the gate; commit; push to `origin`.
 
 ### Gate
@@ -134,12 +135,17 @@ in the same directory as the path before it.
 
 - src: a new guard rail `tools/check_references.py`, with one rule: every repository path that is named in the documentation,
   in a docstring or comment of `src/`, `test/`, `tools/` or `features/`, or in a feature file, exists. A path is a name that
-  starts with a top-level directory of the repository, such as `src/` or `docs/`. The decision records in
-  `docs/developer/architecture/adr/` are excluded, because they record history.
-- test: `test/tools/test_check_references.py`.
-- docs: `docs/developer/tools/check-references.md`, its entry in the tools index and in the `mkdocs.yml` nav.
-- remaining: `[tool.check_references]` in `pyproject.toml` lists the references that are stale today, such as the type
-  parameter files in `docs/developer/feature-test-map/core.md`; the list only shrinks. A step in the matching CI workflow.
+  starts with a top-level directory of the repository, such as `src/` or `docs/`. It skips the targets of Markdown links, which
+  `mkdocs build --strict` checks, and examples: paths with `example` as one of their words. `list_files` and `with_directories`
+  move from `tools/check_layout.py` to `tools/shared/repository_files.py`, because both checks use them.
+- test: `test/tools/test_check_references.py`; the test of `list_files` moves to `test/tools/shared/test_repository_files.py`.
+- docs: `docs/developer/tools/check-references.md`, its entry in the tools index and in the `mkdocs.yml` nav. The paths that
+  only illustrate a point are renamed to examples.
+- remaining: `[tool.check_references]` in `pyproject.toml`. `exclude` lists the decision records in
+  `docs/developer/architecture/adr/`, which record history, and this page, which names the paths the migration creates.
+  `known_issues` lists the files of type parameter modernization, which is documented but whose code is not yet integrated.
+  `stale` lists the paths that do not exist yet, such as `test/unit/`; the step that creates such a path removes its entry.
+  The lists only shrink. A step in the code quality workflow.
 - Checks: `python -m tools.check_references` passes, and fails on a reference to a path that does not exist.
 
 **0.2 Remove the re-exports of `renaissance.syntax_tree`.**
@@ -364,9 +370,9 @@ binding by one contract per new binding.
 #### Phase 9: finishing
 
 **9.1 One issue per known violation.** Creating issues changes a shared system, so it is done after the list is reviewed.
-The list: the `ignore_imports` entries, the rows under [Known violations](repository-structure.md#known-violations), the stale
-references in `[tool.check_references]`, the parser examples that should be unit tests of their binding, and the unused
-helper `python_type_and_value.py`.
+The list: the `ignore_imports` entries, the rows under [Known violations](repository-structure.md#known-violations), the
+`known_issues` and the remaining `stale` entries in `[tool.check_references]`, the parser examples that should be unit tests of
+their binding, and the unused helper `python_type_and_value.py`.
 
 - remaining: each entry and each row links to its issue.
 

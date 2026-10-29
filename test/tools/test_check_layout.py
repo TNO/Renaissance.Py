@@ -6,13 +6,11 @@
 
 """Tests for the layout guard rail in tools/check_layout.py.
 
-The unit tests check synthetic file lists; one integration test runs git in a temporary repository.
+The unit tests check synthetic file lists; one integration test checks the repository itself.
 """
 
 import shutil
-import subprocess
 from collections.abc import Mapping
-from pathlib import Path
 
 import pytest
 
@@ -124,19 +122,6 @@ def test_an_invalid_configuration_is_rejected(config: Mapping[str, object], mess
     """Assert a configuration that does not describe valid mirrors raises `ConfigError`."""
     with pytest.raises(check_layout.ConfigError, match=message):
         check_layout.parse_mirrors(config)
-
-
-@pytest.mark.skipif(shutil.which("git") is None, reason="git is not installed")
-def test_untracked_files_count_and_ignored_files_do_not(tmp_path: Path) -> None:
-    """Assert the files are those git tracks or would track: a new file counts, an ignored one does not."""
-    git = shutil.which("git")
-    assert git is not None  # noqa: S101 (pytest assertion; new tests must not raise the S101 budget)
-    subprocess.run([git, "init", "-q"], cwd=tmp_path, check=True)  # noqa: S603 (git from PATH, fixed arguments)
-    (tmp_path / ".gitignore").write_text("ignored.py\n")
-    (tmp_path / "tools").mkdir()
-    (tmp_path / "tools" / "check_a.py").write_text("")
-    (tmp_path / "tools" / "ignored.py").write_text("")
-    assert check_layout.list_files(tmp_path) == {".gitignore", "tools/check_a.py"}  # noqa: S101 (pytest assertion; new tests must not raise the S101 budget)
 
 
 @pytest.mark.skipif(shutil.which("git") is None, reason="git is not installed")

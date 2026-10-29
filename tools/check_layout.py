@@ -22,14 +22,14 @@ Run `python -m tools.check_layout` locally, or `python -m tools.check_layout --c
 
 import argparse
 import re
-import shutil
-import subprocess
 import sys
 import tomllib
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import cast
+
+from tools.shared.repository_files import list_files, with_directories
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -144,30 +144,6 @@ def load_config(pyproject: Path) -> Mapping[str, object]:
     """Return the `[tool.check_layout]` table of `pyproject`."""
     with pyproject.open("rb") as file:
         return tomllib.load(file).get("tool", {}).get("check_layout", {})
-
-
-def list_files(root: Path) -> set[str]:
-    """Return the files in `root` that git tracks or would track, or raise when git is unavailable or fails."""
-    git = shutil.which("git")
-    if git is None:
-        message = "git was not found on PATH, so the files cannot be listed"
-        raise RuntimeError(message)
-    command = [git, "ls-files", "--cached", "--others", "--exclude-standard", "-z"]
-    result = subprocess.run(command, capture_output=True, cwd=root, check=False)  # noqa: S603 (command built from constants here)
-    if result.returncode != 0:
-        message = f"git ls-files failed (exit code {result.returncode}):\n{result.stderr.decode('utf-8', 'replace').strip()}"
-        raise RuntimeError(message)
-    # A file deleted from the working tree stays in the index until the deletion is staged.
-    return {path for path in result.stdout.decode("utf-8").split("\0") if path and (root / path).is_file()}
-
-
-def with_directories(files: Iterable[str]) -> set[str]:
-    """Return `files` together with every directory that holds one of them, each directory ending with `/`."""
-    paths = set(files)
-    for file in list(paths):
-        parts = file.split("/")[:-1]
-        paths.update("/".join(parts[: depth + 1]) + "/" for depth in range(len(parts)))
-    return paths
 
 
 def find_units(mirror: Mirror, files: Iterable[str]) -> set[str]:

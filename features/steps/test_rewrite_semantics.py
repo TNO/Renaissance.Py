@@ -4,7 +4,7 @@
 # of this repository, also available at:
 # https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
-"""Step implementations for features/rewrite_semantics.feature.
+"""Step implementations for features/rewrite-semantics.feature.
 
 Scenarios 1 and 2 are marked xfail because the corresponding behaviour is not
 yet fully implemented:

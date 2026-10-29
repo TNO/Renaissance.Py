@@ -181,6 +181,50 @@ extra = [
     "docs/developer/tools/check-layering.md",  # Import Linter, configured in [tool.importlinter]
 ]
 
+# Every repository path named in the documentation, in comments and docstrings, and in feature files exists; checked by
+# tools/check_references.py. `exclude` lists the files that are not read; `known_issues` and `stale` list the paths that are
+# known to be missing. An entry that no longer applies fails the check, so these lists only shrink.
+[tool.check_references]
+exclude = [
+    "docs/developer/architecture/adr/",  # the decision records record history
+    "docs/developer/architecture/repository-structure-migration.md",  # names the paths that the migration creates
+]
+# Type parameter modernization is documented, but its code is not yet integrated.
+known_issues = [
+    "src/rejuvenation/migration-type-recipes.py",
+    "src/renaissance/recipes/step_runner.py",
+    "src/renaissance/recipes/type_parameter_check.py",
+    "src/renaissance/recipes/type_parameter_declarations.py",
+    "src/renaissance/recipes/type_parameter_localization.py",
+    "src/renaissance/recipes/type_parameter_rules.py",
+    "src/renaissance/recipes/type_parameter_uses.py",
+    "src/renaissance/utils/cst_utils.py",
+    "src/renaissance/utils/import_resolution.py",
+    "test/recipes/test_step_runner.py",
+    "test/recipes/test_type_parameter_check.py",
+    "test/recipes/test_type_parameter_check_convert.py",
+    "test/recipes/test_type_parameter_check_localize.py",
+    "test/recipes/test_type_parameter_check_orphaned.py",
+    "test/recipes/test_type_parameter_check_properties.py",
+    "test/recipes/test_type_parameter_check_variance.py",
+    "test/recipes/test_type_parameter_declarations.py",
+    "test/recipes/test_type_parameter_localization.py",
+    "test/recipes/test_type_parameter_rules.py",
+    "test/rejuvenation/test_migration_type_recipes.py",
+    "test/utils/test_cst_utils.py",
+    "test/utils/test_import_resolution.py",
+]
+# Paths that do not exist yet.
+stale = [
+    "docs/assets/images/architecture/",  # allowed locations of shared images
+    "docs/assets/images/logos/",
+    "docs/assets/images/notation/",
+    "docs/user/core/",  # targets of the repository structure migration
+    "docs/user/recipes/",
+    "src/renaissance/core/matching/",
+    "test/unit/",
+]
+
 # The dependency rules of docs/developer/architecture/repository-structure.md. This is their single source of truth.
 # The module lists map today's packages onto the target units; each list shrinks to one package as the migration proceeds.
 # A test module follows the rules of the unit it tests. Every ignore_imports entry is a known violation, with its reason.

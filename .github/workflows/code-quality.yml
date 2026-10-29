@@ -47,6 +47,8 @@ jobs:
         run: uv run lint-imports --no-cache
       - name: Check that tests and docs mirror the code
         run: uv run python -m tools.check_layout --check
+      - name: Check that every named repository path exists
+        run: uv run python -m tools.check_references --check
       - name: Check file encodings
         run: uv run python -m tools.check_encoding --check
       - name: Check line endings

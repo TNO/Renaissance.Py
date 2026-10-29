@@ -73,7 +73,7 @@ python -m tools.check_copyright remove
   is left alone.
 
 All three commands accept files or directories, which limits the run to the tracked files among them, for example
-`python -m tools.check_copyright insert tools/my_new_tool.py`. A path that git does not track is a usage error.
+`python -m tools.check_copyright insert tools/example_tool.py`. A path that git does not track is a usage error.
 
 `insert` and `remove` preserve everything else about a file: its encoding (the declared PEP 263 encoding for Python, UTF-8
 otherwise), its byte order mark, its line endings (LF, CRLF or CR) and whether it ends in a newline. `insert` followed by `remove`
@@ -93,7 +93,7 @@ Exit codes:
 Every changed file and every violation is reported on one line, sorted by path, followed by a summary:
 
 ```text
-tools/new_tool.py: notice missing
+tools/example_tool.py: notice missing
 Copyright check failed: 1 violation(s); see docs/developer/tools/check-copyright.md.
 ```
 
