@@ -55,7 +55,7 @@ review thread, to spell `Pyunit` out fully as well (`TautToPythonUnittest`).
 ## Implementation notes
 
 - `src/renaissance/utils/text_utils.py`: `snake_case()` (Rule A), `camel_case()` removed.
-- `src/renaissance/recipes/python_refactoring.py:39`: `PythonRefactoring.process()` resolves
+- `src/renaissance/recipes/python_refactoring.py`: `PythonRefactoring.process()` resolves
   `class_name` -> `renaissance.recipes.<snake_case(class_name)>`; names following the guideline
   above resolve correctly by construction (`snake_case("TautToPythonUnittest")` ->
   `taut_to_python_unittest`).
