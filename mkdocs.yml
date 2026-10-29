@@ -156,6 +156,7 @@ nav:
       - Guard rail tools:
           - Overview: developer/tools/index.md
           - Layering check: developer/tools/check-layering.md
+          - Layout check: developer/tools/check-layout.md
           - Encoding check: developer/tools/check-encoding.md
           - Line ending check: developer/tools/check-line-endings.md
           - Copyright check: developer/tools/check-copyright.md

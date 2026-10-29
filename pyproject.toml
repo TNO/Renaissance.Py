@@ -148,11 +148,41 @@ include = ["src", "test", "tools", "features"]
 exclude = ["features/targets", "**/node_modules", "**/__pycache__", "**/.*", ".venv"]
 extraPaths = ["src", "test", "features"]
 
+# The layout rules of docs/developer/architecture/repository-structure.md: the tests and the documentation mirror the code.
+# This is their single source of truth, checked by tools/check_layout.py. Each mirror maps every unit under `code` onto its
+# counterpart; `exempt` lists units without a counterpart, `extra` lists paths in the mirror that are no counterpart.
+# The migration adds a mirror for each part of src/renaissance once that part is in its target place.
+[[tool.check_layout.mirrors]]
+code = "tools"
+units = "modules"
+mirror = "test/tools/test_{path}.py"
+exempt = ["check_doc_images_policy", "mkdocs_hooks", "ruff_stats"]
+
+[[tool.check_layout.mirrors]]
+code = "tools/shared"
+units = "modules"
+mirror = "test/tools/shared/test_{path}.py"
+
+[[tool.check_layout.mirrors]]
+code = "tools"
+units = "modules"
+mirror = "docs/developer/tools/{kebab_path}.md"
+exempt = [
+    "check_doc_images_policy",  # documented in docs/documentation-system/enforcement/image-policy-enforcement.md
+    "lint_budget",  # documented in docs/developer/coding-conventions.md
+    "mkdocs_hooks",
+    "ruff_stats",
+]
+extra = [
+    "docs/developer/tools/index.md",
+    "docs/developer/tools/check-layering.md",  # Import Linter, configured in [tool.importlinter]
+]
+
 # The dependency rules of docs/developer/architecture/repository-structure.md. This is their single source of truth.
 # The module lists map today's packages onto the target units; each list shrinks to one package as the migration proceeds.
 # A test module follows the rules of the unit it tests. Every ignore_imports entry is a known violation, with its reason.
 [tool.importlinter]
-root_packages = ["renaissance", "rejuvenation", "test"]
+root_packages = ["renaissance", "rejuvenation", "test", "tools"]
 
 [[tool.importlinter.contracts]]
 id = "layers"
@@ -241,7 +271,7 @@ ignore_imports = [
 
 [[tool.importlinter.contracts]]
 id = "recipes-without-bindings"
-name = "Recipes do not use parser bindings, unless proven necessary"
+name = "Recipes use parser bindings only when they are parser specific"
 type = "forbidden"
 source_modules = [
     "renaissance.recipes", "rejuvenation", "renaissance.syntax_tree.ast_refactor_actions",
@@ -253,8 +283,9 @@ forbidden_modules = [
 ]
 allow_indirect_imports = true
 broken_contract_guidance = """
-Express the recipe in terms of the core. An exemption needs evidence: the binding symbol used,
-the capability the core is missing (shown by the code that needs it) and the issue that tracks it."""
+Express the recipe in terms of the core. A recipe that relies on what one parser provides is parser specific:
+declare each binding it depends on in ignore_imports, with the reason shown by the code that needs it."""
+# Declared dependencies of parser-specific recipes come first, then the known violations.
 ignore_imports = [
     # Parsing a file and creating patterns without naming the parser is missing in the core.
     "renaissance.recipes.python_refactoring -> renaissance.integrations.python.ast.factory",
@@ -273,7 +304,7 @@ ignore_imports = [
     "renaissance.recipes.unit_to_pytest -> renaissance.integrations.python.ast.util",
     # A pattern factory protocol is missing in the core; CPPPatternFactory is used in an annotation only.
     "renaissance.syntax_tree.ast_refactor_actions -> renaissance.integrations.clang.c_pattern_factory",
-    # The examples demonstrate a binding; where they belong is an open question of the structure document.
+    # The examples that show how one parser represents code become unit tests of that binding; the others are violations.
     "rejuvenation.batch_process_examples -> renaissance.integrations.**",
     "rejuvenation.cpp_clang_lst_example -> renaissance.integrations.**",
     "rejuvenation.python_ast_example -> renaissance.integrations.**",
@@ -355,6 +386,21 @@ forbidden_modules = [
     "test.c_cpp", "test.python", "test.lst", "test.extractors",
 ]
 allow_indirect_imports = true
+
+# The tools and their tests are independent of the rest of the repository.
+[[tool.importlinter.contracts]]
+id = "tools-independent"
+name = "Tools and their tests import nothing from the rest of the repository"
+type = "forbidden"
+source_modules = ["tools", "test.tools"]
+forbidden_modules = ["renaissance", "rejuvenation", "test.*"]
+
+[[tool.importlinter.contracts]]
+id = "tools-used-by-their-tests-only"
+name = "Only the tools and their tests import the tools"
+type = "protected"
+protected_modules = ["tools.**"]
+allowed_importers = ["tools", "test.tools"]
 
 [tool.pymarkdown]
 plugins.md013.heading_line_length = 140

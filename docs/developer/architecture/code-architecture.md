@@ -75,15 +75,13 @@ https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
    repositories per component, so that users and contributors have one place to clone, install, and
    version, instead of having to discover and align several small repositories.
 
-    1. Layers that are meant to be extended by third parties (currently: parser integrations, under
-       `src/renaissance/integrations/`) use an **extendable directory structure**: one subdirectory per
-       contribution (e.g., one per parser), added alongside the existing ones without modifying the core
-       or other contributions.
+    1. Layers that are meant to be extended by third parties (the parser bindings and the recipes) use an
+       **extendable directory structure**: one subdirectory per contribution (e.g., one per parser), added
+       alongside the existing ones without modifying the core or other contributions.
 
     1. A contribution subdirectory may carry its own license, distinct from the repository's overall
-       license (via a `LICENSE` file and/or SPDX headers scoped to that subdirectory) - e.g., for an
-       integration that wraps a GPL or proprietary parser.
+       license (via a `LICENSE` file and/or SPDX headers scoped to that subdirectory) - e.g., for a
+       parser binding that wraps a GPL or proprietary parser.
 
-    1. See [ADR 14](adr/14_code_repositories.md) for
-       the full rationale and the directory layout (`renaissance` core, `integrations/<parser>`,
-       `recipes/<language>`, `rejuvenation/<language>`).
+    1. See [Repository structure](repository-structure.md) for the layers (core, parser bindings, recipes),
+       their directory layout and the dependencies allowed between them.

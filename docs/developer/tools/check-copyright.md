@@ -62,9 +62,9 @@ files they describe.
 ## Running it
 
 ```powershell
-python tools/check_copyright.py check
-python tools/check_copyright.py insert
-python tools/check_copyright.py remove
+python -m tools.check_copyright check
+python -m tools.check_copyright insert
+python -m tools.check_copyright remove
 ```
 
 - `check` reports every file that does not carry the notice exactly, and writes nothing. CI runs it.
@@ -73,7 +73,7 @@ python tools/check_copyright.py remove
   is left alone.
 
 All three commands accept files or directories, which limits the run to the tracked files among them, for example
-`python tools/check_copyright.py insert tools/my_new_tool.py`. A path that git does not track is a usage error.
+`python -m tools.check_copyright insert tools/my_new_tool.py`. A path that git does not track is a usage error.
 
 `insert` and `remove` preserve everything else about a file: its encoding (the declared PEP 263 encoding for Python, UTF-8
 otherwise), its byte order mark, its line endings (LF, CRLF or CR) and whether it ends in a newline. `insert` followed by `remove`
@@ -113,9 +113,9 @@ What to do for each reason:
 
 `remove` only recognises the exact current notice, so a change goes in three steps:
 
-1. `python tools/check_copyright.py remove`
+1. `python -m tools.check_copyright remove`
 1. edit `COPYRIGHT.txt`
-1. `python tools/check_copyright.py insert`
+1. `python -m tools.check_copyright insert`
 
 If `COPYRIGHT.txt` was edited first, the files now hold a notice that differs from it, which `check` and `insert` report as modified
 or outdated. To recover, restore the previous version with `git restore COPYRIGHT.txt` (or `git show HEAD:COPYRIGHT.txt`), run

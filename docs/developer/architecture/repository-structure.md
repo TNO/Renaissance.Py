@@ -12,9 +12,9 @@ https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
 **Stable ID:** `ARCH-CODE-STRUCTURE`
 
-**Status:** Draft, proposal for [issue 187](https://github.com/TNO/Renaissance.Py/issues/187).
-Once accepted, it supersedes the directory layout of [ADR 14](adr/14_code_repositories.md);
-the single-repository decision of ADR 14 is unchanged.
+**Status:** Accepted, for [issue 187](https://github.com/TNO/Renaissance.Py/issues/187).
+It supersedes the decision record [Code repository structure](adr/14_code_repositories.md); its decisions that remain are
+listed under [Carried over from the code repository decision](#carried-over-from-the-code-repository-decision).
 
 ## Purpose
 
@@ -30,6 +30,17 @@ Packages envisioned in issue 187 for which no code exists yet, such as semantic 
 
 ## Definition
 
+### Carried over from the code repository decision
+
+- The project is one repository.
+- The layers that others extend, the parser bindings and the recipes, have one directory per contribution.
+  Adding a contribution adds a directory, and changes neither the core nor other contributions.
+- A contribution directory may carry its own license, in a `LICENSE` file or in SPDX headers, for example for a binding that
+  wraps a GPL or proprietary parser.
+- The dependencies of a parser binding are meant to become an optional extra, see
+  [Use uv for package and environment management](adr/07_package_management.md).
+  Today every parser is a required dependency.
+
 ### Three layers
 
 The source tree is divided into three layers.
@@ -43,6 +54,7 @@ The source tree is divided into three layers.
 Decisions:
 
 - Application code, such as the command line interface, is a recipe. There is no separate application layer.
+- Extractors are recipes: they analyse code and extract information from it, without changing it.
 - Reading build artefacts (`compile_commands.json`, a `Makefile` via Bear, a source directory tree) is parsing,
   so the project scanners are a parser binding.
 - Directory names are valid Python identifiers: lower case, words separated by `_`, no `.` or `-`.
@@ -52,7 +64,7 @@ Decisions:
 ```text
 recipes ──────► core ◄────── parser_bindings
    ┆                                ▲
-   └┄┄┄┄┄ only with evidence ┄┄┄┄┄┄┄┘
+   └┄┄┄┄┄ parser-specific only ┄┄┄┄┄┘
 ```
 
 The exact rules are the Import Linter contracts in `[tool.importlinter]` of `pyproject.toml`, their single source of truth;
@@ -60,15 +72,18 @@ see [Layering check](../tools/check-layering.md). This page explains the reasons
 Imports of the standard library and of third-party packages are not restricted.
 Imports inside an `if TYPE_CHECKING:` block count as dependencies.
 
-#### Recipes do not use parser bindings, unless proven necessary
+#### Recipes use parser bindings only when they are parser specific
 
-A recipe expresses intent in terms of the core, so that it runs on any parser that provides the abstractions the core defines.
-An import from a recipe into a parser binding is a violation.
-It may be exempted only on facts, not on expectations. An exemption names:
+A recipe expresses its intent in terms of the core where it can, so that it runs on every parser that provides the
+abstractions the core defines.
+Some recipes cannot be written for a language only, because they rely on what one parser provides; such a recipe is
+*parser specific*.
+For example, `PythonExtractor` walks the nodes of the Python standard library `ast` parser.
 
-1. the binding symbol that is used;
-1. the capability the core is missing, demonstrated by the code that needs it;
-1. the issue that tracks adding that capability to the core.
+- A parser-specific recipe declares each parser binding it depends on; it may depend on more than one.
+  A declaration is an entry in `[tool.importlinter]` with the reason, based on the code that needs the binding.
+- Any other import from a recipe into a parser binding is a violation. It is resolved by adding the missing capability to the
+  core, or, if the facts show that the recipe is parser specific, by a declaration.
 
 #### No dependencies between parser bindings
 
@@ -159,6 +174,8 @@ recipes/
 ├── taut_to_python_unittest/
 ├── unit_to_pytest/
 ├── refactor_actions/       # ASTRefactorActions: reusable transformations are recipes, not core
+├── python_extractor/       # PythonExtractor: parser specific, uses python.ast
+├── code_graph_extractor/   # Extractor and the *CodeGraphExtractor classes: parser specific, use tree_sitter
 ├── cli/                    # the rejuvenate and taut2test commands
 └── examples/               # the example applications that are now in src/rejuvenation
 ```
@@ -167,18 +184,33 @@ Decisions:
 
 - There is no separate library directory: reusable transformations, such as `ASTRefactorActions`, are recipes.
 - The `rejuvenation` package is dissolved: its command line moves to `recipes/cli/`, its examples to `recipes/examples/`.
+- An example that shows how one parser represents code is a unit test of that parser binding, not a recipe.
+  Such a test documents, for instance, that the Python `ast` parser represents `else: if` and `elif` alike.
+  This applies to `python_ast_example`, `python_cst_example`, `python_rst_example`, `python_lst_example` and
+  `cpp_clang_lst_example`, unless the facts show that the example is a parser-specific recipe.
 
 ### Public API
 
 Decisions:
 
-- Each package lists its public API in `__all__` of its `__init__.py`. Code outside the package imports from the package,
-  not from its modules: `from renaissance.core.matching import match_pattern`.
-- Some symbols exist only for parser bindings to implement the model. They are exported too, and marked *binding* below.
-  Recipes do not use them.
-- Everything not listed is internal. Unit tests of the package itself may use internal symbols.
+- Each package lists its public API in `__all__` of its `__init__.py`. Its `__init__.py` imports these symbols and defines
+  nothing else.
+- Code outside the package imports from the package, not from its modules: `from renaissance.core.matching import match_pattern`.
+- Some symbols exist only for parser bindings to implement the model. They are marked *binding* below, and live in a module
+  `for_bindings` of their core sub-package, such as `renaissance.core.model.for_bindings`. Recipes do not import it.
+- Everything else is internal. Unit tests of the package itself may use internal symbols.
 
-The tables below are a first draft. The column *now in* gives the current module, relative to `src/renaissance/`.
+How these decisions are checked:
+
+- Each package has a `protected` contract in `[tool.importlinter]`: its modules may be imported only by the package itself and by
+  its unit tests. One contract per package is needed, because a contract cannot name "the package of the protected module" as
+  the allowed importer.
+- Each `for_bindings` module has a `protected` contract that allows the core, the parser bindings and their unit tests.
+- Ruff rule F401 reports a name that an `__init__.py` imports but does not list in `__all__`.
+- That an `__init__.py` defines nothing itself is enforced by review.
+
+The tables below are the starting point; once a package exists, its `__all__` is the source of truth.
+The column *now in* gives the current module, relative to `src/renaissance/`.
 
 #### `core.model`
 
@@ -253,17 +285,16 @@ Internal: `annotate_decorator`, `get_methods_with_decorator`.
 
 #### `parser_bindings` API
 
-The public API of a binding serves the tests, the recipes with an exemption, and the bindings' own documentation.
+The public API of a binding serves the tests, the parser-specific recipes, and the bindings' own documentation.
 
 - `clang.libclang`: `ClangASTNode`, `ClangTranslationUnit`, `ClangAdapter`, `CompilationDatabase`, its own pattern factories
   for C and C++, and its own `is_clang_*` predicates.
 - `clang.json_ast`: `ClangJsonASTNode`, `ClangJsonTranslationUnit`, its own pattern factories for C and C++, and its own
   `is_clang_*` predicates.
-- `python.ast`: `PythonRstNode`, `PythonRstTranslationUnit`, `PythonRSTReference`, `ASTExtension`, `PythonExtractor`,
-  `convert_function`, and its own factory and pattern factory.
+- `python.ast`: `PythonRstNode`, `PythonRstTranslationUnit`, `PythonRSTReference`, `ASTExtension`, `convert_function`, and its
+  own factory and pattern factory.
 - `python.libcst`: `PythonCstNode`, `PythonCstTranslationUnit`, and its own factory and pattern factory.
-- `tree_sitter`: `TreeSitterAdapter`, `TreeSitterPatternFactory`, `LST`, `LSTNode`, `LstVisualizer`, `Extractor`,
-  `BaseCodeGraphExtractor`, `PythonCodeGraphExtractor`, `JavaCodeGraphExtractor`, `CppCodeGraphExtractor`.
+- `tree_sitter`: `TreeSitterAdapter`, `TreeSitterPatternFactory`, `LST`, `LSTNode`, `LstVisualizer`.
 - `project`: `ProjectScanner`, `CppScanner`, `BearCppScanner`, `JavaScanner`, `PythonScanner`.
 
 Today `PythonFactory`, `PythonPatternFactory` and `PythonPattern` serve the `ast`, `libcst` and tree-sitter parsers at once.
@@ -273,16 +304,18 @@ They are split, so that each binding has its own.
 
 Each recipe package exports its recipe; `renaissance.recipes` itself exports nothing.
 
-| Recipe                    | Public API             |
-| ------------------------- | ---------------------- |
-| `cleanup_refactoring`     | `CleanupRefactoring`   |
-| `python_refactoring`      | `PythonRefactoring`    |
-| `simplify_renaissance`    | `SimplifyRenaissance`  |
-| `taut_to_python_unittest` | `TautToPythonUnittest` |
-| `unit_to_pytest`          | `UnitToPytest`         |
-| `refactor_actions`        | `ASTRefactorActions`   |
-| `cli`                     | `refactor`             |
-| `examples`                | none                   |
+| Recipe                    | Public API                                                                        |
+| ------------------------- | --------------------------------------------------------------------------------- |
+| `cleanup_refactoring`     | `CleanupRefactoring`                                                              |
+| `python_refactoring`      | `PythonRefactoring`                                                               |
+| `simplify_renaissance`    | `SimplifyRenaissance`                                                             |
+| `taut_to_python_unittest` | `TautToPythonUnittest`                                                            |
+| `unit_to_pytest`          | `UnitToPytest`                                                                    |
+| `refactor_actions`        | `ASTRefactorActions`                                                              |
+| `python_extractor`        | `PythonExtractor`                                                                 |
+| `code_graph_extractor`    | `Extractor`, `BaseCodeGraphExtractor` and its subclasses for Python, Java and C++ |
+| `cli`                     | `refactor`                                                                        |
+| `examples`                | none                                                                              |
 
 ### Tests
 
@@ -304,20 +337,24 @@ test/
 │   │   └── project/
 │   ├── recipes/
 │   │   └── <recipe>/
-│   └── tools/                  # mirrors tools/, which lives outside src/
-├── feature/                    # was features/: *.feature, steps/, targets/
+├── features/                   # was features/ at the root: *.feature, steps/, targets/
+├── tools/                      # mirrors tools/: one test_<tool>.py per tool, shared/ mirrors tools/shared/
 └── test_data/
 ```
 
 Decisions:
 
+- `test/` has one directory per kind of test: `unit/` for the code under `src/`, `features/` for the end-to-end tests,
+  and `tools/` for the guard rails. `test_data/` holds input files shared by the tests.
 - A unit test lives in the directory of the unit it tests, not of the parser it happens to use.
   A test of the matcher that parses C++ is a test of `core.matching`.
 - A unit test follows the dependency rules of the unit it tests. A unit test of the core therefore uses test doubles, such as
   `test/syntax_tree/infra_syntax_node.py`, instead of a parser binding. The core tests that still parse real code are known
   violations.
 - Feature tests are end to end. They may import from every layer.
-- The layering rules are checked for `src/` and for the unit tests.
+- The layering rules are checked for `src/`, for the unit tests and for the tools and their tests.
+- That `test/unit/` mirrors the source tree, and `test/tools/` mirrors `tools/`, is checked by the
+  [layout check](../tools/check-layout.md).
 
 ### Documentation
 
@@ -343,25 +380,48 @@ Decisions:
 
 - The user documentation does not describe parser bindings; which parser is used is an implementation detail.
   It may state which languages are supported.
+- The user documentation does not describe the tools; they serve the development of Renaissance.Py, not its use.
+  Only `docs/developer/tools/` documents them.
 - `docs/user/core/` and `docs/user/recipes/` follow the structure of the core and the recipes.
   `concepts/`, `features/` and `workflows/` remain organised by task.
 - `docs/developer/modules/` and `docs/developer/api/` follow the structure of `src/renaissance/`.
   The parser bindings are documented there.
+- That these directories mirror the code is checked by the [layout check](../tools/check-layout.md).
 
 ### Tools
 
-`tools/` stays at the repository root. Its scripts are standalone guard rails and do not import `renaissance`.
+```text
+tools/                          # the guard rails, one module per tool, run as python -m tools.<tool>
+└── shared/                     # functionality that several tools share; no tools
+```
+
+`tools/` stays at the repository root, outside `src/`. Its tools are guard rails, independent of everything else:
+
+- a tool imports only the standard library, third-party packages, other tools and `tools.shared`: nothing from `renaissance`,
+  `rejuvenation` or the tests;
+- nothing outside the tools imports a tool, except its own tests in `test/tools/`;
+- the tests in `test/tools/` import nothing from `renaissance`, `rejuvenation` or the other tests.
+
+A tool reads the repository as files, for example `pyproject.toml`, and never as Python modules.
+The [layering check](../tools/check-layering.md) enforces these rules, except for imports from `features/`, which it cannot analyse.
 
 ## Invariants / guarantees
 
 - `core` imports nothing from `parser_bindings` or `recipes`.
 - Within `core`, a sub-package imports only the sub-packages below it.
 - No parser binding imports from another parser binding.
-- A recipe imports from a parser binding only through a recorded exemption.
+- A recipe imports from a parser binding only if it declares that it depends on that binding.
+- Code outside a package imports only the package's public API.
 - Every module under `src/` belongs to exactly one layer, and every module under `parser_bindings/` to exactly one binding.
+- The unit tests and the documentation mirror the code.
+- The tools and their tests are independent of the rest of the repository, and only the developer documentation describes them.
 - The core contains no language- or parser-specific facts.
 
 ## Known violations
+
+The migration to this structure moves code; it does not fix violations.
+A violation that remains after a step of the migration is recorded as a known violation.
+Once the structure is in place, each known violation gets an issue.
 
 At the time of writing, the current code violates this structure as follows.
 The violations an import check can find are the `ignore_imports` entries of the contracts in `pyproject.toml`, each with its
@@ -383,7 +443,7 @@ Imports within these packages are not yet visible to an import check; they becom
 | `integrations/clang/c_pattern_factory`    | `predicates`, `cpp_utils`, shared by both      | one pattern factory per binding                                                   |
 | `integrations/clang/clang_adapter`        | `integrations/tree_sitter/lst`                 | clang gets its own node type; `LSTNode` classifies kinds with the tree-sitter map |
 
-These are resolved during the migration. The `ignore_imports` entries may carry them only until the step that removes them.
+When the migration splits these packages, these imports become visible, and are recorded as `ignore_imports` entries.
 
 ### Language-specific facts in the core
 
@@ -402,13 +462,4 @@ These are resolved during the migration. The `ignore_imports` entries may carry 
 ## Related code
 
 - `[tool.importlinter]` in `pyproject.toml`
-
-## Notes
-
-Open questions:
-
-1. The code graph extractors (`PythonExtractor`, the `*CodeGraphExtractor` classes) are analyses and therefore candidate recipes,
-   but each is written against one parser. This draft leaves them in their binding.
-1. The examples that demonstrate one particular parser (`python_ast_example`, `python_cst_example`, `python_lst_example`,
-   `python_rst_example`, `cpp_clang_lst_example`) document a binding rather than express intent.
-   They may fit better in that binding's developer documentation or tests than in `recipes/examples/`.
+- `[tool.check_layout]` in `pyproject.toml`

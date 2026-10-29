@@ -4,31 +4,14 @@
 # of this repository, also available at:
 # https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
-"""AI: Tests for the ruff/pyright issue budget gate in tools/lint_budget.py.
+"""AI: Tests for the ruff/pyright issue budget gate in tools/lint_budget.py."""
 
-The `tools` directory is not on the pytest `pythonpath`, so the script is loaded from its path.
-"""
-
-import importlib.util
 import json
 from collections import Counter
-from pathlib import Path
 
 import pytest
 
-ROOT = Path(__file__).resolve().parents[2]
-
-
-def _load_lint_budget():
-    """AI: Import tools/lint_budget.py as a module."""
-    spec = importlib.util.spec_from_file_location("lint_budget", ROOT / "tools" / "lint_budget.py")
-    assert spec is not None and spec.loader is not None
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
-
-
-lint_budget = _load_lint_budget()
+from tools import lint_budget
 
 
 @pytest.fixture
