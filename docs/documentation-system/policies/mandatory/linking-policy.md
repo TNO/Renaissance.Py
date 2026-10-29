@@ -23,10 +23,10 @@ This policy governs documentation links and references.
 ## Requirements
 
 1. Section overviews should link to the pages they introduce.
-2. Concept, feature, workflow, and documentation-system overview pages should use navigable links.
-3. Internal documentation links should resolve correctly.
-4. Image references should point to existing files.
-5. Important pages should expose stable anchors where appropriate.
+1. Concept, feature, workflow, and documentation-system overview pages should use navigable links.
+1. Internal documentation links should resolve correctly.
+1. Image references should point to existing files.
+1. Important pages should expose stable anchors where appropriate.
 
 ## Recommended linking style
 

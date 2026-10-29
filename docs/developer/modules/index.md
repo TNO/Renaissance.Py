@@ -9,9 +9,9 @@ https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 # Code modules
 
 1. [Parser and AST modules](parser-and-ast.md)
-2. [Matching modules](matching.md)
-3. [Filter modules](filter.md)
-4. [Analysis modules](analysis.md)
-5. [Transformation modules](transformation.md)
-6. [Observability modules](observability.md)
-7. [Strategy modules](strategy.md)
+1. [Matching modules](matching.md)
+1. [Filter modules](filter.md)
+1. [Analysis modules](analysis.md)
+1. [Transformation modules](transformation.md)
+1. [Observability modules](observability.md)
+1. [Strategy modules](strategy.md)

@@ -21,10 +21,10 @@ See the [`re` module documentation](https://docs.python.org/3/library/re.html) a
 
 1. Regular expressions work on both `str` and `bytes`, but a `bytes` pattern matches bytes, not characters.
    Its results therefore depend on the encoding of the input, so `str` is the preferred default.
-2. Python has no built-in transaction or batch mechanism for combining multiple changes.
+1. Python has no built-in transaction or batch mechanism for combining multiple changes.
    A single `re.sub` call applies all its matches against the original text,
    but combining several rules or edits requires custom logic.
-3. Python has no built-in operation to modify a single group of a match.
+1. Python has no built-in operation to modify a single group of a match.
    The replacement always covers the whole match;
    modifying a group is done by rebuilding the match, by using lookarounds, or by splicing group spans in a callback.
 

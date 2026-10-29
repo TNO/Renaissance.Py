@@ -18,8 +18,8 @@ The documentation system defines how documentation is:
 ## Components
 
 1. [Templates](templates/index.md)
-2. [Policies](policies/index.md)
-3. [Enforcement](enforcement/index.md)
+1. [Policies](policies/index.md)
+1. [Enforcement](enforcement/index.md)
 
 ## Interpretation
 

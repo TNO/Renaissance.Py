@@ -40,18 +40,18 @@ The project consists of four conceptually distinct layers:
 
 1. **Renaissance** — the parser-agnostic core: the unified AST model, match-pattern engine, rewriter, and
    other language- and parser-agnostic components.
-2. **Integrations** — parser-specific bridges (tree-sitter, Clang, Python's `ast` module, …) that make a
+1. **Integrations** — parser-specific bridges (tree-sitter, Clang, Python's `ast` module, …) that make a
    parser's native nodes conform to the core's node `Protocol` (see ADR 03). An integration may be
    implemented as a wrapper, an adapter, or by extending the foreign node type directly to satisfy the
    protocol via duck typing (see ADR 06); the choice of technique is an implementation detail internal to
    the integration, not a distinguishing factor at the directory level.
-3. **Recipes** — libraries of shared transformations, reused across multiple rejuvenations. A recipe is
+1. **Recipes** — libraries of shared transformations, reused across multiple rejuvenations. A recipe is
    more powerful than a single find / filter / modify rule: it combines multiple such rules in a smart way
    to perform a non-trivial, composite transformation. The current assumption is one recipe library per
    language, but it may turn out that some recipes are more naturally scoped per parser/integration instead
    (e.g., when two integrations exist for the same language and expose different behaviours); see
    [Alternatives considered](#alternatives-considered).
-4. **Rejuvenations** — one collection per language of concrete, runnable applications of Renaissance,
+1. **Rejuvenations** — one collection per language of concrete, runnable applications of Renaissance,
    responding to change that originates from the customer (changed requirements), the organization
    (business strategy, process, or structure), or the environment (dependency/tooling versions). Instances
    include transpilation, migrations (language, dependency, or tooling version), and educational examples.
