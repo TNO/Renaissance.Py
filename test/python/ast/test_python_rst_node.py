@@ -27,7 +27,7 @@ from renaissance.integrations.python.ast.rst_node import PythonRstNode
 from renaissance.syntax_tree import ASTShower
 from renaissance.syntax_tree.semantic_kind import SemanticKind
 from renaissance.utils.ast_utils import traverse
-from utils_for_tests import reject_unsupported_code
+from test.utils_for_tests import reject_unsupported_code
 
 
 class TestPythonRstNode:

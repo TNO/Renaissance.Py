@@ -55,13 +55,9 @@ recipes ──────► core ◄────── parser_bindings
    └┄┄┄┄┄ only with evidence ┄┄┄┄┄┄┄┘
 ```
 
-| Layer             | May import                                                   | Must not import                    |
-| ----------------- | ------------------------------------------------------------ | ---------------------------------- |
-| `core`            | nothing outside `core`                                       | `parser_bindings`, `recipes`       |
-| `parser_bindings` | `core.model`, `core.pattern`, `core.matching`                | another binding, `recipes`         |
-| `recipes`         | `core`, other recipes                                        | `parser_bindings`, unless exempted |
-
-Imports of the standard library and of third-party packages are not restricted by this page.
+The exact rules are the Import Linter contracts in `[tool.importlinter]` of `pyproject.toml`, their single source of truth;
+see [Layering check](../tools/check-layering.md). This page explains the reasons for them.
+Imports of the standard library and of third-party packages are not restricted.
 Imports inside an `if TYPE_CHECKING:` block count as dependencies.
 
 #### Recipes do not use parser bindings, unless proven necessary
@@ -317,10 +313,11 @@ Decisions:
 
 - A unit test lives in the directory of the unit it tests, not of the parser it happens to use.
   A test of the matcher that parses C++ is a test of `core.matching`.
-- Unit tests of the core may use parser bindings to obtain realistic trees; ten test modules of the current `syntax_tree` tests do.
-  Where possible they use the test doubles instead, such as `test/syntax_tree/infra_syntax_node.py`.
+- A unit test follows the dependency rules of the unit it tests. A unit test of the core therefore uses test doubles, such as
+  `test/syntax_tree/infra_syntax_node.py`, instead of a parser binding. The core tests that still parse real code are known
+  violations.
 - Feature tests are end to end. They may import from every layer.
-- The layering rules are checked for `src/` only.
+- The layering rules are checked for `src/` and for the unit tests.
 
 ### Documentation
 
@@ -367,7 +364,8 @@ Decisions:
 ## Known violations
 
 At the time of writing, the current code violates this structure as follows.
-`tools/check_layering.py` and its allowlist are the authoritative list for the violations an import check can find.
+The violations an import check can find are the `ignore_imports` entries of the contracts in `pyproject.toml`, each with its
+reason. They include recipes that import parser bindings, and unit tests of the core that parse real code.
 
 ### Imports between parser bindings
 
@@ -385,19 +383,7 @@ Imports within these packages are not yet visible to an import check; they becom
 | `integrations/clang/c_pattern_factory`    | `predicates`, `cpp_utils`, shared by both      | one pattern factory per binding                                                   |
 | `integrations/clang/clang_adapter`        | `integrations/tree_sitter/lst`                 | clang gets its own node type; `LSTNode` classifies kinds with the tree-sitter map |
 
-These are resolved during the migration. The allowlist may carry them only until the step that removes them.
-
-### Recipes importing parser bindings
-
-| Importing module                   | Imported                                                 | Missing in the core                                                 |
-| ---------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------- |
-| `recipes/python_refactoring`       | `PythonFactory`, `PythonPatternFactory`, `PythonRstNode` | parsing a file and creating patterns without naming the parser      |
-| `recipes/unit_to_pytest`           | `convert_function`                                       | access to the parameters of a function; it reads stdlib `ast` today |
-| `rejuvenation/cli`                 | `PythonExtractor`, `PythonRstNode`, `PythonScanner`      | the same as for `python_refactoring`                                |
-| `syntax_tree/ast_refactor_actions` | `CPPPatternFactory` (type-checking only)                 | a pattern factory protocol                                          |
-| `rejuvenation/*_example`           | various bindings                                         | to be assessed per example                                          |
-
-Each needs either an exemption with evidence or a core capability before the rule is enforced.
+These are resolved during the migration. The `ignore_imports` entries may carry them only until the step that removes them.
 
 ### Language-specific facts in the core
 
@@ -413,11 +399,9 @@ Each needs either an exemption with evidence or a core capability before the rul
 
 ## Related tests
 
-- `test/tools/test_check_layering.py`
-
 ## Related code
 
-- `tools/check_layering.py`
+- `[tool.importlinter]` in `pyproject.toml`
 
 ## Notes
 

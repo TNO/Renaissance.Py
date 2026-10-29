@@ -16,8 +16,8 @@ They are kept in the `tools` directory, can all be run locally before a pull req
 
 ## Available tools
 
-1. [Layering check](check-layering.md) (`tools/check_layering.py`):
-   forbids imports that cross a layer boundary, which keeps the core independent of the parser bindings and the recipes.
+1. [Layering check](check-layering.md) (`lint-imports`, configured in `pyproject.toml`):
+   forbids imports that break the dependency rules of the repository structure, in the sources and in the tests.
 1. [Encoding check](check-encoding.md) (`tools/check_encoding.py`):
    requires every file that `git` tracks to be UTF-8, without a byte order mark.
 1. [Line ending check](check-line-endings.md) (`tools/check_line_endings.py`):

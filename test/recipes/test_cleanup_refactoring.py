@@ -9,9 +9,9 @@
 import pytest
 from hamcrest import assert_that, calling, is_, raises
 
-from c_cpp.factories import Factories
 from renaissance.recipes import CleanupRefactoring
 from renaissance.syntax_tree import ASTFactory, ASTProcessor, ASTShower
+from test.c_cpp.factories import Factories
 
 
 class TestCleanupRefactoring:

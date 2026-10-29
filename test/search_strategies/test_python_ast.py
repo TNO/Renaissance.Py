@@ -11,7 +11,8 @@ import re
 
 from hypothesis import given
 from hypothesis import strategies as st
-from python_type_and_value import gen_dict, gen_list, gen_tuple, gen_union
+
+from test.search_strategies.python_type_and_value import gen_dict, gen_list, gen_tuple, gen_union
 
 
 @given(gen_union())

@@ -10,7 +10,8 @@
 import ast
 
 from hypothesis import given
-from python_type_and_value import gen_arguments
+
+from test.search_strategies.python_type_and_value import gen_arguments
 
 
 def _collect_names(a: ast.arguments) -> list[str]:

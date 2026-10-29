@@ -19,7 +19,6 @@ from hamcrest import (
     raises,
 )
 
-from c_cpp.factories import Factories
 from rejuvenation.batch_process_examples import (
     batch_recipe_example,
     batch_remove_unused_variable_once_example,
@@ -45,6 +44,7 @@ from renaissance.integrations.clang import ClangASTNode, CPatternFactory
 from renaissance.integrations.clang.clang_json_ast_node import ClangJsonASTNode
 from renaissance.syntax_tree import ASTFactory
 from renaissance.syntax_tree.ast_node import ASTNode
+from test.c_cpp.factories import Factories
 
 
 class TestRefactorWithNestedCompositions:
