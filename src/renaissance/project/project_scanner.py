@@ -62,8 +62,9 @@ class PythonScanner(ProjectScanner):
         """Store the scan root and optional package_dirs narrowing.
 
         package_dirs, when given, narrows the scan to those subdirectories of root_dir.
-        Left as None (the default), the whole of root_dir is scanned instead of assuming a
-        src/lib/test layout, since that assumption silently skipped real third-party layouts.
+        Left as None (the default), the whole of root_dir is scanned instead of assuming that the
+        packages live in the directories src, lib and test, since that assumption silently skipped
+        real third-party layouts.
         """
         self.root_dir = root_dir
         self.package_dirs = package_dirs
