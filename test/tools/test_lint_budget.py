@@ -8,6 +8,7 @@
 
 import json
 from collections import Counter
+from pathlib import Path
 
 import pytest
 
@@ -80,6 +81,12 @@ def test_check_mode_accepts_an_improvement_without_writing(budget_file, monkeypa
 
     assert lint_budget.main(["--check"]) == lint_budget.EXIT_OK
     assert json.loads(budget_file.read_text(encoding="utf-8"))["ruff"] == {"E501": 5}
+
+
+def test_the_budget_file_is_written_with_lf_line_endings(budget_file: Path) -> None:
+    """Assert the budget file has LF line endings on every platform, as .gitattributes requires."""
+    lint_budget.save_budget({"ruff": {"E501": 1}})
+    assert b"\r\n" not in budget_file.read_bytes()  # noqa: S101 (pytest assertion; new tests must not raise the S101 budget)
 
 
 def test_removal_is_advised_when_no_issues_are_left(budget_file, monkeypatch, capsys) -> None:

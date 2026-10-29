@@ -48,7 +48,7 @@ def load_budget() -> dict[str, dict[str, int]]:
 
 def save_budget(budget: dict[str, dict[str, int]]) -> None:
     """AI: Write the per-kind budgets as sorted JSON, so updates produce minimal diffs."""
-    BUDGET_FILE.write_text(json.dumps(budget, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    BUDGET_FILE.write_text(json.dumps(budget, indent=2, sort_keys=True) + "\n", encoding="utf-8", newline="\n")
 
 
 def compare(tool: str, counts: Counter[str], budgets: dict[str, int]) -> tuple[list[str], list[str]]:
