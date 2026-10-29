@@ -97,6 +97,10 @@ omit = ["test/*", "features/*"]
 show_missing = true
 skip_covered = false
 
+[tool.codespell]
+# NotIn and ANC are identifiers in the code, not misspellings.
+ignore-words-list = "NotIn,ANC"
+
 [tool.ruff]
 line-length = 140
 src = ["src", "test", "features"]

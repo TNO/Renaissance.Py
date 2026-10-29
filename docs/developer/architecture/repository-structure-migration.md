@@ -95,7 +95,7 @@ environment.
 - Lint budget: `python -m tools.lint_budget --check`. No budget is raised.
 - Copyright, encoding and line endings: `python -m tools.check_copyright check`, `python -m tools.check_encoding --check` and
   `python -m tools.check_line_endings --check`.
-- Spelling: `uv run codespell ./src ./test ./tools ./features --ignore-words-list=NotIn,ANC`.
+- Spelling: `uv run codespell ./src ./test ./tools ./features ./docs`.
 - Markdown and documentation: `uv run pymarkdown scan -r --respect-gitignore .`, `python -m tools.check_doc_images_policy` and
   `uv run mkdocs build --strict`.
 - History: `git show -M --stat HEAD` shows each moved file as a rename.

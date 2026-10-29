@@ -56,7 +56,7 @@ jobs:
       - name: Check that the tools list the same source roots
         run: uv run python -m tools.check_source_roots --check
       - name: Check spelling with codespell
-        run: uv run codespell ./src ./test ./tools ./features --ignore-words-list=NotIn,ANC
+        run: uv run codespell ./src ./test ./tools ./features
       - name: Test with pytest and collect coverage
         run: uv run coverage run -m pytest ./test ./features
       - name: Coverage report
