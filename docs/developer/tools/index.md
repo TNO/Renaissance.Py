@@ -32,6 +32,8 @@ may call another tool, and functionality that several tools share lives in `tool
    requires every text file that `git` tracks to be stored with LF line endings.
 1. [Copyright check](check-copyright.md) (`tools/check_copyright.py`):
    checks, inserts and removes the copyright notice of `COPYRIGHT.txt` at the top of every tracked file.
+1. [Source root check](check-source-roots.md) (`tools/check_source_roots.py`):
+   requires pytest, Ruff and Pyright to list the same source roots in `pyproject.toml`.
 1. [Lint and type-check budget](../coding-conventions.md#lint-and-type-check-budgets) (`tools/lint_budget.py`):
    counts the `ruff` and `pyright` issues per kind and fails when a change introduces a new one.
 1. [Image policy check](../../documentation-system/enforcement/image-policy-enforcement.md) (`tools/check_doc_images_policy.py`):

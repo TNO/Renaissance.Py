@@ -160,6 +160,7 @@ nav:
           - Encoding check: developer/tools/check-encoding.md
           - Line ending check: developer/tools/check-line-endings.md
           - Copyright check: developer/tools/check-copyright.md
+          - Source root check: developer/tools/check-source-roots.md
 
       - Architecture:
           - Overview: developer/architecture/index.md

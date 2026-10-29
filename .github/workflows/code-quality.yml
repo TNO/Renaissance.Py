@@ -53,6 +53,8 @@ jobs:
         run: uv run python -m tools.check_line_endings --check
       - name: Check copyright notices
         run: uv run python -m tools.check_copyright check
+      - name: Check that the tools list the same source roots
+        run: uv run python -m tools.check_source_roots --check
       - name: Check spelling with codespell
         run: uv run codespell ./src ./test ./tools ./features --ignore-words-list=NotIn,ANC
       - name: Test with pytest and collect coverage

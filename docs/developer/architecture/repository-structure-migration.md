@@ -90,6 +90,7 @@ environment.
 - Layering: `uv run lint-imports --no-cache`.
 - Layout: `python -m tools.check_layout`.
 - References: `python -m tools.check_references`, from step 0.1 on.
+- Source roots: `python -m tools.check_source_roots`, which matters from step 8.1 on, when the feature tests move.
 - Lint: `ruff check src test tools features` and `ruff format --check src test tools features`.
 - Lint budget: `python -m tools.lint_budget --check`. No budget is raised.
 - Copyright, encoding and line endings: `python -m tools.check_copyright check`, `python -m tools.check_encoding --check` and
@@ -357,7 +358,6 @@ binding by one contract per new binding.
 
 - test: `test/search_strategies/` to `test/unit/shared/`. Its helper `python_type_and_value.py` has no users other than its
   own tests, which is recorded as a known violation.
-  `test/test_pyproject_config.py` checks that the source roots in `pyproject.toml` agree; see the open decision below.
   `test/conftest.py` stays.
 - Checks: `test/` holds only `unit/`, `features/`, `tools/`, `test_data/`, `__init__.py` and `conftest.py`.
 
@@ -380,12 +380,6 @@ helper `python_type_and_value.py`.
   `git grep "repository-structure-migration"` finds nothing.
 
 The pull request is then ready for review.
-
-### Open decisions
-
-- **`test/test_pyproject_config.py`.** It is not a unit test of `src/`, but a check of the configuration, like a guard rail.
-  It could become a guard rail in `tools/`, with its test in `test/tools/`, or move to `test/unit/shared/` until an issue
-  decides.
 
 ## Invariants / guarantees
 
