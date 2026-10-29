@@ -163,6 +163,7 @@ nav:
       - Architecture:
           - Overview: developer/architecture/index.md
           - Code architecture: developer/architecture/code-architecture.md
+          - Repository structure: developer/architecture/repository-structure.md
           - Code base: developer/architecture/code-base.md
           - Navigation: developer/architecture/navigation.md
           - Matching: developer/architecture/matching.md
