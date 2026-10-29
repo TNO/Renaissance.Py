@@ -120,3 +120,5 @@ Revision history:
 - 2026-09-09: Created from issue #146 / PR #147 discussion.
 - 2026-09-09: `TautToPyunit` -> `TautToPythonUnittest`, following Pierre's approval on the PR #147
   review thread.
+- 2026-10-29: `TautToPythonUnittest` and `SimplifyRenaissance` removed (issue #299); the names above
+  record PR #147.

@@ -76,7 +76,6 @@ Issues = "https://github.com/TNO/Renaissance.Py/issues"
 
 [project.scripts]
 rejuvenate = "rejuvenation.cli:refactor"
-taut2test = "rejuvenation.cli:refactor"
 
 [tool.pytest.ini_options]
 testpaths = ["test", "features"]
@@ -102,7 +101,7 @@ line-length = 140
 src = ["src", "test", "features"]
 # Test inputs: tests can assert their content (including line numbers), so neither Ruff nor the guard rails may change them.
 # tools/check_copyright.py reads this list too; it holds the test inputs only.
-extend-exclude = ["features/targets", "test/test_data"]
+extend-exclude = ["features/targets"]
 force-exclude = true
 
 [tool.ruff.format]
