@@ -12,6 +12,7 @@ https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
 * Removed the nominal AST hierarchy in `renaissance.integrations.types`, including `ast_type`, `KIND_MAP`, and class-based kind finder APIs.
 * Use `NodeProtocol`, `SemanticKind`, `PatternKind`, `parser_kind`, and parser-local predicates instead.
+* Removed the `TautToPythonUnittest` and `SimplifyRenaissance` recipes and the `taut2test` command (#299).
 
 ## Plan for next sprints
 
