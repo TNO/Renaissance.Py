@@ -24,7 +24,7 @@ and the public API of each package.
 ## Scope
 
 This page describes *where code lives* and *what may depend on what*.
-It does not describe how to get there; that is the job of the migration plan.
+It does not describe how to get there; that is the job of the [migration plan](repository-structure-migration.md).
 It does not introduce new functionality: every package listed here holds code that exists today.
 Packages envisioned in issue 187 for which no code exists yet, such as semantic services, are added when that code is written.
 
