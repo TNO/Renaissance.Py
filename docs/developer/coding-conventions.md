@@ -51,10 +51,10 @@ Instead of disabling those checks, their issues are *budgeted* by `tools/lint_bu
 * the strict settings live in the script (`ruff --select ALL`, minus the rules `pyproject.toml` deliberately ignores)
   and in `pyrightconfig.strict.json`;
 * `lint-budget.json` records how many issues of each kind (`ruff` rule code, `pyright` rule name) currently exist;
-* CI runs `python tools/lint_budget.py --check` and fails when a pull request exceeds the budget of any kind,
+* CI runs `python -m tools.lint_budget --check` and fails when a pull request exceeds the budget of any kind,
   so no new issue of any kind can be introduced;
 * a pull request that *lowers* a count passes: the budget is a ceiling, never a quota;
-* run `python tools/lint_budget.py` locally after fixing issues to lower the budget to the new counts, or leave it:
+* run `python -m tools.lint_budget` locally after fixing issues to lower the budget to the new counts, or leave it:
   after the merge — and once a week — the `lint budget` workflow runs the script on `main` and opens an auto-merging
   pull request with the lowered `lint-budget.json`, so the counts can only ratchet down;
 * `--init` records the current counts as the budget; use it only for the first run or an approved exception.

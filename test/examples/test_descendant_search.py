@@ -9,13 +9,13 @@
 import pytest
 from hamcrest import assert_that, has_length, is_
 
-from c_cpp.factories import Factories
 from rejuvenation.descendant_search import find_descendant_match
 from renaissance.integrations.clang import ClangASTNode, CPatternFactory
 from renaissance.integrations.clang.clang_json_ast_node import ClangJsonASTNode
 from renaissance.syntax_tree import ASTFactory
 from renaissance.syntax_tree.match_finder import is_match, match_pattern
 from renaissance.syntax_tree.node_protocol import NodeProtocol
+from test.c_cpp.factories import Factories
 
 
 class TestFindDescendantMatch:

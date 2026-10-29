@@ -9,11 +9,11 @@
 import pytest
 from hamcrest import assert_that, has_length, is_, is_in
 
-from python.ast.factories import Factories
 from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
 from renaissance.syntax_tree.match_finder import match_pattern
 from renaissance.syntax_tree.pattern_kind import PatternKind
+from test.python.ast.factories import Factories
 
 
 class TestPythonFactory:

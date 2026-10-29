@@ -8,83 +8,71 @@ https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
 # Layering check
 
-`tools/check_layering.py` fails the build when a module imports another module that it is not allowed to depend on.
+[Import Linter](https://import-linter.readthedocs.io/) fails the build when a module imports another module that it is not
+allowed to depend on. It checks the sources, the unit tests and the tools.
 
-## The rule it enforces
+## Where the rules live
 
-The source tree is divided into layers, and a layer may only import the layers below it.
+The rules are the contracts in `[tool.importlinter]` of `pyproject.toml`. That section is their single source of truth:
+[Repository structure](../architecture/repository-structure.md) explains why the rules exist, but does not repeat them.
 
-| Layer             | Packages                                                             | May import                |
-| ----------------  | -------------------------------------------------------------------- | ------------------------- |
-| `core`            | `renaissance.syntax_tree`, `renaissance.common`, `renaissance.utils` | nothing outside the core  |
-| `parser_bindings` | `renaissance.integrations`                                           | `core`                    |
-| `recipes`         | `renaissance.recipes`, `rejuvenation`                                | `core`, `parser_bindings` |
+| Contract                               | Rule                                                                                      |
+| -------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `layers`                               | recipes above parser bindings above the core; within the core, the order of its parts     |
+| `bindings-use-model-pattern-matching`  | a parser binding does not import `core.rewriting` or `core.processing`                    |
+| `recipes-without-bindings`             | a recipe imports a parser binding only if it is parser specific and declares that binding |
+| `clang-independent` and the like       | a parser binding imports no other parser binding, one contract per binding                |
+| `tools-independent`                    | tools and their tests import nothing from `renaissance`, `rejuvenation` or other tests    |
+| `tools-used-by-their-tests-only`       | nothing but the tools and `test/tools` imports a tool                                     |
 
-Imports within a layer are always allowed, and imports of the standard library or of third-party packages are ignored.
+Each contract lists modules of today's packages, because the target packages do not exist yet. Moving a module during the
+migration is an edit to these lists. Once a target package exists, its line in a contract shrinks to that one package.
 
-The direction matters because the core carries the language- and parser-agnostic machinery: the AST abstraction, pattern matching,
-rewriting and recipe execution. A parser binding connects one concrete parser to that machinery, and a recipe expresses an analysis
-or a transformation in terms of it. As long as the core never reaches back into a binding, a binding can be added, replaced or
-removed without touching the core, and a recipe can run against any parser that provides the abstractions the core defines. One
-import in the wrong direction silently removes that property: the core then only works when that particular parser is installed
-and importable.
+## Tests follow the same rules
+
+A test module is listed next to the unit it tests and follows the rules of that unit. A unit test of `core.matching`, for
+example, may import `core.matching` and what lies below it, but no parser binding. Test helpers are listed like any other module.
+
+Two kinds of test code are not checked:
+
+- The feature tests in `features/`: they are end to end and may import from every layer. Import Linter cannot analyse that
+  package either, because `features/targets/` holds deliberately malformed Python.
+- Test directories without an `__init__.py`, such as `test/tree_sitter/`. Adding one there would shadow the installed
+  `tree_sitter` package, because `test/` is on the pytest `pythonpath`.
+
+A test helper must be imported through the `test` package (`from test.c_cpp.factories import Factories`), not through the
+pytest `pythonpath` (`from c_cpp.factories import Factories`). Import Linter only sees the first form.
 
 ## Running it
 
 ```powershell
-python tools/check_layering.py
+uv run lint-imports
 ```
 
-`--check` is accepted as well, for symmetry with the other guard rails that CI runs; this check never writes anything, so both
-invocations behave identically. The script only parses the sources, it never imports them, so a parser binding whose external
-dependency is missing cannot make the check fail or pass by accident.
+CI runs `uv run lint-imports --no-cache`. Run it from the repository root, so that the `test` package resolves to this
+repository and not to the `test` package of the standard library.
 
-Exit codes:
+Import Linter checks indirect imports as well: in the `layers` contract, a chain of imports through a module that no layer
+lists counts as an import. Imports inside an `if TYPE_CHECKING:` block count too.
 
-| Code | Meaning                                                                             |
-| ---- | ----------------------------------------------------------------------------------- |
-| 0    | every violation found is covered by the allowlist                                   |
-| 1    | a violation is not allowlisted, or an allowlist entry no longer matches a violation |
-| 2    | the sources could not be analysed, for example because a file does not parse        |
+## Known violations
 
-## Reading its output
+A known violation is an `ignore_imports` entry of the contract it breaks, with a comment that gives the reason. An entry that no
+longer matches an import fails the check, so the list cannot outlive the problems it describes.
 
-Every violation is reported on one line, naming the file and the line number so that terminals and CI logs can link to it:
+Add an entry only when the fix is a design change that does not belong in the pull request at hand.
 
-```text
-src\renaissance\utils\ast_utils.py:7: renaissance.utils.ast_utils (core) imports renaissance.integrations (parser_bindings)
-```
+The `recipes-without-bindings` contract has a second kind of entry: the declaration of a parser-specific recipe that it depends
+on a binding. Its comment gives the reason, based on the code that needs the binding.
 
-Violations are reported wherever they are written: at the top of a module, inside a function body, inside a `try` block, and inside
-an `if TYPE_CHECKING:` block. The last kind is marked `[type-checking only]`. Such an import does not exist at run time, but it is
-still a design dependency — the core cannot be type-checked, documented or understood without the binding — so it is reported like
-any other.
+## What it does not check
 
-Relative imports are resolved against the package of the importing module before they are judged, so `from ..integrations import x`
-is reported as an import of `renaissance.integrations`.
-
-## The allowlist
-
-Violations that are known and accepted for now are listed in the `ALLOWLIST` of the script, each with the module, the imported
-module and the reason it still exists. An allowlisted violation is printed on every run, under a heading that says it is to be
-resolved, but it does not fail the check. This keeps the build green while the problem stays visible.
-
-Two properties keep the allowlist from becoming a dumping ground:
-
-1. An entry names one importing module and one imported module exactly. Wildcards are not supported, so an entry can never cover a
-   violation that was added later.
-1. An entry that no longer matches a violation fails the check. Once an import is removed, the next run tells you to delete its
-   entry, so the allowlist cannot outlive the problem it describes.
-
-Add an entry only when the fix is a design change that does not belong in the pull request at hand, and record *why* in the reason.
-The preferred fix is almost always to move the abstraction the core needs into the core, and to let the binding implement it.
-
-## When the packages are renamed
-
-The layer definitions are the `LAYERS` and `ALLOWED_DEPENDENCIES` mappings at the top of the script. `LAYERS` maps a layer name to
-the packages it owns, and `ALLOWED_DEPENDENCIES` maps a layer name to the other layers it may import. Renaming or moving a package
-is a one-line edit to `LAYERS`; introducing a layer is one entry in each mapping. Nothing else in the script knows the package
-names, and the tests run against synthetic package trees rather than against `src`, so they keep working across a restructuring.
-
-After a rename, run the check: the modules whose allowlist entries still carry the old names will be reported as stale, which is
-the signal to update or delete them.
+- That every module is listed in a contract. Import Linter checks this only for layers given as containers, which the current
+  package layout does not allow.
+- Imports between `ast` and `libcst`, and between libclang and the JSON AST dump: each pair still shares one package.
+- That the core contains no language- or parser-specific facts. Review enforces that rule.
+- That code outside a package uses only its public API. This needs one `protected` contract per package, which is added once
+  the package exists in its target place.
+- A module loaded from its path, with `importlib`, instead of imported. The tests in `test/tools` import the tools, so that the
+  `tools-used-by-their-tests-only` contract sees them.
+- Imports from `features/`, which Import Linter cannot analyse (see above).

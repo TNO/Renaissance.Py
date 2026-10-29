@@ -13,7 +13,7 @@ import pytest
 from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
 from renaissance.syntax_tree.node_protocol import NodeProtocol
-from utils.util_equivalence_classes import assert_pair_equivalence, make_parametersets_of_equivalence_classes
+from test.utils.util_equivalence_classes import assert_pair_equivalence, make_parametersets_of_equivalence_classes
 
 
 class TestPythonAstMatcherBasic:

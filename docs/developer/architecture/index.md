@@ -8,7 +8,8 @@ https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
 # Architecture
 
-This section describes the [code architecture](code-architecture.md), [test architecture](test-architecture.md), and [traceability model](traceability-model.md).
+This section describes the [code architecture](code-architecture.md), [repository structure](repository-structure.md),
+[test architecture](test-architecture.md), and [traceability model](traceability-model.md).
 
 ## Environment
 

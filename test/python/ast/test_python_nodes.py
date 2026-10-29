@@ -11,13 +11,13 @@ from ast import AST
 import pytest
 from hamcrest import assert_that, is_
 
-from python.ast.factories import Factories
 from renaissance.integrations.python.ast.cst_node import PythonCstNode
 from renaissance.integrations.python.ast.factory import PythonPatternFactory
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
 from renaissance.integrations.tree_sitter.lst import LSTNode
 from renaissance.syntax_tree.semantic_kind import SemanticKind
 from renaissance.utils.ast_utils import traverse
+from test.python.ast.factories import Factories
 
 
 def assert_parser_or_semantic_kind(node, parser_kind: str) -> None:

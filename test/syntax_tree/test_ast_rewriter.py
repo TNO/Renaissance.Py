@@ -13,14 +13,14 @@ import pytest
 from hamcrest import assert_that, has_length, is_
 from pytest_mock import MockerFixture
 
-from c_cpp.factories import Factories
 from renaissance.integrations.clang import ClangASTNode, CPatternFactory
 from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
 from renaissance.syntax_tree import ASTFactory, ASTRewriter, PatternMatch
 from renaissance.syntax_tree.ast_rewriter import Rewritable, _RewriteAction, _RewriteActions
 from renaissance.syntax_tree.match_finder import find_all, match_pattern
-from utils_for_tests import compress, debug_print
+from test.c_cpp.factories import Factories
+from test.utils_for_tests import compress, debug_print
 
 
 class TestCommentLocation:

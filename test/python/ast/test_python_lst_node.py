@@ -15,7 +15,7 @@ from hypothesis import HealthCheck, given, settings
 from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
 from renaissance.integrations.tree_sitter.lst import LSTNode
 from renaissance.syntax_tree.semantic_kind import SemanticKind
-from utils_for_tests import reject_unsupported_code
+from test.utils_for_tests import reject_unsupported_code
 
 
 class TestPythonLstNode:

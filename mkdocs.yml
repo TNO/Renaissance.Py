@@ -156,13 +156,18 @@ nav:
       - Guard rail tools:
           - Overview: developer/tools/index.md
           - Layering check: developer/tools/check-layering.md
+          - Layout check: developer/tools/check-layout.md
+          - Reference check: developer/tools/check-references.md
           - Encoding check: developer/tools/check-encoding.md
           - Line ending check: developer/tools/check-line-endings.md
           - Copyright check: developer/tools/check-copyright.md
+          - Source root check: developer/tools/check-source-roots.md
 
       - Architecture:
           - Overview: developer/architecture/index.md
           - Code architecture: developer/architecture/code-architecture.md
+          - Repository structure: developer/architecture/repository-structure.md
+          - Repository structure migration: developer/architecture/repository-structure-migration.md
           - Code base: developer/architecture/code-base.md
           - Navigation: developer/architecture/navigation.md
           - Matching: developer/architecture/matching.md

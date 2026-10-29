@@ -8,7 +8,7 @@ https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
 # 14 - Code Repository Structure
 
-Status: Accepted
+Status: Superseded
 
 Date: 2026-03-27
 
@@ -32,6 +32,11 @@ Authors:
 - [Related decisions](#related-decisions)
 
 ## Context
+
+> **Superseded by [Repository structure](../repository-structure.md)** (`ARCH-CODE-STRUCTURE`, issue 187).
+> Its decisions to keep one repository, to extend it by one directory per contribution, and to allow a license per
+> directory are carried over there. The layout below, with `integrations/`, `recipes/<language>` and
+> `rejuvenation/<language>`, is replaced by the layers core, parser bindings and recipes.
 
 The goal of this ADR is to define the repository and directory structure for the Renaissance project,
 balancing modularity, licensing, and contributor accessibility.

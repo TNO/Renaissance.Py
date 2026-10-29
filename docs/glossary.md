@@ -127,10 +127,7 @@ See [Rewrite semantics](user/concepts/rewrite-semantics.md).
 
 ### Integration
 
-A parser-specific bridge (e.g., tree-sitter, Clang, Python's `ast` module) that makes a parser's native
-nodes conform to the core [AST](#ast-abstract-syntax-tree) node's `Protocol`, implemented as a wrapper, an
-adapter, or via duck typing.
-See [ADR 14](developer/architecture/adr/14_code_repositories.md).
+Former name of a [parser binding](#parser-binding).
 
 ---
 
@@ -173,6 +170,13 @@ See [Observability](user/concepts/observability.md).
 
 ## P
 
+### Parser binding
+
+The integration of one concrete parser (e.g., tree-sitter, libclang, Python's `ast` module) that makes the parser's native
+nodes conform to the core [AST](#ast-abstract-syntax-tree) node's `Protocol`, implemented as a wrapper, an
+adapter, or via duck typing.
+See [Repository structure](developer/architecture/repository-structure.md).
+
 ### Prepend
 
 An [insertion](#insertion) that adds text immediately before the start location of an AST node.
@@ -191,9 +195,9 @@ See [Rewrite semantics](user/concepts/rewrite-semantics.md).
 
 ### Recipe
 
-A combination of multiple standard analyses and transformations (rules) applied in a coordinated way to
-perform a non-trivial refactoring; more powerful than a single find / filter / modify rule.
-See [ADR 14](developer/architecture/adr/14_code_repositories.md).
+An analysis or transformation that combines multiple standard analyses and transformations (rules) in a coordinated way,
+such as a non-trivial refactoring or an extractor; more powerful than a single find / filter / modify rule.
+See [Repository structure](developer/architecture/repository-structure.md).
 
 ### Rejuvenation
 
@@ -219,7 +223,7 @@ See [Rewrite semantics](user/concepts/rewrite-semantics.md).
 
 The parser-agnostic core of the project: the unified AST model, match-pattern engine, rewriter, and other
 language- and parser-agnostic components.
-See [ADR 14](developer/architecture/adr/14_code_repositories.md).
+See [Repository structure](developer/architecture/repository-structure.md).
 
 ### Replacement
 

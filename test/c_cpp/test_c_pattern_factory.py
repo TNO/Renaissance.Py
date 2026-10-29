@@ -9,13 +9,13 @@
 import pytest
 from hamcrest import assert_that, contains_string, greater_than_or_equal_to, is_, less_than_or_equal_to, not_, not_none
 
-from c_cpp.factories import Factories
 from renaissance.integrations.clang import ClangASTNode, CPatternFactory
 from renaissance.integrations.clang.c_pattern_factory import derive_header_text
 from renaissance.integrations.clang.predicates import is_clang_compound_statement, is_clang_declaration_reference
 from renaissance.syntax_tree import ASTShower
 from renaissance.syntax_tree.ast_finder import find_nodes
 from renaissance.syntax_tree.semantic_kind import SemanticKind
+from test.c_cpp.factories import Factories
 
 
 class TestCPatternFactory:

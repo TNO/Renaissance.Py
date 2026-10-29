@@ -84,7 +84,7 @@ UTF-8; the encoding check applies to it like to any other file.
 ## Running it
 
 ```powershell
-python tools/check_line_endings.py
+python -m tools.check_line_endings
 ```
 
 `--check` is accepted as well, for symmetry with the other guard rails that CI runs; this check never writes anything, so both

@@ -36,7 +36,7 @@ The goal of ADR is to give the developer of new language AST for Renaissance a g
 | [11](11_parser_with_space_and_comment.md) | Parser with Space and Comment                                         | Proposal   |
 | [12](12_patterns_as_not_nodes.md)         | Patterns Are Not Nodes                                                | Proposal   |
 | [13](13_match_pattern.md)                 | Match Pattern                                                         | Proposal   |
-| [14](14_code_repositories.md)             | Code Repository Structure: Core, Integrations, Recipes, Rejuvenations | Accepted   |
+| [14](14_code_repositories.md)             | Code Repository Structure: Core, Integrations, Recipes, Rejuvenations | Superseded |
 | [15](15_camel_snake_case_conversion.md)   | camelCase/snake_case Conversion and Digit-as-Word Naming              | Accepted   |
 
 ## ADR template
@@ -71,3 +71,4 @@ Revision history:
 * 2026-09-03: Updated ADR 14 title to reflect the single-repository, extendable directory structure
   decision (renamed "rules" to "recipes" and "refactoring examples" to "rejuvenations").
 * 2026-09-09: Added ADR 15 (camelCase/snake_case Conversion and Digit-as-Word Naming).
+* 2026-10-29: Marked ADR 14 as superseded by [Repository structure](../repository-structure.md).

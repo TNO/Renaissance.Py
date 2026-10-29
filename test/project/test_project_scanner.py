@@ -258,7 +258,7 @@ class TestPythonScanner:
 
     def test_default_package_dirs_scans_whole_root_dir(self, tmp_path) -> None:
         """Assert PythonScanner scans the whole root_dir by default when package_dirs is not given."""
-        # Motivating case: source living outside src/lib/test (e.g. redis-py's redis/ layout).
+        # Motivating case: source outside the directories src, lib and test (e.g. redis-py's redis/ layout).
         redis_like = tmp_path / "redis"
         redis_like.mkdir()
         (redis_like / "client.py").write_text("")

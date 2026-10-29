@@ -18,7 +18,7 @@ converts it on every commit, and an old clone may still hold CRLF files that git
 A file whose attributes say `-text`, as `binary` does, is exempt: git stores its bytes verbatim,
 which is how a fixture that must keep CRLF is committed deliberately.
 
-Run `python tools/check_line_endings.py` locally, or `python tools/check_line_endings.py --check`
+Run `python -m tools.check_line_endings` locally, or `python -m tools.check_line_endings --check`
 as CI does; both report and neither writes.
 """
 

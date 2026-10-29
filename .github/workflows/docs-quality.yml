@@ -27,7 +27,7 @@ jobs:
       - name: Build documentation strictly
         run: uv run mkdocs build --strict
       - name: Check documentation image policy
-        run: uv run python tools/check_doc_images_policy.py
+        run: uv run python -m tools.check_doc_images_policy
       - name: Check spelling
         run: uv run codespell ./docs
       # pymarkdown has no configuration key for path exclusions, so .venv must be excluded on the command line.

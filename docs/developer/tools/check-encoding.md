@@ -54,7 +54,7 @@ drive it are visible in the test, rather than hidden in a file that no editor ca
 ## Running it
 
 ```powershell
-python tools/check_encoding.py
+python -m tools.check_encoding
 ```
 
 `--check` is accepted as well, for symmetry with the other guard rails that CI runs; this check never writes anything, so both

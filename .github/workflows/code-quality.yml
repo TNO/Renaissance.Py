@@ -42,17 +42,23 @@ jobs:
       - name: Type check with pyright
         run: uv run pyright ./src ./test ./tools ./features
       - name: Check ruff and pyright issue budgets
-        run: uv run python tools/lint_budget.py --check
+        run: uv run python -m tools.lint_budget --check
       - name: Check layer boundaries
-        run: uv run python tools/check_layering.py --check
+        run: uv run lint-imports --no-cache
+      - name: Check that tests and docs mirror the code
+        run: uv run python -m tools.check_layout --check
+      - name: Check that every named repository path exists
+        run: uv run python -m tools.check_references --check
       - name: Check file encodings
-        run: uv run python tools/check_encoding.py --check
+        run: uv run python -m tools.check_encoding --check
       - name: Check line endings
-        run: uv run python tools/check_line_endings.py --check
+        run: uv run python -m tools.check_line_endings --check
       - name: Check copyright notices
-        run: uv run python tools/check_copyright.py check
+        run: uv run python -m tools.check_copyright check
+      - name: Check that the tools list the same source roots
+        run: uv run python -m tools.check_source_roots --check
       - name: Check spelling with codespell
-        run: uv run codespell ./src ./test ./tools ./features --ignore-words-list=NotIn,ANC
+        run: uv run codespell ./src ./test ./tools ./features
       - name: Test with pytest and collect coverage
         run: uv run coverage run -m pytest ./test ./features
       - name: Coverage report

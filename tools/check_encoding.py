@@ -18,7 +18,7 @@ document or in a Markdown heading.
 The files to check are the ones `git` tracks; generated and ignored files are therefore left alone.
 Files that `git` treats as binary (they contain a NUL byte) are skipped, because they have no encoding.
 
-Run `python tools/check_encoding.py` locally, or `python tools/check_encoding.py --check` as CI does;
+Run `python -m tools.check_encoding` locally, or `python -m tools.check_encoding --check` as CI does;
 both report and neither writes.
 """
 

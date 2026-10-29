@@ -22,7 +22,7 @@ under `[tool.ruff] extend-exclude` in `pyproject.toml`, are never touched. A tra
 that is neither in `COMMENT_STYLES` nor excluded fails the check, as does an exclusion pattern that
 matches no tracked file.
 
-Run `python tools/check_copyright.py check` as CI does, optionally followed by files or directories
+Run `python -m tools.check_copyright check` as CI does, optionally followed by files or directories
 to limit the run to.
 """
 
