@@ -89,10 +89,10 @@ Negative / trade-offs:
     - Keep nodes mutable but perform defensive copying when necessary.
     - Rejected because it is easy to forget copies and still produce subtle bugs.
 
-2. Hybrid approach: mostly immutable, but allow controlled mutation through explicit APIs
+1. Hybrid approach: mostly immutable, but allow controlled mutation through explicit APIs
     - Provides flexibility but complicates invariants and testing; increases cognitive load.
 
-3. Fully persistent immutable data structures (e.g., ropes, HAMT, custom persistent vectors)
+1. Fully persistent immutable data structures (e.g., ropes, HAMT, custom persistent vectors)
     - Strong sharing and performance but larger implementation cost and complexity;
       deferred for future optimization if needed.
 

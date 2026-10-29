@@ -11,4 +11,4 @@ https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 Recommended policies describe preferred practices.
 
 1. [Diagram style guide](diagram-style-guide.md)
-2. [Caption style guide](caption-style-guide.md)
+1. [Caption style guide](caption-style-guide.md)

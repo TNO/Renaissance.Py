@@ -11,5 +11,5 @@ https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 Mandatory policies define requirements for the documentation system.
 
 1. [Image policy](image-policy.md)
-2. [Linking policy](linking-policy.md)
-3. [Glossary guide](glossary-guide.md)
+1. [Linking policy](linking-policy.md)
+1. [Glossary guide](glossary-guide.md)

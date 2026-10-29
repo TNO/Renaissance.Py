@@ -44,7 +44,7 @@ way. Two design questions drive this ADR:
    to a single name, determined by recursively applying `getPlaceholderName`. This lets `$x` in the pattern
    `$x;` match a full expression statement, not just an identifier.
 
-2. **How should repeated placeholders be compared?**
+1. **How should repeated placeholders be compared?**
    The same placeholder can be bound to nodes of *different* AST classes within one pattern
    (e.g., `$type* ptr = new $type()` binds `$type` first to `IASTNamedTypeSpecifier`, then to `IASTTypeId`).
    Comparison must therefore be structural (value equality), not class-based.

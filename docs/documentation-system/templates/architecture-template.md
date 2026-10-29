@@ -88,8 +88,8 @@ Each significant design decision should be its own `###` sub-section under `## D
 The structure within a decision sub-section is:
 
 1. **Context** — plain prose describing the problem or alternatives.
-2. **Comparison** *(optional)* — explicit trade-offs when multiple options are viable.
-3. **Decision** — bold heading followed by the chosen option and rationale.
+1. **Comparison** *(optional)* — explicit trade-offs when multiple options are viable.
+1. **Decision** — bold heading followed by the chosen option and rationale.
 
 ### Invariants / guarantees
 

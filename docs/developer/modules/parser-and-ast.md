@@ -262,9 +262,9 @@ driver as described below.
 The driver is resolved in this order:
 
 1. the first entry of `extra_args`, when it names a clang executable
-2. the path passed to `ClangJsonASTNode.set_compiler_path()`
-3. the `RENAISSANCE_CLANG` environment variable
-4. `clang`, or `clang++` for C++, found on `PATH`
+1. the path passed to `ClangJsonASTNode.set_compiler_path()`
+1. the `RENAISSANCE_CLANG` environment variable
+1. `clang`, or `clang++` for C++, found on `PATH`
 
 When none of these resolves to an executable driver, parsing raises
 `FileNotFoundError` describing these options, rather than failing inside the
