@@ -9,6 +9,7 @@
 import textwrap
 
 from hamcrest import assert_that, contains_string, is_, not_
+from pytest_mock import MockerFixture
 
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
 from renaissance.recipes.simplify_renaissance import SimplifyRenaissance
@@ -17,7 +18,7 @@ from renaissance.recipes.simplify_renaissance import SimplifyRenaissance
 class TestSimplifyRenaissance:
     """AI: Tests for the SimplifyRenaissance recipe."""
 
-    def _create(self, mocker, text) -> SimplifyRenaissance:
+    def _create(self, mocker: MockerFixture, text) -> SimplifyRenaissance:
         code = textwrap.dedent(text)
         mocker.patch(
             "renaissance.integrations.python.ast.factory.PythonFactory.create",
@@ -27,13 +28,13 @@ class TestSimplifyRenaissance:
         subject.in_memory = True
         return subject
 
-    def test_init_sets_white_and_black_list(self, mocker) -> None:
+    def test_init_sets_white_and_black_list(self, mocker: MockerFixture) -> None:
         """AI: Verify __init__ sets the white and black list patterns from the recipe's own defaults."""
         subject = self._create(mocker, "pass")
         assert_that(subject.white_list_pattern, is_("unit_to_pytest"))
         assert_that(subject.black_list_pattern, is_("SimplifyRenaissance"))
 
-    def test_run_skips_file_matching_black_list(self, mocker, capsys) -> None:
+    def test_run_skips_file_matching_black_list(self, mocker: MockerFixture, capsys) -> None:
         """AI: Verify run() skips a file whose name matches the black list pattern."""
         mocker.patch(
             "renaissance.integrations.python.ast.factory.PythonFactory.create",
@@ -45,7 +46,7 @@ class TestSimplifyRenaissance:
         captured = capsys.readouterr()
         assert_that(captured.out, contains_string("skipping"))
 
-    def test_run_skips_file_not_matching_white_list(self, mocker, capsys) -> None:
+    def test_run_skips_file_not_matching_white_list(self, mocker: MockerFixture, capsys) -> None:
         """AI: Verify run() skips a file whose name doesn't match the white list pattern."""
         mocker.patch(
             "renaissance.integrations.python.ast.factory.PythonFactory.create",
@@ -57,7 +58,7 @@ class TestSimplifyRenaissance:
         captured = capsys.readouterr()
         assert_that(captured.out, contains_string("skipping"))
 
-    def test_run_rewrites_expansion_signature_access(self, mocker) -> None:
+    def test_run_rewrites_expansion_signature_access(self, mocker: MockerFixture) -> None:
         """AI: Verify a manual replace_stmt call rewrites .expansions[...] signature access to bracket indexing."""
         subject = self._create(
             mocker,
@@ -70,7 +71,7 @@ class TestSimplifyRenaissance:
         assert_that(subject.apply_to_string(), contains_string('val= match["$key"]'))
         assert_that(subject.apply_to_string(), not_(contains_string(".expansions")))
 
-    def test_run_rewrites_factory_create_from_text(self, mocker) -> None:
+    def test_run_rewrites_factory_create_from_text(self, mocker: MockerFixture) -> None:
         """AI: Verify run() rewrites ASTFactory.create_from_text calls to the simplified load_from_text form."""
         subject = self._create(
             mocker,
@@ -84,7 +85,7 @@ class TestSimplifyRenaissance:
         assert_that(subject.apply_to_string(), contains_string("PythonASTNode.load_from_text(code, name)"))
         assert_that(subject.apply_to_string(), not_(contains_string("ASTFactory")))
 
-    def test_run_processes_matching_file(self, mocker, capsys) -> None:
+    def test_run_processes_matching_file(self, mocker: MockerFixture, capsys) -> None:
         """AI: Verify run() processes a matching file and reports it via stdout."""
         subject = self._create(mocker, "pass")
         subject.run()
