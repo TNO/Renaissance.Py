@@ -38,4 +38,4 @@
 
 1. **Common parser problems** (new page, e.g., `docs/developer/modules/parser-known-limitations.md`) — Java has CommonCdtParsingProblems.md listing concrete CDT/MSVC-extension parsing failures with workarounds. A Python equivalent covering known tree-sitter, libcst, clang binding, and ANTLR limitations would be directly useful.
 
-20. **Related works and context** (new section in index.md or index.md) — The Java UserGuide.md relates the tool to WHARS and ADA tooling. Adding a "related works" section that situates Renaissance-Experiments relative to the Java version, comby, and other code transformation tools would help new contributors understand design choices.
+1. **Related works and context** (new section in index.md or index.md) — The Java UserGuide.md relates the tool to WHARS and ADA tooling. Adding a "related works" section that situates Renaissance-Experiments relative to the Java version, comby, and other code transformation tools would help new contributors understand design choices.
