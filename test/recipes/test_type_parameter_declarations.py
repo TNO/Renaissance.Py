@@ -21,13 +21,13 @@ class TestDeclarationArgumentNames:
     @pytest.mark.parametrize(
         ("declaration", "expected"),
         [
-            pytest.param('T = TypeVar("T")', set(), id="the-type-parameters-own-name-is-skipped"),
+            pytest.param('T = TypeVar("T")', set[str](), id="the-type-parameters-own-name-is-skipped"),
             pytest.param('T = TypeVar("T", bound=Shape)', {"Shape"}, id="keyword-argument"),
             pytest.param('T = TypeVar("T", Shape, Other)', {"Shape", "Other"}, id="constraints"),
             pytest.param('T = TypeVar("T", bound=np.integer)', {"np"}, id="attribute-reads-only-its-root"),
             pytest.param('T = TypeVar("T", bound="Shape")', {"Shape"}, id="string-is-a-forward-reference"),
-            pytest.param('T = TypeVar("T", bound="not valid(")', set(), id="string-that-is-not-an-expression"),
-            pytest.param('T = TypeVar("T", int, str)', set(), id="built-ins-are-left-out"),
+            pytest.param('T = TypeVar("T", bound="not valid(")', set[str](), id="string-that-is-not-an-expression"),
+            pytest.param('T = TypeVar("T", int, str)', set[str](), id="built-ins-are-left-out"),
             pytest.param('T = TypeVar("T", **options)', {"options"}, id="mapping-argument"),
         ],
     )

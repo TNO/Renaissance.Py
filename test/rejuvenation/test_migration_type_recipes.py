@@ -75,7 +75,7 @@ class TestProcessFile:
 
         assert_that(migration.has_fixed(report), equal_to(obj=True))
         assert_that(report.reasons, not_(None))
-        assert_that((report.reasons or {})["orphaned"], equal_to({"T": UnsafeReason.IMPORTED_ELSEWHERE_IN_PROJECT}))
+        assert_that(report.reasons["orphaned"], equal_to({"T": UnsafeReason.IMPORTED_ELSEWHERE_IN_PROJECT}))
         written = target.read_text(encoding="utf-8")
         assert_that(written, contains_string("def identity[T](x: T) -> T:"))
         assert_that(written, contains_string('T = TypeVar("T")'))
