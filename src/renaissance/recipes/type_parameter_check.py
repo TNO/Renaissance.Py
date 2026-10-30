@@ -143,7 +143,8 @@ class TypeParameterCheck(PythonRefactoring[PythonCstNode]):
             self.type_param_kinds[name] = type_param_constructor_name(decl_stmt)
             uses = uses_of(root, name, decl_stmt)
             signature_users = {id(function) for use in uses if (function := signature_function(use)) is not None}
-            functions = list(dict.fromkeys(function for use in uses if (function := owning_function(use, signature_users)) is not None))
+            owners = (owning_function(use, signature_users) for use in uses)
+            functions = list(dict.fromkeys(function for function in owners if function is not None))
             if not functions:
                 continue
 

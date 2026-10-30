@@ -30,12 +30,12 @@ class PythonRefactoring[NodeT: PythonRstNode | PythonCstNode = PythonRstNode](AS
         """Prepare a refactoring processor for file, parsed with node_class (the RST backend by default)."""
         factory = PythonFactory(node_class)
         atu = factory.create(file)
-        super().__init__(atu, factory, False)
-        self.pattern_factory = PythonPatternFactory(self.factory)
+        super().__init__(atu, factory, in_memory=False)
+        self.pattern_factory = PythonPatternFactory(factory)
         self.black_list_pattern = ".git"
         self.white_list_pattern = ""
 
-    def replace_stmt(self, find, repl) -> None:
+    def replace_stmt(self, find: str, repl: str) -> None:
         """AI: Replace all statements matching the find pattern with the repl template, expanding captures."""
         pattern = self.pattern_factory.create_statements(find)
         for match in match_pattern(self.root.children, pattern):
@@ -48,7 +48,7 @@ class PythonRefactoring[NodeT: PythonRstNode | PythonCstNode = PythonRstNode](AS
             self.replace(replacement, match.nodes, False, False)
 
     @staticmethod
-    def process(class_name, file) -> None:
+    def process(class_name: str, file) -> None:
         """Return a subclass by name using importlib, like Java's Class.forName()."""
         snake = snake_case(class_name)
         module = importlib.import_module(f"renaissance.recipes.{snake}")
