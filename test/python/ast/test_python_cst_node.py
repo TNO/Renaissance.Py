@@ -77,7 +77,7 @@ class TestPythonCstNode:
         assert_that(me.name, is_("mememe"))
         assert_that(me.preceding_sibling.name, is_("previous_me"))
         assert_that(me.next_sibling.name, is_("next_me"))
-        assert_that(me.parent.parent.name, is_("Parent"))
+        assert_that(me.parent and me.parent.parent and me.parent.parent.name, is_("Parent"))
         # all children are mashed together
         assert_that(me.children, has_length(8))
 
