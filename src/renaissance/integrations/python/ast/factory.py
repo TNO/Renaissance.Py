@@ -174,5 +174,5 @@ class PythonPatternFactory:
     @staticmethod
     def create_kwargs(kw_str) -> Sequence[PythonPattern]:
         """AI: Parse kw_str as call keyword arguments and return their pattern nodes."""
-        call = ast.parse(f"fun({replace_dollar(kw_str)})", "kwarg_pattern.py", type_comments=True).body[0].value
+        call = ast.parse(f"fun({replace_dollar(kw_str)})", "kwarg_pattern.py").body[0].value
         return [PythonPattern(PythonRstNode(kwarg)) for kwarg in call.keywords]
