@@ -4,13 +4,20 @@
 # of this repository, also available at:
 # https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
-"""AI: Low-level AST utility helpers: sibling lookup, placeholder handling, and node matching."""
+"""AI: Low-level AST utility helpers: sibling and ancestor lookup, placeholder handling, and node matching."""
 
 from collections import deque
 from contextlib import contextmanager
 from contextvars import ContextVar
+from typing import TYPE_CHECKING
 
 from renaissance.integrations import MATCH_ALL, MATCH_ONE
+
+# TODO(FrancescoPezzella): Replace with a lazy import in Python 3.15.
+#  https://github.com/TNO/Renaissance.Py/issues/275
+if TYPE_CHECKING:
+    # syntax_tree imports this module, so a runtime import would be circular.
+    from renaissance.syntax_tree.ast_rewriter import Rewritable
 
 DISPLAY_PARSER_KIND: ContextVar[bool] = ContextVar("display_parser_kind", default=False)
 
@@ -97,6 +104,19 @@ def next_sibling(self):
     siblings = parent.children
     next_index = siblings.index(self) + 1
     return siblings[next_index] if next_index < len(siblings) else None
+
+
+def is_ancestor_of(ancestor: Rewritable, node: Rewritable) -> bool:
+    """Return True if ancestor is a proper ancestor of node.
+
+    Parent links are compared by identity, since node equality is structural.
+    """
+    current = node.parent
+    while current is not None:
+        if current is ancestor:
+            return True
+        current = current.parent
+    return False
 
 
 def match_props(mine, other, irrelevant_props) -> bool:
