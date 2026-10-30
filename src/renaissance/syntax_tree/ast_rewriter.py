@@ -15,6 +15,7 @@ from typing import Protocol, Self, runtime_checkable
 from more_itertools import flatten
 
 from renaissance.common import Rewriter
+from renaissance.utils.ast_utils import is_ancestor_of
 from renaissance.utils.text_utils import TextUtils
 
 from .match_finder import PatternMatch
@@ -294,7 +295,7 @@ class _RewriteActions:
         all_nodes = [(rewrite, node) for rewrite in replacing for node in rewrite.nodes if node != self.node]
         for i, (rewrite_a, node_a) in enumerate(all_nodes):
             for rewrite_b, node_b in all_nodes[i + 1 :]:
-                if rewrite_a is rewrite_b or self.__is_nested(node_a, node_b) or self.__is_nested(node_b, node_a):
+                if rewrite_a is rewrite_b or is_ancestor_of(node_b, node_a) or is_ancestor_of(node_a, node_b):
                     continue
                 if not (node_a.end_offset < node_b.offset or node_a.offset > node_b.end_offset):
                     raise ValueError(
@@ -302,19 +303,6 @@ class _RewriteActions:
                         f"({node_a.offset}-{node_a.end_offset} and {node_b.offset}-{node_b.end_offset}) "
                         "in the same file - applying both would corrupt the output."
                     )
-
-    @staticmethod
-    def __is_nested(node: Rewritable, maybe_ancestor: Rewritable) -> bool:
-        """Return True if maybe_ancestor is an ancestor of node, walking .parent.
-
-        Not node.is_ancestor_of() - not every Rewritable implements it (e.g. PythonRstNode).
-        """
-        parent = node.parent
-        while parent:
-            if parent is maybe_ancestor:
-                return True
-            parent = parent.parent
-        return False
 
     def __is_ancestor_in_nodes(self, node: Rewritable) -> bool:
         """Check if the given node is a descendant of any nodes in the rewrite list.
@@ -536,9 +524,7 @@ class _RewriteActions:
         if node == self.node:
             return node.text
         # the descendants may need to be rewritten as well
-        #        rewrites = [rewrite for rewrite in self.rewrites if any(node.is_ancestor_of(rewrite_node)
-        #                            for rewrite_node in rewrite.nodes)]
-        rewrites = [rewrite for rewrite in self.rewrites if any(node.is_ancestor_of(rewrite_node) for rewrite_node in rewrite.nodes)]
+        rewrites = [rewrite for rewrite in self.rewrites if any(is_ancestor_of(node, rewrite_node) for rewrite_node in rewrite.nodes)]
         if rewrites:
             rewriter = _RewriteActions(node, self.encoding, self.correct_indent, rewrites)
             return rewriter.apply_to_string()
