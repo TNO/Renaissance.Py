@@ -57,8 +57,8 @@ Three kinds of type parameter exist:
 ## Invariants / guarantees
 
 1. A type hint is never a type parameter: `list[T]` is a type hint, `T` is the type parameter it uses.
-2. The legacy and the PEP 695 declaration define the same kind of type parameter. Only the place where it is declared
-   differs, and the inline form needs Python 3.12.
+2. The legacy and the [PEP 695](https://peps.python.org/pep-0695/) declaration define the same kind of type parameter.
+   Only the place where it is declared differs, and the inline form needs Python 3.12.
 
 ## Related features
 
@@ -66,6 +66,6 @@ Three kinds of type parameter exist:
 
 ## Notes
 
-- A PEP 695 type parameter is also a `TypeVar`, `TypeVarTuple` or `ParamSpec` object at runtime (see
-  `__type_params__`). This is why "TypeVar" is often used for all three kinds.
+- A [PEP 695](https://peps.python.org/pep-0695/) type parameter is also a `TypeVar`, `TypeVarTuple` or `ParamSpec`
+  object at runtime (see `__type_params__`). This is why "TypeVar" is often used for all three kinds.
 - The documentation says *type parameter* for the general case and *type variable* only for the single-type kind.

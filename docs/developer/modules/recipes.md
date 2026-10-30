@@ -73,15 +73,16 @@ safely cover. This page covers `TypeParameterCheck`, the recipe behind
   code that fails or binds another object; `DECLARED_TYPEVAR_EXPORTED` and `IMPORTED_ELSEWHERE_IN_PROJECT` then let it
   break the files that import the name.
 
-- **Version gates.** The CLI rejects `--py` below `MIN_SUPPORTED_PYTHON = (3, 12)`, so PEP 695 syntax is always
-  available there; the recipe itself does not check it. `conversion_refusal` compares `min_python` with
-  `PEP_696_MINIMUM = (3, 13)` for a `default=`. A keyword outside `_CONVERTIBLE_KEYWORDS` is refused
-  (`NO_PEP695_EQUIVALENT`) instead of dropped. `covariant` and `contravariant` are in the set and are dropped, because
-  a function's type parameter has no variance; converting classes would have to refuse them.
+- **Version gates.** The CLI rejects `--py` below `MIN_SUPPORTED_PYTHON = (3, 12)`, so
+  [PEP 695](https://peps.python.org/pep-0695/) syntax is always available there; the recipe itself does not check it.
+  `conversion_refusal` compares `min_python` with `PEP_696_MINIMUM = (3, 13)` for a `default=`. A keyword outside
+  `_CONVERTIBLE_KEYWORDS` is refused (`NO_PEP695_EQUIVALENT`) instead of dropped. `covariant` and `contravariant` are
+  in the set and are dropped, because a function's type parameter has no variance; converting classes would have to
+  refuse them.
 
 - **Uses.** `uses_of` takes a declaration's uses from libcst's scope analysis (`referenced_by`). A use inside a
-  string annotation or `cast("T", x)` counts; a `T` that a PEP 695 type parameter of an enclosing function or class
-  declares (`def f[T]`, `class C[T]`) does not.
+  string annotation or `cast("T", x)` counts; a `T` that a [PEP 695](https://peps.python.org/pep-0695/) type parameter
+  of an enclosing function or class declares (`def f[T]`, `class C[T]`) does not.
 
 - **Signature edit.** `_add_type_params` replaces only the function's name (`f` → `f[T]`) or, if it has one, its
   type-parameter bracket; the body is never touched. `type_param_text` writes each parameter (`T: int`, `**P`,
@@ -100,8 +101,8 @@ safely cover. This page covers `TypeParameterCheck`, the recipe behind
   the origin does not block localization.
 
 - **No mixed syntax.** A function using a declaration that `conversion_refusal` rejects gets none of its type
-  parameters, since PEP 695 forbids mixing them with legacy ones. A name whose every function is blocked is
-  `SHARES_FUNCTION_WITH_UNCONVERTIBLE`. This needs two passes: all refusals are known before any parameter is added.
+  parameters, since [PEP 695](https://peps.python.org/pep-0695/) forbids mixing them with legacy ones. A name whose
+  every function is blocked is `SHARES_FUNCTION_WITH_UNCONVERTIBLE`. This needs two passes: all refusals are known before any parameter is added.
 
 - **Orphans.** A declaration with no uses left (`uses_of` is empty) is orphaned. Conversion skips such names too.
 
@@ -144,13 +145,13 @@ See *Verified by test modules* in [Type parameter modernization](../../user/feat
   no registration is needed.
 - A new type-parameter-declaring construct: extend `_is_type_param_call` and `type_param_text` together, both in
   `type_parameter_declarations.py`.
-- A keyword added by a later Python, or future PEP 695 syntax for variance or a bound on `**P`/`*Ts`: add it to
-  `_CONVERTIBLE_KEYWORDS` and carry it over in `type_param_text`.
+- A keyword added by a later Python, or future [PEP 695](https://peps.python.org/pep-0695/) syntax for variance or a
+  bound on `**P`/`*Ts`: add it to `_CONVERTIBLE_KEYWORDS` and carry it over in `type_param_text`.
 - A new refusal rule: add a check function and a `RefusalRule` entry to the stage's tuple in `type_parameter_rules.py`,
   a message and anchor to `UNSAFE_RULES`, and a section to the feature page.
 - A new version gate uses the syntax's own minimum Python from its PEP, not a value copied from another gate.
-- Re-exports through `__init__.py`, and a namespace package (PEP 420) as an import's origin: extend
-  `resolve_project_module`.
+- Re-exports through `__init__.py`, and a namespace package ([PEP 420](https://peps.python.org/pep-0420/)) as an
+  import's origin: extend `resolve_project_module`.
 - `Step`/`run_steps` is generic and can be reused by any recipe.
 
 ## Non-goals
