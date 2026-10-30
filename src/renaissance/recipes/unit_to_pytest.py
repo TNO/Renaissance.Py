@@ -19,6 +19,8 @@ from renaissance.syntax_tree.node_protocol import NodeProtocol
 from renaissance.syntax_tree.semantic_kind import SemanticKind
 
 
+# TODO(FrancescoPezzella): run() leaves broken or non-terminating output for common unittest files.
+#  https://github.com/TNO/Renaissance.Py/issues/317
 class UnitToPytest(PythonRefactoring):
     """AI: Recipe that converts unittest-style test files to pytest style."""
 
