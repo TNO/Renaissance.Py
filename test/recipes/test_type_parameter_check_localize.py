@@ -46,10 +46,10 @@ class TestTypeParameterCheckLocalize:
         origin_file.write_text(textwrap.dedent(origin_text))
 
         importing_code = textwrap.dedent(importing_text)
-        importing_file = str(tmp_path / importing_rel_path)
+        importing_file = tmp_path / importing_rel_path
         mocker.patch(
             "renaissance.integrations.python.ast.factory.PythonFactory.create",
-            return_value=PythonCstNode.load_from_text(importing_code, importing_file),
+            return_value=PythonCstNode.load_from_text(importing_code, str(importing_file)),
         )
         subject = TypeParameterCheck(importing_file)
         subject.in_memory = True
