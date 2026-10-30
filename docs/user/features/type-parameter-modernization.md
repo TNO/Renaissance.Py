@@ -16,25 +16,32 @@ Rewrites legacy `TypeVar`, `ParamSpec` and `TypeVarTuple` declarations to [PEP 6
 syntax in one command. `ruff`'s `UP047` only does part of this, as an unsafe fix: it skips type parameters imported
 from another module, `default=` and nested functions, and never removes the old declaration.
 
+**Before:**
+
 ```python
-# before
 T = TypeVar("T")
 
 def first(items: list[T]) -> T: ...
+```
 
-# after
+**After:**
+
+```python
 def first[T](items: list[T]) -> T: ...
 ```
+
+Its changes to xarray convert type parameters in 8 files and remove one unused declaration:
+[pydata/xarray#11768](https://github.com/pydata/xarray/pull/11768/commits/bb6033218eee48be64aba921265e3dd4e5aea106).
 
 The tool runs three phases:
 
 1. **Localize cross-file imports.** A type parameter imported from another file in the project
    (`from .shapes import T`) is replaced by an exact local copy of its declaration, placed after the file's imports,
    unless the origin is named by `--ignore` (see *Shared declaration files* below) or `--no-localization` is given.
-2. **Convert to PEP 695.** Every function whose signature uses a declared type parameter gets its own `[T]`, with
-   bounds, constraints and `default=` carried over (`def f[T: str = str](...)`). `covariant=` and `contravariant=` are
-   dropped, since only generic classes have a variance. A nested function gets none when an
-   enclosing function's signature uses `T` too. If `T` is also used outside functions (a `Generic[T]` base, an alias),
+2. **Convert to [PEP 695](https://peps.python.org/pep-0695/).** Every function whose signature uses a declared type
+   parameter gets its own `[T]`, with bounds, constraints and `default=` carried over (`def f[T: str = str](...)`).
+   `covariant=` and `contravariant=` are dropped, since only generic classes have a variance. A nested function gets
+   none when an enclosing function's signature uses `T` too. If `T` is also used outside functions (a `Generic[T]` base, an alias),
    the declaration is kept. A function that also uses a type parameter that can't be
    converted is left unchanged.
 3. **Remove orphaned declarations.** A module-level `T = TypeVar("T")` that nothing uses is deleted, including one left
@@ -89,14 +96,18 @@ A class is *generic over* `T` when it declares `T` itself (`class Box[T]:`) or h
 `Protocol[T]`, `Base[int, T]`). Inside such a class, `T` belongs to the class, so the tool never adds `[T]` to its
 methods. With `class Box[T]:` the methods don't use the module-level `T`, so a declaration nothing else uses is removed:
 
+**Before:**
+
 ```python
-# before
 T = TypeVar("T")
 
 class Box[T]:
     def get(self) -> T: ...
+```
 
-# after
+**After:**
+
+```python
 class Box[T]:
     def get(self) -> T: ...
 ```
@@ -124,8 +135,8 @@ example under *Non-goals* or *Need to fix* in [Refactoring recipes](../../develo
 - A file that starts with a UTF-8 byte order mark is rewritten with invalid syntax and reported under `ERRORS`.
 - A declaration followed by `;` on the same line is removed without its `;`, leaving invalid syntax. The file is
   reported under `ERRORS`.
-- A declaration that breaks the naming rule of PEP 484 (`T = U = TypeVar("T")`, `V = TypeVar("W")`,
-  `TypeVar(name)`) gets a wrong rewrite or is skipped with an error.
+- A declaration that breaks the naming rule of [PEP 484](https://peps.python.org/pep-0484/)
+  (`T = U = TypeVar("T")`, `V = TypeVar("W")`, `TypeVar(name)`) gets a wrong rewrite or is skipped with an error.
 - `U = TypeVar("U", default=T)` becomes `def f[U = T]`, where `T` still means the module-level one. Fix it by hand as
   `def f[T, U = T]`.
 - Only `__all__` marks a declaration as public, since the tool sees nothing outside the scanned project. One that
@@ -164,9 +175,9 @@ Each case below stops one change and is reported under *needs manual review*.
 
 ### Python version gates { #feature-type-parameter-modernization-version-gates }
 
-PEP 695 syntax (`def f[T](...)`) is a `SyntaxError` before Python 3.12, so `--py` (the oldest version the target
-supports, not the one running the tool) must be 3.12 or higher. A lower value is a usage error and nothing is
-changed. The version is never guessed. Newer syntax is written only when `--py` is new enough:
+[PEP 695](https://peps.python.org/pep-0695/) syntax (`def f[T](...)`) is a `SyntaxError` before Python 3.12, so `--py`
+(the oldest version the target supports, not the one running the tool) must be 3.12 or higher. A lower value is a usage
+error and nothing is changed. The version is never guessed. Newer syntax is written only when `--py` is new enough:
 
 | Syntax                | PEP                                          | Minimum Python |
 | --------------------- | -------------------------------------------- | -------------- |
@@ -178,13 +189,21 @@ Below 3.13 a declaration with `default=` is not converted, since dropping the de
 checkers infer. Other declarations in the file are still converted, except in functions that also use it (see
 *A function also uses a type variable that can't be converted* below).
 
+**Before:**
+
 ```python
 T = TypeVar("T", default=int)
 
 def first(items: list[T]) -> T: ...
 ```
 
-With `--py 3.12` the file is unchanged. With `--py 3.13` it becomes `def first[T = int](items: list[T]) -> T: ...`.
+**After, with `--py 3.13`:**
+
+```python
+def first[T = int](items: list[T]) -> T: ...
+```
+
+With `--py 3.12` the file is unchanged.
 
 **To fix this yourself:** run again with `--py 3.13` if the project supports it. Otherwise keep the declaration.
 
@@ -207,9 +226,9 @@ The file is unchanged.
 ### A function also uses a type variable that can't be converted { #feature-type-parameter-modernization-shares-function-with-unconvertible }
 
 [PEP 695](https://peps.python.org/pep-0695/#compatibility-with-traditional-typevars) forbids a function from mixing
-`[...]` type parameters with legacy ones of its own. A function that uses a
-declaration refused for a version gate or an argument with no PEP 695 equivalent keeps all its type parameters
-legacy. A legacy type parameter of an enclosing generic class is not the method's own, so it blocks nothing.
+`[...]` type parameters with legacy ones of its own. A function that uses a declaration refused for a version gate or
+an argument with no [PEP 695](https://peps.python.org/pep-0695/) equivalent keeps all its type parameters legacy. A
+legacy type parameter of an enclosing generic class is not the method's own, so it blocks nothing.
 
 ```python
 P = ParamSpec("P", bound=int)
@@ -227,6 +246,8 @@ using it is left unchanged. Functions that use `Ts` without `P` are still conver
 
 `T` is in its file's `__all__`, so it is public API. The functions are converted, the declaration is kept.
 
+**Before:**
+
 ```python
 __all__ = ["T", "first"]
 
@@ -235,7 +256,7 @@ T = TypeVar("T")
 def first(items: list[T]) -> T: ...
 ```
 
-becomes:
+**After:**
 
 ```python
 __all__ = ["T", "first"]
@@ -327,6 +348,8 @@ def first(items: list[T]) -> T: ...
 Another file in the target directory imports `T` from this module (`from mod import T` or `mod.T`). The functions
 are converted, the declaration is kept. Only checked when a directory is passed; `import *` is not checked.
 
+**Before:**
+
 ```python
 # shapes.py
 from typing import TypeVar
@@ -341,8 +364,23 @@ import shapes
 def second(items: list[shapes.T]) -> shapes.T: ...
 ```
 
-`first` becomes `def first[T](items: list[T]) -> T: ...`. `T = TypeVar("T")` stays, because `other.py` reads
-`shapes.T`.
+**After:**
+
+```python
+# shapes.py
+from typing import TypeVar
+
+T = TypeVar("T")
+
+def first[T](items: list[T]) -> T: ...
+
+# other.py
+import shapes
+
+def second(items: list[shapes.T]) -> shapes.T: ...
+```
+
+`T = TypeVar("T")` stays, because `other.py` reads `shapes.T`.
 
 **To remove it yourself:** find that import (`from <module> import <name>` or `<module>.<name>`), remove it, and
 run the tool again.
