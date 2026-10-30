@@ -1017,6 +1017,22 @@ class TestComposeReplacement:
             actual = rewriter.apply_to_string()
             assert_that(compress(expected), is_(compress(actual)))
 
+    @pytest.mark.parametrize(
+        ("source", "expected"),
+        [
+            ("def f():\n    x = compute(1, 2)\n    return x\n", "def f():\n    y = compute(1, 2)\n    x = y\n    return x\n"),
+            ("def f():\n    x = [1, 2]\n    return x\n", "def f():\n    y = [1, 2]\n    x = y\n    return x\n"),
+        ],
+    )
+    def test_python_placeholder_replacement(self, source: str, expected: str) -> None:
+        """Verify replacing a PatternMatch on a Python tree expands its placeholders into the new text."""
+        root = PythonRstNode.load_from_text(source, "test.py")
+        pattern = PythonPatternFactory(PythonFactory(PythonRstNode)).create_statements("x = $value")
+        rewriter = ASTRewriter(root)
+        for match in match_pattern([root], pattern):
+            rewriter.replace("y = $value\nx = y", match, include_whitespace=False, include_comments=False)
+        assert_that(rewriter.apply_to_string(), is_(expected))
+
     def test_get_node_in_match_pattern(self, mocker: MockerFixture) -> None:
         """AI: Verify _RewriteAction._get_nodes resolves a node's referenced_by chain back to the original node."""
         node = mocker.Mock()
