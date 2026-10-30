@@ -34,7 +34,6 @@ dependencies = [
     "tree-sitter-cpp==0.23.4",
     "tree-sitter-java==0.23.5",
     "libcst>=1.8.6",
-    "hypothesmith>=0.3.3",
     "autopep8>=2.0",
     "flake8>=7.0",
 ]
