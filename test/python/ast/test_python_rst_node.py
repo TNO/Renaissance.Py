@@ -227,7 +227,7 @@ class Parent:
         assert_that(node[0].semantic_kind, is_(SemanticKind.STATEMENT))
 
     @pytest.mark.parametrize(
-        "code, expected_kind",
+        ("code", "expected_kind"),
         [
             ("for a, (b, c) in x():\n    pass\n", "For"),
             ("for (a, b), c in x():\n    pass\n", "For"),
@@ -242,7 +242,7 @@ class Parent:
         assert "has no attribute" not in capsys.readouterr().out
 
     @pytest.mark.parametrize(
-        "code, expected_kind",
+        ("code", "expected_kind"),
         [
             ("global x\n", "Global"),
             ("global x, y\n", "Global"),

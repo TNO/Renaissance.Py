@@ -193,7 +193,7 @@ class TestPythonAstMatcherRepresentation:
     # PATTERN_FACTORY.create_expression and PATTERN_FACTORY.create_statement,
     # which is NodeProtocol.
     @pytest.mark.parametrize(
-        "a, b, expected",
+        ("a", "b", "expected"),
         make_parametersets_of_equivalence_classes("whole number", PATTERN_FACTORY.create_expression, WHOLE_NUMBER_REPRESENTATIONS)
         + make_parametersets_of_equivalence_classes("real number", PATTERN_FACTORY.create_expression, REAL_NUMBER_REPRESENTATIONS)
         + make_parametersets_of_equivalence_classes("character", PATTERN_FACTORY.create_expression, CHARACTER_REPRESENTATIONS)

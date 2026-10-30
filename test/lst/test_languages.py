@@ -21,7 +21,7 @@ class TestLanguages:
     """AI: Tests that the tree-sitter LST adapter works across multiple languages."""
 
     @pytest.mark.parametrize(
-        "lang, code",
+        ("lang", "code"),
         [
             (tspython, "def add(x, y): return x + y"),
             (tspython, "if x > 0:    print(x)"),

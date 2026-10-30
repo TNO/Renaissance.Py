@@ -20,7 +20,7 @@ class TestConcretePatternMatcher:
     """AI: Tests concrete (LST-level) pattern matching against tree-sitter-parsed Python code."""
 
     @pytest.mark.parametrize(
-        "code, pattern",
+        ("code", "pattern"),
         [
             ("def foo(): pass", "def foo(): pass"),
             ("if x:  print(x)", "if x:  $body"),

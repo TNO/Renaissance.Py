@@ -19,7 +19,7 @@ class TestClangConcretePatternMatcher:
     """AI: Tests concrete (LST-level) pattern matching against Clang-parsed C++ code."""
 
     @pytest.mark.parametrize(
-        "code, pattern",
+        ("code", "pattern"),
         [
             ("int body=0;int main() { return body; }", "int body=0;int main() { return body; }"),
             ("int init, cond, inc=0;int body=0;for (;;) {}", "int $i, $c, $inc=0;int $b=0;for ($i; $c; $inc) $b"),
@@ -79,7 +79,7 @@ class TestClangConcretePatternMatcher:
         assert_that(code.properties["type"], is_(pattern.properties["type"]))
 
     @pytest.mark.parametrize(
-        "code, pattern",
+        ("code", "pattern"),
         [
             (
                 "int add(int a, int b) { return a + b; }",

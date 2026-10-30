@@ -144,30 +144,37 @@ class UnitToPytest(PythonRefactoring):
 
     def convert_parameterized_test(self) -> None:
         """AI: Convert @parameterized.expand-decorated test functions into @pytest.mark.parametrize."""
-        unittest = self.pattern_factory.create_statements(
-            textwrap.dedent("""
-            @parameterized.expand($$parameters)
-            @$$decorator
-            def $fun($$args, *$$varg):
-                $$stmts
-            """),
-        )
-        for match in match_pattern(self.root.children, unittest):
-            fun = match.nodes[0]
-            args = ", ".join([arg.node.arg for arg in match.expansions["$$args"]])
-            if varg := match.expansions["$$varg"]:
-                args = f"{args}, *{varg[0].signature}"
-            args = args.replace("self, ", "")
-            repl = fun.signature
-            if "    def " in repl:
-                repl = repl.replace("@parameterized.expand(", f'    @pytest.mark.parametrize("{args}",')
-                repl = repl.replace("@unittest.skip(", "@pytest.mark.skip(")
-                repl = textwrap.dedent(repl)
-            else:
-                repl = repl.replace("@parameterized.expand(", f'@pytest.mark.parametrize("{args}",')
-                repl = repl.replace("@unittest.skip(", "@pytest.mark.skip(")
+        for returns in ("", " -> $ret"):
+            unittest = self.pattern_factory.create_statements(
+                textwrap.dedent(f"""
+                @parameterized.expand($$parameters)
+                @$$decorator
+                def $fun($$args, *$$varg){returns}:
+                    $$stmts
+                """),
+            )
+            for match in match_pattern(self.root.children, unittest):
+                self._convert_parameterized_match(match)
 
-            self.replace(repl, fun, False, False)
+    def _convert_parameterized_match(self, match: PatternMatch) -> None:
+        fun = match.nodes[0]
+        names: list[str] = [arg.node.arg for arg in match.expansions["$$args"]]
+        names = [name for name in names if name != "self"]
+        if varg := match.expansions["$$varg"]:
+            names.append(f"*{varg[0].signature}")
+        quoted = [f'"{name}"' for name in names]
+        # A single name stays a string; multiple names become a tuple (Ruff PT006).
+        args = quoted[0] if len(quoted) == 1 else f"({', '.join(quoted)})"
+        repl = fun.signature
+        if "    def " in repl:
+            repl = repl.replace("@parameterized.expand(", f"    @pytest.mark.parametrize({args},")
+            repl = repl.replace("@unittest.skip(", "@pytest.mark.skip(")
+            repl = textwrap.dedent(repl)
+        else:
+            repl = repl.replace("@parameterized.expand(", f"@pytest.mark.parametrize({args},")
+            repl = repl.replace("@unittest.skip(", "@pytest.mark.skip(")
+
+        self.replace(repl, fun, False, False)
 
     def remove_print(self) -> None:
         """AI: Remove print(...) statements, or their containing block if it's the only statement."""
@@ -180,15 +187,15 @@ class UnitToPytest(PythonRefactoring):
 
     def convert_plain_assert_same_length(self) -> None:
         """AI: Replace a manual length-check assert with an assert_that(...) has_length assertion."""
-        pattern: Sequence[NodeProtocol] = self.pattern_factory.create_statements(
-            '$act: int = len($real)\nassert $exp == $act, "$act = " + str($act)',
-        )
-        for match in match_pattern(self.body, pattern):
-            repl = 'assert_that($real, has_length($exp), f"length of $real = {len($real)}")'
-            real = match["$real"]
-            exp = match["$exp" if self.is_swapped(match) else "$act"]  # use "$act" when original is wrong
-            repl = repl.replace("$exp", exp).replace("$real", real)
-            self.replace(repl, match.nodes, False, False)
+        for comparison in ("$exp == $var", "$var == $exp"):
+            pattern: Sequence[NodeProtocol] = self.pattern_factory.create_statements(
+                f'$var: int = len($real)\nassert {comparison}, "$var = " + str($var)',
+            )
+            for match in match_pattern(self.body, pattern):
+                repl = 'assert_that($real, has_length($exp), f"length of $real = {len($real)}")'
+                real = match["$real"]
+                repl = repl.replace("$exp", match["$exp"]).replace("$real", real)
+                self.replace(repl, match.nodes, False, False)
 
     def convert_skip_test(self) -> None:
         """AI: Replace unittest.skip attribute references with pytest.mark.skip."""

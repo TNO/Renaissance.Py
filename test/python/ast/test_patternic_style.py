@@ -25,7 +25,7 @@ class TestPythonicStyle:
         self.pattern_factory = PythonPatternFactory(self.factory)
 
     @pytest.mark.parametrize(
-        "raw, kind, op, name, expr, body_length",
+        ("raw", "kind", "op", "name", "expr", "body_length"),
         [
             ("try:\n  pass\nfinally:\n  pass", "Try", "try", "Try", "expr", 1),
             ("try:\n  x()\nexcept* e:\n  pass", "TryStar", "try", "TryStar", "expr", 1),
@@ -51,7 +51,7 @@ class TestPythonicStyle:
         assert_that(it.body, has_length(body_length))
 
     @pytest.mark.parametrize(
-        "raw, kind, typ, name, op, value",
+        ("raw", "kind", "typ", "name", "op", "value"),
         [
             ("i:int=0", "AnnAssign", "int", "i", "=", 0),
             ("i=0", "Assign", None, "i", "=", 0),
@@ -73,7 +73,7 @@ class TestPythonicStyle:
         assert_that(it.value, is_(value))
 
     @pytest.mark.parametrize(
-        "raw, kind, expr",
+        ("raw", "kind", "expr"),
         [
             ("fun()", "Expr", "fun()"),
             ("return fun()", "Return", "fun()"),

@@ -5,7 +5,7 @@
 # https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
 Feature: Convert unittest to pytest
-  In order to create modern pythton project
+  In order to create modern python project
   As a Developer
   I want a consistent set of unit test expressing specification of code behavior
   Scenario: convert unittest to pytest
@@ -18,13 +18,13 @@ Feature: Convert unittest to pytest
     And it contains '@unittest.skip'
     And it contains '@parameterized.expand'
     And it contains 'class FindMatchTest(unittest.TestCase):'
-    And it contains 'def test_it_has_elements():'
-    And it contains 'assert 0 == count, "count = " + str(count)'
+    And it contains 'def test_it_has_elements() -> None:'
+    And it contains 'assert count == 0, "count = " + str(count)'
     And an AST extracted from that source file without errors
     When I convert it to pytest
     Then AST extracted from that conversion should without errors
     And it should not contain 'import unittest'
-    And it should not contain 'assert 0 == count, "count = " + str(count)'
+    And it should not contain 'assert count == 0, "count = " + str(count)'
     And it should not contain 'assertEqual(a,5)'
     And it should not contain 'assertEqual(55,b)'
     And it should not contain '@unittest.skip'
@@ -36,6 +36,6 @@ Feature: Convert unittest to pytest
     And it should contain 'assert_that(self.a, is_(5))'
     And it should contain 'assert_that(self.b, is_(55))'
     And it should contain '@pytest.mark.skip'
-    And it should contain '@pytest.mark.parametrize("_, factory",Factories.factories)'
+    And it should contain '@pytest.mark.parametrize(("_", "factory"),Factories.factories)'
 
     And it should contain 'class TestFindMatch:'

@@ -95,7 +95,7 @@ class TestExpressions(TestCMatchFinder):
         assert_that(matches, has_length(2))
 
     @pytest.mark.parametrize(
-        "_, factory, expression, expected_full_matches, expected_dicts_per_match",
+        ("_", "factory", "expression", "expected_full_matches", "expected_dicts_per_match"),
         Factories.extend(
             [
                 ("a == 3", ["a==3"], [{}]),
@@ -142,7 +142,7 @@ class TestStatements(TestCMatchFinder):
     """AI: Tests matching C/C++ statement patterns, including placeholder expansions."""
 
     @pytest.mark.parametrize(
-        "_, factory, statements, expected_dicts_per_match",
+        ("_", "factory", "statements", "expected_dicts_per_match"),
         Factories.extend(
             [
                 (
@@ -224,7 +224,7 @@ class TestFunctionCallStatements(TestCMatchFinder):
     """AI: Tests matching C/C++ function-call statement patterns with variadic argument placeholders."""
 
     @pytest.mark.parametrize(
-        "_, factory, statements, extra_declarations, expected_dicts_per_match",
+        ("_", "factory", "statements", "extra_declarations", "expected_dicts_per_match"),
         Factories.extend(
             [
                 ("$f($a);", ["int $f(int);"], [{"$f": ["one"], "$a": ["a"]}]),
@@ -287,7 +287,7 @@ class TestMultiAssignments(TestCMatchFinder):
     """AI: Tests matching statement patterns that repeat the same placeholder across multiple call sites."""
 
     @pytest.mark.parametrize(
-        "_, factory, statements, extra_declarations, expected_dicts_per_match",
+        ("_", "factory", "statements", "extra_declarations", "expected_dicts_per_match"),
         Factories.extend(
             [
                 (
@@ -333,7 +333,7 @@ class TestMultiAssignments(TestCMatchFinder):
         self.assert_matches(expected_dicts_per_match, matches)
 
     @pytest.mark.parametrize(
-        "_, factory, statements, extra_declarations, expected_dicts_per_match",
+        ("_", "factory", "statements", "extra_declarations", "expected_dicts_per_match"),
         Factories.extend(
             [
                 (
@@ -393,7 +393,7 @@ class TestUseAtuToCreatePattern(TestCMatchFinder):
     """AI: Tests building a pattern directly from a parsed translation unit's own nodes."""
 
     @pytest.mark.parametrize(
-        "name, factory, statements, pattern_type, expected, names",
+        ("name", "factory", "statements", "pattern_type", "expected", "names"),
         Factories.extend(
             [
                 (
@@ -488,7 +488,7 @@ class TestUseAtuToCreatePattern(TestCMatchFinder):
         #             .filter(ASTNode.is_part_of_translation_unit).map(ASTNode.text).to_list()
         # assert_that(text, is_(expected))
 
-    @pytest.mark.parametrize("_, factory", Factories.factories)
+    @pytest.mark.parametrize(("_", "factory"), Factories.factories)
     @pytest.mark.skip("stmt and expr are the same")
     def test_is_match_expression_differs_from_stmt(self, _: str, factory: ASTFactory) -> None:
         """AI: Verify an expression pattern does not match an equivalent statement pattern."""

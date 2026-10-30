@@ -25,7 +25,7 @@ class TestASTReference:
     """AI: Tests resolving C/C++ AST node references."""
 
     @pytest.mark.parametrize(
-        "_, factory, code, args",
+        ("_", "factory", "code", "args"),
         Factories.extend(
             [
                 ("class A{ public: A(int x); }; void f(){ A a(3);}", ...),
@@ -63,7 +63,7 @@ class TestASTReference:
         declarations = list(n for n in find_nodes(ast, lambda node: node.semantic_kind is SemanticKind.FUNCTION) if n.name != "f")
         assert_that(declarations, has_length(greater_than(0)))
 
-    @pytest.mark.parametrize("_, factory", Factories.factories)
+    @pytest.mark.parametrize(("_", "factory"), Factories.factories)
     def test_call_reference(self, _, factory) -> None:
         """AI: Verify a function call reference resolves to its declared function and back via referenced_by."""
         ast = factory.create_from_text("void f(){} void f1(){ f();}", "test.c")
@@ -82,7 +82,7 @@ class TestASTReference:
     # self.assertTrue(call in [r.node for r in referenced_by])
 
     @pytest.mark.parametrize(
-        "_, factory, code, args",
+        ("_", "factory", "code", "args"),
         Factories.extend(
             [
                 ("const int a = 3; const int b = a;", ...),
@@ -107,7 +107,7 @@ class TestASTReference:
         assert_that(using.text in [r.node.text for r in referenced_by])
 
     @pytest.mark.parametrize(
-        "_, factory, code, language",
+        ("_", "factory", "code", "language"),
         Factories.extend(
             [
                 ("typedef int a; a b;", "c"),
@@ -143,7 +143,7 @@ class TestASTReference:
         assert_that(using.text in [r.node.text for r in referenced_by])
 
     @pytest.mark.parametrize(
-        "_, factory, code, language",
+        ("_", "factory", "code", "language"),
         Factories.extend(
             [
                 ("class A {}; class B: public A {};", "cpp"),
