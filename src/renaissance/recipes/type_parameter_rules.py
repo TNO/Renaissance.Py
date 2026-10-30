@@ -1,0 +1,184 @@
+# Copyright (C) 2024-2026 TNO
+#
+# Licensed under the terms specified in the LICENSE file in the root directory
+# of this repository, also available at:
+# https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
+
+"""The reasons a TypeVar/ParamSpec/TypeVarTuple is left unconverted, and the rules that decide them."""
+
+from collections.abc import Callable, Iterable
+from dataclasses import dataclass
+from enum import StrEnum
+
+import libcst as cst
+from libcst.codemod import CodemodContext
+from libcst.codemod.visitors import GatherExportsVisitor
+
+from renaissance.recipes.type_parameter_declarations import (
+    declared_default,
+    find_type_param_declarations,
+    has_unconvertible_argument,
+    type_param_constructor_name,
+)
+from renaissance.utils.import_resolution import imports_name_conditionally
+
+PEP_696_MINIMUM = (3, 13)
+DOCS_BASE_URL = "https://tno.github.io/Renaissance.Py/user/features/type-parameter-modernization/"
+
+
+class UnsafeReason(StrEnum):
+    """Every distinct, permanent reason a TypeVar/ParamSpec/TypeVarTuple candidate is left unconverted.
+
+    Each member has a matching documented rule under DOCS_BASE_URL - see UNSAFE_RULES.
+    """
+
+    PEP696_VERSION_GATE = "pep696_version_gate"
+    NO_PEP695_EQUIVALENT = "no_pep695_equivalent"
+    DECLARED_TYPEVAR_EXPORTED = "declared_typevar_exported"
+    USED_IN_GENERIC_CLASS = "used_in_generic_class"
+    SHARES_FUNCTION_WITH_UNCONVERTIBLE = "shares_function_with_unconvertible"
+    NAME_NOT_AT_MODULE_LEVEL = "name_not_at_module_level"
+    IMPORTED_ELSEWHERE_IN_PROJECT = "imported_elsewhere_in_project"
+    ORIGIN_IMPORTS_CONSTRUCTOR_CONDITIONALLY = "origin_imports_constructor_conditionally"
+
+
+@dataclass(frozen=True)
+class UnsafeRule:
+    """A short human-readable explanation plus the docs anchor slug for one UnsafeReason."""
+
+    message: str
+    doc_anchor: str
+
+
+UNSAFE_RULES: dict[UnsafeReason, UnsafeRule] = {
+    UnsafeReason.PEP696_VERSION_GATE: UnsafeRule(
+        "declares a default= (PEP 696), which needs the target's minimum Python to be 3.13+",
+        "feature-type-parameter-modernization-pep696-version-gate",
+    ),
+    UnsafeReason.NO_PEP695_EQUIVALENT: UnsafeRule(
+        "declaration passes an argument with no PEP 695 equivalent, e.g. bound= on a ParamSpec or a **mapping",
+        "feature-type-parameter-modernization-no-pep695-equivalent",
+    ),
+    UnsafeReason.DECLARED_TYPEVAR_EXPORTED: UnsafeRule(
+        "exported via __all__",
+        "feature-type-parameter-modernization-declared-type-parameter-exported",
+    ),
+    UnsafeReason.USED_IN_GENERIC_CLASS: UnsafeRule(
+        "only used inside a class that is generic over it",
+        "feature-type-parameter-modernization-used-in-generic-class",
+    ),
+    UnsafeReason.SHARES_FUNCTION_WITH_UNCONVERTIBLE: UnsafeRule(
+        "every function using it also uses a type variable that can't be converted",
+        "feature-type-parameter-modernization-shares-function-with-unconvertible",
+    ),
+    UnsafeReason.NAME_NOT_AT_MODULE_LEVEL: UnsafeRule(
+        "declaration uses a name that isn't available at module level as the same object",
+        "feature-type-parameter-modernization-name-not-at-module-level",
+    ),
+    UnsafeReason.IMPORTED_ELSEWHERE_IN_PROJECT: UnsafeRule(
+        "imported directly by another file in the target project",
+        "feature-type-parameter-modernization-imported-elsewhere-in-project",
+    ),
+    UnsafeReason.ORIGIN_IMPORTS_CONSTRUCTOR_CONDITIONALLY: UnsafeRule(
+        "origin module imports TypeVar/ParamSpec/TypeVarTuple inside an if/try block, e.g. under TYPE_CHECKING or per Python version",
+        "feature-type-parameter-modernization-origin-imports-constructor-conditionally",
+    ),
+}
+
+
+@dataclass(frozen=True)
+class RefusalRule[**P]:
+    """One reason to refuse a type parameter, and the check that decides whether it applies.
+
+    Attributes:
+        reason: What the report says when the check refuses.
+        refuses: Return True if the reason applies to the arguments the rule's stage passes.
+
+    """
+
+    reason: UnsafeReason
+    refuses: Callable[P, bool]
+
+
+def _first_refusal[**P](rules: Iterable[RefusalRule[P]], *args: P.args, **kwargs: P.kwargs) -> UnsafeReason | None:
+    """Return the reason of the first rule that refuses, or None if none does."""
+    return next((rule.reason for rule in rules if rule.refuses(*args, **kwargs)), None)
+
+
+def _has_no_pep695_equivalent(declaration: cst.Assign, _min_python: tuple[int, int]) -> bool:
+    """Return True if the declaration passes an argument that PEP 695 syntax can't carry over."""
+    return has_unconvertible_argument(declaration)
+
+
+def _needs_newer_python(declaration: cst.Assign, min_python: tuple[int, int]) -> bool:
+    """Return True if the declaration has a `default=` (PEP 696) and min_python is below the 3.13 that introduced it."""
+    return declared_default(declaration) is not None and min_python < PEP_696_MINIMUM
+
+
+def _is_exported(module: cst.Module, name: str, _project_wide_imported_names: frozenset[str]) -> bool:
+    """Return True if the module lists `name` in `__all__`, assigned, annotated or extended with `+=`.
+
+    `__all__.extend(...)` and `__all__.append(...)` are not read.
+    """
+    exports = GatherExportsVisitor(CodemodContext())
+    module.visit(exports)
+    return name in exports.explicit_exported_objects
+
+
+def _is_imported_elsewhere(_module: cst.Module, name: str, project_wide_imported_names: frozenset[str]) -> bool:
+    """Return True if another file in the target project imports `name` directly, regardless of `__all__`."""
+    return name in project_wide_imported_names
+
+
+def _origin_imports_constructor_conditionally(origin: cst.Module, name: str) -> bool:
+    """Return True if the origin imports the constructor of `name` inside a module-level `if`/`try` block.
+
+    Which implementation the constructor binds then depends on the runtime or the type checker, e.g.
+    `typing_extensions` below 3.13 or under `TYPE_CHECKING`.
+    """
+    declaration = find_type_param_declarations(origin).get(name)
+    return declaration is not None and imports_name_conditionally(origin, type_param_constructor_name(declaration))
+
+
+# Each stage reports the first rule that refuses, so the order is the order of precedence. Commenting out
+# a rule switches it off; the rules a pipeline step enforces by its own structure are not listed here
+# (USED_IN_GENERIC_CLASS, SHARES_FUNCTION_WITH_UNCONVERTIBLE, NAME_NOT_AT_MODULE_LEVEL).
+CONVERSION_RULES: tuple[RefusalRule[[cst.Assign, tuple[int, int]]], ...] = (
+    RefusalRule(UnsafeReason.NO_PEP695_EQUIVALENT, _has_no_pep695_equivalent),
+    RefusalRule(UnsafeReason.PEP696_VERSION_GATE, _needs_newer_python),
+)
+REMOVAL_RULES: tuple[RefusalRule[[cst.Module, str, frozenset[str]]], ...] = (
+    RefusalRule(UnsafeReason.DECLARED_TYPEVAR_EXPORTED, _is_exported),
+    RefusalRule(UnsafeReason.IMPORTED_ELSEWHERE_IN_PROJECT, _is_imported_elsewhere),
+)
+LOCALIZATION_RULES: tuple[RefusalRule[[cst.Module, str]], ...] = (
+    RefusalRule(UnsafeReason.ORIGIN_IMPORTS_CONSTRUCTOR_CONDITIONALLY, _origin_imports_constructor_conditionally),
+)
+
+
+def conversion_refusal(declaration: cst.Assign, min_python: tuple[int, int]) -> UnsafeReason | None:
+    """Return None if `declaration` can become a PEP 695 type parameter on a target with `min_python`, else why not."""
+    return _first_refusal(CONVERSION_RULES, declaration, min_python)
+
+
+def is_safe_to_localize(origin: cst.Module, name: str) -> UnsafeReason | None:
+    """Return None if `name` is safe to duplicate as a local declaration, else the reason it isn't."""
+    return _first_refusal(LOCALIZATION_RULES, origin, name)
+
+
+def is_safe_to_remove(
+    module: cst.Module,
+    name: str,
+    project_wide_imported_names: frozenset[str] = frozenset(),
+) -> UnsafeReason | None:
+    """Return None if this file's own binding of `name` may be removed or replaced, else the reason it may not.
+
+    `project_wide_imported_names` holds the names other files of the target project import from this one.
+    """
+    return _first_refusal(REMOVAL_RULES, module, name, project_wide_imported_names)
+
+
+def mark_unsafe(results: dict[str, str], reasons: dict[str, UnsafeReason], name: str, reason: UnsafeReason) -> None:
+    """Record `name` as unsafe with `reason` in both `results` (status) and `reasons` (why)."""
+    results[name] = "unsafe"
+    reasons[name] = reason
