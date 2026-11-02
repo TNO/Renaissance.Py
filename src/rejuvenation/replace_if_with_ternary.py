@@ -31,16 +31,6 @@ example_code = """
         }
         """
 
-expected_result = """
-        int a = 1;
-        int b = 2;
-        int c = 3;
-        int d = 4;
-        void f(){
-            c++; b=(a==1) ? 2:3; d++;
-        }
-        """.strip()
-
 
 def replace_if_with_ternary():
     """Replace if-else statements in the given C code with ternary operator expressions.

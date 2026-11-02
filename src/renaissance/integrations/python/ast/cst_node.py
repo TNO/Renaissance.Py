@@ -207,7 +207,6 @@ class PythonCstNode:
         if isinstance(self.node, (ClassDef, FunctionDef)):
             return self.node.name.value
         return ""
-        self.name = ""  # self._derive_name()
 
     @property
     def references(self) -> list[ASTReference[PythonCstNode]]:
