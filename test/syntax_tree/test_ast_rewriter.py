@@ -105,10 +105,8 @@ class TestCommentLocation:
         content: bytes,
         expected: tuple[int, int],
     ) -> None:
-        """AI: Verify _get_comment_location finds the expected comment span for each comment-style scenario."""
-        result = ASTRewriter._get_comment_location(start_offset, stop_offset, content)
-        # converted print but what to do it true???
-        # assert_that(result, is_not((-1, -1)), f"first char={content[result[0]:result[1]]}")
+        """Verify get_comment_location finds the expected comment span for each comment-style scenario."""
+        result = _RewriteActions.get_comment_location(start_offset, stop_offset, content)
         assert_that(expected, is_(result))
 
 

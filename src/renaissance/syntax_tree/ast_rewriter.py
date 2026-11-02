@@ -17,7 +17,6 @@ from more_itertools import flatten
 
 from renaissance.common import Rewriter
 from renaissance.syntax_tree.match_finder import PatternMatch
-from renaissance.syntax_tree.semantic_kind import SemanticKind
 from renaissance.utils.ast_utils import is_ancestor_of
 from renaissance.utils.text_utils import TextUtils
 
@@ -63,9 +62,6 @@ class _RewriteActionType(Enum):
     INSERT_BEFORE = 2
     INSERT_AFTER = 3
     REMOVE = 4  # TODO: Why needed? Why isn't a REMOVE Action Type just a REPLACE Action Type (with an empty string)?
-
-
-DEFAULT_INDENT = 4
 
 
 class ASTRewriter:
@@ -162,10 +158,6 @@ class ASTRewriter:
     def has_changed(self) -> bool:
         """AI: Return whether any rewrites have been queued."""
         return len(self.__rewrites.rewrites) > 0
-
-    @staticmethod
-    def _get_comment_location(start_offset: int, stop_offset: int, content: bytes) -> tuple[int, int]:
-        return _RewriteActions.get_comment_location(start_offset, stop_offset, content)
 
 
 @dataclass
@@ -586,13 +578,6 @@ class _RewriteActions:
         return any(node in rewrite.nodes[1:] for rewrite in self.rewrites if isinstance(rewrite.target, PatternMatch))
 
     @staticmethod
-    def _get_parent_statement(node: Rewritable) -> Rewritable | None:
-        parent = node
-        while parent and not parent.is_statement:
-            parent = parent.parent
-        return parent
-
-    @staticmethod
     def __correct_for_comments_and_whitespace(
         offset: int,
         content: bytes,
@@ -626,9 +611,6 @@ class _RewriteActions:
         if include_whitespace:
             end_offset = _RewriteActions.__extend_with_whitespace(end_offset, content)
         return start_offset, end_offset
-
-    def cor_offset(self, offset: int):
-        return offset - self.node.offset
 
     @staticmethod
     def get_comment_location(start_offset: int, stop_offset: int, content: bytes) -> tuple[int, int]:
@@ -696,13 +678,3 @@ class _RewriteActions:
         if location == -1:
             return len(content)
         return location
-
-    @staticmethod
-    def __get_depth(node: Rewritable) -> int:
-        depth = 0
-        parent = node.parent
-        while parent:
-            if parent.semantic_kind is SemanticKind.STATEMENT or parent.parser_kind in {"CompoundStmt", "COMPOUND_STMT"}:
-                depth += 1
-            parent = parent.parent
-        return depth
