@@ -124,3 +124,29 @@ class TestPythonCstNode:
         """)
         it = PythonCstNode.load_from_text(ann_fun, "fun.py").children[-1]
         assert_that(it.signature, contains_string("def test"))
+
+
+class _SubclassNode(PythonCstNode):
+    """A PythonCstNode subclass that adds nothing."""
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        "a = 0\n",
+        "class A:\n    def f(self): pass\n    def g(self): pass\n",
+        "@decorator\ndef f(x):\n    return x + 1\n",
+        "items = [n * 2 for n in range(10) if n % 3]\n",
+    ],
+)
+def test_load_builds_every_node_from_the_subclass(source: str, tmp_path: Path) -> None:
+    """Verify a subclass's load yields a tree whose nodes, roots, parents and siblings are all of that subclass."""
+    file = tmp_path / "module.py"
+    file.write_text(source, encoding="utf-8", newline="\n")
+    pending: list[PythonCstNode] = [_SubclassNode.load(file)]
+    while pending:
+        node = pending.pop()
+        for related in (node, node.root, node.parent, node.next_sibling, node.preceding_sibling):
+            if related is not None:
+                assert_that(related, is_(_SubclassNode))
+        pending.extend(node.children)

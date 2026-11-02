@@ -11,6 +11,7 @@ import itertools
 import sys
 from collections import defaultdict
 from pathlib import Path
+from typing import Self
 
 import libcst
 from libcst import BaseCompoundStatement, BaseSmallStatement, ClassDef, CSTNode, FunctionDef, MetadataWrapper
@@ -140,13 +141,10 @@ class PythonCstTranslationUnit:
 class PythonCstNode:
     """AI: ASTNode implementation backed by libcst's concrete syntax tree."""
 
-    def __init__(self, node: CSTNode, translation_unit: PythonCstTranslationUnit, parent: PythonCstNode | None = None) -> None:
-        """AI: Wrap a libcst node as an AST node within the given translation unit."""
+    def __init__(self, node: CSTNode, translation_unit: PythonCstTranslationUnit, parent: Self | None = None) -> None:
+        """Wrap node and, recursively, its children as nodes of this class within the given translation unit."""
         self.parent = parent
-        if parent and parent.root:
-            self.root = parent.root
-        else:
-            self.root = self
+        self.root: Self = parent.root if parent and parent.root else self
         self.translation_unit = translation_unit
         self.node = node
         translation_unit.wrappers[node] = self
@@ -155,7 +153,7 @@ class PythonCstNode:
         self.parser_kind = type(node).__name__
         self.semantic_kind = PYTHON_KIND_MAP.get(self.parser_kind, SemanticKind.NODE)
 
-        self.children: list[PythonCstNode] = [PythonCstNode(node, translation_unit, self) for node in node.children]
+        self.children: list[Self] = [type(self)(child, translation_unit, self) for child in node.children]
         self.properties = {}
 
         # for shower
@@ -222,28 +220,28 @@ class PythonCstNode:
         return self.translation_unit.uses_of(self.node)
 
     @property
-    def next_sibling(self) -> PythonCstNode | None:
+    def next_sibling(self) -> Self | None:
         """AI: Return the sibling node immediately following this one, or None."""
         return next_sibling(self)
 
     @property
-    def preceding_sibling(self) -> PythonCstNode | None:
+    def preceding_sibling(self) -> Self | None:
         """AI: Return the sibling node immediately preceding this one, or None."""
         return preceding_sibling(self)
 
-    @staticmethod
-    def load(file_path: Path) -> PythonCstNode:
-        """AI: Parse the Python source file at file_path into a PythonCstNode tree."""
+    @classmethod
+    def load(cls, file_path: Path) -> Self:
+        """Parse the Python source file at file_path into a tree of nodes of this class."""
         with Path(file_path).open() as file:
             content = file.read()
-            return PythonCstNode.load_from_text(content, str(file_path))
+            return cls.load_from_text(content, str(file_path))
 
-    @staticmethod
+    @classmethod
     def load_from_text(
+        cls,
         text: str,
         file_name: str = "cst_snippet.py",
-    ) -> PythonCstNode:
-        """AI: Parse Python source text into a PythonCstNode tree, attributed to file_name."""
+    ) -> Self:
+        """Parse Python source text into a tree of nodes of this class, attributed to file_name."""
         translation_unit = PythonCstTranslationUnit(text, file_name=str(file_name))
-        root_node = PythonCstNode(translation_unit.atu, translation_unit)
-        return root_node
+        return cls(translation_unit.atu, translation_unit)
