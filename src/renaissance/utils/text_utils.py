@@ -7,9 +7,6 @@
 """AI: Text manipulation utilities for shifting, indenting, and clipboard operations on source text."""
 
 import re
-import subprocess
-import sys
-import tempfile
 from pathlib import Path
 
 import pyperclip
@@ -140,50 +137,3 @@ def snake_case(snippet: str) -> str:
     snippet = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", snippet)
     return snippet.lower()
 
-
-def fix_indent(code_string: str) -> str | None:
-    """AI: Reformat code_string's indentation by round-tripping it through a temporary file and an external formatter."""
-    with tempfile.NamedTemporaryFile(suffix=".py", mode="w+", delete=False) as temp_file:
-        file_path = temp_file.name
-        temp_file.write(code_string)
-
-    try:
-        if not Path(file_path).is_file():
-            print(f"Error: {file_path} does not exist.")
-            return None
-
-        # Step 1: Run flake8 to show issues
-        print("Running flake8...")
-        subprocess.run([sys.executable, "-m", "flake8", file_path])
-
-        # Step 2: Auto-fix with autopep8
-        print("Auto-fixing with autopep8...")
-        subprocess.run(
-            [
-                sys.executable,
-                "-m",
-                "autopep8",
-                "--in-place",
-                "--aggressive",
-                "--aggressive",
-                file_path,
-            ],
-        )
-
-        # Step 3: Run flake8 again to verify
-        print("Re-running flake8 after fixes...")
-        subprocess.run([sys.executable, "-m", "flake8", file_path])
-
-        # Read the fixed code
-        with Path(file_path).open() as file:
-            fixed_code = file.read()
-
-        # black format
-        # return format_str(fixed_code, mode=FileMode())
-        return fixed_code
-    except Exception as e:
-        print(f"Error formatting code: {e}")
-    finally:
-        # Clean up the temporary file
-        if Path(file_path).exists():
-            Path(file_path).unlink()
