@@ -303,6 +303,16 @@ class _RewriteActions:
                         "in the same file - applying both would corrupt the output."
                     )
 
+    @staticmethod
+    def __is_nested(node: Rewritable, maybe_ancestor: Rewritable) -> bool:
+        """Return True if maybe_ancestor is an ancestor of node, walking .parent (works for every Rewritable)."""
+        parent = node.parent
+        while parent:
+            if parent is maybe_ancestor:
+                return True
+            parent = parent.parent
+        return False
+
     def __is_ancestor_in_nodes(self, node: Rewritable) -> bool:
         """Check if the given node is a descendant of any nodes in the rewrite list.
 
@@ -327,6 +337,11 @@ class _RewriteActions:
 
         result = any(no_conflict(node, rew) for rew in rewrite_nodes)
 
+        # TODO(FrancescoPezzella): an outer rewrite should suppress the rewrites nested inside it, but both are applied.
+        #  Dropping `and False` is not enough: no_conflict also matches each node with its own rewrite, so result is almost
+        #  always True and apply() would skip nearly every rewrite. A fix has to leave out the node's own rewrite and use a
+        #  true ancestor check such as __is_nested.
+        #  https://github.com/TNO/Renaissance.Py/issues/286
         return result and False  # TODO: Why `and False`
 
     def __replace(
@@ -441,6 +456,8 @@ class _RewriteActions:
             else spaces
         )
         # indent the new content except the first line
+        # TODO(FrancescoPezzella): unlike __replace, this ignores correct_indent, so the re-indentation can't be turned off.
+        #  https://github.com/TNO/Renaissance.Py/issues/283
         new_content = TextUtils.shift_right(new_content, indent, start_line=1)
 
         if before:
@@ -489,6 +506,8 @@ class _RewriteActions:
                         if regex_match:
                             raw_signature = "".join(regex_match.groups())
                         place_holder_length = end_index - index + 1
+                    # TODO(FrancescoPezzella): this also indents the lines inside a multi-line string in the captured text.
+                    #  https://github.com/TNO/Renaissance.Py/issues/283
                     indent_replacement = raw_signature.replace("\n", "\n" + spaces)
                     if (
                         placeholder.startswith("$$")

@@ -30,7 +30,7 @@ def refactor() -> None:
         extractor = PythonExtractor()
         for file in PythonScanner().find_sources():
             filename = sys.argv[2]
-            extractor.process(file)
+            extractor.process(Path(file))
         extractor.save_graph(filename)
     if sys.argv[1] == "inspect":
         print(f"inspect {Path().cwd()}")
