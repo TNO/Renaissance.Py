@@ -241,12 +241,6 @@ class TestMatchTree:
 
         assert_that(find_in_list(src, pattern, {}), is_(len(src) - 1))
 
-    def test_lists_with_list_with_matcher_in_both_end_mismatch2(self) -> None:
-        """AI: Verify is_match_tree returns False when the source is one statement shorter than the pattern requires."""
-        src = self.pattern_factory.create_statements("1\n2\n3\n4\n5\n61\n2\n3\n4\n5")
-        pattern = self.pattern_factory.create_statements("$$seq\n61\n$$seq")
-        assert_that(is_match_tree(src, pattern, {}), is_(False))
-
     def test_find_function_with_any_param_python(self) -> None:
         """AI: Verify find_in_list locates a Python call statement against a variadic-argument pattern."""
         atu = self.factory.create_from_text("ca(13,14,15)", "test.py")

@@ -6,8 +6,6 @@
 
 """Tests for matching C AST patterns via MatchFinder."""
 
-import logging
-
 import pytest
 from hamcrest import assert_that, greater_than_or_equal_to, has_length, is_
 from more_itertools.more import last
@@ -24,8 +22,6 @@ from renaissance.syntax_tree.ast_finder import find_nodes
 from renaissance.syntax_tree.match_finder import PatternMatch, find_in_list, find_variants, is_match, match_pattern
 from renaissance.syntax_tree.semantic_kind import SemanticKind
 from utils_for_tests import compress, debug_mismatch, show_node
-
-logger = logging.getLogger(__name__)
 
 
 class TestCMatchFinder:

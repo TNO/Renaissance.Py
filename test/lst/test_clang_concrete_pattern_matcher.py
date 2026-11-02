@@ -133,11 +133,3 @@ class TestClangConcretePatternMatcher:
         p = interface.create_statement("int $body=0; int main() { return $body; }")
         match = MatchFinder.match_pattern([c.children[-1]], [p.children[-1]])
         assert_that(match, has_length(1))
-
-
-class Matchfinder:
-    """AI: Unused placeholder class."""
-
-
-if __name__ == "__main__":
-    pytest.main()

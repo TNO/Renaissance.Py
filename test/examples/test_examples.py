@@ -96,8 +96,7 @@ f2(a,c);
 class TestReplaceIfWithTernaryOperator:
     """AI: Tests the replace-if-with-ternary refactor example produces the expected rewritten code."""
 
-    # didn't check expected result
-    def test_refactor_with_nested_compositions(self) -> None:
+    def test_replace_if_with_ternary(self) -> None:
         """AI: Verify the replace-if-with-ternary refactor example produces the expected rewritten C source."""
         result = replace_if_with_ternary()
 
@@ -249,18 +248,6 @@ class TestExamplesDifferentStyles:
         assert_that(
             calling(lambda: remove_unused_variable_using_refactor_method(node_type)),
             not_(raises(Exception)),
-        )
-
-    def test_make_sure_replace_if_with_ternary_still_run(self) -> None:
-        """AI: Verify replace_if_with_ternary produces the expected rewritten C source."""
-        result = replace_if_with_ternary()
-
-        assert_that(
-            result,
-            is_(
-                "int a = 1;\n        int b = 2;\n        int c = 3;\n"
-                "        int d = 4;\n        void f(){\n            c++; b=(a==1) ? 2:3; d++;\n        }",
-            ),
         )
 
 
