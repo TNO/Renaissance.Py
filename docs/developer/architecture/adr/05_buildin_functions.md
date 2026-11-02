@@ -58,17 +58,15 @@ Not every node must implement every method — choose the methods that make sens
 - Avoid surprising side effects in any dunder method. Keep them simple and consistent.
     `AST Node != AST Pattern`
 
+`PythonRstNode` in `src/renaissance/integrations/python/ast/rst_node.py` implements both:
+
 ```python
+class PythonRstNode:
+    def __getitem__(self, key) -> Any:
+        return self.children[key]
 
-class GoAstNode:
-
-# easier to see in debugger and it is used in astshower
-def __repr__(self) -> str:
-    return f"{type}....."
-
-#shorthand for nth children
-__getitem__(self, index) -> Self:
-    return self.children[index]
+    def __repr__(self) -> str:
+        return format_node(self)
 ```
 
 ## Rationale
@@ -107,3 +105,4 @@ also it avoids extra implementation
 Revision history:
 
 - 2026-02-25: Converted to ADR template and clarified decision.
+- 2026-11-02: Replaced the example with `PythonRstNode`.

@@ -58,13 +58,16 @@ for both concepts.
 
 ## Example
 
+`NodeProtocol` in `src/renaissance/syntax_tree/node_protocol.py` declares both accessors:
+
 ```python
-class GoAstNode:
+@runtime_checkable
+class NodeProtocol(Protocol):
     @property
-    def properties(self) -> dict[str, Any]: ...
+    def properties(self) -> Mapping[str, Any]: ...
 
     @property
-    def children(self) -> list[Self]: ...
+    def children(self) -> Sequence[Self]: ...
 ```
 
 ## Rationale
@@ -99,3 +102,4 @@ Revision history:
 - 2026-02-25: Converted to ADR template and clarified decision.
 - 2026-03-27: Added table of contents; moved ordering note into Implementation notes;
   renamed Example section to match template.
+- 2026-11-02: Replaced the example with `NodeProtocol`.
