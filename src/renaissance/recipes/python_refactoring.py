@@ -24,7 +24,13 @@ from renaissance.utils.text_utils import snake_case
 
 
 class PythonRefactoring[NodeT: PythonRstNode | PythonCstNode = PythonRstNode](ASTProcessor):
-    """AI: Base processor for Python-specific source refactoring recipes."""
+    """Base processor for Python-specific source refactoring recipes.
+
+    NodeT is the node class the file is parsed into: PythonRstNode by default, or PythonCstNode. A subclass picks the
+    CST backend with PythonRefactoring[PythonCstNode] and passes the same class as node_class; NodeT then types body.
+    See PEP 695 (https://peps.python.org/pep-0695/) for the bound and PEP 696 (https://peps.python.org/pep-0696/)
+    for the default.
+    """
 
     def __init__(self, file: Path, node_class: type[NodeT] = PythonRstNode) -> None:
         """Prepare a refactoring processor for file, parsed with node_class (the RST backend by default)."""
