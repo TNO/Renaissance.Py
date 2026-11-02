@@ -34,7 +34,6 @@
 
 1. **Scoping: skip and filter at the file level** (add to strategy-composition.md or a new page) — Java's `skipATU`, `globalFilter`, `sourceFilePostfixes`, and `sourceFileDirectories` provide coarse-grained scoping before any pattern matching runs. The Python equivalent concept needs documentation.
 
-
 ### New pages worth adding
 
 1. **Common parser problems** (new page, e.g., `docs/developer/modules/parser-known-limitations.md`) — Java has CommonCdtParsingProblems.md listing concrete CDT/MSVC-extension parsing failures with workarounds. A Python equivalent covering known tree-sitter, libcst, clang binding, and ANTLR limitations would be directly useful.
