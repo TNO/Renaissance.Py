@@ -1090,7 +1090,13 @@ class TestComposeReplacement:
             pytest.param(
                 factory,
                 id=name,
-                marks=[pytest.mark.xfail(strict=True, reason="clang_json node offsets are shifted, see issue #115")]
+                marks=[
+                    pytest.mark.xfail(
+                        sys.platform == "win32",
+                        strict=True,
+                        reason="clang_json sends the code to clang with CRLF line endings on Windows, so offsets shift",
+                    )
+                ]
                 if name == "clang_json"
                 else [],
             )
