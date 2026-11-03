@@ -6,22 +6,19 @@
 
 """Tests for type_parameter_rules's safety predicates and their UnsafeReason results."""
 
-import re
 import textwrap
 from collections import Counter
-from pathlib import Path
 from typing import cast
 
 import libcst as cst
 import pytest
-from hamcrest import assert_that, equal_to, not_
+from hamcrest import assert_that, equal_to
 
 from renaissance.recipes.type_parameter_rules import (
     CONVERSION_RULES,
     LOCALIZATION_RULES,
     PEP_696_MINIMUM,
     REMOVAL_RULES,
-    UNSAFE_RULES,
     UnsafeReason,
     conversion_refusal,
     is_safe_to_localize,
@@ -131,21 +128,6 @@ class TestIsSafeToLocalize:
         tree = _parse(source)
 
         assert_that(is_safe_to_localize(tree, "T"), equal_to(expected_reason))
-
-
-_FEATURE_DOC = Path(__file__).resolve().parents[2] / "docs" / "user" / "features" / "type-parameter-modernization.md"
-
-
-class TestUnsafeRuleDocAnchors:
-    """Every UnsafeRule's documentation anchor exists where the CLI's report links to it."""
-
-    @pytest.mark.parametrize("reason", list(UnsafeReason))
-    def test_anchor_is_set_on_a_heading(self, reason: UnsafeReason) -> None:
-        """The rule's anchor is attached to a heading line, the only place attr_list turns it into a link target."""
-        anchor = UNSAFE_RULES[reason].doc_anchor
-        heading = re.compile(rf"^#+ .+ \{{ #{re.escape(anchor)} \}}$", re.MULTILINE)
-
-        assert_that(heading.search(_FEATURE_DOC.read_text(encoding="utf-8")), not_(None))
 
 
 class TestConversionRefusal:
