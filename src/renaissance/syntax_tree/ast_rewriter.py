@@ -537,6 +537,8 @@ class _RewriteActions:
         if len(nodes) == 1:
             text = self.__get_text(nodes[0])
             return transform(text) if transform else text
+        # TODO(FrancescoPezzella): an empty `$$x` raises IndexError here, e.g. `f($$args)` -> `g($$args)` on `f()`.
+        #  https://github.com/TNO/Renaissance.Py/issues/329
         start = self.cor_offset(nodes[0].offset)
         end = self.cor_offset(nodes[-1].extended_end_offset)
         rewriter = Rewriter(self.content[start:end])
