@@ -75,15 +75,6 @@ class LSTNode:
         """AI: Return a hash based on the node's kind key, properties, and children."""
         return hash((self.kind_key, frozenset(self.properties.items()), tuple(self.children)))
 
-    def match_props(self, properties) -> bool:
-        """AI: Return whether this node's properties match the given properties, ignoring irrelevant ones."""
-        all_keys = (self.properties.keys() | properties.keys()) - IRRELEVANT_PROPS
-        return all(self.properties.get(n) == properties.get(n) for n in all_keys)
-
-    def match_children(self, children):
-        """AI: Return whether this node's children match the given children at each corresponding index."""
-        return all(i < len(self.children) and self.children[i] == child for i, child in enumerate(children))
-
     def add_child(self, child) -> None:  # LSTNode):
         """AI: Append child to this node's children and set its parent to this node."""
         self.children.append(child)
