@@ -8,7 +8,8 @@
 
 import re
 import sys
-from collections.abc import Sequence
+from collections.abc import Callable, Mapping, Sequence
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Protocol, Self, runtime_checkable
 
@@ -91,14 +92,20 @@ class ASTRewriter:
         target: Rewritable | Sequence[Rewritable] | PatternMatch | Sequence[PatternMatch],
         include_whitespace: bool = True,
         include_comments: bool = True,
+        transforms: Mapping[str, Callable[[str], str]] | None = None,
     ) -> None:
-        """AI: Queue a rewrite replacing target's source text with new_content."""
-        self.__rewrites.add(
-            _RewriteActionType.REPLACE,
-            target,
-            new_content,
-            include_whitespace,
-            include_comments,
+        """Queue a rewrite replacing target's source text with new_content.
+
+        Args:
+            new_content: The replacement text; for a `PatternMatch` target, its placeholders are expanded.
+            target: The nodes or match to replace.
+            include_whitespace: Whether the whitespace around target is replaced as well.
+            include_comments: Whether the comments around target are replaced as well.
+            transforms: Per placeholder, a function applied to the text of each node bound to it before expansion.
+
+        """
+        self.__rewrites.add_rewrite(
+            _RewriteAction(_RewriteActionType.REPLACE, target, new_content, include_whitespace, include_comments, transforms or {})
         )
 
     def remove(
@@ -161,23 +168,21 @@ class ASTRewriter:
         return _RewriteActions.get_comment_location(start_offset, stop_offset, content)
 
 
+@dataclass
 class _RewriteAction:
     """Data container for  a rewrite action to be applied later on to the AST."""
 
-    def __init__(
-        self,
-        action: _RewriteActionType,
-        target: Rewritable | Sequence[Rewritable] | PatternMatch | Sequence[PatternMatch],
-        replacement: str,
-        include_whitespace: bool,
-        include_comments: bool,
-    ) -> None:
-        self.action = action
-        self.target = target
-        self.replacement = replacement
-        self.nodes = self._get_nodes(target)
-        self.include_whitespace = include_whitespace
-        self.include_comments = include_comments
+    action: _RewriteActionType
+    target: Rewritable | Sequence[Rewritable] | PatternMatch | Sequence[PatternMatch]
+    replacement: str
+    include_whitespace: bool
+    include_comments: bool
+    transforms: Mapping[str, Callable[[str], str]] = field(default_factory=dict[str, Callable[[str], str]])
+    nodes: Sequence[Rewritable] = field(init=False)
+
+    def __post_init__(self) -> None:
+        """Derive the nodes the action applies to from its target."""
+        self.nodes = self._get_nodes(self.target)
 
     @staticmethod
     def _get_nodes(
@@ -239,7 +244,7 @@ class _RewriteActions:
             # except for if the rewrite node is the root node
             if any(self.__is_ancestor_in_nodes(n) for n in rewrite.nodes if n != self.node):
                 continue
-            new_content, nodelist = self.__prepare_replacement_content(rewrite.replacement, rewrite.target)
+            new_content, nodelist = self.__prepare_replacement_content(rewrite.replacement, rewrite.target, rewrite.transforms)
             if rewrite.action == _RewriteActionType.REPLACE:
                 self.__replace(
                     rewriter,
@@ -480,11 +485,13 @@ class _RewriteActions:
         """
         rewriter.replace(start, end, new_content.encode(self.encoding))
 
-    def __compose_replacement(self, replacement: str, matches: Sequence[PatternMatch]) -> str:
+    def __compose_replacement(
+        self, replacement: str, matches: Sequence[PatternMatch], transforms: Mapping[str, Callable[[str], str]]
+    ) -> str:
         all_placeholders = {p: n for m in matches for p, n in m.expansions.items()}
         for placeholder, nodes in all_placeholders.items():
             quoted_placeholder = re.escape(placeholder)
-            raw_signature = self.__get_texts(nodes)
+            raw_signature = self.__get_texts(nodes, transforms.get(placeholder))
             # replacement = replacement.replace(placeholder, raw_signature)
             while placeholder in replacement:
                 pattern = re.compile(r"( *)" + quoted_placeholder)
@@ -495,7 +502,7 @@ class _RewriteActions:
                     place_holder_length = len(placeholder)
                     index = replacement.index(placeholder)
                     # TODO a regex may be provided between backticks and the groups are used. This needs a better design
-                    # A preferable solution is to pass a transformer function to the compose_replacement
+                    # The transforms argument of replace() can do the same with a function per placeholder
                     if index + place_holder_length < len(replacement) and replacement[index + place_holder_length] == "`":
                         # ` ` means get regex
                         end_index = replacement.index("`", index + place_holder_length + 1)
@@ -521,18 +528,22 @@ class _RewriteActions:
                     print("Match doesn't match unexpectedly")
         return replacement
 
-    def __get_texts(self, nodes: Sequence[Rewritable]) -> str:
+    def __get_texts(self, nodes: Sequence[Rewritable], transform: Callable[[str], str] | None = None) -> str:
         """Return the source from the first of the sibling nodes to the end of the last, dedented to the first.
 
-        The text between the nodes is kept. A node with rewrites queued inside it is replaced by its rewritten text.
+        The text between the nodes is kept. A node with rewrites queued inside it is replaced by its rewritten text,
+        and transform, if given, is applied to the text of each node.
         """
         if len(nodes) == 1:
-            return self.__get_text(nodes[0])
+            text = self.__get_text(nodes[0])
+            return transform(text) if transform else text
         start = self.cor_offset(nodes[0].offset)
         end = self.cor_offset(nodes[-1].extended_end_offset)
         rewriter = Rewriter(self.content[start:end])
         for node in nodes:
             text = self.__get_text(node)
+            if transform:
+                text = transform(text)
             if text != node.text:
                 rewriter.replace(
                     self.cor_offset(node.offset) - start, self.cor_offset(node.extended_end_offset) - start, text.encode(self.encoding)
@@ -557,9 +568,10 @@ class _RewriteActions:
         self,
         new_content: str,
         target: PatternMatch | Rewritable | Sequence[Rewritable],
+        transforms: Mapping[str, Callable[[str], str]],
     ) -> tuple[str, Sequence[Rewritable]]:
         if isinstance(target, PatternMatch):
-            new_content = self.__compose_replacement(new_content, [target])
+            new_content = self.__compose_replacement(new_content, [target], transforms)
             node_list = target.nodes
         else:
             node_list = (

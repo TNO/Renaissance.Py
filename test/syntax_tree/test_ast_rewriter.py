@@ -1072,6 +1072,37 @@ class TestComposeReplacement:
             rewriter.replace(replacement, match, include_whitespace=False, include_comments=False)
         assert_that(rewriter.apply_to_string(), is_(expected))
 
+    @pytest.mark.parametrize(
+        ("source", "find", "replacement", "transforms", "expected"),
+        [
+            (
+                "if TYPE_CHECKING:\n    from a import X\n    import b as B\n",
+                "if TYPE_CHECKING:\n    $$includes",
+                "$$includes",
+                {"$$includes": "lazy {}".format},
+                "lazy from a import X\nlazy import b as B\n",
+            ),
+            (
+                "if TYPE_CHECKING:\n    from a import (\n        X,  # x\n        Y,\n    )\n    import b\n",
+                "if TYPE_CHECKING:\n    $$includes",
+                "$$includes",
+                {"$$includes": "lazy {}".format},
+                "lazy from a import (\n    X,  # x\n    Y,\n)\nlazy import b\n",
+            ),
+            ("f(a, b)\n", "f($x, $y)", "g($y, $x)", {"$x": str.upper}, "g(b, A)\n"),
+        ],
+    )
+    def test_python_placeholder_transform(
+        self, source: str, find: str, replacement: str, transforms: dict[str, Callable[[str], str]], expected: str
+    ) -> None:
+        """Verify `transforms` rewrites the text of each node bound to its placeholder, and leaves other placeholders as they are."""
+        root = PythonRstNode.load_from_text(source, "test.py")
+        pattern = PythonPatternFactory(PythonFactory(PythonRstNode)).create_statements(find)
+        rewriter = ASTRewriter(root)
+        for match in match_pattern([root], pattern):
+            rewriter.replace(replacement, match, include_whitespace=False, include_comments=False, transforms=transforms)
+        assert_that(rewriter.apply_to_string(), is_(expected))
+
     @pytest.mark.xfail(strict=True, reason="the outer apply() also applies the nested rewrite, see issue #286")
     def test_python_multi_node_placeholder_with_nested_rewrite(self) -> None:
         """Verify a rewrite inside one of the nodes bound to a `$$` placeholder is kept when the placeholder expands."""
