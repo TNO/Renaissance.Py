@@ -10,7 +10,6 @@ import tree_sitter_cpp as tscpp
 import tree_sitter_java as tsjava
 import tree_sitter_python as tspython
 from hamcrest import assert_that, is_
-
 from tree_sitter import Language, Parser
 
 # Load compiled languages
