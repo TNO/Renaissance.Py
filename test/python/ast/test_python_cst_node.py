@@ -14,6 +14,8 @@ from hamcrest import (
     assert_that,
     contains_string,
     has_length,
+    has_properties,
+    has_property,
     is_,
     is_not,
 )
@@ -74,10 +76,15 @@ class TestPythonCstNode:
         )
         #          module  class     body        fun memem
         me = src.children[-1].children[5].children[2]
-        assert_that(me.name, is_("mememe"))
-        assert_that(me.preceding_sibling.name, is_("previous_me"))
-        assert_that(me.next_sibling.name, is_("next_me"))
-        assert_that(me.parent and me.parent.parent and me.parent.parent.name, is_("Parent"))
+        assert_that(
+            me,
+            has_properties(
+                name="mememe",
+                preceding_sibling=has_property("name", "previous_me"),
+                next_sibling=has_property("name", "next_me"),
+                parent=has_property("parent", has_property("name", "Parent")),
+            ),
+        )
         # all children are mashed together
         assert_that(me.children, has_length(8))
 
