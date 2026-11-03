@@ -44,44 +44,35 @@ class UnsafeReason(StrEnum):
 
 @dataclass(frozen=True)
 class UnsafeRule:
-    """A short human-readable explanation plus the docs anchor slug for one UnsafeReason."""
+    """A short human-readable explanation for one UnsafeReason."""
 
     message: str
-    doc_anchor: str
 
 
 UNSAFE_RULES: dict[UnsafeReason, UnsafeRule] = {
     UnsafeReason.PEP696_VERSION_GATE: UnsafeRule(
         "declares a default= (PEP 696), which needs the target's minimum Python to be 3.13+",
-        "feature-type-parameter-modernization-pep696-version-gate",
     ),
     UnsafeReason.NO_PEP695_EQUIVALENT: UnsafeRule(
         "declaration passes an argument with no PEP 695 equivalent, e.g. bound= on a ParamSpec or a **mapping",
-        "feature-type-parameter-modernization-no-pep695-equivalent",
     ),
     UnsafeReason.DECLARED_TYPEVAR_EXPORTED: UnsafeRule(
         "exported via __all__",
-        "feature-type-parameter-modernization-declared-type-parameter-exported",
     ),
     UnsafeReason.USED_IN_GENERIC_CLASS: UnsafeRule(
         "only used inside a class that is generic over it",
-        "feature-type-parameter-modernization-used-in-generic-class",
     ),
     UnsafeReason.SHARES_FUNCTION_WITH_UNCONVERTIBLE: UnsafeRule(
         "every function using it also uses a type variable that can't be converted",
-        "feature-type-parameter-modernization-shares-function-with-unconvertible",
     ),
     UnsafeReason.NAME_NOT_AT_MODULE_LEVEL: UnsafeRule(
         "declaration uses a name that isn't available at module level as the same object",
-        "feature-type-parameter-modernization-name-not-at-module-level",
     ),
     UnsafeReason.IMPORTED_ELSEWHERE_IN_PROJECT: UnsafeRule(
         "imported directly by another file in the target project",
-        "feature-type-parameter-modernization-imported-elsewhere-in-project",
     ),
     UnsafeReason.ORIGIN_IMPORTS_CONSTRUCTOR_CONDITIONALLY: UnsafeRule(
         "origin module imports TypeVar/ParamSpec/TypeVarTuple inside an if/try block, e.g. under TYPE_CHECKING or per Python version",
-        "feature-type-parameter-modernization-origin-imports-constructor-conditionally",
     ),
 }
 
