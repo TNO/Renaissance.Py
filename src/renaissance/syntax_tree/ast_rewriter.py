@@ -522,18 +522,22 @@ class _RewriteActions:
         return replacement
 
     def __get_texts(self, nodes: Sequence[Rewritable]) -> str:
+        """Return the source from the first of the sibling nodes to the end of the last, dedented to the first.
+
+        The text between the nodes is kept. A node with rewrites queued inside it is replaced by its rewritten text.
+        """
         if len(nodes) == 1:
             return self.__get_text(nodes[0])
-        # Use a ASTRewriter to only rewrite exactly that what needs to be rewritten
-        rewriter = ASTRewriter(nodes[0], self.encoding, correct_indent=False)
+        start = self.cor_offset(nodes[0].offset)
+        rewriter = Rewriter(self.content[start : self.cor_offset(nodes[-1].extended_end_offset)])
         for node in nodes:
-            rs = self.__get_text(node)
-            org_rs = node.text
-            if rs != org_rs:
-                rewriter.replace(rs, node)
-        result = rewriter.apply_to_string()
-        indent = self.derive_indent(nodes[0].offset)
-        return TextUtils.shift_left(result, indent, start_line=1)
+            text = self.__get_text(node)
+            if text != node.text:
+                rewriter.replace(
+                    self.cor_offset(node.offset) - start, self.cor_offset(node.extended_end_offset) - start, text.encode(self.encoding)
+                )
+        result = rewriter.apply().decode(self.encoding)
+        return TextUtils.shift_left(result, self.derive_indent(start), start_line=1)
 
     def __get_text(self, node: Rewritable) -> str:
         if self._should_skip(node):
