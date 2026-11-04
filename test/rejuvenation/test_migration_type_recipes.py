@@ -12,7 +12,7 @@ import textwrap
 from pathlib import Path
 
 import pytest
-from hamcrest import assert_that, contains_string, equal_to, has_entry, not_
+from hamcrest import assert_that, contains_string, equal_to, not_
 from hamcrest.core.matcher import Matcher
 
 from rejuvenation import migration_type_recipes as migration
@@ -52,8 +52,8 @@ class TestProcessFile:
         report = migration.process_file(target, min_python=(3, 12), project_root=tmp_path, project_wide_imported_names=frozenset({"T"}))
 
         assert_that(migration.has_fixed(report), equal_to(obj=True))
-        assert_that(report.reasons, not_(None))
-        assert_that(report.reasons, has_entry("orphaned", {"T": UnsafeReason.IMPORTED_ELSEWHERE_IN_PROJECT}))
+        reasons = report.reasons or {}
+        assert_that(reasons.get("orphaned"), equal_to({"T": UnsafeReason.IMPORTED_ELSEWHERE_IN_PROJECT}))
         written = target.read_text(encoding="utf-8")
         assert_that(written, contains_string("def identity[T](x: T) -> T:"))
         assert_that(written, contains_string('T = TypeVar("T")'))
