@@ -192,10 +192,13 @@ The modules of this phase move to `core/model/`, their tests to `test/unit/core/
 - src: from `utils/ast_utils.py`, `traverse`, `display_context` and `process_node` to `core.model`, and `preceding_sibling`,
   `next_sibling`, `match_props`, `match_children` and `format_node` to `core.model.for_bindings`.
   From `integrations/python/ast/util.py`, `convert` to `core.model.for_bindings`, and `to_str` to
-  `recipes/python_refactoring.py` (internal).
+  `recipes/python_refactoring.py` (internal). `is_ancestor_of`, which is typed with the rewriter's `Rewritable`, moves to
+  `syntax_tree/ast_rewriter.py`, its only user.
   `replace_dollar`, `use_dollar` and `detect_placeholder` are all that is left in `utils/ast_utils.py`.
-- remaining: the `protected` contract of `core.model.for_bindings`, which allows the core, `renaissance.integrations`,
-  `renaissance.project` and their tests. The allowed importers follow the bindings as they move.
+- test: `test/utils/test_ast_utils.py`, which tests `is_ancestor_of`, becomes `test/syntax_tree/test_is_ancestor_of.py`.
+- remaining: the known violation `renaissance.utils.ast_utils -> renaissance.syntax_tree.ast_rewriter` is removed, and that of
+  the moved test follows its new path. The `protected` contract of `core.model.for_bindings`, which allows the core,
+  `renaissance.integrations`, `renaissance.project` and their tests. The allowed importers follow the bindings as they move.
 
 **1.5 The nodes.**
 
@@ -230,7 +233,7 @@ The modules of this phase move to `core/matching/`, their tests to `test/unit/co
 - src: `syntax_tree/match_finder.py`; `find_in_list` to `core.matching.for_bindings`.
 - test: `test/syntax_tree/test_match_finder.py`, `test_match_finder_multi_assignments.py`, `test_match_tree.py`,
   `test_match_dict.py` and `test_pattern_match.py`.
-  The matcher tests under `test/c_cpp/`, `test/python/ast/`, `test/lst/` and `test/tree_sitter/` move here if they test the
+  The matcher tests under `test/c_cpp/`, `test/python/ast/` and `test/lst/` move here if they test the
   algorithm, and stay with their binding if they test how the binding presents its nodes to the matcher.
   This decides the users of `test/utils/util_equivalence_classes.py`, which moves to their `shared/` directory.
 - Checks: `git grep "syntax_tree.match_finder"` finds nothing.
@@ -248,8 +251,8 @@ The modules of this phase move to `core/rewriting/`, their tests to `test/unit/c
 **4.2 The node-based rewriter.**
 
 - src: `syntax_tree/ast_rewriter.py`.
-- test: `test/syntax_tree/test_ast_rewriter.py` and `test_rewrite_semantics_properties.py`, and the helpers of
-  `test_ast_rewriter.py` that have not moved yet; see [Test helpers](#test-helpers).
+- test: `test/syntax_tree/test_ast_rewriter.py`, `test_rewrite_semantics_properties.py` and `test_is_ancestor_of.py`, and the
+  helpers of `test_ast_rewriter.py` that have not moved yet; see [Test helpers](#test-helpers).
 - remaining: the `ignore_imports` entries of the Python binding tests that check the effect of a rewrite follow the new path.
 
 #### Phase 5: `core.processing`, and closing the core
@@ -299,8 +302,7 @@ binding by one contract per new binding.
 **6.3 tree-sitter.**
 
 - src: `integrations/tree_sitter/` to `parser_bindings/tree_sitter/`.
-- test: `test/lst/`, except the tests of `clang_adapter`; `test/tree_sitter/`; `test/python/ast/test_python_lst_node.py`.
-  `test/unit/parser_bindings/tree_sitter/` gets an `__init__.py`, unlike `test/tree_sitter/` today.
+- test: `test/lst/`, except the tests of `clang_adapter`; `test/python/ast/test_python_lst_node.py`.
 - Checks: `import tree_sitter` still finds the library in the tests.
 
 **6.4 The Python parsers.**
@@ -321,7 +323,7 @@ binding by one contract per new binding.
   `clang_adapter` keeps its known import of `tree_sitter`.
 - test: `test/c_cpp/`, and the `clang_adapter` tests of `test/lst/`.
 - Checks: `src/renaissance/integrations/`, `src/renaissance/project/`, `test/c_cpp/`, `test/python/`, `test/lst/`,
-  `test/tree_sitter/`, `test/project/` and `test/extractors/` no longer exist; `git grep -E "renaissance\.(integrations|project)\b"`
+  `test/project/` and `test/extractors/` no longer exist; `git grep -E "renaissance\.(integrations|project)\b"`
   finds nothing; the `layers` contract has a container `renaissance.parser_bindings`, and each binding is independent.
 
 #### Phase 7: recipes
