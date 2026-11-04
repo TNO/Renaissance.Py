@@ -6,7 +6,7 @@
 
 """AI: Mapping of Clang node kinds to the library's semantic kinds."""
 
-from renaissance.syntax_tree.semantic_kind import SemanticKind
+from renaissance.core.model import SemanticKind
 
 CLANG_KIND_MAP = {
     "TRANSLATION_UNIT": SemanticKind.TRANSLATION_UNIT,

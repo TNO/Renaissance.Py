@@ -15,10 +15,10 @@ from hypothesis import given, settings
 from hypothesis import strategies as st
 from pytest_mock import MockerFixture
 
+from renaissance.core.model import SemanticKind
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
 from renaissance.recipes.python_refactoring import PythonRefactoring
 from renaissance.recipes.unit_to_pytest import UnitToPytest
-from renaissance.syntax_tree.semantic_kind import SemanticKind
 
 
 class TestPythonRefactoring:

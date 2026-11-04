@@ -8,9 +8,9 @@
 
 import pytest
 
+from renaissance.core.model import NodeProtocol
 from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
-from renaissance.syntax_tree.node_protocol import NodeProtocol
 from test.utils.util_equivalence_classes import assert_pair_equivalence, make_parametersets_of_equivalence_classes
 
 

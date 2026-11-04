@@ -12,8 +12,8 @@ Requires minimum amount of code to make the matcher work.
 import ast
 from typing import Any
 
+from renaissance.core.model import SemanticKind
 from renaissance.integrations.python.ast.kinds import PYTHON_KIND_MAP
-from renaissance.syntax_tree.semantic_kind import SemanticKind
 
 
 class ASTExtension:

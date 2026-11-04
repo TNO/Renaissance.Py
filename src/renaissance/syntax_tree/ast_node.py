@@ -16,8 +16,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Self
 
-from renaissance.syntax_tree.node_protocol import NodeProtocol
-from renaissance.syntax_tree.semantic_kind import SemanticKind
+from renaissance.core.model import NodeProtocol, SemanticKind
 from renaissance.utils.ast_utils import format_node, next_sibling, preceding_sibling, process_node
 from renaissance.utils.text_utils import TextUtils
 

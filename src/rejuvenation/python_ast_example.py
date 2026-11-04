@@ -10,12 +10,12 @@ import textwrap
 from ast import AST
 
 from rejuvenation.python_lst_example import python_lst_smoke_test
+from renaissance.core.model import SemanticKind
 from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
 from renaissance.syntax_tree.ast_finder import find_semantic_kind
 from renaissance.syntax_tree.ast_rewriter import ASTRewriter
 from renaissance.syntax_tree.ast_shower import ASTShower
 from renaissance.syntax_tree.match_finder import match_pattern
-from renaissance.syntax_tree.semantic_kind import SemanticKind
 
 example_code = """
 from module import foo, bar, baz, quux

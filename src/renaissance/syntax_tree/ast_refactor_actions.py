@@ -10,11 +10,12 @@ from collections.abc import Callable, Sequence
 from functools import cache
 from typing import TYPE_CHECKING
 
+from renaissance.core.model import SemanticKind
+
 from .ast_finder import matches_node
 from .ast_node import ASTNode
 from .ast_processor import ASTProcessor
 from .match_finder import MatchFinder, PatternMatch
-from .semantic_kind import SemanticKind
 
 if TYPE_CHECKING:
     from renaissance.integrations.clang.c_pattern_factory import CPPPatternFactory

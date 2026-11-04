@@ -214,8 +214,8 @@ The column *now in* gives the current module, relative to `src/renaissance/`.
 
 | Symbol                                                          | For     | Now in                                  |
 | --------------------------------------------------------------- | ------- | --------------------------------------- |
-| `NodeProtocol`                                                  | all     | `syntax_tree/node_protocol.py`          |
-| `SemanticKind`                                                  | all     | `syntax_tree/semantic_kind.py`          |
+| `NodeProtocol`                                                  | all     | `core/model/node_protocol.py`           |
+| `SemanticKind`                                                  | all     | `core/model/semantic_kind.py`           |
 | `TextSegment`, `SyntaxNode`, `Siblings`                         | all     | `syntax_tree/text_segment.py` and so on |
 | `ASTNode`, `ASTReference`, `VisitorResult`                      | all     | `syntax_tree/ast_node.py`               |
 | `ASTFactory`                                                    | all     | `syntax_tree/ast_factory.py`            |

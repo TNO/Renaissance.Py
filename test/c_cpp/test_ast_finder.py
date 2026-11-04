@@ -12,11 +12,11 @@ import pytest
 from hamcrest import assert_that, greater_than, has_length, is_
 
 import targets
+from renaissance.core.model import SemanticKind
 from renaissance.syntax_tree.ast_factory import ASTFactory
 from renaissance.syntax_tree.ast_finder import ASTFinder, find_nodes
 from renaissance.syntax_tree.ast_node import ASTNode
 from renaissance.syntax_tree.ast_shower import ASTShower
-from renaissance.syntax_tree.semantic_kind import SemanticKind
 
 from .factories import Factories
 

@@ -8,9 +8,9 @@
 
 from more_itertools import flatten
 
+from renaissance.core.model import SemanticKind
 from renaissance.syntax_tree.ast_finder import find_semantic_kind
 from renaissance.syntax_tree.ast_processor import ASTProcessor
-from renaissance.syntax_tree.semantic_kind import SemanticKind
 
 
 class CleanupRefactoring:

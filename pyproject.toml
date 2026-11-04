@@ -238,8 +238,7 @@ stale = [
     "docs/assets/images/architecture/",  # allowed locations of shared images
     "docs/assets/images/logos/",
     "docs/assets/images/notation/",
-    "docs/user/core/",  # targets of the repository structure migration
-    "docs/user/recipes/",
+    "docs/user/recipes/",  # targets of the repository structure migration
     "src/renaissance/core/matching/",
 ]
 
@@ -276,11 +275,12 @@ layers = [
     # core.pattern
     "renaissance.syntax_tree.pattern_kind : test.syntax_tree.test_pattern_kind",
     # core.model
-    """renaissance.syntax_tree.semantic_kind : renaissance.syntax_tree.node_protocol
+    """renaissance.core.model
     : renaissance.syntax_tree.text_segment : renaissance.syntax_tree.syntax_node : renaissance.syntax_tree.siblings
     : renaissance.syntax_tree.ast_node : renaissance.syntax_tree.ast_factory : renaissance.syntax_tree.ast_finder
     : renaissance.syntax_tree.ast_shower : renaissance.utils
-    : test.syntax_tree.infra_syntax_node : test.syntax_tree.infra_text_segment : test.syntax_tree.test_node_protocol
+    : test.unit.core.model
+    : test.syntax_tree.infra_syntax_node : test.syntax_tree.infra_text_segment
     : test.syntax_tree.test_syntax_node : test.syntax_tree.test_text_segment : test.syntax_tree.test_node_finder
     : test.syntax_tree.test_semantic_finder : test.syntax_tree.test_removed_legacy_api
     : test.utils.test_text_utils : test.utils.test_ast_utils : test.search_strategies : test.conftest""",
@@ -312,7 +312,7 @@ ignore_imports = [
     "test.syntax_tree.test_node_finder -> renaissance.integrations.python.ast.rst_node",
     "test.syntax_tree.test_semantic_finder -> renaissance.integrations.python.ast.rst_node",
     # A test of the node protocol that checks its use by the matcher.
-    "test.syntax_tree.test_node_protocol -> renaissance.syntax_tree.match_finder",
+    "test.unit.core.model.test_node_protocol -> renaissance.syntax_tree.match_finder",
 ]
 
 [[tool.importlinter.contracts]]
@@ -449,6 +449,14 @@ forbidden_modules = [
     "test.c_cpp", "test.python", "test.lst", "test.extractors",
 ]
 allow_indirect_imports = true
+
+# One contract per core sub-package: code outside the package imports only its public API, from the package itself.
+[[tool.importlinter.contracts]]
+id = "core-model-api"
+name = "Only core.model and its unit tests import the modules of core.model"
+type = "protected"
+protected_modules = ["renaissance.core.model.*"]
+allowed_importers = ["renaissance.core.model", "test.unit.core.model"]
 
 # The tools and their tests are independent of the rest of the repository.
 [[tool.importlinter.contracts]]

@@ -8,8 +8,8 @@
 
 import tree_sitter_python
 
+from renaissance.core.model import SemanticKind
 from renaissance.integrations.tree_sitter.adapter import TreeSitterAdapter
-from renaissance.syntax_tree.semantic_kind import SemanticKind
 
 
 def test_tree_sitter_nodes_expose_protocol_metadata() -> None:

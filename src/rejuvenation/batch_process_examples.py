@@ -11,6 +11,7 @@ import textwrap
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 
+from renaissance.core.model import SemanticKind
 from renaissance.integrations.clang import ClangASTNode
 from renaissance.integrations.clang.clang_json_ast_node import ClangJsonASTNode
 from renaissance.recipes import CleanupRefactoring
@@ -24,7 +25,6 @@ from renaissance.syntax_tree.recipe_ast_processor import (
     final_action,
     recipe_step,
 )
-from renaissance.syntax_tree.semantic_kind import SemanticKind
 from renaissance.utils.text_utils import TextUtils
 
 example_1 = textwrap.dedent("""

@@ -13,12 +13,12 @@ from typing import cast
 
 from termcolor import colored
 
+from renaissance.core.model import SemanticKind
 from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
 from renaissance.integrations.python.ast.util import to_str
 from renaissance.syntax_tree.ast_processor import ASTProcessor
 from renaissance.syntax_tree.match_finder import match_pattern
-from renaissance.syntax_tree.semantic_kind import SemanticKind
 from renaissance.utils.text_utils import snake_case
 
 

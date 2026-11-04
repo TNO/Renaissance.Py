@@ -10,11 +10,11 @@ import pytest
 import tree_sitter_cpp as tscpp
 from hamcrest import assert_that, has_length
 
+from renaissance.core.model import SemanticKind
 from renaissance.integrations.tree_sitter.adapter import TreeSitterAdapter
 from renaissance.integrations.tree_sitter.lst import LSTNode
 from renaissance.syntax_tree.ast_finder import find_semantic_kind
 from renaissance.syntax_tree.match_finder import is_match
-from renaissance.syntax_tree.semantic_kind import SemanticKind
 from renaissance.utils.ast_utils import traverse
 
 

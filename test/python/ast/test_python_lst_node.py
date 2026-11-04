@@ -17,9 +17,9 @@ import tree_sitter_python
 from hamcrest import assert_that, is_
 from hypothesis import HealthCheck, given, settings
 
+from renaissance.core.model import SemanticKind
 from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
 from renaissance.integrations.tree_sitter.lst import LSTNode
-from renaissance.syntax_tree.semantic_kind import SemanticKind
 from test.utils_for_tests import reject_unsupported_code
 
 TREE_SITTER_PYTHON = tree_sitter.Parser(tree_sitter.Language(tree_sitter_python.language()))

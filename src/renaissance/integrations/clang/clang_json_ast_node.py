@@ -22,6 +22,7 @@ from importlib.metadata import version
 from pathlib import Path
 from typing import Any, Self, override
 
+from renaissance.core.model import SemanticKind
 from renaissance.integrations.clang.cpp_utils import CPPUtils, matches_node_kind
 from renaissance.integrations.clang.kinds import CLANG_KIND_MAP
 from renaissance.integrations.clang.predicates import (
@@ -30,7 +31,6 @@ from renaissance.integrations.clang.predicates import (
 )
 from renaissance.syntax_tree.ast_node import ASTNode, ASTReference
 from renaissance.syntax_tree.pattern_kind import PatternKind
-from renaissance.syntax_tree.semantic_kind import SemanticKind
 from renaissance.utils.ast_utils import match_children, match_props
 
 EMPTY_DICT = {}

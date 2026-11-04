@@ -149,6 +149,9 @@ nav:
           - 2. Apply a transformation strategy: user/workflows/apply-a-transformation-strategy.md
           - 3. Investigate undecisive results: user/workflows/investigate-undecisive-results.md
 
+      - Core:
+          - Model: user/core/model.md
+
   - Developer documentation:
       - Overview: developer/index.md
       - Coding conventions: developer/coding-conventions.md
@@ -206,6 +209,7 @@ nav:
 
       - Code modules:
           - Overview: developer/modules/index.md
+          - Core model: developer/modules/core/model.md
           - Parser and AST modules: developer/modules/parser-and-ast.md
           - Matching modules: developer/modules/matching.md
           - Filter modules: developer/modules/filter.md
@@ -220,6 +224,7 @@ nav:
       - API reference:
           - Overview: developer/api/index.md
           - Public API: developer/api/public-api.md
+          - Core model: developer/api/core/model.md
 
   - Documentation system:
       - Overview: documentation-system/index.md

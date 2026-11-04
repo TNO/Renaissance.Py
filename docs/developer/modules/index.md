@@ -8,6 +8,7 @@ https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
 # Code modules
 
+1. [Core model](core/model.md)
 1. [Parser and AST modules](parser-and-ast.md)
 1. [Matching modules](matching.md)
 1. [Filter modules](filter.md)

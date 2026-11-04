@@ -13,9 +13,9 @@ import libcst
 from libcst import BaseCompoundStatement, BaseSmallStatement, ClassDef, CSTNode, FunctionDef, MetadataWrapper
 from libcst.metadata import WhitespaceInclusivePositionProvider
 
+from renaissance.core.model import SemanticKind
 from renaissance.integrations.python.ast.kinds import PYTHON_KIND_MAP
 from renaissance.integrations.python.ast.util import convert
-from renaissance.syntax_tree.semantic_kind import SemanticKind
 from renaissance.utils.ast_utils import next_sibling, preceding_sibling
 
 

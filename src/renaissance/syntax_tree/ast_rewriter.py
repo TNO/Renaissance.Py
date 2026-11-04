@@ -15,11 +15,11 @@ from typing import Protocol, Self, runtime_checkable
 from more_itertools import flatten
 
 from renaissance.common import Rewriter
+from renaissance.core.model import SemanticKind
 from renaissance.utils.ast_utils import is_ancestor_of
 from renaissance.utils.text_utils import TextUtils
 
 from .match_finder import PatternMatch
-from .semantic_kind import SemanticKind
 
 
 @runtime_checkable

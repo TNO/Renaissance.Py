@@ -9,11 +9,10 @@
 import re
 from collections.abc import Callable, Iterator, Sequence
 
+from renaissance.core.model import NodeProtocol, SemanticKind
 from renaissance.utils.ast_utils import traverse
 
 from .ast_node import ASTNode
-from .node_protocol import NodeProtocol
-from .semantic_kind import SemanticKind
 
 
 class ASTFinder:
