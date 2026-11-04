@@ -63,6 +63,7 @@ Every adapted node must expose the fields consumed by `NodeProtocol`:
 parser_kind: str
 semantic_kind: SemanticKind
 properties: Mapping[str, Any]
+parent: NodeProtocol | None
 children: Sequence[NodeProtocol]
 signature: str
 name: str

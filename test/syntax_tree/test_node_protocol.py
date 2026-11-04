@@ -17,6 +17,7 @@ class FakeNode:
     parser_kind = "fake_node"
     semantic_kind = SemanticKind.NODE
     properties = {}
+    parent = None
     children = []
     signature = "fake"
     name = ""
