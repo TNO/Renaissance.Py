@@ -222,24 +222,24 @@ def _run_second_pass(
     return merged
 
 
-def _run_ruff_import_cleanup(paths: list[Path]) -> None:
-    """Run `ruff check --fix --select F401,I001` over every path.
+def _run_ruff_cleanup(paths: list[Path]) -> None:
+    """Run `ruff check --fix --select F401,I001,UP049` over every path.
 
-    Drops any now-unused import (F401), then merges and sorts the imports (I001) under the settings ruff
-    finds for each path.
+    Drops any now-unused import (F401), merges and sorts the imports (I001) under the settings ruff
+    finds for each path, and removes the leading underscores of type parameters (UP049).
 
     Best-effort: if ruff can't be invoked (e.g. not installed), prints a warning instead of raising.
     The files are already valid without this cleanup.
     """
     try:
         subprocess.run(  # noqa: S603 - fixed argv list (sys.executable + literals + our own discovered paths), no shell
-            [sys.executable, "-m", "ruff", "check", "--fix", "--select", "F401,I001", *(str(path) for path in paths)],
+            [sys.executable, "-m", "ruff", "check", "--fix", "--select", "F401,I001,UP049", *(str(path) for path in paths)],
             capture_output=True,
             text=True,
             check=False,
         )
     except OSError as exc:
-        print(colored(f"warning: could not run ruff for import cleanup: {exc}", "yellow"))
+        print(colored(f"warning: could not run ruff for cleanup: {exc}", "yellow"))
 
 
 def _files(count: int) -> str:
@@ -494,7 +494,10 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--no-ruff",
         action="store_true",
-        help="Skip the final `ruff check --fix --select F401,I001` pass that drops imports made unused and sorts the rest.",
+        help=(
+            "Skip the final `ruff check --fix --select F401,I001,UP049` pass that drops imports made unused, sorts the rest"
+            " and removes the leading underscores of type parameters."
+        ),
     )
     parser.add_argument(
         "--ignore",
@@ -589,7 +592,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         # TODO(FrancescoPezzella): removed statements leave their blank lines behind; ruff's E303 (preview) collapses them, but not
         #  at file start.
         #  https://github.com/TNO/Renaissance.Py/issues/279
-        _run_ruff_import_cleanup(modified_paths)
+        _run_ruff_cleanup(modified_paths)
 
     console_report = _format_console_report(
         reports,
