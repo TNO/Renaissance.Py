@@ -17,8 +17,7 @@ from renaissance.syntax_tree.ast_factory import ASTFactory
 from renaissance.syntax_tree.ast_finder import ASTFinder, find_nodes
 from renaissance.syntax_tree.ast_node import ASTNode
 from renaissance.syntax_tree.ast_shower import ASTShower
-
-from .factories import Factories
+from test.c_cpp.factories import Factories
 
 
 class TestFinder:

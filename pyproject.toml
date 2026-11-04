@@ -142,6 +142,9 @@ allow-star-arg-any = true
 [tool.ruff.lint.flake8-copyright]
 author = "TNO"
 
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
 [tool.pyright]
 typeCheckingMode = "off"
 #typeCheckingMode = "strict"

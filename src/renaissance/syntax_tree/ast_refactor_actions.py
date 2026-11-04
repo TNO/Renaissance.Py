@@ -11,11 +11,10 @@ from functools import cache
 from typing import TYPE_CHECKING
 
 from renaissance.core.model import SemanticKind
-
-from .ast_finder import matches_node
-from .ast_node import ASTNode
-from .ast_processor import ASTProcessor
-from .match_finder import MatchFinder, PatternMatch
+from renaissance.syntax_tree.ast_finder import matches_node
+from renaissance.syntax_tree.ast_node import ASTNode
+from renaissance.syntax_tree.ast_processor import ASTProcessor
+from renaissance.syntax_tree.match_finder import MatchFinder, PatternMatch
 
 if TYPE_CHECKING:
     from renaissance.integrations.clang.c_pattern_factory import CPPPatternFactory
