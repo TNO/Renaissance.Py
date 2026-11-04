@@ -17,6 +17,7 @@ from renaissance.integrations import MATCH_ALL, MATCH_ONE
 #  https://github.com/TNO/Renaissance.Py/issues/275
 if TYPE_CHECKING:
     # syntax_tree imports this module, so a runtime import would be circular.
+    from renaissance.core.model import NodeProtocol
     from renaissance.syntax_tree.ast_rewriter import Rewritable
 
 DISPLAY_PARSER_KIND: ContextVar[bool] = ContextVar("display_parser_kind", default=False)
@@ -86,24 +87,31 @@ def process_node(node, action) -> None:
             process_node(child, action)
 
 
-def preceding_sibling(node):
-    """AI: Return the sibling immediately before node in its parent's children, or None."""
+def _sibling_at[NodeT: NodeProtocol](node: NodeT, offset: int) -> NodeT | None:
+    """Return the sibling offset positions away from node in its parent's children, or None.
+
+    The node is located by identity, since node equality is structural.
+    """
     parent = node.parent
-    if not parent:
+    if parent is None:
         return None
     siblings = parent.children
-    preceding_index = siblings.index(node) - 1
-    return siblings[preceding_index] if preceding_index >= 0 else None
+    for index, sibling in enumerate(siblings):
+        if sibling is node:
+            target = index + offset
+            return siblings[target] if 0 <= target < len(siblings) else None
+    msg = "node is not among the children of its parent"
+    raise ValueError(msg)
 
 
-def next_sibling(self):
-    """AI: Return the sibling immediately after self in its parent's children, or None."""
-    parent = self.parent
-    if not parent:
-        return None
-    siblings = parent.children
-    next_index = siblings.index(self) + 1
-    return siblings[next_index] if next_index < len(siblings) else None
+def preceding_sibling[NodeT: NodeProtocol](node: NodeT) -> NodeT | None:
+    """AI: Return the sibling immediately before node in its parent's children, or None."""
+    return _sibling_at(node, -1)
+
+
+def next_sibling[NodeT: NodeProtocol](node: NodeT) -> NodeT | None:
+    """AI: Return the sibling immediately after node in its parent's children, or None."""
+    return _sibling_at(node, 1)
 
 
 def is_ancestor_of(ancestor: Rewritable, node: Rewritable) -> bool:

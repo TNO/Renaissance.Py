@@ -11,6 +11,7 @@ from collections import Counter
 from pathlib import Path
 
 import pytest
+from hamcrest import assert_that, equal_to
 
 from tools import lint_budget
 
@@ -72,6 +73,13 @@ def test_reduced_counts_are_adopted_as_the_new_budget(budget_file, monkeypatch) 
 
     assert lint_budget.main([]) == lint_budget.EXIT_OK
     assert json.loads(budget_file.read_text(encoding="utf-8")) == {"ruff": {"E501": 3}, "pyright": {"reportUnusedVariable": 2}}
+
+
+def test_the_budget_is_written_with_lf_line_endings(budget_file: Path) -> None:
+    """Assert the budget file gets LF line endings, also on Windows."""
+    lint_budget.save_budget({"ruff": {"E501": 3}, "pyright": {}})
+
+    assert_that(budget_file.read_bytes().count(b"\r"), equal_to(0))
 
 
 def test_check_mode_accepts_an_improvement_without_writing(budget_file, monkeypatch) -> None:
