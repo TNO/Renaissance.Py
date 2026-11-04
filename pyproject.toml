@@ -180,6 +180,26 @@ extra = [
     "docs/developer/tools/check-layering.md",  # Import Linter, configured in [tool.importlinter]
 ]
 
+[[tool.check_layout.mirrors]]
+code = "src/renaissance/core"
+units = "packages"
+mirror = "test/unit/core/{path}/"
+
+[[tool.check_layout.mirrors]]
+code = "src/renaissance/core"
+units = "packages"
+mirror = "docs/developer/modules/core/{kebab_path}.md"
+
+[[tool.check_layout.mirrors]]
+code = "src/renaissance/core"
+units = "packages"
+mirror = "docs/developer/api/core/{kebab_path}.md"
+
+[[tool.check_layout.mirrors]]
+code = "src/renaissance/core"
+units = "packages"
+mirror = "docs/user/core/{kebab_path}.md"
+
 # Every repository path named in the documentation, in comments and docstrings, and in feature files exists; checked by
 # tools/check_references.py. `exclude` lists the files that are not read; `known_issues` and `stale` list the paths that are
 # known to be missing. An entry that no longer applies fails the check, so these lists only shrink.
@@ -221,7 +241,6 @@ stale = [
     "docs/user/core/",  # targets of the repository structure migration
     "docs/user/recipes/",
     "src/renaissance/core/matching/",
-    "test/unit/",
 ]
 
 # The dependency rules of docs/developer/architecture/repository-structure.md. This is their single source of truth.

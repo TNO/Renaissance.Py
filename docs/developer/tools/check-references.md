@@ -39,7 +39,7 @@ It skips:
 [tool.check_references]
 exclude = ["docs/developer/architecture/adr/"]  # files, or directories ending with /, that the check does not read
 known_issues = ["src/renaissance/recipes/type_parameter_check.py"]  # missing paths that a known issue explains
-stale = ["test/unit/"]  # missing paths that do not exist yet
+stale = ["docs/user/recipes/"]  # missing paths that do not exist yet
 ```
 
 An entry that no longer applies fails the check: a listed path that exists or that no file names any more, and an excluded path
