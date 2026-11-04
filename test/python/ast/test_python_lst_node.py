@@ -6,9 +6,14 @@
 
 """Tests for the LST-based Python AST node implementation."""
 
+import warnings
+
+import hypothesis
 import hypothesmith
 import libcst
 import pytest
+import tree_sitter
+import tree_sitter_python
 from hamcrest import assert_that, is_
 from hypothesis import HealthCheck, given, settings
 
@@ -16,6 +21,20 @@ from renaissance.integrations.python.ast.factory import PythonFactory, PythonPat
 from renaissance.integrations.tree_sitter.lst import LSTNode
 from renaissance.syntax_tree.semantic_kind import SemanticKind
 from utils_for_tests import reject_unsupported_code
+
+TREE_SITTER_PYTHON = tree_sitter.Parser(tree_sitter.Language(tree_sitter_python.language()))
+
+
+def reject_code_tree_sitter_cannot_parse(code: str) -> None:
+    """Reject valid Python that tree-sitter-python cannot parse, with a warning, as that is a bug of tree-sitter-python."""
+    if TREE_SITTER_PYTHON.parse(code.encode()).root_node.has_error:
+        warnings.warn(
+            f"tree-sitter-python cannot parse this valid Python, so the example is skipped: {code!r}. "
+            "Report it at https://github.com/tree-sitter/tree-sitter-python/issues, unless it is already reported there; "
+            "see https://github.com/TNO/Renaissance.Py/issues/367.",
+            stacklevel=2,
+        )
+        hypothesis.reject()
 
 
 class TestPythonLstNode:
@@ -36,9 +55,10 @@ class TestPythonLstNode:
     @pytest.mark.hypothesisslow
     @given(code=hypothesmith.from_node(libcst.BaseStatement))
     @settings(max_examples=250, suppress_health_check=list(HealthCheck))
-    def test_from_cst_returns_statement(self, code) -> None:
+    def test_from_cst_returns_statement(self, code: str) -> None:
         """AI: Verify creating a node from arbitrary hypothesis-generated CST code yields a non-NODE-kind child."""
         reject_unsupported_code(code)
+        reject_code_tree_sitter_cannot_parse(code)
         factory = PythonFactory(LSTNode)
         node = factory.create_from_text(code)
         print(f"testing {code=} with LSTNode")
