@@ -9,10 +9,10 @@
 from collections.abc import Callable
 
 import pytest
-from hamcrest import assert_that, equal_to
+from hamcrest import assert_that, equal_to, none, same_instance
 
 from renaissance.integrations.clang import ClangASTNode
-from renaissance.utils.ast_utils import is_ancestor_of
+from renaissance.utils.ast_utils import is_ancestor_of, next_sibling, preceding_sibling
 
 # Two functions with the same body, so their nodes are structurally equal.
 SOURCE = "void f() { int x = 0; }\nvoid g() { int x = 0; }\n"
@@ -67,3 +67,22 @@ class TestIsAncestorOf:
         root = ClangASTNode.load_from_text(SOURCE, "test.c")
         assert_that(_first_function(root), equal_to(_second_function(root)), "f and g must be structurally equal")
         assert_that(is_ancestor_of(ancestor(root), node(root)), equal_to(expected))
+
+
+class TestSiblings:
+    """Tests for preceding_sibling and next_sibling with structurally equal siblings."""
+
+    def test_preceding_sibling_of_second_is_first(self) -> None:
+        """Verify preceding_sibling does not stop at an earlier sibling that is structurally equal."""
+        root = ClangASTNode.load_from_text(SOURCE, "test.c")
+        assert_that(preceding_sibling(_second_function(root)), same_instance(_first_function(root)))
+
+    def test_next_sibling_of_first_is_second(self) -> None:
+        """Verify next_sibling returns the following node."""
+        root = ClangASTNode.load_from_text(SOURCE, "test.c")
+        assert_that(next_sibling(_first_function(root)), same_instance(_second_function(root)))
+
+    def test_next_sibling_of_last_is_none(self) -> None:
+        """Verify next_sibling of the last node is None, not the node itself."""
+        root = ClangASTNode.load_from_text(SOURCE, "test.c")
+        assert_that(next_sibling(_second_function(root)), none())

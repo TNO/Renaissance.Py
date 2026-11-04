@@ -9,7 +9,7 @@
 from collections import deque
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from renaissance.integrations import MATCH_ALL, MATCH_ONE
 
@@ -86,24 +86,32 @@ def process_node(node, action) -> None:
             process_node(child, action)
 
 
-def preceding_sibling(node):
-    """AI: Return the sibling immediately before node in its parent's children, or None."""
+# Any, not object: the callers are untyped, and pyright reports Unknown arguments to typed parameters.
+def _sibling_at(node: Any, offset: int) -> Any:  # noqa: ANN401
+    """Return the sibling offset positions away from node in its parent's children, or None.
+
+    The node is located by identity, since node equality is structural.
+    """
     parent = node.parent
     if not parent:
         return None
     siblings = parent.children
-    preceding_index = siblings.index(node) - 1
-    return siblings[preceding_index] if preceding_index >= 0 else None
+    for index, sibling in enumerate(siblings):
+        if sibling is node:
+            target = index + offset
+            return siblings[target] if 0 <= target < len(siblings) else None
+    msg = "node is not among the children of its parent"
+    raise ValueError(msg)
+
+
+def preceding_sibling(node):
+    """AI: Return the sibling immediately before node in its parent's children, or None."""
+    return _sibling_at(node, -1)
 
 
 def next_sibling(self):
     """AI: Return the sibling immediately after self in its parent's children, or None."""
-    parent = self.parent
-    if not parent:
-        return None
-    siblings = parent.children
-    next_index = siblings.index(self) + 1
-    return siblings[next_index] if next_index < len(siblings) else None
+    return _sibling_at(self, 1)
 
 
 def is_ancestor_of(ancestor: Rewritable, node: Rewritable) -> bool:
