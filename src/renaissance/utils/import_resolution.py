@@ -169,7 +169,10 @@ def collect_project_imported_names(files: Sequence[Path], project_root: Path) ->
     for file in files:
         try:
             module = cst.parse_module(file.read_text(encoding="utf-8"))
-        except OSError, cst.ParserSyntaxError:
+        # TODO(FrancescoPezzella): libcst raises CSTLogicError on an implicit concatenation of t-strings, like `t"a" t"b"`,
+        #  which is valid code.
+        #  https://github.com/Instagram/LibCST/issues/1485
+        except OSError, cst.ParserSyntaxError, cst.CSTLogicError:
             continue
         module_bindings: dict[str, Path] = {}
         for statement in matchers.findall(module, matchers.ImportFrom() | matchers.Import()):
