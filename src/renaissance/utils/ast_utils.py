@@ -109,9 +109,9 @@ def preceding_sibling(node):
     return _sibling_at(node, -1)
 
 
-def next_sibling(self):
-    """AI: Return the sibling immediately after self in its parent's children, or None."""
-    return _sibling_at(self, 1)
+def next_sibling(node):
+    """AI: Return the sibling immediately after node in its parent's children, or None."""
+    return _sibling_at(node, 1)
 
 
 def is_ancestor_of(ancestor: Rewritable, node: Rewritable) -> bool:
