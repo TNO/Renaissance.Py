@@ -15,8 +15,7 @@ import targets
 from renaissance.syntax_tree import ASTFactory, ASTFinder, ASTNode, ASTShower
 from renaissance.syntax_tree.ast_finder import find_nodes
 from renaissance.syntax_tree.semantic_kind import SemanticKind
-
-from .factories import Factories
+from test.c_cpp.factories import Factories
 
 
 class TestFinder:

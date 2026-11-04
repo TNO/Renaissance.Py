@@ -6,9 +6,9 @@
 
 """AI: Clang/libclang-based parser integration for C and C++ source code."""
 
-from .c_pattern_factory import CPatternFactory, CPPPatternFactory
-from .clang_ast_node import ClangASTNode
-from .clang_compilation_database import CompilationDatabase
+from renaissance.integrations.clang.c_pattern_factory import CPatternFactory, CPPPatternFactory
+from renaissance.integrations.clang.clang_ast_node import ClangASTNode
+from renaissance.integrations.clang.clang_compilation_database import CompilationDatabase
 
 __all__ = [
     "CPPPatternFactory",
