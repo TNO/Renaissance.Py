@@ -10,6 +10,7 @@ import keyword
 import textwrap
 from unittest.mock import patch
 
+import pytest
 from hamcrest import assert_that, contains_string, is_
 from hypothesis import given, settings
 from hypothesis import strategies as st
@@ -17,7 +18,7 @@ from pytest_mock import MockerFixture
 
 from renaissance.core.model import SemanticKind
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
-from renaissance.recipes.python_refactoring import PythonRefactoring
+from renaissance.recipes.python_refactoring import PythonRefactoring, snake_case
 from renaissance.recipes.unit_to_pytest import UnitToPytest
 
 
@@ -297,3 +298,26 @@ class TestPythonRefactoring:
         )
         subject = UnitToPytest("test_foo.py")
         assert_that(len(subject.body), is_(2))
+
+
+class TestSnakeCase:
+    """AI: Tests for the snake_case text utility."""
+
+    @pytest.mark.parametrize(
+        ("input_str", "expected"),
+        [
+            ("A", "a"),
+            ("already_snake", "already_snake"),
+            ("Base64Encode", "base64_encode"),
+            ("CamelCase", "camel_case"),
+            ("HTML5Parser", "html5_parser"),
+            ("HTMLParser", "html_parser"),
+            ("Python3Refactoring", "python3_refactoring"),
+            ("PythonRefactoring", "python_refactoring"),
+            ("SimplifyRenaissance", "simplify_renaissance"),
+            ("TestSnakeCase", "test_snake_case"),
+        ],
+    )
+    def test_snake_case(self, input_str, expected) -> None:
+        """AI: Assert snake_case converts camelCase/PascalCase strings to snake_case, preserving acronyms."""
+        assert_that(snake_case(input_str), is_(expected))

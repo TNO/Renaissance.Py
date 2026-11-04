@@ -29,6 +29,7 @@ The `__all__` of `renaissance.core.model`; see the [API reference](../../api/cor
 - `TextSegment`: a consecutive piece of a text, with its offsets, lines and columns.
 - `SyntaxNode`: a node of a syntax tree that is a text segment.
 - `Siblings`: a contiguous range of sibling syntax nodes, which is a text segment too.
+- `TextUtils`: shifting, indenting and writing source text.
 
 ## Internal structure
 
@@ -36,6 +37,7 @@ The `__all__` of `renaissance.core.model`; see the [API reference](../../api/cor
 - `node_protocol.py` defines `NodeProtocol`, in terms of `SemanticKind`.
 - `text_segment.py` defines `TextSegment`.
 - `syntax_node.py` defines `SyntaxNode`, and `siblings.py` defines `Siblings`, both in terms of `TextSegment`.
+- `text_utils.py` defines `TextUtils`, and `fix_indent`, which has no users.
 
 ## Related features
 

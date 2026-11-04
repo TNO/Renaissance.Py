@@ -7,6 +7,7 @@
 """AI: Base processor for Python-specific source refactoring recipes."""
 
 import importlib
+import re
 from collections.abc import Sequence
 from pathlib import Path
 from typing import cast
@@ -19,7 +20,16 @@ from renaissance.integrations.python.ast.rst_node import PythonRstNode
 from renaissance.integrations.python.ast.util import to_str
 from renaissance.syntax_tree.ast_processor import ASTProcessor
 from renaissance.syntax_tree.match_finder import match_pattern
-from renaissance.utils.text_utils import snake_case
+
+
+def snake_case(snippet: str) -> str:
+    """Convert a camelCase or PascalCase string to snake_case, preserving acronyms as single words.
+
+    Leaves a string already in snake_case unchanged.
+    """
+    snippet = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1_\2", snippet)
+    snippet = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", snippet)
+    return snippet.lower()
 
 
 class PythonRefactoring(ASTProcessor):

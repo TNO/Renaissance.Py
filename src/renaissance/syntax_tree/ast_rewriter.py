@@ -15,10 +15,9 @@ from typing import Protocol, Self, runtime_checkable
 from more_itertools import flatten
 
 from renaissance.common import Rewriter
-from renaissance.core.model import SemanticKind
+from renaissance.core.model import SemanticKind, TextUtils
 from renaissance.syntax_tree.match_finder import PatternMatch
 from renaissance.utils.ast_utils import is_ancestor_of
-from renaissance.utils.text_utils import TextUtils
 
 
 @runtime_checkable

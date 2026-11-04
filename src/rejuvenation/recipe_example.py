@@ -12,6 +12,7 @@ from collections.abc import Iterable
 
 from more_itertools import last
 
+from renaissance.core.model import TextUtils
 from renaissance.integrations.clang import ClangASTNode, CPPPatternFactory
 from renaissance.integrations.clang.clang_json_ast_node import ClangJsonASTNode
 from renaissance.integrations.clang.predicates import is_clang_constructor, is_clang_method, is_clang_type_reference
@@ -21,7 +22,6 @@ from renaissance.syntax_tree.ast_node import ASTNode
 from renaissance.syntax_tree.ast_processor import ASTProcessor
 from renaissance.syntax_tree.ast_refactor_actions import ASTRefactorActions
 from renaissance.syntax_tree.recipe_ast_processor import RecipeASTProcessor, recipe_step
-from renaissance.utils.text_utils import TextUtils
 
 example_1 = textwrap.dedent("""
 #include <vector>

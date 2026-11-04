@@ -11,5 +11,6 @@ from renaissance.core.model.semantic_kind import SemanticKind
 from renaissance.core.model.siblings import Siblings
 from renaissance.core.model.syntax_node import SyntaxNode
 from renaissance.core.model.text_segment import TextSegment
+from renaissance.core.model.text_utils import TextUtils
 
-__all__ = ["NodeProtocol", "SemanticKind", "Siblings", "SyntaxNode", "TextSegment"]
+__all__ = ["NodeProtocol", "SemanticKind", "Siblings", "SyntaxNode", "TextSegment", "TextUtils"]

@@ -222,7 +222,7 @@ The column *now in* gives the current module, relative to `src/renaissance/`.
 | `ASTFinder`, `find_nodes`, `matches_node`, `find_semantic_kind` | all     | `syntax_tree/ast_finder.py`             |
 | `ASTShower`, `Displayable`                                      | all     | `syntax_tree/ast_shower.py`             |
 | `traverse`                                                      | all     | `utils/ast_utils.py`                    |
-| `TextUtils`                                                     | all     | `utils/text_utils.py`                   |
+| `TextUtils`                                                     | all     | `core/model/text_utils.py`              |
 | `preceding_sibling`, `next_sibling`                             | all     | `utils/ast_utils.py`                    |
 | `match_props`, `match_children`, `format_node`                  | binding | `utils/ast_utils.py`                    |
 | `convert` (line and column to offset)                           | binding | `integrations/python/ast/util.py`       |

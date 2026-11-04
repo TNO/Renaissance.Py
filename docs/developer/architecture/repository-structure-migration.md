@@ -187,7 +187,8 @@ The modules of this phase move to `core/model/`, their tests to `test/unit/core/
 
 - src: `utils/text_utils.py`. Two of its functions leave the core and become internal to their only user:
   `signature_to_id` to `integrations/tree_sitter/visualizer.py`, and `snake_case` to `recipes/python_refactoring.py`.
-- test: `test/utils/test_text_utils.py`.
+- test: `test/utils/test_text_utils.py` tests only `snake_case`, so its test class moves with it, to
+  `test/recipes/test_python_refactoring.py`.
 
 **1.4 The node utilities.**
 
