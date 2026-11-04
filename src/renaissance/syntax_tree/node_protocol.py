@@ -9,7 +9,7 @@
 from collections.abc import Mapping, Sequence
 from typing import Any, Protocol, Self, runtime_checkable
 
-from .semantic_kind import SemanticKind
+from renaissance.syntax_tree.semantic_kind import SemanticKind
 
 
 @runtime_checkable

@@ -9,7 +9,7 @@
 from collections.abc import Sequence
 from pathlib import Path
 
-from .ast_node import ASTNode
+from renaissance.syntax_tree.ast_node import ASTNode
 
 
 class ASTFactory:

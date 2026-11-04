@@ -6,28 +6,17 @@
 
 """AI: Language-agnostic AST abstraction layer (finder, rewriter, processor) used by all parser integrations."""
 
+from renaissance.syntax_tree.ast_factory import ASTFactory
+from renaissance.syntax_tree.ast_finder import ASTFinder
+from renaissance.syntax_tree.ast_node import ASTNode, ASTReference, VisitorResult
+from renaissance.syntax_tree.ast_processor import ASTProcessor
+from renaissance.syntax_tree.ast_refactor_actions import ASTRefactorActions
+from renaissance.syntax_tree.ast_rewriter import ASTRewriter
+from renaissance.syntax_tree.ast_shower import ASTShower
+from renaissance.syntax_tree.batch_ast_processor import AST_FACTORY_AND_ATU, Action, BatchASTProcessor, IterableProvider
+from renaissance.syntax_tree.match_finder import MatchFinder, PatternMatch
+from renaissance.syntax_tree.recipe_ast_processor import RecipeASTProcessor, after_step, final_action, recipe_step
 from renaissance.utils.text_utils import TextUtils
-
-from .ast_factory import ASTFactory
-from .ast_finder import ASTFinder
-from .ast_node import ASTNode, ASTReference, VisitorResult
-from .ast_processor import ASTProcessor
-from .ast_refactor_actions import ASTRefactorActions
-from .ast_rewriter import ASTRewriter
-from .ast_shower import ASTShower
-from .batch_ast_processor import (
-    AST_FACTORY_AND_ATU,
-    Action,
-    BatchASTProcessor,
-    IterableProvider,
-)
-from .match_finder import MatchFinder, PatternMatch
-from .recipe_ast_processor import (
-    RecipeASTProcessor,
-    after_step,
-    final_action,
-    recipe_step,
-)
 
 # isort: split
 # This import must come after the ones above: renaissance.integrations.clang (imported via

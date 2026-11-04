@@ -17,8 +17,7 @@ from renaissance.integrations.clang.predicates import is_clang_declaration_refer
 from renaissance.syntax_tree import ASTNode, ASTShower
 from renaissance.syntax_tree.ast_finder import find_nodes
 from renaissance.syntax_tree.semantic_kind import SemanticKind
-
-from .factories import Factories
+from test.c_cpp.factories import Factories
 
 
 class TestASTReference:

@@ -10,8 +10,8 @@ import functools
 from collections.abc import Callable, Sequence
 from typing import Any, TypeVar
 
-from .ast_processor import ASTProcessor
-from .batch_ast_processor import BatchASTProcessor, IterableProvider
+from renaissance.syntax_tree.ast_processor import ASTProcessor
+from renaissance.syntax_tree.batch_ast_processor import BatchASTProcessor, IterableProvider
 
 TRecipe = TypeVar("TRecipe")
 TFunc = Callable[..., Any]
