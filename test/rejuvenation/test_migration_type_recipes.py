@@ -91,8 +91,8 @@ class TestProcessFile:
         assert_that(report.result, equal_to(None))
 
 
-class TestRuffImportCleanup:
-    """main(): the ruff F401 batch step actually drops now-unused imports end to end."""
+class TestRuffCleanup:
+    """main(): the final ruff pass cleans up the imports and type parameter names of the modified files."""
 
     @pytest.mark.parametrize(
         ("extra_args", "import_matcher"),
@@ -117,6 +117,34 @@ class TestRuffImportCleanup:
         written = target.read_text(encoding="utf-8")
         assert_that(written, contains_string("def identity[T]"))
         assert_that(written, import_matcher)
+
+    @pytest.mark.parametrize(
+        ("extra_args", "signature"),
+        [
+            pytest.param([], "def identity[T](x: T) -> T:", id="default-drops-underscore"),
+            pytest.param(["--no-ruff"], "def identity[_T](x: _T) -> _T:", id="no-ruff-keeps-underscore"),
+        ],
+    )
+    def test_private_type_parameter_loses_its_underscore(self, tmp_path: Path, extra_args: list[str], signature: str) -> None:
+        """A converted `_T` becomes `T` unless --no-ruff."""
+        target = tmp_path / "mod.py"
+        target.write_text(
+            textwrap.dedent("""\
+                from typing import TypeVar
+
+                _T = TypeVar("_T")
+
+
+                def identity(x: _T) -> _T:
+                    return x
+                """),
+            encoding="utf-8",
+        )
+
+        exit_code = migration.main([str(target), "--py", "3.12", *extra_args])
+
+        assert_that(exit_code, equal_to(0))
+        assert_that(target.read_text(encoding="utf-8"), contains_string(signature))
 
     def test_localized_imports_are_merged_with_existing_ones(self, tmp_path: Path) -> None:
         """The localized TypeVar's import joins the file's own `typing` import."""
