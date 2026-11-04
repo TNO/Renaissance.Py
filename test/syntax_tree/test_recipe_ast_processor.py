@@ -6,17 +6,25 @@
 
 """Tests for the RecipeASTProcessor and its decorator helpers."""
 
-from hamcrest import assert_that, has_length, is_
+from collections.abc import Callable, Iterator
+
+import pytest
+from hamcrest import assert_that, equal_to, has_length, is_
 from pytest_mock import MockerFixture
 
+from renaissance.integrations.clang import ClangASTNode
+from renaissance.syntax_tree import ASTFactory, ASTProcessor
+from renaissance.syntax_tree.batch_ast_processor import AST_FACTORY_AND_ATU, IterableProvider
 from renaissance.syntax_tree.recipe_ast_processor import (
     BatchASTProcessor,
     RecipeASTProcessor,
+    after_step,
     annotate_decorator,
     final_action,
     get_methods_with_decorator,
     recipe_step,
 )
+from renaissance.syntax_tree.semantic_kind import SemanticKind
 
 
 class TestRecipeASTProcessor:
@@ -99,3 +107,90 @@ class TestRecipeASTProcessor:
         methods = list(get_methods_with_decorator(Sample, final_action))
         assert_that(methods, has_length(1))
         assert_that(methods[0].__name__, is_("final"))
+
+
+def clang_files(files: dict[str, str]) -> IterableProvider:
+    """Return a provider that parses each (filename, source) pair with Clang."""
+
+    def provider() -> Iterator[AST_FACTORY_AND_ATU]:
+        factory = ASTFactory(ClangASTNode)
+        for filename, source in files.items():
+            yield factory, factory.create_from_text(source, filename)
+
+    return provider
+
+
+class CallCounter:
+    """Recipe that counts the calls in each file, then records its after_step and final_action."""
+
+    def __init__(self) -> None:
+        """Start with an empty log."""
+        self.log: list[tuple[str, ...]] = []
+
+    @recipe_step(order=0)
+    def count_calls(self, ast_processor: ASTProcessor) -> Callable[[], None]:
+        """Queue the number of calls in this file for the log."""
+        count = len(list(ast_processor.find_semantic_kind(SemanticKind.CALL)))
+        return lambda: self.log.append(("count_calls", ast_processor.filename, str(count)))
+
+    @after_step("count_calls")
+    def after_counting(self) -> None:
+        """Record that count_calls has run."""
+        self.log.append(("after_counting",))
+
+    @final_action()
+    def finish(self) -> None:
+        """Record the end of the recipe."""
+        self.log.append(("finish",))
+
+
+class TwoSteps:
+    """Recipe with two steps that only record their own name."""
+
+    def __init__(self) -> None:
+        """Start with an empty log."""
+        self.log: list[str] = []
+
+    @recipe_step(order=0)
+    def first(self, _: ASTProcessor) -> Callable[[], None]:
+        """Queue the name of the first step."""
+        return lambda: self.log.append("first")
+
+    @recipe_step(order=1)
+    def second(self, _: ASTProcessor) -> Callable[[], None]:
+        """Queue the name of the second step."""
+        return lambda: self.log.append("second")
+
+    @final_action()
+    def finish(self) -> None:
+        """Record the end of the recipe."""
+        self.log.append("finish")
+
+
+class TestRecipeASTProcessorOnClangCode:
+    """RecipeASTProcessor runs a recipe over real C files."""
+
+    def test_runs_step_then_after_step_then_final_action(self) -> None:
+        """The step runs for every file, then the after_step, then the final_action."""
+        recipe = CallCounter()
+        files = {"a.c": "void g();\nvoid f() {\n    g();\n    g();\n}\n", "b.c": "void g();\nvoid h() {\n    g();\n}\n"}
+
+        RecipeASTProcessor(recipe, clang_files(files), r".*", in_memory=True).run()
+
+        assert_that(
+            recipe.log,
+            equal_to([("count_calls", "a.c", "2"), ("count_calls", "b.c", "1"), ("after_counting",), ("finish",)]),
+        )
+
+    @pytest.mark.xfail(
+        reason="RecipeASTProcessor.run builds its step actions in a loop whose closures read the loop variable late, "
+        "so every action calls the last recipe_step method.",
+        strict=True,
+    )
+    def test_runs_steps_in_order(self) -> None:
+        """Steps run in the order of their order argument, then the final_action."""
+        recipe = TwoSteps()
+
+        RecipeASTProcessor(recipe, clang_files({"a.c": "void f() {}\n"}), r".*", in_memory=True).run()
+
+        assert_that(recipe.log, equal_to(["first", "second", "finish"]))
