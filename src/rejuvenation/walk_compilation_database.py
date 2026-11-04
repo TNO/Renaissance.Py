@@ -13,7 +13,8 @@ from pathlib import Path
 import targets
 from renaissance.integrations.clang import ClangASTNode, CompilationDatabase
 from renaissance.integrations.clang.clang_json_ast_node import ClangJsonASTNode
-from renaissance.syntax_tree import ASTProcessor, ASTShower
+from renaissance.syntax_tree.ast_processor import ASTProcessor
+from renaissance.syntax_tree.ast_shower import ASTShower
 from renaissance.syntax_tree.semantic_kind import SemanticKind
 
 

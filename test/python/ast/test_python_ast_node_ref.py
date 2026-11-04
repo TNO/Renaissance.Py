@@ -12,9 +12,9 @@ import pytest
 from hamcrest import assert_that, greater_than, has_length, has_string, is_, is_in
 from more_itertools.more import first
 
-from renaissance import syntax_tree
 from renaissance.integrations.python.ast.factory import PythonFactory
 from renaissance.integrations.python.ast.rst_node import PythonRstNode, PythonRSTReference
+from renaissance.syntax_tree.ast_shower import ASTShower
 from renaissance.syntax_tree.semantic_kind import SemanticKind
 from renaissance.utils.ast_utils import traverse
 
@@ -86,7 +86,7 @@ class TestPythonNode:
         # Function f() refers to Function a()
         ast = PythonRstNode.load_from_text(content2)
         with tempfile.TemporaryDirectory(delete=True) as temp_dir:
-            syntax_tree.ASTShower.store_node(temp_dir + "/py0.txt", ast)
+            ASTShower.store_node(temp_dir + "/py0.txt", ast)
 
         func_def = first(n for n in traverse(ast) if n.semantic_kind is SemanticKind.FUNCTION and n.name == "f")
         assert_that(func_def, is_(PythonRstNode))
@@ -113,7 +113,7 @@ class TestPythonNode:
         # Name z refers to Name a
         ast = self.factory.create_from_text("from abc import a\nx = a()\nz: a = x", "content3.py")
         with tempfile.TemporaryDirectory(delete=True) as temp_dir:
-            syntax_tree.ASTShower.store_node(temp_dir + "/py1.txt", ast)
+            ASTShower.store_node(temp_dir + "/py1.txt", ast)
         type_node = first(n for n in traverse(ast) if n.semantic_kind is SemanticKind.NAME and n.name == "z")
         assert_that(type_node, is_(PythonRstNode))
         ast.translation_unit.lazy_create_refers(ast)
@@ -132,7 +132,7 @@ class TestPythonNode:
         # Class A refers to Class B
         ast = self.factory.create_from_text(content3, "content3.py")
         with tempfile.TemporaryDirectory(delete=True) as temp_dir:
-            syntax_tree.ASTShower.store_node(temp_dir + "/py2.txt", ast)
+            ASTShower.store_node(temp_dir + "/py2.txt", ast)
 
         class_node = first(n for n in traverse(ast) if n.semantic_kind is SemanticKind.CLASS and n.name == "A")
 
@@ -152,7 +152,7 @@ class TestPythonNode:
         # param obj refers to its type, if type definition in the same file, refers to def, otherwise refers to Name
         ast = self.factory.create_from_text(content, "content.py")
         with tempfile.TemporaryDirectory(delete=True) as temp_dir:
-            syntax_tree.ASTShower.store_node(temp_dir + "/py3.txt", ast)
+            ASTShower.store_node(temp_dir + "/py3.txt", ast)
 
         param_node = [n for n in traverse(ast) if n.name == "bruno" and n.parser_kind == "arg"]
 
@@ -172,7 +172,7 @@ class TestPythonNode:
         """AI: Verify a method call resolves its reference to the method it calls."""
         ast = self.factory.create_from_text(content, "content.py")
         with tempfile.TemporaryDirectory(delete=True) as temp_dir:
-            syntax_tree.ASTShower.store_node(temp_dir + "/py4.txt", ast)
+            ASTShower.store_node(temp_dir + "/py4.txt", ast)
         call_node = first(n for n in traverse(ast) if n.semantic_kind is SemanticKind.CALL and n.name == "bruno.is_near()")
         assert_that(call_node, is_(PythonRstNode))
         ast.translation_unit.lazy_create_refers(ast)

@@ -12,14 +12,12 @@ from renaissance.integrations.clang import ClangASTNode
 from renaissance.integrations.clang.clang_json_ast_node import ClangJsonASTNode
 from renaissance.integrations.clang.predicates import is_clang_compound_statement
 from renaissance.recipes import CleanupRefactoring
-from renaissance.syntax_tree import (
-    ASTFactory,
-    ASTNode,
-    ASTProcessor,
-    ASTRewriter,
-    ASTShower,
-)
+from renaissance.syntax_tree.ast_factory import ASTFactory
 from renaissance.syntax_tree.ast_finder import find_nodes
+from renaissance.syntax_tree.ast_node import ASTNode
+from renaissance.syntax_tree.ast_processor import ASTProcessor
+from renaissance.syntax_tree.ast_rewriter import ASTRewriter
+from renaissance.syntax_tree.ast_shower import ASTShower
 from renaissance.syntax_tree.semantic_kind import SemanticKind
 
 example_code = """

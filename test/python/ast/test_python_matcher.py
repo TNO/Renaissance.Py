@@ -14,8 +14,8 @@ from hamcrest import assert_that, empty, greater_than, has_length, is_, is_not
 
 from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
-from renaissance.syntax_tree import MatchFinder
 from renaissance.syntax_tree.match_finder import (
+    MatchFinder,
     find_variants,
     is_match,
     match_pattern,

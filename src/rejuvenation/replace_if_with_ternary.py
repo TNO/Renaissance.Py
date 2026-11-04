@@ -9,7 +9,8 @@
 # This script demonstrates the use of the syntax_tree library to parse and rewrite C code.
 # It specifically showcases the replacement of if-else statements with ternary operators.
 from renaissance.integrations.clang import ClangASTNode, CPatternFactory
-from renaissance.syntax_tree import ASTFactory, ASTRewriter
+from renaissance.syntax_tree.ast_factory import ASTFactory
+from renaissance.syntax_tree.ast_rewriter import ASTRewriter
 from renaissance.syntax_tree.match_finder import find_all
 
 example_code = """

@@ -9,8 +9,8 @@
 from hamcrest import assert_that, has_length, is_
 from pytest_mock import MockerFixture
 
-from renaissance.syntax_tree import BatchASTProcessor
-from renaissance.syntax_tree import batch_ast_processor as bap
+import renaissance.syntax_tree.batch_ast_processor as bap
+from renaissance.syntax_tree.batch_ast_processor import BatchASTProcessor
 
 
 class TestBatchASTProcessor:

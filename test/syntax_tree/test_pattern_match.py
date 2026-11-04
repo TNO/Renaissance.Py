@@ -15,8 +15,7 @@ from pytest_mock import MockerFixture
 
 from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
-from renaissance.syntax_tree import PatternMatch
-from renaissance.syntax_tree.match_finder import match_pattern
+from renaissance.syntax_tree.match_finder import PatternMatch, match_pattern
 
 
 class TestPatternMatch:

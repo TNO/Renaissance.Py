@@ -11,7 +11,7 @@ from __future__ import annotations
 from hamcrest import assert_that, has_length, is_
 
 from renaissance.integrations.clang import ClangASTNode, CPatternFactory
-from renaissance.syntax_tree import ASTFactory
+from renaissance.syntax_tree.ast_factory import ASTFactory
 from renaissance.syntax_tree.match_finder import MatchFinder, find_in_list
 
 VERBOSE = False

@@ -114,7 +114,7 @@ The core has five sub-packages. Each may import only the sub-packages below it i
 bindings to fill in a replacement. It does not use the matching algorithm.
 
 `renaissance.core` itself exports nothing; code imports from the sub-packages.
-This avoids the eager re-exports that cause the circular import in the current `renaissance.syntax_tree` package.
+This avoids eager re-exports, which caused a circular import in the former `renaissance.syntax_tree` package.
 
 #### The core contains no language- or parser-specific facts
 

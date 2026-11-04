@@ -42,7 +42,7 @@ from rejuvenation.remove_unused_variable import (
 from rejuvenation.replace_if_with_ternary import replace_if_with_ternary
 from renaissance.integrations.clang import ClangASTNode, CPatternFactory
 from renaissance.integrations.clang.clang_json_ast_node import ClangJsonASTNode
-from renaissance.syntax_tree import ASTFactory
+from renaissance.syntax_tree.ast_factory import ASTFactory
 from renaissance.syntax_tree.ast_node import ASTNode
 from test.c_cpp.factories import Factories
 

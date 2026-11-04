@@ -154,8 +154,10 @@ in the same directory as the path before it.
   `ASTRefactorActions`, import from the defining module instead. This removes the late import that works around the circular
   import with `integrations.clang`.
 - test: the same for the importers in `test/` and `features/`.
-- remaining: remove the two `ignore_imports` entries for the re-exports from the `layers` contract.
-- Checks: `git grep -E "from renaissance\.syntax_tree import"` finds nothing; `test_removed_legacy_api` still passes.
+- remaining: remove the two `ignore_imports` entries for the re-exports from the `layers` contract. `test.utils_for_tests`
+  moves to the `core.matching` layer: the re-exports hid its import of `PatternMatch`.
+- Checks: `git grep -E "from renaissance\.syntax_tree import|from renaissance import syntax_tree"` finds nothing;
+  `test_removed_legacy_api` still passes.
 
 **0.3 Create the core.**
 

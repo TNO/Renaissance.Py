@@ -12,8 +12,9 @@ from more_itertools import last
 
 from renaissance.integrations.clang import CPatternFactory
 from renaissance.integrations.clang.clang_json_ast_node import ClangJsonASTNode
-from renaissance.syntax_tree import ASTFactory, MatchFinder
+from renaissance.syntax_tree.ast_factory import ASTFactory
 from renaissance.syntax_tree.ast_finder import find_nodes
+from renaissance.syntax_tree.match_finder import MatchFinder
 from renaissance.syntax_tree.semantic_kind import SemanticKind
 
 

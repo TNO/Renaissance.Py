@@ -253,7 +253,7 @@ layers = [
     """renaissance.syntax_tree.match_finder
     : test.syntax_tree.test_match_finder : test.syntax_tree.test_match_finder_multi_assignments
     : test.syntax_tree.test_match_tree : test.syntax_tree.test_match_dict : test.syntax_tree.test_pattern_match
-    : test.utils.util_equivalence_classes""",
+    : test.utils.util_equivalence_classes : test.utils_for_tests""",
     # core.pattern
     "renaissance.syntax_tree.pattern_kind : test.syntax_tree.test_pattern_kind",
     # core.model
@@ -264,12 +264,9 @@ layers = [
     : test.syntax_tree.infra_syntax_node : test.syntax_tree.infra_text_segment : test.syntax_tree.test_node_protocol
     : test.syntax_tree.test_syntax_node : test.syntax_tree.test_text_segment : test.syntax_tree.test_node_finder
     : test.syntax_tree.test_semantic_finder : test.syntax_tree.test_removed_legacy_api
-    : test.utils.test_text_utils : test.utils.test_ast_utils : test.utils_for_tests : test.search_strategies : test.conftest""",
+    : test.utils.test_text_utils : test.utils.test_ast_utils : test.search_strategies : test.conftest""",
 ]
 ignore_imports = [
-    # Eager re-exports in syntax_tree/__init__.py; the core exports nothing from its root (issue 110).
-    "renaissance.syntax_tree -> renaissance.syntax_tree.*",
-    "renaissance.syntax_tree -> renaissance.integrations.clang.cpp_utils",
     # MATCH_ONE and MATCH_ALL are placeholder markers that belong in core.pattern (issue 110).
     "renaissance.utils.ast_utils -> renaissance.integrations",
     # is_ancestor_of is typed with the rewriter's Rewritable; it moves to the rewriter, its only user.

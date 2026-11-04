@@ -14,8 +14,9 @@ from more_itertools.more import first
 
 from renaissance.integrations.clang import ClangASTNode
 from renaissance.integrations.clang.predicates import is_clang_declaration_reference, is_clang_type_reference
-from renaissance.syntax_tree import ASTNode, ASTShower
 from renaissance.syntax_tree.ast_finder import find_nodes
+from renaissance.syntax_tree.ast_node import ASTNode
+from renaissance.syntax_tree.ast_shower import ASTShower
 from renaissance.syntax_tree.semantic_kind import SemanticKind
 
 from .factories import Factories

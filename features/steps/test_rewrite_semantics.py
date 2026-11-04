@@ -34,8 +34,9 @@ from renaissance.integrations.clang import ClangASTNode, CPPPatternFactory
 from renaissance.integrations.clang.predicates import is_clang_compound_statement
 from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
-from renaissance.syntax_tree import ASTFactory, ASTRewriter
+from renaissance.syntax_tree.ast_factory import ASTFactory
 from renaissance.syntax_tree.ast_finder import find_nodes
+from renaissance.syntax_tree.ast_rewriter import ASTRewriter
 from renaissance.syntax_tree.match_finder import match_pattern
 
 _FEATURE = "../rewrite-semantics.feature"

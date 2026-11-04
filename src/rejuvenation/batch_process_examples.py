@@ -14,13 +14,10 @@ from dataclasses import dataclass
 from renaissance.integrations.clang import ClangASTNode
 from renaissance.integrations.clang.clang_json_ast_node import ClangJsonASTNode
 from renaissance.recipes import CleanupRefactoring
-from renaissance.syntax_tree import (
-    ASTFactory,
-    ASTNode,
-    ASTProcessor,
-    BatchASTProcessor,
-    TextUtils,
-)
+from renaissance.syntax_tree.ast_factory import ASTFactory
+from renaissance.syntax_tree.ast_node import ASTNode
+from renaissance.syntax_tree.ast_processor import ASTProcessor
+from renaissance.syntax_tree.batch_ast_processor import BatchASTProcessor
 from renaissance.syntax_tree.recipe_ast_processor import (
     RecipeASTProcessor,
     after_step,
@@ -28,6 +25,7 @@ from renaissance.syntax_tree.recipe_ast_processor import (
     recipe_step,
 )
 from renaissance.syntax_tree.semantic_kind import SemanticKind
+from renaissance.utils.text_utils import TextUtils
 
 example_1 = textwrap.dedent("""
         void x(int a) {}

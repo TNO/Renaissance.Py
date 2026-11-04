@@ -28,7 +28,7 @@ from renaissance.integrations.clang.predicates import (
     is_clang_declaration_reference,
     is_clang_kind,
 )
-from renaissance.syntax_tree import ASTNode, ASTReference
+from renaissance.syntax_tree.ast_node import ASTNode, ASTReference
 from renaissance.syntax_tree.pattern_kind import PatternKind
 from renaissance.syntax_tree.semantic_kind import SemanticKind
 from renaissance.utils.ast_utils import match_children, match_props

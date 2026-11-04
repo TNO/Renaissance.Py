@@ -10,7 +10,9 @@ from hamcrest import assert_that, is_
 from pytest_mock import MockerFixture
 
 from renaissance.integrations.clang import ClangASTNode
-from renaissance.syntax_tree import ASTFactory, ASTProcessor, PatternMatch
+from renaissance.syntax_tree.ast_factory import ASTFactory
+from renaissance.syntax_tree.ast_processor import ASTProcessor
+from renaissance.syntax_tree.match_finder import PatternMatch
 
 
 class TestAstProcessor:
