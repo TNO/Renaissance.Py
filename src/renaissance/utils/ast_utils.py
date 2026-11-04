@@ -9,7 +9,7 @@
 from collections import deque
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from renaissance.integrations import MATCH_ALL, MATCH_ONE
 
@@ -18,6 +18,7 @@ from renaissance.integrations import MATCH_ALL, MATCH_ONE
 if TYPE_CHECKING:
     # syntax_tree imports this module, so a runtime import would be circular.
     from renaissance.syntax_tree.ast_rewriter import Rewritable
+    from renaissance.syntax_tree.node_protocol import NodeProtocol
 
 DISPLAY_PARSER_KIND: ContextVar[bool] = ContextVar("display_parser_kind", default=False)
 
@@ -86,14 +87,13 @@ def process_node(node, action) -> None:
             process_node(child, action)
 
 
-# Any, not object: the callers are untyped, and pyright reports Unknown arguments to typed parameters.
-def _sibling_at(node: Any, offset: int) -> Any:  # noqa: ANN401
+def _sibling_at[NodeT: NodeProtocol](node: NodeT, offset: int) -> NodeT | None:
     """Return the sibling offset positions away from node in its parent's children, or None.
 
     The node is located by identity, since node equality is structural.
     """
     parent = node.parent
-    if not parent:
+    if parent is None:
         return None
     siblings = parent.children
     for index, sibling in enumerate(siblings):
@@ -104,12 +104,12 @@ def _sibling_at(node: Any, offset: int) -> Any:  # noqa: ANN401
     raise ValueError(msg)
 
 
-def preceding_sibling(node):
+def preceding_sibling[NodeT: NodeProtocol](node: NodeT) -> NodeT | None:
     """AI: Return the sibling immediately before node in its parent's children, or None."""
     return _sibling_at(node, -1)
 
 
-def next_sibling(node):
+def next_sibling[NodeT: NodeProtocol](node: NodeT) -> NodeT | None:
     """AI: Return the sibling immediately after node in its parent's children, or None."""
     return _sibling_at(node, 1)
 

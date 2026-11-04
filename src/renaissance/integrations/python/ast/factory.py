@@ -35,9 +35,10 @@ SHOW_NODE = False
 class PythonPattern:
     """AI: Wrap a Python AST/RST node as a matchable pattern, detecting match-all/match-one placeholders."""
 
-    def __init__(self, node) -> None:
+    def __init__(self, node, parent: PythonPattern | None = None) -> None:
         """AI: Wrap a Python AST/RST node as a matchable pattern, detecting match-all/match-one placeholders."""
         self.node: PythonRstNode = node
+        self.parent = parent
         if type(node) is str:
             print(node)
             return
@@ -47,7 +48,7 @@ class PythonPattern:
         self._derive_pattern_kind(node)
 
         self.properties: dict = node.properties
-        self.children: list[PythonPattern] = [PythonPattern(node) for node in node.children]
+        self.children: list[PythonPattern] = [PythonPattern(child, self) for child in node.children]
         self.signature: str = node.signature
         if hasattr(node, "name") and node.name:
             self.name: str = use_dollar(node.name)

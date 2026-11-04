@@ -32,8 +32,9 @@ We use the terms *proper ancestor* and *proper descendant* to exclude the node i
 
 ## Shared and adapter navigation
 
-`NodeProtocol` guarantees child traversal, so generic algorithms can navigate
-descendants. `ASTRewriter` requires `Rewritable.parent` for the upward
-navigation needed to order and apply edits. Adapters may provide further
-navigation helpers, such as `root`, `next_sibling`, and `preceding_sibling`,
-for recipes that need them. Their implementation remains adapter-owned.
+`NodeProtocol` guarantees parent and child traversal, so generic algorithms can
+navigate ancestors, descendants and siblings; `preceding_sibling` and
+`next_sibling` in `renaissance.utils.ast_utils` are shared by all adapters.
+`ASTRewriter` requires `Rewritable.parent` for the upward navigation needed to
+order and apply edits. Adapters may provide further navigation helpers, such as
+`root`, for recipes that need them. Their implementation remains adapter-owned.

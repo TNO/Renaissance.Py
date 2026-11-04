@@ -33,6 +33,11 @@ class NodeProtocol(Protocol):
         ...
 
     @property
+    def parent(self) -> Self | None:
+        """Enclosing node, or None at the root."""
+        ...
+
+    @property
     def children(self) -> Sequence[Self]:
         """Direct child nodes, in source order."""
         ...
