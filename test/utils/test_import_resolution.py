@@ -140,6 +140,25 @@ class TestCollectProjectImportedNames:
 
         assert_that(result, equal_to({tmp_path / name: names for name, names in expected.items()}))
 
+    @pytest.mark.parametrize(
+        "unparsable_source",
+        [
+            pytest.param("def (:\n", id="syntax-error"),
+            pytest.param('x = "a" t"b"\n', id="invalid-string-then-t-string"),
+            pytest.param('x = t"a" t"b"\n', id="valid-t-string-concatenation"),
+        ],
+    )
+    def test_skips_a_file_libcst_cannot_parse(self, tmp_path: Path, unparsable_source: str) -> None:
+        """A file libcst cannot parse is skipped, and the imports of the other files are still recorded."""
+        (tmp_path / "unparsable.py").write_text(unparsable_source, encoding="utf-8")
+        (tmp_path / "origin.py").write_text("X = 1\n")
+        (tmp_path / "consumer.py").write_text("from origin import X\n")
+
+        files = [tmp_path / "unparsable.py", tmp_path / "origin.py", tmp_path / "consumer.py"]
+        result = collect_project_imported_names(files, tmp_path)
+
+        assert_that(result, equal_to({tmp_path / "origin.py": frozenset({"X"})}))
+
 
 @pytest.fixture
 def module_tree(tmp_path: Path) -> Path:
