@@ -223,21 +223,24 @@ def _run_second_pass(
 
 
 def _run_ruff_cleanup(paths: list[Path]) -> None:
-    """Run `ruff check --fix --select F401,I001,UP049` over every path.
+    """Run `ruff check --fix --select F401,I001,UP049`, then `ruff format`, over every path.
 
     Drops any now-unused import (F401), merges and sorts the imports (I001) under the settings ruff
-    finds for each path, and removes the leading underscores of type parameters (UP049).
+    finds for each path, and removes the leading underscores of type parameters (UP049). Then formats
+    each whole file with the ruff format settings found for it.
 
     Best-effort: if ruff can't be invoked (e.g. not installed), prints a warning instead of raising.
     The files are already valid without this cleanup.
     """
+    ruff_commands = (["check", "--fix", "--select", "F401,I001,UP049"], ["format"])
     try:
-        subprocess.run(  # noqa: S603 - fixed argv list (sys.executable + literals + our own discovered paths), no shell
-            [sys.executable, "-m", "ruff", "check", "--fix", "--select", "F401,I001,UP049", *(str(path) for path in paths)],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
+        for ruff_command in ruff_commands:
+            subprocess.run(  # noqa: S603 - fixed argv list (sys.executable + literals + our own discovered paths), no shell
+                [sys.executable, "-m", "ruff", *ruff_command, *(str(path) for path in paths)],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
     except OSError as exc:
         print(colored(f"warning: could not run ruff for cleanup: {exc}", "yellow"))
 
@@ -495,8 +498,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "--no-ruff",
         action="store_true",
         help=(
-            "Skip the final `ruff check --fix --select F401,I001,UP049` pass that drops imports made unused, sorts the rest"
-            " and removes the leading underscores of type parameters."
+            "Skip the final `ruff check --fix --select F401,I001,UP049` and `ruff format` pass that drops imports made"
+            " unused, sorts the rest, removes the leading underscores of type parameters and formats the files."
         ),
     )
     parser.add_argument(
@@ -589,9 +592,6 @@ def main(argv: Sequence[str] | None = None) -> int:
     modified_paths = [report.path for report in reports if has_fixed(report)]
     ruff_ran = bool(modified_paths) and not args.no_ruff
     if ruff_ran:
-        # TODO(FrancescoPezzella): removed statements leave their blank lines behind; ruff's E303 (preview) collapses them, but not
-        #  at file start.
-        #  https://github.com/TNO/Renaissance.Py/issues/279
         _run_ruff_cleanup(modified_paths)
 
     console_report = _format_console_report(
