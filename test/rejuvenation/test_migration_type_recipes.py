@@ -4,41 +4,19 @@
 # of this repository, also available at:
 # https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
-"""Tests for the migration-type-recipes.py CLI script (src/rejuvenation).
-
-The script's filename is hyphenated (not a legal dotted module path), so it's loaded via
-importlib.util.spec_from_file_location instead of a normal import - see _load_script().
-"""
+"""Tests for the migration_type_recipes.py CLI script (src/rejuvenation)."""
 
 import ast
 import codecs
-import importlib.util
 import textwrap
 from pathlib import Path
-from types import ModuleType
 
 import pytest
 from hamcrest import assert_that, contains_string, equal_to, not_
 from hamcrest.core.matcher import Matcher
 
+from rejuvenation import migration_type_recipes as migration
 from renaissance.recipes.type_parameter_rules import DOCS_BASE_URL, UNSAFE_RULES, UnsafeReason
-
-_SCRIPT_PATH = Path(__file__).resolve().parents[2] / "src" / "rejuvenation" / "migration-type-recipes.py"
-
-
-def _load_script() -> ModuleType:
-    """Import migration-type-recipes.py as a module despite its hyphenated filename."""
-    spec = importlib.util.spec_from_file_location("migration_type_recipes", _SCRIPT_PATH)
-    if spec is None or spec.loader is None:
-        message = f"could not load {_SCRIPT_PATH} as a module"
-        raise RuntimeError(message)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
-
-
-migration = _load_script()
-
 
 LEGACY_TYPEVAR_SOURCE = textwrap.dedent("""\
     from typing import TypeVar
