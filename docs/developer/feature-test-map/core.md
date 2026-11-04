@@ -33,7 +33,9 @@ https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
     - `test/common/test_rewriter.py`
     - `test/syntax_tree/test_ast_rewriter.py`
     - `test/syntax_tree/test_rewrite_semantics_properties.py`
-- **Code files:** `src/renaissance/common/rewriter.py`, `src/renaissance/syntax_tree/ast_rewriter.py`
+    - `test/utils/test_ast_utils.py`
+- **Code files:** `src/renaissance/common/rewriter.py`, `src/renaissance/syntax_tree/ast_rewriter.py`,
+  `src/renaissance/utils/ast_utils.py`
 
 ## 3. Type parameter modernization
 

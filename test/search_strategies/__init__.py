@@ -4,4 +4,4 @@
 # of this repository, also available at:
 # https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
-"""Hypothesis search strategies that generate Python code, and their tests."""
+"""Hypothesis search strategies that generate Python type and value expressions, and their tests."""

@@ -19,7 +19,7 @@ class TestTreeSitterStructuralMatcher:
     """AI: Tests structural (placeholder) pattern matching against tree-sitter-parsed code."""
 
     @pytest.mark.parametrize(
-        "code, pattern",
+        ("code", "pattern"),
         [
             ("def foo(): pass", "def $foo(): pass"),
             ("if x: pass", "if $x: pass"),
@@ -54,7 +54,7 @@ class TestTreeSitterStructuralMatcher:
         assert_that(result, has_length(1))
 
     @pytest.mark.parametrize(
-        "code, pattern",
+        ("code", "pattern"),
         [
             ("int main() { return 0; }", "int $main() { return 0; }"),
             ("int a;", "int $a;"),

@@ -18,11 +18,6 @@ on:
 permissions:
   contents: read
 
-# Avoid overlapping Pages deployments; let the latest push win.
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -33,7 +28,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7.0.1
       - name: Set up uv
-        uses: astral-sh/setup-uv@v10.3.2
+        uses: astral-sh/setup-uv@v10.3.3
       # uv installs the interpreter pinned by requires-python in pyproject.toml.
       - name: Install dependencies
         run: uv sync --group dev
@@ -97,6 +92,10 @@ jobs:
     needs: build
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
+    # Job-level, so that PR runs sharing the repo-wide group are never cancelled.
+    concurrency:
+      group: "pages"
+      cancel-in-progress: false
     permissions:
       pages: write
       id-token: write

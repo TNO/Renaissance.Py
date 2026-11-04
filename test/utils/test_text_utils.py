@@ -16,7 +16,7 @@ class TestSnakeCase:
     """AI: Tests for the snake_case text utility."""
 
     @pytest.mark.parametrize(
-        "input_str, expected",
+        ("input_str", "expected"),
         [
             ("A", "a"),
             ("already_snake", "already_snake"),

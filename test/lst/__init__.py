@@ -4,4 +4,4 @@
 # of this repository, also available at:
 # https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
-"""Tests for the language-agnostic syntax tree (LST) of the tree-sitter and clang adapters."""
+"""Tests for the lossless syntax tree (LST) nodes, the tree-sitter and clang adapters that build them, and their matchers."""

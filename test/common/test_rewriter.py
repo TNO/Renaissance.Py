@@ -16,7 +16,7 @@ class TestRewriter:
     """AI: Tests for the byte-level content Rewriter."""
 
     @pytest.mark.parametrize(
-        "initial_bytes, start, end, new_content, expected_bytes",
+        ("initial_bytes", "start", "end", "new_content", "expected_bytes"),
         [
             (b"abcdefghij", 5, 10, b"hellooo", b"abcdehellooo"),
             (b"abcdefghij", 5, 10, b" world", b"abcde world"),

@@ -6,9 +6,10 @@
 
 """AI: Adapter that parses source code with tree-sitter into the internal LST representation."""
 
+from tree_sitter import Language, Parser
+
 from renaissance.integrations.tree_sitter.lst import LST, LSTNode
 from renaissance.utils.ast_utils import detect_placeholder, replace_dollar
-from tree_sitter import Language, Parser
 
 
 class TreeSitterAdapter:

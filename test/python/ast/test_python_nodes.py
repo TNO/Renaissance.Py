@@ -36,7 +36,7 @@ class TestPythonNodes:
     """AI: Tests that Python AST/CST/LST nodes expose consistent parser and semantic kind metadata."""
 
     @pytest.mark.parametrize(
-        "_, factory, raw, kind",
+        ("_", "factory", "raw", "kind"),
         Factories.extend(
             [
                 ("i:int=0", "AnnAssign"),
@@ -74,7 +74,7 @@ class TestPythonNodes:
             assert_parser_or_semantic_kind(it, kind)
 
     @pytest.mark.parametrize(
-        "_, factory, raw, kind",
+        ("_", "factory", "raw", "kind"),
         Factories.extend(
             [
                 ("with open() as c: pass", "With"),
@@ -105,7 +105,7 @@ def outer():
         it = factory.create_from_text(raw, "context.py")
         assert_that(any(has_parser_or_semantic_kind(node, kind) for node in traverse(it) if hasattr(node, "parser_kind")), is_(True))
 
-    @pytest.mark.parametrize("_, factory, raw, kind", Factories.extend([("global x", "Global")]))
+    @pytest.mark.parametrize(("_", "factory", "raw", "kind"), Factories.extend([("global x", "Global")]))
     def test_global_stmt(self, _, factory, raw, kind) -> None:
         """AI: Verify a global statement parses to the expected parser/semantic kind."""
         pattern_factory = PythonPatternFactory(factory)
@@ -113,7 +113,7 @@ def outer():
         assert_parser_or_semantic_kind(it, kind)
 
     @pytest.mark.parametrize(
-        "_, factory, raw, kind",
+        ("_", "factory", "raw", "kind"),
         Factories.extend(
             [
                 ("fun()", "Call"),
@@ -142,7 +142,7 @@ def outer():
         assert_parser_or_semantic_kind(it, kind)
 
     @pytest.mark.parametrize(
-        "_, factory, raw, kind",
+        ("_", "factory", "raw", "kind"),
         Factories.extend(
             [
                 ("a == b", "Eq"),
@@ -168,7 +168,7 @@ def outer():
             assert it.semantic_kind is SemanticKind.BINARY_OPERATION
 
     @pytest.mark.parametrize(
-        "_, factory, raw, kind",
+        ("_", "factory", "raw", "kind"),
         Factories.extend(
             [
                 ('case None: return "No data"', "MatchSingleton"),
@@ -202,7 +202,7 @@ def outer():
         assert_that(case_kind, is_("MatchList" if kind == "MatchSequence" and isinstance(stmt.node, PythonCstNode) else kind))
 
     @pytest.mark.parametrize(
-        "_, factory, raw, kind",
+        ("_", "factory", "raw", "kind"),
         Factories.extend(
             [
                 ("a % b", "Mod"),
@@ -224,7 +224,7 @@ def outer():
         assert it.semantic_kind is SemanticKind.BINARY_OPERATION or it.children[1].semantic_kind is SemanticKind.BINARY_OPERATION
 
     @pytest.mark.parametrize(
-        "_, factory, raw, kind",
+        ("_", "factory", "raw", "kind"),
         Factories.extend(
             [
                 ("+b", "UAdd"),

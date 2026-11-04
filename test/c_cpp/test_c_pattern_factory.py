@@ -75,7 +75,7 @@ class TestExpression:
     """AI: Tests building C/C++ expression patterns via CPatternFactory."""
 
     @pytest.mark.parametrize(
-        "_, factory, expression, expected",
+        ("_", "factory", "expression", "expected"),
         Factories.extend(
             [
                 (
@@ -174,7 +174,7 @@ class TestDeclaration:
     """AI: Tests building C/C++ declaration patterns via CPatternFactory."""
 
     @pytest.mark.parametrize(
-        "_, factory, declaration_text, types, parameters, expected_vars, expected_refs",
+        ("_", "factory", "declaration_text", "types", "parameters", "expected_vars", "expected_refs"),
         Factories.extend(
             [
                 ("int a=3;", [], [], 1, 0),
@@ -214,7 +214,7 @@ class TestStatements:
     """AI: Tests building C/C++ statement patterns via CPatternFactory."""
 
     @pytest.mark.parametrize(
-        "_, factory, statement_text, extra_declarations, expected_stmts, expected_refs",
+        ("_", "factory", "statement_text", "extra_declarations", "expected_stmts", "expected_refs"),
         list(
             Factories.extend(
                 [
@@ -258,7 +258,7 @@ class TestUseAtuToCreatePatterns:
     """
 
     @pytest.mark.parametrize(
-        "_, factory, statement_text, expected_stmts, expected_refs",
+        ("_", "factory", "statement_text", "expected_stmts", "expected_refs"),
         list(
             Factories.extend(
                 [

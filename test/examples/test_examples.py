@@ -117,13 +117,13 @@ class TestReplaceIfWithTernaryOperator:
 class TestRemoveUnusedVariable:
     """AI: Tests the remove-unused-variable refactor examples produce the expected rewritten code."""
 
-    @pytest.mark.parametrize("_, node_type", Factories.node_types)
+    @pytest.mark.parametrize(("_", "node_type"), Factories.node_types)
     def test_remove_unused_variable_using_refactor_method(self, _: str, node_type: type[ASTNode]) -> None:
         """AI: Verify remove_unused_variable_using_refactor_method produces the expected rewritten result."""
         result, expected = remove_unused_variable_using_refactor_method(node_type)
         assert_that(result, is_(expected))
 
-    @pytest.mark.parametrize("_, node_type", Factories.node_types)
+    @pytest.mark.parametrize(("_", "node_type"), Factories.node_types)
     def test_remove_unused_variable_low_level(self, _: str, node_type: type[ASTNode]) -> None:
         """AI: Verify remove_unused_variable_low_level produces the expected rewritten result."""
         result, expected_result = remove_unused_variable_low_level(node_type)
@@ -134,7 +134,7 @@ class TestExamplesDifferentStyles:
     """AI: Tests the same refactor produces identical results across different AST-finder styles."""
 
     @pytest.mark.parametrize(
-        "_, factory, _node_type, method",
+        ("_", "factory", "_node_type", "method"),
         list(
             Factories.extend(
                 [

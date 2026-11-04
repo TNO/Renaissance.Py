@@ -214,7 +214,7 @@ def test_runtime_checkable_protocol_rejects_missing_members() -> None:
 
 
 @pytest.mark.parametrize(
-    "text,start,end,expected_slice",
+    ("text", "start", "end", "expected_slice"),
     [
         ("", 0, 0, ""),  # empty full text
         ("a", 0, 1, "a"),  # segment equal full text

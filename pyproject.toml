@@ -34,7 +34,6 @@ dependencies = [
     "tree-sitter-cpp==0.23.4",
     "tree-sitter-java==0.23.5",
     "libcst>=1.8.6",
-    "hypothesmith>=0.3.3",
     "autopep8>=2.0",
     "flake8>=7.0",
 ]
@@ -45,7 +44,7 @@ test = [
     "hypothesmith>=0.3.3",
     "parameterized>=0.9",
     "pytest>=8.0",
-    "pytest-bdd==9.0.0",
+    "pytest-bdd>=9.0.1",
     "pytest-cov>=7.0",
     "pytest-mock>=3.15",
     "pytest-profiling>=1.8",
@@ -58,17 +57,17 @@ lint = [
     "pymarkdownlnt>=0.9",
     "import-linter>=2.15",
 ]
-dev = [
-    {include-group = "test"},
-    {include-group = "lint"},
-    {include-group = "docs"},
-]
 docs = [
     "mkdocs>=1.6",
     "mkdocs-material>=9.0",
     "mkdocstrings[python]>=0.25",
     "mkdocs-autorefs>=1.0",
     "mkdocs-exporter>=6.0",
+]
+dev = [
+    {include-group = "test"},
+    {include-group = "lint"},
+    {include-group = "docs"},
 ]
 
 [project.urls]
@@ -265,7 +264,7 @@ layers = [
     : test.syntax_tree.infra_syntax_node : test.syntax_tree.infra_text_segment : test.syntax_tree.test_node_protocol
     : test.syntax_tree.test_syntax_node : test.syntax_tree.test_text_segment : test.syntax_tree.test_node_finder
     : test.syntax_tree.test_semantic_finder : test.syntax_tree.test_removed_legacy_api
-    : test.utils.test_text_utils : test.utils_for_tests : test.search_strategies : test.conftest""",
+    : test.utils.test_text_utils : test.utils.test_ast_utils : test.utils_for_tests : test.search_strategies : test.conftest""",
 ]
 ignore_imports = [
     # Eager re-exports in syntax_tree/__init__.py; the core exports nothing from its root (issue 110).
@@ -273,7 +272,10 @@ ignore_imports = [
     "renaissance.syntax_tree -> renaissance.integrations.clang.cpp_utils",
     # MATCH_ONE and MATCH_ALL are placeholder markers that belong in core.pattern (issue 110).
     "renaissance.utils.ast_utils -> renaissance.integrations",
+    # is_ancestor_of is typed with the rewriter's Rewritable; it moves to the rewriter, its only user.
+    "renaissance.utils.ast_utils -> renaissance.syntax_tree.ast_rewriter",
     # Unit tests of the core that parse real code instead of using test doubles.
+    "test.utils.test_ast_utils -> renaissance.integrations.clang",
     "test.syntax_tree.test_ast_processor -> renaissance.integrations.clang",
     "test.syntax_tree.test_ast_processor_semantic_kind -> renaissance.integrations.python.ast.factory",
     "test.syntax_tree.test_ast_processor_semantic_kind -> renaissance.integrations.python.ast.rst_node",

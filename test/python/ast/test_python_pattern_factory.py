@@ -291,7 +291,7 @@ class TestPythonFactory:
         assert_that(it[0], is_(kwargs[0]))
 
     @pytest.mark.parametrize(
-        "_, factory, raw, expected",
+        ("_", "factory", "raw", "expected"),
         Factories.extend(
             [
                 ("a = 1", ["Number", "Assign", "Literal", "Name", "AssignTarget", "Constant", "Integer", "assignment"]),

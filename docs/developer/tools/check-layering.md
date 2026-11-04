@@ -33,12 +33,8 @@ migration is an edit to these lists. Once a target package exists, its line in a
 A test module is listed next to the unit it tests and follows the rules of that unit. A unit test of `core.matching`, for
 example, may import `core.matching` and what lies below it, but no parser binding. Test helpers are listed like any other module.
 
-Two kinds of test code are not checked:
-
-- The feature tests in `features/`: they are end to end and may import from every layer. Import Linter cannot analyse that
-  package either, because `features/targets/` holds deliberately malformed Python.
-- Test directories without an `__init__.py`, such as `test/tree_sitter/`. Adding one there would shadow the installed
-  `tree_sitter` package, because `test/` is on the pytest `pythonpath`.
+One kind of test code is not checked: the feature tests in `features/`. They are end to end and may import from every layer.
+Import Linter cannot analyse that package either, because `features/targets/` holds deliberately malformed Python.
 
 A test helper must be imported through the `test` package (`from test.c_cpp.factories import Factories`), not through the
 pytest `pythonpath` (`from c_cpp.factories import Factories`). Import Linter only sees the first form.

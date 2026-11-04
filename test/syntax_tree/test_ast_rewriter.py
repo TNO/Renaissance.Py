@@ -27,7 +27,7 @@ class TestCommentLocation:
     """AI: Tests locating the trailing comment adjacent to a code range."""
 
     @pytest.mark.parametrize(
-        "_, start_offset, stop_offset, content, expected",
+        ("_", "start_offset", "stop_offset", "content", "expected"),
         [
             (
                 "single_line_comment",
@@ -194,7 +194,7 @@ class TestRemove(TestRewrites):
     """AI: Tests for ASTRewriter.remove."""
 
     @pytest.mark.parametrize(
-        "name, factory, code, include_whitespace, include_comments, expected",
+        ("name", "factory", "code", "include_whitespace", "include_comments", "expected"),
         list(
             Factories.extend(
                 [
@@ -250,7 +250,7 @@ class TestReplace(TestRewrites):
     """AI: Tests for ASTRewriter.replace."""
 
     @pytest.mark.parametrize(
-        "name, factory, code, include_whitespace, include_comments, expected",
+        ("name", "factory", "code", "include_whitespace", "include_comments", "expected"),
         list(
             Factories.extend(
                 [
@@ -387,7 +387,7 @@ class TestInsertBeforeSingleLine(TestRewrites):
     """AI: Tests for ASTRewriter.insert_before with a single-line insertion."""
 
     @pytest.mark.parametrize(
-        "name, factory, code, include_whitespace, include_comments, expected",
+        ("name", "factory", "code", "include_whitespace", "include_comments", "expected"),
         list(
             Factories.extend(
                 [
@@ -523,7 +523,7 @@ class TestInsertBeforeMultiLine(TestRewrites):
     """AI: Tests for ASTRewriter.insert_before with a multi-line insertion."""
 
     @pytest.mark.parametrize(
-        "name, factory, code, include_whitespace, include_comments, expected",
+        ("name", "factory", "code", "include_whitespace", "include_comments", "expected"),
         list(
             Factories.extend(
                 [
@@ -677,7 +677,7 @@ class TestInsertAfterSingleLine(TestRewrites):
     """AI: Tests for ASTRewriter.insert_after with a single-line insertion."""
 
     @pytest.mark.parametrize(
-        "name, factory, code, include_whitespace, include_comments, expected",
+        ("name", "factory", "code", "include_whitespace", "include_comments", "expected"),
         list(
             Factories.extend(
                 [
@@ -813,7 +813,7 @@ class TestInsertAfterMultiLine(TestRewrites):
     """AI: Tests for ASTRewriter.insert_after with a multi-line insertion."""
 
     @pytest.mark.parametrize(
-        "name, factory, code, include_whitespace, include_comments, expected",
+        ("name", "factory", "code", "include_whitespace", "include_comments", "expected"),
         list(
             Factories.extend(
                 [
@@ -967,7 +967,7 @@ class TestComposeReplacement:
     """AI: Tests composing a replacement pattern from a match's placeholder bindings."""
 
     @pytest.mark.parametrize(
-        "_, factory, statements, extra_declarations, replacement",
+        ("_", "factory", "statements", "extra_declarations", "replacement"),
         Factories.extend(
             [
                 (
@@ -1016,6 +1016,22 @@ class TestComposeReplacement:
             rewriter.replace(org, match)
             actual = rewriter.apply_to_string()
             assert_that(compress(expected), is_(compress(actual)))
+
+    @pytest.mark.parametrize(
+        ("source", "expected"),
+        [
+            ("def f():\n    x = compute(1, 2)\n    return x\n", "def f():\n    y = compute(1, 2)\n    x = y\n    return x\n"),
+            ("def f():\n    x = [1, 2]\n    return x\n", "def f():\n    y = [1, 2]\n    x = y\n    return x\n"),
+        ],
+    )
+    def test_python_placeholder_replacement(self, source: str, expected: str) -> None:
+        """Verify replacing a PatternMatch on a Python tree expands its placeholders into the new text."""
+        root = PythonRstNode.load_from_text(source, "test.py")
+        pattern = PythonPatternFactory(PythonFactory(PythonRstNode)).create_statements("x = $value")
+        rewriter = ASTRewriter(root)
+        for match in match_pattern([root], pattern):
+            rewriter.replace("y = $value\nx = y", match, include_whitespace=False, include_comments=False)
+        assert_that(rewriter.apply_to_string(), is_(expected))
 
     def test_get_node_in_match_pattern(self, mocker: MockerFixture) -> None:
         """AI: Verify _RewriteAction._get_nodes resolves a node's referenced_by chain back to the original node."""
@@ -1314,7 +1330,7 @@ class TestSyntaxAwareAdjacentComposition:
         # verify
         assert rewriter.apply_to_string() == "void f(int i, int j) { i++;++i;++j;j++; }", "Unexpected replacement"
 
-    @pytest.mark.parametrize("name, factory", Factories.factories)
+    @pytest.mark.parametrize(("name", "factory"), Factories.factories)
     @pytest.mark.skip("TODO: implement accordingly")
     def test_prepend_second_first_append(self, name: str, factory: ASTFactory) -> None:
         """AI: Verify prepend-before-second then append-after-first nests in source order, across factories (not yet implemented)."""
