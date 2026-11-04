@@ -191,8 +191,8 @@ The modules of this phase move to `core/model/`, their tests to `test/unit/core/
 
 **1.4 The node utilities.**
 
-- src: from `utils/ast_utils.py`, `traverse`, `display_context` and `process_node` to `core.model`, and `preceding_sibling`,
-  `next_sibling`, `match_props`, `match_children` and `format_node` to `core.model.for_bindings`.
+- src: from `utils/ast_utils.py`, `traverse`, `display_context`, `process_node`, `preceding_sibling` and `next_sibling` to
+  `core.model`, and `match_props`, `match_children` and `format_node` to `core.model.for_bindings`.
   From `integrations/python/ast/util.py`, `convert` to `core.model.for_bindings`, and `to_str` to
   `recipes/python_refactoring.py` (internal). `is_ancestor_of`, which is typed with the rewriter's `Rewritable`, moves to
   `syntax_tree/ast_rewriter.py`, its only user.

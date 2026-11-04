@@ -223,7 +223,7 @@ The column *now in* gives the current module, relative to `src/renaissance/`.
 | `ASTShower`, `Displayable`                                      | all     | `syntax_tree/ast_shower.py`             |
 | `traverse`                                                      | all     | `utils/ast_utils.py`                    |
 | `TextUtils`                                                     | all     | `utils/text_utils.py`                   |
-| `preceding_sibling`, `next_sibling`                             | binding | `utils/ast_utils.py`                    |
+| `preceding_sibling`, `next_sibling`                             | all     | `utils/ast_utils.py`                    |
 | `match_props`, `match_children`, `format_node`                  | binding | `utils/ast_utils.py`                    |
 | `convert` (line and column to offset)                           | binding | `integrations/python/ast/util.py`       |
 
