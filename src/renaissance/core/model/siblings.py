@@ -9,8 +9,8 @@
 from collections.abc import Sequence
 from typing import Protocol, runtime_checkable
 
-from renaissance.syntax_tree.syntax_node import SyntaxNode
-from renaissance.syntax_tree.text_segment import TextSegment
+from .syntax_node import SyntaxNode
+from .text_segment import TextSegment
 
 # TODO: Do we only want to wrap the AST sequence matches in AST pattern matching?
 #       or also the parser output?

@@ -26,11 +26,16 @@ The `__all__` of `renaissance.core.model`; see the [API reference](../../api/cor
 
 - `NodeProtocol`: the structural interface of a node.
 - `SemanticKind`: the language-independent classification of a node.
+- `TextSegment`: a consecutive piece of a text, with its offsets, lines and columns.
+- `SyntaxNode`: a node of a syntax tree that is a text segment.
+- `Siblings`: a contiguous range of sibling syntax nodes, which is a text segment too.
 
 ## Internal structure
 
 - `semantic_kind.py` defines `SemanticKind`.
 - `node_protocol.py` defines `NodeProtocol`, in terms of `SemanticKind`.
+- `text_segment.py` defines `TextSegment`.
+- `syntax_node.py` defines `SyntaxNode`, and `siblings.py` defines `Siblings`, both in terms of `TextSegment`.
 
 ## Related features
 

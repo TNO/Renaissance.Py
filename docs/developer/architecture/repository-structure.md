@@ -216,7 +216,7 @@ The column *now in* gives the current module, relative to `src/renaissance/`.
 | --------------------------------------------------------------- | ------- | --------------------------------------- |
 | `NodeProtocol`                                                  | all     | `core/model/node_protocol.py`           |
 | `SemanticKind`                                                  | all     | `core/model/semantic_kind.py`           |
-| `TextSegment`, `SyntaxNode`, `Siblings`                         | all     | `syntax_tree/text_segment.py` and so on |
+| `TextSegment`, `SyntaxNode`, `Siblings`                         | all     | `core/model/text_segment.py` and so on  |
 | `ASTNode`, `ASTReference`, `VisitorResult`                      | all     | `syntax_tree/ast_node.py`               |
 | `ASTFactory`                                                    | all     | `syntax_tree/ast_factory.py`            |
 | `ASTFinder`, `find_nodes`, `matches_node`, `find_semantic_kind` | all     | `syntax_tree/ast_finder.py`             |
@@ -345,8 +345,8 @@ Decisions:
 - A unit test lives in the directory of the unit it tests, not of the parser it happens to use.
   A test of the matcher that parses C++ is a test of `core.matching`.
 - A unit test follows the dependency rules of the unit it tests. A unit test of the core therefore uses test doubles, such as
-  `test/syntax_tree/infra_syntax_node.py`, instead of a parser binding. The core tests that still parse real code are known
-  violations.
+  `test/unit/core/model/shared/infra_syntax_node.py`, instead of a parser binding. The core tests that still parse real code
+  are known violations.
 - Feature tests are end to end. They may import from every layer.
 - The layering rules are checked for `src/`, for the unit tests and for the tools and their tests.
 - That `test/unit/` mirrors the source tree, and `test/tools/` mirrors `tools/`, is checked by the

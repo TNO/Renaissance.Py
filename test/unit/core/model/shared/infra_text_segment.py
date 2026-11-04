@@ -4,9 +4,9 @@
 # of this repository, also available at:
 # https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
-"""AI: Shared text-segment/offset conversion helpers used across the syntax_tree test suite."""
+"""AI: Shared text-segment/offset conversion helpers used by the unit tests of core.model."""
 
-from renaissance.syntax_tree.text_segment import TextSegment
+from renaissance.core.model import TextSegment
 
 
 def offset_to_location(text: str, offset: int) -> tuple[int, int]:

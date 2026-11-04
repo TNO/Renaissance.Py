@@ -4,12 +4,12 @@
 # of this repository, also available at:
 # https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
-"""AI: Shared syntax-node invariant assertion helpers used across the syntax_tree test suite."""
+"""AI: Shared syntax-node invariant assertion helpers used by the unit tests of core.model."""
 
 from typing import Any
 
-from renaissance.syntax_tree.syntax_node import SyntaxNode
-from test.syntax_tree.infra_text_segment import assert_valid_text_segment
+from renaissance.core.model import SyntaxNode
+from test.unit.core.model.shared.infra_text_segment import assert_valid_text_segment
 
 
 def assert_valid_syntax_node(node: SyntaxNode[Any]) -> None:

@@ -184,6 +184,7 @@ extra = [
 code = "src/renaissance/core"
 units = "packages"
 mirror = "test/unit/core/{path}/"
+extra = ["test/unit/core/model/shared/"]  # test helpers
 
 [[tool.check_layout.mirrors]]
 code = "src/renaissance/core"
@@ -276,12 +277,10 @@ layers = [
     "renaissance.syntax_tree.pattern_kind : test.syntax_tree.test_pattern_kind",
     # core.model
     """renaissance.core.model
-    : renaissance.syntax_tree.text_segment : renaissance.syntax_tree.syntax_node : renaissance.syntax_tree.siblings
     : renaissance.syntax_tree.ast_node : renaissance.syntax_tree.ast_factory : renaissance.syntax_tree.ast_finder
     : renaissance.syntax_tree.ast_shower : renaissance.utils
     : test.unit.core.model
-    : test.syntax_tree.infra_syntax_node : test.syntax_tree.infra_text_segment
-    : test.syntax_tree.test_syntax_node : test.syntax_tree.test_text_segment : test.syntax_tree.test_node_finder
+    : test.syntax_tree.test_node_finder
     : test.syntax_tree.test_semantic_finder : test.syntax_tree.test_removed_legacy_api
     : test.utils.test_text_utils : test.utils.test_ast_utils : test.search_strategies : test.conftest""",
 ]

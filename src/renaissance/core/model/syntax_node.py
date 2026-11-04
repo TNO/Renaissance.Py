@@ -9,7 +9,7 @@
 from collections.abc import Mapping, Sequence
 from typing import Any, Protocol, Self, runtime_checkable
 
-from renaissance.syntax_tree.text_segment import TextSegment
+from .text_segment import TextSegment
 
 
 @runtime_checkable

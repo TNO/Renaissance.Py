@@ -11,9 +11,9 @@ from typing import Any, Self
 
 import pytest
 
-import test.syntax_tree.infra_syntax_node
-import test.syntax_tree.infra_text_segment
-from renaissance.syntax_tree.text_segment import TextSegment
+import test.unit.core.model.shared.infra_syntax_node
+import test.unit.core.model.shared.infra_text_segment
+from renaissance.core.model import TextSegment
 
 
 def _offset_to_line_col(text: str, offset: int) -> tuple[int, int]:
@@ -116,7 +116,7 @@ class _SegmentCallCounter:
 def segment_validator_counter(monkeypatch: pytest.MonkeyPatch) -> _SegmentCallCounter:
     """AI: Monkeypatch assert_valid_text_segment with a counter fixture to record its call arguments."""
     counter = _SegmentCallCounter()
-    monkeypatch.setattr(test.syntax_tree.infra_text_segment, "assert_valid_text_segment", counter)
+    monkeypatch.setattr(test.unit.core.model.shared.infra_text_segment, "assert_valid_text_segment", counter)
     return counter
 
 
@@ -136,7 +136,7 @@ def test_assert_valid_syntax_node_ok(segment_validator_counter: _SegmentCallCoun
 
     root.set_children([c0, c1, c2])
 
-    test.syntax_tree.infra_syntax_node.assert_valid_syntax_node(root)
+    test.unit.core.model.shared.infra_syntax_node.assert_valid_syntax_node(root)
 
     assert segment_validator_counter.calls == [root, c0, c1, c2]
 
@@ -155,7 +155,7 @@ def test_assert_valid_syntax_tree_ok(segment_validator_counter: _SegmentCallCoun
     root.set_children([mid])
     mid.set_children([leaf0, leaf1])
 
-    test.syntax_tree.infra_syntax_node.assert_valid_syntax_tree(root)
+    test.unit.core.model.shared.infra_syntax_node.assert_valid_syntax_tree(root)
 
     assert set(segment_validator_counter.calls) >= {root, mid, leaf0, leaf1}
 
@@ -177,7 +177,7 @@ def test_children_must_be_ordered_by_start_offset(segment_validator_counter: _Se
     root.set_children([a, b])
 
     with pytest.raises(AssertionError, match=r"ordered by non-decreasing start_offset"):
-        test.syntax_tree.infra_syntax_node.assert_valid_syntax_node(root)
+        test.unit.core.model.shared.infra_syntax_node.assert_valid_syntax_node(root)
 
 
 def test_children_must_not_overlap(segment_validator_counter: _SegmentCallCounter) -> None:
@@ -192,7 +192,7 @@ def test_children_must_not_overlap(segment_validator_counter: _SegmentCallCounte
     root.set_children([a, b])
 
     with pytest.raises(AssertionError, match=r"must not overlap"):
-        test.syntax_tree.infra_syntax_node.assert_valid_syntax_node(root)
+        test.unit.core.model.shared.infra_syntax_node.assert_valid_syntax_node(root)
 
 
 def test_child_must_be_within_parent_span(segment_validator_counter: _SegmentCallCounter) -> None:
@@ -206,7 +206,7 @@ def test_child_must_be_within_parent_span(segment_validator_counter: _SegmentCal
     root.set_children([child])
 
     with pytest.raises(AssertionError, match=r"start_offset must lie within the node span"):
-        test.syntax_tree.infra_syntax_node.assert_valid_syntax_node(root)
+        test.unit.core.model.shared.infra_syntax_node.assert_valid_syntax_node(root)
 
 
 def test_child_must_point_back_to_parent(segment_validator_counter: _SegmentCallCounter) -> None:
@@ -221,7 +221,7 @@ def test_child_must_point_back_to_parent(segment_validator_counter: _SegmentCall
     root._children = [child]
 
     with pytest.raises(AssertionError, match=r"parent must be the node itself"):
-        test.syntax_tree.infra_syntax_node.assert_valid_syntax_node(root)
+        test.unit.core.model.shared.infra_syntax_node.assert_valid_syntax_node(root)
 
 
 def test_child_must_share_text_and_location(segment_validator_counter: _SegmentCallCounter) -> None:
@@ -235,7 +235,7 @@ def test_child_must_share_text_and_location(segment_validator_counter: _SegmentC
     root.set_children([child])
 
     with pytest.raises(AssertionError, match=r"full_text must equal node\.full_text"):
-        test.syntax_tree.infra_syntax_node.assert_valid_syntax_node(root)
+        test.unit.core.model.shared.infra_syntax_node.assert_valid_syntax_node(root)
 
 
 # ----------------------------
@@ -255,4 +255,4 @@ def test_assert_valid_syntax_tree_detects_cycle(segment_validator_counter: _Segm
     child.set_children([root])  # cycle
 
     with pytest.raises(AssertionError, match=r"same node object twice"):
-        test.syntax_tree.infra_syntax_node.assert_valid_syntax_tree(root)
+        test.unit.core.model.shared.infra_syntax_node.assert_valid_syntax_tree(root)

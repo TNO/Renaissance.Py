@@ -8,5 +8,8 @@
 
 from .node_protocol import NodeProtocol
 from .semantic_kind import SemanticKind
+from .siblings import Siblings
+from .syntax_node import SyntaxNode
+from .text_segment import TextSegment
 
-__all__ = ["NodeProtocol", "SemanticKind"]
+__all__ = ["NodeProtocol", "SemanticKind", "Siblings", "SyntaxNode", "TextSegment"]

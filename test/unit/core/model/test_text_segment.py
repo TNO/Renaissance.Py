@@ -12,8 +12,8 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from renaissance.syntax_tree.text_segment import TextSegment
-from test.syntax_tree.infra_text_segment import (
+from renaissance.core.model import TextSegment
+from test.unit.core.model.shared.infra_text_segment import (
     assert_valid_text_segment,
     line_starts_from_lines,
     location_to_offset,
