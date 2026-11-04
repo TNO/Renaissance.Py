@@ -10,7 +10,7 @@ Runs TypeParameterCheck on a file or directory, and reports which files were mod
 manual review.
 
 Example:
-    python src/rejuvenation/migration-type-recipes.py ./repo --py 3.12 --report review.md --ignore folder/types.py
+    python src/rejuvenation/migration_type_recipes.py ./repo --py 3.12 --report review.md --ignore folder/types.py
 
 """
 
@@ -474,11 +474,11 @@ def _format_console_report(
 def build_arg_parser() -> argparse.ArgumentParser:
     """Build the argument parser for this CLI's --help/usage text and flags."""
     parser = argparse.ArgumentParser(
-        prog="migration-type-recipes.py",
+        prog="migration_type_recipes.py",
         description="Modernize legacy TypeVar/ParamSpec/TypeVarTuple usage to PEP 695 syntax.",
         epilog=textwrap.dedent("""\
             Examples:
-                python src/rejuvenation/migration-type-recipes.py ./repo --py 3.12 --report review.md --ignore folder/types.py
+                python src/rejuvenation/migration_type_recipes.py ./repo --py 3.12 --report review.md --ignore folder/types.py
             """),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
