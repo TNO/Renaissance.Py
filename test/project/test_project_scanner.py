@@ -22,6 +22,8 @@ from renaissance.project.project_scanner import (
     PythonScanner,
 )
 
+NOISE_DIR_NAMES = sorted({*PythonScanner.EXCLUDED_DIRS, ".git", ".venv", ".pixi", ".tox"})
+
 # ---------------------------------------------------------------------------
 # ProjectScanner (base)
 # ---------------------------------------------------------------------------
@@ -228,7 +230,7 @@ class TestPythonScanner:
 
         assert_that(calling(scanner.find_sources), raises(NotADirectoryError))
 
-    @pytest.mark.parametrize("excluded_dir", sorted(PythonScanner.EXCLUDED_DIRS))
+    @pytest.mark.parametrize("excluded_dir", NOISE_DIR_NAMES)
     def test_excludes_known_noise_dirs_in_default_whole_tree_scan(self, tmp_path, excluded_dir) -> None:
         """Assert PythonScanner.find_sources excludes known noise directories during a default whole-tree scan."""
         noise_dir = tmp_path / excluded_dir
@@ -241,7 +243,7 @@ class TestPythonScanner:
 
         assert_that(result, equal_to(["kept.py"]))
 
-    @pytest.mark.parametrize("excluded_dir", sorted(PythonScanner.EXCLUDED_DIRS))
+    @pytest.mark.parametrize("excluded_dir", NOISE_DIR_NAMES)
     def test_excludes_known_noise_dirs_within_explicit_package_dirs(self, tmp_path, excluded_dir) -> None:
         """Assert PythonScanner.find_sources excludes known noise directories within an explicit package_dirs."""
         src = tmp_path / "src"
@@ -267,6 +269,31 @@ class TestPythonScanner:
         result = [str(p) for p in scanner.find_sources()]
 
         assert_that(result, equal_to([str(redis_like / "client.py")]))
+
+    @pytest.mark.parametrize("excluded_dir", NOISE_DIR_NAMES)
+    def test_root_dir_inside_excluded_name_is_still_scanned(self, tmp_path: Path, excluded_dir: str) -> None:
+        """Assert PythonScanner.find_sources only skips excluded names below root_dir, never in its ancestors."""
+        root = tmp_path / excluded_dir / "project"
+        noise_dir = root / excluded_dir
+        noise_dir.mkdir(parents=True)
+        (noise_dir / "ignored.py").write_text("")
+        (root / "kept.py").write_text("")
+
+        scanner = PythonScanner(str(root))
+        result = [Path(p).name for p in scanner.find_sources()]
+
+        assert_that(result, equal_to(["kept.py"]))
+
+    @pytest.mark.parametrize("hidden_name", [".hidden.py", ".py"])
+    def test_skips_files_starting_with_a_dot(self, tmp_path: Path, hidden_name: str) -> None:
+        """Assert PythonScanner.find_sources skips Python files whose name starts with a dot."""
+        (tmp_path / hidden_name).write_text("")
+        (tmp_path / "kept.py").write_text("")
+
+        scanner = PythonScanner(str(tmp_path))
+        result = [Path(p).name for p in scanner.find_sources()]
+
+        assert_that(result, equal_to(["kept.py"]))
 
 
 # ---------------------------------------------------------------------------
