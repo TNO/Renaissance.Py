@@ -97,29 +97,35 @@ class TestRuffCleanup:
         assert_that(written, import_matcher)
 
     @pytest.mark.parametrize(
-        ("extra_args", "signature"),
+        ("source", "signature"),
         [
-            pytest.param([], "def identity[T](x: T) -> T:", id="default-drops-underscore"),
-            pytest.param(["--no-ruff"], "def identity[_T](x: _T) -> _T:", id="no-ruff-keeps-underscore"),
+            pytest.param(
+                textwrap.dedent("""\
+                    from __future__ import annotations
+
+                    from typing import Generic, TypeVar
+
+                    _T = TypeVar("_T")
+
+
+                    def first(items: list[_T]) -> _T:
+                        return items[0]
+
+
+                    class Box(Generic[_T]):
+                        pass
+                    """),
+                "def first[_T](items: list[_T]) -> _T:",
+                id="declaration-kept-by-generic-class",
+            ),
         ],
     )
-    def test_private_type_parameter_loses_its_underscore(self, tmp_path: Path, extra_args: list[str], signature: str) -> None:
-        """A converted `_T` becomes `T` unless --no-ruff."""
+    def test_converted_signature_keeps_its_names(self, tmp_path: Path, source: str, signature: str) -> None:
+        """After the ruff pass, a declared type parameter and its uses in the signature have the same name."""
         target = tmp_path / "mod.py"
-        target.write_text(
-            textwrap.dedent("""\
-                from typing import TypeVar
+        target.write_text(source, encoding="utf-8")
 
-                _T = TypeVar("_T")
-
-
-                def identity(x: _T) -> _T:
-                    return x
-                """),
-            encoding="utf-8",
-        )
-
-        exit_code = migration.main([str(target), "--py", "3.12", *extra_args])
+        exit_code = migration.main([str(target), "--py", "3.12"])
 
         assert_that(exit_code, equal_to(0))
         assert_that(target.read_text(encoding="utf-8"), contains_string(signature))
