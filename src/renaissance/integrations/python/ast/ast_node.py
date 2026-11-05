@@ -53,8 +53,8 @@ class ASTExtension:
     @property
     def ast_children(self) -> list[ast.AST]:
         """AI: Return this node's direct child AST nodes, including those held in list fields."""
-        children = [getattr(self, field) for field in self._fields if isinstance(getattr(self, field), (ast.AST))]
-        [children.extend(getattr(self, field)) for field in self._fields if isinstance(getattr(self, field), (list))]
+        children = [getattr(self, field) for field in self._fields if isinstance(getattr(self, field), ast.AST)]
+        [children.extend(getattr(self, field)) for field in self._fields if isinstance(getattr(self, field), list)]
         return children
 
     @staticmethod
@@ -62,17 +62,3 @@ class ASTExtension:
     def ast_signature(self) -> str:
         """AI: Return the unparsed source text of this node."""
         return ast.unparse(self)
-
-    @staticmethod
-    @property
-    def ast_name(self) -> str:
-        """AI: Return this node's identifying name, derived from its specific ast node type."""
-        if isinstance(self, ast.arg):
-            signature = self.arg
-        elif isinstance(self, ast.Name):
-            signature = self.id
-        elif isinstance(self, ast.Expr) and isinstance(self.value, ast.Name):
-            signature = self.value.id
-        else:
-            signature = str(self)
-        return signature

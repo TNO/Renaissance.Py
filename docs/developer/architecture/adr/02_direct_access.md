@@ -49,21 +49,22 @@ documented APIs for direct ast node manipulation.
 
 ## Implementation notes
 
+`ASTExtension` in `src/renaissance/integrations/python/ast/ast_node.py` derives the matcher's properties and
+children from the `_fields` of CPython's `ast` nodes:
+
 ```python
-class GoAstNode:
-    # direct access protocol
-    expr: Self
-    body: Sequence[Self]
-    other: Sequence[self]
+class ASTExtension:
+    @staticmethod
+    @property
+    def ast_properties(self) -> dict[str, Any]:
+        return {field: getattr(self, field) for field in self._fields if not isinstance(getattr(self, field), ast.AST)}
 
-    # rewrite protocol
-    length: int
-    offset: int
-    name: str
-
-    # matcher
-    properties: dict[str, int | str] = {"length": length, "offset": offset, "name": name}
-    children: list[Self] = [expr, body, other]
+    @staticmethod
+    @property
+    def ast_children(self) -> list[ast.AST]:
+        children = [getattr(self, field) for field in self._fields if isinstance(getattr(self, field), ast.AST)]
+        [children.extend(getattr(self, field)) for field in self._fields if isinstance(getattr(self, field), list)]
+        return children
 ```
 
 ## Rationale
@@ -95,3 +96,4 @@ Negative:
 Revision history:
 
 - 2026-02-25: Converted to ADR template and clarified decision.
+- 2026-11-02: Replaced the example with `ASTExtension`.

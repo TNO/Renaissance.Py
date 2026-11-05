@@ -159,15 +159,3 @@ class ASTProcessor:
             f.write(rewriter.apply())
         atu = factory.create(Path(rewriter.get_filename()))
         return atu, ASTRewriter(atu)
-
-
-# main
-if __name__ == "__main__":
-
-    def test[T](_: str, factory: type[T]) -> T:
-        """AI: Smoke-test helper verifying a factory callable returns an instance of its own type."""
-        result = factory()
-        assert isinstance(result, factory)
-        return result
-
-    test("key", str)

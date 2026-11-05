@@ -68,14 +68,21 @@ control of parsing, source-span and trivia semantics, and reparsing; the
 protocols state only what a shared Renaissance facility consumes. No common
 parser backend or parser lifecycle interface is required.
 
+`is_match` in `src/renaissance/syntax_tree/match_finder.py` accepts any object with the shape of `NodeProtocol`:
+
 ```python
 @runtime_checkable
-class NodeMatchProtocol(protocol):
-    properties: dict
-    children: list[Self]
+class NodeProtocol(Protocol):
+    @property
+    def properties(self) -> Mapping[str, Any]: ...
+
+    @property
+    def children(self) -> Sequence[Self]: ...
+
+    ...
 
 
-def is_match(src: NodeMatchProtocol, cmp: NodeMatchProtocol) -> bool: ...
+def is_match(src: NodeProtocol, cmp: NodeProtocol, expansions=None) -> bool: ...
 ```
 
 ## Rationale
@@ -117,3 +124,4 @@ is comment need to it own property without "comment sign"
 Revision history:
 
 - 2026-02-25: Converted to ADR template and clarified decision.
+- 2026-11-02: Replaced the example with `NodeProtocol` and `is_match`.

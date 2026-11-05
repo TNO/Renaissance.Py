@@ -56,7 +56,3 @@ class ASTFactory:
         atu = self.clazz.load_from_text(text, file_name, extra_args=self.extra_args, working_dir=self.working_dir)
         assert isinstance(atu, self.clazz), "The loaded AST node is not an instance of the expected type"
         return atu
-
-
-if __name__ == "__main__":
-    pass

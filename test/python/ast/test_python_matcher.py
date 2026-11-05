@@ -546,14 +546,3 @@ class TestPythonMatcher:
         assert_that(variants, is_not(empty()))
         assert_that(variants, is_not(empty()))
         assert_that(match_pattern(atu.children, pattern), has_length(1))
-
-    def test_match_multi_fun_using_generic_matcher2(self) -> None:
-        """AI: Verify a fixed two-statement pattern matches exactly once against the module's statements (second variant)."""
-        atu = self.factory.create_from_text("ba(55)\nca(555)\nlo(4444)\nna=55", "test.py")
-        simple = self.pattern_factory.create_statements("ba(55)\nca(555)")
-        result = match_pattern(atu.children, simple)
-        assert_that(result, has_length(1))
-
-
-if __name__ == "__main__":
-    pytest.main()

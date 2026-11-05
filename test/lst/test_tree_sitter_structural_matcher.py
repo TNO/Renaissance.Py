@@ -95,7 +95,3 @@ class TestTreeSitterStructuralMatcher:
         pat = adapter.to_lst(pattern, ast)
         result = match_pattern(lst.root.children, pat.root.children)
         assert_that(result, has_length(1))
-
-
-if __name__ == "__main__":
-    pytest.main()

@@ -14,9 +14,6 @@ from renaissance.integrations.clang import ClangASTNode, CPatternFactory
 from renaissance.syntax_tree import ASTFactory
 from renaissance.syntax_tree.match_finder import MatchFinder, find_in_list
 
-VERBOSE = False
-DEFAULT_EXCLUDE_KIND = "comment"
-
 code = """
 int one(int a);
 int two(int a, int b);

@@ -40,35 +40,6 @@ void f(){
 }
 """.strip()
 
-expected_result = """
-void f1(int a, int b, int c);
-void f2(int a, int c);
-void f(){
-    const int a = 1;
-    const int b = 2;
-    int isAOne = a==1;
-    int c = 0, d=0;
-    //changed if expr to const
-    if(isAOne){
-       d++;
-       //changed if expr to const
-       if(isAOne){
-          d++;
-          c=d;
-          //changed function f1 to f2
-          f2(a,c);
-       }
-    }
-    if (a==2) {
-        c++;
-        //changed function f1 to f2
-        f2(a,c);
-    }
-    //changed function f1 to f2
-    f2(a,c);
-}
-""".strip()
-
 
 def refactor_with_nested_compositions(args):
     """AI: Demonstrate nested pattern composition by rewriting calls inside matched if-statement bodies."""

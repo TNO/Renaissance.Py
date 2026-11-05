@@ -105,10 +105,8 @@ class TestCommentLocation:
         content: bytes,
         expected: tuple[int, int],
     ) -> None:
-        """AI: Verify _get_comment_location finds the expected comment span for each comment-style scenario."""
-        result = ASTRewriter._get_comment_location(start_offset, stop_offset, content)
-        # converted print but what to do it true???
-        # assert_that(result, is_not((-1, -1)), f"first char={content[result[0]:result[1]]}")
+        """Verify get_comment_location finds the expected comment span for each comment-style scenario."""
+        result = _RewriteActions.get_comment_location(start_offset, stop_offset, content)
         assert_that(expected, is_(result))
 
 
@@ -117,25 +115,6 @@ class TestRewrites:
 
     def test_passing_case_in_clang(self) -> None:
         """AI: Verify insert_before places replacement text between two adjacent comments in a C declaration."""
-        # action: Callable[[ASTRewriter, str, Sequence[ASTNode], bool, bool], None],
-        # factory: ASTFactory,code: str, replacement: str, include_whitespace: bool, include_comments: bool, expected: str):
-        factory = ASTFactory(ClangASTNode, [])
-        atu = factory.create_from_text("void f() { /* c1 */ /* c2 */ int a=3;\n}", "test.cpp")
-        pattern_factory = CPatternFactory(factory)
-        declaration_pattern = pattern_factory.create_declarations("int a=3;")
-        found = match_pattern(atu.children, declaration_pattern)
-
-        rewriter = ASTRewriter(atu)
-        for match in found:  # .map(lambda m: m.nodes).to_iterable():
-            nodes = match.nodes
-            rewriter.insert_before("int b=4;int c=5;", nodes, True, True)
-        assert_that(
-            rewriter.apply_to_string(),
-            is_("void f() { /* c1 */ int b=4;int c=5;\n /* c2 */ int a=3;\n}"),
-        )
-
-    def test_failing_case(self) -> None:
-        """AI: Duplicate of test_passing_case_in_clang, kept as a placeholder for a failing-case scenario."""
         # action: Callable[[ASTRewriter, str, Sequence[ASTNode], bool, bool], None],
         # factory: ASTFactory,code: str, replacement: str, include_whitespace: bool, include_comments: bool, expected: str):
         factory = ASTFactory(ClangASTNode, [])

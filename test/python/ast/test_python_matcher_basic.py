@@ -58,7 +58,3 @@ class TestPythonMatcherBasic:
     def test_pairs_of_equivalence_classes(self, a: Sequence[NodeProtocol], b: Sequence[NodeProtocol], *, expected: bool) -> None:
         """AI: Verify code snippet pairs differing only in comments/whitespace match as expected."""
         assert_pair_equivalence(a, b, expected)
-
-
-if __name__ == "__main__":
-    pytest.main()

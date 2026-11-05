@@ -34,7 +34,11 @@ safely cover. This page covers `TypeParameterCheck`, the recipe behind
   names each project file imports from the others.
 - `src/renaissance/utils/cst_utils.py`: a module's top-level statements, the names they read or bind and the comment
   trailing a statement's line.
-
+  
+<!-- TODO: FrancescoPezzella - list ruff_utils.py here once a recipe uses run_ruff_import_cleanup (#111):
+- `src/renaissance/utils/ruff_utils.py`: `run_ruff_import_cleanup`, which removes unused imports and sorts the imports
+  of the files a recipe changed, with ruff. -->
+  
 ## Public entry points
 
 - `TypeParameterCheck.check()` (and `run()`): runs the three phases through `run_steps`, committing to disk between them.

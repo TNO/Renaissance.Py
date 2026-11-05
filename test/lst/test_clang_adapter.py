@@ -8,7 +8,6 @@
 
 from pathlib import Path
 
-import pytest
 from hamcrest import assert_that, greater_than, has_length, is_
 
 import targets
@@ -26,7 +25,3 @@ class TestClangAdapter:
         lst = adapter.parse(Path(targets.__file__).parent / "cpp_example.cpp")
         assert_that(lst, is_(LST))
         assert_that(list(traverse(lst.root)), has_length(greater_than(0)))
-
-
-if __name__ == "__main__":
-    pytest.main()

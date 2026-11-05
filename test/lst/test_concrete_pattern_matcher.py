@@ -96,6 +96,3 @@ class TestConcretePatternMatcher:
 #     cc = interface.create_statements("if x:  print(x)")
 #     pp = interface.create_statements("if x:  $body")
 #     assert is_match_tree(cc, pp, {})
-
-if __name__ == "__main__":
-    pytest.main()

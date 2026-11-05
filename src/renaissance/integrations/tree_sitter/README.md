@@ -23,7 +23,6 @@ It supports Tree-sitter grammars and offers a flexible interface for analyzing P
 - Rule-based extractor (templated, with filtering)
 - Symbol table for declarations, definitions, and uses
 - Extensible for multi-language support
-- Includes examples for Python, Java, and C++
 - Unit-tested matcher components
 - VSCode integration
 
@@ -61,28 +60,6 @@ This will:
 
 ```bash
 python -m unittest discover tests
-```
-
----
-
-## 🧰 Examples
-
-Python:
-
-```bash
-python examples/python_example.py
-```
-
-Java:
-
-```bash
-cat examples/java_example.java
-```
-
-C++:
-
-```bash
-cat examples/cpp_example.cpp
 ```
 
 ---

@@ -6,8 +6,6 @@
 
 """AI: Byte-level content rewriter that accumulates and applies pending replacements."""
 
-import sys
-
 
 class Rewrite:
     """AI: Represent one pending replacement of a byte range with new content."""
@@ -69,23 +67,3 @@ class Rewriter:
         for rewrite in sorted(self.__rewrites, key=lambda x: x.start, reverse=True):
             result[rewrite.start : rewrite.end] = rewrite.replacement
         return result
-
-    @property
-    def content(self) -> bytes:
-        """AI: Return the original, unmodified content this rewriter was constructed with."""
-        return self.__content
-
-
-if __name__ == "__main__":
-    # create a byte array a random bytes of len 20
-
-    my_bytes = bytearray(20)
-    for i in range(20):
-        my_bytes[i] = ord("a") + i
-    rewriter = Rewriter(my_bytes)
-    rewriter.replace(5, 10, b"hellooo")
-    rewriter.replace(5, 10, b" world")
-    rewriter.replace(0, 0, b"BEGIN")
-    s = rewriter.apply().decode(sys.getfilesystemencoding())
-    print(len(s))
-    print(s)
