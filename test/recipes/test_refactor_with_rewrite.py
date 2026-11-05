@@ -7,7 +7,6 @@
 """Tests for PythonRefactoring's rewrite-based refactoring support."""
 
 import textwrap
-from pathlib import Path
 
 import pytest
 from hamcrest import assert_that, is_
@@ -26,7 +25,7 @@ class TestRefactorWithRewrite:
             "renaissance.integrations.python.ast.factory.PythonFactory.create",
             return_value=PythonRstNode.load_from_text(code),
         )
-        subject = PythonRefactoring(Path("x.py"))
+        subject = PythonRefactoring("x.py")
         subject.in_memory = True
         return subject
 
