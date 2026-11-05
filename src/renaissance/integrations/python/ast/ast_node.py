@@ -53,8 +53,8 @@ class ASTExtension:
     @property
     def ast_children(self) -> list[ast.AST]:
         """AI: Return this node's direct child AST nodes, including those held in list fields."""
-        children = [getattr(self, field) for field in self._fields if isinstance(getattr(self, field), (ast.AST))]
-        [children.extend(getattr(self, field)) for field in self._fields if isinstance(getattr(self, field), (list))]
+        children = [getattr(self, field) for field in self._fields if isinstance(getattr(self, field), ast.AST)]
+        [children.extend(getattr(self, field)) for field in self._fields if isinstance(getattr(self, field), list)]
         return children
 
     @staticmethod

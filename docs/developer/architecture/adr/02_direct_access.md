@@ -62,8 +62,8 @@ class ASTExtension:
     @staticmethod
     @property
     def ast_children(self) -> list[ast.AST]:
-        children = [getattr(self, field) for field in self._fields if isinstance(getattr(self, field), (ast.AST))]
-        [children.extend(getattr(self, field)) for field in self._fields if isinstance(getattr(self, field), (list))]
+        children = [getattr(self, field) for field in self._fields if isinstance(getattr(self, field), ast.AST)]
+        [children.extend(getattr(self, field)) for field in self._fields if isinstance(getattr(self, field), list)]
         return children
 ```
 
