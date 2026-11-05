@@ -6,17 +6,23 @@
 
 """AI: ASTNode implementation backed by libcst's concrete syntax tree."""
 
+import io
+import itertools
+import sys
+from collections import defaultdict
 from pathlib import Path
 from typing import Self
 
 import libcst
 from libcst import BaseCompoundStatement, BaseSmallStatement, ClassDef, CSTNode, FunctionDef, MetadataWrapper
-from libcst.metadata import WhitespaceInclusivePositionProvider
+from libcst.metadata import Access, Assignment, CodePosition, PositionProvider, ScopeProvider
 
 from renaissance.integrations.python.ast.kinds import PYTHON_KIND_MAP
-from renaissance.integrations.python.ast.util import convert
+from renaissance.syntax_tree.ast_node import ASTReference
 from renaissance.syntax_tree.semantic_kind import SemanticKind
 from renaissance.utils.ast_utils import next_sibling, preceding_sibling
+
+type _Link = tuple[CSTNode, str, Access]
 
 
 class PythonCstTranslationUnit:
@@ -24,24 +30,105 @@ class PythonCstTranslationUnit:
 
     def __init__(self, content, file_name: str) -> None:
         """AI: Parse Python source into a libcst tree with position lookups for AST-node wrapping."""
-        # TODO: see docs/developer/architecture/position-consistency.md - exposes no buffer, so the rewriter derives its own.
+        # TODO(pjljvandelaar): see docs/developer/architecture/position-consistency.md - exposes no buffer, so the rewriter
+        #  derives its own.
+        #  https://github.com/TNO/Renaissance.Py/issues/153
+        # TODO(FrancescoPezzella): content is to become the file's UTF-8 bytes, with every offset a UTF-8 byte offset into
+        #  them (decided for AST and regular expression matching; no str). Until then content is the str decoded by load
+        #  and offsets count bytes of self.encoding, the filesystem encoding, so never slice content with them (#153).
+        #  https://github.com/TNO/Renaissance.Py/issues/188
         self.content = content
-        self.lines = content.splitlines()
+        self.encoding = sys.getfilesystemencoding()
+        # newline="" splits on \n, \r\n and \r only, like libcst, and keeps each line ending.
+        self._lines = io.StringIO(content, newline="").readlines()
+        self._line_starts = list(itertools.accumulate((len(line.encode(self.encoding)) for line in self._lines), initial=0))
         self.file_name = file_name
-        self.references_initialized = False
         self.wrapper = MetadataWrapper(libcst.parse_module(content))
         self.atu = self.wrapper.module
-        self.spans = self.wrapper.resolve(WhitespaceInclusivePositionProvider)
+        self.spans = self.wrapper.resolve(PositionProvider)
+        self.wrappers: dict[CSTNode, PythonCstNode] = {}
+        self._uses_of: dict[CSTNode, list[_Link]] | None = None
+        self._definitions_of: dict[CSTNode, list[_Link]] = {}
+
+    def _index_references(self) -> dict[CSTNode, list[_Link]]:
+        """Resolve libcst's scopes once, linking every definition to its uses; return the definition-to-uses map.
+
+        Also fills self._definitions_of, the use-to-definitions map. Builtins, which have no defining node, are skipped.
+        An annotation or type hint above a definition in the same scope is linked to it too, since it is evaluated
+        lazily (PEP 563, PEP 649); a value read there at once is not.
+        """
+        if self._uses_of is not None:
+            return self._uses_of
+        uses_of: defaultdict[CSTNode, list[_Link]] = defaultdict(list)
+        definitions_of: defaultdict[CSTNode, list[_Link]] = defaultdict(list)
+        scopes = {scope for scope in self.wrapper.resolve(ScopeProvider).values() if scope is not None}
+        for scope in scopes:
+            for assignment in scope.assignments:
+                if not isinstance(assignment, Assignment):
+                    continue
+                lazy_accesses_above = {
+                    access
+                    for access in scope.accesses[assignment.name]
+                    if not access.referents and (access.is_annotation or access.is_type_hint)
+                }
+                # libcst only links an access to the definitions above it in the same scope.
+                for access in [*assignment.references, *lazy_accesses_above]:
+                    uses_of[assignment.node].append((access.node, assignment.name, access))
+                    definitions_of[access.node].append((assignment.node, assignment.name, access))
+        self._uses_of = dict(uses_of)
+        self._definitions_of = dict(definitions_of)
+        return self._uses_of
+
+    def _to_references(self, links: list[_Link], ref_kind: str) -> list[ASTReference[PythonCstNode]]:
+        """Wrap links as references, ordered by the position of the node each points at.
+
+        Each reference's properties hold the bound "name" and whether the use sits in an annotation ("is_annotation")
+        or another type hint such as `cast("T", x)` ("is_type_hint").
+        """
+        references = [
+            ASTReference(
+                self.wrappers[node],
+                ref_kind,
+                {"name": name, "is_annotation": access.is_annotation, "is_type_hint": access.is_type_hint},
+            )
+            for node, name, access in links
+            if node in self.wrappers
+        ]
+        return sorted(references, key=lambda reference: reference.node.offset)
+
+    def uses_of(self, node: CSTNode) -> list[ASTReference[PythonCstNode]]:
+        """Return the uses of the name(s) that node defines; empty if node defines nothing."""
+        return self._to_references(self._index_references().get(node, []), "use")
+
+    def definitions_of(self, node: CSTNode) -> list[ASTReference[PythonCstNode]]:
+        """Return the definitions that node, a use of a name, resolves to; empty if node is not a resolved use."""
+        self._index_references()
+        return self._to_references(self._definitions_of.get(node, []), "definition")
+
+    def _byte_offset(self, position: CodePosition) -> int:
+        """Return the offset, in bytes of self.encoding, of a libcst position whose column counts characters.
+
+        A position on the line after the last one (the end of a node that ends with the file) maps to the file's length.
+        """
+        line_index = position.line - 1
+        if line_index >= len(self._lines):
+            return self._line_starts[-1]
+        return self._line_starts[line_index] + len(self._lines[line_index][: position.column].encode(self.encoding))
 
     def start_of(self, node: CSTNode) -> int:
-        """AI: Return the character offset where node begins in the source text."""
+        """Return the byte offset where node begins in the source text, or 0 if it has no position.
+
+        A decorated function or class begins at its first decorator.
+        """
+        if isinstance(node, (ClassDef, FunctionDef)) and node.decorators:
+            node = node.decorators[0]
         span = self.spans.get(node)
-        return convert(self.lines, span.start.line, span.start.column) if span else 0
+        return self._byte_offset(span.start) if span else 0
 
     def end_of(self, node: CSTNode) -> int:
-        """AI: Return the character offset where node ends in the source text."""
+        """Return the byte offset where node's code ends in the source text, or 0 if it has no position."""
         span = self.spans.get(node)
-        return convert(self.lines, span.end.line, span.end.column) if span else 0
+        return self._byte_offset(span.end) if span else 0
 
     def signature_of(self, node: CSTNode) -> str:
         """AI: Return the source code text corresponding to node, or an empty string on failure."""
@@ -54,21 +141,19 @@ class PythonCstTranslationUnit:
 class PythonCstNode:
     """AI: ASTNode implementation backed by libcst's concrete syntax tree."""
 
-    def __init__(self, node: CSTNode, translation_unit: PythonCstTranslationUnit, parent=None) -> None:
-        """AI: Wrap a libcst node as an AST node within the given translation unit."""
+    def __init__(self, node: CSTNode, translation_unit: PythonCstTranslationUnit, parent: Self | None = None) -> None:
+        """Wrap node and, recursively, its children as nodes of this class within the given translation unit."""
         self.parent = parent
-        if parent and parent.root:
-            self.root = parent.root
-        else:
-            self.root = self
+        self.root: Self = parent.root if parent and parent.root else self
         self.translation_unit = translation_unit
         self.node = node
+        translation_unit.wrappers[node] = self
 
         self.is_statement = isinstance(self.node, (BaseSmallStatement, BaseCompoundStatement))
         self.parser_kind = type(node).__name__
         self.semantic_kind = PYTHON_KIND_MAP.get(self.parser_kind, SemanticKind.NODE)
 
-        self.children: list[Self] = [PythonCstNode(node, translation_unit, self) for node in node.children]
+        self.children: list[Self] = [type(self)(child, translation_unit, self) for child in node.children]
         self.properties = {}
 
         # for shower
@@ -93,22 +178,22 @@ class PythonCstNode:
 
     @property
     def offset(self):
-        """AI: Return the character offset where this node begins in the source text."""
+        """Return the offset, in bytes of translation_unit.encoding, where this node begins in the source text."""
         return self.translation_unit.start_of(self.node)
 
     @property
     def length(self):
-        """AI: Return the length in characters of this node's source text."""
+        """Return the length, in bytes of translation_unit.encoding, of this node's source text."""
         return self.end_offset - self.offset
 
     @property
     def end_offset(self):
-        """AI: Return the character offset where this node ends in the source text."""
+        """Return the offset, in bytes of translation_unit.encoding, where this node ends in the source text."""
         return self.translation_unit.end_of(self.node)
 
     @property
     def extended_end_offset(self) -> int:
-        """AI: Return the end offset; libcst attaches trailing trivia to the node itself, so there is nothing to extend."""
+        """Return the end offset; trailing comments are found by the rewriter, as for the RST backend."""
         return self.end_offset
 
     @property
@@ -125,6 +210,16 @@ class PythonCstNode:
         self.name = ""  # self._derive_name()
 
     @property
+    def references(self) -> list[ASTReference[PythonCstNode]]:
+        """Return the definitions this node uses, resolved with libcst's scope analysis (empty if it uses none)."""
+        return self.translation_unit.definitions_of(self.node)
+
+    @property
+    def referenced_by(self) -> list[ASTReference[PythonCstNode]]:
+        """Return the uses of the name(s) this node defines, resolved with libcst's scope analysis (empty if none)."""
+        return self.translation_unit.uses_of(self.node)
+
+    @property
     def next_sibling(self) -> Self | None:
         """AI: Return the sibling node immediately following this one, or None."""
         return next_sibling(self)
@@ -134,19 +229,21 @@ class PythonCstNode:
         """AI: Return the sibling node immediately preceding this one, or None."""
         return preceding_sibling(self)
 
-    @staticmethod
-    def load(file_path: Path) -> PythonCstNode:
-        """AI: Parse the Python source file at file_path into a PythonCstNode tree."""
-        with Path(file_path).open() as file:
+    @classmethod
+    def load(cls, file_path: Path) -> Self:
+        """Parse the Python source file at file_path into a tree of nodes of this class."""
+        # TODO(FrancescoPezzella): drop the explicit encoding with Python 3.15, where UTF-8 is the default.
+        #  https://github.com/TNO/Renaissance.Py/issues/188
+        with Path(file_path).open(encoding="utf-8") as file:
             content = file.read()
-            return PythonCstNode.load_from_text(content, str(file_path))
+            return cls.load_from_text(content, str(file_path))
 
-    @staticmethod
+    @classmethod
     def load_from_text(
+        cls,
         text: str,
         file_name: str = "cst_snippet.py",
-    ) -> PythonCstNode:
-        """AI: Parse Python source text into a PythonCstNode tree, attributed to file_name."""
+    ) -> Self:
+        """Parse Python source text into a tree of nodes of this class, attributed to file_name."""
         translation_unit = PythonCstTranslationUnit(text, file_name=str(file_name))
-        root_node = PythonCstNode(translation_unit.atu, translation_unit)
-        return root_node
+        return cls(translation_unit.atu, translation_unit)
