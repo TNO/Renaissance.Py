@@ -6,6 +6,7 @@
 
 """AI: Base processor for Python-specific source refactoring recipes."""
 
+import ast
 import importlib
 from collections.abc import Sequence
 from pathlib import Path
@@ -91,10 +92,10 @@ class PythonRefactoring[NodeT: PythonRstNode | PythonCstNode = PythonRstNode](AS
         positional_args = [arg_node.signature for arg_node in (args_implicit.children if args_implicit else [])]
         keyword_args: dict[str, str] = {}
         for kw_node in keywords_implicit.children if keywords_implicit else []:
-            kw_name = kw_node.node.arg
-            if kw_name:
+            keyword = kw_node.node
+            if isinstance(keyword, ast.keyword) and keyword.arg:
                 value_node = kw_node.children[0] if kw_node.children else kw_node
-                keyword_args[str(kw_name)] = value_node.signature
+                keyword_args[keyword.arg] = value_node.signature
 
         return positional_args, keyword_args
 

@@ -6,7 +6,7 @@
 
 """AI: Processor that coordinates parsing, pattern matching, and rewriting of a single AST."""
 
-from collections.abc import Callable, Iterator, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
@@ -62,9 +62,19 @@ class ASTProcessor:
         target: Rewritable | Sequence[Rewritable] | PatternMatch | Sequence[PatternMatch],
         include_whitespace: bool = True,
         include_comments: bool = True,
+        transforms: Mapping[str, Callable[[str], str]] | None = None,
     ) -> None:
-        """AI: Queue a rewrite replacing target's source text with new_content."""
-        self.__rewriter.replace(new_content, target, include_whitespace, include_comments)
+        """Queue a rewrite replacing target's source text with new_content.
+
+        Args:
+            new_content: The replacement text; for a `PatternMatch` target, its placeholders are expanded.
+            target: The nodes or match to replace.
+            include_whitespace: Whether the whitespace around target is replaced as well.
+            include_comments: Whether the comments around target are replaced as well.
+            transforms: Per placeholder, a function applied to the text of each node bound to it before expansion.
+
+        """
+        self.__rewriter.replace(new_content, target, include_whitespace, include_comments, transforms)
 
     def remove(
         self,

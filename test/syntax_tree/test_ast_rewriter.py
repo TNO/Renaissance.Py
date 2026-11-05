@@ -1033,6 +1033,118 @@ class TestComposeReplacement:
             rewriter.replace("y = $value\nx = y", match, include_whitespace=False, include_comments=False)
         assert_that(rewriter.apply_to_string(), is_(expected))
 
+    @pytest.mark.parametrize(
+        ("source", "find", "replacement", "expected"),
+        [
+            (
+                "if TYPE_CHECKING:\n    from a import X\n    import b as B\n\n\ndef f(x: X) -> B.Y: ...\n",
+                "if TYPE_CHECKING:\n    $$includes",
+                "$$includes",
+                "from a import X\nimport b as B\n\n\ndef f(x: X) -> B.Y: ...\n",
+            ),
+            (
+                "def f():\n    if TYPE_CHECKING:\n        first()\n        second()\n        third()\n    return 0\n",
+                "if TYPE_CHECKING:\n    $$includes",
+                "$$includes",
+                "def f():\n    first()\n    second()\n    third()\n    return 0\n",
+            ),
+            (
+                "if TYPE_CHECKING:\n    from a import (\n        X,  # x\n        Y,\n    )\n    import b\n",
+                "if TYPE_CHECKING:\n    $$includes",
+                "$$includes",
+                "from a import (\n    X,  # x\n    Y,\n)\nimport b\n",
+            ),
+            (
+                "if TYPE_CHECKING:\n    from a import X  # café\n    import b\n",
+                "if TYPE_CHECKING:\n    $$includes",
+                "$$includes",
+                "from a import X  # café\nimport b\n",
+            ),
+            ("f(1, 2)\n", "f($$args)", "g($$args)", "g(1, 2)\n"),
+        ],
+    )
+    def test_python_multi_node_placeholder(self, source: str, find: str, replacement: str, expected: str) -> None:
+        """Verify a `$$` placeholder bound to several nodes expands to all of them, keeping their text and layout."""
+        root = PythonRstNode.load_from_text(source, "test.py")
+        pattern = PythonPatternFactory(PythonFactory(PythonRstNode)).create_statements(find)
+        rewriter = ASTRewriter(root)
+        for match in match_pattern([root], pattern):
+            rewriter.replace(replacement, match, include_whitespace=False, include_comments=False)
+        assert_that(rewriter.apply_to_string(), is_(expected))
+
+    @pytest.mark.parametrize(
+        ("source", "find", "replacement", "transforms", "expected"),
+        [
+            (
+                "if TYPE_CHECKING:\n    from a import X\n    import b as B\n",
+                "if TYPE_CHECKING:\n    $$includes",
+                "$$includes",
+                {"$$includes": "lazy {}".format},
+                "lazy from a import X\nlazy import b as B\n",
+            ),
+            (
+                "if TYPE_CHECKING:\n    from a import (\n        X,  # x\n        Y,\n    )\n    import b\n",
+                "if TYPE_CHECKING:\n    $$includes",
+                "$$includes",
+                {"$$includes": "lazy {}".format},
+                "lazy from a import (\n    X,  # x\n    Y,\n)\nlazy import b\n",
+            ),
+            ("f(a, b)\n", "f($x, $y)", "g($y, $x)", {"$x": str.upper}, "g(b, A)\n"),
+        ],
+    )
+    def test_python_placeholder_transform(
+        self, source: str, find: str, replacement: str, transforms: dict[str, Callable[[str], str]], expected: str
+    ) -> None:
+        """Verify `transforms` rewrites the text of each node bound to its placeholder, and leaves other placeholders as they are."""
+        root = PythonRstNode.load_from_text(source, "test.py")
+        pattern = PythonPatternFactory(PythonFactory(PythonRstNode)).create_statements(find)
+        rewriter = ASTRewriter(root)
+        for match in match_pattern([root], pattern):
+            rewriter.replace(replacement, match, include_whitespace=False, include_comments=False, transforms=transforms)
+        assert_that(rewriter.apply_to_string(), is_(expected))
+
+    @pytest.mark.xfail(strict=True, reason="the outer apply() also applies the nested rewrite, see issue #286")
+    def test_python_multi_node_placeholder_with_nested_rewrite(self) -> None:
+        """Verify a rewrite inside one of the nodes bound to a `$$` placeholder is kept when the placeholder expands."""
+        root = PythonRstNode.load_from_text("def f():\n    if TYPE_CHECKING:\n        first()\n        second()\n    return 0\n", "test.py")
+        pattern = PythonPatternFactory(PythonFactory(PythonRstNode)).create_statements("if TYPE_CHECKING:\n    $$includes")
+        match = match_pattern([root], pattern)[0]
+        callee = match.expansions["$$includes"][1].children[0].children[0]
+        rewriter = ASTRewriter(root)
+        rewriter.replace("two", callee, include_whitespace=False, include_comments=False)
+        rewriter.replace("$$includes", match, include_whitespace=False, include_comments=False)
+        assert_that(rewriter.apply_to_string(), is_("def f():\n    first()\n    two()\n    return 0\n"))
+
+    @pytest.mark.parametrize(
+        "factory",
+        [
+            pytest.param(
+                factory,
+                id=name,
+                marks=[
+                    pytest.mark.xfail(
+                        sys.platform == "win32",
+                        strict=True,
+                        reason="clang_json sends the code to clang with CRLF line endings on Windows, so offsets shift",
+                    )
+                ]
+                if name == "clang_json"
+                else [],
+            )
+            for name, factory in Factories.factories
+        ],
+    )
+    def test_c_multi_statement_placeholder(self, factory: ASTFactory) -> None:
+        """Verify a `$$` placeholder bound to several C statements expands to all of them."""
+        code = "int a = 1;\nint c = 2;\nint d = 3;\nvoid f(){\n    if (a) {\n        c++;\n        d++;\n    }\n}\n"
+        atu = factory.create_from_text(code, "test.cpp")
+        pattern = CPatternFactory(factory).create_statements("if($e){$$body;}")
+        matches = [match for match in match_pattern([atu], pattern) if match.nodes[0].is_part_of_translation_unit()]
+        assert_that(matches, has_length(1), "Expected one match")
+        rewriter = ASTRewriter(atu)
+        rewriter.replace("$$body;", matches[0])
+        assert_that(compress(rewriter.apply_to_string()), is_(compress("int a=1;int c=2;int d=3;void f(){c++;d++;}")))
+
     def test_get_node_in_match_pattern(self, mocker: MockerFixture) -> None:
         """AI: Verify _RewriteAction._get_nodes resolves a node's referenced_by chain back to the original node."""
         node = mocker.Mock()
