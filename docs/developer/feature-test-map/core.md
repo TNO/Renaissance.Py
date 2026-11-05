@@ -63,4 +63,4 @@ https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
   `src/renaissance/recipes/step_runner.py`,
   `src/renaissance/recipes/python_refactoring.py`,
   `src/renaissance/utils/import_resolution.py`, `src/renaissance/utils/cst_utils.py`,
-  `src/rejuvenation/migration-type-recipes.py`
+  `src/rejuvenation/migration_type_recipes.py`
