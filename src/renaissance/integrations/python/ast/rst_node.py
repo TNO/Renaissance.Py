@@ -232,7 +232,7 @@ class PythonRstNode:
         self.indent = ""
         self.name = self._derive_name()
         self.show_props = False
-        self.children = []
+        self.children: list[PythonRstNode] = []
         self.properties = {}
         self.is_implicit = self.parser_kind not in IMPLICIT
         self.offset = 0
@@ -319,7 +319,7 @@ class PythonRstNode:
         """AI: Return the sibling node immediately preceding this one, or None."""
         return preceding_sibling(self)
 
-    def process(self, function: Callable[[Self], None]) -> None:
+    def process(self, function: Callable[[PythonRstNode], None]) -> None:
         """AI: Apply function to this node and recursively to all of its descendants."""
         function(self)
         for child in self.children:
@@ -445,27 +445,15 @@ class PythonRstNode:
     def expr(self):
         """AI: Return the wrapped inner expression node relevant to this statement's kind, or None."""
         if (
-            isinstance(
-                self.node,
-                (
-                    ast.Assign,
-                    ast.AnnAssign,
-                    ast.AugAssign,
-                    ast.Return,
-                    ast.Expr,
-                    ast.Delete,
-                    ast.NamedExpr,
-                ),
-            )
-            and hasattr(self.node, "value")
+            isinstance(self.node, (ast.Assign, ast.AnnAssign, ast.AugAssign, ast.Return, ast.Expr, ast.NamedExpr))
             and self.node.value is not None
-        ) or (isinstance(self.node, ast.Expr) and hasattr(self.node, "value")):
+        ):
             return PythonRstNode(self.node.value, self.translation_unit, self)
         if isinstance(self.node, (ast.For, ast.AsyncFor, ast.comprehension)):
             return PythonRstNode(self.node.iter, self.translation_unit, self)
         if isinstance(self.node, (ast.If, ast.While, ast.Assert)):
             return PythonRstNode(self.node.test, self.translation_unit, self)
-        if isinstance(self.node, (ast.Raise, ast.ExceptHandler)) and hasattr(self.node, "exc") and self.node.exc is not None:
+        if isinstance(self.node, ast.Raise) and self.node.exc is not None:
             return PythonRstNode(self.node.exc, self.translation_unit, self)
         return None
 
