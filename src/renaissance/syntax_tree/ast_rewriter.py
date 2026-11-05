@@ -529,7 +529,8 @@ class _RewriteActions:
         if len(nodes) == 1:
             return self.__get_text(nodes[0])
         start = self.cor_offset(nodes[0].offset)
-        rewriter = Rewriter(self.content[start : self.cor_offset(nodes[-1].extended_end_offset)])
+        end = self.cor_offset(nodes[-1].extended_end_offset)
+        rewriter = Rewriter(self.content[start:end])
         for node in nodes:
             text = self.__get_text(node)
             if text != node.text:
