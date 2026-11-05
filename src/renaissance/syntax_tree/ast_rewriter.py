@@ -612,6 +612,9 @@ class _RewriteActions:
             end_offset = _RewriteActions.__extend_with_whitespace(end_offset, content)
         return start_offset, end_offset
 
+    def cor_offset(self, offset: int):
+        return offset - self.node.offset
+
     @staticmethod
     def get_comment_location(start_offset: int, stop_offset: int, content: bytes) -> tuple[int, int]:
         """Get the location of the comment before the location, but after the stop_location.
