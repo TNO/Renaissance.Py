@@ -12,7 +12,7 @@ The check fails on a unit without its counterpart, and on a path in the mirror t
 or deleted unit cannot leave its tests or its page behind.
 
 A mirror with `aspects = true` also accepts a counterpart split into one file per aspect: `{path}` followed by `___<aspect>`,
-such as `test_x___parsing.py` next to or instead of `test_x.py`. Whether names are well formed is not checked here, but by
+such as `test_x___parsing.py` instead of `test_x.py`, but not next to it. Whether names are well formed is not checked here, but by
 `tools/check_names.py`.
 
 A mirror may list known deviations: `exempt` names units that have no counterpart, `extra` names paths in the mirror that are no
@@ -60,7 +60,7 @@ class Mirror:
     A unit is a module (a `.py` file directly in `code`, other than `__init__.py`) or a package (a directory below `code` holding
     `__init__.py`), named by its path relative to `code`, without `.py`, separated by `/`. A template that ends with `/` names a
     directory. The modules of a sub-package of `code` are units of a mirror of that sub-package. With `aspects`, the counterpart
-    may be split into files with `___<aspect>` after the unit.
+    may instead be split into files with `___<aspect>` after the unit.
     """
 
     code: str
@@ -162,7 +162,7 @@ def find_units(mirror: Mirror, files: Iterable[str]) -> set[str]:
 
 
 def check_mirror(mirror: Mirror, files: set[str]) -> list[Violation]:
-    """Return how `files` break `mirror`: units without counterpart, paths that mirror no unit, and stale deviations."""
+    """Return how `files` break `mirror`: missing, doubled or orphaned counterparts, and stale deviations."""
     paths = with_directories(files)
     units = find_units(mirror, files)
     mirrored = {path: unit for path in sorted(paths) if (unit := mirror.unit_of(path)) is not None}
@@ -173,6 +173,9 @@ def check_mirror(mirror: Mirror, files: set[str]) -> list[Violation]:
             violations.append(Violation(mirror.location(unit), f"has no counterpart {mirror.counterpart(unit)}"))
         elif counterparts and unit in mirror.exempt:
             violations.append(Violation(mirror.location(unit), f"is exempt, but {counterparts[0]} exists: remove the exemption"))
+        elif len(counterparts) > 1 and (whole := mirror.counterpart(unit)) in counterparts:
+            split = next(path for path in counterparts if path != whole)
+            violations.append(Violation(mirror.location(unit), f"has both {whole} and {split}: keep one file or split it per aspect"))
     violations += [
         Violation(f"{mirror.code}/{unit}", "is exempt, but is not a unit: remove the exemption") for unit in sorted(mirror.exempt - units)
     ]

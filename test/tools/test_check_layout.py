@@ -47,16 +47,21 @@ def test_a_counterpart_without_its_unit_is_reported() -> None:
 
 
 def test_a_counterpart_split_per_aspect_mirrors_its_unit() -> None:
-    """Assert test files per aspect count as the counterpart of their module, with or without `test_x.py`."""
+    """Assert test files per aspect count as the counterpart of their module."""
     files = {
         "tools/check_a.py",
-        "tools/check_b.py",
-        "test/tools/test_check_a.py",
         "test/tools/test_check_a___parsing.py",
-        "test/tools/test_check_b___parsing.py",
-        "test/tools/test_check_b___reporting.py",
+        "test/tools/test_check_a___reporting.py",
     }
     assert _violations(TESTS_OF_TOOLS_PER_ASPECT, files) == []  # noqa: S101 (pytest assertion; new tests must not raise the S101 budget)
+
+
+def test_a_counterpart_both_whole_and_split_per_aspect_is_reported() -> None:
+    """Assert a module with `test_x.py` next to `test_x___<aspect>.py` is reported."""
+    whole, split = "test/tools/test_check_a.py", "test/tools/test_check_a___parsing.py"
+    violations = _violations(TESTS_OF_TOOLS_PER_ASPECT, {"tools/check_a.py", whole, split})
+    expected = f"tools/check_a.py: has both {whole} and {split}: keep one file or split it per aspect"
+    assert violations == [expected]  # noqa: S101 (pytest assertion; new tests must not raise the S101 budget)
 
 
 def test_a_counterpart_split_per_aspect_without_its_unit_is_reported() -> None:
