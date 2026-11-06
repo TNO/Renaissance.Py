@@ -249,7 +249,7 @@ def main(argv: list[str] | None = None) -> int:
         report += [f"  {violation.describe()}" for violation in violations]
         report.append(
             "\nCorrect the reference, or record the missing path in [tool.check_references] of pyproject.toml;"
-            " see docs/developer/tools/check-references.md."
+            " see docs/developer/tools/check_references.md."
         )
     else:
         known = sum(len(missing) for missing in config.missing.values())

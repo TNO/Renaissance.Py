@@ -24,7 +24,7 @@ import argparse
 import re
 import sys
 import tomllib
-from collections.abc import Callable, Iterable, Mapping
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import cast
@@ -33,11 +33,8 @@ from tools.shared.repository_files import list_files, with_directories
 
 ROOT = Path(__file__).resolve().parents[1]
 
-# The placeholders a mirror template may contain, and how each one spells the path of a unit.
-PLACEHOLDERS: dict[str, Callable[[str], str]] = {
-    "path": lambda path: path,
-    "kebab_path": lambda path: path.replace("_", "-"),
-}
+# The placeholder of a mirror template, replaced by the path of a unit.
+PLACEHOLDER = "{path}"
 UNIT_KINDS = ("modules", "packages")
 INIT = "__init__.py"
 
@@ -65,18 +62,13 @@ class Mirror:
     exempt: frozenset[str] = frozenset()
     extra: frozenset[str] = frozenset()
 
-    @property
-    def placeholder(self) -> str:
-        """Return the one placeholder of the template, without its braces."""
-        return next(name for name in PLACEHOLDERS if f"{{{name}}}" in self.template)
-
     def counterpart(self, unit: str) -> str:
         """Return the path of the counterpart of `unit`."""
-        return self.template.replace(f"{{{self.placeholder}}}", PLACEHOLDERS[self.placeholder](unit))
+        return self.template.replace(PLACEHOLDER, unit)
 
     def matches_template(self, path: str) -> bool:
         """Return whether `path` has the shape of a counterpart, whether or not its unit exists."""
-        before, after = self.template.split(f"{{{self.placeholder}}}")
+        before, after = self.template.split(PLACEHOLDER)
         return re.fullmatch(f"{re.escape(before)}.+{re.escape(after)}", path) is not None
 
     def location(self, unit: str) -> str:
@@ -133,8 +125,8 @@ def parse_mirrors(config: Mapping[str, object]) -> list[Mirror]:
         if not isinstance(units, str) or units not in UNIT_KINDS:
             message = f"`units` of the mirror of {code} must be one of {list(UNIT_KINDS)}"
             raise ConfigError(message)
-        if not isinstance(template, str) or sum(template.count(f"{{{name}}}") for name in PLACEHOLDERS) != 1:
-            message = f"`mirror` of the mirror of {code} must contain exactly one of {[f'{{{name}}}' for name in PLACEHOLDERS]}"
+        if not isinstance(template, str) or template.count(PLACEHOLDER) != 1:
+            message = f"`mirror` of the mirror of {code} must contain {PLACEHOLDER} exactly once"
             raise ConfigError(message)
         mirrors.append(Mirror(code, units, template, _strings(entry, "exempt"), _strings(entry, "extra")))
     return mirrors
@@ -206,7 +198,7 @@ def main(argv: list[str] | None = None) -> int:
         report += [f"  {violation.describe()}" for violation in violations]
         report.append(
             "\nAdd or move the counterpart, or record the deviation in [tool.check_layout] of pyproject.toml;"
-            " see docs/developer/tools/check-layout.md."
+            " see docs/developer/tools/check_layout.md."
         )
     else:
         unit_count = sum(len(find_units(mirror, files)) for mirror in mirrors)

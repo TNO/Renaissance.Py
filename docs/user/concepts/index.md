@@ -12,14 +12,14 @@ This section introduces the conceptual model of the repository.
 
 ## 1. Foundations
 
-1. [Evolving and maintaining code](code-base-evolution-and-maintenance.md)
+1. [Evolving and maintaining code](code_base_evolution_and_maintenance.md)
 1. [Automation](automation.md)
 
 ## 2. Core mechanisms
 
 1. [Matching](matching.md)
 1. [Filter](filter.md)
-1. [Rewrite semantics](rewrite-semantics.md)
+1. [Rewrite semantics](rewrite_semantics.md)
 
 ## 3. System qualities
 
@@ -33,8 +33,8 @@ This section introduces the conceptual model of the repository.
 
 ## 5. Reusable libraries
 
-1. [Standard analyses and transformations](standard-libraries.md)
+1. [Standard analyses and transformations](standard_libraries.md)
 
 ## 6. Python typing terms
 
-1. [Type parameters](type-parameters.md)
+1. [Type parameters](type_parameters.md)

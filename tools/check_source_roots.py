@@ -82,7 +82,7 @@ def main(argv: list[str] | None = None) -> int:
     else:
         report = ["These settings in pyproject.toml must list the same source roots, in the same order:"]
         report += [f"  {name} = {value}" for name, value in values.items()]
-        report.append("\nMake them equal; see docs/developer/tools/check-source-roots.md.")
+        report.append("\nMake them equal; see docs/developer/tools/check_source_roots.md.")
     print("\n".join(report))  # noqa: T201 (a script reports on stdout and stderr)
 
     return EXIT_OK if passed else EXIT_VIOLATIONS

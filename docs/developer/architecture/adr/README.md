@@ -71,4 +71,4 @@ Revision history:
 * 2026-09-03: Updated ADR 14 title to reflect the single-repository, extendable directory structure
   decision (renamed "rules" to "recipes" and "refactoring examples" to "rejuvenations").
 * 2026-09-09: Added ADR 15 (camelCase/snake_case Conversion and Digit-as-Word Naming).
-* 2026-10-29: Marked ADR 14 as superseded by [Repository structure](../repository-structure.md).
+* 2026-10-29: Marked ADR 14 as superseded by [Repository structure](../repository_structure.md).

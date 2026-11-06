@@ -8,9 +8,9 @@ https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
 # Renaissance.Py
 
-[![code quality](https://github.com/TNO/Renaissance.Py/actions/workflows/code-quality.yml/badge.svg)](https://github.com/TNO/Renaissance.Py/actions/workflows/code-quality.yml)
+[![code quality](https://github.com/TNO/Renaissance.Py/actions/workflows/code_quality.yml/badge.svg)](https://github.com/TNO/Renaissance.Py/actions/workflows/code_quality.yml)
 [![Coverage report](https://img.shields.io/badge/coverage-report-informational.svg)](https://tno.github.io/Renaissance.Py/coverage/)
-[![docs quality](https://github.com/TNO/Renaissance.Py/actions/workflows/docs-quality.yml/badge.svg)](https://github.com/TNO/Renaissance.Py/actions/workflows/docs-quality.yml)
+[![docs quality](https://github.com/TNO/Renaissance.Py/actions/workflows/docs_quality.yml/badge.svg)](https://github.com/TNO/Renaissance.Py/actions/workflows/docs_quality.yml)
 [![docs](https://img.shields.io/badge/docs-mkdocs-blue.svg)](https://tno.github.io/Renaissance.Py/)
 [![License: EPL 2.0](https://img.shields.io/badge/License-EPL_2.0-red.svg)](https://opensource.org/license/epl-2-0)
 
@@ -76,7 +76,7 @@ brew install llvm@22
 
 Open a new terminal and check that `clang --version` reports the expected version.
 On Windows the installer does not add LLVM to `PATH`, so add `C:\Program Files\LLVM\bin` to it yourself.
-See [Clang prerequisites](docs/developer/modules/parser-and-ast.md#clang-prerequisites) for selecting a specific driver
+See [Clang prerequisites](docs/developer/modules/parser_and_ast.md#clang-prerequisites) for selecting a specific driver
 when it is not on `PATH`.
 
 The code for the experiments is located in the [src](./src) folder.
@@ -158,7 +158,7 @@ An incomplete list of todo's:
     - A pattern should also have a semantic kind to ensure that exotic patterns, like created with PatternFactory.create_statement("$placeholder"),
       will only match a statement node and not every AST node.
 - Improve rewriter to support both AST-based and character-based code rewritting
-  (see [user documentation for details.](https://tno.github.io/Renaissance.Py/user/concepts/rewrite-semantics/))
+  (see [user documentation for details.](https://tno.github.io/Renaissance.Py/user/concepts/rewrite_semantics/))
 - Improve the rewriter such that the rewriter and the parser have exactly the same (internal) representation of the code,
   as difference in representations can result in subtle errors.
 - Improve pattern matcher to report multiple assignments to placeholders.

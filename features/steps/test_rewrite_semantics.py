@@ -4,7 +4,7 @@
 # of this repository, also available at:
 # https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
-"""Step implementations for features/rewrite-semantics.feature.
+"""Step implementations for features/rewrite_semantics.feature.
 
 Scenarios 1 and 2 are marked xfail because the corresponding behaviour is not
 yet fully implemented:
@@ -39,7 +39,7 @@ from renaissance.syntax_tree.ast_finder import find_nodes
 from renaissance.syntax_tree.ast_rewriter import ASTRewriter
 from renaissance.syntax_tree.match_finder import match_pattern
 
-_FEATURE = "../rewrite-semantics.feature"
+_FEATURE = "../rewrite_semantics.feature"
 
 
 # ── Scenario functions ────────────────────────────────────────────────────────

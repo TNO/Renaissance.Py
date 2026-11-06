@@ -38,7 +38,7 @@ Every node has:
 
 ## Related features
 
-- [Parsing and AST access](../features/parsing-and-ast-access.md)
+- [Parsing and AST access](../features/parsing_and_ast_access.md)
 
 ## Related tests
 

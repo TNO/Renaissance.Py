@@ -10,7 +10,7 @@ Audience: developers and testers.
 
 These tests use Hypothesis to verify that the rewrite-semantics rules hold
 universally, complementing the representative BDD examples in:
-  features/rewrite-semantics.feature
+  features/rewrite_semantics.feature
 
 Each test references the BDD scenario it universally covers and the concept
 rule it enforces (CONCEPT-REWRITE-SEMANTICS).
@@ -69,10 +69,10 @@ def test_replacing_same_node_twice_always_errors(
 
     This holds regardless of the replacement texts, and regardless of whether they are equal.
 
-    BDD counterpart : Scenario 0 in features/rewrite-semantics.feature
+    BDD counterpart : Scenario 0 in features/rewrite_semantics.feature
                       ("Replacements of the same node produce an error")
     Rule source     : CONCEPT-REWRITE-SEMANTICS
-                      docs/user/concepts/rewrite-semantics.md
+                      docs/user/concepts/rewrite_semantics.md
     """
     _, atu, matches = _parse_and_find(source)
     assume(len(matches) > 0)

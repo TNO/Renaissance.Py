@@ -438,7 +438,7 @@ def main(argv: list[str] | None = None) -> int:
         violations += [f"{pattern}: exclusion pattern matches no tracked file; delete it" for pattern in stale_patterns(files, test_inputs)]
     report = [*changes, *violations]
     if violations:
-        report.append(f"Copyright {command} failed: {len(violations)} violation(s); see docs/developer/tools/check-copyright.md.")
+        report.append(f"Copyright {command} failed: {len(violations)} violation(s); see docs/developer/tools/check_copyright.md.")
     elif command == "check":
         report.append("Copyright check passed.")
     else:

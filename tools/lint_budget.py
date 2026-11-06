@@ -9,7 +9,7 @@
 The repository cannot enable every ruff rule and pyright's strict mode yet: the existing
 issues would fail CI. Instead of disabling those checks, this script runs the strict
 configuration, counts the issues per kind (ruff rule code, pyright rule name), and compares
-the counts with a per-kind budget stored in `lint-budget.json`:
+the counts with a per-kind budget stored in `lint_budget.json`:
 
 * a pull request may never exceed the budget of any kind (new issues fail the check);
 * a reduction never fails the check: improving the code is always allowed, and the lower
@@ -30,7 +30,7 @@ from pathlib import Path
 
 from tools.shared.linters import PYRIGHT_STRICT_CONFIG, ROOT, count_pyright_issues, count_ruff_issues
 
-BUDGET_FILE = ROOT / "lint-budget.json"
+BUDGET_FILE = ROOT / "lint_budget.json"
 
 EXIT_OK = 0
 EXIT_OVER_BUDGET = 1
@@ -71,7 +71,7 @@ def _removal_advice() -> str:
         "\nNo ruff or pyright issues are left. This budget functionality can be removed:\n"
         '  1. move the strict settings into pyproject.toml (ruff `select = ["ALL"]`, pyright `typeCheckingMode = "strict"`);\n'
         f"  2. delete {BUDGET_FILE.name}, {PYRIGHT_STRICT_CONFIG.name} and tools/{Path(__file__).name};\n"
-        "  3. delete the 'Check ruff and pyright issue budgets' step from .github/workflows/code-quality.yml."
+        "  3. delete the 'Check ruff and pyright issue budgets' step from .github/workflows/code_quality.yml."
     )
 
 

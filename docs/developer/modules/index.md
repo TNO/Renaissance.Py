@@ -9,13 +9,13 @@ https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 # Code modules
 
 1. [Core model](core/model.md)
-1. [Parser and AST modules](parser-and-ast.md)
+1. [Parser and AST modules](parser_and_ast.md)
 1. [Matching modules](matching.md)
 1. [Filter modules](filter.md)
 1. [Analysis modules](analysis.md)
 1. [Transformation modules](transformation.md)
 1. [Observability modules](observability.md)
 1. [Strategy modules](strategy.md)
-1. [Rewrite semantics module](rewrite-semantics.md)
+1. [Rewrite semantics module](rewrite_semantics.md)
 1. [Refactoring recipes](recipes.md)
-1. [Rejected recipes](rejected-recipes.md)
+1. [Rejected recipes](rejected_recipes.md)

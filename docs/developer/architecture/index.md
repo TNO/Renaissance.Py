@@ -8,12 +8,12 @@ https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
 # Architecture
 
-This section describes the [code architecture](code-architecture.md), [repository structure](repository-structure.md),
-[test architecture](test-architecture.md), and [traceability model](traceability-model.md).
+This section describes the [code architecture](code_architecture.md), [repository structure](repository_structure.md),
+[test architecture](test_architecture.md), and [traceability model](traceability_model.md).
 
 ## Environment
 
-- [Regular expressions in Python](environment/regular-expressions.md)
+- [Regular expressions in Python](environment/regular_expressions.md)
 
 ## Related images
 

@@ -16,7 +16,7 @@ https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
 Recipes are `PythonRefactoring` subclasses that rewrite one Python file at a time, for gaps `ruff` does not fully or
 safely cover. This page covers `TypeParameterCheck`, the recipe behind
-[Type parameter modernization](../../user/features/type-parameter-modernization.md).
+[Type parameter modernization](../../user/features/type_parameter_modernization.md).
 
 ## Location
 
@@ -132,16 +132,16 @@ safely cover. This page covers `TypeParameterCheck`, the recipe behind
 
 ## Related features
 
-- [Type parameter modernization](../../user/features/type-parameter-modernization.md)
+- [Type parameter modernization](../../user/features/type_parameter_modernization.md)
 
 ## Related concepts
 
-- [Rewrite semantics](../../user/concepts/rewrite-semantics.md)
-- [Python version gates](../../user/features/type-parameter-modernization.md#feature-type-parameter-modernization-version-gates)
+- [Rewrite semantics](../../user/concepts/rewrite_semantics.md)
+- [Python version gates](../../user/features/type_parameter_modernization.md#feature-type-parameter-modernization-version-gates)
 
 ## Validated by test modules
 
-See *Verified by test modules* in [Type parameter modernization](../../user/features/type-parameter-modernization.md).
+See *Verified by test modules* in [Type parameter modernization](../../user/features/type_parameter_modernization.md).
 
 ## Extension points
 
@@ -275,7 +275,7 @@ See *Verified by test modules* in [Type parameter modernization](../../user/feat
 
     `T = TypeVar("T")` is removed, and `Pairs` refers to an undefined `T`.
 
-- `Unpack[Ts]` → `*Ts` is left to `ruff`'s `UP044`, see [Rejected recipes](rejected-recipes.md). In:
+- `Unpack[Ts]` → `*Ts` is left to `ruff`'s `UP044`, see [Rejected recipes](rejected_recipes.md). In:
 
     ```python
     Ts = TypeVarTuple("Ts")

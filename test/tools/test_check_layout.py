@@ -17,7 +17,6 @@ import pytest
 from tools import check_layout
 
 TESTS_OF_TOOLS = {"code": "tools", "units": "modules", "mirror": "test/tools/test_{path}.py"}
-PAGES_OF_TOOLS = {"code": "tools", "units": "modules", "mirror": "docs/tools/{kebab_path}.md"}
 TESTS_OF_CORE = {"code": "src/core", "units": "packages", "mirror": "test/unit/core/{path}/"}
 
 
@@ -50,11 +49,6 @@ def test_the_modules_of_a_sub_package_are_no_units() -> None:
     """Assert only the modules directly in `code` are units; a sub-package needs a mirror of its own."""
     files = {"tools/check_a.py", "tools/shared/__init__.py", "tools/shared/runner.py", "test/tools/test_check_a.py"}
     assert _violations(TESTS_OF_TOOLS, files) == []  # noqa: S101 (pytest assertion; new tests must not raise the S101 budget)
-
-
-def test_the_kebab_path_placeholder_replaces_underscores() -> None:
-    """Assert `{kebab_path}` spells `check_a_b` as `check-a-b`."""
-    assert _violations(PAGES_OF_TOOLS, {"tools/check_a_b.py", "docs/tools/check-a-b.md"}) == []  # noqa: S101 (pytest assertion; new tests must not raise the S101 budget)
 
 
 def test_packages_are_mirrored_by_directories_at_every_depth() -> None:
@@ -112,8 +106,8 @@ def test_stale_deviations_are_reported() -> None:
         ({"mirrors": [{**TESTS_OF_TOOLS, "unit": "modules"}]}, "unknown key"),
         ({"mirrors": [{**TESTS_OF_TOOLS, "code": "tools/"}]}, "`code`"),
         ({"mirrors": [{**TESTS_OF_TOOLS, "units": "files"}]}, "`units`"),
-        ({"mirrors": [{**TESTS_OF_TOOLS, "mirror": "test/tools/test.py"}]}, "exactly one"),
-        ({"mirrors": [{**TESTS_OF_TOOLS, "mirror": "{path}/{kebab_path}.md"}]}, "exactly one"),
+        ({"mirrors": [{**TESTS_OF_TOOLS, "mirror": "test/tools/test.py"}]}, "exactly once"),
+        ({"mirrors": [{**TESTS_OF_TOOLS, "mirror": "{path}/{path}.md"}]}, "exactly once"),
         ({"mirrors": [{**TESTS_OF_TOOLS, "exempt": "check_a"}]}, "list of strings"),
         ({"mirrors": [{**TESTS_OF_TOOLS, "exempt": ["check_a", "check_a"]}]}, "twice"),
     ],

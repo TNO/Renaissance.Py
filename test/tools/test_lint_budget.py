@@ -19,7 +19,7 @@ from tools import lint_budget
 @pytest.fixture
 def budget_file(tmp_path, monkeypatch):
     """AI: Redirect the budget file to a temporary location."""
-    path = tmp_path / "lint-budget.json"
+    path = tmp_path / "lint_budget.json"
     monkeypatch.setattr(lint_budget, "BUDGET_FILE", path)
     return path
 

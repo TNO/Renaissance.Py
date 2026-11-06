@@ -33,7 +33,7 @@ Authors:
 
 ## Context
 
-> **Superseded by [Repository structure](../repository-structure.md)** (`ARCH-CODE-STRUCTURE`, issue 187).
+> **Superseded by [Repository structure](../repository_structure.md)** (`ARCH-CODE-STRUCTURE`, issue 187).
 > Its decisions to keep one repository, to extend it by one directory per contribution, and to allow a license per
 > directory are carried over there. The layout below, with `integrations/`, `recipes/<language>` and
 > `rejuvenation/<language>`, is replaced by the layers core, parser bindings and recipes.

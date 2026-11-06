@@ -127,7 +127,7 @@ def main(argv: list[str] | None = None) -> int:
     if violations:
         report = ["These files are not UTF-8 encoded:"]
         report += [f"  {violation.describe(ROOT)}" for violation in violations]
-        report.append("\nRe-save each file as UTF-8 without a byte order mark; see docs/developer/tools/check-encoding.md.")
+        report.append("\nRe-save each file as UTF-8 without a byte order mark; see docs/developer/tools/check_encoding.md.")
     else:
         report = [f"Encoding check passed: {len(paths)} tracked file(s), all UTF-8."]
     print("\n".join(report))  # noqa: T201 (a script reports on stdout and stderr)

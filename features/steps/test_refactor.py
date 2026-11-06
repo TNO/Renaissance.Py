@@ -39,13 +39,13 @@ def context():
 
 
 @scenario(
-    "refactor-python-file.feature",
+    "refactor_python_file.feature",
     "python code",
     encoding="utf-8",
     features_base_dir=str(FEATURES_BASE_DIR),
 )
 def test_refactor_python_file() -> None:
-    """AI: Scenario test for the 'python code' refactor-python-file.feature scenario."""
+    """AI: Scenario test for the 'python code' refactor_python_file.feature scenario."""
 
 
 @given("'python' programming language")

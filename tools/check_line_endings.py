@@ -127,7 +127,7 @@ def main(argv: list[str] | None = None) -> int:
     if violations:
         report = ["These files are not stored with LF line endings:"]
         report += [f"  {violation.describe()}" for violation in violations]
-        report.append("\nRun `git add --renormalize .` and commit; see docs/developer/tools/check-line-endings.md.")
+        report.append("\nRun `git add --renormalize .` and commit; see docs/developer/tools/check_line_endings.md.")
     else:
         report = [f"Line ending check passed: {len(files)} tracked file(s), all text files stored with LF."]
     print("\n".join(report))  # noqa: T201 (a script reports on stdout and stderr)

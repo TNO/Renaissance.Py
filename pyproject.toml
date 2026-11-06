@@ -80,10 +80,10 @@ testpaths = ["test", "features"]
 pythonpath = ["src", "test", "features"]
 norecursedirs = ["features/targets", "*.egg", ".*", "_darcs", "build", "CVS", "dist", "node_modules", "venv", "{arch}"]
 markers = [
-    "xfail_prepend_descendant_first: known-failing rewrite-semantics.feature Examples row (see features/steps/conftest.py)",
-    "xfail_append_ancestor_first: known-failing rewrite-semantics.feature Examples row (see features/steps/conftest.py)",
-    "xfail_surround_descendant_first_shared_start: known-failing rewrite-semantics.feature Examples row (see features/steps/conftest.py)",
-    "xfail_surround_ancestor_first_shared_end: known-failing rewrite-semantics.feature Examples row (see features/steps/conftest.py)",
+    "xfail_prepend_descendant_first: known-failing rewrite_semantics.feature Examples row (see features/steps/conftest.py)",
+    "xfail_append_ancestor_first: known-failing rewrite_semantics.feature Examples row (see features/steps/conftest.py)",
+    "xfail_surround_descendant_first_shared_start: known-failing rewrite_semantics.feature Examples row (see features/steps/conftest.py)",
+    "xfail_surround_ancestor_first_shared_end: known-failing rewrite_semantics.feature Examples row (see features/steps/conftest.py)",
 ]
 
 [tool.coverage.run]
@@ -151,7 +151,7 @@ include = ["src", "test", "tools", "features"]
 exclude = ["features/targets", "**/node_modules", "**/__pycache__", "**/.*", ".venv"]
 extraPaths = ["src", "test", "features"]
 
-# The layout rules of docs/developer/architecture/repository-structure.md: the tests and the documentation mirror the code.
+# The layout rules of docs/developer/architecture/repository_structure.md: the tests and the documentation mirror the code.
 # This is their single source of truth, checked by tools/check_layout.py. Each mirror maps every unit under `code` onto its
 # counterpart; `exempt` lists units without a counterpart, `extra` lists paths in the mirror that are no counterpart.
 # The migration adds a mirror for each part of src/renaissance once that part is in its target place.
@@ -169,16 +169,16 @@ mirror = "test/tools/shared/test_{path}.py"
 [[tool.check_layout.mirrors]]
 code = "tools"
 units = "modules"
-mirror = "docs/developer/tools/{kebab_path}.md"
+mirror = "docs/developer/tools/{path}.md"
 exempt = [
-    "check_doc_images_policy",  # documented in docs/documentation-system/enforcement/image-policy-enforcement.md
-    "lint_budget",  # documented in docs/developer/coding-conventions.md
+    "check_doc_images_policy",  # documented in docs/documentation_system/enforcement/image_policy_enforcement.md
+    "lint_budget",  # documented in docs/developer/coding_conventions.md
     "mkdocs_hooks",
     "ruff_stats",
 ]
 extra = [
     "docs/developer/tools/index.md",
-    "docs/developer/tools/check-layering.md",  # Import Linter, configured in [tool.importlinter]
+    "docs/developer/tools/check_layering.md",  # Import Linter, configured in [tool.importlinter]
 ]
 
 [[tool.check_layout.mirrors]]
@@ -190,17 +190,17 @@ extra = ["test/unit/core/model/shared/"]  # test helpers
 [[tool.check_layout.mirrors]]
 code = "src/renaissance/core"
 units = "packages"
-mirror = "docs/developer/modules/core/{kebab_path}.md"
+mirror = "docs/developer/modules/core/{path}.md"
 
 [[tool.check_layout.mirrors]]
 code = "src/renaissance/core"
 units = "packages"
-mirror = "docs/developer/api/core/{kebab_path}.md"
+mirror = "docs/developer/api/core/{path}.md"
 
 [[tool.check_layout.mirrors]]
 code = "src/renaissance/core"
 units = "packages"
-mirror = "docs/user/core/{kebab_path}.md"
+mirror = "docs/user/core/{path}.md"
 
 # Every repository path named in the documentation, in comments and docstrings, and in feature files exists; checked by
 # tools/check_references.py. `exclude` lists the files that are not read; `known_issues` and `stale` list the paths that are
@@ -208,7 +208,7 @@ mirror = "docs/user/core/{kebab_path}.md"
 [tool.check_references]
 exclude = [
     "docs/developer/architecture/adr/",  # the decision records record history
-    "docs/developer/architecture/repository-structure-migration.md",  # names the paths that the migration creates
+    "docs/developer/architecture/repository_structure_migration.md",  # names the paths that the migration creates
 ]
 # Type parameter modernization is documented, but its code is not yet integrated.
 known_issues = [
@@ -242,7 +242,7 @@ stale = [
     "src/renaissance/core/matching/",
 ]
 
-# The dependency rules of docs/developer/architecture/repository-structure.md. This is their single source of truth.
+# The dependency rules of docs/developer/architecture/repository_structure.md. This is their single source of truth.
 # The module lists map today's packages onto the target units; each list shrinks to one package as the migration proceeds.
 # A test module follows the rules of the unit it tests. Every ignore_imports entry is a known violation, with its reason.
 [tool.importlinter]

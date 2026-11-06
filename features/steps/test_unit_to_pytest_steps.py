@@ -13,7 +13,7 @@ from steps.conftest import FEATURES_BASE_DIR
 
 
 @scenario(
-    "convert-unit-to-pytest.feature",
+    "convert_unit_to_pytest.feature",
     "convert unittest to pytest",
     encoding="utf-8",
     features_base_dir=str(FEATURES_BASE_DIR),

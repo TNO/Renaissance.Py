@@ -16,29 +16,29 @@ They are kept in the `tools` package, can all be run locally before a pull reque
 Run a tool from the repository root as a module, for example `python -m tools.check_layout`.
 
 The tools are independent of the rest of the repository: they import nothing from `renaissance`, `rejuvenation` or the tests, and
-only their own tests in `test/tools` import them. The [layering check](check-layering.md) enforces this. Within `tools`, a tool
+only their own tests in `test/tools` import them. The [layering check](check_layering.md) enforces this. Within `tools`, a tool
 may call another tool, and functionality that several tools share lives in `tools/shared`, which holds no tools itself.
 `tools/shared/linters.py`, for example, runs `ruff` and `pyright` for the lint budget and for `tools/ruff_stats.py`.
 
 ## Available tools
 
-1. [Layering check](check-layering.md) (`lint-imports`, configured in `pyproject.toml`):
+1. [Layering check](check_layering.md) (`lint-imports`, configured in `pyproject.toml`):
    forbids imports that break the dependency rules of the repository structure, in the sources and in the tests.
-1. [Layout check](check-layout.md) (`tools/check_layout.py`, configured in `pyproject.toml`):
+1. [Layout check](check_layout.md) (`tools/check_layout.py`, configured in `pyproject.toml`):
    requires the tests and the documentation to mirror the code.
-1. [Reference check](check-references.md) (`tools/check_references.py`, configured in `pyproject.toml`):
+1. [Reference check](check_references.md) (`tools/check_references.py`, configured in `pyproject.toml`):
    requires every repository path named in the documentation, the code and the tests to exist.
-1. [Encoding check](check-encoding.md) (`tools/check_encoding.py`):
+1. [Encoding check](check_encoding.md) (`tools/check_encoding.py`):
    requires every file that `git` tracks to be UTF-8, without a byte order mark.
-1. [Line ending check](check-line-endings.md) (`tools/check_line_endings.py`):
+1. [Line ending check](check_line_endings.md) (`tools/check_line_endings.py`):
    requires every text file that `git` tracks to be stored with LF line endings.
-1. [Copyright check](check-copyright.md) (`tools/check_copyright.py`):
+1. [Copyright check](check_copyright.md) (`tools/check_copyright.py`):
    checks, inserts and removes the copyright notice of `COPYRIGHT.txt` at the top of every tracked file.
-1. [Source root check](check-source-roots.md) (`tools/check_source_roots.py`):
+1. [Source root check](check_source_roots.md) (`tools/check_source_roots.py`):
    requires pytest, Ruff and Pyright to list the same source roots in `pyproject.toml`.
-1. [Lint and type-check budget](../coding-conventions.md#lint-and-type-check-budgets) (`tools/lint_budget.py`):
+1. [Lint and type-check budget](../coding_conventions.md#lint-and-type-check-budgets) (`tools/lint_budget.py`):
    counts the `ruff` and `pyright` issues per kind and fails when a change introduces a new one.
-1. [Image policy check](../../documentation-system/enforcement/image-policy-enforcement.md) (`tools/check_doc_images_policy.py`):
+1. [Image policy check](../../documentation_system/enforcement/image_policy_enforcement.md) (`tools/check_doc_images_policy.py`):
    enforces the naming and the location of documentation image assets.
 
 ## Adding a guard rail

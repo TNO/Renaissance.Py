@@ -49,7 +49,7 @@ The `__all__` of `renaissance.core.model`; see the [API reference](../../api/cor
 
 ## Related features
 
-- [Parsing and AST access](../../../user/features/parsing-and-ast-access.md)
+- [Parsing and AST access](../../../user/features/parsing_and_ast_access.md)
 
 ## Related concepts
 
@@ -62,7 +62,7 @@ The `__all__` of `renaissance.core.model`; see the [API reference](../../api/cor
 ## Extension points
 
 A parser binding implements `NodeProtocol` and maps its parser kinds onto `SemanticKind`; see
-[Parser and AST modules](../parser-and-ast.md#node-contract).
+[Parser and AST modules](../parser_and_ast.md#node-contract).
 
 ## Non-goals
 
