@@ -14,6 +14,8 @@ from hamcrest import (
     assert_that,
     contains_string,
     has_length,
+    has_properties,
+    has_property,
     is_,
     is_not,
 )
@@ -74,10 +76,15 @@ class TestPythonCstNode:
         )
         #          module  class     body        fun memem
         me = src.children[-1].children[5].children[2]
-        assert_that(me.name, is_("mememe"))
-        assert_that(me.preceding_sibling.name, is_("previous_me"))
-        assert_that(me.next_sibling.name, is_("next_me"))
-        assert_that(me.parent.parent.name, is_("Parent"))
+        assert_that(
+            me,
+            has_properties(
+                name="mememe",
+                preceding_sibling=has_property("name", "previous_me"),
+                next_sibling=has_property("name", "next_me"),
+                parent=has_property("parent", has_property("name", "Parent")),
+            ),
+        )
         # all children are mashed together
         assert_that(me.children, has_length(8))
 
@@ -124,3 +131,29 @@ class TestPythonCstNode:
         """)
         it = PythonCstNode.load_from_text(ann_fun, "fun.py").children[-1]
         assert_that(it.signature, contains_string("def test"))
+
+
+class _SubclassNode(PythonCstNode):
+    """A PythonCstNode subclass that adds nothing."""
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        "a = 0\n",
+        "class A:\n    def f(self): pass\n    def g(self): pass\n",
+        "@decorator\ndef f(x):\n    return x + 1\n",
+        "items = [n * 2 for n in range(10) if n % 3]\n",
+    ],
+)
+def test_load_builds_every_node_from_the_subclass(source: str, tmp_path: Path) -> None:
+    """Verify a subclass's load yields a tree whose nodes, roots, parents and siblings are all of that subclass."""
+    file = tmp_path / "module.py"
+    file.write_text(source, encoding="utf-8", newline="\n")
+    pending: list[PythonCstNode] = [_SubclassNode.load(file)]
+    while pending:
+        node = pending.pop()
+        for related in (node, node.root, node.parent, node.next_sibling, node.preceding_sibling):
+            if related is not None:
+                assert_that(related, is_(_SubclassNode))
+        pending.extend(node.children)

@@ -126,7 +126,3 @@ else
         assert_that(text, contains_string("|call(x);|"))
         assert_that(text, contains_string("test.c[88:113]"))
         assert_that(text, not_(contains_string("DeclarationExpression")))
-
-
-if __name__ == "__main__":
-    pytest.main()

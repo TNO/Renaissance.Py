@@ -17,6 +17,8 @@ from hamcrest import (
     contains_string,
     empty,
     has_length,
+    has_properties,
+    has_property,
     is_,
 )
 from hypothesis import HealthCheck, given, settings
@@ -144,10 +146,15 @@ class Parent:
         )
         #          module  class     body        fun memem
         me = src.children[-1].children[2].children[1]
-        assert_that(me.name, is_("mememe"))
-        assert_that(me.preceding_sibling.name, is_("previous_me"))
-        assert_that(me.next_sibling.name, is_("next_me"))
-        assert_that(me.parent.parent.name, is_("Parent"))
+        assert_that(
+            me,
+            has_properties(
+                name="mememe",
+                preceding_sibling=has_property("name", "previous_me"),
+                next_sibling=has_property("name", "next_me"),
+                parent=has_property("parent", has_property("name", "Parent")),
+            ),
+        )
         assert_that(me.children[1].children, has_length(4))
 
     @pytest.mark.skip("don't use ast comment parser")

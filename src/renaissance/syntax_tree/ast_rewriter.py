@@ -8,14 +8,15 @@
 
 import re
 import sys
-from collections.abc import Sequence
+from collections.abc import Callable, Mapping, Sequence
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Protocol, Self, runtime_checkable
 
 from more_itertools import flatten
 
 from renaissance.common import Rewriter
-from renaissance.core.model import SemanticKind, TextUtils
+from renaissance.core.model import TextUtils
 from renaissance.syntax_tree.match_finder import PatternMatch
 from renaissance.utils.ast_utils import is_ancestor_of
 
@@ -63,9 +64,6 @@ class _RewriteActionType(Enum):
     REMOVE = 4  # TODO: Why needed? Why isn't a REMOVE Action Type just a REPLACE Action Type (with an empty string)?
 
 
-DEFAULT_INDENT = 4
-
-
 class ASTRewriter:
     """AI: Rewriter that translates AST-level replace/remove/insert actions into byte-level edits."""
 
@@ -90,14 +88,20 @@ class ASTRewriter:
         target: Rewritable | Sequence[Rewritable] | PatternMatch | Sequence[PatternMatch],
         include_whitespace: bool = True,
         include_comments: bool = True,
+        transforms: Mapping[str, Callable[[str], str]] | None = None,
     ) -> None:
-        """AI: Queue a rewrite replacing target's source text with new_content."""
-        self.__rewrites.add(
-            _RewriteActionType.REPLACE,
-            target,
-            new_content,
-            include_whitespace,
-            include_comments,
+        """Queue a rewrite replacing target's source text with new_content.
+
+        Args:
+            new_content: The replacement text; for a `PatternMatch` target, its placeholders are expanded.
+            target: The nodes or match to replace.
+            include_whitespace: Whether the whitespace around target is replaced as well.
+            include_comments: Whether the comments around target are replaced as well.
+            transforms: Per placeholder, a function applied to the text of each node bound to it before expansion.
+
+        """
+        self.__rewrites.add_rewrite(
+            _RewriteAction(_RewriteActionType.REPLACE, target, new_content, include_whitespace, include_comments, transforms or {})
         )
 
     def remove(
@@ -155,28 +159,22 @@ class ASTRewriter:
         """AI: Return whether any rewrites have been queued."""
         return len(self.__rewrites.rewrites) > 0
 
-    @staticmethod
-    def _get_comment_location(start_offset: int, stop_offset: int, content: bytes) -> tuple[int, int]:
-        return _RewriteActions.get_comment_location(start_offset, stop_offset, content)
 
-
+@dataclass
 class _RewriteAction:
     """Data container for  a rewrite action to be applied later on to the AST."""
 
-    def __init__(
-        self,
-        action: _RewriteActionType,
-        target: Rewritable | Sequence[Rewritable] | PatternMatch | Sequence[PatternMatch],
-        replacement: str,
-        include_whitespace: bool,
-        include_comments: bool,
-    ) -> None:
-        self.action = action
-        self.target = target
-        self.replacement = replacement
-        self.nodes = self._get_nodes(target)
-        self.include_whitespace = include_whitespace
-        self.include_comments = include_comments
+    action: _RewriteActionType
+    target: Rewritable | Sequence[Rewritable] | PatternMatch | Sequence[PatternMatch]
+    replacement: str
+    include_whitespace: bool
+    include_comments: bool
+    transforms: Mapping[str, Callable[[str], str]] = field(default_factory=dict[str, Callable[[str], str]])
+    nodes: Sequence[Rewritable] = field(init=False)
+
+    def __post_init__(self) -> None:
+        """Derive the nodes the action applies to from its target."""
+        self.nodes = self._get_nodes(self.target)
 
     @staticmethod
     def _get_nodes(
@@ -238,7 +236,7 @@ class _RewriteActions:
             # except for if the rewrite node is the root node
             if any(self.__is_ancestor_in_nodes(n) for n in rewrite.nodes if n != self.node):
                 continue
-            new_content, nodelist = self.__prepare_replacement_content(rewrite.replacement, rewrite.target)
+            new_content, nodelist = self.__prepare_replacement_content(rewrite.replacement, rewrite.target, rewrite.transforms)
             if rewrite.action == _RewriteActionType.REPLACE:
                 self.__replace(
                     rewriter,
@@ -302,6 +300,16 @@ class _RewriteActions:
                         "in the same file - applying both would corrupt the output."
                     )
 
+    @staticmethod
+    def __is_nested(node: Rewritable, maybe_ancestor: Rewritable) -> bool:
+        """Return True if maybe_ancestor is an ancestor of node, walking .parent (works for every Rewritable)."""
+        parent = node.parent
+        while parent:
+            if parent is maybe_ancestor:
+                return True
+            parent = parent.parent
+        return False
+
     def __is_ancestor_in_nodes(self, node: Rewritable) -> bool:
         """Check if the given node is a descendant of any nodes in the rewrite list.
 
@@ -326,6 +334,11 @@ class _RewriteActions:
 
         result = any(no_conflict(node, rew) for rew in rewrite_nodes)
 
+        # TODO(FrancescoPezzella): an outer rewrite should suppress the rewrites nested inside it, but both are applied.
+        #  Dropping `and False` is not enough: no_conflict also matches each node with its own rewrite, so result is almost
+        #  always True and apply() would skip nearly every rewrite. A fix has to leave out the node's own rewrite and use a
+        #  true ancestor check such as __is_nested.
+        #  https://github.com/TNO/Renaissance.Py/issues/286
         return result and False  # TODO: Why `and False`
 
     def __replace(
@@ -440,6 +453,8 @@ class _RewriteActions:
             else spaces
         )
         # indent the new content except the first line
+        # TODO(FrancescoPezzella): unlike __replace, this ignores correct_indent, so the re-indentation can't be turned off.
+        #  https://github.com/TNO/Renaissance.Py/issues/283
         new_content = TextUtils.shift_right(new_content, indent, start_line=1)
 
         if before:
@@ -462,11 +477,13 @@ class _RewriteActions:
         """
         rewriter.replace(start, end, new_content.encode(self.encoding))
 
-    def __compose_replacement(self, replacement: str, matches: Sequence[PatternMatch]) -> str:
+    def __compose_replacement(
+        self, replacement: str, matches: Sequence[PatternMatch], transforms: Mapping[str, Callable[[str], str]]
+    ) -> str:
         all_placeholders = {p: n for m in matches for p, n in m.expansions.items()}
         for placeholder, nodes in all_placeholders.items():
             quoted_placeholder = re.escape(placeholder)
-            raw_signature = self.__get_texts(nodes)
+            raw_signature = self.__get_texts(nodes, transforms.get(placeholder))
             # replacement = replacement.replace(placeholder, raw_signature)
             while placeholder in replacement:
                 pattern = re.compile(r"( *)" + quoted_placeholder)
@@ -477,7 +494,7 @@ class _RewriteActions:
                     place_holder_length = len(placeholder)
                     index = replacement.index(placeholder)
                     # TODO a regex may be provided between backticks and the groups are used. This needs a better design
-                    # A preferable solution is to pass a transformer function to the compose_replacement
+                    # The transforms argument of replace() can do the same with a function per placeholder
                     if index + place_holder_length < len(replacement) and replacement[index + place_holder_length] == "`":
                         # ` ` means get regex
                         end_index = replacement.index("`", index + place_holder_length + 1)
@@ -488,6 +505,8 @@ class _RewriteActions:
                         if regex_match:
                             raw_signature = "".join(regex_match.groups())
                         place_holder_length = end_index - index + 1
+                    # TODO(FrancescoPezzella): this also indents the lines inside a multi-line string in the captured text.
+                    #  https://github.com/TNO/Renaissance.Py/issues/283
                     indent_replacement = raw_signature.replace("\n", "\n" + spaces)
                     if (
                         placeholder.startswith("$$")
@@ -501,19 +520,30 @@ class _RewriteActions:
                     print("Match doesn't match unexpectedly")
         return replacement
 
-    def __get_texts(self, nodes: Sequence[Rewritable]) -> str:
+    def __get_texts(self, nodes: Sequence[Rewritable], transform: Callable[[str], str] | None = None) -> str:
+        """Return the source from the first of the sibling nodes to the end of the last, dedented to the first.
+
+        The text between the nodes is kept. A node with rewrites queued inside it is replaced by its rewritten text,
+        and transform, if given, is applied to the text of each node.
+        """
         if len(nodes) == 1:
-            return self.__get_text(nodes[0])
-        # Use a ASTRewriter to only rewrite exactly that what needs to be rewritten
-        rewriter = ASTRewriter(nodes[0], self.encoding, correct_indent=False)
+            text = self.__get_text(nodes[0])
+            return transform(text) if transform else text
+        # TODO(FrancescoPezzella): an empty `$$x` raises IndexError here, e.g. `f($$args)` -> `g($$args)` on `f()`.
+        #  https://github.com/TNO/Renaissance.Py/issues/329
+        start = self.cor_offset(nodes[0].offset)
+        end = self.cor_offset(nodes[-1].extended_end_offset)
+        rewriter = Rewriter(self.content[start:end])
         for node in nodes:
-            rs = self.__get_text(node)
-            org_rs = node.text
-            if rs != org_rs:
-                rewriter.replace(rs, node)
-        result = rewriter.apply_to_string()
-        indent = self.derive_indent(nodes[0].offset)
-        return TextUtils.shift_left(result, indent, start_line=1)
+            text = self.__get_text(node)
+            if transform:
+                text = transform(text)
+            if text != node.text:
+                rewriter.replace(
+                    self.cor_offset(node.offset) - start, self.cor_offset(node.extended_end_offset) - start, text.encode(self.encoding)
+                )
+        result = rewriter.apply().decode(self.encoding)
+        return TextUtils.shift_left(result, self.derive_indent(start), start_line=1)
 
     def __get_text(self, node: Rewritable) -> str:
         if self._should_skip(node):
@@ -532,9 +562,10 @@ class _RewriteActions:
         self,
         new_content: str,
         target: PatternMatch | Rewritable | Sequence[Rewritable],
+        transforms: Mapping[str, Callable[[str], str]],
     ) -> tuple[str, Sequence[Rewritable]]:
         if isinstance(target, PatternMatch):
-            new_content = self.__compose_replacement(new_content, [target])
+            new_content = self.__compose_replacement(new_content, [target], transforms)
             node_list = target.nodes
         else:
             node_list = (
@@ -545,13 +576,6 @@ class _RewriteActions:
     def _should_skip(self, node: Rewritable):
         """If the node is not the first node of a pattern match it should be skipped."""
         return any(node in rewrite.nodes[1:] for rewrite in self.rewrites if isinstance(rewrite.target, PatternMatch))
-
-    @staticmethod
-    def _get_parent_statement(node: Rewritable) -> Rewritable | None:
-        parent = node
-        while parent and not parent.is_statement:
-            parent = parent.parent
-        return parent
 
     @staticmethod
     def __correct_for_comments_and_whitespace(
@@ -657,13 +681,3 @@ class _RewriteActions:
         if location == -1:
             return len(content)
         return location
-
-    @staticmethod
-    def __get_depth(node: Rewritable) -> int:
-        depth = 0
-        parent = node.parent
-        while parent:
-            if parent.semantic_kind is SemanticKind.STATEMENT or parent.parser_kind in {"CompoundStmt", "COMPOUND_STMT"}:
-                depth += 1
-            parent = parent.parent
-        return depth

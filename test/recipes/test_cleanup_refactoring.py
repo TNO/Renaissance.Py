@@ -52,7 +52,3 @@ class TestCleanupRefactoring:
     def test_should_not_be_instantiable(self) -> None:
         """AI: Verify CleanupRefactoring cannot be instantiated directly."""
         assert_that(calling(CleanupRefactoring), raises(Exception))
-
-
-if __name__ == "__main__":
-    pytest.main()

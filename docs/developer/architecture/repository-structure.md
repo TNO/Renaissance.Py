@@ -184,8 +184,7 @@ Decisions:
 - The `rejuvenation` package is dissolved: its command line moves to `recipes/cli/`, its examples to `recipes/examples/`.
 - An example that shows how one parser represents code is a unit test of that parser binding, not a recipe.
   Such a test documents, for instance, that the Python `ast` parser represents `else: if` and `elif` alike.
-  This applies to `python_ast_example`, `python_cst_example`, `python_rst_example`, `python_lst_example` and
-  `cpp_clang_lst_example`, unless the facts show that the example is a parser-specific recipe.
+  This applies to `cpp_clang_lst_example`, unless the facts show that the example is a parser-specific recipe.
 
 ### Public API
 
@@ -257,8 +256,6 @@ Internal: `Variant`, `find_variants`, `is_match_tree`, `variant_in_match_stmt`, 
 | --------------------------- | --- | ----------------------------- |
 | `ASTRewriter`, `Rewritable` | all | `syntax_tree/ast_rewriter.py` |
 | `Rewriter`, `Rewrite`       | all | `common/rewriter.py`          |
-
-Internal: `DEFAULT_INDENT`.
 
 #### `core.processing`
 

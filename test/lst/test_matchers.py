@@ -83,7 +83,3 @@ class TestMatchers:
         tree = adapter.parse_code(code)
         root = adapter.to_lst(code, tree)
         return root.root
-
-
-if __name__ == "__main__":
-    pytest.main()

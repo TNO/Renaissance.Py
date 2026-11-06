@@ -33,7 +33,6 @@ EMPTY_LIST = []
 DECLARATION_EXPRESSION_PARSER_KINDS = {"DeclRefExpr", "DECL_REF_EXPR"}
 IRRELEVANT_PROPS = {"comment"}
 IRRELEVANT_NODES = {"comment"}
-PRINT_ALL_NODES = False
 
 
 class Clangastreference:

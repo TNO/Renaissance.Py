@@ -16,6 +16,8 @@ from renaissance.syntax_tree.ast_node import ASTNode
 from renaissance.syntax_tree.ast_processor import ASTProcessor
 from renaissance.syntax_tree.match_finder import MatchFinder, PatternMatch
 
+# TODO(FrancescoPezzella): Replace with a lazy import in Python 3.15.
+#  https://github.com/TNO/Renaissance.Py/issues/275
 if TYPE_CHECKING:
     from renaissance.integrations.clang.c_pattern_factory import CPPPatternFactory
 

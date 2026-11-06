@@ -206,7 +206,7 @@ The modules of this phase move to `core/model/`, their tests to `test/unit/core/
 **1.5 The nodes.**
 
 - src: `syntax_tree/ast_node.py`, `ast_factory.py`, `ast_finder.py` and `ast_shower.py`.
-- test: `test/syntax_tree/test_node_finder.py`, `test_semantic_finder.py` and `test_removed_legacy_api.py`; and, if they test
+- test: `test/syntax_tree/test_node_finder.py` and `test_semantic_finder.py`; and, if they test
   the model rather than a binding, `test/c_cpp/test_ast_factory.py`, `test_ast_finder.py`, `test_astshower.py`,
   `test_ast_references.py` and `test/python/ast/test_python_astshower.py`. Their imports of a binding become known violations.
 - Checks: `git grep -E "utils\.text_utils|syntax_tree\.(semantic_kind|node_protocol|text_segment|syntax_node|siblings)"` and
@@ -341,7 +341,7 @@ binding by one contract per new binding.
 **7.4 The examples.**
 
 - src: the modules of `src/rejuvenation/`, except `cli.py`, to `recipes/examples/`. This includes the examples that show how
-  one parser represents code, such as `python_ast_example.py`; rewriting them as unit tests of their binding is not a move, so
+  one parser represents code, such as `cpp_clang_lst_example.py`; rewriting them as unit tests of their binding is not a move, so
   it is an issue.
 - test: `test/examples/` to `test/unit/recipes/examples/`.
 

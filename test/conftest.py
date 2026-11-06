@@ -107,7 +107,6 @@ KNOWN_FAILING_TESTS = {
         r"clang_json function-factory3-function-example_use_ast_function_finder]"
     ),
     r"test/examples/test_examples.py::TestExamplesDifferentStyles::test_example_add_comment_and_commit_json",
-    r"test/examples/test_examples.py::TestExamplesDifferentStyles::test_make_sure_that_recipe_still_run",
     r"test/extractors/test_code_graph_extractors.py::TestPythonCodeGraphExtractor::test_adds_file_and_folder_nodes",
     r"test/extractors/test_code_graph_extractors.py::TestPythonCodeGraphExtractor::test_adds_contains_edge_from_folder_to_file",
     r"test/extractors/test_code_graph_extractors.py::TestJavaCodeGraphExtractor::test_adds_file_and_folder_nodes",

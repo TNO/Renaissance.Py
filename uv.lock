@@ -40,18 +40,6 @@ wheels = [
 ]
 
 [[package]]
-name = "autopep8"
-version = "2.3.2"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "pycodestyle" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/50/d8/30873d2b7b57dee9263e53d142da044c4600a46f2d28374b3e38b023df16/autopep8-2.3.2.tar.gz", hash = "sha256:89440a4f969197b69a995e4ce0661b031f455a9f776d2c5ba3dbd83466931758", size = 92210, upload-time = "2025-01-14T14:46:18.454Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/9e/43/53afb8ba17218f19b77c7834128566c5bbb100a0ad9ba2e8e89d089d7079/autopep8-2.3.2-py2.py3-none-any.whl", hash = "sha256:ce8ad498672c845a0c3de2629c15b635ec2b05ef8177a6e7c91c74f3e9b51128", size = 45807, upload-time = "2025-01-14T14:46:15.466Z" },
-]
-
-[[package]]
 name = "babel"
 version = "2.18.0"
 source = { registry = "https://pypi.org/simple" }
@@ -244,20 +232,6 @@ wheels = [
 ]
 
 [[package]]
-name = "flake8"
-version = "7.5.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "mccabe" },
-    { name = "pycodestyle" },
-    { name = "pyflakes" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/9a/da/b0d00f8c4c676212284edd3cc3d371588ce0e36a349373c3a01e188b5639/flake8-7.5.0.tar.gz", hash = "sha256:0dab7566341aca0d80aa29b5812bdadf256caa6a63e6068e49ac2649918236a4", size = 47811, upload-time = "2026-10-28T20:17:22.128Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/5d/57/a3adc5f380f50ef3d01014cb9d3b8c17b25de9b89def20d559def4fc3c4e/flake8-7.5.0-py2.py3-none-any.whl", hash = "sha256:637ea1a443a78ed6ee461725cdf71ca93bc5cde0abf25436dbebdc3880b4e078", size = 57487, upload-time = "2026-10-28T20:17:21.061Z" },
-]
-
-[[package]]
 name = "gherkin-official"
 version = "29.0.0"
 source = { registry = "https://pypi.org/simple" }
@@ -331,6 +305,12 @@ sdist = { url = "https://files.pythonhosted.org/packages/42/f4/a0313ef208458d099
 wheels = [
     { url = "https://files.pythonhosted.org/packages/8d/95/f1659bff361c15293321f9ab4ddf0c93c0a32c1c6d2e6e7df4d6bf12a8e4/grimp-3.18-cp314-cp314-macosx_10_12_x86_64.whl", hash = "sha256:6e26c3020843ceeda2bb699ea09e27b6654f7823b51e779b9c607e204b34e1f4", size = 2152974, upload-time = "2026-10-26T09:58:00.403Z" },
     { url = "https://files.pythonhosted.org/packages/f1/9a/f4aa9e284fb82874c4f588143557ae4f871ed52c6689a55c49968b6e3b44/grimp-3.18-cp314-cp314-macosx_11_0_arm64.whl", hash = "sha256:7bc0587c8622e1275e217e924c27e54420f7a06db88d133f4adad18a0298b040", size = 2099498, upload-time = "2026-10-26T09:57:50.493Z" },
+    { url = "https://files.pythonhosted.org/packages/e0/89/ca91f3a223f9b1dce8aaf23a7b92a8afdb3c7bf6597348c793f3eef6e5d1/grimp-3.18-cp314-cp314-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:5083d474794a20d8b3d53c2955d9cc6e590fe3d55a467ec6e4940d2d1413e5d3", size = 2276232, upload-time = "2026-10-30T09:05:29.668Z" },
+    { url = "https://files.pythonhosted.org/packages/51/24/b782fc977992e0460991e9bde35e15d40e41057427ded9e8612a87a00400/grimp-3.18-cp314-cp314-manylinux2014_armv7l.manylinux_2_17_armv7l.whl", hash = "sha256:e3e101de453ba3a5ed7e6776857e12e75913a71254779240b952b00fb99be327", size = 2224038, upload-time = "2026-10-30T09:05:40.995Z" },
+    { url = "https://files.pythonhosted.org/packages/5d/7e/d95e166c2aafc14a20bdcda3e251c197d411d765e674db7d3a48532b5e14/grimp-3.18-cp314-cp314-manylinux2014_i686.manylinux_2_17_i686.whl", hash = "sha256:d5ca964848d32b871a6b5755ec9e2c8499945268fb07065805616c2f0ccc7b94", size = 2365371, upload-time = "2026-10-30T09:06:08.213Z" },
+    { url = "https://files.pythonhosted.org/packages/b5/a3/c092a0c5458378962e11df965e6588743d9544019e1c0b375a2d144e2b7f/grimp-3.18-cp314-cp314-manylinux2014_ppc64le.manylinux_2_17_ppc64le.whl", hash = "sha256:742661cf3af03b9cae83abbd47a86e3fee2e5241c9c0ca1506ee3a2d9d21c835", size = 2630405, upload-time = "2026-10-30T09:05:49.75Z" },
+    { url = "https://files.pythonhosted.org/packages/41/bf/2f7fff6f1a7ed5209fdc42455c7aeb76d5e64017db1641cf30ee9e8c39dd/grimp-3.18-cp314-cp314-manylinux2014_s390x.manylinux_2_17_s390x.whl", hash = "sha256:cc513ef2584df912b7bc165a7a1d549cf8f6032e80fc11cf947ca9c2fcf3c5a2", size = 2359624, upload-time = "2026-10-30T09:05:58.832Z" },
+    { url = "https://files.pythonhosted.org/packages/d7/bd/defaf1fa6f19173b1b4bcf87311a9bc72d66e6e6cddd57cec8473fd4030e/grimp-3.18-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:47ff6d75a2b8db5c0b98be66be74ff7d7ba6d603feca3b5cbe6684a849ffb08c", size = 2286960, upload-time = "2026-10-30T09:06:19.997Z" },
     { url = "https://files.pythonhosted.org/packages/e8/66/a96e7b9ecf3ffce2482d303663959a9f4d4ec33fceb667cc5071cd62a161/grimp-3.18-cp314-cp314-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:1453b4b00c324cdaabb5c70f57d45a84882dd877883cefbda859fd66b400bcd6", size = 2276234, upload-time = "2026-10-26T09:56:53.902Z" },
     { url = "https://files.pythonhosted.org/packages/a4/29/8bb9dccd6390ff78b6e49f6e073afe90c6add6f71e4f795e217ce0846fdb/grimp-3.18-cp314-cp314-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:d2611d37e446eee05e6621a28e4ae7b612899715cae637037404e7a0d91f327b", size = 2224037, upload-time = "2026-10-26T09:57:04.89Z" },
     { url = "https://files.pythonhosted.org/packages/18/af/25bf0c6cd7c1fe4f77be0354a96337cee516a4b48bbfe48ca1745ec70cc6/grimp-3.18-cp314-cp314-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:438544f3e7aaed32ddc09d8a8f6685e67e7ce43f0931f7149426fb7b483a6df6", size = 2365372, upload-time = "2026-10-26T09:57:29.904Z" },
@@ -346,6 +326,12 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/89/6b/d07a1f733c75522985e733990884a341009676ef41b135c5141d7599d401/grimp-3.18-cp314-cp314-win_arm64.whl", hash = "sha256:932e992a798c4b69ad77957cc09517c22cd1aa3b07cc85aba41e14406cb1a42f", size = 1925674, upload-time = "2026-10-26T09:58:42.745Z" },
     { url = "https://files.pythonhosted.org/packages/1f/7c/aa8d7bfe872f4bfba342ee0dae17eadd34dcc1e73b8822765f0528eea3e4/grimp-3.18-cp314-cp314t-macosx_10_12_x86_64.whl", hash = "sha256:73633cf2c822f34a38dd77e34e015afd6fc489998abeab8b91a7149fc63c1a1b", size = 2153687, upload-time = "2026-10-26T09:58:01.827Z" },
     { url = "https://files.pythonhosted.org/packages/1c/73/613c1e57e3db9c81779e4e5f7e6bb2c69118da64be9a4aba69cc74401594/grimp-3.18-cp314-cp314t-macosx_11_0_arm64.whl", hash = "sha256:1d7418bc8b511a12e21099b43349588785254d3d38ecf0dac88aa927c91ebc47", size = 2099246, upload-time = "2026-10-26T09:57:51.73Z" },
+    { url = "https://files.pythonhosted.org/packages/30/38/8962a691c78fde0be777e67805e994944000551882dce617b03a99d5e02b/grimp-3.18-cp314-cp314t-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:34090d38fba4223a6a9a5cc8f5c7523fdd9db7dfaef80dd90376d45242e59704", size = 2276732, upload-time = "2026-10-30T09:05:31.154Z" },
+    { url = "https://files.pythonhosted.org/packages/b0/ad/1c0ac6be3ea422ed8431bb392a0041c11300164761f2d2d3200e4f222f1d/grimp-3.18-cp314-cp314t-manylinux2014_armv7l.manylinux_2_17_armv7l.whl", hash = "sha256:3463911ead5015eaa91da3721b84c900cdcaec22d149133827a76ea86d798cb1", size = 2220324, upload-time = "2026-10-30T09:05:42.395Z" },
+    { url = "https://files.pythonhosted.org/packages/09/00/a30fdaa8c0793db7dfc17590f341e1e82b30989602338205030d4e4394d0/grimp-3.18-cp314-cp314t-manylinux2014_i686.manylinux_2_17_i686.whl", hash = "sha256:b989ad42e66d2ffb75dddfbc14bb980790fbbce6f58fdccc3df99cebf4661689", size = 2365815, upload-time = "2026-10-30T09:06:09.694Z" },
+    { url = "https://files.pythonhosted.org/packages/2b/19/1965cf2d8d218f0d763872c32362cf5dc05eb5c192c7a5996089e41e048a/grimp-3.18-cp314-cp314t-manylinux2014_ppc64le.manylinux_2_17_ppc64le.whl", hash = "sha256:4390a69445c586c1ad1c4aaab9e3ec44fcd3f662c04476dbb77b3b6dde5ed6ac", size = 2629781, upload-time = "2026-10-30T09:05:51.184Z" },
+    { url = "https://files.pythonhosted.org/packages/26/eb/26a06c8eab6a252c8c1e0a3bbe3cf71ddd9b0e3c288c6ee474df635e3f3b/grimp-3.18-cp314-cp314t-manylinux2014_s390x.manylinux_2_17_s390x.whl", hash = "sha256:a34f3414a8f944d1b30b958fe571f5ca07cd6fa8fd7dcffea89e995a6cd5ee0f", size = 2359278, upload-time = "2026-10-30T09:06:00.328Z" },
+    { url = "https://files.pythonhosted.org/packages/cb/02/d9497138b299b45eebe856159605752be9304fd661ab87f507fdbc10fa2e/grimp-3.18-cp314-cp314t-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:98e62116c9a323f00b580b6d9a4aade24d047bdf37b3a4f5098098aa055063be", size = 2290843, upload-time = "2026-10-30T09:06:21.903Z" },
     { url = "https://files.pythonhosted.org/packages/4b/95/eedf8708e71345d3a2adea470c493ecb1bc368e295d01a02b7c1777cc2c8/grimp-3.18-cp314-cp314t-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:4ecaf989c284fbd0abc8710b79565b5ac2165b9d74e77ced52463c576e5b00a0", size = 2276734, upload-time = "2026-10-26T09:56:55.162Z" },
     { url = "https://files.pythonhosted.org/packages/7c/43/8ee0455db564d983b0dd5875b709e360c68e54e454f7b14376f639b5ef27/grimp-3.18-cp314-cp314t-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:07abd5b67a0d2b8d1809cdea9f18d83c8a92525dc54b50726a30cfe89eb66d55", size = 2220324, upload-time = "2026-10-26T09:57:06.484Z" },
     { url = "https://files.pythonhosted.org/packages/6b/84/5720f66a65e084f6cb126f041454b1d6921ff3bc9ce1ffed559508c2621d/grimp-3.18-cp314-cp314t-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:9a59c0727f35f765a93c20cc0141fbab5bad4ae58b5fb80c9b7ed4e7ac3b3554", size = 2365814, upload-time = "2026-10-26T09:57:31.19Z" },
@@ -654,15 +640,6 @@ wheels = [
 ]
 
 [[package]]
-name = "mccabe"
-version = "0.7.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/e7/ff/0ffefdcac38932a54d2b5eed4e0ba8a408f215002cd178ad1df0f2806ff8/mccabe-0.7.0.tar.gz", hash = "sha256:348e0240c33b60bbdf4e523192ef919f28cb2c3d7d5c7794f74009290f236325", size = 9658, upload-time = "2022-01-24T01:14:51.113Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/27/1a/1f68f9ba0c207934b35b86a8ca3aad8395a3d6dd7921c0686e23853ff5a9/mccabe-0.7.0-py2.py3-none-any.whl", hash = "sha256:6c2d30ab6be0e4a46919781807b4f0d834ebdd6c6e3dca0bda5a15f863427b6e", size = 7350, upload-time = "2022-01-24T01:14:49.62Z" },
-]
-
-[[package]]
 name = "mdurl"
 version = "0.1.2"
 source = { registry = "https://pypi.org/simple" }
@@ -951,15 +928,6 @@ wheels = [
 ]
 
 [[package]]
-name = "pycodestyle"
-version = "2.15.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/86/df/178e41c9ed0ff33c23b3f3757e4e658c889f9abc5ad76ece6cd607b12e9c/pycodestyle-2.15.0.tar.gz", hash = "sha256:318f5db083869b4c4dad922d0b11124fb27ab181b6730b93371da671e31bd50e", size = 39765, upload-time = "2026-09-22T22:15:34.926Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/56/e2/480bcdb153feecde4d736b18c908c7eee4846f11d7547d2e0c71499af630/pycodestyle-2.15.0-py2.py3-none-any.whl", hash = "sha256:12fd2f73c7b8ee8845a0431111df8faf4c1a07d6e64e2ee7f0c74014dab14181", size = 31583, upload-time = "2026-09-22T22:15:34.007Z" },
-]
-
-[[package]]
 name = "pyee"
 version = "13.0.1"
 source = { registry = "https://pypi.org/simple" }
@@ -969,15 +937,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/8b/04/e7c1fe4dc78a6fdbfd6c337b1c3732ff543b8a397683ab38378447baa331/pyee-13.0.1.tar.gz", hash = "sha256:0b931f7c14535667ed4c7e0d531716368715e860b988770fc7eb8578d1f67fc8", size = 31655, upload-time = "2026-02-14T21:12:28.044Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a0/c4/b4d4827c93ef43c01f599ef31453ccc1c132b353284fc6c87d535c233129/pyee-13.0.1-py3-none-any.whl", hash = "sha256:af2f8fede4171ef667dfded53f96e2ed0d6e6bd7ee3bb46437f77e3b57689228", size = 15659, upload-time = "2026-02-14T21:12:26.263Z" },
-]
-
-[[package]]
-name = "pyflakes"
-version = "4.1.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/9b/43/f4566b992ab97abd18426aeba516a83c7a833230614a2c3f4d3e9d8ff0f0/pyflakes-4.1.0.tar.gz", hash = "sha256:592beb57058eb82eb190fb7514f2081c555c51000b029ff71286a681e6cf2f83", size = 67243, upload-time = "2026-10-28T20:10:02.469Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/fd/52/98c9a0e4718abe887121279457bc7140115df22d714b7183880eb61e359f/pyflakes-4.1.0-py2.py3-none-any.whl", hash = "sha256:b2e05e6bac8e49b67be2a6ffa63422c60f7193fc72e8180255907b41ec997dc1", size = 66258, upload-time = "2026-10-28T20:10:01.109Z" },
 ]
 
 [[package]]
@@ -1236,14 +1195,13 @@ version = "0.0.1"
 source = { editable = "." }
 dependencies = [
     { name = "arpeggio" },
-    { name = "autopep8" },
-    { name = "flake8" },
     { name = "libclang-ng" },
     { name = "libcst" },
     { name = "more-itertools" },
     { name = "networkx" },
     { name = "pyhamcrest" },
     { name = "pyperclip" },
+    { name = "ruff" },
     { name = "termcolor" },
     { name = "tree-sitter" },
     { name = "tree-sitter-cpp" },
@@ -1271,7 +1229,6 @@ dev = [
     { name = "pytest-cov" },
     { name = "pytest-mock" },
     { name = "pytest-profiling" },
-    { name = "ruff" },
 ]
 docs = [
     { name = "mkdocs" },
@@ -1285,7 +1242,6 @@ lint = [
     { name = "import-linter" },
     { name = "pymarkdownlnt" },
     { name = "pyright" },
-    { name = "ruff" },
 ]
 test = [
     { name = "coverage" },
@@ -1302,14 +1258,13 @@ test = [
 [package.metadata]
 requires-dist = [
     { name = "arpeggio", specifier = ">=2.0" },
-    { name = "autopep8", specifier = ">=2.0" },
-    { name = "flake8", specifier = ">=7.0" },
     { name = "libclang-ng", specifier = "==22.1.4.2" },
     { name = "libcst", specifier = ">=1.8.6" },
     { name = "more-itertools", specifier = ">=10.0" },
     { name = "networkx", specifier = ">=3.0" },
     { name = "pyhamcrest", specifier = ">=2.1" },
     { name = "pyperclip", specifier = ">=1.8" },
+    { name = "ruff", specifier = ">=0.5" },
     { name = "termcolor", specifier = ">=2.0" },
     { name = "tree-sitter", specifier = ">=0.25" },
     { name = "tree-sitter-cpp", specifier = "==0.23.4" },
@@ -1337,7 +1292,6 @@ dev = [
     { name = "pytest-cov", specifier = ">=7.0" },
     { name = "pytest-mock", specifier = ">=3.15" },
     { name = "pytest-profiling", specifier = ">=1.8" },
-    { name = "ruff", specifier = ">=0.5" },
 ]
 docs = [
     { name = "mkdocs", specifier = ">=1.6" },
@@ -1351,7 +1305,6 @@ lint = [
     { name = "import-linter", specifier = ">=2.15" },
     { name = "pymarkdownlnt", specifier = ">=0.9" },
     { name = "pyright", specifier = ">=1.1" },
-    { name = "ruff", specifier = ">=0.5" },
 ]
 test = [
     { name = "coverage", specifier = ">=7.0" },

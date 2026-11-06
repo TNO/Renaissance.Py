@@ -14,11 +14,6 @@ def matches_node_kind(mine, other) -> bool:
     return mine.parser_kind == other.parser_kind
 
 
-def is_clang_kind(node, *parser_kinds: str) -> bool:
-    """AI: Return True if node's parser_kind matches one of the given kind strings."""
-    return node.parser_kind in parser_kinds
-
-
 class CPPUtils:
     """AI: Constants and helpers for working with C++ reserved keywords and type names."""
 

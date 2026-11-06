@@ -10,8 +10,8 @@ from pathlib import Path
 
 from renaissance.core.model import SemanticKind
 from renaissance.integrations.clang.clang_json_ast_node import ClangJsonASTNode
-from renaissance.integrations.clang.cpp_utils import is_clang_kind
 from renaissance.integrations.clang.kinds import CLANG_KIND_MAP
+from renaissance.integrations.clang.predicates import is_clang_kind
 
 
 def test_clang_json_nodes_expose_protocol_metadata() -> None:

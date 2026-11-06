@@ -74,7 +74,3 @@ else:
         assert_that(text, contains_string("(Call, call(x),"))
         assert_that(text, contains_string("test.py[15:18]"))
         assert_that(text, contains_string("call(y)"))
-
-
-if __name__ == "__main__":
-    pytest.main()

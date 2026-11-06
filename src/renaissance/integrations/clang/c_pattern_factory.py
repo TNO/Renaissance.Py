@@ -254,17 +254,6 @@ class CPatternFactory:
         return list(k for k in set(re.findall(pattern, text)) if k not in CPPUtils.RESERVED_KEYWORDS)
 
     @staticmethod
-    def _get_dollar_keywords_from_text(text: str) -> Sequence[str]:
-        # regex to get keywords that start with one of two dollars followed by a \\w+
-        pattern = re.compile(r"\${1,2}[a-zA-Z]\w*")
-        return list(set(re.findall(pattern, text)))
-
-    @staticmethod
-    def _get_non_dollar_keywords_from_text(text: str) -> Sequence[str]:
-        pattern = re.compile(r"[^$][a-zA-Z]\w*")
-        return list(set(re.findall(pattern, text)))
-
-    @staticmethod
     def _to_declaration(keywords: Sequence[str], prefix: str = "int ", postfix: str = ";") -> Sequence[str]:
         return [prefix + keyword + postfix for keyword in keywords]
 

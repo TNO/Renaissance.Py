@@ -95,7 +95,3 @@ class TestLanguages:
         assert_that(lst, is_(LST))
         nodes = list(traverse(lst.root))
         assert_that(nodes, has_length(greater_than(0)))
-
-
-if __name__ == "__main__":
-    pytest.main()

@@ -34,8 +34,7 @@ dependencies = [
     "tree-sitter-cpp==0.23.4",
     "tree-sitter-java==0.23.5",
     "libcst>=1.8.6",
-    "autopep8>=2.0",
-    "flake8>=7.0",
+    "ruff>=0.5",
 ]
 
 [dependency-groups]
@@ -51,7 +50,6 @@ test = [
     "coverage>=7.0",
 ]
 lint = [
-    "ruff>=0.5",
     "codespell>=2.4",
     "pyright>=1.1",
     "pymarkdownlnt>=0.9",
@@ -214,7 +212,7 @@ exclude = [
 ]
 # Type parameter modernization is documented, but its code is not yet integrated.
 known_issues = [
-    "src/rejuvenation/migration-type-recipes.py",
+    "src/rejuvenation/migration_type_recipes.py",
     "src/renaissance/recipes/step_runner.py",
     "src/renaissance/recipes/type_parameter_check.py",
     "src/renaissance/recipes/type_parameter_declarations.py",
@@ -284,7 +282,7 @@ layers = [
     : renaissance.syntax_tree.ast_shower : renaissance.utils
     : test.unit.core.model
     : test.syntax_tree.test_node_finder
-    : test.syntax_tree.test_semantic_finder : test.syntax_tree.test_removed_legacy_api
+    : test.syntax_tree.test_semantic_finder
     : test.utils.test_ast_utils : test.search_strategies : test.conftest""",
 ]
 ignore_imports = [
@@ -295,6 +293,8 @@ ignore_imports = [
     # Unit tests of the core that parse real code instead of using test doubles.
     "test.utils.test_ast_utils -> renaissance.integrations.clang",
     "test.syntax_tree.test_ast_processor -> renaissance.integrations.clang",
+    "test.syntax_tree.test_batch_ast_processor -> renaissance.integrations.clang",
+    "test.syntax_tree.test_recipe_ast_processor -> renaissance.integrations.clang",
     "test.syntax_tree.test_ast_processor_semantic_kind -> renaissance.integrations.python.ast.factory",
     "test.syntax_tree.test_ast_processor_semantic_kind -> renaissance.integrations.python.ast.rst_node",
     "test.syntax_tree.test_ast_rewriter -> renaissance.integrations.clang",
@@ -315,6 +315,8 @@ ignore_imports = [
     "test.syntax_tree.test_semantic_finder -> renaissance.integrations.python.ast.rst_node",
     # A test of the node protocol that checks its use by the matcher.
     "test.unit.core.model.test_node_protocol -> renaissance.syntax_tree.match_finder",
+    # A test of the batch processor that runs a real recipe step instead of a test double.
+    "test.syntax_tree.test_batch_ast_processor -> renaissance.recipes",
 ]
 
 [[tool.importlinter.contracts]]
@@ -355,12 +357,15 @@ declare each binding it depends on in ignore_imports, with the reason shown by t
 # Declared dependencies of parser-specific recipes come first, then the known violations.
 ignore_imports = [
     # Parsing a file and creating patterns without naming the parser is missing in the core.
+    "renaissance.recipes.python_refactoring -> renaissance.integrations.python.ast.cst_node",
     "renaissance.recipes.python_refactoring -> renaissance.integrations.python.ast.factory",
     "renaissance.recipes.python_refactoring -> renaissance.integrations.python.ast.rst_node",
     "renaissance.recipes.python_refactoring -> renaissance.integrations.python.ast.util",
     "rejuvenation.cli -> renaissance.integrations.python.ast.extractor",
     "rejuvenation.cli -> renaissance.integrations.python.ast.rst_node",
     "rejuvenation.cli -> renaissance.project.project_scanner",
+    "test.recipes.test_python_refactoring -> renaissance.integrations.python.ast.cst_node",
+    "test.recipes.test_python_refactoring -> renaissance.integrations.python.ast.factory",
     "test.recipes.test_python_refactoring -> renaissance.integrations.python.ast.rst_node",
     "test.recipes.test_refactor_with_rewrite -> renaissance.integrations.python.ast.rst_node",
     "test.recipes.test_unit_to_pytest -> renaissance.integrations.python.ast.rst_node",
@@ -370,13 +375,7 @@ ignore_imports = [
     # A pattern factory protocol is missing in the core; CPPPatternFactory is used in an annotation only.
     "renaissance.syntax_tree.ast_refactor_actions -> renaissance.integrations.clang.c_pattern_factory",
     # The examples that show how one parser represents code become unit tests of that binding; the others are violations.
-    "rejuvenation.batch_process_examples -> renaissance.integrations.**",
     "rejuvenation.cpp_clang_lst_example -> renaissance.integrations.**",
-    "rejuvenation.python_ast_example -> renaissance.integrations.**",
-    "rejuvenation.python_cst_example -> renaissance.integrations.**",
-    "rejuvenation.python_lst_example -> renaissance.integrations.**",
-    "rejuvenation.python_rst_example -> renaissance.integrations.**",
-    "rejuvenation.recipe_example -> renaissance.integrations.**",
     "rejuvenation.refactor_examples_different_styles -> renaissance.integrations.**",
     "rejuvenation.refactor_with_nested_compositions -> renaissance.integrations.**",
     "rejuvenation.remove_unused_variable -> renaissance.integrations.**",

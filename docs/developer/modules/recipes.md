@@ -34,7 +34,11 @@ safely cover. This page covers `TypeParameterCheck`, the recipe behind
   names each project file imports from the others.
 - `src/renaissance/utils/cst_utils.py`: a module's top-level statements, the names they read or bind and the comment
   trailing a statement's line.
-
+  
+<!-- TODO: FrancescoPezzella - list ruff_utils.py here once a recipe uses run_ruff_import_cleanup (#111):
+- `src/renaissance/utils/ruff_utils.py`: `run_ruff_import_cleanup`, which removes unused imports and sorts the imports
+  of the files a recipe changed, with ruff. -->
+  
 ## Public entry points
 
 - `TypeParameterCheck.check()` (and `run()`): runs the three phases through `run_steps`, committing to disk between them.
@@ -47,7 +51,7 @@ safely cover. This page covers `TypeParameterCheck`, the recipe behind
     | `remove_orphaned_declarations()` (only removes declarations) | `orphaned_unsafe_reasons`   |
 
 - `type_param_kinds`: maps each type parameter name the phases see to `"TypeVar"`, `"ParamSpec"` or `"TypeVarTuple"`.
-- Attributes set by the CLI (`migration-type-recipes.py`): `min_python`, `project_root` (falls back to the file's
+- Attributes set by the CLI (`migration_type_recipes.py`): `min_python`, `project_root` (falls back to the file's
   folder), `project_wide_imported_names` (from `collect_project_imported_names`), `ignore_localize_origins` (absolute
   paths of the files `--ignore` names) and `localize_imports` (`False` with `--no-localization`). `ignored_names` holds
   the type parameter names this file imports from those files, or from any project file when `localize_imports` is
@@ -62,7 +66,7 @@ safely cover. This page covers `TypeParameterCheck`, the recipe behind
   replaces only the node it changes, so formatting and comments elsewhere are kept.
 
 - **Unsafe reasons.** `is_safe_to_remove`, `is_safe_to_localize` and `conversion_refusal` return an `UnsafeReason`
-  or `None`. Each of the 8 reasons has an `UnsafeRule` (message + docs anchor) in `UNSAFE_RULES`. The CLI report prints
+  or `None`. Each of the 8 reasons has an `UnsafeRule` (its message) in `UNSAFE_RULES`. The CLI report prints
   each message and links `DOCS_BASE_URL` once.
 
 - **Refusal rules.** Five of the reasons are independent checks, listed as `RefusalRule` entries in
@@ -121,7 +125,7 @@ safely cover. This page covers `TypeParameterCheck`, the recipe behind
   the file's last import, so no import is left below code (E402). A localization is written where its import was
   when that import shares its line with other statements and is dropped, when no import of the file remains, or when
   a statement between it and the last import reads one of its names. Merging and sorting the added imports, and
-  removing imports that became unused, is left to the CLI's `ruff check --fix --select F401,I001` pass.
+  removing imports that became unused, is left to the CLI's final `ruff` pass (F401, I001).
 
 - **Line endings.** Files are read with universal newlines and a modified file is written back with LF, also on the
   lines the recipe did not change. A file the recipe does not modify is not rewritten.

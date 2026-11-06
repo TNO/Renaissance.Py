@@ -168,7 +168,3 @@ class TestPythonAstMatcherBasic:
     def test_pairs_of_equivalence_classes(self, a: NodeProtocol, b: NodeProtocol, *, expected: bool) -> None:
         """AI: Verify if-statement pairs from the same or different equivalence classes match as expected."""
         assert_pair_equivalence(a, b, expected)
-
-
-if __name__ == "__main__":
-    pytest.main()

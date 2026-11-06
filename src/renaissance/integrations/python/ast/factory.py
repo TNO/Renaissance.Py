@@ -28,8 +28,6 @@ from renaissance.utils.ast_utils import replace_dollar, use_dollar
 _MATCH_ALL_RE = re.compile(r"^" + re.escape(MATCH_ALL) + r"\w+$")
 _MATCH_ONE_RE = re.compile(r"^" + re.escape(MATCH_ONE) + r"\w+$")
 
-SHOW_NODE = False
-
 
 class PythonPattern:
     """AI: Wrap a Python AST/RST node as a matchable pattern, detecting match-all/match-one placeholders."""
@@ -93,8 +91,6 @@ class PythonFactory:
             clazz.load_from_text = ASTExtension.load_from_ast
             # matcher
             clazz.node = ASTExtension.ast_node
-
-            # clazz.name = ASTExtension.ast_name
             clazz.parser_kind = ASTExtension.parser_kind
             clazz.semantic_kind = ASTExtension.semantic_kind
             clazz.properties = ASTExtension.ast_properties

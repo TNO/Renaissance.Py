@@ -6,6 +6,7 @@
 
 """AI: Base processor for Python-specific source refactoring recipes."""
 
+import ast
 import importlib
 import re
 from collections.abc import Sequence
@@ -15,6 +16,7 @@ from typing import cast
 from termcolor import colored
 
 from renaissance.core.model import SemanticKind
+from renaissance.integrations.python.ast.cst_node import PythonCstNode
 from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
 from renaissance.integrations.python.ast.util import to_str
@@ -32,12 +34,18 @@ def snake_case(snippet: str) -> str:
     return snippet.lower()
 
 
-class PythonRefactoring(ASTProcessor):
-    """AI: Base processor for Python-specific source refactoring recipes."""
+class PythonRefactoring[NodeT: PythonRstNode | PythonCstNode = PythonRstNode](ASTProcessor):
+    """Base processor for Python-specific source refactoring recipes.
 
-    def __init__(self, file) -> None:
-        """AI: Prepare a Python-specific refactoring processor for the given source file."""
-        factory = PythonFactory(PythonRstNode)
+    NodeT is the node class the file is parsed into: PythonRstNode by default, or PythonCstNode. A subclass picks the
+    CST backend with PythonRefactoring[PythonCstNode] and passes the same class as node_class; NodeT then types body.
+    See PEP 695 (https://peps.python.org/pep-0695/) for the bound and PEP 696 (https://peps.python.org/pep-0696/)
+    for the default.
+    """
+
+    def __init__(self, file: Path, node_class: type[NodeT] = PythonRstNode) -> None:
+        """Prepare a refactoring processor for file, parsed with node_class (the RST backend by default)."""
+        factory = PythonFactory(node_class)
         atu = factory.create(file)
         super().__init__(atu, factory, False)
         self.pattern_factory = PythonPatternFactory(self.factory)
@@ -94,10 +102,10 @@ class PythonRefactoring(ASTProcessor):
         positional_args = [arg_node.signature for arg_node in (args_implicit.children if args_implicit else [])]
         keyword_args: dict[str, str] = {}
         for kw_node in keywords_implicit.children if keywords_implicit else []:
-            kw_name = kw_node.node.arg
-            if kw_name:
+            keyword = kw_node.node
+            if isinstance(keyword, ast.keyword) and keyword.arg:
                 value_node = kw_node.children[0] if kw_node.children else kw_node
-                keyword_args[str(kw_name)] = value_node.signature
+                keyword_args[keyword.arg] = value_node.signature
 
         return positional_args, keyword_args
 
@@ -121,9 +129,13 @@ class PythonRefactoring(ASTProcessor):
         return [child.signature for child in bases_implicit.children]
 
     @property
-    def body(self) -> Sequence[PythonRstNode]:
-        """AI: Return the root node's body statements."""
-        return cast("PythonRstNode", cast("object", self.root)).body
+    def body(self) -> Sequence[NodeT]:
+        """Return the module's top-level statements; with the CST backend, a simple statement comes as its whole line."""
+        root = cast("NodeT", cast("object", self.root))
+        if isinstance(root, PythonCstNode):
+            wrappers = root.translation_unit.wrappers
+            return cast("Sequence[NodeT]", [wrappers[statement] for statement in root.translation_unit.atu.body])
+        return cast("Sequence[NodeT]", root.body)
 
     def run(self) -> None:
         """AI: Run this refactoring recipe. Subclasses override this to perform the refactoring."""

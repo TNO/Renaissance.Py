@@ -7,7 +7,7 @@
 """Tests for the Pythonic-style (RST) AST pattern matching."""
 
 import pytest
-from hamcrest import assert_that, empty, has_length, is_, is_in, is_not
+from hamcrest import assert_that, empty, has_length, has_property, is_, is_in, is_not
 
 from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
@@ -85,7 +85,7 @@ class TestPythonicStyle:
         """AI: Verify expression statements (call, return, raise) expose the expected kind and inner expression name."""
         it = PythonRstNode.load_from_text(raw).body[-1]
         assert_that(it.parser_kind, is_(kind))
-        assert_that(it.expr.name, is_(expr))
+        assert_that(it.expr, has_property("name", expr))
 
     def test_ann_assign_node(self) -> None:
         """AI: Verify an annotated assignment exposes its name, type annotation, operator, and value."""

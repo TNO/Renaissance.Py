@@ -6,10 +6,18 @@
 
 """Tests for the BatchASTProcessor."""
 
-from hamcrest import assert_that, has_length, is_
+from collections.abc import Callable, Iterator
+
+import pytest
+from hamcrest import assert_that, equal_to, has_length, is_
 from pytest_mock import MockerFixture
 
 import renaissance.syntax_tree.batch_ast_processor as bap
+from renaissance.core.model import SemanticKind
+from renaissance.integrations.clang import ClangASTNode
+from renaissance.recipes import CleanupRefactoring
+from renaissance.syntax_tree.ast_factory import ASTFactory
+from renaissance.syntax_tree.ast_processor import ASTProcessor
 from renaissance.syntax_tree.batch_ast_processor import BatchASTProcessor
 
 
@@ -101,3 +109,58 @@ class TestBatchASTProcessor:
 
         assert_that(results, has_length(1))
         assert_that(results[0], is_(action_result))
+
+
+SOURCE = "void g(int a);\nvoid f() {\n    int unused = 1;\n    int used = 2;\n    g(used);\n}\n"
+
+
+def clang_files(files: dict[str, str]) -> bap.IterableProvider:
+    """Return a provider that parses each (filename, source) pair with Clang."""
+
+    def provider() -> Iterator[bap.AST_FACTORY_AND_ATU]:
+        factory = ASTFactory(ClangASTNode)
+        for filename, source in files.items():
+            yield factory, factory.create_from_text(source, filename)
+
+    return provider
+
+
+def comment_out_calls(ast_processor: ASTProcessor) -> None:
+    """Prefix every call with a line comment marker."""
+    for call in ast_processor.find_semantic_kind(SemanticKind.CALL):
+        ast_processor.insert_before("// ", call, include_whitespace=False, include_comments=False)
+
+
+class TestBatchASTProcessorOnClangCode:
+    """BatchASTProcessor rewrites real C code in memory."""
+
+    @pytest.mark.parametrize(
+        ("method", "expected"),
+        [
+            pytest.param(
+                BatchASTProcessor.once,
+                "void g(int a);\nvoid f() {\n    int used = 2;\n    // g(used);\n}\n",
+                id="once",
+            ),
+            pytest.param(
+                BatchASTProcessor.repeat,
+                "void g(int a);\nvoid f() {\n    // g(used);\n}\n",
+                id="repeat-until-nothing-changes",
+            ),
+        ],
+    )
+    def test_rewrites_until_nothing_changes(self, method: Callable[..., None], expected: str) -> None:
+        """Once applies the actions in one pass; repeat also removes the variable that the first pass left unused."""
+        processor = BatchASTProcessor(in_memory=True)
+
+        method(processor, clang_files({"a.c": SOURCE}), [CleanupRefactoring.remove_unused_variables, comment_out_calls])
+
+        assert_that(processor.in_memory_files, equal_to({"a.c": expected}))
+
+    def test_file_filter_limits_the_rewritten_files(self) -> None:
+        """Only files whose name matches the filter are processed."""
+        processor = BatchASTProcessor(in_memory=True)
+
+        processor.once(clang_files({"a.c": SOURCE, "b.c": SOURCE}), CleanupRefactoring.remove_unused_variables, r"a\.c")
+
+        assert_that(list(processor.in_memory_files), equal_to(["a.c"]))

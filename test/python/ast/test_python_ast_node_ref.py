@@ -209,7 +209,3 @@ class TestPythonNode:
         func_node = first(n for n in traverse(ast) if n.name == "f")
         ast.translation_unit.lazy_create_refers(ast)
         assert_that(func_node.references, has_length(0))
-
-
-if __name__ == "__main__":
-    pytest.main()

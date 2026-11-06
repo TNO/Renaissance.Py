@@ -37,7 +37,7 @@ The `__all__` of `renaissance.core.model`; see the [API reference](../../api/cor
 - `node_protocol.py` defines `NodeProtocol`, in terms of `SemanticKind`.
 - `text_segment.py` defines `TextSegment`.
 - `syntax_node.py` defines `SyntaxNode`, and `siblings.py` defines `Siblings`, both in terms of `TextSegment`.
-- `text_utils.py` defines `TextUtils`, and `fix_indent`, which has no users.
+- `text_utils.py` defines `TextUtils`.
 
 ## Related features
 
