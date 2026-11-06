@@ -402,7 +402,7 @@ run the tool again.
 - `test/recipes/test_type_parameter_rules.py`
 - `test/recipes/test_step_runner.py`
 - `test/recipes/test_python_refactoring.py`
-- `test/utils/test_cst_utils.py`
+- `test/python/ast/test_cst_utils.py`
 - `test/utils/test_import_resolution.py`
 - `test/rejuvenation/test_migration_type_recipes.py`
 
@@ -411,7 +411,7 @@ run the tool again.
 - [Refactoring recipes](../../developer/modules/recipes.md)
 - `src/renaissance/recipes/type_parameter_check.py`, `type_parameter_rules.py`, `type_parameter_declarations.py`,
   `type_parameter_localization.py`, `type_parameter_uses.py`, `step_runner.py` and `python_refactoring.py`.
-- `src/renaissance/utils/import_resolution.py` and `cst_utils.py`
+- `src/renaissance/utils/import_resolution.py` and `src/renaissance/integrations/python/ast/cst_utils.py`
 - `src/rejuvenation/migration_type_recipes.py` (the CLI)
 
 ## API entry points

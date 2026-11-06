@@ -227,6 +227,13 @@ The modules of this phase move to `core/model/`, their tests to `test/unit/core/
 - test: `test/utils/test_ruff_utils.py` to `test/recipes/test_ruff_utils.py`.
 - docs: the path of `ruff_utils.py` in [recipes](../modules/recipes.md).
 
+**1.7 The libcst helpers go to the libcst binding.**
+
+- src: `utils/cst_utils.py` to `integrations/python/ast/cst_utils.py`. Its helpers analyse the names in a libcst tree, which
+  is the reference analysis that a binding provides; a recipe uses them as a step.
+- test: `test/utils/test_cst_utils.py` to `test/python/ast/test_cst_utils.py`.
+- docs: its paths in [recipes](../modules/recipes.md), the feature test map and type parameter modernization.
+
 #### Phase 2: `core.pattern`
 
 The modules of this phase move to `core/pattern/`, their tests to `test/unit/core/pattern/`.
@@ -324,7 +331,8 @@ binding by one contract per new binding.
 
 **6.4 The Python parsers.**
 
-- src: `integrations/python/ast/cst_node.py` to `parser_bindings/python/libcst/`, the rest to `parser_bindings/python/ast/`.
+- src: `integrations/python/ast/cst_node.py` and `cst_utils.py` to `parser_bindings/python/libcst/`, the rest to
+  `parser_bindings/python/ast/`.
   The modules both use (`kinds.py`, `factory.py` and `util.py`) go to `python/ast/`, and `python/libcst/` imports them from
   there. These imports become visible as known violations, as
   [repository structure](repository-structure.md#imports-between-parser-bindings) anticipates; splitting them is an issue, not

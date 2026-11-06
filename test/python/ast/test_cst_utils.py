@@ -4,7 +4,7 @@
 # of this repository, also available at:
 # https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
-"""Tests for renaissance.utils.cst_utils."""
+"""Tests for renaissance.integrations.python.ast.cst_utils."""
 
 from typing import cast
 
@@ -12,7 +12,12 @@ import libcst as cst
 import pytest
 from hamcrest import assert_that, equal_to, same_instance
 
-from renaissance.utils.cst_utils import assigned_names, module_statements, names_read_by, trailing_of_sole_statement
+from renaissance.integrations.python.ast.cst_utils import (
+    assigned_names,
+    module_statements,
+    names_read_by,
+    trailing_of_sole_statement,
+)
 
 
 class TestNamesReadBy:
