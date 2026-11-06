@@ -225,7 +225,6 @@ The column *now in* gives the current module, relative to `src/renaissance/`.
 | `TextUtils`                                                     | all     | `core/model/text_utils.py`              |
 | `preceding_sibling`, `next_sibling`                             | all     | `utils/ast_utils.py`                    |
 | `match_props`, `match_children`, `format_node`                  | binding | `utils/ast_utils.py`                    |
-| `convert` (line and column to offset)                           | binding | `integrations/python/ast/util.py`       |
 
 Internal: `display_context`, `DISPLAY_PARSER_KIND`, `process_node`.
 
@@ -430,7 +429,6 @@ Imports within these packages are not yet visible to an import check; they becom
 | Importing module                          | Imported                                       | Resolution                                                                        |
 | ----------------------------------------- | ---------------------------------------------- | --------------------------------------------------------------------------------- |
 | `integrations/python/ast/cst_node`        | `PYTHON_KIND_MAP`, shared with the `ast` nodes | one map per binding (issue 266)                                                   |
-| `integrations/python/ast/cst_node`        | `integrations/python/ast/util.convert`         | `convert` is parser-agnostic: move to `core.model`                                |
 | `integrations/python/ast/factory`         | `ast`, `libcst` and tree-sitter nodes          | one factory and pattern factory per binding                                       |
 | `integrations/clang/clang_ast_node`       | `CLANG_KIND_MAP`, `predicates`, `cpp_utils`    | one map, one set of predicates and one `CPPUtils` per binding                     |
 | `integrations/clang/clang_json_ast_node`  | `CLANG_KIND_MAP`, `predicates`, `cpp_utils`    | as above                                                                          |

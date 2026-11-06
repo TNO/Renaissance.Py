@@ -194,9 +194,9 @@ The modules of this phase move to `core/model/`, their tests to `test/unit/core/
 
 - src: from `utils/ast_utils.py`, `traverse`, `display_context`, `process_node`, `preceding_sibling` and `next_sibling` to
   `core.model`, and `match_props`, `match_children` and `format_node` to `core.model.for_bindings`.
-  From `integrations/python/ast/util.py`, `convert` to `core.model.for_bindings`, and `to_str` to
-  `recipes/python_refactoring.py` (internal). `is_ancestor_of`, which is typed with the rewriter's `Rewritable`, moves to
-  `syntax_tree/ast_rewriter.py`, its only user.
+  From `integrations/python/ast/util.py`, `to_str` to `recipes/python_refactoring.py` (internal). `convert` stays: a binding
+  provides offsets into the UTF-8 encoded code, so turning a line and column into an offset is internal to the binding.
+  `is_ancestor_of`, which is typed with the rewriter's `Rewritable`, moves to `syntax_tree/ast_rewriter.py`, its only user.
   `replace_dollar`, `use_dollar` and `detect_placeholder` are all that is left in `utils/ast_utils.py`.
 - test: `test/utils/test_ast_utils.py`, which tests `is_ancestor_of`, becomes `test/syntax_tree/test_is_ancestor_of.py`.
 - remaining: the known violation `renaissance.utils.ast_utils -> renaissance.syntax_tree.ast_rewriter` is removed, and that of
