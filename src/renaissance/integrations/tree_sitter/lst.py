@@ -73,6 +73,8 @@ class LSTNode:
 
     def __hash__(self) -> int:
         """AI: Return a hash based on the node's kind key, properties, and children."""
+        # TODO(pjljvandelaar): hashes the IRRELEVANT_PROPS that __eq__ ignores, so equal nodes can have different hashes.
+        #  https://github.com/TNO/Renaissance.Py/issues/187
         return hash((self.kind_key, frozenset(self.properties.items()), tuple(self.children)))
 
     def add_child(self, child) -> None:  # LSTNode):
