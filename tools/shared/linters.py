@@ -20,7 +20,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 PYPROJECT_FILE = ROOT / "pyproject.toml"
-PYRIGHT_STRICT_CONFIG = ROOT / "pyrightconfig.strict.json"
+PYRIGHT_STRICT_CONFIG = ROOT / "pyrightconfig_strict.json"
 CHECK_PATHS = ("src", "test", "tools", "features")
 
 

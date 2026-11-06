@@ -46,6 +46,8 @@ Packages envisioned in issue 187 for which no code exists yet, such as semantic 
 File and directory names separate their words by a single `_`, never by `-`, throughout the repository: the code, the tests,
 the documentation and its images, and the workflows. With one separator, a page has the name of the unit it mirrors.
 The only other separator is the triple `___` in the names of test files, see [Tests](#tests).
+A name consists of ASCII letters, digits and `_`, with a `.` only before its extension and at the start of a hidden file, such
+as `.gitignore`.
 The [name check](../tools/check_names.md) enforces these names.
 
 ### Three layers

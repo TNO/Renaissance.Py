@@ -49,7 +49,7 @@ because the existing issues would fail every build.
 Instead of disabling those checks, their issues are *budgeted* by `tools/lint_budget.py`:
 
 * the strict settings live in the script (`ruff --select ALL`, minus the rules `pyproject.toml` deliberately ignores)
-  and in `pyrightconfig.strict.json`;
+  and in `pyrightconfig_strict.json`;
 * `lint_budget.json` records how many issues of each kind (`ruff` rule code, `pyright` rule name) currently exist;
 * CI runs `python -m tools.lint_budget --check` and fails when a pull request exceeds the budget of any kind,
   so no new issue of any kind can be introduced;
@@ -78,4 +78,4 @@ CI checks the pull request merged with `main`, so the counts can exceed the budg
 that arrived on `main` after the branch was created. Merge `main` into the branch and re-run the script.
 
 Once every count has reached zero, the script says so: move the strict settings into `pyproject.toml`
-and delete `lint_budget.json`, `pyrightconfig.strict.json`, `tools/lint_budget.py` and the CI step.
+and delete `lint_budget.json`, `pyrightconfig_strict.json`, `tools/lint_budget.py` and the CI step.

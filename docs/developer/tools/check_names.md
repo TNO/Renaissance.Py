@@ -8,18 +8,21 @@ https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
 # Name check
 
-`tools/check_names.py` fails the build when a file or directory name does not separate its words by `_`.
+`tools/check_names.py` fails the build when a file or directory name contains other characters than letters, digits, `_` and the
+`.` of a hidden file or an extension, or does not separate its words by `_`.
 
 ## The rule it enforces
 
-[Repository structure](../architecture/repository_structure.md#names) decides that file and directory names separate their words
-by a single `_`, never by `-`, and that the test files of a module `x` may be split into `test_x___<aspect>.py`, with a triple
-`___` between the module and the aspect.
+[Repository structure](../architecture/repository_structure.md#names) decides that file and directory names consist of ASCII
+letters, digits and `_`, that they separate their words by a single `_`, never by `-`, and that the test files of a module `x` may
+be split into `test_x___<aspect>.py`, with a triple `___` between the module and the aspect.
 
-A separator is a run of underscores between two letters or digits. The check requires of every name that:
+The check requires of every name that:
 
-- it contains no `-`;
-- every separator is a single `_`, or, in a name that starts with `test_`, a triple `___`.
+- it is an optional leading `.`, which hides a file such as `.gitignore`, a stem of ASCII letters, digits and `_`, and an optional
+  extension: a `.` followed by ASCII letters, digits and `_`;
+- every separator, a run of underscores between two letters or digits, is a single `_`, or, in a name that starts with `test_`, a
+  triple `___`.
 
 Underscores at the start or the end of a word separate no words, so `__init__.py` passes.
 
@@ -41,7 +44,7 @@ Exit codes:
 
 | Code | Meaning                                    |
 | ---- | ------------------------------------------ |
-| 0    | every name separates its words by `_`      |
+| 0    | every name follows the rule                |
 | 1    | at least one name breaks the rule          |
 | 2    | the files could not be listed              |
 
@@ -50,8 +53,8 @@ Exit codes:
 Every violation is reported on one line; a directory is reported once, not for every file it holds:
 
 ```text
-These names do not separate their words by `_`:
-  docs/bad-example/: contains `-`; separate words by `_`
+These names break the naming rule:
+  docs/bad-example/: is not an optional `.`, letters, digits and `_`, and an optional `.` with an extension
   tools/check__example.py: separates words by `__`; use `_`
   tools/check___example.py: separates words by `___`, which only a name that starts with `test_` may do
 ```

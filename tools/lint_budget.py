@@ -14,7 +14,7 @@ the counts with a per-kind budget stored in `lint_budget.json`:
 * a pull request may never exceed the budget of any kind (new issues fail the check);
 * a reduction never fails the check: improving the code is always allowed, and the lower
   counts are adopted as the new budget, so the counts can only ratchet down;
-* once every count reaches zero the budget file, this script, `pyrightconfig.strict.json`
+* once every count reaches zero the budget file, this script, `pyrightconfig_strict.json`
   and the CI step can be removed, and the strict settings can move into `pyproject.toml`.
 
 Run `python -m tools.lint_budget` to check and adopt improvements, and
