@@ -18,13 +18,6 @@ def convert(lines, line_nr, col):
     # add node to the node list for references
 
 
-def to_str(node) -> str:
-    """AI: Return the node's signature if it has one, otherwise its string representation."""
-    if hasattr(node, "signature"):
-        return node.signature
-    return str(node)
-
-
 def convert_function(fun):
     """AI: Return the function's signature rewritten to take a leading 'self' parameter."""
     signature: str = fun.signature + "\n\n\n"

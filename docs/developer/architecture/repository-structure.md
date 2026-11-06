@@ -221,10 +221,10 @@ The column *now in* gives the current module, relative to `src/renaissance/`.
 | `ASTFactory`                                                    | all     | `syntax_tree/ast_factory.py`            |
 | `ASTFinder`, `find_nodes`, `matches_node`, `find_semantic_kind` | all     | `syntax_tree/ast_finder.py`             |
 | `ASTShower`, `Displayable`                                      | all     | `syntax_tree/ast_shower.py`             |
-| `traverse`                                                      | all     | `utils/ast_utils.py`                    |
+| `traverse`                                                      | all     | `core/model/node_utils.py`              |
 | `TextUtils`                                                     | all     | `core/model/text_utils.py`              |
-| `preceding_sibling`, `next_sibling`                             | all     | `utils/ast_utils.py`                    |
-| `match_props`, `match_children`, `format_node`                  | binding | `utils/ast_utils.py`                    |
+| `preceding_sibling`, `next_sibling`                             | all     | `core/model/node_utils.py`              |
+| `match_props`, `match_children`, `format_node`                  | binding | `core/model/for_bindings.py`            |
 
 Internal: `display_context`, `DISPLAY_PARSER_KIND`, `process_node`.
 

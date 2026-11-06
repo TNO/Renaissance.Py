@@ -30,6 +30,11 @@ The `__all__` of `renaissance.core.model`; see the [API reference](../../api/cor
 - `SyntaxNode`: a node of a syntax tree that is a text segment.
 - `Siblings`: a contiguous range of sibling syntax nodes, which is a text segment too.
 - `TextUtils`: shifting, indenting and writing source text.
+- `traverse`: a node and all its descendants, breadth first.
+- `preceding_sibling` and `next_sibling`: the neighbours of a node among the children of its parent.
+
+`renaissance.core.model.for_bindings` holds what only parser bindings need, to implement node equality (`match_props`,
+`match_children`) and node display (`format_node`).
 
 ## Internal structure
 
@@ -38,6 +43,9 @@ The `__all__` of `renaissance.core.model`; see the [API reference](../../api/cor
 - `text_segment.py` defines `TextSegment`.
 - `syntax_node.py` defines `SyntaxNode`, and `siblings.py` defines `Siblings`, both in terms of `TextSegment`.
 - `text_utils.py` defines `TextUtils`.
+- `node_utils.py` defines `traverse`, `preceding_sibling` and `next_sibling`, and the internal `process_node` and
+  `display_context`, which sets whether nodes are displayed with their parser kind.
+- `for_bindings.py` defines the helpers for parser bindings.
 
 ## Related features
 

@@ -12,11 +12,10 @@ import pytest
 from hamcrest import assert_that, greater_than, has_length, has_string, is_, is_in
 from more_itertools.more import first
 
-from renaissance.core.model import SemanticKind
+from renaissance.core.model import SemanticKind, traverse
 from renaissance.integrations.python.ast.factory import PythonFactory
 from renaissance.integrations.python.ast.rst_node import PythonRstNode, PythonRSTReference
 from renaissance.syntax_tree.ast_shower import ASTShower
-from renaissance.utils.ast_utils import traverse
 
 content = """
 # antagonist

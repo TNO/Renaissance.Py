@@ -13,18 +13,11 @@ from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import Any, Self
 
-from renaissance.core.model import SemanticKind
+from renaissance.core.model import SemanticKind, next_sibling, preceding_sibling, traverse
+from renaissance.core.model.for_bindings import format_node, match_children, match_props
 from renaissance.integrations.python.ast.kinds import PYTHON_KIND_MAP, PYTHON_OPERATOR_MAP
 from renaissance.integrations.python.ast.util import convert
 from renaissance.syntax_tree.match_finder import find_in_list
-from renaissance.utils.ast_utils import (
-    format_node,
-    match_children,
-    match_props,
-    next_sibling,
-    preceding_sibling,
-    traverse,
-)
 
 types = ["int", "float", "str", "list", "set", "tuple", "Mapping", "dict", "Optional"]
 IRRELEVANT_PROPS = {"comment"}

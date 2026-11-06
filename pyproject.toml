@@ -266,7 +266,8 @@ layers = [
     : test.syntax_tree.test_batch_ast_processor : test.syntax_tree.test_recipe_ast_processor""",
     # core.rewriting
     """renaissance.syntax_tree.ast_rewriter : renaissance.common
-    : test.common : test.syntax_tree.test_ast_rewriter : test.syntax_tree.test_rewrite_semantics_properties""",
+    : test.common : test.syntax_tree.test_ast_rewriter : test.syntax_tree.test_rewrite_semantics_properties
+    : test.syntax_tree.test_is_ancestor_of""",
     # core.matching
     """renaissance.syntax_tree.match_finder
     : test.syntax_tree.test_match_finder : test.syntax_tree.test_match_finder_multi_assignments
@@ -281,15 +282,14 @@ layers = [
     : test.unit.core.model
     : test.syntax_tree.test_node_finder
     : test.syntax_tree.test_semantic_finder
-    : test.utils.test_ast_utils : test.search_strategies : test.conftest""",
+    : test.search_strategies : test.conftest""",
 ]
 ignore_imports = [
     # MATCH_ONE and MATCH_ALL are placeholder markers that belong in core.pattern (issue 110).
     "renaissance.utils.ast_utils -> renaissance.integrations",
-    # is_ancestor_of is typed with the rewriter's Rewritable; it moves to the rewriter, its only user.
-    "renaissance.utils.ast_utils -> renaissance.syntax_tree.ast_rewriter",
     # Unit tests of the core that parse real code instead of using test doubles.
-    "test.utils.test_ast_utils -> renaissance.integrations.clang",
+    "test.unit.core.model.test_node_utils -> renaissance.integrations.clang",
+    "test.syntax_tree.test_is_ancestor_of -> renaissance.integrations.clang",
     "test.syntax_tree.test_ast_processor -> renaissance.integrations.clang",
     "test.syntax_tree.test_batch_ast_processor -> renaissance.integrations.clang",
     "test.syntax_tree.test_recipe_ast_processor -> renaissance.integrations.clang",
@@ -358,7 +358,6 @@ ignore_imports = [
     "renaissance.recipes.python_refactoring -> renaissance.integrations.python.ast.cst_node",
     "renaissance.recipes.python_refactoring -> renaissance.integrations.python.ast.factory",
     "renaissance.recipes.python_refactoring -> renaissance.integrations.python.ast.rst_node",
-    "renaissance.recipes.python_refactoring -> renaissance.integrations.python.ast.util",
     "rejuvenation.cli -> renaissance.integrations.python.ast.extractor",
     "rejuvenation.cli -> renaissance.integrations.python.ast.rst_node",
     "rejuvenation.cli -> renaissance.project.project_scanner",
@@ -450,12 +449,38 @@ forbidden_modules = [
 allow_indirect_imports = true
 
 # One contract per core sub-package: code outside the package imports only its public API, from the package itself.
+# A module expression cannot exclude a module, so the protected modules are listed, without for_bindings.
 [[tool.importlinter.contracts]]
 id = "core-model-api"
 name = "Only core.model and its unit tests import the modules of core.model"
 type = "protected"
-protected_modules = ["renaissance.core.model.*"]
+protected_modules = [
+    "renaissance.core.model.node_protocol",
+    "renaissance.core.model.node_utils",
+    "renaissance.core.model.semantic_kind",
+    "renaissance.core.model.siblings",
+    "renaissance.core.model.syntax_node",
+    "renaissance.core.model.text_segment",
+    "renaissance.core.model.text_utils",
+]
 allowed_importers = ["renaissance.core.model", "test.unit.core.model"]
+ignore_imports = [
+    # ast_node and ast_shower belong in core.model, but are still in syntax_tree.
+    "renaissance.syntax_tree.ast_node -> renaissance.core.model.node_utils",
+    "renaissance.syntax_tree.ast_shower -> renaissance.core.model.node_utils",
+]
+
+# One contract per for_bindings module: only the core, the parser bindings and their unit tests import it.
+[[tool.importlinter.contracts]]
+id = "core-model-for-bindings"
+name = "Only the core, the parser bindings and their unit tests import core.model.for_bindings"
+type = "protected"
+protected_modules = ["renaissance.core.model.for_bindings"]
+allowed_importers = [
+    "renaissance.core", "renaissance.syntax_tree.ast_node",  # ast_node belongs in core.model, but is still in syntax_tree
+    "renaissance.integrations", "renaissance.project",
+    "test.unit.core", "test.c_cpp", "test.python", "test.lst", "test.extractors", "test.project",
+]
 
 # The tools and their tests are independent of the rest of the repository.
 [[tool.importlinter.contracts]]

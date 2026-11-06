@@ -16,8 +16,9 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Self
 
-from renaissance.core.model import NodeProtocol, SemanticKind, TextUtils
-from renaissance.utils.ast_utils import format_node, next_sibling, preceding_sibling, process_node
+from renaissance.core.model import NodeProtocol, SemanticKind, TextUtils, next_sibling, preceding_sibling
+from renaissance.core.model.for_bindings import format_node
+from renaissance.core.model.node_utils import process_node
 
 
 # enum with ABORT, CONTINUE and SKIP

@@ -17,10 +17,9 @@ import libcst
 from libcst import BaseCompoundStatement, BaseSmallStatement, ClassDef, CSTNode, FunctionDef, MetadataWrapper
 from libcst.metadata import Access, Assignment, CodePosition, PositionProvider, ScopeProvider
 
-from renaissance.core.model import SemanticKind
+from renaissance.core.model import SemanticKind, next_sibling, preceding_sibling
 from renaissance.integrations.python.ast.kinds import PYTHON_KIND_MAP
 from renaissance.syntax_tree.ast_node import ASTReference
-from renaissance.utils.ast_utils import next_sibling, preceding_sibling
 
 type _Link = tuple[CSTNode, str, Access]
 

@@ -18,7 +18,6 @@ from more_itertools import flatten
 from renaissance.common import Rewriter
 from renaissance.core.model import TextUtils
 from renaissance.syntax_tree.match_finder import PatternMatch
-from renaissance.utils.ast_utils import is_ancestor_of
 
 
 @runtime_checkable
@@ -55,6 +54,19 @@ class Rewritable(Protocol):
     def text(self) -> str:
         """Source text of this node."""
         ...
+
+
+def is_ancestor_of(ancestor: Rewritable, node: Rewritable) -> bool:
+    """Return True if ancestor is a proper ancestor of node.
+
+    Parent links are compared by identity, since node equality is structural.
+    """
+    current = node.parent
+    while current is not None:
+        if current is ancestor:
+            return True
+        current = current.parent
+    return False
 
 
 class _RewriteActionType(Enum):

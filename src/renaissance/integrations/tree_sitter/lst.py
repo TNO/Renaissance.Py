@@ -9,9 +9,9 @@
 import sys
 from typing import Any, Self, cast
 
-from renaissance.core.model import SemanticKind
+from renaissance.core.model import SemanticKind, next_sibling, preceding_sibling
+from renaissance.core.model.for_bindings import format_node, match_children, match_props
 from renaissance.integrations.tree_sitter.kinds import TREE_SITTER_KIND_MAP
-from renaissance.utils.ast_utils import format_node, match_children, match_props, next_sibling, preceding_sibling
 
 IRRELEVANT_PROPS = {"source_code", "end_point", "start_point", "location", "type"}
 IRRELEVANT_NODE = {"comment"}

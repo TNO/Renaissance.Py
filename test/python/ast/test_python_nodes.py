@@ -11,12 +11,11 @@ from ast import AST
 import pytest
 from hamcrest import assert_that, is_
 
-from renaissance.core.model import SemanticKind
+from renaissance.core.model import SemanticKind, traverse
 from renaissance.integrations.python.ast.cst_node import PythonCstNode
 from renaissance.integrations.python.ast.factory import PythonPatternFactory
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
 from renaissance.integrations.tree_sitter.lst import LSTNode
-from renaissance.utils.ast_utils import traverse
 from test.python.ast.factories import Factories
 
 

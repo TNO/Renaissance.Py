@@ -193,15 +193,19 @@ The modules of this phase move to `core/model/`, their tests to `test/unit/core/
 **1.4 The node utilities.**
 
 - src: from `utils/ast_utils.py`, `traverse`, `display_context`, `process_node`, `preceding_sibling` and `next_sibling` to
-  `core.model`, and `match_props`, `match_children` and `format_node` to `core.model.for_bindings`.
+  `core/model/node_utils.py`, and `match_props`, `match_children` and `format_node` to `core/model/for_bindings.py`.
   From `integrations/python/ast/util.py`, `to_str` to `recipes/python_refactoring.py` (internal). `convert` stays: a binding
   provides offsets into the UTF-8 encoded code, so turning a line and column into an offset is internal to the binding.
   `is_ancestor_of`, which is typed with the rewriter's `Rewritable`, moves to `syntax_tree/ast_rewriter.py`, its only user.
   `replace_dollar`, `use_dollar` and `detect_placeholder` are all that is left in `utils/ast_utils.py`.
 - test: `test/utils/test_ast_utils.py`, which tests `is_ancestor_of`, becomes `test/syntax_tree/test_is_ancestor_of.py`.
+  Its tests of `preceding_sibling` and `next_sibling` move to `test/unit/core/model/test_node_utils.py`.
 - remaining: the known violation `renaissance.utils.ast_utils -> renaissance.syntax_tree.ast_rewriter` is removed, and that of
-  the moved test follows its new path. The `protected` contract of `core.model.for_bindings`, which allows the core,
-  `renaissance.integrations`, `renaissance.project` and their tests. The allowed importers follow the bindings as they move.
+  the moved tests follows their new paths. A module expression cannot exclude a module, so the `protected` contract of
+  `core.model` lists its modules, without `for_bindings`. That `ast_node` and `ast_shower` import the internal `process_node`
+  and `display_context` is a known violation until step 1.5. The `protected` contract of `core.model.for_bindings`, which
+  allows the core, `renaissance.integrations`, `renaissance.project` and their tests. The allowed importers follow the
+  bindings as they move.
 
 **1.5 The nodes.**
 
@@ -209,6 +213,9 @@ The modules of this phase move to `core/model/`, their tests to `test/unit/core/
 - test: `test/syntax_tree/test_node_finder.py` and `test_semantic_finder.py`; and, if they test
   the model rather than a binding, `test/c_cpp/test_ast_factory.py`, `test_ast_finder.py`, `test_astshower.py`,
   `test_ast_references.py` and `test/python/ast/test_python_astshower.py`. Their imports of a binding become known violations.
+- remaining: the moved modules join the list of the `protected` contract of `core.model`. Its known violations by `ast_node`
+  and `ast_shower` disappear, and `renaissance.syntax_tree.ast_node` leaves the allowed importers of
+  `core.model.for_bindings`.
 - Checks: `git grep -E "utils\.text_utils|syntax_tree\.(semantic_kind|node_protocol|text_segment|syntax_node|siblings)"` and
   `git grep -E "syntax_tree\.ast_(node|factory|finder|shower)"` find nothing; the model layer of the `layers` contract is
   `renaissance.core.model` and its tests.
