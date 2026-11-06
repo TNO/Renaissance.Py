@@ -137,6 +137,8 @@ def match_children(mine, other, irrelevant_kinds) -> bool:
     """AI: Return True if every child in other matches the corresponding child in mine (or has an irrelevant kind)."""
     if mine is None or other is None:
         return mine == other
+    # TODO(pjljvandelaar): asymmetric - extra trailing children of mine are ignored, so a == b need not imply b == a.
+    #  https://github.com/TNO/Renaissance.Py/issues/187
     return all((i < len(mine) and mine[i] == child) or child.parser_kind in irrelevant_kinds for i, child in enumerate(other))
 
 
