@@ -22,7 +22,7 @@ from renaissance.project.project_scanner import (
     PythonScanner,
 )
 
-NOISE_DIR_NAMES = sorted({*PythonScanner.EXCLUDED_DIRS, ".git", ".venv", ".pixi", ".tox"})
+NOISE_DIR_NAMES = sorted({*PythonScanner.SPECIAL_EXCLUDED_DIRS, ".git", ".venv", ".pixi", ".tox"})
 
 # ---------------------------------------------------------------------------
 # ProjectScanner (base)

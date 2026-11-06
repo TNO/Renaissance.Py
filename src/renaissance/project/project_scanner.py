@@ -55,7 +55,7 @@ class JavaScanner(ProjectScanner):
 class PythonScanner(ProjectScanner):
     """Scan a directory tree for Python source files, skipping hidden files and directories."""
 
-    EXCLUDED_DIRS = frozenset({"__pycache__", "venv"})
+    SPECIAL_EXCLUDED_DIRS = frozenset({"__pycache__", "venv"})
 
     def __init__(self, root_dir: str = ".", package_dirs: list[str] | None = None) -> None:
         """Store the scan root and optional package_dirs narrowing.
@@ -88,7 +88,7 @@ class PythonScanner(ProjectScanner):
                 continue
             for dirpath, dirnames, filenames in root.walk():
                 # Pruning in place stops walk() from descending into skipped directories at all.
-                dirnames[:] = [name for name in dirnames if not name.startswith(".") and name not in self.EXCLUDED_DIRS]
+                dirnames[:] = [name for name in dirnames if not name.startswith(".") and name not in self.SPECIAL_EXCLUDED_DIRS]
                 files.extend(dirpath / name for name in filenames if name.endswith(".py") and not name.startswith("."))
         return sorted(str(file) for file in files)
 
