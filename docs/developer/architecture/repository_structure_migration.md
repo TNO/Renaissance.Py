@@ -411,6 +411,8 @@ their binding, and the unused helper `python_type_and_value.py`.
   the references to the migration in the repository memory. The codespell ignore list applies to the code only again: it moves
   from `[tool.codespell]` in `pyproject.toml` back to the codespell step of the code quality workflow, so the documentation is
   checked without exceptions. It was shared only because this page quotes commands that contain the ignored words.
+- GitHub: the Renaissance.Py lint budget app is updated, because the file that holds the budgets was renamed from
+  `lint-budget.json` to `lint_budget.json`.
 - Checks: every unit under `src/renaissance/` has its test directory and its pages;
   `git grep "repository_structure_migration"` finds nothing; `pyproject.toml` has no `[tool.codespell]`, and
   `uv run codespell ./docs` passes.
