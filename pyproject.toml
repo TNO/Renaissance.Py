@@ -219,7 +219,6 @@ known_issues = [
     "src/renaissance/recipes/type_parameter_localization.py",
     "src/renaissance/recipes/type_parameter_rules.py",
     "src/renaissance/recipes/type_parameter_uses.py",
-    "src/renaissance/utils/cst_utils.py",
     "src/renaissance/utils/import_resolution.py",
     "test/recipes/test_step_runner.py",
     "test/recipes/test_type_parameter_check.py",
@@ -232,7 +231,6 @@ known_issues = [
     "test/recipes/test_type_parameter_localization.py",
     "test/recipes/test_type_parameter_rules.py",
     "test/rejuvenation/test_migration_type_recipes.py",
-    "test/utils/test_cst_utils.py",
     "test/utils/test_import_resolution.py",
 ]
 # Paths that do not exist yet.
