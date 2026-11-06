@@ -18,6 +18,10 @@ parts of the documentation mirror the source tree and `tools/`. A mirror makes t
 to find, and makes it visible when a unit has none. Checking both directions also catches what a rename leaves behind: a test
 directory or a page named after a unit that no longer exists.
 
+[Repository structure](../architecture/repository-structure.md#tests) also decides how the test files of a module are named:
+`test_x.py`, or `test_x___<aspect>.py` when there are several. The check does not enforce that naming rule yet; a test file
+`test/tools/test_x___<aspect>.py` is still reported as mirroring no unit.
+
 ## Where the rules live
 
 The mirrors are the `[[tool.check_layout.mirrors]]` tables in `pyproject.toml`; that is their single source of truth.

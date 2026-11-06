@@ -57,7 +57,9 @@ Decisions:
 - Extractors are recipes: they analyse code and extract information from it, without changing it.
 - Reading build artefacts (`compile_commands.json`, a `Makefile` via Bear, a source directory tree) is parsing,
   so the project scanners are a parser binding.
-- Directory names are valid Python identifiers: lower case, words separated by `_`, no `.` or `-`.
+- Module names contain no triple underscore `___`. Python's own module names, such as `__init__` and `__main__`, contain none
+  either. The names of the test files use it as a separator, see [Tests](#tests).
+- Directory names are valid Python identifiers: lower case words, separated by a single `_`, without `.` or `-`.
 
 ### Allowed dependencies between layers
 
@@ -331,7 +333,7 @@ test/
 │   ├── recipes/
 │   │   └── <recipe>/
 ├── features/                   # was features/ at the root: *.feature, steps/, targets/
-├── tools/                      # mirrors tools/: one test_<tool>.py per tool, shared/ mirrors tools/shared/
+├── tools/                      # mirrors tools/: the tests of each tool, shared/ mirrors tools/shared/
 └── test_data/
 ```
 
@@ -341,6 +343,9 @@ Decisions:
   and `tools/` for the guard rails. `test_data/` holds input files shared by the tests.
 - A unit test lives in the directory of the unit it tests, not of the parser it happens to use.
   A test of the matcher that parses C++ is a test of `core.matching`.
+- The tests of a module `x` are in `test_x.py` when they fit in one file, and in `test_x___<aspect>.py`, one file per aspect,
+  when they do not. Several files help to organize the tests and keep them maintainable. The triple underscore separates the
+  module from the aspect. An aspect is lower case words separated by `_`.
 - A unit test follows the dependency rules of the unit it tests. A unit test of the core therefore uses test doubles, such as
   `test/unit/core/model/shared/infra_syntax_node.py`, instead of a parser binding. The core tests that still parse real code
   are known violations.
