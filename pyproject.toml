@@ -154,7 +154,7 @@ extraPaths = ["src", "test", "features"]
 # The layout rules of docs/developer/architecture/repository_structure.md: the tests and the documentation mirror the code.
 # This is their single source of truth, checked by tools/check_layout.py. Each mirror maps every unit under `code` onto its
 # counterpart; `exempt` lists units without a counterpart, `extra` lists paths in the mirror that are no counterpart. With
-# `aspects = true`, the tests of a module may instead be split into one file per aspect, `test_x___<aspect>.py`, but not both.
+# `aspects = true`, the tests of a module may instead be split into several files, one per aspect, `test_x___<aspect>.py`.
 # The migration adds the mirrors of each part of src/renaissance once that part is in its target place.
 [[tool.check_layout.mirrors]]
 code = "tools"

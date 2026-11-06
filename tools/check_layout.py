@@ -12,8 +12,8 @@ The check fails on a unit without its counterpart, and on a path in the mirror t
 or deleted unit cannot leave its tests or its page behind.
 
 A mirror with `aspects = true` also accepts a counterpart split into one file per aspect: `{path}` followed by `___<aspect>`,
-such as `test_x___parsing.py` instead of `test_x.py`, but not next to it. Whether names are well formed is not checked here, but by
-`tools/check_names.py`.
+such as `test_x___parsing.py` instead of `test_x.py`, but not next to it, and only when there are several aspects. Whether names
+are well formed is not checked here, but by `tools/check_names.py`.
 
 A mirror may list known deviations: `exempt` names units that have no counterpart, `extra` names paths in the mirror that are no
 counterpart. An entry that no longer describes a deviation fails the check, so these lists only shrink.
@@ -60,7 +60,7 @@ class Mirror:
     A unit is a module (a `.py` file directly in `code`, other than `__init__.py`) or a package (a directory below `code` holding
     `__init__.py`), named by its path relative to `code`, without `.py`, separated by `/`. A template that ends with `/` names a
     directory. The modules of a sub-package of `code` are units of a mirror of that sub-package. With `aspects`, the counterpart
-    may instead be split into files with `___<aspect>` after the unit.
+    may instead be split into several files with `___<aspect>` after the unit.
     """
 
     code: str
@@ -176,6 +176,8 @@ def check_mirror(mirror: Mirror, files: set[str]) -> list[Violation]:
         elif len(counterparts) > 1 and (whole := mirror.counterpart(unit)) in counterparts:
             split = next(path for path in counterparts if path != whole)
             violations.append(Violation(mirror.location(unit), f"has both {whole} and {split}: keep one file or split it per aspect"))
+        elif len(counterparts) == 1 and (split := counterparts[0]) != (whole := mirror.counterpart(unit)):
+            violations.append(Violation(mirror.location(unit), f"has one aspect only, {split}: rename it to {whole}"))
     violations += [
         Violation(f"{mirror.code}/{unit}", "is exempt, but is not a unit: remove the exemption") for unit in sorted(mirror.exempt - units)
     ]

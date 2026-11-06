@@ -64,6 +64,13 @@ def test_a_counterpart_both_whole_and_split_per_aspect_is_reported() -> None:
     assert violations == [expected]  # noqa: S101 (pytest assertion; new tests must not raise the S101 budget)
 
 
+def test_a_counterpart_split_into_one_aspect_only_is_reported() -> None:
+    """Assert a module whose only test file is `test_x___<aspect>.py` is reported: one file is `test_x.py`."""
+    violations = _violations(TESTS_OF_TOOLS_PER_ASPECT, {"tools/check_a.py", "test/tools/test_check_a___parsing.py"})
+    expected = "tools/check_a.py: has one aspect only, test/tools/test_check_a___parsing.py: rename it to test/tools/test_check_a.py"
+    assert violations == [expected]  # noqa: S101 (pytest assertion; new tests must not raise the S101 budget)
+
+
 def test_a_counterpart_split_per_aspect_without_its_unit_is_reported() -> None:
     """Assert a test file per aspect of a missing module is reported, as is a file with an empty aspect."""
     files = {"tools/check_a.py", "test/tools/test_check_a___.py", "test/tools/test_check_gone___parsing.py"}
