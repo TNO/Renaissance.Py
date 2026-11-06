@@ -45,6 +45,8 @@ Packages envisioned in issue 187 for which no code exists yet, such as semantic 
 
 File and directory names separate their words by a single `_`, never by `-`, throughout the repository: the code, the tests,
 the documentation and its images, and the workflows. With one separator, a page has the name of the unit it mirrors.
+The only other separator is the triple `___` in the names of test files, see [Tests](#tests).
+The [name check](../tools/check_names.md) enforces these names.
 
 ### Three layers
 
@@ -356,8 +358,8 @@ Decisions:
   are known violations.
 - Feature tests are end to end. They may import from every layer.
 - The layering rules are checked for `src/`, for the unit tests and for the tools and their tests.
-- That `test/unit/` mirrors the source tree, and `test/tools/` mirrors `tools/`, is checked by the
-  [layout check](../tools/check_layout.md).
+- That `test/unit/` mirrors the source tree, and `test/tools/` mirrors `tools/`, including the test files of each module, is
+  checked by the [layout check](../tools/check_layout.md).
 
 ### Documentation
 

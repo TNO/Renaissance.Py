@@ -19,8 +19,8 @@ to find, and makes it visible when a unit has none. Checking both directions als
 directory or a page named after a unit that no longer exists.
 
 [Repository structure](../architecture/repository_structure.md#tests) also decides how the test files of a module are named:
-`test_x.py`, or `test_x___<aspect>.py` when there are several. The check does not enforce that naming rule yet; a test file
-`test/tools/test_x___<aspect>.py` is still reported as mirroring no unit.
+`test_x.py`, or `test_x___<aspect>.py` when there are several. A mirror with `aspects = true` accepts both as the counterpart of
+module `x`. Whether the names themselves are well formed is checked by the [name check](check_names.md).
 
 ## Where the rules live
 
@@ -32,13 +32,16 @@ code = "tools"                          # the directory that holds the units, re
 units = "modules"                       # "modules": every .py file directly in `code`, except __init__.py; "packages":
                                         # every directory below `code` that holds an __init__.py
 mirror = "test/tools/test_{path}.py"    # the counterpart of a unit; a trailing / makes it a directory
+aspects = true                          # the counterpart may also be split into files test/tools/test_{path}___<aspect>.py
 exempt = ["mkdocs_hooks"]               # units without counterpart: known deviations
 extra = ["docs/developer/tools/index.md"]   # paths that look like a counterpart, but are not one
 ```
 
 A unit is named by its path relative to `code`, without `.py`, with `/` between directories: `check_layout` for
 `tools/check_layout.py`, `core/matching` for the package `src/renaissance/core/matching/`. The template of `mirror` contains
-the placeholder `{path}` exactly once; it is replaced by the name of the unit.
+the placeholder `{path}` exactly once; it is replaced by the name of the unit. With `aspects = true`, a path that has `___` and an
+aspect after the name of the unit, such as `test/tools/test_check_example___parsing.py`, is a counterpart of that unit too; a unit
+has its counterpart when at least one of these paths exists.
 
 A directory counterpart exists when it holds at least one file; a unit test directory without tests does not count.
 The modules of a sub-package, such as `tools/shared/`, are no units of the mirror of `code`; the sub-package gets a mirror of its
@@ -48,8 +51,8 @@ A path in the mirror is checked when it has the shape of the template, such as `
 `conftest.py` in `test/tools/` do not have that shape and are left alone. A directory below a mirrored directory, such as a directory
 of test data, does have that shape, and is listed in `extra`.
 
-During the migration to the target structure, a mirror is added for each part of `src/renaissance` once that part is in its
-target place.
+During the migration to the target structure, mirrors are added for each part of `src/renaissance` once that part is in its
+target place: for its packages, and for the modules of each package, which its unit tests mirror.
 
 ## Running it
 

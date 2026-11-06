@@ -17,6 +17,7 @@ import pytest
 from tools import check_layout
 
 TESTS_OF_TOOLS = {"code": "tools", "units": "modules", "mirror": "test/tools/test_{path}.py"}
+TESTS_OF_TOOLS_PER_ASPECT = {**TESTS_OF_TOOLS, "aspects": True}
 TESTS_OF_CORE = {"code": "src/core", "units": "packages", "mirror": "test/unit/core/{path}/"}
 
 
@@ -43,6 +44,37 @@ def test_a_counterpart_without_its_unit_is_reported() -> None:
     files = {"tools/check_b.py", "test/tools/test_check_a.py", "test/tools/test_check_b.py"}
     violations = _violations(TESTS_OF_TOOLS, files)
     assert violations == ["test/tools/test_check_a.py: mirrors no unit of tools/"]  # noqa: S101 (pytest assertion; new tests must not raise the S101 budget)
+
+
+def test_a_counterpart_split_per_aspect_mirrors_its_unit() -> None:
+    """Assert test files per aspect count as the counterpart of their module, with or without `test_x.py`."""
+    files = {
+        "tools/check_a.py",
+        "tools/check_b.py",
+        "test/tools/test_check_a.py",
+        "test/tools/test_check_a___parsing.py",
+        "test/tools/test_check_b___parsing.py",
+        "test/tools/test_check_b___reporting.py",
+    }
+    assert _violations(TESTS_OF_TOOLS_PER_ASPECT, files) == []  # noqa: S101 (pytest assertion; new tests must not raise the S101 budget)
+
+
+def test_a_counterpart_split_per_aspect_without_its_unit_is_reported() -> None:
+    """Assert a test file per aspect of a missing module is reported, as is a file with an empty aspect."""
+    files = {"tools/check_a.py", "test/tools/test_check_a___.py", "test/tools/test_check_gone___parsing.py"}
+    violations = _violations(TESTS_OF_TOOLS_PER_ASPECT, files)
+    assert violations == [  # noqa: S101 (pytest assertion; new tests must not raise the S101 budget)
+        "tools/check_a.py: has no counterpart test/tools/test_check_a.py",
+        "test/tools/test_check_a___.py: mirrors no unit of tools/",
+        "test/tools/test_check_gone___parsing.py: mirrors no unit of tools/",
+    ]
+
+
+def test_a_mirror_without_aspects_does_not_split_counterparts() -> None:
+    """Assert a test file per aspect is no counterpart when the mirror does not allow aspects."""
+    files = {"tools/check_a.py", "test/tools/test_check_a.py", "test/tools/test_check_a___parsing.py"}
+    violations = _violations(TESTS_OF_TOOLS, files)
+    assert violations == ["test/tools/test_check_a___parsing.py: mirrors no unit of tools/"]  # noqa: S101 (pytest assertion; new tests must not raise the S101 budget)
 
 
 def test_the_modules_of_a_sub_package_are_no_units() -> None:
@@ -110,6 +142,7 @@ def test_stale_deviations_are_reported() -> None:
         ({"mirrors": [{**TESTS_OF_TOOLS, "mirror": "{path}/{path}.md"}]}, "exactly once"),
         ({"mirrors": [{**TESTS_OF_TOOLS, "exempt": "check_a"}]}, "list of strings"),
         ({"mirrors": [{**TESTS_OF_TOOLS, "exempt": ["check_a", "check_a"]}]}, "twice"),
+        ({"mirrors": [{**TESTS_OF_TOOLS, "aspects": "yes"}]}, "`aspects`"),
     ],
 )
 def test_an_invalid_configuration_is_rejected(config: Mapping[str, object], message: str) -> None:

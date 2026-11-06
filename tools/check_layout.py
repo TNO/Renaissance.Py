@@ -11,6 +11,10 @@ code under one directory, a module or a package, onto its counterpart: a test fi
 The check fails on a unit without its counterpart, and on a path in the mirror that is the counterpart of no unit, so a renamed
 or deleted unit cannot leave its tests or its page behind.
 
+A mirror with `aspects = true` also accepts a counterpart split into one file per aspect: `{path}` followed by `___<aspect>`,
+such as `test_x___parsing.py` next to or instead of `test_x.py`. Whether names are well formed is not checked here, but by
+`tools/check_names.py`.
+
 A mirror may list known deviations: `exempt` names units that have no counterpart, `extra` names paths in the mirror that are no
 counterpart. An entry that no longer describes a deviation fails the check, so these lists only shrink.
 
@@ -35,6 +39,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 # The placeholder of a mirror template, replaced by the path of a unit.
 PLACEHOLDER = "{path}"
+# Separates the unit from the aspect in the name of a counterpart split per aspect.
+ASPECT_SEPARATOR = "___"
 UNIT_KINDS = ("modules", "packages")
 INIT = "__init__.py"
 
@@ -53,7 +59,8 @@ class Mirror:
 
     A unit is a module (a `.py` file directly in `code`, other than `__init__.py`) or a package (a directory below `code` holding
     `__init__.py`), named by its path relative to `code`, without `.py`, separated by `/`. A template that ends with `/` names a
-    directory. The modules of a sub-package of `code` are units of a mirror of that sub-package.
+    directory. The modules of a sub-package of `code` are units of a mirror of that sub-package. With `aspects`, the counterpart
+    may be split into files with `___<aspect>` after the unit.
     """
 
     code: str
@@ -61,15 +68,18 @@ class Mirror:
     template: str
     exempt: frozenset[str] = frozenset()
     extra: frozenset[str] = frozenset()
+    aspects: bool = False
 
     def counterpart(self, unit: str) -> str:
-        """Return the path of the counterpart of `unit`."""
+        """Return the path of the counterpart of `unit`, when it is not split per aspect."""
         return self.template.replace(PLACEHOLDER, unit)
 
-    def matches_template(self, path: str) -> bool:
-        """Return whether `path` has the shape of a counterpart, whether or not its unit exists."""
+    def unit_of(self, path: str) -> str | None:
+        """Return the unit whose counterpart `path` is, whether or not that unit exists, or None when `path` has no such shape."""
         before, after = self.template.split(PLACEHOLDER)
-        return re.fullmatch(f"{re.escape(before)}.+{re.escape(after)}", path) is not None
+        aspect = f"(?:{ASPECT_SEPARATOR}[^/]+)?" if self.aspects else ""
+        match = re.fullmatch(f"{re.escape(before)}(.+?){aspect}{re.escape(after)}", path)
+        return None if match is None else match.group(1)
 
     def location(self, unit: str) -> str:
         """Return the path of `unit` relative to the repository root."""
@@ -114,7 +124,7 @@ def parse_mirrors(config: Mapping[str, object]) -> list[Mirror]:
             message = "each mirror must be a [[tool.check_layout.mirrors]] table"
             raise ConfigError(message)
         entry = cast("dict[str, object]", item)
-        unknown = set(entry) - {"code", "units", "mirror", "exempt", "extra"}
+        unknown = set(entry) - {"code", "units", "mirror", "exempt", "extra", "aspects"}
         if unknown:
             message = f"unknown key(s) {sorted(unknown)} in a mirror"
             raise ConfigError(message)
@@ -128,7 +138,11 @@ def parse_mirrors(config: Mapping[str, object]) -> list[Mirror]:
         if not isinstance(template, str) or template.count(PLACEHOLDER) != 1:
             message = f"`mirror` of the mirror of {code} must contain {PLACEHOLDER} exactly once"
             raise ConfigError(message)
-        mirrors.append(Mirror(code, units, template, _strings(entry, "exempt"), _strings(entry, "extra")))
+        aspects = entry.get("aspects", False)
+        if not isinstance(aspects, bool):
+            message = f"`aspects` of the mirror of {code} must be true or false"
+            raise ConfigError(message)
+        mirrors.append(Mirror(code, units, template, _strings(entry, "exempt"), _strings(entry, "extra"), aspects))
     return mirrors
 
 
@@ -151,21 +165,21 @@ def check_mirror(mirror: Mirror, files: set[str]) -> list[Violation]:
     """Return how `files` break `mirror`: units without counterpart, paths that mirror no unit, and stale deviations."""
     paths = with_directories(files)
     units = find_units(mirror, files)
-    counterparts = {mirror.counterpart(unit) for unit in units}
+    mirrored = {path: unit for path in sorted(paths) if (unit := mirror.unit_of(path)) is not None}
     violations: list[Violation] = []
     for unit in sorted(units):
-        counterpart = mirror.counterpart(unit)
-        if counterpart not in paths and unit not in mirror.exempt:
-            violations.append(Violation(mirror.location(unit), f"has no counterpart {counterpart}"))
-        elif counterpart in paths and unit in mirror.exempt:
-            violations.append(Violation(mirror.location(unit), f"is exempt, but {counterpart} exists: remove the exemption"))
+        counterparts = [path for path, mirrored_unit in mirrored.items() if mirrored_unit == unit]
+        if not counterparts and unit not in mirror.exempt:
+            violations.append(Violation(mirror.location(unit), f"has no counterpart {mirror.counterpart(unit)}"))
+        elif counterparts and unit in mirror.exempt:
+            violations.append(Violation(mirror.location(unit), f"is exempt, but {counterparts[0]} exists: remove the exemption"))
     violations += [
         Violation(f"{mirror.code}/{unit}", "is exempt, but is not a unit: remove the exemption") for unit in sorted(mirror.exempt - units)
     ]
     violations += [
         Violation(path, f"mirrors no unit of {mirror.code}/")
-        for path in sorted(paths)
-        if mirror.matches_template(path) and path not in counterparts and path not in mirror.extra
+        for path, unit in mirrored.items()
+        if unit not in units and path not in mirror.extra
     ]
     violations += [
         Violation(path, f"is an extra of the mirror of {mirror.code}/, but does not exist: remove it")
@@ -173,7 +187,8 @@ def check_mirror(mirror: Mirror, files: set[str]) -> list[Violation]:
     ]
     violations += [
         Violation(path, f"is an extra of the mirror of {mirror.code}/, but is a counterpart: remove it")
-        for path in sorted(mirror.extra & counterparts)
+        for path in sorted(mirror.extra & paths)
+        if mirrored.get(path) in units
     ]
     return violations
 

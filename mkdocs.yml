@@ -160,6 +160,7 @@ nav:
           - Overview: developer/tools/index.md
           - Layering check: developer/tools/check_layering.md
           - Layout check: developer/tools/check_layout.md
+          - Name check: developer/tools/check_names.md
           - Reference check: developer/tools/check_references.md
           - Encoding check: developer/tools/check_encoding.md
           - Line ending check: developer/tools/check_line_endings.md

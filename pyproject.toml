@@ -153,18 +153,21 @@ extraPaths = ["src", "test", "features"]
 
 # The layout rules of docs/developer/architecture/repository_structure.md: the tests and the documentation mirror the code.
 # This is their single source of truth, checked by tools/check_layout.py. Each mirror maps every unit under `code` onto its
-# counterpart; `exempt` lists units without a counterpart, `extra` lists paths in the mirror that are no counterpart.
-# The migration adds a mirror for each part of src/renaissance once that part is in its target place.
+# counterpart; `exempt` lists units without a counterpart, `extra` lists paths in the mirror that are no counterpart. With
+# `aspects = true`, the tests of a module may be split into one file per aspect, `test_x___<aspect>.py`.
+# The migration adds the mirrors of each part of src/renaissance once that part is in its target place.
 [[tool.check_layout.mirrors]]
 code = "tools"
 units = "modules"
 mirror = "test/tools/test_{path}.py"
+aspects = true
 exempt = ["check_doc_images_policy", "mkdocs_hooks", "ruff_stats"]
 
 [[tool.check_layout.mirrors]]
 code = "tools/shared"
 units = "modules"
 mirror = "test/tools/shared/test_{path}.py"
+aspects = true
 
 [[tool.check_layout.mirrors]]
 code = "tools"
@@ -186,6 +189,14 @@ code = "src/renaissance/core"
 units = "packages"
 mirror = "test/unit/core/{path}/"
 extra = ["test/unit/core/model/shared/"]  # test helpers
+
+[[tool.check_layout.mirrors]]
+code = "src/renaissance/core/model"
+units = "modules"
+mirror = "test/unit/core/model/test_{path}.py"
+aspects = true
+# No unit tests of their own yet.
+exempt = ["for_bindings", "semantic_kind", "siblings", "text_utils"]
 
 [[tool.check_layout.mirrors]]
 code = "src/renaissance/core"

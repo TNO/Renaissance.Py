@@ -90,6 +90,7 @@ environment.
 - Tests: `python -m pytest -q -p no:cacheprovider`, with the same counts as after the previous step.
 - Layering: `uv run lint-imports --no-cache`.
 - Layout: `python -m tools.check_layout`.
+- Names: `python -m tools.check_names`.
 - References: `python -m tools.check_references`, from step 0.1 on.
 - Source roots: `python -m tools.check_source_roots`, which matters from step 8.1 on, when the feature tests move.
 - Lint: `ruff check src test tools features` and `ruff format --check src test tools features`.
