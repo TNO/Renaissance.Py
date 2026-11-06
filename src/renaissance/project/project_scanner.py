@@ -53,10 +53,9 @@ class JavaScanner(ProjectScanner):
 
 
 class PythonScanner(ProjectScanner):
-    """Scan a directory tree for Python source files."""
+    """Scan a directory tree for Python source files, skipping hidden files and directories."""
 
-    EXCLUDED_DIRS = frozenset({".git", "__pycache__", ".venv", "venv"})
-    # TODO: incomplete list, extend this list with more files/directories that should always be ignored
+    SPECIAL_EXCLUDED_DIRS = frozenset({"__pycache__", "venv"})
 
     def __init__(self, root_dir: str = ".", package_dirs: list[str] | None = None) -> None:
         """Store the scan root and optional package_dirs narrowing.
@@ -69,7 +68,11 @@ class PythonScanner(ProjectScanner):
         self.package_dirs = package_dirs
 
     def find_sources(self) -> list[str]:
-        """Return every .py file under root_dir (or package_dirs, if given), sorted, excluding EXCLUDED_DIRS."""
+        """Return every .py file under root_dir (or package_dirs, if given), sorted.
+
+        Files and directories whose name starts with "." are skipped, as are EXCLUDED_DIRS subdirectories.
+        The names of root_dir and package_dirs themselves are never checked.
+        """
         path = Path(self.root_dir)
         if not path.exists():
             message = f"root_dir does not exist: {self.root_dir}"
@@ -78,13 +81,16 @@ class PythonScanner(ProjectScanner):
             message = f"root_dir is not a directory: {self.root_dir}"
             raise NotADirectoryError(message)
 
-        roots = [Path(self.root_dir) / d for d in self.package_dirs] if self.package_dirs else [Path(self.root_dir)]
+        roots = [path / d for d in self.package_dirs] if self.package_dirs else [path]
         files: list[Path] = []
         for root in roots:
             if not root.exists():
                 continue
-            files.extend(path for path in root.rglob("*.py") if not any(part in self.EXCLUDED_DIRS for part in path.parts))
-        return sorted(str(path) for path in files)
+            for dirpath, dirnames, filenames in root.walk():
+                # Pruning in place stops walk() from descending into skipped directories at all.
+                dirnames[:] = [name for name in dirnames if not name.startswith(".") and name not in self.SPECIAL_EXCLUDED_DIRS]
+                files.extend(dirpath / name for name in filenames if name.endswith(".py") and not name.startswith("."))
+        return sorted(str(file) for file in files)
 
 
 class BearCppScanner(CppScanner):
