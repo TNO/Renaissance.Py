@@ -41,6 +41,14 @@ Three cases
 - Placeholders are AST Nodes
 - Support of explicit and implicit placeholders
 
+## Scenario: Placeholders for type parameters
+
+- `[$$tps]` in `def $f[$$tps]($$args) -> $r:` or `class $c[$$tps]($$bases):` matches any number of type parameters
+  (`TypeVar`, `ParamSpec` and `TypeVarTuple`).
+- `[$t]` matches exactly one type parameter.
+- Each captured type parameter is an AST node.
+- A type parameter written in the pattern, such as `[T]`, matches only that name.
+
 ## Scenario: Robustness for occurrence of implicit placeholders
 
 - in strings, e.g. `"$X"`
