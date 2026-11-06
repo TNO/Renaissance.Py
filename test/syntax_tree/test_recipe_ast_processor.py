@@ -12,8 +12,10 @@ import pytest
 from hamcrest import assert_that, equal_to, has_length, is_
 from pytest_mock import MockerFixture
 
+from renaissance.core.model import SemanticKind
 from renaissance.integrations.clang import ClangASTNode
-from renaissance.syntax_tree import ASTFactory, ASTProcessor
+from renaissance.syntax_tree.ast_factory import ASTFactory
+from renaissance.syntax_tree.ast_processor import ASTProcessor
 from renaissance.syntax_tree.batch_ast_processor import AST_FACTORY_AND_ATU, IterableProvider
 from renaissance.syntax_tree.recipe_ast_processor import (
     BatchASTProcessor,
@@ -24,7 +26,6 @@ from renaissance.syntax_tree.recipe_ast_processor import (
     get_methods_with_decorator,
     recipe_step,
 )
-from renaissance.syntax_tree.semantic_kind import SemanticKind
 
 
 class TestRecipeASTProcessor:

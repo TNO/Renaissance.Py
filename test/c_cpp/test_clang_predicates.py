@@ -6,6 +6,7 @@
 
 """Tests for the Clang AST node kind predicate helpers."""
 
+from renaissance.core.model import SemanticKind
 from renaissance.integrations.clang.predicates import (
     is_clang_compound_statement,
     is_clang_constructor,
@@ -14,7 +15,6 @@ from renaissance.integrations.clang.predicates import (
     is_clang_method,
     is_clang_type_reference,
 )
-from renaissance.syntax_tree.semantic_kind import SemanticKind
 
 
 class Node:

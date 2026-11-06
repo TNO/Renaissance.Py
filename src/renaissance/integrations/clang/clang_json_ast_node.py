@@ -22,16 +22,16 @@ from importlib.metadata import version
 from pathlib import Path
 from typing import Any, Self, override
 
+from renaissance.core.model import SemanticKind
+from renaissance.core.model.for_bindings import match_children, match_props
 from renaissance.integrations.clang.cpp_utils import CPPUtils, matches_node_kind
 from renaissance.integrations.clang.kinds import CLANG_KIND_MAP
 from renaissance.integrations.clang.predicates import (
     is_clang_declaration_reference,
     is_clang_kind,
 )
-from renaissance.syntax_tree import ASTNode, ASTReference
+from renaissance.syntax_tree.ast_node import ASTNode, ASTReference
 from renaissance.syntax_tree.pattern_kind import PatternKind
-from renaissance.syntax_tree.semantic_kind import SemanticKind
-from renaissance.utils.ast_utils import match_children, match_props
 
 EMPTY_DICT = {}
 EMPTY_STR = ""
@@ -301,7 +301,7 @@ class ClangJsonASTNode(ASTNode[dict[str, Any], ClangJsonTranslationUnit]):
                 length=length,
             )
             if code:
-                # TODO: see docs/developer/architecture/position-consistency.md - clang decides the encoding, not the host.
+                # TODO: see docs/developer/architecture/position_consistency.md - clang decides the encoding, not the host.
                 atu.cache[str(file_path)] = code.encode(sys.getfilesystemencoding())
             else:
                 with Path(working_dir / file_path).open("rb") as f:

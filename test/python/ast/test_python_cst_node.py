@@ -24,7 +24,7 @@ from libcst import ParserSyntaxError
 import targets
 from renaissance.integrations.python.ast.cst_node import PythonCstNode
 from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
-from renaissance.syntax_tree import ASTShower
+from renaissance.syntax_tree.ast_shower import ASTShower
 
 
 class TestPythonCstNode:

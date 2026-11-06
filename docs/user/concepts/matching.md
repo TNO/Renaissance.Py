@@ -61,7 +61,7 @@ See for example [Figure 1.1](#matching-equal-notepadplusplus-find) that shows op
 <!-- pyml enable md051-->
 /// html | figure#matching-equal-notepadplusplus-find
 
-![Find window of Notepad++](matching-images/matching-equal-notepadplusplus-find.png)
+![Find window of Notepad++](matching_images/matching_equal_notepadplusplus_find.png)
 
 _Figure 1.1 (CONCEPT-MATCHING): Selecting the desired conceptual view for text in the Find window of Notepad++._
 
@@ -217,7 +217,7 @@ Relevant strategies include eager, lazy, and all-possible matching.
 
 ## Related images
 
-* Local image directory: [matching-images/](matching-images/README.md)
+* Local image directory: [matching_images/](matching_images/README.md)
 
 ## MISC
 

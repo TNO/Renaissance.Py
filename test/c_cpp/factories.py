@@ -10,7 +10,7 @@ from itertools import product
 
 from renaissance.integrations.clang import ClangASTNode
 from renaissance.integrations.clang.clang_json_ast_node import ClangJsonASTNode
-from renaissance.syntax_tree import ASTFactory
+from renaissance.syntax_tree.ast_factory import ASTFactory
 
 
 class Factories:

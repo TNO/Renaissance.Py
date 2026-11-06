@@ -16,9 +16,8 @@ from typing import Protocol, Self, runtime_checkable
 from more_itertools import flatten
 
 from renaissance.common import Rewriter
+from renaissance.core.model import TextUtils
 from renaissance.syntax_tree.match_finder import PatternMatch
-from renaissance.utils.ast_utils import is_ancestor_of
-from renaissance.utils.text_utils import TextUtils
 
 
 @runtime_checkable
@@ -57,6 +56,19 @@ class Rewritable(Protocol):
         ...
 
 
+def is_ancestor_of(ancestor: Rewritable, node: Rewritable) -> bool:
+    """Return True if ancestor is a proper ancestor of node.
+
+    Parent links are compared by identity, since node equality is structural.
+    """
+    current = node.parent
+    while current is not None:
+        if current is ancestor:
+            return True
+        current = current.parent
+    return False
+
+
 class _RewriteActionType(Enum):
     REPLACE = 1
     INSERT_BEFORE = 2
@@ -70,7 +82,7 @@ class ASTRewriter:
     def __init__(
         self,
         node,
-        # TODO: see docs/developer/architecture/position-consistency.md - the encoding must come from the adapter, not the host.
+        # TODO: see docs/developer/architecture/position_consistency.md - the encoding must come from the adapter, not the host.
         encoding: str = sys.getfilesystemencoding(),
         correct_indent: bool = True,
     ) -> None:
@@ -209,7 +221,7 @@ class _RewriteActions:
         self.node = node
         self.encoding = encoding
         # self.content = self.node.root.binary_file_content()[self.node.offset : self.node.extended_end_offset]
-        # TODO: see docs/developer/architecture/position-consistency.md - re-encodes node text instead of using the root buffer.
+        # TODO: see docs/developer/architecture/position_consistency.md - re-encodes node text instead of using the root buffer.
         self.content = node.text.encode(sys.getfilesystemencoding())
         self.correct_indent = correct_indent
 

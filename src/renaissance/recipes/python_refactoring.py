@@ -8,20 +8,36 @@
 
 import ast
 import importlib
+import re
 from collections.abc import Sequence
 from pathlib import Path
 from typing import cast
 
 from termcolor import colored
 
+from renaissance.core.model import SemanticKind
 from renaissance.integrations.python.ast.cst_node import PythonCstNode
 from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
-from renaissance.integrations.python.ast.util import to_str
-from renaissance.syntax_tree import ASTProcessor
+from renaissance.syntax_tree.ast_processor import ASTProcessor
 from renaissance.syntax_tree.match_finder import match_pattern
-from renaissance.syntax_tree.semantic_kind import SemanticKind
-from renaissance.utils.text_utils import snake_case
+
+
+def to_str(node) -> str:
+    """AI: Return the node's signature if it has one, otherwise its string representation."""
+    if hasattr(node, "signature"):
+        return node.signature
+    return str(node)
+
+
+def snake_case(snippet: str) -> str:
+    """Convert a camelCase or PascalCase string to snake_case, preserving acronyms as single words.
+
+    Leaves a string already in snake_case unchanged.
+    """
+    snippet = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1_\2", snippet)
+    snippet = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", snippet)
+    return snippet.lower()
 
 
 class PythonRefactoring[NodeT: PythonRstNode | PythonCstNode = PythonRstNode](ASTProcessor):

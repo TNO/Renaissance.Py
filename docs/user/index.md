@@ -15,3 +15,4 @@ The user documentation explains the conceptual model, the available features, an
 1. [Concepts](concepts/index.md)
 1. [Features](features/index.md)
 1. [Workflows](workflows/index.md)
+1. [Core model](core/model.md)

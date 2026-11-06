@@ -13,7 +13,7 @@ from renaissance.integrations.python.ast.extractor import PythonExtractor
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
 from renaissance.project.project_scanner import PythonScanner
 from renaissance.recipes.python_refactoring import PythonRefactoring
-from renaissance.syntax_tree import ASTShower
+from renaissance.syntax_tree.ast_shower import ASTShower
 
 
 def refactor() -> None:

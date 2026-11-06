@@ -14,7 +14,8 @@ from pytest_bdd import given, parsers, scenario, then, when
 
 from renaissance.integrations.python.ast.factory import PythonPatternFactory
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
-from renaissance.syntax_tree import ASTFactory, ASTRewriter
+from renaissance.syntax_tree.ast_factory import ASTFactory
+from renaissance.syntax_tree.ast_rewriter import ASTRewriter
 from renaissance.syntax_tree.match_finder import match_pattern
 from steps.conftest import FEATURES_BASE_DIR
 
@@ -38,13 +39,13 @@ def context():
 
 
 @scenario(
-    "refactor-python-file.feature",
+    "refactor_python_file.feature",
     "python code",
     encoding="utf-8",
     features_base_dir=str(FEATURES_BASE_DIR),
 )
 def test_refactor_python_file() -> None:
-    """AI: Scenario test for the 'python code' refactor-python-file.feature scenario."""
+    """AI: Scenario test for the 'python code' refactor_python_file.feature scenario."""
 
 
 @given("'python' programming language")

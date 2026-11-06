@@ -16,10 +16,9 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Self
 
-from renaissance.syntax_tree.node_protocol import NodeProtocol
-from renaissance.syntax_tree.semantic_kind import SemanticKind
-from renaissance.utils.ast_utils import format_node, next_sibling, preceding_sibling, process_node
-from renaissance.utils.text_utils import TextUtils
+from renaissance.core.model import NodeProtocol, SemanticKind, TextUtils, next_sibling, preceding_sibling
+from renaissance.core.model.for_bindings import format_node
+from renaissance.core.model.node_utils import process_node
 
 
 # enum with ABORT, CONTINUE and SKIP
@@ -119,7 +118,7 @@ class ASTNode[NodeT, TranslationUnitT](ABC):
     def content(self, start: int, end: int) -> str:
         """AI: Return the decoded source text between start and end offsets in the root's file content."""
         content = self.root.binary_file_content()
-        # TODO: see docs/developer/architecture/position-consistency.md - decodes with the host encoding, not the adapter's.
+        # TODO: see docs/developer/architecture/position_consistency.md - decodes with the host encoding, not the adapter's.
         return str(content[start:end], sys.getfilesystemencoding())
 
     def binary_file_content(self, file_path: str | None = None) -> bytes:

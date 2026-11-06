@@ -10,11 +10,10 @@ from pathlib import Path
 
 import networkx as nx
 
+from renaissance.core.model import SemanticKind
 from renaissance.integrations.tree_sitter.adapter import TreeSitterAdapter
 from renaissance.integrations.tree_sitter.factory import TreeSitterPatternFactory
-from renaissance.syntax_tree import PatternMatch
-from renaissance.syntax_tree.match_finder import match_pattern
-from renaissance.syntax_tree.semantic_kind import SemanticKind
+from renaissance.syntax_tree.match_finder import PatternMatch, match_pattern
 
 GRAPHML_DIR = "out_graphml"
 Path(GRAPHML_DIR).mkdir(parents=True, exist_ok=True)

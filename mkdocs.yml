@@ -113,70 +113,79 @@ nav:
       - Overview: user/index.md
       - Concepts:
           - Overview: user/concepts/index.md
-          - 1. Evolving and maintaining code: user/concepts/code-base-evolution-and-maintenance.md
+          - 1. Evolving and maintaining code: user/concepts/code_base_evolution_and_maintenance.md
           - 2. Automation: user/concepts/automation.md
           - 3. Matching: user/concepts/matching.md
-          - Matching images: user/concepts/matching-images/README.md
+          - Matching images: user/concepts/matching_images/README.md
           - 4. Filter: user/concepts/filter.md
-          - 5. Rewrite semantics: user/concepts/rewrite-semantics.md
-          - Rewrite semantics images: user/concepts/rewrite-semantics-images/README.md
+          - 5. Rewrite semantics: user/concepts/rewrite_semantics.md
+          - Rewrite semantics images: user/concepts/rewrite_semantics_images/README.md
           - 6. Observability: user/concepts/observability.md
           - 7. Analysis: user/concepts/analysis.md
           - 8. Transformation: user/concepts/transformation.md
           - 9. Composition: user/concepts/composition.md
-          - 10. Standard analyses and transformations: user/concepts/standard-libraries.md
-          - 11. Type parameters: user/concepts/type-parameters.md
+          - 10. Standard analyses and transformations: user/concepts/standard_libraries.md
+          - 11. Type parameters: user/concepts/type_parameters.md
 
       - Features:
           - Overview: user/features/index.md
-          - 1. Parsing and AST access: user/features/parsing-and-ast-access.md
-          - 2. Pattern matching: user/features/pattern-matching.md
-          - Pattern matching images: user/features/pattern-matching-images/README.md
-          - 3. Filtering and semantic checks: user/features/filtering-and-semantic-checks.md
-          - 4. Analysis workflows: user/features/analysis-workflows.md
-          - 5. Transformation workflows: user/features/transformation-workflows.md
-          - 6. Strategy composition: user/features/strategy-composition.md
-          - 7. Observability and reporting: user/features/observability-and-reporting.md
+          - 1. Parsing and AST access: user/features/parsing_and_ast_access.md
+          - 2. Pattern matching: user/features/pattern_matching.md
+          - Pattern matching images: user/features/pattern_matching_images/README.md
+          - 3. Filtering and semantic checks: user/features/filtering_and_semantic_checks.md
+          - 4. Analysis workflows: user/features/analysis_workflows.md
+          - 5. Transformation workflows: user/features/transformation_workflows.md
+          - 6. Strategy composition: user/features/strategy_composition.md
+          - 7. Observability and reporting: user/features/observability_and_reporting.md
           - 8. Navigation: user/features/navigation.md
           - 9. Find: user/features/find.md
           - 10. Modify: user/features/modify.md
-          - 11. Rewrite semantics: user/features/rewrite-semantics.md
-          - 12. Type parameter modernization: user/features/type-parameter-modernization.md
+          - 11. Rewrite semantics: user/features/rewrite_semantics.md
+          - 12. Type parameter modernization: user/features/type_parameter_modernization.md
 
       - Workflows:
           - Overview: user/workflows/index.md
-          - 1. Analyse a code base: user/workflows/analyse-a-code-base.md
-          - 2. Apply a transformation strategy: user/workflows/apply-a-transformation-strategy.md
-          - 3. Investigate undecisive results: user/workflows/investigate-undecisive-results.md
+          - 1. Analyse a code base: user/workflows/analyse_a_code_base.md
+          - 2. Apply a transformation strategy: user/workflows/apply_a_transformation_strategy.md
+          - 3. Investigate undecisive results: user/workflows/investigate_undecisive_results.md
+
+      - Core:
+          - Model: user/core/model.md
 
   - Developer documentation:
       - Overview: developer/index.md
-      - Coding conventions: developer/coding-conventions.md
+      - Coding conventions: developer/coding_conventions.md
 
       - Guard rail tools:
           - Overview: developer/tools/index.md
-          - Layering check: developer/tools/check-layering.md
-          - Encoding check: developer/tools/check-encoding.md
-          - Line ending check: developer/tools/check-line-endings.md
-          - Copyright check: developer/tools/check-copyright.md
+          - Layering check: developer/tools/check_layering.md
+          - Layout check: developer/tools/check_layout.md
+          - Name check: developer/tools/check_names.md
+          - Reference check: developer/tools/check_references.md
+          - Encoding check: developer/tools/check_encoding.md
+          - Line ending check: developer/tools/check_line_endings.md
+          - Copyright check: developer/tools/check_copyright.md
+          - Source root check: developer/tools/check_source_roots.md
 
       - Architecture:
           - Overview: developer/architecture/index.md
-          - Code architecture: developer/architecture/code-architecture.md
-          - Code base: developer/architecture/code-base.md
+          - Code architecture: developer/architecture/code_architecture.md
+          - Repository structure: developer/architecture/repository_structure.md
+          - Repository structure migration: developer/architecture/repository_structure_migration.md
+          - Code base: developer/architecture/code_base.md
           - Navigation: developer/architecture/navigation.md
           - Matching: developer/architecture/matching.md
           - Find: developer/architecture/find.md
           - Filter: developer/architecture/filter.md
           - Modify: developer/architecture/modify.md
-          - Rewrite semantics: developer/architecture/rewrite-semantics.md
-          - Position consistency: developer/architecture/position-consistency.md
-          - Standard analyses and transformations: developer/architecture/standard-libraries.md
+          - Rewrite semantics: developer/architecture/rewrite_semantics.md
+          - Position consistency: developer/architecture/position_consistency.md
+          - Standard analyses and transformations: developer/architecture/standard_libraries.md
           - Architecture images: developer/architecture/images/README.md
-          - Test architecture: developer/architecture/test-architecture.md
-          - Traceability model: developer/architecture/traceability-model.md
+          - Test architecture: developer/architecture/test_architecture.md
+          - Traceability model: developer/architecture/traceability_model.md
           - Environment:
-              - Regular expressions in Python: developer/architecture/environment/regular-expressions.md
+              - Regular expressions in Python: developer/architecture/environment/regular_expressions.md
           - Architecture Decision Records:
               - Overview: developer/architecture/adr/README.md
               - 01. Children and properties: developer/architecture/adr/01_children_and_properties.md
@@ -196,56 +205,58 @@ nav:
               - 15. camelCase/snake_case conversion and digit-as-word naming: developer/architecture/adr/15_camel_snake_case_conversion.md
 
       - Traceability:
-          - Overview: developer/feature-test-map/index.md
-          - Core mappings: developer/feature-test-map/core.md
+          - Overview: developer/feature_test_map/index.md
+          - Core mappings: developer/feature_test_map/core.md
 
       - Code modules:
           - Overview: developer/modules/index.md
-          - Parser and AST modules: developer/modules/parser-and-ast.md
+          - Core model: developer/modules/core/model.md
+          - Parser and AST modules: developer/modules/parser_and_ast.md
           - Matching modules: developer/modules/matching.md
           - Filter modules: developer/modules/filter.md
           - Analysis modules: developer/modules/analysis.md
           - Transformation modules: developer/modules/transformation.md
           - Observability modules: developer/modules/observability.md
           - Strategy modules: developer/modules/strategy.md
-          - Rewrite semantics module: developer/modules/rewrite-semantics.md
+          - Rewrite semantics module: developer/modules/rewrite_semantics.md
           - Refactoring recipes: developer/modules/recipes.md
-          - Rejected recipes: developer/modules/rejected-recipes.md
+          - Rejected recipes: developer/modules/rejected_recipes.md
 
       - API reference:
           - Overview: developer/api/index.md
-          - Public API: developer/api/public-api.md
+          - Public API: developer/api/public_api.md
+          - Core model: developer/api/core/model.md
 
   - Documentation system:
-      - Overview: documentation-system/index.md
+      - Overview: documentation_system/index.md
 
       - Templates:
-          - Overview: documentation-system/templates/index.md
-          - Architecture template: documentation-system/templates/architecture-template.md
-          - Concept template: documentation-system/templates/concept-template.md
-          - Feature template: documentation-system/templates/feature-template.md
-          - Test module template: documentation-system/templates/test-module-template.md
-          - Code module template: documentation-system/templates/code-module-template.md
-          - Feature-test mapping template: documentation-system/templates/feature-test-map-template.md
+          - Overview: documentation_system/templates/index.md
+          - Architecture template: documentation_system/templates/architecture_template.md
+          - Concept template: documentation_system/templates/concept_template.md
+          - Feature template: documentation_system/templates/feature_template.md
+          - Test module template: documentation_system/templates/test_module_template.md
+          - Code module template: documentation_system/templates/code_module_template.md
+          - Feature-test mapping template: documentation_system/templates/feature_test_map_template.md
 
       - Policies:
-          - Overview: documentation-system/policies/index.md
+          - Overview: documentation_system/policies/index.md
 
           - Mandatory:
-              - Overview: documentation-system/policies/mandatory/index.md
-              - Image policy: documentation-system/policies/mandatory/image-policy.md
-              - Linking policy: documentation-system/policies/mandatory/linking-policy.md
-              - Glossary guide: documentation-system/policies/mandatory/glossary-guide.md
+              - Overview: documentation_system/policies/mandatory/index.md
+              - Image policy: documentation_system/policies/mandatory/image_policy.md
+              - Linking policy: documentation_system/policies/mandatory/linking_policy.md
+              - Glossary guide: documentation_system/policies/mandatory/glossary_guide.md
 
           - Recommended:
-              - Overview: documentation-system/policies/recommended/index.md
-              - Diagram style guide: documentation-system/policies/recommended/diagram-style-guide.md
-              - Caption style guide: documentation-system/policies/recommended/caption-style-guide.md
+              - Overview: documentation_system/policies/recommended/index.md
+              - Diagram style guide: documentation_system/policies/recommended/diagram_style_guide.md
+              - Caption style guide: documentation_system/policies/recommended/caption_style_guide.md
 
       - Enforcement:
-          - Overview: documentation-system/enforcement/index.md
-          - Image policy enforcement: documentation-system/enforcement/image-policy-enforcement.md
-          - Linking policy enforcement: documentation-system/enforcement/linking-policy-enforcement.md
-          - CI overview: documentation-system/enforcement/ci-overview.md
+          - Overview: documentation_system/enforcement/index.md
+          - Image policy enforcement: documentation_system/enforcement/image_policy_enforcement.md
+          - Linking policy enforcement: documentation_system/enforcement/linking_policy_enforcement.md
+          - CI overview: documentation_system/enforcement/ci_overview.md
 
   - Shared images: assets/images/README.md

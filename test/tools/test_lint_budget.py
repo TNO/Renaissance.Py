@@ -4,12 +4,8 @@
 # of this repository, also available at:
 # https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
-"""AI: Tests for the ruff/pyright issue budget gate in tools/lint_budget.py.
+"""AI: Tests for the ruff/pyright issue budget gate in tools/lint_budget.py."""
 
-The `tools` directory is not on the pytest `pythonpath`, so the script is loaded from its path.
-"""
-
-import importlib.util
 import json
 from collections import Counter
 from pathlib import Path
@@ -17,25 +13,13 @@ from pathlib import Path
 import pytest
 from hamcrest import assert_that, equal_to
 
-ROOT = Path(__file__).resolve().parents[2]
-
-
-def _load_lint_budget():
-    """AI: Import tools/lint_budget.py as a module."""
-    spec = importlib.util.spec_from_file_location("lint_budget", ROOT / "tools" / "lint_budget.py")
-    assert spec is not None and spec.loader is not None
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
-
-
-lint_budget = _load_lint_budget()
+from tools import lint_budget
 
 
 @pytest.fixture
 def budget_file(tmp_path, monkeypatch):
     """AI: Redirect the budget file to a temporary location."""
-    path = tmp_path / "lint-budget.json"
+    path = tmp_path / "lint_budget.json"
     monkeypatch.setattr(lint_budget, "BUDGET_FILE", path)
     return path
 
@@ -105,6 +89,12 @@ def test_check_mode_accepts_an_improvement_without_writing(budget_file, monkeypa
 
     assert lint_budget.main(["--check"]) == lint_budget.EXIT_OK
     assert json.loads(budget_file.read_text(encoding="utf-8"))["ruff"] == {"E501": 5}
+
+
+def test_the_budget_file_is_written_with_lf_line_endings(budget_file: Path) -> None:
+    """Assert the budget file has LF line endings on every platform, as .gitattributes requires."""
+    lint_budget.save_budget({"ruff": {"E501": 1}})
+    assert b"\r\n" not in budget_file.read_bytes()  # noqa: S101 (pytest assertion; new tests must not raise the S101 budget)
 
 
 def test_removal_is_advised_when_no_issues_are_left(budget_file, monkeypatch, capsys) -> None:

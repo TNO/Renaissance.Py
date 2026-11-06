@@ -24,12 +24,11 @@ from hamcrest import (
 from hypothesis import HealthCheck, given, settings
 
 import targets
+from renaissance.core.model import SemanticKind, traverse
 from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
-from renaissance.syntax_tree import ASTShower
-from renaissance.syntax_tree.semantic_kind import SemanticKind
-from renaissance.utils.ast_utils import traverse
-from utils_for_tests import reject_unsupported_code
+from renaissance.syntax_tree.ast_shower import ASTShower
+from test.utils_for_tests import reject_unsupported_code
 
 
 class TestPythonRstNode:

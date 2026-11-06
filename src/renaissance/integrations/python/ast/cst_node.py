@@ -17,10 +17,9 @@ import libcst
 from libcst import BaseCompoundStatement, BaseSmallStatement, ClassDef, CSTNode, FunctionDef, MetadataWrapper
 from libcst.metadata import Access, Assignment, CodePosition, PositionProvider, ScopeProvider
 
+from renaissance.core.model import SemanticKind, next_sibling, preceding_sibling
 from renaissance.integrations.python.ast.kinds import PYTHON_KIND_MAP
 from renaissance.syntax_tree.ast_node import ASTReference
-from renaissance.syntax_tree.semantic_kind import SemanticKind
-from renaissance.utils.ast_utils import next_sibling, preceding_sibling
 
 type _Link = tuple[CSTNode, str, Access]
 
@@ -30,7 +29,7 @@ class PythonCstTranslationUnit:
 
     def __init__(self, content, file_name: str) -> None:
         """AI: Parse Python source into a libcst tree with position lookups for AST-node wrapping."""
-        # TODO(pjljvandelaar): see docs/developer/architecture/position-consistency.md - exposes no buffer, so the rewriter
+        # TODO(pjljvandelaar): see docs/developer/architecture/position_consistency.md - exposes no buffer, so the rewriter
         #  derives its own.
         #  https://github.com/TNO/Renaissance.Py/issues/153
         # TODO(FrancescoPezzella): content is to become the file's UTF-8 bytes, with every offset a UTF-8 byte offset into

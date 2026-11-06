@@ -1,0 +1,48 @@
+# Copyright (C) 2024-2026 TNO
+#
+# Licensed under the terms specified in the LICENSE file in the root directory
+# of this repository, also available at:
+# https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
+
+name: docs quality
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Install uv
+        uses: astral-sh/setup-uv@v10.3.3
+      # uv installs the interpreter pinned by requires-python in pyproject.toml.
+      - name: Install dependencies
+        run: uv sync --group dev
+      - name: Build documentation strictly
+        run: uv run mkdocs build --strict
+      - name: Check documentation image policy
+        run: uv run python -m tools.check_doc_images_policy
+      - name: Check spelling
+        run: uv run codespell ./docs
+      # pymarkdown has no configuration key for path exclusions, so .venv must be excluded on the command line.
+      - name: Lint markdown
+        run: uv run pymarkdown scan -r --respect-gitignore .
+
+  ci-passed:
+    name: Docs CI passed
+    if: always()
+    needs: [docs]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check docs result
+        run: |
+          if [ "${{ needs.docs.result }}" != "success" ]; then
+            echo "docs job failed or was cancelled"
+            exit 1
+          fi

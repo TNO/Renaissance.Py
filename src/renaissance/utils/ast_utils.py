@@ -4,33 +4,9 @@
 # of this repository, also available at:
 # https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
-"""AI: Low-level AST utility helpers: sibling and ancestor lookup, placeholder handling, and node matching."""
-
-from collections import deque
-from contextlib import contextmanager
-from contextvars import ContextVar
-from typing import TYPE_CHECKING
+"""AI: Placeholder helpers: conversion between dollar signs and match symbols, and placeholder detection."""
 
 from renaissance.integrations import MATCH_ALL, MATCH_ONE
-
-# TODO(FrancescoPezzella): Replace with a lazy import in Python 3.15.
-#  https://github.com/TNO/Renaissance.Py/issues/275
-if TYPE_CHECKING:
-    # syntax_tree imports this module, so a runtime import would be circular.
-    from renaissance.syntax_tree.ast_rewriter import Rewritable
-    from renaissance.syntax_tree.node_protocol import NodeProtocol
-
-DISPLAY_PARSER_KIND: ContextVar[bool] = ContextVar("display_parser_kind", default=False)
-
-
-@contextmanager
-def display_context(display_parser_kind: bool):
-    """AI: Temporarily set whether node display uses parser kind instead of semantic kind."""
-    token = DISPLAY_PARSER_KIND.set(display_parser_kind)
-    try:
-        yield
-    finally:
-        DISPLAY_PARSER_KIND.reset(token)
 
 
 def replace_dollar(text: str) -> str:
@@ -66,90 +42,3 @@ def detect_placeholder(signature: str, original_node_type: str) -> tuple[bool, s
     if signature.startswith((MATCH_ONE, "$")) and " " not in signature and "(" not in signature:
         return True, MATCH_ONE, signature
     return False, original_node_type, "-"
-
-
-# duplicate of ast node process
-def traverse(node):
-    """AI: Yield node and all its descendants in breadth-first order."""
-    todo = deque([node])
-    while todo:
-        node = todo.popleft()
-        if hasattr(node, "children"):
-            todo.extend(node.children)
-        yield node
-
-
-def process_node(node, action) -> None:
-    """AI: Recursively apply action to node and all its descendants."""
-    action(node)
-    if node.children:
-        for child in node.children:
-            process_node(child, action)
-
-
-def _sibling_at[NodeT: NodeProtocol](node: NodeT, offset: int) -> NodeT | None:
-    """Return the sibling offset positions away from node in its parent's children, or None.
-
-    The node is located by identity, since node equality is structural.
-    """
-    parent = node.parent
-    if parent is None:
-        return None
-    siblings = parent.children
-    for index, sibling in enumerate(siblings):
-        if sibling is node:
-            target = index + offset
-            return siblings[target] if 0 <= target < len(siblings) else None
-    msg = "node is not among the children of its parent"
-    raise ValueError(msg)
-
-
-def preceding_sibling[NodeT: NodeProtocol](node: NodeT) -> NodeT | None:
-    """AI: Return the sibling immediately before node in its parent's children, or None."""
-    return _sibling_at(node, -1)
-
-
-def next_sibling[NodeT: NodeProtocol](node: NodeT) -> NodeT | None:
-    """AI: Return the sibling immediately after node in its parent's children, or None."""
-    return _sibling_at(node, 1)
-
-
-def is_ancestor_of(ancestor: Rewritable, node: Rewritable) -> bool:
-    """Return True if ancestor is a proper ancestor of node.
-
-    Parent links are compared by identity, since node equality is structural.
-    """
-    current = node.parent
-    while current is not None:
-        if current is ancestor:
-            return True
-        current = current.parent
-    return False
-
-
-def match_props(mine, other, irrelevant_props) -> bool:
-    """AI: Return True if mine and other agree on all properties except the irrelevant ones."""
-    all_keys = (mine.keys() | other.keys()) - irrelevant_props
-    return all(mine.get(n) == other.get(n) for n in all_keys)
-
-
-def match_children(mine, other, irrelevant_kinds) -> bool:
-    """AI: Return True if every child in other matches the corresponding child in mine (or has an irrelevant kind)."""
-    if mine is None or other is None:
-        return mine == other
-    return all((i < len(mine) and mine[i] == child) or child.parser_kind in irrelevant_kinds for i, child in enumerate(other))
-
-
-def format_node(node) -> str:
-    """AI: Return a human-readable, indented display string for a single AST node."""
-    raw_lines = node.signature.splitlines()
-    properties_text = "" if not node.show_props else node.properties
-    prefix = " " if len(raw_lines) < 2 else f"\n    {node.indent}"
-    formatted_lines = [f"{prefix}|{line}|" for line in raw_lines]
-    semantic_name = node.semantic_kind.value
-    kind = node.parser_kind if DISPLAY_PARSER_KIND.get() or semantic_name == "node" else semantic_name
-    return (
-        f"{node.indent}({kind}, {node.name}, "
-        f"{node.filename}[{node.offset}:{node.offset + node.length}])"
-        f"{properties_text}:{''.join(formatted_lines)}\n"
-    )

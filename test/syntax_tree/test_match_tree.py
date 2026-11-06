@@ -24,7 +24,8 @@ from hamcrest import (
 from renaissance.integrations.clang import ClangASTNode, CPatternFactory
 from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
-from renaissance.syntax_tree import ASTFactory, ASTShower
+from renaissance.syntax_tree.ast_factory import ASTFactory
+from renaissance.syntax_tree.ast_shower import ASTShower
 from renaissance.syntax_tree.match_finder import (
     MatchFinder,
     find_in_list,

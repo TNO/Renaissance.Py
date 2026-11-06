@@ -9,9 +9,9 @@
 import sys
 from typing import Any, Self, cast
 
+from renaissance.core.model import SemanticKind, next_sibling, preceding_sibling
+from renaissance.core.model.for_bindings import format_node, match_children, match_props
 from renaissance.integrations.tree_sitter.kinds import TREE_SITTER_KIND_MAP
-from renaissance.syntax_tree.semantic_kind import SemanticKind
-from renaissance.utils.ast_utils import format_node, match_children, match_props, next_sibling, preceding_sibling
 
 IRRELEVANT_PROPS = {"source_code", "end_point", "start_point", "location", "type"}
 IRRELEVANT_NODE = {"comment"}
@@ -73,6 +73,8 @@ class LSTNode:
 
     def __hash__(self) -> int:
         """AI: Return a hash based on the node's kind key, properties, and children."""
+        # TODO(pjljvandelaar): hashes the IRRELEVANT_PROPS that __eq__ ignores, so equal nodes can have different hashes.
+        #  https://github.com/TNO/Renaissance.Py/issues/187
         return hash((self.kind_key, frozenset(self.properties.items()), tuple(self.children)))
 
     def add_child(self, child) -> None:  # LSTNode):
@@ -97,7 +99,7 @@ class LSTNode:
 
     def binary_file_content(self):
         """AI: Return this node's source code encoded as bytes using the filesystem encoding."""
-        # TODO: see docs/developer/architecture/position-consistency.md - builds a per-node buffer, not the root's.
+        # TODO: see docs/developer/architecture/position_consistency.md - builds a per-node buffer, not the root's.
         src = cast("str", self.properties.get("source_code"))
         return src.encode(sys.getfilesystemencoding())
 

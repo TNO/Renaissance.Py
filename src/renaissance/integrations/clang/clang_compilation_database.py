@@ -11,7 +11,8 @@ from pathlib import Path
 
 from clang.cindex import CompilationDatabase as ClangCompilationDatabase
 
-from renaissance.syntax_tree import ASTFactory, ASTNode
+from renaissance.syntax_tree.ast_factory import ASTFactory
+from renaissance.syntax_tree.ast_node import ASTNode
 
 
 class CompilationDatabase:

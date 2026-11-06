@@ -30,7 +30,7 @@ whereas across consecutive rewrite steps a later change can refer to the result 
 ### Within one rewrite step
 
 A [rewrite step](../../glossary.md#rewrite-step) interprets the code once, collects changes, and commits them together;
-see [Rewrite semantics](rewrite-semantics.md#change-process).
+see [Rewrite semantics](rewrite_semantics.md#change-process).
 Combining changes in one step has the following benefits:
 
 1. **Positions stay valid.**
@@ -46,7 +46,7 @@ Combining changes in one step has the following benefits:
 1. **Conflicts are detected.**
     Erroneous combinations, such as overlapping replacements, can only be detected when all changes are known.
 1. **Deterministic and predictable result.**
-    The [rules of rewrite semantics](rewrite-semantics.md#particular-combinations) define how the collected changes combine.
+    The [rules of rewrite semantics](rewrite_semantics.md#particular-combinations) define how the collected changes combine.
     Most rules do not depend on the collection order:
     erroneous combinations are rejected and nested insertions are ordered by containment, regardless of that order.
     Only multiple insertions on the same consecutive units depend on the collection order,
@@ -74,7 +74,7 @@ This has the following consequences:
 * **Earlier positions are invalid.**
     Positions and AST nodes of an earlier step do not refer to the code of a later step;
     changes are only combined for nodes of the same parse,
-    see [Position consistency](../../developer/architecture/position-consistency.md).
+    see [Position consistency](../../developer/architecture/position_consistency.md).
 * **The order of the steps matters.**
     A later step sees, and can change, the result of an earlier step.
     No conflicts are detected between steps: a later replacement can silently replace text inserted by an earlier step.
@@ -94,4 +94,4 @@ Replacing only the function names of both calls changes disjoint units and gives
 The same distinction exists for Python regular expressions:
 `re.sub` finds all matches in the original text and replaces them in one step,
 whereas calling `re.sub` repeatedly corresponds to consecutive steps;
-see [Regular expressions in Python](../../developer/architecture/environment/regular-expressions.md).
+see [Regular expressions in Python](../../developer/architecture/environment/regular_expressions.md).

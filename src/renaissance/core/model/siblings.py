@@ -1,0 +1,53 @@
+# Copyright (C) 2024-2026 TNO
+#
+# Licensed under the terms specified in the LICENSE file in the root directory
+# of this repository, also available at:
+# https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
+
+"""AI: Protocol for a contiguous range of sibling syntax nodes."""
+
+from collections.abc import Sequence
+from typing import Protocol, runtime_checkable
+
+from renaissance.core.model.syntax_node import SyntaxNode
+from renaissance.core.model.text_segment import TextSegment
+
+# TODO: Do we only want to wrap the AST sequence matches in AST pattern matching?
+#       or also the parser output?
+
+
+@runtime_checkable
+class Siblings[NodeType](TextSegment, Protocol):
+    """Protocol for contiguous siblings, i.e., a range of syntax nodes.
+
+    Siblings is a text segment.
+    When the range of siblings is empty, the start and end offset of the text segment are the same.
+    Yet, an offset within the text is available.
+
+    Read-only access is enforced "as much as possible" by
+    exposing only @property getters in the protocol
+    """
+
+    @property
+    def syntax_nodes(self) -> Sequence[SyntaxNode[NodeType]]:
+        """The sequence of SyntaxNodes corresponding to these siblings."""
+        ...
+
+    @property
+    def parent(self) -> SyntaxNode[NodeType]:
+        """The syntax node containing these siblings.
+
+        Siblings only exist relative to a containing node, so the parent is never None,
+        even when the range of siblings is empty.
+
+        The property 'parent' is not used to compare siblings.
+        """
+        ...
+
+    @property
+    def original_nodes(self) -> Sequence[NodeType]:
+        """The sequence of original nodes of these siblings as produced by the parser.
+
+        The property 'original_nodes' is not used to compare siblings.
+        """
+        ...

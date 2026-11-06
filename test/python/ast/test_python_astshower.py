@@ -11,7 +11,7 @@ from hamcrest import assert_that, contains_string, not_, starts_with
 
 from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
-from renaissance.syntax_tree import ASTShower
+from renaissance.syntax_tree.ast_shower import ASTShower
 
 
 class TestPythonShower:

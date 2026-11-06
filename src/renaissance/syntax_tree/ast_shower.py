@@ -14,7 +14,7 @@ from typing import Protocol, Self, runtime_checkable
 
 from termcolor import colored
 
-from renaissance.utils.ast_utils import display_context
+from renaissance.core.model.node_utils import display_context
 
 
 @runtime_checkable

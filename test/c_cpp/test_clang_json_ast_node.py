@@ -13,7 +13,8 @@ from hamcrest import assert_that, is_
 
 from renaissance.integrations.clang import CPatternFactory
 from renaissance.integrations.clang.clang_json_ast_node import ClangJsonASTNode
-from renaissance.syntax_tree import ASTFactory, ASTShower
+from renaissance.syntax_tree.ast_factory import ASTFactory
+from renaissance.syntax_tree.ast_shower import ASTShower
 
 
 class TestClangJsonAstNode:

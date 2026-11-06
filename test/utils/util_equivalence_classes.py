@@ -13,8 +13,8 @@ import pytest
 from _pytest.mark.structures import ParameterSet
 from hamcrest import assert_that, equal_to
 
+from renaissance.core.model import NodeProtocol
 from renaissance.syntax_tree.match_finder import is_match
-from renaissance.syntax_tree.node_protocol import NodeProtocol
 
 
 def escape_new_lines(txt: str) -> str:
