@@ -170,6 +170,7 @@ A recipe holds its language-specific patterns itself, and may use other recipes.
 recipes/
 ├── cleanup_refactoring/
 ├── python_refactoring/
+├── ruff_utils/             # run_ruff_import_cleanup: removes the imports that a recipe left unused
 ├── unit_to_pytest/
 ├── refactor_actions/       # ASTRefactorActions: reusable transformations are recipes, not core
 ├── python_extractor/       # PythonExtractor: parser specific, uses python.ast

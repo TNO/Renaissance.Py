@@ -213,6 +213,13 @@ The modules of this phase move to `core/model/`, their tests to `test/unit/core/
   `git grep -E "syntax_tree\.ast_(node|factory|finder|shower)"` find nothing; the model layer of the `layers` contract is
   `renaissance.core.model` and its tests.
 
+**1.6 The ruff clean-up leaves the core.**
+
+- src: `utils/ruff_utils.py` to `recipes/ruff_utils.py`. `run_ruff_import_cleanup` removes the imports that a recipe left
+  unused and sorts the imports, so it is a recipe.
+- test: `test/utils/test_ruff_utils.py` to `test/recipes/test_ruff_utils.py`.
+- docs: the path of `ruff_utils.py` in [recipes](../modules/recipes.md).
+
 #### Phase 2: `core.pattern`
 
 The modules of this phase move to `core/pattern/`, their tests to `test/unit/core/pattern/`.
@@ -331,21 +338,21 @@ binding by one contract per new binding.
 
 #### Phase 7: recipes
 
-**7.1 to 7.3 One package per recipe.** One step per recipe, in this order: `cleanup_refactoring`, `python_refactoring` and
-`unit_to_pytest`.
+**7.1 to 7.4 One package per recipe.** One step per recipe, in this order: `cleanup_refactoring`, `python_refactoring`,
+`ruff_utils` and `unit_to_pytest`.
 
 - src: `recipes/<recipe>.py` to `recipes/<recipe>/`.
 - test: `test/recipes/test_<recipe>.py` to `test/unit/recipes/<recipe>/`. `test_refactor_with_rewrite.py` goes to the recipe it
   exercises.
 
-**7.4 The examples.**
+**7.5 The examples.**
 
 - src: the modules of `src/rejuvenation/`, except `cli.py`, to `recipes/examples/`. This includes the examples that show how
   one parser represents code, such as `cpp_clang_lst_example.py`; rewriting them as unit tests of their binding is not a move, so
   it is an issue.
 - test: `test/examples/` to `test/unit/recipes/examples/`.
 
-**7.5 The command line.**
+**7.6 The command line.**
 
 - src: `src/rejuvenation/cli.py` to `recipes/cli/`; `src/rejuvenation/` no longer exists.
 - remaining: `[project.scripts]` points `rejuvenate` to `renaissance.recipes.cli:refactor`; `rejuvenation` leaves
