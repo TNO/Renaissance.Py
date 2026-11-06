@@ -301,6 +301,8 @@ def is_match_dict(src: dict, cmp: dict, expansions: dict | None = None) -> bool:
     def match_property(n):
         c = cmp.get(n)
         s = src.get(n)
+        # TODO(FrancescoPezzella): a placeholder matched through a property is captured as text, not as a node.
+        #  https://github.com/TNO/Renaissance.Py/issues/387
         if isinstance(c, str) and (key := use_dollar(c)).startswith("$"):
             return s == expansions[key][0] if key in expansions else (expansions.update({key: [s]}) or True)
         return s == c
