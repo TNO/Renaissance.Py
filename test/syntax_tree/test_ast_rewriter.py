@@ -1040,10 +1040,11 @@ class TestComposeReplacement:
                 "from a import X  # café\nimport b\n",
             ),
             ("f(1, 2)\n", "f($$args)", "g($$args)", "g(1, 2)\n"),
+            ("f()\n", "f($$args)", "g($$args)", "g()\n"),
         ],
     )
     def test_python_multi_node_placeholder(self, source: str, find: str, replacement: str, expected: str) -> None:
-        """Verify a `$$` placeholder bound to several nodes expands to all of them, keeping their text and layout."""
+        """Verify a `$$` placeholder expands zero or more nodes, preserving text and layout."""
         root = PythonRstNode.load_from_text(source, "test.py")
         pattern = PythonPatternFactory(PythonFactory(PythonRstNode)).create_statements(find)
         rewriter = ASTRewriter(root)
