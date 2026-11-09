@@ -251,8 +251,6 @@ def _format_commit_summary(reports: Sequence[FileReport], min_python: tuple[int,
                 names_by_action[action][name] += 1
     version = ".".join(map(str, min_python))
     lines = [
-        "Modernize TypeVar/ParamSpec/TypeVarTuple usage to PEP 695 syntax",
-        "",
         f"Convert type parameters to PEP 695 syntax in {_files(len(modified))} (Python {version}+).",
         "",
         *(f"- {action}: {_format_names(file_counts)}" for action, file_counts in names_by_action.items() if file_counts),
