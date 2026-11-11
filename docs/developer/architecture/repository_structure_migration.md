@@ -246,6 +246,9 @@ layer, below `core.model`.
     - [Navigation of code](navigation.md) describes the protocols and the functions, and records the decisions of issue 385:
         - protocol names are verbs, after what they enable: match, rewrite and navigate, as in `NodeNavigateProtocol`;
         - `HasParent` and `HasChildren` are the basic protocols, and a node implements both;
+        - the protocols live in `core.navigate` with the functions that need them, as `Rewritable` lives with the rewriter.
+          They cannot live in `core.model` while the functions are in `core.navigate`: `ASTNode` in `core.model` delegates
+          to the functions, so the two packages would import each other;
         - an ancestor of a node includes the node itself, a proper ancestor excludes it, and nodes are compared by identity,
           never by equality;
         - `previous_sibling` and `next_sibling` are a symmetric pair, so `preceding_sibling` is not used;
