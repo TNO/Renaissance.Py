@@ -11,17 +11,18 @@ import sys
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Protocol, Self, runtime_checkable
+from typing import Protocol, runtime_checkable
 
 from more_itertools import flatten
 
 from renaissance.common import Rewriter
 from renaissance.core.model import TextUtils
+from renaissance.core.navigate import HasParent, is_proper_ancestor_of
 from renaissance.syntax_tree.match_finder import PatternMatch
 
 
 @runtime_checkable
-class Rewritable(Protocol):
+class Rewritable(HasParent, Protocol):
     """AI: Structural protocol describing the offset/text shape required for byte-level rewriting."""
 
     # Read-only members keep the protocol covariant, so implementations may expose them as properties.
@@ -46,27 +47,9 @@ class Rewritable(Protocol):
         ...
 
     @property
-    def parent(self) -> Self | None:
-        """Enclosing node, or None at the root."""
-        ...
-
-    @property
     def text(self) -> str:
         """Source text of this node."""
         ...
-
-
-def is_ancestor_of(ancestor: Rewritable, node: Rewritable) -> bool:
-    """Return True if ancestor is a proper ancestor of node.
-
-    Parent links are compared by identity, since node equality is structural.
-    """
-    current = node.parent
-    while current is not None:
-        if current is ancestor:
-            return True
-        current = current.parent
-    return False
 
 
 class _RewriteActionType(Enum):
@@ -303,7 +286,7 @@ class _RewriteActions:
         all_nodes = [(rewrite, node) for rewrite in replacing for node in rewrite.nodes if node != self.node]
         for i, (rewrite_a, node_a) in enumerate(all_nodes):
             for rewrite_b, node_b in all_nodes[i + 1 :]:
-                if rewrite_a is rewrite_b or is_ancestor_of(node_b, node_a) or is_ancestor_of(node_a, node_b):
+                if rewrite_a is rewrite_b or is_proper_ancestor_of(node_b, node_a) or is_proper_ancestor_of(node_a, node_b):
                     continue
                 if not (node_a.end_offset < node_b.offset or node_a.offset > node_b.end_offset):
                     raise ValueError(
@@ -564,7 +547,9 @@ class _RewriteActions:
         if node == self.node:
             return node.text
         # the descendants may need to be rewritten as well
-        rewrites = [rewrite for rewrite in self.rewrites if any(is_ancestor_of(node, rewrite_node) for rewrite_node in rewrite.nodes)]
+        rewrites = [
+            rewrite for rewrite in self.rewrites if any(is_proper_ancestor_of(node, rewrite_node) for rewrite_node in rewrite.nodes)
+        ]
         if rewrites:
             rewriter = _RewriteActions(node, self.encoding, self.correct_indent, rewrites)
             return rewriter.apply_to_string()
@@ -600,7 +585,7 @@ class _RewriteActions:
         start_offset = nodes[0].offset - offset
         end_offset = nodes[-1].extended_end_offset - offset
         if include_comments:
-            preceding_node = nodes[0].preceding_sibling
+            preceding_node = nodes[0].previous_sibling
             parent = nodes[0].parent
             start_comment_location = 0
             if preceding_node:

@@ -111,7 +111,7 @@ Information that the rewriter needs from a binding, such as the location of comm
 
 ### Core
 
-The core has five sub-packages. Each may import only the sub-packages below it in this list.
+The core has six sub-packages. Each may import only the sub-packages below it in this list.
 
 | Sub-package          | Responsibility                                                                                  |
 | -------------------- | ----------------------------------------------------------------------------------------------- |
@@ -119,7 +119,8 @@ The core has five sub-packages. Each may import only the sub-packages below it i
 | `core.rewriting`     | Collecting changes and applying them to the text, both node based and character based           |
 | `core.matching`      | Finding the occurrences of a pattern in a tree, with their placeholder bindings                 |
 | `core.pattern`       | The pattern language: placeholder markers, placeholder kinds and the `$` notation               |
-| `core.model`         | The AST model: node protocol, semantic kinds, text segments, navigation, finding by predicate   |
+| `core.model`         | The AST model: node protocol, semantic kinds, text segments, finding by predicate               |
+| `core.navigate`      | The navigation protocols, and the ancestors and siblings of a node                              |
 
 `core.rewriting` imports `core.matching` for one reason: the rewriter accepts a `PatternMatch` as a target and uses its
 bindings to fill in a replacement. It does not use the matching algorithm.
@@ -234,10 +235,18 @@ The column *now in* gives the current module, relative to `src/renaissance/`.
 | `ASTShower`, `Displayable`                                      | all     | `syntax_tree/ast_shower.py`             |
 | `traverse`                                                      | all     | `core/model/node_utils.py`              |
 | `TextUtils`                                                     | all     | `core/model/text_utils.py`              |
-| `preceding_sibling`, `next_sibling`                             | all     | `core/model/node_utils.py`              |
 | `match_props`, `match_children`, `format_node`                  | binding | `core/model/for_bindings.py`            |
 
 Internal: `display_context`, `DISPLAY_PARSER_KIND`, `process_node`.
+
+#### `core.navigate`
+
+| Symbol                                                                       | For | Now in                         |
+| ---------------------------------------------------------------------------- | --- | ------------------------------ |
+| `HasParent`, `HasChildren`, `NodeNavigateProtocol`                           | all | `core/navigate/protocols.py`   |
+| `is_ancestor_of`, `is_proper_ancestor_of`, `ancestors`, `proper_ancestors`   | all | `core/navigate/navigate.py`    |
+| `nearest_ancestor`, `nearest_proper_ancestor`                                | all | `core/navigate/navigate.py`    |
+| `next_sibling`, `previous_sibling`                                           | all | `core/navigate/navigate.py`    |
 
 #### `core.pattern`
 

@@ -33,7 +33,6 @@ https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
     - `test/common/test_rewriter.py`
     - `test/syntax_tree/test_ast_rewriter.py`
     - `test/syntax_tree/test_rewrite_semantics_properties.py`
-    - `test/syntax_tree/test_is_ancestor_of.py`
 - **Code files:** `src/renaissance/common/rewriter.py`, `src/renaissance/syntax_tree/ast_rewriter.py`
 
 ## 3. Type parameter modernization
@@ -63,3 +62,12 @@ https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
   `src/renaissance/recipes/python_refactoring.py`,
   `src/renaissance/utils/import_resolution.py`, `src/renaissance/integrations/python/ast/cst_utils.py`,
   `src/rejuvenation/migration_type_recipes.py`
+
+## 4. Navigation
+
+- **Feature:** [Navigation](../../user/features/navigation.md)
+- **Concepts:** [Navigate](../../user/core/navigate.md)
+- **Code modules:** [Core navigate](../modules/core/navigate.md)
+- **Test file(s):**
+    - `test/unit/core/navigate/test_navigate.py`
+- **Code file(s):** `src/renaissance/core/navigate/protocols.py`, `src/renaissance/core/navigate/navigate.py`

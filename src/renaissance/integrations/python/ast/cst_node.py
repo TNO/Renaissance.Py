@@ -17,7 +17,8 @@ import libcst
 from libcst import BaseCompoundStatement, BaseSmallStatement, ClassDef, CSTNode, FunctionDef, MetadataWrapper
 from libcst.metadata import Access, Assignment, CodePosition, PositionProvider, ScopeProvider
 
-from renaissance.core.model import SemanticKind, next_sibling, preceding_sibling
+from renaissance.core.model import SemanticKind
+from renaissance.core.navigate import next_sibling, previous_sibling
 from renaissance.integrations.python.ast.kinds import PYTHON_KIND_MAP
 from renaissance.syntax_tree.ast_node import ASTReference
 
@@ -223,9 +224,9 @@ class PythonCstNode:
         return next_sibling(self)
 
     @property
-    def preceding_sibling(self) -> Self | None:
+    def previous_sibling(self) -> Self | None:
         """AI: Return the sibling node immediately preceding this one, or None."""
-        return preceding_sibling(self)
+        return previous_sibling(self)
 
     @classmethod
     def load(cls, file_path: Path) -> Self:

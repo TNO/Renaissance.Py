@@ -25,6 +25,7 @@ from hypothesis import HealthCheck, given, settings
 
 import targets
 from renaissance.core.model import SemanticKind, traverse
+from renaissance.core.navigate import nearest_proper_ancestor
 from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
 from renaissance.syntax_tree.ast_shower import ASTShower
@@ -149,7 +150,7 @@ class Parent:
             me,
             has_properties(
                 name="mememe",
-                preceding_sibling=has_property("name", "previous_me"),
+                previous_sibling=has_property("name", "previous_me"),
                 next_sibling=has_property("name", "next_me"),
                 parent=has_property("parent", has_property("name", "Parent")),
             ),
@@ -262,14 +263,10 @@ class Parent:
         assert expected_kind in [c.parser_kind for c in traverse(root)]
         assert "has no attribute" not in capsys.readouterr().out
 
-    @pytest.mark.xfail(
-        reason="PythonRstNode does not inherit from ASTNode, so get_ancestor() is not available on it",
-        strict=True,
-    )
     def test_get_ancestor_finds_enclosing_function(self) -> None:
-        """get_ancestor() walks up .parent to find the nearest FunctionDef."""
+        """nearest_proper_ancestor walks up .parent to find the nearest FunctionDef."""
         root = PythonRstNode.load_from_text("def f():\n    x = 1\n")
         target = root.children[0].children[0]
-        ancestor = target.get_ancestor("FunctionDef")
+        ancestor = nearest_proper_ancestor(target, lambda node: node.parser_kind == "FunctionDef")
         assert ancestor is not None
         assert ancestor.parser_kind == "FunctionDef"

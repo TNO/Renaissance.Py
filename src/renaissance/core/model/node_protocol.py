@@ -6,14 +6,15 @@
 
 """AI: Structural protocol describing the interface consumed by generic syntax-tree algorithms."""
 
-from collections.abc import Mapping, Sequence
-from typing import Any, Protocol, Self, runtime_checkable
+from collections.abc import Mapping
+from typing import Any, Protocol, runtime_checkable
 
 from renaissance.core.model.semantic_kind import SemanticKind
+from renaissance.core.navigate import NodeNavigateProtocol
 
 
 @runtime_checkable
-class NodeProtocol(Protocol):
+class NodeProtocol(NodeNavigateProtocol, Protocol):
     """Structural interface consumed by generic syntax-tree algorithms."""
 
     # Read-only members keep the protocol covariant, so implementations may expose them as properties.
@@ -30,16 +31,6 @@ class NodeProtocol(Protocol):
     @property
     def properties(self) -> Mapping[str, Any]:
         """Parser-supplied attributes of this node."""
-        ...
-
-    @property
-    def parent(self) -> Self | None:
-        """Enclosing node, or None at the root."""
-        ...
-
-    @property
-    def children(self) -> Sequence[Self]:
-        """Direct child nodes, in source order."""
         ...
 
     @property

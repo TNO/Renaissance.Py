@@ -7,7 +7,7 @@
 """The syntax tree model: the vocabulary and structure of nodes, shared by all parser bindings."""
 
 from renaissance.core.model.node_protocol import NodeProtocol
-from renaissance.core.model.node_utils import next_sibling, preceding_sibling, traverse
+from renaissance.core.model.node_utils import traverse
 from renaissance.core.model.semantic_kind import SemanticKind
 from renaissance.core.model.siblings import Siblings
 from renaissance.core.model.syntax_node import SyntaxNode
@@ -21,7 +21,5 @@ __all__ = [
     "SyntaxNode",
     "TextSegment",
     "TextUtils",
-    "next_sibling",
-    "preceding_sibling",
     "traverse",
 ]

@@ -10,6 +10,7 @@ import ast
 import re
 from collections.abc import Sequence
 from pathlib import Path
+from typing import Self
 
 import tree_sitter_python
 from libcst import SimpleStatementLine
@@ -32,7 +33,7 @@ _MATCH_ONE_RE = re.compile(r"^" + re.escape(MATCH_ONE) + r"\w+$")
 class PythonPattern:
     """AI: Wrap a Python AST/RST node as a matchable pattern, detecting match-all/match-one placeholders."""
 
-    def __init__(self, node, parent: PythonPattern | None = None) -> None:
+    def __init__(self, node, parent: Self | None = None) -> None:
         """AI: Wrap a Python AST/RST node as a matchable pattern, detecting match-all/match-one placeholders."""
         self.node: PythonRstNode = node
         self.parent = parent
@@ -45,7 +46,7 @@ class PythonPattern:
         self._derive_pattern_kind(node)
 
         self.properties: dict = node.properties
-        self.children: list[PythonPattern] = [PythonPattern(child, self) for child in node.children]
+        self.children: list[Self] = [type(self)(child, self) for child in node.children]
         self.signature: str = node.signature
         if hasattr(node, "name") and node.name:
             self.name: str = use_dollar(node.name)

@@ -306,7 +306,7 @@ class CPPPatternFactory(CPatternFactory):
         call_expr = last(find_nodes(target_class, lambda node: node.semantic_kind is SemanticKind.CALL))
         # include the preceding type ref
         assert isinstance(call_expr, ASTNode), "No call expression found"
-        type_ref = call_expr.preceding_sibling
+        type_ref = call_expr.previous_sibling
         assert isinstance(type_ref, ASTNode), "No type ref found"
         # return the constrained pattern where the first node must be of type TypeRef
 

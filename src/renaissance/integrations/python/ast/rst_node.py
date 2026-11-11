@@ -13,8 +13,9 @@ from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import Any, Self
 
-from renaissance.core.model import SemanticKind, next_sibling, preceding_sibling, traverse
+from renaissance.core.model import SemanticKind, traverse
 from renaissance.core.model.for_bindings import format_node, match_children, match_props
+from renaissance.core.navigate import next_sibling, previous_sibling
 from renaissance.integrations.python.ast.kinds import PYTHON_KIND_MAP, PYTHON_OPERATOR_MAP
 from renaissance.integrations.python.ast.util import convert
 from renaissance.syntax_tree.match_finder import find_in_list
@@ -213,7 +214,7 @@ class PythonRstTranslationUnit:
 class PythonRstNode:
     """AI: ASTNode implementation backed by the stdlib ast module."""
 
-    def __init__(self, node: ast.AST, translation_unit: PythonRstTranslationUnit = None, parent=None) -> None:
+    def __init__(self, node: ast.AST, translation_unit: PythonRstTranslationUnit = None, parent: Self | None = None) -> None:
         """AI: Wrap a stdlib ast node as an AST node within the given translation unit."""
         self.root = parent.root if parent and parent.root else self
         self.node = node
@@ -225,7 +226,7 @@ class PythonRstNode:
         self.indent = ""
         self.name = self._derive_name()
         self.show_props = False
-        self.children: list[PythonRstNode] = []
+        self.children: list[Self] = []
         self.properties = {}
         self.is_implicit = self.parser_kind not in IMPLICIT
         self.offset = 0
@@ -247,17 +248,17 @@ class PythonRstNode:
                         elif isinstance(node, (ImplicitNode, ast.Module)) or len(node._fields) == 1:
                             # A list field can hold a bare None at a position with no value
                             # None isn't a real AST node, so it has nothing to build a child from.
-                            self.children.extend(PythonRstNode(n, translation_unit, self) for n in child if n is not None)
+                            self.children.extend(type(self)(n, translation_unit, self) for n in child if n is not None)
                             if name == "body":
                                 self.body = self.children
                         else:
-                            self.children.append(PythonRstNode(ImplicitNode(name, child), translation_unit, self))
+                            self.children.append(type(self)(ImplicitNode(name, child), translation_unit, self))
                             if name in ["body", "cases"]:
                                 self.body = self.children[-1].children
 
                     case ast.AST():
                         if name != "ctx":
-                            self.children.append(PythonRstNode(child, translation_unit, self))
+                            self.children.append(type(self)(child, translation_unit, self))
                             if isinstance(child, ast.expr):
                                 self.expression = self.children[-1]
                     case _:
@@ -308,9 +309,9 @@ class PythonRstNode:
         return next_sibling(self)
 
     @property
-    def preceding_sibling(self) -> Self | None:
+    def previous_sibling(self) -> Self | None:
         """AI: Return the sibling node immediately preceding this one, or None."""
-        return preceding_sibling(self)
+        return previous_sibling(self)
 
     def process(self, function: Callable[[PythonRstNode], None]) -> None:
         """AI: Apply function to this node and recursively to all of its descendants."""

@@ -151,6 +151,7 @@ nav:
 
       - Core:
           - Model: user/core/model.md
+          - Navigate: user/core/navigate.md
 
   - Developer documentation:
       - Overview: developer/index.md
@@ -211,6 +212,7 @@ nav:
       - Code modules:
           - Overview: developer/modules/index.md
           - Core model: developer/modules/core/model.md
+          - Core navigate: developer/modules/core/navigate.md
           - Parser and AST modules: developer/modules/parser_and_ast.md
           - Matching modules: developer/modules/matching.md
           - Filter modules: developer/modules/filter.md
@@ -226,6 +228,7 @@ nav:
           - Overview: developer/api/index.md
           - Public API: developer/api/public_api.md
           - Core model: developer/api/core/model.md
+          - Core navigate: developer/api/core/navigate.md
 
   - Documentation system:
       - Overview: documentation_system/index.md

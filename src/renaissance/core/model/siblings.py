@@ -18,11 +18,14 @@ from renaissance.core.model.text_segment import TextSegment
 
 @runtime_checkable
 class Siblings[NodeType](TextSegment, Protocol):
-    """Protocol for contiguous siblings, i.e., a range of syntax nodes.
+    """Protocol for contiguous siblings, i.e., a range, or slice, of syntax nodes.
 
     Siblings is a text segment.
     When the range of siblings is empty, the start and end offset of the text segment are the same.
     Yet, an offset within the text is available.
+
+    Siblings implements neither HasParent nor HasChildren of renaissance.core.navigate: a slice is never its own
+    ancestor, so its ancestors are those of its parent.
 
     Read-only access is enforced "as much as possible" by
     exposing only @property getters in the protocol

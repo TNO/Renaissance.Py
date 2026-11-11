@@ -218,14 +218,17 @@ navigation protocols, and the package `core.navigate`, which imports nothing fro
 layer, below `core.model`.
 
 - src:
-    - `core/navigate/` defines the protocols `HasParent`, `HasChildren` and `NodeNavigateProtocol`, which combines them, and
-      the functions `is_ancestor_of`, `is_proper_ancestor_of`, `ancestors`, `proper_ancestors`, `nearest_ancestor`,
-      `nearest_proper_ancestor`, `next_sibling` and `previous_sibling`. The functions compare nodes by identity.
+    - In `core/navigate/`, `protocols.py` defines the protocols `HasParent`, `HasChildren` and `NodeNavigateProtocol`, which
+      combines them, and `navigate.py` the functions `is_ancestor_of`, `is_proper_ancestor_of`, `ancestors`,
+      `proper_ancestors`, `nearest_ancestor`, `nearest_proper_ancestor`, `next_sibling` and `previous_sibling`. The functions
+      compare nodes by identity.
     - `next_sibling` and `preceding_sibling` leave `core/model/node_utils.py`. `preceding_sibling` becomes `previous_sibling`,
       and so do the properties of `ASTNode`, `PythonCstNode`, `PythonRstNode` and the tree-sitter node, and their uses in
       `c_pattern_factory.py` and `ast_rewriter.py`.
     - `NodeProtocol` extends `NodeNavigateProtocol`, and the rewriter's `Rewritable` extends `HasParent`. `Siblings`
       implements neither.
+    - The protocols type `parent` and `children` with `Self`, so `PythonPattern` and `PythonRstNode` do too, and create
+      their children with `type(self)` instead of their class name.
     - `is_ancestor_of` leaves `syntax_tree/ast_rewriter.py`. Its two calls mean a proper ancestor, so they become
       `is_proper_ancestor_of`, and the rewriter behaves as before.
     - `ASTNode.get_ancestor(kind)` keeps its behaviour by delegating to `nearest_proper_ancestor`. `ASTNode.is_ancestor_of`,
@@ -245,7 +248,7 @@ layer, below `core.model`.
       one.
     - [Navigation of code](navigation.md) describes the protocols and the functions, and records the decisions of issue 385:
         - protocol names are verbs, after what they enable: match, rewrite and navigate, as in `NodeNavigateProtocol`;
-        - `HasParent` and `HasChildren` are the basic protocols, and a node implements both;
+        - `HasParent` and `HasChildren` are the basic protocols, and `NodeNavigateProtocol` combines them;
         - the protocols live in `core.navigate` with the functions that need them, as `Rewritable` lives with the rewriter.
           They cannot live in `core.model` while the functions are in `core.navigate`: `ASTNode` in `core.model` delegates
           to the functions, so the two packages would import each other;
@@ -266,7 +269,8 @@ layer, below `core.model`.
 - remaining: the `layers` contract gets the layer `renaissance.core.navigate : test.unit.core.navigate`, below `core.model`.
   The `protected` contract of `core.navigate`. In `[tool.check_layout]`, the mirror of the modules of `core/navigate/` in
   `test/unit/core/navigate/`, as for `core.model`. The removed test files leave the `layers` contract, and so do their
-  `ignore_imports` entries.
+  `ignore_imports` entries. `node_utils` of `core.model` no longer has unit tests of its own, so it joins the exempt modules of
+  its mirror.
 - Checks: `git grep -wE "preceding_sibling|is_descendant_of" -- src test features` finds nothing; `is_ancestor_of` is defined
   only in `core/navigate/`; Pyright reports no new issues; the test counts change only by the tests that the step adds and
   removes, and by one xfailed test that now passes.

@@ -85,9 +85,11 @@ text: str
 parent: Rewritable | None
 ```
 
-`parent` provides the upward navigation consumed by the rewriter. Adapters may
-also provide navigation helpers such as `root`, `next_sibling`, and
-`preceding_sibling` for their own recipes.
+`parent` provides the upward navigation consumed by the rewriter: `Rewritable`
+extends `HasParent` of [`core.navigate`](core/navigate.md). Adapters may also
+provide navigation helpers such as `root`, `next_sibling`, and
+`previous_sibling` for their own recipes; the last two delegate to
+`core.navigate`.
 
 To use one node in the complete workflow, it must satisfy both protocols and
 its source locations must address the same original source as the root passed

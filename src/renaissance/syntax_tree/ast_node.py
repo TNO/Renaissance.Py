@@ -16,9 +16,10 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Self
 
-from renaissance.core.model import NodeProtocol, SemanticKind, TextUtils, next_sibling, preceding_sibling
+from renaissance.core.model import NodeProtocol, SemanticKind, TextUtils
 from renaissance.core.model.for_bindings import format_node
 from renaissance.core.model.node_utils import process_node
+from renaissance.core.navigate import nearest_proper_ancestor, next_sibling, previous_sibling
 
 
 # enum with ABORT, CONTINUE and SKIP
@@ -134,9 +135,9 @@ class ASTNode[NodeT, TranslationUnitT](ABC):
                 return content
 
     @property
-    def preceding_sibling(self) -> Self | None:
+    def previous_sibling(self) -> Self | None:
         """AI: Return the sibling node immediately preceding this one, or None."""
-        return preceding_sibling(self)
+        return previous_sibling(self)
 
     @property
     def next_sibling(self) -> Self | None:
@@ -154,27 +155,9 @@ class ASTNode[NodeT, TranslationUnitT](ABC):
         """AI: Return the references that point to this node."""
 
     def get_ancestor(self, kind: str | re.Pattern[str]) -> Self | None:
-        """AI: Return the nearest ancestor node whose kind matches the given kind pattern, or None."""
+        """Return the nearest proper ancestor whose kind matches the pattern kind, case-insensitively and as a prefix, or None."""
         pattern = re.compile(kind, re.IGNORECASE) if isinstance(kind, str) else kind
-        parent = self.parent
-        if not parent:
-            return None
-        if pattern.match(parent.kind):
-            return parent
-        return parent.get_ancestor(pattern)
-
-    def is_descendant_of(self, node: Self) -> bool:
-        """AI: Return whether this node is a descendant of node."""
-        return node.is_ancestor_of(self)
-
-    def is_ancestor_of(self, descendant: Self) -> bool:
-        """AI: Return whether this node is an ancestor of descendant."""
-        parent: Self | None = descendant.parent
-        if parent == self:
-            return True
-        if not parent:
-            return False
-        return self.is_ancestor_of(parent)
+        return nearest_proper_ancestor(self, lambda ancestor: pattern.match(ancestor.kind) is not None)
 
     @staticmethod
     @abstractmethod

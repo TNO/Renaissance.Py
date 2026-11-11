@@ -196,7 +196,14 @@ units = "modules"
 mirror = "test/unit/core/model/test_{path}.py"
 aspects = true
 # No unit tests of their own yet.
-exempt = ["for_bindings", "semantic_kind", "siblings", "text_utils"]
+exempt = ["for_bindings", "node_utils", "semantic_kind", "siblings", "text_utils"]
+
+[[tool.check_layout.mirrors]]
+code = "src/renaissance/core/navigate"
+units = "modules"
+mirror = "test/unit/core/navigate/test_{path}.py"
+aspects = true
+exempt = ["protocols"]  # Protocols only: Pyright checks that nodes implement them.
 
 [[tool.check_layout.mirrors]]
 code = "src/renaissance/core"
@@ -277,8 +284,7 @@ layers = [
     : test.syntax_tree.test_batch_ast_processor : test.syntax_tree.test_recipe_ast_processor""",
     # core.rewriting
     """renaissance.syntax_tree.ast_rewriter : renaissance.common
-    : test.common : test.syntax_tree.test_ast_rewriter : test.syntax_tree.test_rewrite_semantics_properties
-    : test.syntax_tree.test_is_ancestor_of""",
+    : test.common : test.syntax_tree.test_ast_rewriter : test.syntax_tree.test_rewrite_semantics_properties""",
     # core.matching
     """renaissance.syntax_tree.match_finder
     : test.syntax_tree.test_match_finder : test.syntax_tree.test_match_finder_multi_assignments
@@ -294,13 +300,13 @@ layers = [
     : test.syntax_tree.test_node_finder
     : test.syntax_tree.test_semantic_finder
     : test.search_strategies : test.conftest""",
+    # core.navigate
+    "renaissance.core.navigate : test.unit.core.navigate",
 ]
 ignore_imports = [
     # MATCH_ONE and MATCH_ALL are placeholder markers that belong in core.pattern (issue 110).
     "renaissance.utils.ast_utils -> renaissance.integrations",
     # Unit tests of the core that parse real code instead of using test doubles.
-    "test.unit.core.model.test_node_utils -> renaissance.integrations.clang",
-    "test.syntax_tree.test_is_ancestor_of -> renaissance.integrations.clang",
     "test.syntax_tree.test_ast_processor -> renaissance.integrations.clang",
     "test.syntax_tree.test_batch_ast_processor -> renaissance.integrations.clang",
     "test.syntax_tree.test_recipe_ast_processor -> renaissance.integrations.clang",
@@ -480,6 +486,13 @@ ignore_imports = [
     "renaissance.syntax_tree.ast_node -> renaissance.core.model.node_utils",
     "renaissance.syntax_tree.ast_shower -> renaissance.core.model.node_utils",
 ]
+
+[[tool.importlinter.contracts]]
+id = "core-navigate-api"
+name = "Only core.navigate and its unit tests import the modules of core.navigate"
+type = "protected"
+protected_modules = ["renaissance.core.navigate.navigate", "renaissance.core.navigate.protocols"]
+allowed_importers = ["renaissance.core.navigate", "test.unit.core.navigate"]
 
 # One contract per for_bindings module: only the core, the parser bindings and their unit tests import it.
 [[tool.importlinter.contracts]]

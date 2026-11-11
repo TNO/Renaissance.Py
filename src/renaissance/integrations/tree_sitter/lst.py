@@ -9,8 +9,9 @@
 import sys
 from typing import Any, Self, cast
 
-from renaissance.core.model import SemanticKind, next_sibling, preceding_sibling
+from renaissance.core.model import SemanticKind
 from renaissance.core.model.for_bindings import format_node, match_children, match_props
+from renaissance.core.navigate import next_sibling, previous_sibling
 from renaissance.integrations.tree_sitter.kinds import TREE_SITTER_KIND_MAP
 
 IRRELEVANT_PROPS = {"source_code", "end_point", "start_point", "location", "type"}
@@ -83,9 +84,9 @@ class LSTNode:
         child.parent = self
 
     @property
-    def preceding_sibling(self) -> Self | None:
+    def previous_sibling(self) -> Self | None:
         """AI: Return the sibling node immediately preceding this one, or None."""
-        return preceding_sibling(self)
+        return previous_sibling(self)
 
     @property
     def next_sibling(self) -> Self | None:
