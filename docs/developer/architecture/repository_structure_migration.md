@@ -175,7 +175,7 @@ in the same directory as the path before it.
 #### Phase 1: `core.model` and `core.navigate`
 
 The modules of this phase move to `core/model/`, their tests to `test/unit/core/model/`. Step 1.8 creates `core/navigate/`
-and `test/unit/core/navigate/`.
+and `test/unit/core/navigate/`. Step 1.9 creates `integrations/shared/`.
 
 **1.1 The vocabulary.**
 
@@ -275,6 +275,22 @@ layer, below `core.model`.
   only in `core/navigate/`; Pyright reports no new issues; the test counts change only by the tests that the step adds and
   removes, and by one xfailed test that now passes.
 
+**1.9 The equality helpers leave the core, done before step 1.5.**
+
+- src: `match_props` and `match_children` move from `core/model/for_bindings.py` to `integrations/shared/equal.py`: only
+  parser bindings use them, and they need nothing from Renaissance.Py. `format_node` stays in the core, because it reads
+  `DISPLAY_PARSER_KIND` of `core.model`, and `ASTNode` uses it; `for_bindings.py` becomes `format.py`. The four bindings that
+  compare nodes import `equal`. `integrations/shared/` is the future `parser_bindings/shared/`, see
+  [repository structure](repository_structure.md#bindings-share-helpers-in-parser_bindingsshared).
+- test: neither module has unit tests of its own.
+- docs: the [core model](../modules/core/model.md) page loses the equality helpers and names `format.py`.
+- remaining: the `protected` contract of `core.model.for_bindings` becomes that of `core.model.format`, with the same allowed
+  importers. `renaissance.integrations.shared` gets a `forbidden` contract, which forbids every other package of
+  Renaissance.Py, and a `protected` contract, which allows `renaissance.integrations`, `renaissance.project` and their tests.
+  `format` replaces `for_bindings` in the exempt modules of the mirror of `core.model`.
+- Checks: `git grep for_bindings -- src test pyproject.toml` finds nothing; `match_props` and `match_children` are defined
+  only in `integrations/shared/equal.py`.
+
 **1.5 The nodes.**
 
 - src: `syntax_tree/ast_node.py`, `ast_factory.py`, `ast_finder.py` and `ast_shower.py`.
@@ -283,7 +299,7 @@ layer, below `core.model`.
   `test_ast_references.py` and `test/python/ast/test_python_astshower.py`. Their imports of a binding become known violations.
 - remaining: the moved modules join the list of the `protected` contract of `core.model`. Its known violations by `ast_node`
   and `ast_shower` disappear, and `renaissance.syntax_tree.ast_node` leaves the allowed importers of
-  `core.model.for_bindings`.
+  `core.model.format`.
 - Checks: `git grep -E "utils\.text_utils|syntax_tree\.(semantic_kind|node_protocol|text_segment|syntax_node|siblings)"` and
   `git grep -E "syntax_tree\.ast_(node|factory|finder|shower)"` find nothing; the model layer of the `layers` contract is
   `renaissance.core.model` and its tests.
@@ -308,9 +324,10 @@ The modules of this phase move to `core/pattern/`, their tests to `test/unit/cor
 
 **2.1 The pattern language.**
 
-- src: `syntax_tree/pattern_kind.py`. To `core.pattern.for_bindings`: `MATCH_ONE` and `MATCH_ALL` from
-  `integrations/__init__.py`, `replace_dollar`, `use_dollar` and `detect_placeholder` from `utils/ast_utils.py`, and
-  `pattern_kind` from `syntax_tree/match_finder.py`.
+- src: `syntax_tree/pattern_kind.py`. `utils/ast_utils.py`, which holds `replace_dollar`, `use_dollar` and
+  `detect_placeholder`, becomes `core/pattern/placeholders.py`, and `MATCH_ONE` and `MATCH_ALL` move there from
+  `integrations/__init__.py`. They are part of the pattern language, so they are public. `pattern_kind` stays in
+  `syntax_tree/match_finder.py`: only the matcher uses it.
 - test: `test/syntax_tree/test_pattern_kind.py`.
 - remaining: the known violation `renaissance.utils.ast_utils -> renaissance.integrations` disappears, because the markers are
   parser agnostic and now live in the core; remove its `ignore_imports` entry.
@@ -322,7 +339,7 @@ The modules of this phase move to `core/matching/`, their tests to `test/unit/co
 
 **3.1 The matcher.**
 
-- src: `syntax_tree/match_finder.py`; `find_in_list` to `core.matching.for_bindings`.
+- src: `syntax_tree/match_finder.py`. `find_in_list` is public, because a binding uses it; `pattern_kind` is internal.
 - test: `test/syntax_tree/test_match_finder.py`, `test_match_finder_multi_assignments.py`, `test_match_tree.py`,
   `test_match_dict.py` and `test_pattern_match.py`.
   The matcher tests under `test/c_cpp/`, `test/python/ast/` and `test/lst/` move here if they test the
@@ -385,11 +402,11 @@ binding by one contract per new binding.
 - test: `test/extractors/` to `test/unit/recipes/python_extractor/` and `test/unit/recipes/code_graph_extractor/`.
 - remaining: their imports of a binding are declared as dependencies of parser-specific recipes.
 
-**6.2 The project scanners.**
+**6.2 The project scanners and the shared helpers.**
 
-- src: `project/` to `parser_bindings/project/`.
+- src: `project/` to `parser_bindings/project/`, and `integrations/shared/` to `parser_bindings/shared/`.
 - test: `test/project/`.
-- remaining: the mirrors of `src/renaissance/parser_bindings`, with `units = "packages"`.
+- remaining: the mirrors of `src/renaissance/parser_bindings`, with `units = "packages"`. The contracts of `shared` follow it.
 
 **6.3 tree-sitter.**
 

@@ -104,6 +104,19 @@ Duplicated mappings are acceptable; a mapping shared between bindings is not, be
 changes the classification of another parser ([issue 266](https://github.com/TNO/Renaissance.Py/issues/266)).
 What bindings genuinely share, such as `SemanticKind` and `NodeProtocol`, is common vocabulary and belongs in the core.
 
+#### Bindings share helpers in `parser_bindings/shared/`
+
+`parser_bindings/shared/` holds the functions that several bindings use to implement the model, such as `match_props` and
+`match_children` in `equal.py`, with which a binding implements node equality. It is not a binding:
+
+- it imports nothing from Renaissance.Py, only the standard library and third-party packages;
+- only the parser bindings and its own unit tests import it.
+
+A helper takes the facts of a binding as parameters, such as the properties that equality ignores, so each binding keeps its
+own data, and no mapping is shared in the sense of issue 266.
+A helper that needs the core, or that the core uses too, stays in the core: `format_node` reads a setting of `core.model`, and
+`ASTNode` uses it.
+
 #### Bindings do not use rewriting or processing
 
 No binding uses `core.rewriting` or `core.processing` today.
@@ -161,13 +174,14 @@ parser_bindings/
 │   ├── ast/        # Python standard library ast
 │   └── libcst/     # libcst
 ├── tree_sitter/    # tree-sitter, for all grammars it is used with
-└── project/        # build artefacts and source trees: compile_commands.json, Bear, directory scans
+├── project/        # build artefacts and source trees: compile_commands.json, Bear, directory scans
+└── shared/         # helpers that several bindings use; not a binding, imports nothing from Renaissance.Py
 ```
 
 Decisions:
 
 - A grouping directory such as `clang/` or `python/` holds an `__init__.py` without imports and nothing else, so it cannot
-  become a place where bindings share code.
+  become a place where bindings share code; `shared/` is the only such place.
 - The two clang parsers are separate bindings: they name kinds differently (`COMPOUND_STMT` and `CompoundStmt`), so a shared
   kind map is a joined map in the sense of issue 266.
 - Each binding owns its parser's vocabulary: kind maps, property names, placeholder detection and comment syntax.
@@ -206,8 +220,8 @@ Decisions:
 - Each package lists its public API in `__all__` of its `__init__.py`. Its `__init__.py` imports these symbols and defines
   nothing else.
 - Code outside the package imports from the package, not from its modules: `from renaissance.core.matching import match_pattern`.
-- Some symbols exist only for parser bindings to implement the model. They are marked *binding* below, and live in a module
-  `for_bindings` of their core sub-package, such as `renaissance.core.model.for_bindings`. Recipes do not import it.
+- `format_node` exists only for the core and the parser bindings, which implement `__repr__` with it. It is marked *binding*
+  below, and lives in the module `renaissance.core.model.format`, which `core.model` does not export. Recipes do not import it.
 - Everything else is internal. Unit tests of the package itself may use internal symbols.
 
 How these decisions are checked:
@@ -215,7 +229,9 @@ How these decisions are checked:
 - Each package has a `protected` contract in `[tool.importlinter]`: its modules may be imported only by the package itself and by
   its unit tests. One contract per package is needed, because a contract cannot name "the package of the protected module" as
   the allowed importer.
-- Each `for_bindings` module has a `protected` contract that allows the core, the parser bindings and their unit tests.
+- `core.model.format` has a `protected` contract that allows the core, the parser bindings and their unit tests.
+- `parser_bindings.shared` has a `forbidden` contract, which forbids every other package of Renaissance.Py, and a `protected`
+  contract, which allows the parser bindings and its unit tests.
 - Ruff rule F401 reports a name that an `__init__.py` imports but does not list in `__all__`.
 - That an `__init__.py` defines nothing itself is enforced by review.
 
@@ -235,7 +251,7 @@ The column *now in* gives the current module, relative to `src/renaissance/`.
 | `ASTShower`, `Displayable`                                      | all     | `syntax_tree/ast_shower.py`             |
 | `traverse`                                                      | all     | `core/model/node_utils.py`              |
 | `TextUtils`                                                     | all     | `core/model/text_utils.py`              |
-| `match_props`, `match_children`, `format_node`                  | binding | `core/model/for_bindings.py`            |
+| `format_node`                                                   | binding | `core/model/for_bindings.py`            |
 
 Internal: `display_context`, `DISPLAY_PARSER_KIND`, `process_node`.
 
@@ -250,12 +266,14 @@ Internal: `display_context`, `DISPLAY_PARSER_KIND`, `process_node`.
 
 #### `core.pattern`
 
-| Symbol                                               | For     | Now in                        |
-| ---------------------------------------------------- | ------- | ----------------------------- |
-| `PatternKind`                                        | all     | `syntax_tree/pattern_kind.py` |
-| `MATCH_ONE`, `MATCH_ALL`                             | binding | `integrations/__init__.py`    |
-| `replace_dollar`, `use_dollar`, `detect_placeholder` | binding | `utils/ast_utils.py`          |
-| `pattern_kind`                                       | binding | `syntax_tree/match_finder.py` |
+| Symbol                                               | For | Now in                        |
+| ---------------------------------------------------- | --- | ----------------------------- |
+| `PatternKind`                                        | all | `syntax_tree/pattern_kind.py` |
+| `MATCH_ONE`, `MATCH_ALL`                             | all | `integrations/__init__.py`    |
+| `replace_dollar`, `use_dollar`, `detect_placeholder` | all | `utils/ast_utils.py`          |
+
+The placeholder markers and the `$` notation are part of the pattern language, not of a binding, so they are for all.
+They live in `core/pattern/placeholders.py`.
 
 A pattern type of its own (improvement plan, phase 3) does not exist yet and is not part of this draft.
 
@@ -265,10 +283,10 @@ A pattern type of its own (improvement plan, phase 3) does not exist yet and is 
 | -------------------------------------------------------------- | ------- | ----------------------------- |
 | `PatternMatch`, `MatchFinder`                                  | all     | `syntax_tree/match_finder.py` |
 | `match_pattern`, `find_all`, `is_match`                        | all     | `syntax_tree/match_finder.py` |
-| `find_in_list`                                                 | binding | `syntax_tree/match_finder.py` |
+| `find_in_list`                                                 | all     | `syntax_tree/match_finder.py` |
 
-Internal: `Variant`, `find_variants`, `is_match_tree`, `variant_in_match_stmt`, `is_match_dict`, `node_kinds_match`,
-`IRRELEVANT_PROPS`, `MIS_MATCH`, `INCOMPLETE_MATCH`.
+Internal: `pattern_kind`, which only the matcher uses, `Variant`, `find_variants`, `is_match_tree`, `variant_in_match_stmt`,
+`is_match_dict`, `node_kinds_match`, `IRRELEVANT_PROPS`, `MIS_MATCH`, `INCOMPLETE_MATCH`.
 
 #### `core.rewriting`
 
@@ -312,6 +330,8 @@ The public API of a binding serves the tests, the parser-specific recipes, and t
 - `tree_sitter`: `TreeSitterAdapter`, `TreeSitterPatternFactory`, `LST`, `LSTNode`, `LstVisualizer`.
 - `project`: `ProjectScanner`, `CppScanner`, `BearCppScanner`, `JavaScanner`, `PythonScanner`.
 
+`shared` exports `match_props` and `match_children`, now in `core/model/for_bindings.py`.
+
 Today `PythonFactory`, `PythonPatternFactory` and `PythonPattern` serve the `ast`, `libcst` and tree-sitter parsers at once.
 They are split, so that each binding has its own.
 
@@ -347,7 +367,8 @@ test/
 │   │   ├── python/ast/
 │   │   ├── python/libcst/
 │   │   ├── tree_sitter/
-│   │   └── project/
+│   │   ├── project/
+│   │   └── shared/
 │   ├── recipes/
 │   │   └── <recipe>/
 ├── features/                   # was features/ at the root: *.feature, steps/, targets/
@@ -428,7 +449,9 @@ The [layering check](../tools/check_layering.md) enforces these rules, except fo
 - No parser binding imports from another parser binding.
 - A recipe imports from a parser binding only if it declares that it depends on that binding.
 - Code outside a package imports only the package's public API.
-- Every module under `src/` belongs to exactly one layer, and every module under `parser_bindings/` to exactly one binding.
+- Every module under `src/` belongs to exactly one layer, and every module under `parser_bindings/` to exactly one binding or
+  to `shared/`.
+- `parser_bindings/shared/` imports nothing from Renaissance.Py, and only the parser bindings import it.
 - The unit tests and the documentation mirror the code.
 - The tools and their tests are independent of the rest of the repository, and only the developer documentation describes them.
 - The core contains no language- or parser-specific facts.
