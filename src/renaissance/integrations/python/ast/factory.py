@@ -36,6 +36,7 @@ class PythonPattern:
     def __init__(self, node, parent: Self | None = None) -> None:
         """AI: Wrap a Python AST/RST node as a matchable pattern, detecting match-all/match-one placeholders."""
         # TODO(pjljvandelaar): wrong type - node can also be an ast.AST, a PythonCstNode, an LSTNode, or a str.
+        #  https://github.com/TNO/Renaissance.Py/issues/187
         self.node: PythonRstNode = node
         self.parent = parent
         if type(node) is str:
