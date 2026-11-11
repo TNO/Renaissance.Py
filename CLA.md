@@ -25,9 +25,7 @@ By submitting any Contribution to this Project, you agree to the following terms
 
 3. Contribution License
 
-    You agree that all Contributions are submitted under either:
-    - the MIT License; or
-    - the BSD 3-Clause License.
+    You agree that all Contributions are submitted under the MIT License.
 
     By submitting a Contribution, you grant the Maintainer a perpetual, worldwide, non-exclusive, irrevocable,
     royalty-free license to use, reproduce, modify, prepare derivative works of, publicly display, publicly perform,
