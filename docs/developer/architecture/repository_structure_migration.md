@@ -30,8 +30,10 @@ The last step removes this page; git keeps its history.
 
 ### Principles
 
-- **Move, then fix.** A step moves code and updates its importers. It does not change behaviour and introduces no new
-  abstractions. A violation that a step makes visible is recorded: as an `ignore_imports` entry with its reason, or under
+- **Move, then fix.** A step either moves code or implements an issue that the migration depends on, never both.
+  A step that moves code updates its importers. It does not change behaviour and introduces no new abstractions.
+  A step that implements an issue does what the acceptance criteria of the issue require.
+  A violation that a step makes visible is recorded: as an `ignore_imports` entry with its reason, or under
   [Known violations](repository_structure.md#known-violations). Once the migration is done, each known violation gets an issue.
 - **Bottom up.** The core moves first, sub-package by sub-package, from `core.model` up to `core.processing`;
   then the parser bindings; then the recipes; then the tests that are not unit tests.
@@ -87,7 +89,9 @@ Every step consists of the same four substeps, in this order.
 A step is done when each of the following commands exits with 0, run from the repository root in the activated virtual
 environment.
 
-- Tests: `python -m pytest -q -p no:cacheprovider`, with the same counts as after the previous step.
+- Tests: `python -m pytest -q -p no:cacheprovider`, with the same counts as after the previous step. After a step that
+  implements an issue, every test that passed still passes or has its cases in a test that replaces it, and the counts change
+  only as the step lists.
 - Layering: `uv run lint-imports --no-cache`.
 - Layout: `python -m tools.check_layout`.
 - Names: `python -m tools.check_names`.
@@ -168,9 +172,10 @@ in the same directory as the path before it.
   `docs/developer/modules/core/{path}.md`, `docs/developer/api/core/{path}.md` and `docs/user/core/{path}.md`.
 - Checks: `python -m tools.check_layout` lists the four new mirrors, with no units yet.
 
-#### Phase 1: `core.model`
+#### Phase 1: `core.model` and `core.navigate`
 
-The modules of this phase move to `core/model/`, their tests to `test/unit/core/model/`.
+The modules of this phase move to `core/model/`, their tests to `test/unit/core/model/`. Step 1.8 creates `core/navigate/`
+and `test/unit/core/navigate/`.
 
 **1.1 The vocabulary.**
 
@@ -207,6 +212,61 @@ The modules of this phase move to `core/model/`, their tests to `test/unit/core/
   and `display_context` is a known violation until step 1.5. The `protected` contract of `core.model.for_bindings`, which
   allows the core, `renaissance.integrations`, `renaissance.project` and their tests. The allowed importers follow the
   bindings as they move.
+
+**1.8 The navigation, done before step 1.5.** Implements [issue 385](https://github.com/TNO/Renaissance.Py/issues/385): the
+navigation protocols, and the package `core.navigate`, which imports nothing from the rest of the core and is the lowest core
+layer, below `core.model`.
+
+- src:
+    - `core/navigate/` defines the protocols `HasParent`, `HasChildren` and `NodeNavigateProtocol`, which combines them, and
+      the functions `is_ancestor_of`, `is_proper_ancestor_of`, `ancestors`, `proper_ancestors`, `nearest_ancestor`,
+      `nearest_proper_ancestor`, `next_sibling` and `previous_sibling`. The functions compare nodes by identity.
+    - `next_sibling` and `preceding_sibling` leave `core/model/node_utils.py`. `preceding_sibling` becomes `previous_sibling`,
+      and so do the properties of `ASTNode`, `PythonCstNode`, `PythonRstNode` and the tree-sitter node, and their uses in
+      `c_pattern_factory.py` and `ast_rewriter.py`.
+    - `NodeProtocol` extends `NodeNavigateProtocol`, and the rewriter's `Rewritable` extends `HasParent`. `Siblings`
+      implements neither.
+    - `is_ancestor_of` leaves `syntax_tree/ast_rewriter.py`. Its two calls mean a proper ancestor, so they become
+      `is_proper_ancestor_of`, and the rewriter behaves as before.
+    - `ASTNode.get_ancestor(kind)` keeps its behaviour by delegating to `nearest_proper_ancestor`. `ASTNode.is_ancestor_of`,
+      which compares by equality, and `is_descendant_of`, which calls it, are removed; their only user is a test.
+- test:
+    - `test/unit/core/navigate/` holds the unit tests that the acceptance criteria of issue 385 list. They use a test double
+      of their own instead of a parser binding.
+    - `test/syntax_tree/test_is_ancestor_of.py` and `test/unit/core/model/test_node_utils.py` test only functions that move
+      to `core.navigate`, so their cases join these tests and the two files are removed.
+    - `test_get_ancestor_finds_enclosing_function` in `test/python/ast/test_python_rst_node.py` calls
+      `nearest_proper_ancestor` and loses its strict xfail marker.
+    - The test of `is_ancestor_of` in `test/c_cpp/test_clang_ast_node.py` calls `is_proper_ancestor_of`, and the tests of the
+      bindings use `previous_sibling`.
+- docs:
+    - The mirror pages of `core.navigate`: `docs/developer/modules/core/navigate.md`, `docs/developer/api/core/navigate.md`
+      and `docs/user/core/navigate.md`. The user page of [navigation](../../user/features/navigation.md) links to the last
+      one.
+    - [Navigation of code](navigation.md) describes the protocols and the functions, and records the decisions of issue 385:
+        - protocol names are verbs, after what they enable: match, rewrite and navigate, as in `NodeNavigateProtocol`;
+        - `HasParent` and `HasChildren` are the basic protocols, and a node implements both;
+        - an ancestor of a node includes the node itself, a proper ancestor excludes it, and nodes are compared by identity,
+          never by equality;
+        - `previous_sibling` and `next_sibling` are a symmetric pair, so `preceding_sibling` is not used;
+        - `nearest_ancestor` and `nearest_proper_ancestor` take a predicate, so `core.navigate` needs no other protocol and
+          does not decide how a kind matches;
+        - `Siblings` keeps its name, with *slice* as a synonym for *range*;
+        - `Siblings` implements neither `HasParent` nor `HasChildren`. Its `parent` is a node and never `None`. A slice is
+          never its own ancestor, so the functions take a node, and code that needs the ancestors of `Siblings` calls them
+          on `siblings.parent`. The children of the siblings have different parents, so they are not the children of any
+          one node.
+    - The [core model](../modules/core/model.md) page loses the sibling functions and calls `Siblings` a range, or slice.
+    - [Repository structure](repository_structure.md): the core has six sub-packages, with `core.navigate` at the bottom;
+      navigation leaves the responsibility of `core.model`; `core.navigate` gets its own table of symbols.
+    - The sibling functions in [parser and AST modules](../modules/parser_and_ast.md).
+- remaining: the `layers` contract gets the layer `renaissance.core.navigate : test.unit.core.navigate`, below `core.model`.
+  The `protected` contract of `core.navigate`. In `[tool.check_layout]`, the mirror of the modules of `core/navigate/` in
+  `test/unit/core/navigate/`, as for `core.model`. The removed test files leave the `layers` contract, and so do their
+  `ignore_imports` entries.
+- Checks: `git grep -wE "preceding_sibling|is_descendant_of" -- src test features` finds nothing; `is_ancestor_of` is defined
+  only in `core/navigate/`; Pyright reports no new issues; the test counts change only by the tests that the step adds and
+  removes, and by one xfailed test that now passes.
 
 **1.5 The nodes.**
 
@@ -276,8 +336,8 @@ The modules of this phase move to `core/rewriting/`, their tests to `test/unit/c
 **4.2 The node-based rewriter.**
 
 - src: `syntax_tree/ast_rewriter.py`.
-- test: `test/syntax_tree/test_ast_rewriter.py`, `test_rewrite_semantics_properties.py` and `test_is_ancestor_of.py`, and the
-  helpers of `test_ast_rewriter.py` that have not moved yet; see [Test helpers](#test-helpers).
+- test: `test/syntax_tree/test_ast_rewriter.py` and `test_rewrite_semantics_properties.py`, and the helpers of
+  `test_ast_rewriter.py` that have not moved yet; see [Test helpers](#test-helpers).
 - remaining: the `ignore_imports` entries of the Python binding tests that check the effect of a rewrite follow the new path.
 
 #### Phase 5: `core.processing`, and closing the core
