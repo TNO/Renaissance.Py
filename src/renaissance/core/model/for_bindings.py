@@ -6,16 +6,18 @@
 
 """AI: Helpers with which a parser binding implements node equality and node display."""
 
+from collections.abc import Set as AbstractSet
+
 from renaissance.core.model.node_utils import DISPLAY_PARSER_KIND
 
 
-def match_props(mine, other, irrelevant_props) -> bool:
+def match_props(mine, other, irrelevant_props: AbstractSet[str]) -> bool:
     """AI: Return True if mine and other agree on all properties except the irrelevant ones."""
     all_keys = (mine.keys() | other.keys()) - irrelevant_props
     return all(mine.get(n) == other.get(n) for n in all_keys)
 
 
-def match_children(mine, other, irrelevant_kinds) -> bool:
+def match_children(mine, other, irrelevant_kinds: AbstractSet[str]) -> bool:
     """AI: Return True if every child in other matches the corresponding child in mine (or has an irrelevant kind)."""
     if mine is None or other is None:
         return mine == other
