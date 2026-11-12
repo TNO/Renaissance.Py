@@ -11,7 +11,7 @@ from pathlib import Path
 import pytest
 from hamcrest import assert_that, equal_to
 
-from renaissance.utils.ruff_utils import run_ruff_import_cleanup
+from renaissance.recipes.ruff_utils import run_ruff_import_cleanup
 
 UNUSED_IMPORT = ("import os\nimport sys\n\nprint(sys.argv)\n", "import sys\n\nprint(sys.argv)\n")
 UNSORTED_IMPORTS = ("import sys\nimport os\n\nprint(os, sys)\n", "import os\nimport sys\n\nprint(os, sys)\n")

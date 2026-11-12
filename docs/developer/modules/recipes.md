@@ -36,7 +36,7 @@ safely cover. This page covers `TypeParameterCheck`, the recipe behind
   the comment trailing a statement's line. They are part of the libcst parser binding.
   
 <!-- TODO: FrancescoPezzella - list ruff_utils.py here once a recipe uses run_ruff_import_cleanup (#111):
-- `src/renaissance/utils/ruff_utils.py`: `run_ruff_import_cleanup`, which removes unused imports and sorts the imports
+- `src/renaissance/recipes/ruff_utils.py`: `run_ruff_import_cleanup`, which removes unused imports and sorts the imports
   of the files a recipe changed, with ruff. -->
   
 ## Public entry points
