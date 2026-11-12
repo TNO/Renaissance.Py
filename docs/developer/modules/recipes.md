@@ -60,7 +60,9 @@ safely cover. This page covers `TypeParameterCheck`, the recipe behind
 - `PythonRefactoring.process("TypeParameterCheck", file)`, used by `cli.py refactor`, never sets those attributes, so
   `min_python` stays `MIN_SUPPORTED_PYTHON` there and a `default=` declaration is reported `"unsafe"`.
 - `PrivateTypeParameterCheck.check()` (and `run()`): renames each private type parameter and returns
-  `{old name: "fixed" | "unsafe"}`; a name refused in any declaration is `"unsafe"`. The CLI does not run it.
+  `{old name: "fixed" | "unsafe"}`; a name refused in any declaration is `"unsafe"`. `unsafe_reasons` holds the
+  `UnsafeReason` of each unsafe name and `type_param_kinds` the kind of each name it saw. The CLI runs it after
+  `TypeParameterCheck` on each file, as the `renamed` phase of the report.
 
 ## Internal structure
 
@@ -69,13 +71,14 @@ safely cover. This page covers `TypeParameterCheck`, the recipe behind
   replaces only the node it changes, so formatting and comments elsewhere are kept.
 
 - **Unsafe reasons.** `is_safe_to_remove`, `is_safe_to_localize` and `conversion_refusal` return an `UnsafeReason`
-  or `None`. Each of the 8 reasons has an `UnsafeRule` (its message) in `UNSAFE_RULES`. The CLI report prints
+  or `None`. Each of the 10 reasons has an `UnsafeRule` (its message) in `UNSAFE_RULES`. The CLI report prints
   each message and links `DOCS_BASE_URL` once.
 
 - **Refusal rules.** Five of the reasons are independent checks, listed as `RefusalRule` entries in
   `CONVERSION_RULES`, `REMOVAL_RULES` and `LOCALIZATION_RULES`; the first rule of a stage that refuses decides the
   reason. The other three (`USED_IN_GENERIC_CLASS`, `SHARES_FUNCTION_WITH_UNCONVERTIBLE`, `NAME_NOT_AT_MODULE_LEVEL`)
-  follow from how the phases work and are not listed. Commenting out an entry switches its rule off.
+  follow from how the phases work and are not listed. `NEW_NAME_NOT_FREE` and `USE_NOT_RENAMEABLE` are decided by
+  `PrivateTypeParameterCheck` itself. Commenting out an entry switches its rule off.
   `NO_PEP695_EQUIVALENT`, `PEP696_VERSION_GATE` and `ORIGIN_IMPORTS_CONSTRUCTOR_CONDITIONALLY` then let the recipe write
   code that fails or binds another object; `DECLARED_TYPEVAR_EXPORTED` and `IMPORTED_ELSEWHERE_IN_PROJECT` then let it
   break the files that import the name.
@@ -133,7 +136,7 @@ safely cover. This page covers `TypeParameterCheck`, the recipe behind
   removing imports that became unused, is left to the CLI's final `ruff` pass (F401, I001).
 
 - **Private type parameters.** `PrivateTypeParameterCheck` finds the declarations with patterns on a second parse of the
-  file, with the RST backend. It maps each type parameter to its libcst node by offset and length, and takes its uses
+  file, with the RST backend. It maps each type parameter to its libcst node by offset, and takes its uses
   from `referenced_by`, so a module-level `_T` of the same name is left alone. A name inside a string annotation is
   renamed inside the string. A type parameter is left unchanged when its new name is already a name in the declaring
   function or class, or is declared twice in the same bracket.

@@ -6,8 +6,8 @@
 
 """CLI that modernizes type parameters (TypeVar, ParamSpec, TypeVarTuple) to PEP 695 syntax.
 
-Runs TypeParameterCheck on a file or directory, and reports which files were modified and which need
-manual review.
+Runs TypeParameterCheck and then PrivateTypeParameterCheck on a file or directory, and reports which files were
+modified and which need manual review.
 
 Example:
     python src/rejuvenation/migration_type_recipes.py ./repo --py 3.12 --report review.md --ignore folder/types.py
@@ -27,6 +27,8 @@ from pathlib import Path
 from termcolor import colored
 
 from renaissance.project.project_scanner import PythonScanner
+from renaissance.recipes.private_type_parameter_check import PrivateTypeParameterCheck
+from renaissance.recipes.step_runner import Step, run_steps
 from renaissance.recipes.type_parameter_check import MIN_SUPPORTED_PYTHON, TypeParameterCheck
 from renaissance.recipes.type_parameter_rules import DOCS_BASE_URL, UNSAFE_RULES, UnsafeReason
 from renaissance.utils.import_resolution import collect_project_imported_names
@@ -38,6 +40,7 @@ _FIXED_DESCRIPTIONS = {
     "converted": "converted to PEP 695 in functions",
     "orphaned": "unused declaration removed",
     "cross_file": "import replaced by a local declaration",
+    "renamed": "leading underscore removed",
 }
 _MAX_LISTED_NAMES = 10
 
@@ -132,7 +135,7 @@ def process_file(
     project_wide_imported_names: frozenset[str],
     localization: LocalizationSettings = _DEFAULT_LOCALIZATION,
 ) -> FileReport:
-    """Run TypeParameterCheck's three phases on one file and return its FileReport.
+    """Run TypeParameterCheck's three phases and then PrivateTypeParameterCheck on one file; return its FileReport.
 
     Any exception is caught and stored on FileReport.error, so one bad file never aborts a batch run.
     """
@@ -144,10 +147,13 @@ def process_file(
         recipe.ignore_localize_origins = localization.ignored_files
         recipe.localize_imports = localization.enabled
         result = recipe.check()
+        private = PrivateTypeParameterCheck(path)
+        result["renamed"] = run_steps([Step("renamed", private, private.check)])["renamed"]
         reasons = {
             "cross_file": recipe.cross_file_unsafe_reasons,
             "converted": recipe.converted_unsafe_reasons,
             "orphaned": recipe.orphaned_unsafe_reasons,
+            "renamed": private.unsafe_reasons,
         }
     except Exception as exc:  # noqa: BLE001 - isolate one bad file, never abort the whole batch
         return FileReport(path=path, result=None, error=f"{type(exc).__name__}: {exc}")
@@ -156,7 +162,7 @@ def process_file(
         result=result,
         error=None,
         reasons=reasons,
-        kinds=recipe.type_param_kinds,
+        kinds={**recipe.type_param_kinds, **private.type_param_kinds},
         ignored=frozenset(recipe.ignored_names),
     )
 
@@ -452,7 +458,10 @@ def build_arg_parser() -> argparse.ArgumentParser:
     """Build the argument parser for this CLI's --help/usage text and flags."""
     parser = argparse.ArgumentParser(
         prog="migration_type_recipes.py",
-        description="Modernize legacy TypeVar/ParamSpec/TypeVarTuple usage to PEP 695 syntax.",
+        description=(
+            "Modernize legacy TypeVar/ParamSpec/TypeVarTuple usage to PEP 695 syntax, "
+            "and drop the leading underscore of its type parameters."
+        ),
         epilog=textwrap.dedent("""\
             Examples:
                 python src/rejuvenation/migration_type_recipes.py ./repo --py 3.12 --report review.md --ignore folder/types.py

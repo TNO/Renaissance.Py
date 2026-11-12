@@ -33,7 +33,7 @@ def first[T](items: list[T]) -> T: ...
 Its changes to xarray convert type parameters in 8 files and remove one unused declaration:
 [pydata/xarray#11768](https://github.com/pydata/xarray/pull/11768/commits/bb6033218eee48be64aba921265e3dd4e5aea106).
 
-The tool runs three phases:
+The tool runs four phases:
 
 1. **Localize cross-file imports.** A type parameter imported from another file in the project
    (`from .shapes import T`) is replaced by an exact local copy of its declaration, placed after the file's imports,
@@ -47,6 +47,11 @@ The tool runs three phases:
    converted is left unchanged.
 3. **Remove orphaned declarations.** A module-level `T = TypeVar("T")` that nothing uses is deleted, including one left
    behind by `ruff`'s `UP047` or by a manual rewrite.
+4. **Remove the leading underscore.** A type parameter of a function or class written as `_T`, including one phase 2
+   wrote, becomes `T` together with every use it binds (`def f[T](x: T) -> T`). `ruff`'s `UP049` does the same, but
+   leaves the uses behind when a module-level `_T` of the same name remains
+   ([astral-sh/ruff#21004](https://github.com/astral-sh/ruff/issues/21004)). It also can completely break the code, 
+   when running it after changing Type Parameters in certain situations (from an experiment using it before)!
 
 ## Inputs
 
@@ -165,6 +170,8 @@ example under *Non-goals* or *Need to fix* in [Refactoring recipes](../../develo
   which shadows the first.
 - `Unpack[Ts]` is left as it is. Run `ruff`'s `UP044` to rewrite it to `*Ts` (see
   [Rejected recipes](../../developer/modules/rejected-recipes.md)).
+- A type parameter of a function with default values, keyword-only or positional-only parameters, or of a class with
+  two or more keyword arguments in its bases, keeps its leading underscore, and the report does not list it.
 - There is no filtering of files, so a large project can take tens of minutes.
 - A file that is not valid UTF-8 stops the whole run with a `UnicodeDecodeError`, before any file is changed. Re-save
   it as UTF-8 or move it out of the target.
@@ -385,6 +392,35 @@ def second(items: list[shapes.T]) -> shapes.T: ...
 
 **To remove it yourself:** find that import (`from <module> import <name>` or `<module>.<name>`), remove it, and
 run the tool again.
+
+### The name without its underscore is not free { #feature-type-parameter-modernization-new-name-not-free }
+
+The name without the leading underscore is already used in the same function or class, as a name it reads or defines
+or as another type parameter, or it is not a valid name (`_class`). Renaming would capture or clash with it.
+
+```python
+T = 1
+
+def f[_T](x: _T) -> _T:
+    return T
+```
+
+The type parameter keeps its leading underscore.
+
+**To fix this yourself:** rename the other name, or rename the type parameter by hand.
+
+### A use of the type parameter cannot be rewritten { #feature-type-parameter-modernization-use-not-renameable }
+
+A use of the type parameter is written in a form the tool cannot rewrite, such as an annotation split over
+concatenated strings.
+
+```python
+def f[_T](x: "list[" "_T]") -> _T: ...
+```
+
+The type parameter keeps its leading underscore.
+
+**To fix this yourself:** write the annotation as one string, or without quotes, and run the tool again.
 
 ## Related concepts
 

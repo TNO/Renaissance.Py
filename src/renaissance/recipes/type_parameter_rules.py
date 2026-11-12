@@ -27,7 +27,7 @@ DOCS_BASE_URL = "https://tno.github.io/Renaissance.Py/user/features/type-paramet
 
 
 class UnsafeReason(StrEnum):
-    """Every distinct, permanent reason a TypeVar/ParamSpec/TypeVarTuple candidate is left unconverted.
+    """Every distinct, permanent reason a TypeVar/ParamSpec/TypeVarTuple candidate is left unconverted or keeps its private name.
 
     Each member has a matching documented rule under DOCS_BASE_URL - see UNSAFE_RULES.
     """
@@ -40,6 +40,8 @@ class UnsafeReason(StrEnum):
     NAME_NOT_AT_MODULE_LEVEL = "name_not_at_module_level"
     IMPORTED_ELSEWHERE_IN_PROJECT = "imported_elsewhere_in_project"
     ORIGIN_IMPORTS_CONSTRUCTOR_CONDITIONALLY = "origin_imports_constructor_conditionally"
+    NEW_NAME_NOT_FREE = "new_name_not_free"
+    USE_NOT_RENAMEABLE = "use_not_renameable"
 
 
 @dataclass(frozen=True)
@@ -73,6 +75,12 @@ UNSAFE_RULES: dict[UnsafeReason, UnsafeRule] = {
     ),
     UnsafeReason.ORIGIN_IMPORTS_CONSTRUCTOR_CONDITIONALLY: UnsafeRule(
         "origin module imports TypeVar/ParamSpec/TypeVarTuple inside an if/try block, e.g. under TYPE_CHECKING or per Python version",
+    ),
+    UnsafeReason.NEW_NAME_NOT_FREE: UnsafeRule(
+        "name without its leading underscore is already used in the function or class, or is not a valid name",
+    ),
+    UnsafeReason.USE_NOT_RENAMEABLE: UnsafeRule(
+        "a use of it is written in a form the tool can't rewrite, e.g. an annotation split over concatenated strings",
     ),
 }
 

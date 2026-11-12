@@ -14,6 +14,7 @@ import pytest
 from hamcrest import assert_that, equal_to
 
 from renaissance.recipes.private_type_parameter_check import PrivateTypeParameterCheck
+from renaissance.recipes.type_parameter_rules import UnsafeReason
 
 _PATTERN_GAP = pytest.mark.xfail(
     strict=True,
@@ -138,6 +139,15 @@ class TestPrivateTypeParameterCheck:
             ),
             pytest.param(
                 """\
+                def f[_T: str = str](x: _T) -> _T: ...
+                """,
+                """\
+                def f[T: str = str](x: T) -> T: ...
+                """,
+                id="bound_and_default",
+            ),
+            pytest.param(
+                """\
                 def f[_T](x: _T, *args: _T, **kwargs: _T) -> _T: ...
                 """,
                 """\
@@ -225,13 +235,14 @@ class TestPrivateTypeParameterCheck:
         assert_that(subject.apply_to_string(), equal_to(textwrap.dedent(expected)))
 
     @pytest.mark.parametrize(
-        "source",
+        ("source", "expected_reasons"),
         [
             pytest.param(
                 """\
                 def f[T](x: T) -> T:
                     return x
                 """,
+                {},
                 id="public_name",
             ),
             pytest.param(
@@ -241,6 +252,7 @@ class TestPrivateTypeParameterCheck:
                 def f[_T](x: _T) -> _T:
                     return T
                 """,
+                {"_T": UnsafeReason.NEW_NAME_NOT_FREE},
                 id="outer_name_used_in_scope_would_be_captured",
             ),
             pytest.param(
@@ -248,15 +260,58 @@ class TestPrivateTypeParameterCheck:
                 def f[_T, T](x: _T, y: T) -> _T:
                     return x
                 """,
+                {"_T": UnsafeReason.NEW_NAME_NOT_FREE},
                 id="new_name_already_a_type_parameter",
+            ),
+            pytest.param(
+                """\
+                def f[_class](x: _class) -> _class: ...
+                """,
+                {"_class": UnsafeReason.NEW_NAME_NOT_FREE},
+                id="new_name_is_a_keyword",
+            ),
+            pytest.param(
+                """\
+                def f[_T](x: "list[" "_T]") -> _T: ...
+                """,
+                {"_T": UnsafeReason.USE_NOT_RENAMEABLE},
+                id="use_in_a_concatenated_string",
             ),
         ],
     )
     def test_leaves_source_unchanged_when_renaming_is_not_safe(
-        self, create_check: Callable[[str], PrivateTypeParameterCheck], source: str
+        self,
+        create_check: Callable[[str], PrivateTypeParameterCheck],
+        source: str,
+        expected_reasons: dict[str, UnsafeReason],
     ) -> None:
-        """Verify nothing is renamed when the name is already public or the new name would capture or clash."""
+        """Verify nothing is renamed when the name is already public or the new name would capture or clash, and why."""
+        subject = create_check(source)
+        result = subject.check()
+
+        assert_that(subject.apply_to_string(), equal_to(textwrap.dedent(source)))
+        assert_that(subject.unsafe_reasons, equal_to(expected_reasons))
+        assert_that(result, equal_to(dict.fromkeys(expected_reasons, "unsafe")))
+
+    @pytest.mark.parametrize(
+        ("source", "expected_kinds"),
+        [
+            pytest.param(
+                "def f[_T, **_P, *_Ts](x: _T, c: Callable[_P, int], *args: *_Ts) -> int: ...\n",
+                {"_T": "TypeVar", "_P": "ParamSpec", "_Ts": "TypeVarTuple"},
+                id="function",
+            ),
+            pytest.param("class Box[_T]:\n    a: _T\n", {"_T": "TypeVar"}, id="class"),
+        ],
+    )
+    def test_reports_the_kind_of_each_type_parameter_it_renamed(
+        self,
+        create_check: Callable[[str], PrivateTypeParameterCheck],
+        source: str,
+        expected_kinds: dict[str, str],
+    ) -> None:
+        """Verify each renamed name is mapped to TypeVar, ParamSpec or TypeVarTuple."""
         subject = create_check(source)
         subject.check()
 
-        assert_that(subject.apply_to_string(), equal_to(textwrap.dedent(source)))
+        assert_that(subject.type_param_kinds, equal_to(expected_kinds))
