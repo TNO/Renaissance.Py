@@ -16,7 +16,7 @@ https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
 Recipes are `PythonRefactoring` subclasses that rewrite one Python file at a time, for gaps `ruff` does not fully or
 safely cover. This page covers `TypeParameterCheck`, the recipe behind
-[Type parameter modernization](../../user/features/type-parameter-modernization.md).
+[Type parameter modernization](../../user/features/type-parameter-modernization.md), and `PrivateTypeParameterCheck`.
 
 ## Location
 
@@ -26,6 +26,9 @@ safely cover. This page covers `TypeParameterCheck`, the recipe behind
 - `src/renaissance/recipes/type_parameter_localization.py`: decides which imported type parameters get a local
   declaration, and the imports and text that replace them.
 - `src/renaissance/recipes/type_parameter_uses.py`: finds where a declared name is used.
+- `src/renaissance/recipes/private_type_parameter_check.py`: `PrivateTypeParameterCheck`, which drops the leading
+  underscore from the PEP 695 type parameters of functions and classes (`def f[_T]` to `def f[T]`) and from every use
+  they bind.
 - `src/renaissance/recipes/step_runner.py`: `Step`/`run_steps`, runs fix actions in order and commits only the ones
   that fixed something.
 - `src/renaissance/recipes/python_refactoring.py`: the base class.
@@ -56,6 +59,8 @@ safely cover. This page covers `TypeParameterCheck`, the recipe behind
   `False`.
 - `PythonRefactoring.process("TypeParameterCheck", file)`, used by `cli.py refactor`, never sets those attributes, so
   `min_python` stays `MIN_SUPPORTED_PYTHON` there and a `default=` declaration is reported `"unsafe"`.
+- `PrivateTypeParameterCheck.check()` (and `run()`): renames each private type parameter and returns
+  `{old name: "fixed" | "unsafe"}`; a name refused in any declaration is `"unsafe"`. The CLI does not run it.
 
 ## Internal structure
 
@@ -126,6 +131,12 @@ safely cover. This page covers `TypeParameterCheck`, the recipe behind
   when that import shares its line with other statements and is dropped, when no import of the file remains, or when
   a statement between it and the last import reads one of its names. Merging and sorting the added imports, and
   removing imports that became unused, is left to the CLI's final `ruff` pass (F401, I001).
+
+- **Private type parameters.** `PrivateTypeParameterCheck` finds the declarations with patterns on a second parse of the
+  file, with the RST backend. It maps each type parameter to its libcst node by offset and length, and takes its uses
+  from `referenced_by`, so a module-level `_T` of the same name is left alone. A name inside a string annotation is
+  renamed inside the string. A type parameter is left unchanged when its new name is already a name in the declaring
+  function or class, or is declared twice in the same bracket.
 
 - **Line endings.** Files are read with universal newlines and a modified file is written back with LF, also on the
   lines the recipe did not change. A file the recipe does not modify is not rewritten.
@@ -426,6 +437,12 @@ Errors that should be fixed, not accepted.
 - A localized declaration whose constructor is already imported from another module, such as `TypeVar` from `typing`
   in this file and from `typing_extensions` in the origin, adds a second import of the name that shadows the first
   ([issue 279](https://github.com/TNO/Renaissance.Py/issues/279)).
+
+- `PrivateTypeParameterCheck` does not find a function with default values, keyword-only or positional-only
+  parameters, or a class with two or more keyword arguments in its bases, because the patterns cannot express them. It
+  leaves their type parameters unchanged and does not report them
+  ([issue 279](https://github.com/TNO/Renaissance.Py/issues/279)). In `def f[_T](x: _T | None = None) -> _T: ...`,
+  `_T` stays.
 
 - A file that starts with a UTF-8 byte order mark is rewritten with invalid syntax and reported under `ERRORS`: a
   converted `def identity(x: T) -> T:` becomes `def ideidentity[T] T) -> T:`. The file should keep its encoding and
