@@ -29,6 +29,10 @@ from renaissance.utils.ast_utils import replace_dollar, use_dollar
 _MATCH_ALL_RE = re.compile(r"^" + re.escape(MATCH_ALL) + r"\w+$")
 _MATCH_ONE_RE = re.compile(r"^" + re.escape(MATCH_ONE) + r"\w+$")
 
+# TODO(FrancescoPezzella): a placeholder outside these kinds silently becomes a text match.
+#  https://github.com/TNO/Renaissance.Py/issues/387
+_PLACEHOLDER_PARSER_KINDS = frozenset({"Name", "Expr", "arg", "Param", "TypeVar", "ParamSpec", "TypeVarTuple"})
+
 
 class PythonPattern:
     """AI: Wrap a Python AST/RST node as a matchable pattern, detecting match-all/match-one placeholders."""
@@ -64,6 +68,7 @@ class PythonPattern:
         return use_dollar(str(self.node))
 
     def _derive_pattern_kind(self, node) -> None:
+        """Set pattern_kind to MATCH_ONE or MATCH_ALL when node is a `$x` or `$$x` placeholder, including a type parameter."""
         if isinstance(node, ast.arg):
             signature = node.arg
         elif isinstance(node, ast.Name):
@@ -75,7 +80,7 @@ class PythonPattern:
         else:
             signature = node.name
 
-        if node.parser_kind in {"Name", "Expr", "arg", "Param"}:
+        if node.parser_kind in _PLACEHOLDER_PARSER_KINDS:
             if _MATCH_ALL_RE.match(signature):
                 self.pattern_kind = PatternKind.MATCH_ALL
             elif _MATCH_ONE_RE.match(signature):
