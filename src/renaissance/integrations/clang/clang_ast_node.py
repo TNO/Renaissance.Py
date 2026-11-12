@@ -419,6 +419,8 @@ class ClangASTNode(ASTNode[Cursor, ClangTranslationUnit]):
 
             if has_body(self):
                 return None
+            # TODO(pjljvandelaar): find_all returns a list, which has no find_first or or_else: this raises AttributeError when reached.
+            #  https://github.com/TNO/Renaissance.Py/issues/187
             body = ASTFinder.find_all(self.root, is_match).find_first().or_else(None)
             if isinstance(body, ClangASTNode):
                 return body
