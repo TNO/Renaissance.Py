@@ -16,6 +16,7 @@ from pytest_mock import MockerFixture
 
 from renaissance.integrations.python.ast.cst_node import PythonCstNode
 from renaissance.recipes.type_parameter_check import TypeParameterCheck
+from renaissance.recipes.type_parameter_rules import UnsafeReason
 
 
 def _imports_after_code(module_text: str) -> list[str]:
@@ -57,20 +58,47 @@ class TestTypeParameterCheckLocalize:
         return subject
 
     @pytest.mark.parametrize(
-        ("dunder_all", "imported_elsewhere"),
-        [
-            pytest.param('__all__ = ["T"]', frozenset[str](), id="re-exported-via-dunder-all"),
-            pytest.param("", frozenset({"T"}), id="imported-from-here-elsewhere"),
-        ],
+        "imported_elsewhere",
+        [pytest.param(frozenset({"T"}), id="imported-from-here-elsewhere")],
     )
-    def test_localizes_typevar_this_file_re_exports(
+    def test_localizes_typevar_other_files_import_from_here(
         self,
         mocker: MockerFixture,
         tmp_path: Path,
-        dunder_all: str,
         imported_elsewhere: frozenset[str],
     ) -> None:
-        """Verify an imported TypeVar is localized even when this file passes it on to others."""
+        """Verify an imported TypeVar is localized even when other files import it from this file."""
+        subject = self._create_cross_file(
+            mocker,
+            tmp_path,
+            """
+            from typing import TypeVar
+            T = TypeVar("T")
+            """,
+            """
+            from file_1 import T
+            def b(x: T) -> T:
+                return x
+            """,
+        )
+        subject.project_wide_imported_names = imported_elsewhere
+
+        result = subject.localize_imported_typevars()
+
+        assert_that(result, equal_to({"T": "fixed"}))
+        output = subject.apply_to_string()
+        assert_that(output, contains_string('T = TypeVar("T")'))
+        assert_that(output, not_(contains_string("from file_1 import T")))
+
+    @pytest.mark.parametrize(
+        "dunder_all",
+        [
+            pytest.param('__all__ = ["T", "b"]', id="assigned"),
+            pytest.param('__all__: list[str] = ["T"]', id="annotated"),
+        ],
+    )
+    def test_keeps_the_import_of_a_typevar_this_file_exports(self, mocker: MockerFixture, tmp_path: Path, dunder_all: str) -> None:
+        """Verify an imported TypeVar this file lists in `__all__` keeps its import and is reported as exported."""
         subject = self._create_cross_file(
             mocker,
             tmp_path,
@@ -85,14 +113,14 @@ class TestTypeParameterCheckLocalize:
                 return x
             """,
         )
-        subject.project_wide_imported_names = imported_elsewhere
 
         result = subject.localize_imported_typevars()
 
-        assert_that(result, equal_to({"T": "fixed"}))
+        assert_that(result, equal_to({"T": "unsafe"}))
+        assert_that(subject.cross_file_unsafe_reasons, equal_to({"T": UnsafeReason.DECLARED_TYPEVAR_EXPORTED}))
         output = subject.apply_to_string()
-        assert_that(output, contains_string('T = TypeVar("T")'))
-        assert_that(output, not_(contains_string("from file_1 import T")))
+        assert_that(output, contains_string("from file_1 import T"))
+        assert_that(output, not_(contains_string("TypeVar")))
 
     @pytest.mark.parametrize(
         ("layout", "importing_import", "expected_line"),

@@ -111,7 +111,9 @@ safely cover. This page covers `TypeParameterCheck`, the recipe behind
 - **Localization.** The origin's declaration is copied as written, with the comment trailing it when it is alone on
   its line (`declaration_text`). `NAME_NOT_AT_MODULE_LEVEL` if the origin only binds a name its arguments use
   (`declaration_argument_names`) under `if TYPE_CHECKING:` or this file binds it to something else
-  (`from_import_sources`). All names localized from one import statement are handled together.
+  (`from_import_sources`). All names localized from one import statement are handled together. The import it
+  replaces is this file's binding, so `is_safe_to_remove` checks it too. Only `DECLARED_TYPEVAR_EXPORTED` can refuse
+  there, since the planner gets no `project_wide_imported_names`.
 
   A name the origin imports, the constructor or one an argument uses, is imported here from the module the origin
   gets it from, with its alias (`from_import_binding`). A relative import of the origin is re-anchored on this file
