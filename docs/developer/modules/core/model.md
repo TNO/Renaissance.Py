@@ -35,8 +35,10 @@ The `__all__` of `renaissance.core.model`; see the [API reference](../../api/cor
 - `ASTNode`: the abstract base class of the nodes of the clang bindings, with `ASTReference`, a reference between two
   nodes, and `VisitorResult`, which tells a traversal how to continue.
 - `ASTFactory`: creates the nodes of one node class from a file or a text.
-- `find_nodes`, `matches_node` and `find_semantic_kind`, also as static methods of `ASTFinder`: the nodes that satisfy a
-  predicate or have a semantic kind.
+- `find_nodes` and `find_semantic_kind`: the nodes that satisfy a predicate or have a semantic kind; `matches_node`: whether a
+  node satisfies a predicate.
+- `ASTFinder`: static methods that find the nodes for which a function returns `True` or that it yields (`find_all`), or
+  whose parser kind matches a pattern (`find`, `matches_kind`).
 - `ASTShower`: renders a tree of nodes for debugging, with `Displayable`, the shape of a node that it renders.
 
 `renaissance.core.model.format` holds `format_node`, the display of a node, with which the core and the parser bindings
@@ -55,7 +57,8 @@ implement `__repr__`.
 - `ast_node.py` defines `ASTNode`, `ASTReference` and `VisitorResult`, in terms of `NodeProtocol`, `format_node` and
   `process_node`.
 - `ast_factory.py` defines `ASTFactory`, in terms of `ASTNode`.
-- `ast_finder.py` defines `ASTFinder` and its functions, in terms of `NodeProtocol` and `traverse`.
+- `ast_finder.py` defines `ASTFinder`, `find_nodes`, `matches_node` and `find_semantic_kind`, in terms of `ASTNode`,
+  `NodeProtocol` and `traverse`.
 - `ast_shower.py` defines `ASTShower` and `Displayable`, in terms of `display_context`.
 
 The modules import each other from their module, not from the package, so that importing the package imports no module
