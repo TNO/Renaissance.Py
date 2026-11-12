@@ -9,6 +9,6 @@
 It imports nothing from Renaissance.Py, and only the parser bindings import it.
 """
 
-from renaissance.integrations.shared.equal import match_children, match_props
+from renaissance.integrations.shared.equal import equal_in_children, equal_in_properties
 
-__all__ = ["match_children", "match_props"]
+__all__ = ["equal_in_children", "equal_in_properties"]

@@ -12,7 +12,7 @@ from typing import Any, Self, cast
 from renaissance.core.model import SemanticKind
 from renaissance.core.model.format import format_node
 from renaissance.core.navigate import next_sibling, previous_sibling
-from renaissance.integrations.shared import match_children, match_props
+from renaissance.integrations.shared import equal_in_children, equal_in_properties
 from renaissance.integrations.tree_sitter.kinds import TREE_SITTER_KIND_MAP
 
 IRRELEVANT_PROPS = {"source_code", "end_point", "start_point", "location", "type"}
@@ -69,8 +69,8 @@ class LSTNode:
         return (
             isinstance(other, type(self))
             and self.kind_key == other.kind_key
-            and match_props(self.properties, other.properties, IRRELEVANT_PROPS)
-            and match_children(self.children, other.children, IRRELEVANT_NODE)
+            and equal_in_properties(self.properties, other.properties, lambda name: name not in IRRELEVANT_PROPS)
+            and equal_in_children(self.children, other.children, lambda child: child.parser_kind not in IRRELEVANT_NODE)
         )
 
     def __hash__(self) -> int:

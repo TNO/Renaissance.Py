@@ -525,7 +525,7 @@ type = "protected"
 protected_modules = ["renaissance.integrations.shared"]
 allowed_importers = [
     "renaissance.integrations", "renaissance.project",
-    "test.c_cpp", "test.python", "test.lst", "test.extractors", "test.project",
+    "test.unit.integrations", "test.c_cpp", "test.python", "test.lst", "test.extractors", "test.project",
 ]
 
 # The tools and their tests are independent of the rest of the repository.

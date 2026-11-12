@@ -21,7 +21,7 @@ from renaissance.core.model import SemanticKind
 from renaissance.integrations.clang.cpp_utils import matches_node_kind
 from renaissance.integrations.clang.kinds import CLANG_KIND_MAP
 from renaissance.integrations.clang.predicates import is_clang_compound_statement, is_clang_macro_definition
-from renaissance.integrations.shared import match_children, match_props
+from renaissance.integrations.shared import equal_in_children, equal_in_properties
 from renaissance.syntax_tree.ast_finder import ASTFinder
 from renaissance.syntax_tree.ast_node import ASTNode, ASTReference
 from renaissance.syntax_tree.pattern_kind import PatternKind
@@ -201,8 +201,8 @@ class ClangASTNode(ASTNode[Cursor, ClangTranslationUnit]):
         return (
             isinstance(other, type(self))
             and self.kind_key == other.kind_key
-            and match_props(self.properties, other.properties, IRRELEVANT_PROPS)
-            and match_children(self.children, other.children, IRRELEVANT_NODES)
+            and equal_in_properties(self.properties, other.properties, lambda name: name not in IRRELEVANT_PROPS)
+            and equal_in_children(self.children, other.children, lambda child: child.parser_kind not in IRRELEVANT_NODES)
         )
 
     def __hash__(self) -> int:

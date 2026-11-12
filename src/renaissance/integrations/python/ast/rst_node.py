@@ -18,7 +18,7 @@ from renaissance.core.model.format import format_node
 from renaissance.core.navigate import next_sibling, previous_sibling
 from renaissance.integrations.python.ast.kinds import PYTHON_KIND_MAP, PYTHON_OPERATOR_MAP
 from renaissance.integrations.python.ast.util import convert
-from renaissance.integrations.shared import match_children, match_props
+from renaissance.integrations.shared import equal_in_children, equal_in_properties
 from renaissance.syntax_tree.match_finder import find_in_list
 
 types = ["int", "float", "str", "list", "set", "tuple", "Mapping", "dict", "Optional"]
@@ -283,8 +283,8 @@ class PythonRstNode:
         return (
             isinstance(other, type(self))
             and self.kind_key == other.kind_key
-            and match_props(self.properties, other.properties, IRRELEVANT_PROPS)
-            and match_children(self.children, other.children, IRRELEVANT_NODES)
+            and equal_in_properties(self.properties, other.properties, lambda name: name not in IRRELEVANT_PROPS)
+            and equal_in_children(self.children, other.children, lambda child: child.parser_kind not in IRRELEVANT_NODES)
         )
 
     def __contains__(self, item) -> bool:

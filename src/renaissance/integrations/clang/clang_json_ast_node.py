@@ -29,7 +29,7 @@ from renaissance.integrations.clang.predicates import (
     is_clang_declaration_reference,
     is_clang_kind,
 )
-from renaissance.integrations.shared import match_children, match_props
+from renaissance.integrations.shared import equal_in_children, equal_in_properties
 from renaissance.syntax_tree.ast_node import ASTNode, ASTReference
 from renaissance.syntax_tree.pattern_kind import PatternKind
 
@@ -235,8 +235,8 @@ class ClangJsonASTNode(ASTNode[dict[str, Any], ClangJsonTranslationUnit]):
         return (
             isinstance(other, type(self))
             and self.kind == other.kind
-            and match_props(self.properties, other.properties, IRRELEVANT_PROPS)
-            and match_children(self.children, other.children, IRRELEVANT_NODE_KINDS)
+            and equal_in_properties(self.properties, other.properties, lambda name: name not in IRRELEVANT_PROPS)
+            and equal_in_children(self.children, other.children, lambda child: child.parser_kind not in IRRELEVANT_NODE_KINDS)
         )
 
     @override

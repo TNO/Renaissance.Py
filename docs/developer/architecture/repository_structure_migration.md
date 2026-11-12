@@ -277,19 +277,21 @@ layer, below `core.model`.
 
 **1.9 The equality helpers leave the core, done before step 1.5.**
 
-- src: `match_props` and `match_children` move from `core/model/for_bindings.py` to `integrations/shared/equal.py`: only
-  parser bindings use them, and they need nothing from Renaissance.Py. `format_node` stays in the core, because it reads
+- src: `match_props` and `match_children` move from `core/model/for_bindings.py` to `integrations/shared/equal.py`, as
+  `equal_in_properties` and `equal_in_children`: only parser bindings use them, and they need nothing from Renaissance.Py.
+  `format_node` stays in the core, because it reads
   `DISPLAY_PARSER_KIND` of `core.model`, and `ASTNode` uses it; `for_bindings.py` becomes `format.py`. The four bindings that
   compare nodes import `equal`. `integrations/shared/` is the future `parser_bindings/shared/`, see
   [repository structure](repository_structure.md#bindings-share-helpers-in-parser_bindingsshared).
-- test: neither module has unit tests of its own.
+- test: `test/unit/integrations/shared/test_equal.py` tests `equal`, including the regression of the asymmetric
+  `equal_in_children`; `format` has no unit tests of its own.
 - docs: the [core model](../modules/core/model.md) page loses the equality helpers and names `format.py`.
 - remaining: the `protected` contract of `core.model.for_bindings` becomes that of `core.model.format`, with the same allowed
   importers. `renaissance.integrations.shared` gets a `forbidden` contract, which forbids every other package of
   Renaissance.Py, and a `protected` contract, which allows `renaissance.integrations`, `renaissance.project` and their tests.
   `format` replaces `for_bindings` in the exempt modules of the mirror of `core.model`.
-- Checks: `git grep for_bindings -- src test pyproject.toml` finds nothing; `match_props` and `match_children` are defined
-  only in `integrations/shared/equal.py`.
+- Checks: `git grep -E "for_bindings|match_props|match_children" -- src test pyproject.toml` finds nothing;
+  `equal_in_properties` and `equal_in_children` are defined only in `integrations/shared/equal.py`.
 
 **1.5 The nodes.**
 
@@ -405,7 +407,7 @@ binding by one contract per new binding.
 **6.2 The project scanners and the shared helpers.**
 
 - src: `project/` to `parser_bindings/project/`, and `integrations/shared/` to `parser_bindings/shared/`.
-- test: `test/project/`.
+- test: `test/project/`, and `test/unit/integrations/shared/` to `test/unit/parser_bindings/shared/`.
 - remaining: the mirrors of `src/renaissance/parser_bindings`, with `units = "packages"`. The contracts of `shared` follow it.
 
 **6.3 tree-sitter.**

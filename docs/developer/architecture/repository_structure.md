@@ -106,8 +106,9 @@ What bindings genuinely share, such as `SemanticKind` and `NodeProtocol`, is com
 
 #### Bindings share helpers in `parser_bindings/shared/`
 
-`parser_bindings/shared/` holds the functions that several bindings use to implement the model, such as `match_props` and
-`match_children` in `equal.py`, with which a binding implements node equality. It is not a binding:
+`parser_bindings/shared/` holds the functions that several bindings use to implement the model, such as
+`equal_in_properties` and `equal_in_children` in `equal.py`, with which a binding implements node equality. It is not a
+binding:
 
 - it imports nothing from Renaissance.Py, only the standard library and third-party packages;
 - only the parser bindings and its own unit tests import it.
@@ -330,7 +331,7 @@ The public API of a binding serves the tests, the parser-specific recipes, and t
 - `tree_sitter`: `TreeSitterAdapter`, `TreeSitterPatternFactory`, `LST`, `LSTNode`, `LstVisualizer`.
 - `project`: `ProjectScanner`, `CppScanner`, `BearCppScanner`, `JavaScanner`, `PythonScanner`.
 
-`shared` exports `match_props` and `match_children`, now in `integrations/shared/equal.py`.
+`shared` exports `equal_in_properties` and `equal_in_children`, now in `integrations/shared/equal.py`.
 
 Today `PythonFactory`, `PythonPatternFactory` and `PythonPattern` serve the `ast`, `libcst` and tree-sitter parsers at once.
 They are split, so that each binding has its own.
