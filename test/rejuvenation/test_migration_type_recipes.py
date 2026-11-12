@@ -43,6 +43,13 @@ UNSAFE_TYPEVAR_SOURCE = textwrap.dedent("""\
     """)
 
 
+def _report_of(tmp_path: Path, *args: str) -> str:
+    """Run main() with args and --report, and return the Markdown report it wrote."""
+    report = tmp_path / "report.md"
+    migration.main([*args, "--report", str(report)])
+    return report.read_text(encoding="utf-8")
+
+
 class TestProcessFile:
     """process_file: writes changes for real, and isolates per-file errors."""
 
@@ -154,28 +161,19 @@ class TestRuffCleanup:
 class TestConsoleReportNeedsReviewSection:
     """main(): what the NEEDS MANUAL REVIEW section lists per reason."""
 
-    def test_names_are_listed_per_file_under_their_reason_and_the_documentation_is_linked_once(
-        self,
-        tmp_path: Path,
-        capsys: pytest.CaptureFixture[str],
-    ) -> None:
+    def test_names_are_listed_per_file_under_their_reason_and_the_documentation_is_linked_once(self, tmp_path: Path) -> None:
         """Each reason is a heading with its files and names below it; the documentation is linked once, without per-name anchors."""
         target = tmp_path / "mod.py"
         target.write_text(UNSAFE_TYPEVAR_SOURCE, encoding="utf-8")
 
-        migration.main([str(target), "--py", "3.12"])
+        output = _report_of(tmp_path, str(target), "--py", "3.12")
 
-        output = capsys.readouterr().out
         assert_that(output.count(DOCS_BASE_URL), equal_to(1))
         assert_that(output, not_(contains_string("#feature-")))
         assert_that(output, contains_string("**Exported via __all__**\n  `mod.py`: `T`\n"))
         assert_that(output, not_(contains_string("    orphaned:")))
 
-    def test_files_and_names_sharing_a_reason_are_listed_under_one_heading(
-        self,
-        tmp_path: Path,
-        capsys: pytest.CaptureFixture[str],
-    ) -> None:
+    def test_files_and_names_sharing_a_reason_are_listed_under_one_heading(self, tmp_path: Path) -> None:
         """A reason is printed once, with every file it applies to, and a file lists all its names on one line."""
         (tmp_path / "one.py").write_text(UNSAFE_TYPEVAR_SOURCE, encoding="utf-8")
         (tmp_path / "two.py").write_text(
@@ -208,18 +206,13 @@ class TestConsoleReportNeedsReviewSection:
             encoding="utf-8",
         )
 
-        migration.main([str(tmp_path), "--py", "3.12", "--no-ruff"])
+        output = _report_of(tmp_path, str(tmp_path), "--py", "3.12", "--no-ruff")
 
-        output = capsys.readouterr().out
         assert_that(output.count("**Exported via __all__**"), equal_to(1))
         for line in ["  `one.py`: `T`\n", "  `three.py`: `A`, `B`\n", "  `two.py`: `U`\n"]:
             assert_that(output, contains_string(line))
 
-    def test_name_converted_in_functions_but_still_used_by_a_generic_class_is_in_both_sections(
-        self,
-        tmp_path: Path,
-        capsys: pytest.CaptureFixture[str],
-    ) -> None:
+    def test_name_converted_in_functions_but_still_used_by_a_generic_class_is_in_both_sections(self, tmp_path: Path) -> None:
         """A name converted in some functions that a generic class still uses is listed as modified and as needing review."""
         target = tmp_path / "mod.py"
         target.write_text(
@@ -240,9 +233,8 @@ class TestConsoleReportNeedsReviewSection:
             encoding="utf-8",
         )
 
-        migration.main([str(target), "--py", "3.12", "--no-ruff"])
+        output = _report_of(tmp_path, str(target), "--py", "3.12", "--no-ruff")
 
-        output = capsys.readouterr().out
         modified, needs_review = output.split("**NEEDS MANUAL REVIEW (")
         assert_that(output, contains_string("1 modified, 1 need manual review"))
         assert_that(modified, contains_string("    `T`: converted to PEP 695 in functions\n"))
@@ -252,7 +244,7 @@ class TestConsoleReportNeedsReviewSection:
 class TestConsoleReportModifiedSection:
     """main(): what the MODIFIED section lists per file."""
 
-    def test_converted_name_is_not_listed_again_as_removed(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    def test_converted_name_is_not_listed_again_as_removed(self, tmp_path: Path) -> None:
         """A converted name is listed once; only declarations removed without a conversion are listed as removed."""
         target = tmp_path / "mod.py"
         target.write_text(
@@ -273,9 +265,8 @@ class TestConsoleReportModifiedSection:
             encoding="utf-8",
         )
 
-        migration.main([str(target), "--py", "3.12", "--no-ruff"])
+        output = _report_of(tmp_path, str(target), "--py", "3.12", "--no-ruff")
 
-        output = capsys.readouterr().out
         assert_that(output, contains_string("    `T`: converted to PEP 695 in functions\n"))
         assert_that(output, not_(contains_string("    `T`: unused declaration removed")))
         assert_that(output, contains_string("    `U`: unused declaration removed\n"))
@@ -304,7 +295,6 @@ class TestPrivateTypeParameterRename:
     def test_is_renamed_and_listed_in_the_report_and_the_commit_summary(
         self,
         tmp_path: Path,
-        capsys: pytest.CaptureFixture[str],
         source: str,
         signature: str,
         report_line: str,
@@ -313,10 +303,8 @@ class TestPrivateTypeParameterRename:
         target = tmp_path / "mod.py"
         target.write_text(source, encoding="utf-8")
 
-        exit_code = migration.main([str(target), "--py", "3.12", "--no-ruff"])
+        output = _report_of(tmp_path, str(target), "--py", "3.12", "--no-ruff")
 
-        output = capsys.readouterr().out
-        assert_that(exit_code, equal_to(0))
         assert_that(target.read_text(encoding="utf-8"), contains_string(signature))
         assert_that(output, contains_string(report_line))
         assert_that(output, contains_string("- leading underscore removed: _T"))
@@ -339,7 +327,6 @@ class TestPrivateTypeParameterRename:
     def test_refused_rename_leaves_the_file_unchanged_and_is_listed_for_manual_review(
         self,
         tmp_path: Path,
-        capsys: pytest.CaptureFixture[str],
         source: str,
         reason: UnsafeReason,
     ) -> None:
@@ -347,17 +334,16 @@ class TestPrivateTypeParameterRename:
         target = tmp_path / "mod.py"
         target.write_text(source, encoding="utf-8")
 
-        migration.main([str(target), "--py", "3.12", "--no-ruff"])
+        output = _report_of(tmp_path, str(target), "--py", "3.12", "--no-ruff")
 
         message = UNSAFE_RULES[reason].message
-        output = capsys.readouterr().out
         assert_that(target.read_text(encoding="utf-8"), equal_to(source))
         assert_that(output, contains_string("NEEDS MANUAL REVIEW (1)"))
         assert_that(output, contains_string(message[:1].upper() + message[1:]))
 
 
 def _table_rows(output: str, first_header: str) -> list[list[str]]:
-    """Return the data rows, as cells without padding or backticks, of the printed Markdown table whose header starts with first_header."""
+    """Return the data rows, as cells without padding or backticks, of the report table whose header starts with first_header."""
     rows = [[cell.strip().strip("`") for cell in line.strip("|").split("|")] for line in output.splitlines() if line.startswith("|")]
     start = next(index for index, row in enumerate(rows) if row[0] == first_header)
     table: list[list[str]] = []
@@ -369,9 +355,9 @@ def _table_rows(output: str, first_header: str) -> list[list[str]]:
 
 
 class TestSummaryTables:
-    """main(): the summary tables at the top of the printed report."""
+    """main(): the summary tables at the top of the report."""
 
-    def test_counts_per_kind_and_reasons_by_frequency(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    def test_counts_per_kind_and_reasons_by_frequency(self, tmp_path: Path) -> None:
         """A name counts once per file, needs review if it has a reason, errored files are skipped, reasons are ranked."""
         (tmp_path / "fixed.py").write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
         (tmp_path / "exported_1.py").write_text(UNSAFE_TYPEVAR_SOURCE, encoding="utf-8")
@@ -391,9 +377,8 @@ class TestSummaryTables:
         )
         (tmp_path / "broken.py").write_text("def broken(:\n", encoding="utf-8")
 
-        migration.main([str(tmp_path), "--py", "3.12", "--no-ruff"])
+        output = _report_of(tmp_path, str(tmp_path), "--py", "3.12", "--no-ruff")
 
-        output = capsys.readouterr().out
         assert_that(
             _table_rows(output, "Kind"),
             equal_to([["TypeVar", "3", "1", "2"], ["ParamSpec", "1", "0", "1"], ["TypeVarTuple", "0", "0", "0"]]),
@@ -417,7 +402,7 @@ _TWELVE_TYPEVARS_SOURCE = "from typing import TypeVar\n\n" + "".join(
 
 
 class TestCommitSummary:
-    """main(): the commit-style message printed after the report."""
+    """main(): the commit-style message printed after the progress lines and written at the end of the report."""
 
     @pytest.mark.parametrize(
         ("files", "expected"),
@@ -459,19 +444,34 @@ class TestCommitSummary:
         for name, source in files.items():
             (tmp_path / name).write_text(source, encoding="utf-8")
 
-        migration.main([str(tmp_path), "--py", "3.12", "--no-ruff"])
+        report = _report_of(tmp_path, str(tmp_path), "--py", "3.12", "--no-ruff")
 
         output = capsys.readouterr().out
         summary = output[output.index(_COMMIT_SUBJECT) :].strip()
         assert_that(summary, equal_to(expected))
+        assert_that(report, contains_string(f"**COMMIT MESSAGE**\n\n```text\n{expected}\n```"))
 
     def test_no_message_when_no_file_was_modified(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
-        """A run that changes nothing prints no commit message."""
+        """A run that changes nothing prints no commit message and the report has no commit message section."""
         (tmp_path / "a.py").write_text("x = 1\n", encoding="utf-8")
+
+        report = _report_of(tmp_path, str(tmp_path), "--py", "3.12", "--no-ruff")
+
+        assert_that(capsys.readouterr().out, not_(contains_string(_COMMIT_SUBJECT)))
+        assert_that(report, not_(contains_string("COMMIT MESSAGE")))
+
+
+class TestReportOutput:
+    """main(): the report is written only to the --report file, never printed."""
+
+    def test_report_is_not_printed_nor_written_without_report_flag(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+        """Without --report, the output has no report sections and no report file is created."""
+        (tmp_path / "mod.py").write_text(UNSAFE_TYPEVAR_SOURCE, encoding="utf-8")
 
         migration.main([str(tmp_path), "--py", "3.12", "--no-ruff"])
 
-        assert_that(capsys.readouterr().out, not_(contains_string(_COMMIT_SUBJECT)))
+        assert_that(capsys.readouterr().out, not_(contains_string("NEEDS MANUAL REVIEW")))
+        assert_that(list(tmp_path.glob("*.md")), equal_to([]))
 
 
 class TestIgnore:
@@ -488,13 +488,12 @@ class TestIgnore:
         (tmp_path / "shared.py").write_text(shared_source, encoding="utf-8")
         (tmp_path / "user.py").write_text(user_source, encoding="utf-8")
 
-        migration.main([str(tmp_path), "--py", "3.12", "--no-ruff", "--ignore", "shared.py"])
+        output = _report_of(tmp_path, str(tmp_path), "--py", "3.12", "--no-ruff", "--ignore", "shared.py")
 
-        output = capsys.readouterr().out
         assert_that((tmp_path / "shared.py").read_text(encoding="utf-8"), equal_to(shared_source))
         assert_that((tmp_path / "user.py").read_text(encoding="utf-8"), equal_to(user_source))
         assert_that(output, contains_string("**IGNORED FILES (1)**\n  `shared.py`\n"))
-        assert_that(output, not_(contains_string("shared.py checked")))
+        assert_that(capsys.readouterr().out, not_(contains_string("shared.py checked")))
         assert_that(
             _table_rows(output, "Kind"),
             equal_to([["TypeVar", "1", "0", "0", "1"], ["ParamSpec", "0", "0", "0", "0"], ["TypeVarTuple", "0", "0", "0", "0"]]),
@@ -514,7 +513,6 @@ class TestSecondPass:
     def test_declaration_left_behind_by_localizing_is_removed_in_the_same_run(
         self,
         tmp_path: Path,
-        capsys: pytest.CaptureFixture[str],
         extra_args: list[str],
         *,
         declaration_kept: bool,
@@ -524,9 +522,8 @@ class TestSecondPass:
         (tmp_path / "origin.py").write_text('from typing import TypeVar\n\nT = TypeVar("T")\n', encoding="utf-8")
         (tmp_path / "user.py").write_text("from origin import T\n\n\ndef identity(x: T) -> T:\n    return x\n", encoding="utf-8")
 
-        migration.main([str(tmp_path), "--py", "3.12", "--no-ruff", *extra_args])
+        output = _report_of(tmp_path, str(tmp_path), "--py", "3.12", "--no-ruff", *extra_args)
 
-        output = capsys.readouterr().out
         assert_that('T = TypeVar("T")' in (tmp_path / "origin.py").read_text(encoding="utf-8"), equal_to(declaration_kept))
         assert_that(output, contains_string(expected_review))
         assert_that(output, contains_string("Processed 2 files"))
@@ -557,19 +554,14 @@ class TestSecondPass:
 class TestNoLocalization:
     """main(): --no-localization keeps every project import of a type parameter and reports the names left."""
 
-    def test_importer_is_left_untouched_and_the_report_counts_the_name_as_ignored(
-        self,
-        tmp_path: Path,
-        capsys: pytest.CaptureFixture[str],
-    ) -> None:
+    def test_importer_is_left_untouched_and_the_report_counts_the_name_as_ignored(self, tmp_path: Path) -> None:
         """The importer is unchanged, no file is listed as ignored, and the imported name counts as reported and ignored."""
         (tmp_path / "shared.py").write_text('from typing import TypeVar\n\nT = TypeVar("T")\n', encoding="utf-8")
         user_source = "from shared import T\n\n\ndef identity(x: T) -> T:\n    return x\n"
         (tmp_path / "user.py").write_text(user_source, encoding="utf-8")
 
-        migration.main([str(tmp_path), "--py", "3.12", "--no-ruff", "--no-localization"])
+        output = _report_of(tmp_path, str(tmp_path), "--py", "3.12", "--no-ruff", "--no-localization")
 
-        output = capsys.readouterr().out
         assert_that((tmp_path / "user.py").read_text(encoding="utf-8"), equal_to(user_source))
         assert_that(output, not_(contains_string("IGNORED FILES")))
         assert_that(_table_rows(output, "Kind")[0], equal_to(["TypeVar", "2", "0", "1", "1"]))
@@ -654,22 +646,19 @@ class TestMainFileEncoding:
             pytest.param("# café\nx = 1\n".encode("utf-16"), id="utf-16"),
         ],
     )
-    def test_file_that_is_not_utf8_is_reported_and_the_rest_of_the_batch_is_converted(
-        self,
-        tmp_path: Path,
-        capsys: pytest.CaptureFixture[str],
-        content: bytes,
-    ) -> None:
+    def test_file_that_is_not_utf8_is_reported_and_the_rest_of_the_batch_is_converted(self, tmp_path: Path, content: bytes) -> None:
         """The undecodable file is listed under ERRORS and left byte-identical, and the other file is converted."""
         good = tmp_path / "good.py"
         good.write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
         undecodable = tmp_path / "undecodable.py"
         undecodable.write_bytes(content)
 
-        exit_code = migration.main([str(tmp_path), "--py", "3.12", "--no-ruff"])
+        report = tmp_path / "report.md"
+
+        exit_code = migration.main([str(tmp_path), "--py", "3.12", "--no-ruff", "--report", str(report)])
 
         assert_that(exit_code, equal_to(3))
-        assert_that(capsys.readouterr().out, contains_string("**ERRORS (1)**\n  `undecodable.py`"))
+        assert_that(report.read_text(encoding="utf-8"), contains_string("**ERRORS (1)**\n  `undecodable.py`"))
         assert_that(undecodable.read_bytes(), equal_to(content))
         assert_that(good.read_text(encoding="utf-8"), contains_string("def identity[T]"))
 
@@ -677,7 +666,7 @@ class TestMainFileEncoding:
 class TestMainProjectWideImportSafety:
     """main(): a TypeVar imported by another file in the batch is localized there and kept at its origin."""
 
-    def test_consumer_is_localized_and_origin_declaration_survives(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    def test_consumer_is_localized_and_origin_declaration_survives(self, tmp_path: Path) -> None:
         """The importing file gets a PEP 695 local TypeVar, and the origin declaration is not removed."""
         import_line = "from pkg.typing_mod import T"
         pkg = tmp_path / "pkg"
@@ -688,13 +677,15 @@ class TestMainProjectWideImportSafety:
         consumer.write_text(f"{import_line}\n\ndef use(x: T) -> T:\n    return x\n", encoding="utf-8")
         (pkg / "unused.py").write_text(f"{import_line}\n", encoding="utf-8")
 
-        exit_code = migration.main([str(tmp_path), "--py", "3.12"])
+        report = tmp_path / "report.md"
+
+        exit_code = migration.main([str(tmp_path), "--py", "3.12", "--report", str(report)])
 
         assert_that(exit_code, equal_to(0))
         consumer_text = consumer.read_text(encoding="utf-8")
         assert_that(consumer_text, contains_string("def use[T](x: T) -> T:"))
         assert_that(consumer_text, not_(contains_string(import_line)))
-        assert_that(capsys.readouterr().out, contains_string("    `T`: unused declaration removed\n"))
+        assert_that(report.read_text(encoding="utf-8"), contains_string("    `T`: unused declaration removed\n"))
         assert_that((pkg / "typing_mod.py").read_text(encoding="utf-8"), contains_string('T = TypeVar("T")'))
 
     @pytest.mark.xfail(

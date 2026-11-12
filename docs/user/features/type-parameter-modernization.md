@@ -465,7 +465,7 @@ python src/rejuvenation/migration_type_recipes.py <path> --py MAJOR.MINOR \
 - `<path>`: a `.py` file or a directory, scanned recursively for `.py` files. Files and directories starting with `.`,
   and `__pycache__` and `venv` directories, are skipped.
 - `--py` (required): the oldest Python version the target project supports, 3.12 or higher.
-- `--report`: also write the report to a file.
+- `--report`: write the report to a file. Without it no report is produced.
 - `--no-ruff`: skip the final `ruff` pass.
 - `--ignore`: files left untouched, whose type parameters are never copied into the files importing them (see
   *Shared declaration files*).
@@ -481,16 +481,17 @@ rules. Then it runs `ruff format` on the same files, which reformats **every** l
 `ruff format` settings, not only the changed ones. `ruff` must be installed in the same environment. Files are changed
 directly, so run it on a git checkout.
 
-The report is Markdown, with a summary line, up to two summary tables and the sections `MODIFIED`, `NEEDS MANUAL REVIEW` and
-`ERRORS`. The tables count the type parameters per kind (`TypeVar`, `ParamSpec`, `TypeVarTuple`) and rank the reasons for
-manual review from most to least common; the reasons table is left out when no name needs review. A name counts once
-per file, as needing review if it has a reason to review.
+The CLI prints a progress line per file and, when files were modified, a commit message. The report is Markdown, with a
+summary line, up to two summary tables and the sections `MODIFIED`, `NEEDS MANUAL REVIEW` and `ERRORS`, and ends with
+the same commit message in the `COMMIT MESSAGE` section. The tables count the type parameters per kind (`TypeVar`,
+`ParamSpec`, `TypeVarTuple`) and rank the reasons for manual review from most to least common; the reasons table is left
+out when no name needs review. A name counts once per file, as needing review if it has a reason to review.
 `MODIFIED` says what was done to each name: converted in functions, import replaced by a local declaration, or unused
 declaration removed; a name localized and then removed is listed only as removed. `NEEDS MANUAL REVIEW` groups the files
 and names by reason, most common reason first, and a name can be in both sections. With `--ignore` the report also has
 the `IGNORED FILES` section, and with `--ignore` or `--no-localization` the `Ignored` column. Files are listed relative
-to `<path>`. When files were modified, the run ends with a commit message: the names grouped by what was done to them
-(with the number of files if above one, at most ten per group), then the files left for manual review by reason. Exit
+to `<path>`. The commit message lists the names grouped by what was done to them (with the number of files if above
+one, at most ten per group), then the files left for manual review by reason. Exit
 codes: 0 when the run completes (manual review is not a failure), 2 for a usage error, 3 if any file raised an exception.
 
 ## Change considerations

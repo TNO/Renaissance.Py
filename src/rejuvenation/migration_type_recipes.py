@@ -14,7 +14,7 @@ Example:
 
 """
 
-# Printing the report is this CLI's purpose.
+# Printing progress and the commit message is this CLI's purpose.
 # ruff: noqa: T201
 
 import argparse
@@ -410,11 +410,12 @@ def _needs_review_groups(reports: Sequence[FileReport], project_root: Path) -> l
     return groups
 
 
-def _format_console_report(
+def _format_report(
     reports: list[FileReport],
     *,
     project_root: Path,
     localization: LocalizationSettings,
+    commit_summary: str | None,
 ) -> str:
     """Build the full report as Markdown: MODIFIED / NEEDS MANUAL REVIEW / ERRORS sections.
 
@@ -422,7 +423,8 @@ def _format_console_report(
     its names, separated by a blank line; NEEDS MANUAL REVIEW groups the files and names by reason. Clean
     files (no type parameter usage at all) are only counted, not listed, so the report shows what needs
     attention. The IGNORED FILES section is only included when localization.ignored_files is not empty,
-    and the Ignored column when it is not empty or localization is disabled.
+    and the Ignored column when it is not empty or localization is disabled. The COMMIT MESSAGE section,
+    with commit_summary in a code block, is only included when commit_summary is not None.
     """
     modified = [report for report in reports if has_fixed(report)]
     needs_review = [report for report in reports if has_unsafe(report)]
@@ -451,6 +453,9 @@ def _format_console_report(
     lines.extend(["", _heading(f"ERRORS ({len(errors)})")])
     lines.extend(f"  {_code(report.path.relative_to(project_root))}: {report.error}" for report in errors)
 
+    if commit_summary is not None:
+        lines.extend(["", _heading("COMMIT MESSAGE"), "", "```text", commit_summary, "```"])
+
     return "\n".join(lines)
 
 
@@ -476,7 +481,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
         metavar="MAJOR.MINOR",
         help=("Minimum Python version the target project supports is 3.12."),
     )
-    parser.add_argument("--report", type=Path, metavar="PATH", help="Also write the full report to this file.")
+    parser.add_argument("--report", type=Path, metavar="PATH", help="Write the full Markdown report to this file.")
     parser.add_argument(
         "--no-ruff",
         action="store_true",
@@ -532,7 +537,9 @@ def _localization_settings(parser: argparse.ArgumentParser, args: argparse.Names
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """Parse arguments, run TypeParameterCheck across the target, print/save the report, return an exit code.
+    """Parse arguments, run TypeParameterCheck across the target, print progress and the commit message, return an exit code.
+
+    The report is written only if --report is given.
 
     Exit codes: 0 on normal completion (files needing manual review are informational, not a
     failure), 2 on a usage error (bad path/argument), 3 if any file hit an unhandled exception.
@@ -578,18 +585,19 @@ def main(argv: Sequence[str] | None = None) -> int:
         run_ruff_import_cleanup(modified_paths)
         run_ruff_format(modified_paths)
 
-    console_report = _format_console_report(
-        reports,
-        project_root=project_root,
-        localization=localization,
-    )
-    print(console_report)
-    if modified_paths:
+    commit_summary = _format_commit_summary(reports, args.py) if modified_paths else None
+    if commit_summary is not None:
         print()
-        print(colored(_format_commit_summary(reports, args.py), "green", attrs=["bold"]))
+        print(colored(commit_summary, "green", attrs=["bold"]))
 
     if args.report is not None:
-        args.report.write_text(console_report, encoding="utf-8")
+        report_text = _format_report(
+            reports,
+            project_root=project_root,
+            localization=localization,
+            commit_summary=commit_summary,
+        )
+        args.report.write_text(report_text, encoding="utf-8")
 
     return 3 if any(report.error is not None for report in reports) else 0
 
