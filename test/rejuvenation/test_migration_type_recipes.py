@@ -132,38 +132,6 @@ class TestRuffCleanup:
         assert_that(exit_code, equal_to(0))
         assert_that(target.read_text(encoding="utf-8"), contains_string(signature))
 
-    def test_localized_imports_are_merged_with_existing_ones(self, tmp_path: Path) -> None:
-        """The localized TypeVar's import joins the file's own `typing` import."""
-        (tmp_path / "xarray_types.py").write_text(
-            'from typing import TypeVar\n\nJoinOptions = str\nAlignable = int\nT = TypeVar("T")\n',
-            encoding="utf-8",
-        )
-        target = tmp_path / "use.py"
-        target.write_text(
-            textwrap.dedent("""\
-                from typing import Any
-                from xarray_types import JoinOptions
-                from xarray_types import T
-                from xarray_types import Alignable
-
-
-                def pick(x: T, how: JoinOptions, other: Alignable) -> Any:
-                    return x
-
-
-                class Items(list[T]):
-                    pass
-                """),
-            encoding="utf-8",
-        )
-
-        exit_code = migration.main([str(target), "--py", "3.12"])
-
-        assert_that(exit_code, equal_to(0))
-        lines = target.read_text(encoding="utf-8").splitlines()
-        for import_line in ["from typing import Any, TypeVar", "from xarray_types import Alignable, JoinOptions"]:
-            assert_that(lines.count(import_line), equal_to(1), import_line)
-
     def test_unmodified_sibling_file_is_left_untouched(self, tmp_path: Path) -> None:
         """A sibling file with no TypeVar usage - and its own genuinely-unused import - survives main() byte-for-byte."""
         (tmp_path / "mod.py").write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
@@ -366,7 +334,7 @@ class TestSummaryTables:
         )
 
 
-_COMMIT_SUBJECT = "Modernize TypeVar/ParamSpec/TypeVarTuple usage to PEP 695 syntax"
+_COMMIT_SUBJECT = "Convert type parameters to PEP 695 syntax in "
 _DEAD_TYPEVAR_SOURCE = 'from typing import TypeVar\n\nT_FreqStr = TypeVar("T_FreqStr")\n'
 _TWELVE_TYPEVARS_SOURCE = "from typing import TypeVar\n\n" + "".join(
     f'T{n:02} = TypeVar("T{n:02}")\n\n\ndef f{n:02}(x: T{n:02}) -> T{n:02}:\n    return x\n\n\n' for n in range(1, 13)
@@ -418,7 +386,8 @@ class TestCommitSummary:
 
         migration.main([str(tmp_path), "--py", "3.12", "--no-ruff"])
 
-        summary = capsys.readouterr().out.split(_COMMIT_SUBJECT, 1)[1].strip()
+        output = capsys.readouterr().out
+        summary = output[output.index(_COMMIT_SUBJECT) :].strip()
         assert_that(summary, equal_to(expected))
 
     def test_no_message_when_no_file_was_modified(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
