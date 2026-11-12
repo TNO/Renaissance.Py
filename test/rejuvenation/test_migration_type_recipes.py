@@ -117,7 +117,7 @@ class TestRuffCleanup:
                     class Box(Generic[_T]):
                         pass
                     """),
-                "def first[_T](items: list[_T]) -> _T:",
+                "def first[T](items: list[T]) -> T:",
                 id="declaration-kept-by-generic-class",
             ),
         ],
@@ -279,6 +279,81 @@ class TestConsoleReportModifiedSection:
         assert_that(output, contains_string("    `T`: converted to PEP 695 in functions\n"))
         assert_that(output, not_(contains_string("    `T`: unused declaration removed")))
         assert_that(output, contains_string("    `U`: unused declaration removed\n"))
+
+
+class TestPrivateTypeParameterRename:
+    """main(): a type parameter named with a leading underscore loses it, and the report says what was refused."""
+
+    @pytest.mark.parametrize(
+        ("source", "signature", "report_line"),
+        [
+            pytest.param(
+                'from typing import TypeVar\n\n_T = TypeVar("_T")\n\n\ndef identity(x: _T) -> _T:\n    return x\n',
+                "def identity[T](x: T) -> T:",
+                "    `_T`: converted to PEP 695 in functions, leading underscore removed\n",
+                id="converted-then-renamed",
+            ),
+            pytest.param(
+                "def identity[_T](x: _T) -> _T:\n    return x\n",
+                "def identity[T](x: T) -> T:",
+                "    `_T`: leading underscore removed\n",
+                id="already-pep-695",
+            ),
+        ],
+    )
+    def test_is_renamed_and_listed_in_the_report_and_the_commit_summary(
+        self,
+        tmp_path: Path,
+        capsys: pytest.CaptureFixture[str],
+        source: str,
+        signature: str,
+        report_line: str,
+    ) -> None:
+        """The rename runs by default, after the conversion, and is described next to what else was done to the name."""
+        target = tmp_path / "mod.py"
+        target.write_text(source, encoding="utf-8")
+
+        exit_code = migration.main([str(target), "--py", "3.12", "--no-ruff"])
+
+        output = capsys.readouterr().out
+        assert_that(exit_code, equal_to(0))
+        assert_that(target.read_text(encoding="utf-8"), contains_string(signature))
+        assert_that(output, contains_string(report_line))
+        assert_that(output, contains_string("- leading underscore removed: _T"))
+
+    @pytest.mark.parametrize(
+        ("source", "reason"),
+        [
+            pytest.param(
+                "T = 1\n\n\ndef f[_T](x: _T) -> _T:\n    return T\n",
+                UnsafeReason.NEW_NAME_NOT_FREE,
+                id="new-name-not-free",
+            ),
+            pytest.param(
+                'def f[_T](x: "list[" "_T]") -> _T: ...\n',
+                UnsafeReason.USE_NOT_RENAMEABLE,
+                id="use-not-renameable",
+            ),
+        ],
+    )
+    def test_refused_rename_leaves_the_file_unchanged_and_is_listed_for_manual_review(
+        self,
+        tmp_path: Path,
+        capsys: pytest.CaptureFixture[str],
+        source: str,
+        reason: UnsafeReason,
+    ) -> None:
+        """A name the recipe cannot rename safely stays as it is, under its reason in NEEDS MANUAL REVIEW."""
+        target = tmp_path / "mod.py"
+        target.write_text(source, encoding="utf-8")
+
+        migration.main([str(target), "--py", "3.12", "--no-ruff"])
+
+        message = UNSAFE_RULES[reason].message
+        output = capsys.readouterr().out
+        assert_that(target.read_text(encoding="utf-8"), equal_to(source))
+        assert_that(output, contains_string("NEEDS MANUAL REVIEW (1)"))
+        assert_that(output, contains_string(message[:1].upper() + message[1:]))
 
 
 def _table_rows(output: str, first_header: str) -> list[list[str]]:

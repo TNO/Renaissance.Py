@@ -17,16 +17,17 @@ from renaissance.integrations.python.ast.cst_node import PythonCstNode
 from renaissance.integrations.python.ast.factory import PythonFactory, PythonPattern, PythonPatternFactory
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
 from renaissance.recipes.python_refactoring import PythonRefactoring
+from renaissance.recipes.type_parameter_rules import UnsafeReason
 from renaissance.syntax_tree.match_finder import match_pattern
 from renaissance.utils.cst_utils import names_read_by
 
 _TYPE_PARAM_NODES = (cst.TypeVar, cst.ParamSpec, cst.TypeVarTuple)
 type _TypeParam = cst.TypeVar | cst.ParamSpec | cst.TypeVarTuple
-type _Position = tuple[int, int]
 type _Edit = tuple[PythonCstNode, str]
 
 # TODO(FrancescoPezzella): these patterns do not find a class with two or more keyword arguments in its bases, nor a
-#  function with default values, keyword-only or positional-only parameters.
+#  function with default values, keyword-only or positional-only parameters, so these keep their leading underscore:
+#  `def f[_T](x: _T = None)`, `def f[_T](*, x: _T)`, `def f[_T](x: _T, /)`, `class C[_T](B, metaclass=M, flag=True)`.
 #  https://github.com/TNO/Renaissance.Py/issues/279
 _DECLARATION_PATTERNS = (
     "@$$decorators\ndef $f[$$tps]($$args, *$$varargs, **$$kwargs) -> $r:\n    $$body",
@@ -100,12 +101,12 @@ def _renamed_string(string: cst.SimpleString, renames: Mapping[str, str]) -> str
     return f"{string.prefix}{string.quote}{inner}{string.quote}"
 
 
-def _declared_positions(nodes: Sequence[PythonRstNode], patterns: Sequence[Sequence[PythonPattern]]) -> set[_Position]:
-    """Return the (offset, length) of every type parameter that a function or class in nodes declares, nested ones included."""
-    positions: set[_Position] = set()
+def _declared_positions(nodes: Sequence[PythonRstNode], patterns: Sequence[Sequence[PythonPattern]]) -> set[int]:
+    """Return the offset of every type parameter that a function or class in nodes declares, nested ones included."""
+    positions: set[int] = set()
     for pattern in patterns:
         for match in match_pattern(nodes, pattern):
-            positions.update((param.offset, param.length) for param in match.expansions["$$tps"])
+            positions.update(param.offset for param in match.expansions["$$tps"])
             positions |= _declared_positions(match.nodes[0].children, patterns)
     return positions
 
@@ -116,11 +117,18 @@ class PrivateTypeParameterCheck(PythonRefactoring[PythonCstNode]):
     Patterns locate the declarations; libcst's scope analysis finds the uses, so a module-level `_T` of the same name
     is left alone. A type parameter is left unchanged when its new name is already taken in the declaring function or
     class, or is already a name there.
+
+    Attributes:
+        type_param_kinds: Maps each private name check() saw to "TypeVar", "ParamSpec" or "TypeVarTuple".
+        unsafe_reasons: Why check() left each "unsafe" name unchanged.
+
     """
 
     def __init__(self, file: Path) -> None:
         """Prepare the recipe for file, parsed with the CST backend."""
         super().__init__(file, PythonCstNode)
+        self.type_param_kinds: dict[str, str] = {}
+        self.unsafe_reasons: dict[str, UnsafeReason] = {}
 
     def run(self) -> None:
         """Run check() and store its result on self.result."""
@@ -129,17 +137,25 @@ class PrivateTypeParameterCheck(PythonRefactoring[PythonCstNode]):
     def check(self) -> dict[str, str]:
         """Rename every private type parameter that can be renamed safely.
 
-        Returns {old name: "fixed" | "unsafe"}; a name refused in any declaration is "unsafe".
+        Returns {old name: "fixed" | "unsafe"}, with the reason of each unsafe name on self.unsafe_reasons; a name
+        refused in any declaration is "unsafe".
         """
         results: dict[str, str] = {}
+        self.type_param_kinds = {}
+        self.unsafe_reasons = {}
         for owner, params in self._private_type_params().items():
-            edits = self._plan_renames(owner, params)
-            status = "unsafe" if edits is None else "fixed"
+            plan = self._plan_renames(owner, params)
             for param in params:
                 name = _declared_name(param)
-                results[name] = "unsafe" if "unsafe" in (status, results.get(name)) else status
-            for target, text in edits or []:
-                self.replace(text, target, include_whitespace=False, include_comments=False)
+                self.type_param_kinds[name] = type(param.node).__name__
+                if isinstance(plan, UnsafeReason):
+                    results[name] = "unsafe"
+                    self.unsafe_reasons[name] = plan
+                elif results.get(name) != "unsafe":
+                    results[name] = "fixed"
+            if not isinstance(plan, UnsafeReason):
+                for target, text in plan:
+                    self.replace(text, target, include_whitespace=False, include_comments=False)
         return results
 
     def _private_type_params(self) -> dict[PythonCstNode, list[PythonCstNode]]:
@@ -149,7 +165,7 @@ class PrivateTypeParameterCheck(PythonRefactoring[PythonCstNode]):
         pattern_factory = PythonPatternFactory(rst_factory)
         patterns = [pattern_factory.create_statements(text) for text in _DECLARATION_PATTERNS]
         declared = _declared_positions([PythonRstNode.load_from_text(unit.content, unit.file_name)], patterns)
-        by_position = {(node.offset, node.length): node for node in unit.wrappers.values() if isinstance(node.node, _TYPE_PARAM_NODES)}
+        by_position = {node.offset: node for node in unit.wrappers.values() if isinstance(node.node, _TYPE_PARAM_NODES)}
         owners: dict[PythonCstNode, list[PythonCstNode]] = {}
         for position in sorted(declared):
             param = by_position[position]
@@ -157,14 +173,12 @@ class PrivateTypeParameterCheck(PythonRefactoring[PythonCstNode]):
                 owners.setdefault(_owner(param), []).append(param)
         return owners
 
-    def _plan_renames(self, owner: PythonCstNode, params: list[PythonCstNode]) -> list[_Edit] | None:
-        """Return the edits that rename params, or None if a new name would clash or capture another one."""
+    def _plan_renames(self, owner: PythonCstNode, params: list[PythonCstNode]) -> list[_Edit] | UnsafeReason:
+        """Return the edits that rename params, or the reason they can't be renamed."""
         unit = owner.translation_unit
         renames = {_declared_name(param): _declared_name(param).lstrip("_") for param in params}
-        if not all(new.isidentifier() and not keyword.iskeyword(new) for new in renames.values()):
-            return None
-        if self._clashes(owner, renames):
-            return None
+        if not all(new.isidentifier() and not keyword.iskeyword(new) for new in renames.values()) or self._clashes(owner, renames):
+            return UnsafeReason.NEW_NAME_NOT_FREE
         edits: list[_Edit] = []
         string_uses: dict[PythonCstNode, dict[str, str]] = {}
         for param in params:
@@ -177,11 +191,11 @@ class PrivateTypeParameterCheck(PythonRefactoring[PythonCstNode]):
                 elif isinstance(use.node, cst.SimpleString):
                     string_uses.setdefault(use, {})[old] = renames[old]
                 else:
-                    return None
+                    return UnsafeReason.USE_NOT_RENAMEABLE
         for use, string_renames in string_uses.items():
             text = _renamed_string(cast("cst.SimpleString", use.node), string_renames)
             if text is None:
-                return None
+                return UnsafeReason.USE_NOT_RENAMEABLE
             edits.append((use, text))
         return edits
 
