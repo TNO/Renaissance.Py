@@ -251,7 +251,7 @@ The column *now in* gives the current module, relative to `src/renaissance/`.
 | `ASTShower`, `Displayable`                                      | all     | `syntax_tree/ast_shower.py`             |
 | `traverse`                                                      | all     | `core/model/node_utils.py`              |
 | `TextUtils`                                                     | all     | `core/model/text_utils.py`              |
-| `format_node`                                                   | binding | `core/model/for_bindings.py`            |
+| `format_node`                                                   | binding | `core/model/format.py`                  |
 
 Internal: `display_context`, `DISPLAY_PARSER_KIND`, `process_node`.
 
@@ -330,7 +330,7 @@ The public API of a binding serves the tests, the parser-specific recipes, and t
 - `tree_sitter`: `TreeSitterAdapter`, `TreeSitterPatternFactory`, `LST`, `LSTNode`, `LstVisualizer`.
 - `project`: `ProjectScanner`, `CppScanner`, `BearCppScanner`, `JavaScanner`, `PythonScanner`.
 
-`shared` exports `match_props` and `match_children`, now in `core/model/for_bindings.py`.
+`shared` exports `match_props` and `match_children`, now in `integrations/shared/equal.py`.
 
 Today `PythonFactory`, `PythonPatternFactory` and `PythonPattern` serve the `ast`, `libcst` and tree-sitter parsers at once.
 They are split, so that each binding has its own.

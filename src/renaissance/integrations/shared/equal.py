@@ -4,11 +4,9 @@
 # of this repository, also available at:
 # https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
-"""AI: Helpers with which a parser binding implements node equality and node display."""
+"""The node equality helpers, with which parser bindings implement __eq__."""
 
 from collections.abc import Set as AbstractSet
-
-from renaissance.core.model.node_utils import DISPLAY_PARSER_KIND
 
 
 def match_props(mine, other, irrelevant_props: AbstractSet[str]) -> bool:
@@ -24,18 +22,3 @@ def match_children(mine, other, irrelevant_kinds: AbstractSet[str]) -> bool:
     # TODO(pjljvandelaar): asymmetric - extra trailing children of mine are ignored, so a == b need not imply b == a.
     #  https://github.com/TNO/Renaissance.Py/issues/187
     return all((i < len(mine) and mine[i] == child) or child.parser_kind in irrelevant_kinds for i, child in enumerate(other))
-
-
-def format_node(node) -> str:
-    """AI: Return a human-readable, indented display string for a single AST node."""
-    raw_lines = node.signature.splitlines()
-    properties_text = "" if not node.show_props else node.properties
-    prefix = " " if len(raw_lines) < 2 else f"\n    {node.indent}"
-    formatted_lines = [f"{prefix}|{line}|" for line in raw_lines]
-    semantic_name = node.semantic_kind.value
-    kind = node.parser_kind if DISPLAY_PARSER_KIND.get() or semantic_name == "node" else semantic_name
-    return (
-        f"{node.indent}({kind}, {node.name}, "
-        f"{node.filename}[{node.offset}:{node.offset + node.length}])"
-        f"{properties_text}:{''.join(formatted_lines)}\n"
-    )

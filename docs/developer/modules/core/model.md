@@ -33,8 +33,8 @@ The `__all__` of `renaissance.core.model`; see the [API reference](../../api/cor
 - `TextUtils`: shifting, indenting and writing source text.
 - `traverse`: a node and all its descendants, breadth first.
 
-`renaissance.core.model.for_bindings` holds what only parser bindings need, to implement node equality (`match_props`,
-`match_children`) and node display (`format_node`).
+`renaissance.core.model.format` holds `format_node`, the display of a node, with which the core and the parser bindings
+implement `__repr__`.
 
 ## Internal structure
 
@@ -45,7 +45,7 @@ The `__all__` of `renaissance.core.model`; see the [API reference](../../api/cor
 - `text_utils.py` defines `TextUtils`.
 - `node_utils.py` defines `traverse`, and the internal `process_node` and `display_context`, which sets whether nodes are
   displayed with their parser kind.
-- `for_bindings.py` defines the helpers for parser bindings.
+- `format.py` defines `format_node`, in terms of `display_context`.
 
 ## Related features
 

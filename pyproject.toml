@@ -196,7 +196,7 @@ units = "modules"
 mirror = "test/unit/core/model/test_{path}.py"
 aspects = true
 # No unit tests of their own yet.
-exempt = ["for_bindings", "node_utils", "semantic_kind", "siblings", "text_utils"]
+exempt = ["format", "node_utils", "semantic_kind", "siblings", "text_utils"]
 
 [[tool.check_layout.mirrors]]
 code = "src/renaissance/core/navigate"
@@ -466,7 +466,7 @@ forbidden_modules = [
 allow_indirect_imports = true
 
 # One contract per core sub-package: code outside the package imports only its public API, from the package itself.
-# A module expression cannot exclude a module, so the protected modules are listed, without for_bindings.
+# A module expression cannot exclude a module, so the protected modules are listed, without format.
 [[tool.importlinter.contracts]]
 id = "core-model-api"
 name = "Only core.model and its unit tests import the modules of core.model"
@@ -494,16 +494,38 @@ type = "protected"
 protected_modules = ["renaissance.core.navigate.navigate", "renaissance.core.navigate.protocols"]
 allowed_importers = ["renaissance.core.navigate", "test.unit.core.navigate"]
 
-# One contract per for_bindings module: only the core, the parser bindings and their unit tests import it.
+# format_node is for the core and the parser bindings only.
 [[tool.importlinter.contracts]]
-id = "core-model-for-bindings"
-name = "Only the core, the parser bindings and their unit tests import core.model.for_bindings"
+id = "core-model-format"
+name = "Only the core, the parser bindings and their unit tests import core.model.format"
 type = "protected"
-protected_modules = ["renaissance.core.model.for_bindings"]
+protected_modules = ["renaissance.core.model.format"]
 allowed_importers = [
     "renaissance.core", "renaissance.syntax_tree.ast_node",  # ast_node belongs in core.model, but is still in syntax_tree
     "renaissance.integrations", "renaissance.project",
     "test.unit.core", "test.c_cpp", "test.python", "test.lst", "test.extractors", "test.project",
+]
+
+# The helpers that the parser bindings share import nothing from Renaissance.Py, and only the parser bindings import them.
+[[tool.importlinter.contracts]]
+id = "bindings-shared-independent"
+name = "The shared helpers of the parser bindings import nothing from Renaissance.Py"
+type = "forbidden"
+source_modules = ["renaissance.integrations.shared"]
+forbidden_modules = [
+    "renaissance.core", "renaissance.syntax_tree", "renaissance.utils", "renaissance.common", "renaissance.recipes",
+    "renaissance.integrations.clang", "renaissance.integrations.python", "renaissance.integrations.tree_sitter",
+    "renaissance.project", "rejuvenation",
+]
+
+[[tool.importlinter.contracts]]
+id = "bindings-shared-api"
+name = "Only the parser bindings and their unit tests import the shared helpers of the parser bindings"
+type = "protected"
+protected_modules = ["renaissance.integrations.shared"]
+allowed_importers = [
+    "renaissance.integrations", "renaissance.project",
+    "test.c_cpp", "test.python", "test.lst", "test.extractors", "test.project",
 ]
 
 # The tools and their tests are independent of the rest of the repository.

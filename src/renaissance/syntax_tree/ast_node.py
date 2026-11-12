@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any, Self
 
 from renaissance.core.model import NodeProtocol, SemanticKind, TextUtils
-from renaissance.core.model.for_bindings import format_node
+from renaissance.core.model.format import format_node
 from renaissance.core.model.node_utils import process_node
 from renaissance.core.navigate import nearest_proper_ancestor, next_sibling, previous_sibling
 

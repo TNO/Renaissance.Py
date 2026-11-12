@@ -14,10 +14,11 @@ from pathlib import Path
 from typing import Any, Self
 
 from renaissance.core.model import SemanticKind, traverse
-from renaissance.core.model.for_bindings import format_node, match_children, match_props
+from renaissance.core.model.format import format_node
 from renaissance.core.navigate import next_sibling, previous_sibling
 from renaissance.integrations.python.ast.kinds import PYTHON_KIND_MAP, PYTHON_OPERATOR_MAP
 from renaissance.integrations.python.ast.util import convert
+from renaissance.integrations.shared import match_children, match_props
 from renaissance.syntax_tree.match_finder import find_in_list
 
 types = ["int", "float", "str", "list", "set", "tuple", "Mapping", "dict", "Optional"]

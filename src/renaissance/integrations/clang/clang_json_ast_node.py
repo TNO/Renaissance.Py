@@ -23,13 +23,13 @@ from pathlib import Path
 from typing import Any, Self, override
 
 from renaissance.core.model import SemanticKind
-from renaissance.core.model.for_bindings import match_children, match_props
 from renaissance.integrations.clang.cpp_utils import CPPUtils, matches_node_kind
 from renaissance.integrations.clang.kinds import CLANG_KIND_MAP
 from renaissance.integrations.clang.predicates import (
     is_clang_declaration_reference,
     is_clang_kind,
 )
+from renaissance.integrations.shared import match_children, match_props
 from renaissance.syntax_tree.ast_node import ASTNode, ASTReference
 from renaissance.syntax_tree.pattern_kind import PatternKind
 
