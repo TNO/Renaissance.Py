@@ -89,6 +89,21 @@ class TestPlanLocalizations:
         assert_that(plan.localizations[0].kept, equal_to([]))
 
     @pytest.mark.parametrize(
+        ("dunder_all", "expected_result"),
+        [
+            pytest.param('__all__ = ["b"]', "fixed", id="exports-another-name"),
+            pytest.param('__all__ = ["b", "T"]', "unsafe", id="exports-it"),
+        ],
+    )
+    def test_only_an_import_this_file_exports_is_kept(self, tmp_path: Path, dunder_all: str, expected_result: str) -> None:
+        """Verify an imported TypeVar is kept only when this file's `__all__` lists that name."""
+        importing = f"from file_1 import T\n{dunder_all}\ndef b(x: T) -> T:\n    return x\n"
+        plan = _plan(tmp_path, "from typing import TypeVar\nT = TypeVar('T')\n", importing)
+
+        assert_that(plan.results, equal_to({"T": expected_result}))
+        assert_that(plan.localizations, has_length(1 if expected_result == "fixed" else 0))
+
+    @pytest.mark.parametrize(
         ("origin_ignored", "localize_imports", "localized"),
         [
             pytest.param(True, True, False, id="ignored-origin"),

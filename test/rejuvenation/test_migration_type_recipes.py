@@ -8,6 +8,8 @@
 
 import ast
 import codecs
+import subprocess
+import sys
 import textwrap
 from pathlib import Path
 
@@ -484,6 +486,28 @@ class TestSecondPass:
         assert_that('T = TypeVar("T")' in (tmp_path / "origin.py").read_text(encoding="utf-8"), equal_to(declaration_kept))
         assert_that(output, contains_string(expected_review))
         assert_that(output, contains_string("Processed 2 files"))
+
+    @pytest.mark.parametrize(
+        "import_line", [pytest.param("from pkg.base import T", id="absolute"), pytest.param("from .base import T", id="relative")]
+    )
+    def test_name_re_exported_via_dunder_all_stays_the_same_object(self, tmp_path: Path, import_line: str) -> None:
+        """A package re-exporting T via `__all__` is left untouched, so it and its origin still bind the same T."""
+        package = tmp_path / "pkg"
+        package.mkdir()
+        init_source = f'{import_line}\n\n__all__ = ["T"]\n'
+        (package / "__init__.py").write_text(init_source, encoding="utf-8")
+        base_source = 'from typing import TypeVar\n\nT = TypeVar("T")\n\n\ndef first(items: list[T]) -> T:\n    return items[0]\n'
+        (package / "base.py").write_text(base_source, encoding="utf-8")
+
+        migration.main([str(tmp_path), "--py", "3.12", "--no-ruff", "--second-pass"])
+
+        assert_that((package / "__init__.py").read_text(encoding="utf-8"), equal_to(init_source))
+        base_text = (package / "base.py").read_text(encoding="utf-8")
+        assert_that(base_text, contains_string('T = TypeVar("T")'))
+        assert_that(base_text, contains_string("def first[T](items: list[T]) -> T:"))
+        same_object = "import pkg, pkg.base; assert pkg.T is pkg.base.T"
+        result = subprocess.run([sys.executable, "-c", same_object], cwd=tmp_path, capture_output=True, text=True, check=False)  # noqa: S603 - fixed argv
+        assert_that(result.stderr, equal_to(""))
 
 
 class TestNoLocalization:

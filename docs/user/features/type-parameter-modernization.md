@@ -37,7 +37,8 @@ The tool runs three phases:
 
 1. **Localize cross-file imports.** A type parameter imported from another file in the project
    (`from .shapes import T`) is replaced by an exact local copy of its declaration, placed after the file's imports,
-   unless the origin is named by `--ignore` (see *Shared declaration files* below) or `--no-localization` is given.
+   unless the file lists it in `__all__`, the origin is named by `--ignore` (see *Shared declaration files* below) or
+   `--no-localization` is given.
 2. **Convert to [PEP 695](https://peps.python.org/pep-0695/).** Every function whose signature uses a declared type
    parameter gets its own `[T]`, with bounds, constraints and `default=` carried over (`def f[T: str = str](...)`).
    `covariant=` and `contravariant=` are dropped, since only generic classes have a variance. A nested function gets
@@ -241,9 +242,10 @@ using it is left unchanged. Functions that use `Ts` without `P` are still conver
 
 **To fix this yourself:** fix the refused declaration as its section describes, then run again.
 
-### A declared type parameter is exported via `__all__` { #feature-type-parameter-modernization-declared-type-parameter-exported }
+### A type parameter is exported via `__all__` { #feature-type-parameter-modernization-declared-type-parameter-exported }
 
-`T` is in its file's `__all__`, so it is public API. The functions are converted, the declaration is kept.
+`T` is in its file's `__all__`, so it is public API. The functions are converted, the declaration is kept. An
+imported `T` keeps its import instead, so the functions in that file using it are not converted.
 
 **Before:**
 

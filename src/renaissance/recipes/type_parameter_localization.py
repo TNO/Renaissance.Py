@@ -19,7 +19,7 @@ from renaissance.recipes.type_parameter_declarations import (
     find_type_param_declarations,
     type_param_constructor_name,
 )
-from renaissance.recipes.type_parameter_rules import UnsafeReason, is_safe_to_localize, mark_unsafe
+from renaissance.recipes.type_parameter_rules import UnsafeReason, is_safe_to_localize, is_safe_to_remove, mark_unsafe
 from renaissance.utils.cst_utils import module_statements
 from renaissance.utils.import_resolution import (
     from_import_binding,
@@ -76,7 +76,8 @@ def plan_localizations(
 
     X is resolved against project_root from filename; only imports that resolve to a project file are considered.
     Names from a file in ignore_origins, or from any file when localize_imports is False, keep their import and go to
-    the plan's ignored_names. `import *` and aliased names are skipped.
+    the plan's ignored_names. A name module lists in `__all__` keeps its import and is recorded as unsafe. `import *`
+    and aliased names are skipped.
 
     Raises:
         SyntaxError: if an origin file can't be parsed, with its path as the filename.
@@ -135,7 +136,7 @@ class _Planner:
             if not self.localize_imports or origin_path in self.ignore_origins:
                 plan.ignored_names.add(name)
                 continue
-            reason = is_safe_to_localize(origin, name)
+            reason = is_safe_to_localize(origin, name) or is_safe_to_remove(self.module, name)
             if reason is not None:
                 mark_unsafe(plan.results, plan.unsafe_reasons, name, reason)
                 continue
