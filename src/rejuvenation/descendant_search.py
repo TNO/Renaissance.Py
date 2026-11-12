@@ -8,7 +8,7 @@
 
 from arpeggio import flatten
 
-from renaissance.syntax_tree.ast_node import ASTNode
+from renaissance.core.model import ASTNode
 from renaissance.syntax_tree.match_finder import PatternMatch, match_pattern
 
 

@@ -9,7 +9,7 @@
 from collections.abc import Sequence
 from pathlib import Path
 
-from renaissance.syntax_tree.ast_node import ASTNode
+from renaissance.core.model.ast_node import ASTNode
 
 
 class ASTFactory:
@@ -18,7 +18,7 @@ class ASTFactory:
     Attributes:
         clazz (type[ASTNode]): The class type of the AST nodes to be created.
         extra_args (Optional[Sequence[str]]): Additional arguments to be passed during the creation of AST nodes.
-        #TODO working_dir
+        working_dir (Path): The working directory of the parser; the current directory by default.
 
     """
 

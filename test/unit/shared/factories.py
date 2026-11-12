@@ -4,13 +4,13 @@
 # of this repository, also available at:
 # https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
-"""AI: Shared C/C++ AST factory fixtures used across the c_cpp test suite."""
+"""AI: Shared C/C++ AST factory fixtures used by the tests of the core, the clang bindings, the recipes and the examples."""
 
 from itertools import product
 
+from renaissance.core.model import ASTFactory
 from renaissance.integrations.clang import ClangASTNode
 from renaissance.integrations.clang.clang_json_ast_node import ClangJsonASTNode
-from renaissance.syntax_tree.ast_factory import ASTFactory
 
 
 class Factories:

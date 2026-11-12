@@ -22,9 +22,9 @@ from hamcrest import (
 from libcst import ParserSyntaxError
 
 import targets
+from renaissance.core.model import ASTShower
 from renaissance.integrations.python.ast.cst_node import PythonCstNode
 from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
-from renaissance.syntax_tree.ast_shower import ASTShower
 
 
 class TestPythonCstNode:

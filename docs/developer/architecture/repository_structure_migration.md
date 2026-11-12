@@ -296,15 +296,19 @@ layer, below `core.model`.
 **1.5 The nodes.**
 
 - src: `syntax_tree/ast_node.py`, `ast_factory.py`, `ast_finder.py` and `ast_shower.py`.
-- test: `test/syntax_tree/test_node_finder.py` and `test_semantic_finder.py`; and, if they test
-  the model rather than a binding, `test/c_cpp/test_ast_factory.py`, `test_ast_finder.py`, `test_astshower.py`,
-  `test_ast_references.py` and `test/python/ast/test_python_astshower.py`. Their imports of a binding become known violations.
+- test: `test/syntax_tree/test_node_finder.py`, `test_semantic_finder.py` and `test/c_cpp/test_ast_finder.py` test the model,
+  so they become `test/unit/core/model/test_ast_finder___predicate.py`, `___semantic_kind.py` and `___parsed_c.py`.
+  Their imports of a binding become known violations. `test_ast_factory.py`, `test_astshower.py`, `test_ast_references.py`
+  and `test/python/ast/test_python_astshower.py` check what a binding provides, so they stay. `test/c_cpp/factories.py`
+  goes to `test/unit/shared/`.
 - remaining: the moved modules join the list of the `protected` contract of `core.model`. Its known violations by `ast_node`
   and `ast_shower` disappear, and `renaissance.syntax_tree.ast_node` leaves the allowed importers of
-  `core.model.format`.
+  `core.model.format`. `renaissance.utils`, which holds the placeholder helpers, moves to the layer of `core.pattern`.
+  `test.unit.shared.factories` takes the place of `test.c_cpp.factories` in the contracts.
 - Checks: `git grep -E "utils\.text_utils|syntax_tree\.(semantic_kind|node_protocol|text_segment|syntax_node|siblings)"` and
-  `git grep -E "syntax_tree\.ast_(node|factory|finder|shower)"` find nothing; the model layer of the `layers` contract is
-  `renaissance.core.model` and its tests.
+  `git grep -E "syntax_tree\.ast_(node|factory|finder|shower)"` find nothing outside the test input
+  `features/targets/pyunit_test_example.py`; the model layer of the `layers` contract is `renaissance.core.model` and its
+  tests.
 
 **1.6 The ruff clean-up leaves the core.**
 

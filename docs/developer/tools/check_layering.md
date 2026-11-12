@@ -36,8 +36,8 @@ example, may import `core.matching` and what lies below it, but no parser bindin
 One kind of test code is not checked: the feature tests in `features/`. They are end to end and may import from every layer.
 Import Linter cannot analyse that package either, because `features/targets/` holds deliberately malformed Python.
 
-A test helper must be imported through the `test` package (`from test.c_cpp.factories import Factories`), not through the
-pytest `pythonpath` (`from c_cpp.factories import Factories`). Import Linter only sees the first form.
+A test helper must be imported through the `test` package (`from test.unit.shared.factories import Factories`), not through the
+pytest `pythonpath` (`from unit.shared.factories import Factories`). Import Linter only sees the first form.
 
 ## Running it
 

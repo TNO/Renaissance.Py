@@ -158,7 +158,7 @@ the two sides can silently disagree, producing incorrect or corrupted output.
 
 * `src/renaissance/syntax_tree/ast_rewriter.py` - derives the buffer a rewrite batch is applied to.
 * `src/renaissance/common/rewriter.py` - splices replacement text into that buffer, in bytes.
-* `src/renaissance/syntax_tree/ast_node.py` - `binary_file_content`, the root-owned buffer accessor.
+* `src/renaissance/core/model/ast_node.py` - `binary_file_content`, the root-owned buffer accessor.
 * `src/renaissance/integrations/python/ast/rst_node.py` and `src/renaissance/integrations/python/ast/util.py` -
   the RST adapter and its line/column to offset conversion.
 * `src/renaissance/integrations/python/ast/cst_node.py` - the CST adapter, which converts libcst's line/column

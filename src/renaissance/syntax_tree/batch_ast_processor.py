@@ -12,8 +12,7 @@ from collections.abc import Callable, Iterable, Sequence
 from functools import partial
 from typing import Any
 
-from renaissance.syntax_tree.ast_factory import ASTFactory
-from renaissance.syntax_tree.ast_node import ASTNode
+from renaissance.core.model import ASTFactory, ASTNode
 from renaissance.syntax_tree.ast_processor import ASTProcessor
 
 AST_FACTORY_AND_ATU = tuple[ASTFactory, ASTNode]

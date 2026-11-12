@@ -8,8 +8,7 @@
 
 from more_itertools import flatten
 
-from renaissance.core.model import SemanticKind
-from renaissance.syntax_tree.ast_finder import find_semantic_kind
+from renaissance.core.model import SemanticKind, find_semantic_kind
 from renaissance.syntax_tree.ast_processor import ASTProcessor
 
 

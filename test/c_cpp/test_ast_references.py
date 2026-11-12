@@ -12,13 +12,10 @@ import pytest
 from hamcrest import assert_that, contains_exactly, contains_string, greater_than, has_length, is_, is_in
 from more_itertools.more import first
 
-from renaissance.core.model import SemanticKind
+from renaissance.core.model import ASTNode, ASTShower, SemanticKind, find_nodes
 from renaissance.integrations.clang import ClangASTNode
 from renaissance.integrations.clang.predicates import is_clang_declaration_reference, is_clang_type_reference
-from renaissance.syntax_tree.ast_finder import find_nodes
-from renaissance.syntax_tree.ast_node import ASTNode
-from renaissance.syntax_tree.ast_shower import ASTShower
-from test.c_cpp.factories import Factories
+from test.unit.shared.factories import Factories
 
 
 class TestASTReference:

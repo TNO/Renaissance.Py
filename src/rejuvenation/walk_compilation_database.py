@@ -11,11 +11,10 @@
 from pathlib import Path
 
 import targets
-from renaissance.core.model import SemanticKind
+from renaissance.core.model import ASTShower, SemanticKind
 from renaissance.integrations.clang import ClangASTNode, CompilationDatabase
 from renaissance.integrations.clang.clang_json_ast_node import ClangJsonASTNode
 from renaissance.syntax_tree.ast_processor import ASTProcessor
-from renaissance.syntax_tree.ast_shower import ASTShower
 
 
 def main(args) -> None:

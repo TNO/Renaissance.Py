@@ -11,10 +11,7 @@ from pathlib import Path
 from typing import Any
 
 import renaissance.syntax_tree.match_finder
-from renaissance.core.model import NodeProtocol, SemanticKind
-from renaissance.syntax_tree.ast_factory import ASTFactory
-from renaissance.syntax_tree.ast_finder import ASTFinder, find_semantic_kind
-from renaissance.syntax_tree.ast_node import ASTNode
+from renaissance.core.model import ASTFactory, ASTFinder, ASTNode, NodeProtocol, SemanticKind, find_semantic_kind
 from renaissance.syntax_tree.ast_rewriter import ASTRewriter, Rewritable
 from renaissance.syntax_tree.match_finder import PatternMatch
 

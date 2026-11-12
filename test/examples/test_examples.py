@@ -30,11 +30,10 @@ from rejuvenation.remove_unused_variable import (
     remove_unused_variable_using_refactor_method,
 )
 from rejuvenation.replace_if_with_ternary import replace_if_with_ternary
+from renaissance.core.model import ASTFactory, ASTNode
 from renaissance.integrations.clang import ClangASTNode, CPatternFactory
 from renaissance.integrations.clang.clang_json_ast_node import ClangJsonASTNode
-from renaissance.syntax_tree.ast_factory import ASTFactory
-from renaissance.syntax_tree.ast_node import ASTNode
-from test.c_cpp.factories import Factories
+from test.unit.shared.factories import Factories
 
 
 class TestRefactorWithNestedCompositions:

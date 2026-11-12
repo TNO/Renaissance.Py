@@ -8,12 +8,10 @@
 
 # This script demonstrates various techniques for refactoring C code using an abstract syntax tree (AST) approach.
 # It showcases how to add comments, replace types, and find specific nodes in the AST using different methods.
+from renaissance.core.model import ASTFactory, ASTFinder, ASTShower, find_nodes
 from renaissance.integrations.clang import ClangASTNode, CPatternFactory
 from renaissance.integrations.clang.predicates import is_clang_type_reference
-from renaissance.syntax_tree.ast_factory import ASTFactory
-from renaissance.syntax_tree.ast_finder import ASTFinder, find_nodes
 from renaissance.syntax_tree.ast_rewriter import ASTRewriter
-from renaissance.syntax_tree.ast_shower import ASTShower
 from renaissance.syntax_tree.match_finder import find_all, match_pattern
 
 example_code = """

@@ -246,10 +246,10 @@ The column *now in* gives the current module, relative to `src/renaissance/`.
 | `NodeProtocol`                                                  | all     | `core/model/node_protocol.py`           |
 | `SemanticKind`                                                  | all     | `core/model/semantic_kind.py`           |
 | `TextSegment`, `SyntaxNode`, `Siblings`                         | all     | `core/model/text_segment.py` and so on  |
-| `ASTNode`, `ASTReference`, `VisitorResult`                      | all     | `syntax_tree/ast_node.py`               |
-| `ASTFactory`                                                    | all     | `syntax_tree/ast_factory.py`            |
-| `ASTFinder`, `find_nodes`, `matches_node`, `find_semantic_kind` | all     | `syntax_tree/ast_finder.py`             |
-| `ASTShower`, `Displayable`                                      | all     | `syntax_tree/ast_shower.py`             |
+| `ASTNode`, `ASTReference`, `VisitorResult`                      | all     | `core/model/ast_node.py`                |
+| `ASTFactory`                                                    | all     | `core/model/ast_factory.py`             |
+| `ASTFinder`, `find_nodes`, `matches_node`, `find_semantic_kind` | all     | `core/model/ast_finder.py`              |
+| `ASTShower`, `Displayable`                                      | all     | `core/model/ast_shower.py`              |
 | `traverse`                                                      | all     | `core/model/node_utils.py`              |
 | `TextUtils`                                                     | all     | `core/model/text_utils.py`              |
 | `format_node`                                                   | binding | `core/model/format.py`                  |

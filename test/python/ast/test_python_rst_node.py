@@ -24,11 +24,10 @@ from hamcrest import (
 from hypothesis import HealthCheck, given, settings
 
 import targets
-from renaissance.core.model import SemanticKind, traverse
+from renaissance.core.model import ASTShower, SemanticKind, traverse
 from renaissance.core.navigate import nearest_proper_ancestor
 from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
-from renaissance.syntax_tree.ast_shower import ASTShower
 from test.utils_for_tests import reject_unsupported_code
 
 

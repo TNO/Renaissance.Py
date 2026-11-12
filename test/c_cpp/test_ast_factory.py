@@ -9,8 +9,8 @@
 import pytest
 from hamcrest import assert_that, is_, not_none
 
-from renaissance.syntax_tree.ast_shower import ASTShower
-from test.c_cpp.factories import Factories
+from renaissance.core.model import ASTShower
+from test.unit.shared.factories import Factories
 
 
 class TestASTFactory:

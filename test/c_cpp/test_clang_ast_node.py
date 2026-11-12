@@ -10,9 +10,9 @@ import pytest
 from hamcrest import assert_that, has_length, has_string, is_
 from pytest_mock import MockerFixture
 
+from renaissance.core.model import ASTFactory
 from renaissance.core.navigate import is_proper_ancestor_of
 from renaissance.integrations.clang import ClangASTNode, CPatternFactory
-from renaissance.syntax_tree.ast_factory import ASTFactory
 
 
 class TestClangAstNode:

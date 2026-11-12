@@ -12,9 +12,8 @@ import pytest
 from hamcrest import assert_that, equal_to, has_length, is_
 from pytest_mock import MockerFixture
 
-from renaissance.core.model import SemanticKind
+from renaissance.core.model import ASTFactory, SemanticKind
 from renaissance.integrations.clang import ClangASTNode
-from renaissance.syntax_tree.ast_factory import ASTFactory
 from renaissance.syntax_tree.ast_processor import ASTProcessor
 from renaissance.syntax_tree.batch_ast_processor import AST_FACTORY_AND_ATU, IterableProvider
 from renaissance.syntax_tree.recipe_ast_processor import (

@@ -9,11 +9,8 @@
 import pytest
 from hamcrest import assert_that, contains_string, matches_regexp, not_, starts_with
 
-from renaissance.core.model import SemanticKind
+from renaissance.core.model import ASTFactory, ASTShower, SemanticKind, find_nodes
 from renaissance.integrations.clang import ClangASTNode, CPatternFactory
-from renaissance.syntax_tree.ast_factory import ASTFactory
-from renaissance.syntax_tree.ast_finder import find_nodes
-from renaissance.syntax_tree.ast_shower import ASTShower
 
 
 class TestCcppShower:

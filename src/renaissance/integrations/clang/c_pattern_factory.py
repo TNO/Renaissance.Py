@@ -12,17 +12,13 @@ from collections.abc import Sequence
 from more_itertools import first
 from more_itertools.more import last
 
-from renaissance.core.model import SemanticKind
+from renaissance.core.model import ASTFactory, ASTNode, ASTShower, SemanticKind, find_nodes
 from renaissance.integrations.clang.cpp_utils import CPPUtils
 from renaissance.integrations.clang.predicates import (
     is_clang_compound_statement,
     is_clang_kind,
     is_clang_macro_definition,
 )
-from renaissance.syntax_tree.ast_factory import ASTFactory
-from renaissance.syntax_tree.ast_finder import find_nodes
-from renaissance.syntax_tree.ast_node import ASTNode
-from renaissance.syntax_tree.ast_shower import ASTShower
 
 SHOW_NODE = False
 

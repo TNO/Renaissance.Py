@@ -196,7 +196,7 @@ units = "modules"
 mirror = "test/unit/core/model/test_{path}.py"
 aspects = true
 # No unit tests of their own yet.
-exempt = ["format", "node_utils", "semantic_kind", "siblings", "text_utils"]
+exempt = ["ast_factory", "ast_node", "ast_shower", "format", "node_utils", "semantic_kind", "siblings", "text_utils"]
 
 [[tool.check_layout.mirrors]]
 code = "src/renaissance/core/navigate"
@@ -276,7 +276,7 @@ layers = [
     : test.recipes : test.examples : test.syntax_tree.test_ast_refactor_actions""",
     # parser_bindings
     """renaissance.integrations : renaissance.project
-    : test.c_cpp : test.python : test.lst : test.extractors : test.project""",
+    : test.c_cpp : test.python : test.lst : test.extractors : test.project : test.unit.shared.factories""",
     # core.processing
     """renaissance.syntax_tree.ast_processor : renaissance.syntax_tree.batch_ast_processor
     : renaissance.syntax_tree.recipe_ast_processor
@@ -291,15 +291,9 @@ layers = [
     : test.syntax_tree.test_match_tree : test.syntax_tree.test_match_dict : test.syntax_tree.test_pattern_match
     : test.utils.util_equivalence_classes : test.utils_for_tests""",
     # core.pattern
-    "renaissance.syntax_tree.pattern_kind : test.syntax_tree.test_pattern_kind",
+    "renaissance.syntax_tree.pattern_kind : renaissance.utils : test.syntax_tree.test_pattern_kind",
     # core.model
-    """renaissance.core.model
-    : renaissance.syntax_tree.ast_node : renaissance.syntax_tree.ast_factory : renaissance.syntax_tree.ast_finder
-    : renaissance.syntax_tree.ast_shower : renaissance.utils
-    : test.unit.core.model
-    : test.syntax_tree.test_node_finder
-    : test.syntax_tree.test_semantic_finder
-    : test.search_strategies : test.conftest""",
+    "renaissance.core.model : test.unit.core.model : test.search_strategies : test.conftest",
     # core.navigate
     "renaissance.core.navigate : test.unit.core.navigate",
 ]
@@ -315,7 +309,7 @@ ignore_imports = [
     "test.syntax_tree.test_ast_rewriter -> renaissance.integrations.clang",
     "test.syntax_tree.test_ast_rewriter -> renaissance.integrations.python.ast.factory",
     "test.syntax_tree.test_ast_rewriter -> renaissance.integrations.python.ast.rst_node",
-    "test.syntax_tree.test_ast_rewriter -> test.c_cpp.factories",
+    "test.syntax_tree.test_ast_rewriter -> test.unit.shared.factories",
     "test.syntax_tree.test_rewrite_semantics_properties -> renaissance.integrations.python.ast.factory",
     "test.syntax_tree.test_rewrite_semantics_properties -> renaissance.integrations.python.ast.rst_node",
     "test.syntax_tree.test_match_finder -> renaissance.integrations.clang",
@@ -326,8 +320,9 @@ ignore_imports = [
     "test.syntax_tree.test_match_tree -> renaissance.integrations.python.ast.rst_node",
     "test.syntax_tree.test_pattern_match -> renaissance.integrations.python.ast.factory",
     "test.syntax_tree.test_pattern_match -> renaissance.integrations.python.ast.rst_node",
-    "test.syntax_tree.test_node_finder -> renaissance.integrations.python.ast.rst_node",
-    "test.syntax_tree.test_semantic_finder -> renaissance.integrations.python.ast.rst_node",
+    "test.unit.core.model.test_ast_finder___parsed_c -> test.unit.shared.factories",
+    "test.unit.core.model.test_ast_finder___predicate -> renaissance.integrations.python.ast.rst_node",
+    "test.unit.core.model.test_ast_finder___semantic_kind -> renaissance.integrations.python.ast.rst_node",
     # A test of the node protocol that checks its use by the matcher.
     "test.unit.core.model.test_node_protocol -> renaissance.syntax_tree.match_finder",
     # A test of the batch processor that runs a real recipe step instead of a test double.
@@ -340,7 +335,7 @@ name = "Parser bindings use only core.model, core.pattern and core.matching"
 type = "forbidden"
 source_modules = [
     "renaissance.integrations", "renaissance.project",
-    "test.c_cpp", "test.python", "test.lst", "test.extractors", "test.project",
+    "test.c_cpp", "test.python", "test.lst", "test.extractors", "test.project", "test.unit.shared.factories",
 ]
 forbidden_modules = [
     "renaissance.syntax_tree.ast_processor", "renaissance.syntax_tree.batch_ast_processor",
@@ -363,7 +358,7 @@ source_modules = [
 ]
 forbidden_modules = [
     "renaissance.integrations", "renaissance.project",
-    "test.c_cpp", "test.python", "test.lst", "test.extractors", "test.project",
+    "test.c_cpp", "test.python", "test.lst", "test.extractors", "test.project", "test.unit.shared.factories",
 ]
 allow_indirect_imports = true
 broken_contract_guidance = """
@@ -383,7 +378,7 @@ ignore_imports = [
     "test.recipes.test_python_refactoring -> renaissance.integrations.python.ast.rst_node",
     "test.recipes.test_refactor_with_rewrite -> renaissance.integrations.python.ast.rst_node",
     "test.recipes.test_unit_to_pytest -> renaissance.integrations.python.ast.rst_node",
-    "test.recipes.test_cleanup_refactoring -> test.c_cpp.factories",
+    "test.recipes.test_cleanup_refactoring -> test.unit.shared.factories",
     # Access to the parameters of a function is missing in the core; convert_function reads stdlib ast.
     "renaissance.recipes.unit_to_pytest -> renaissance.integrations.python.ast.util",
     # A pattern factory protocol is missing in the core; CPPPatternFactory is used in an annotation only.
@@ -396,9 +391,9 @@ ignore_imports = [
     "rejuvenation.replace_if_with_ternary -> renaissance.integrations.**",
     "rejuvenation.walk_compilation_database -> renaissance.integrations.**",
     "test.examples.test_descendant_search -> renaissance.integrations.**",
-    "test.examples.test_descendant_search -> test.c_cpp.factories",
+    "test.examples.test_descendant_search -> test.unit.shared.factories",
     "test.examples.test_examples -> renaissance.integrations.**",
-    "test.examples.test_examples -> test.c_cpp.factories",
+    "test.examples.test_examples -> test.unit.shared.factories",
 ]
 
 # One contract per binding: a binding and its tests import no other binding.
@@ -407,7 +402,7 @@ ignore_imports = [
 id = "clang-independent"
 name = "The clang binding imports no other binding"
 type = "forbidden"
-source_modules = ["renaissance.integrations.clang", "test.c_cpp"]
+source_modules = ["renaissance.integrations.clang", "test.c_cpp", "test.unit.shared.factories"]
 forbidden_modules = [
     "renaissance.integrations.python", "renaissance.integrations.tree_sitter", "renaissance.project",
     "test.python", "test.lst", "test.extractors", "test.project",
@@ -425,7 +420,7 @@ type = "forbidden"
 source_modules = ["renaissance.integrations.python", "test.python", "test.extractors.test_python_extractors"]
 forbidden_modules = [
     "renaissance.integrations.clang", "renaissance.integrations.tree_sitter", "renaissance.project",
-    "test.c_cpp", "test.lst", "test.extractors.test_code_graph_extractors", "test.project",
+    "test.c_cpp", "test.unit.shared.factories", "test.lst", "test.extractors.test_code_graph_extractors", "test.project",
 ]
 allow_indirect_imports = true
 ignore_imports = [
@@ -445,7 +440,7 @@ type = "forbidden"
 source_modules = ["renaissance.integrations.tree_sitter", "test.lst", "test.extractors.test_code_graph_extractors"]
 forbidden_modules = [
     "renaissance.integrations.clang", "renaissance.integrations.python", "renaissance.project",
-    "test.c_cpp", "test.python", "test.extractors.test_python_extractors", "test.project",
+    "test.c_cpp", "test.unit.shared.factories", "test.python", "test.extractors.test_python_extractors", "test.project",
 ]
 allow_indirect_imports = true
 ignore_imports = [
@@ -461,7 +456,7 @@ type = "forbidden"
 source_modules = ["renaissance.project", "test.project"]
 forbidden_modules = [
     "renaissance.integrations",
-    "test.c_cpp", "test.python", "test.lst", "test.extractors",
+    "test.c_cpp", "test.unit.shared.factories", "test.python", "test.lst", "test.extractors",
 ]
 allow_indirect_imports = true
 
@@ -472,6 +467,10 @@ id = "core-model-api"
 name = "Only core.model and its unit tests import the modules of core.model"
 type = "protected"
 protected_modules = [
+    "renaissance.core.model.ast_factory",
+    "renaissance.core.model.ast_finder",
+    "renaissance.core.model.ast_node",
+    "renaissance.core.model.ast_shower",
     "renaissance.core.model.node_protocol",
     "renaissance.core.model.node_utils",
     "renaissance.core.model.semantic_kind",
@@ -481,11 +480,6 @@ protected_modules = [
     "renaissance.core.model.text_utils",
 ]
 allowed_importers = ["renaissance.core.model", "test.unit.core.model"]
-ignore_imports = [
-    # ast_node and ast_shower belong in core.model, but are still in syntax_tree.
-    "renaissance.syntax_tree.ast_node -> renaissance.core.model.node_utils",
-    "renaissance.syntax_tree.ast_shower -> renaissance.core.model.node_utils",
-]
 
 [[tool.importlinter.contracts]]
 id = "core-navigate-api"
@@ -501,8 +495,7 @@ name = "Only the core, the parser bindings and their unit tests import core.mode
 type = "protected"
 protected_modules = ["renaissance.core.model.format"]
 allowed_importers = [
-    "renaissance.core", "renaissance.syntax_tree.ast_node",  # ast_node belongs in core.model, but is still in syntax_tree
-    "renaissance.integrations", "renaissance.project",
+    "renaissance.core", "renaissance.integrations", "renaissance.project",
     "test.unit.core", "test.c_cpp", "test.python", "test.lst", "test.extractors", "test.project",
 ]
 

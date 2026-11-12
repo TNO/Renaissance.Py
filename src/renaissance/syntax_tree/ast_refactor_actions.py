@@ -10,9 +10,7 @@ from collections.abc import Callable, Sequence
 from functools import cache
 from typing import TYPE_CHECKING
 
-from renaissance.core.model import SemanticKind
-from renaissance.syntax_tree.ast_finder import matches_node
-from renaissance.syntax_tree.ast_node import ASTNode
+from renaissance.core.model import ASTNode, SemanticKind, matches_node
 from renaissance.syntax_tree.ast_processor import ASTProcessor
 from renaissance.syntax_tree.match_finder import MatchFinder, PatternMatch
 

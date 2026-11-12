@@ -10,10 +10,9 @@ import textwrap
 from collections.abc import Sequence
 from pathlib import Path
 
-from renaissance.core.model import NodeProtocol, SemanticKind
+from renaissance.core.model import NodeProtocol, SemanticKind, find_semantic_kind
 from renaissance.integrations.python.ast.util import convert_function
 from renaissance.recipes.python_refactoring import PythonRefactoring
-from renaissance.syntax_tree.ast_finder import find_semantic_kind
 from renaissance.syntax_tree.match_finder import PatternMatch, match_pattern
 
 
