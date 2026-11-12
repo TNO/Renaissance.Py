@@ -23,6 +23,7 @@ from pathlib import Path
 from typing import Any, Self, override
 
 from renaissance.core.model import ASTNode, ASTReference, SemanticKind
+from renaissance.core.pattern import PatternKind
 from renaissance.integrations.clang.cpp_utils import CPPUtils, matches_node_kind
 from renaissance.integrations.clang.kinds import CLANG_KIND_MAP
 from renaissance.integrations.clang.predicates import (
@@ -30,7 +31,6 @@ from renaissance.integrations.clang.predicates import (
     is_clang_kind,
 )
 from renaissance.integrations.shared import equal_in_children, equal_in_properties
-from renaissance.syntax_tree.pattern_kind import PatternKind
 
 EMPTY_DICT = {}
 EMPTY_STR = ""

@@ -6,7 +6,8 @@
 
 """AI: Placeholder helpers: conversion between dollar signs and match symbols, and placeholder detection."""
 
-from renaissance.integrations import MATCH_ALL, MATCH_ONE
+MATCH_ONE = "_MatchOne__"
+MATCH_ALL = "_MatchAll__"
 
 
 def replace_dollar(text: str) -> str:

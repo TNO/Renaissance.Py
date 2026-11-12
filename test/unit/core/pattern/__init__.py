@@ -4,4 +4,4 @@
 # of this repository, also available at:
 # https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
-"""AI: Shared utility helpers (text manipulation, subprocess wrappers, etc.) used across the codebase."""
+"""Unit tests of renaissance.core.pattern."""

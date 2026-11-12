@@ -267,14 +267,13 @@ Internal: `display_context`, `DISPLAY_PARSER_KIND`, `process_node`.
 
 #### `core.pattern`
 
-| Symbol                                               | For | Now in                        |
-| ---------------------------------------------------- | --- | ----------------------------- |
-| `PatternKind`                                        | all | `syntax_tree/pattern_kind.py` |
-| `MATCH_ONE`, `MATCH_ALL`                             | all | `integrations/__init__.py`    |
-| `replace_dollar`, `use_dollar`, `detect_placeholder` | all | `utils/ast_utils.py`          |
+| Symbol                                               | For | Now in                         |
+| ---------------------------------------------------- | --- | ------------------------------ |
+| `PatternKind`                                        | all | `core/pattern/pattern_kind.py` |
+| `MATCH_ONE`, `MATCH_ALL`                             | all | `core/pattern/placeholders.py` |
+| `replace_dollar`, `use_dollar`, `detect_placeholder` | all | `core/pattern/placeholders.py` |
 
 The placeholder markers and the `$` notation are part of the pattern language, not of a binding, so they are for all.
-They live in `core/pattern/placeholders.py`.
 
 A pattern type of its own (improvement plan, phase 3) does not exist yet and is not part of this draft.
 

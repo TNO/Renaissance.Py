@@ -16,15 +16,13 @@ import tree_sitter_python
 from libcst import SimpleStatementLine
 
 from renaissance.core.model import NodeProtocol, SemanticKind
-from renaissance.integrations import MATCH_ALL, MATCH_ONE
+from renaissance.core.pattern import MATCH_ALL, MATCH_ONE, PatternKind, replace_dollar, use_dollar
 from renaissance.integrations.python.ast.ast_node import ASTExtension
 from renaissance.integrations.python.ast.cst_node import PythonCstNode
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
 from renaissance.integrations.tree_sitter.adapter import TreeSitterAdapter
 from renaissance.integrations.tree_sitter.lst import LSTNode
 from renaissance.syntax_tree.match_finder import is_match
-from renaissance.syntax_tree.pattern_kind import PatternKind
-from renaissance.utils.ast_utils import replace_dollar, use_dollar
 
 _MATCH_ALL_RE = re.compile(r"^" + re.escape(MATCH_ALL) + r"\w+$")
 _MATCH_ONE_RE = re.compile(r"^" + re.escape(MATCH_ONE) + r"\w+$")

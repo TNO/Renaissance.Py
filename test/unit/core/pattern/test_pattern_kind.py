@@ -6,7 +6,7 @@
 
 """Tests for the PatternKind enum values."""
 
-from renaissance.syntax_tree.pattern_kind import PatternKind
+from renaissance.core.pattern import PatternKind
 
 
 def test_pattern_kind_values_are_distinct() -> None:

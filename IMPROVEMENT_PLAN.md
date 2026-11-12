@@ -24,7 +24,7 @@ Most items on the TODO list are not independent. They all bottom out in three mo
    why character-based rewriting is bolted on, and why `reportUnknown*` dominates the lint budget
    (roughly 4000 of the tracked Pyright issues).
 2. **A pattern is not a type.**
-   A pattern is an `ASTNode` whose `$`-names are discovered by regular expression in `src/renaissance/utils/ast_utils.py`.
+   A pattern is an `ASTNode` whose `$`-names are discovered by regular expression in `src/renaissance/core/pattern/placeholders.py`.
    This is why placeholders have no semantic kind, why binding consistency is an ad-hoc check inside `_resolve_match_one`,
    and why the matcher cannot *report* ambiguity.
 3. **A recipe is not a value.**

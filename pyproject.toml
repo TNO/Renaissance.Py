@@ -206,6 +206,13 @@ aspects = true
 exempt = ["protocols"]  # Protocols only: Pyright checks that nodes implement them.
 
 [[tool.check_layout.mirrors]]
+code = "src/renaissance/core/pattern"
+units = "modules"
+mirror = "test/unit/core/pattern/test_{path}.py"
+aspects = true
+exempt = ["placeholders"]  # No unit tests of its own yet.
+
+[[tool.check_layout.mirrors]]
 code = "src/renaissance/core"
 units = "packages"
 mirror = "docs/developer/modules/core/{path}.md"
@@ -291,15 +298,13 @@ layers = [
     : test.syntax_tree.test_match_tree : test.syntax_tree.test_match_dict : test.syntax_tree.test_pattern_match
     : test.utils.util_equivalence_classes : test.utils_for_tests""",
     # core.pattern
-    "renaissance.syntax_tree.pattern_kind : renaissance.utils : test.syntax_tree.test_pattern_kind",
+    "renaissance.core.pattern : test.unit.core.pattern",
     # core.model
     "renaissance.core.model : test.unit.core.model : test.search_strategies : test.conftest",
     # core.navigate
     "renaissance.core.navigate : test.unit.core.navigate",
 ]
 ignore_imports = [
-    # MATCH_ONE and MATCH_ALL are placeholder markers that belong in core.pattern (issue 110).
-    "renaissance.utils.ast_utils -> renaissance.integrations",
     # Unit tests of the core that parse real code instead of using test doubles.
     "test.syntax_tree.test_ast_processor -> renaissance.integrations.clang",
     "test.syntax_tree.test_batch_ast_processor -> renaissance.integrations.clang",
@@ -488,6 +493,13 @@ type = "protected"
 protected_modules = ["renaissance.core.navigate.navigate", "renaissance.core.navigate.protocols"]
 allowed_importers = ["renaissance.core.navigate", "test.unit.core.navigate"]
 
+[[tool.importlinter.contracts]]
+id = "core-pattern-api"
+name = "Only core.pattern and its unit tests import the modules of core.pattern"
+type = "protected"
+protected_modules = ["renaissance.core.pattern.pattern_kind", "renaissance.core.pattern.placeholders"]
+allowed_importers = ["renaissance.core.pattern", "test.unit.core.pattern"]
+
 # format_node is for the core and the parser bindings only.
 [[tool.importlinter.contracts]]
 id = "core-model-format"
@@ -506,7 +518,7 @@ name = "The shared helpers of the parser bindings import nothing from Renaissanc
 type = "forbidden"
 source_modules = ["renaissance.integrations.shared"]
 forbidden_modules = [
-    "renaissance.core", "renaissance.syntax_tree", "renaissance.utils", "renaissance.common", "renaissance.recipes",
+    "renaissance.core", "renaissance.syntax_tree", "renaissance.common", "renaissance.recipes",
     "renaissance.integrations.clang", "renaissance.integrations.python", "renaissance.integrations.tree_sitter",
     "renaissance.project", "rejuvenation",
 ]

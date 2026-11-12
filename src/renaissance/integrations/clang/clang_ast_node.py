@@ -18,11 +18,11 @@ from clang.cindex import Config, Cursor, CursorKind, Index, TypeKind
 from clang.cindex import TranslationUnit as ClangCindexTranslationUnit
 
 from renaissance.core.model import ASTFinder, ASTNode, ASTReference, SemanticKind
+from renaissance.core.pattern import PatternKind
 from renaissance.integrations.clang.cpp_utils import matches_node_kind
 from renaissance.integrations.clang.kinds import CLANG_KIND_MAP
 from renaissance.integrations.clang.predicates import is_clang_compound_statement, is_clang_macro_definition
 from renaissance.integrations.shared import equal_in_children, equal_in_properties
-from renaissance.syntax_tree.pattern_kind import PatternKind
 
 EMPTY_DICT = {}
 EMPTY_STR = ""

@@ -4,4 +4,4 @@
 # of this repository, also available at:
 # https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
-"""Tests of renaissance.utils, and helpers shared by tests."""
+"""Helpers shared by tests."""

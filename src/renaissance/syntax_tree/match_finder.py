@@ -10,8 +10,7 @@ from collections.abc import Iterable, Sequence
 from typing import Any, Self
 
 from renaissance.core.model import NodeProtocol, SemanticKind
-from renaissance.syntax_tree.pattern_kind import PatternKind
-from renaissance.utils.ast_utils import use_dollar
+from renaissance.core.pattern import PatternKind, use_dollar
 
 IRRELEVANT_PROPS = {"macro_expansion", "start_point", "end_point", "source_code", "location", "type"}
 
