@@ -25,15 +25,13 @@ _TYPE_PARAM_NODES = (cst.TypeVar, cst.ParamSpec, cst.TypeVarTuple)
 type _TypeParam = cst.TypeVar | cst.ParamSpec | cst.TypeVarTuple
 type _Edit = tuple[PythonCstNode, str]
 
-# TODO(FrancescoPezzella): these patterns do not find a class with two or more keyword arguments in its bases, nor a
-#  function with default values, keyword-only or positional-only parameters, so these keep their leading underscore:
-#  `def f[_T](x: _T = None)`, `def f[_T](*, x: _T)`, `def f[_T](x: _T, /)`, `class C[_T](B, metaclass=M, flag=True)`.
-#  https://github.com/TNO/Renaissance.Py/issues/279
+# Python's `ast` keeps each kind of parameter in its own list, so every list gets a placeholder: positional-only, with
+# and without default, `*args`, keyword-only, with and without default, and `**kwargs`.
+_PARAMETERS = "$$positional_only, /, $$params=$$defaults, *$$varargs, $$keyword_only=$$keyword_defaults, **$$kwargs"
 _DECLARATION_PATTERNS = (
-    "@$$decorators\ndef $f[$$tps]($$args, *$$varargs, **$$kwargs) -> $r:\n    $$body",
-    "@$$decorators\ndef $f[$$tps]($$args, *$$varargs, **$$kwargs):\n    $$body",
-    "@$$decorators\nclass $c[$$tps]($$bases):\n    $$body",
-    "@$$decorators\nclass $c[$$tps]($$bases, $kw=$v):\n    $$body",
+    f"@$$decorators\ndef $f[$$tps]({_PARAMETERS}) -> $r:\n    $$body",
+    f"@$$decorators\ndef $f[$$tps]({_PARAMETERS}):\n    $$body",
+    "@$$decorators\nclass $c[$$tps]($$bases, **$$kws):\n    $$body",
 )
 
 
