@@ -49,6 +49,20 @@ Three cases
 - Each captured type parameter is an AST node.
 - A type parameter written in the pattern, such as `[T]`, matches only that name.
 
+## Scenario: Placeholders for keyword arguments
+
+- `**$$kws` in `class $c($$bases, **$$kws):` or `f($$args, **$$kws)` matches any number of keyword arguments of a class
+  or a call, named (`metaclass=M`) or unpacked (`**options`), and captures each one as an AST node.
+- A single keyword argument written with placeholders, such as `$kw=$v`, matches exactly one keyword argument.
+
+## Scenario: Placeholders for the parameters of a function
+
+- Python keeps each kind of parameter in its own list, so a pattern names one placeholder per kind:
+  `def $f($$positional_only, /, $$params=$$defaults, *$$varargs, $$keyword_only=$$keyword_defaults, **$$kwargs):`
+  matches every function, whatever kinds of parameters it has.
+- `$$args` alone, as in `def $f($$args):`, matches only positional-or-keyword parameters without a default value.
+  What a lone `$$args` should match is open in [issue 22](https://github.com/TNO/Renaissance.Py/issues/22).
+
 ## Scenario: Robustness for occurrence of implicit placeholders
 
 - in strings, e.g. `"$X"`
