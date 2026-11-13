@@ -12,7 +12,7 @@ from collections.abc import Sequence
 import hypothesis
 
 from renaissance.core.model import ASTNode, ASTShower
-from renaissance.syntax_tree.match_finder import PatternMatch
+from renaissance.syntax_tree.match_finder import PatternMatch, find_in_list
 
 VERBOSE = False
 AST_SHOWER = False
@@ -29,6 +29,11 @@ def compress(s: str):
     skip_whitespace = re.sub(r"(\W)\s", r"\1", skip_whitespace)
     skip_whitespace = re.sub(r"\s(\W)", r"\1", skip_whitespace)
     return skip_whitespace.strip()
+
+
+def is_match_tree(src: Sequence | None, cmp: Sequence | None, expansions=None):
+    """AI: Return True if the entire src sequence matches the cmp pattern sequence."""
+    return find_in_list(src, cmp, expansions, 0) == len(src) - 1
 
 
 def show_node(node: ASTNode, title: str = "") -> None:

@@ -133,11 +133,6 @@ def _resolve_match_one(name: str, src: NodeProtocol, expansions: dict):
     return True
 
 
-def is_match_tree(src: Sequence | None, cmp: Sequence | None, expansions=None):
-    """AI: Return True if the entire src sequence matches the cmp pattern sequence."""
-    return find_in_list(src, cmp, expansions, 0) == len(src) - 1
-
-
 def variant_in_match_stmt(src: NodeProtocol, cmp: NodeProtocol, expansions) -> list:
     """AI: Return the list of matching Variants of a single src node against a single cmp pattern node."""
     if pattern_kind(cmp) is PatternKind.MATCH_ONE and cmp.name:

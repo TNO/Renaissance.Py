@@ -288,8 +288,8 @@ A pattern type of its own (improvement plan, phase 3) does not exist yet and is 
 | `match_pattern`, `find_all`, `is_match`                        | all     | `syntax_tree/match_finder.py` |
 | `find_in_list`                                                 | all     | `syntax_tree/match_finder.py` |
 
-Internal: `pattern_kind`, which only the matcher uses, `Variant`, `find_variants`, `is_match_tree`, `variant_in_match_stmt`,
-`is_match_dict`, `node_kinds_match`, `IRRELEVANT_PROPS`, `MIS_MATCH`, `INCOMPLETE_MATCH`.
+Internal: `pattern_kind`, which only the matcher uses, `Variant`, `find_variants`, `variant_in_match_stmt`, `is_match_dict`,
+`node_kinds_match`, `IRRELEVANT_PROPS`, `MIS_MATCH`, `INCOMPLETE_MATCH`.
 
 #### `core.rewrite`
 

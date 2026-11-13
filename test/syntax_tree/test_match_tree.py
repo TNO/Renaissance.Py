@@ -29,14 +29,18 @@ from renaissance.syntax_tree.match_finder import (
     MatchFinder,
     find_in_list,
     is_match,
-    is_match_tree,
     match_pattern,
     variant_in_match_stmt,
 )
+from test.utils_for_tests import is_match_tree
 
 
 class TestMatchTree:
     """AI: Tests for matching AST patterns containing placeholder variants."""
+
+    # TODO(pjljvandelaar): the tests that call is_match_tree test no src function directly: is_match_tree is a helper of
+    #  the test suite. Analysis is needed to determine their value.
+    #  https://github.com/TNO/Renaissance.Py/issues/187
 
     @pytest.fixture(autouse=True)
     def setup(self) -> None:

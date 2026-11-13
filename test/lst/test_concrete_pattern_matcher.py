@@ -13,7 +13,8 @@ from hamcrest import assert_that, empty, has_length, is_, is_not
 from renaissance.integrations.tree_sitter.adapter import TreeSitterAdapter
 from renaissance.integrations.tree_sitter.extractor import Extractor
 from renaissance.integrations.tree_sitter.factory import TreeSitterPatternFactory
-from renaissance.syntax_tree.match_finder import is_match, is_match_tree, match_pattern
+from renaissance.syntax_tree.match_finder import is_match, match_pattern
+from test.utils_for_tests import is_match_tree
 
 
 class TestConcretePatternMatcher:
