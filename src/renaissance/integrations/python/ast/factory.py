@@ -31,7 +31,12 @@ _MATCH_ONE_RE = re.compile(r"^" + re.escape(MATCH_ONE) + r"\w+$")
 
 # TODO(FrancescoPezzella): a placeholder outside these kinds silently becomes a text match.
 #  https://github.com/TNO/Renaissance.Py/issues/387
-_PLACEHOLDER_PARSER_KINDS = frozenset({"Name", "Expr", "arg", "Param", "TypeVar", "ParamSpec", "TypeVarTuple"})
+_PLACEHOLDER_PARSER_KINDS = frozenset({"Name", "Expr", "arg", "Param", "keyword", "TypeVar", "ParamSpec", "TypeVarTuple"})
+
+
+def _placeholder_name(node: NodeProtocol) -> str:
+    """Return the name a pattern node carries, without the `**` of an unpacked keyword argument such as `**$$kws`."""
+    return node.name.removeprefix("**") if node.parser_kind == "keyword" else node.name
 
 
 class PythonPattern:
@@ -53,7 +58,7 @@ class PythonPattern:
         self.children: list[PythonPattern] = [PythonPattern(child, self) for child in node.children]
         self.signature: str = node.signature
         if hasattr(node, "name") and node.name:
-            self.name: str = use_dollar(node.name)
+            self.name: str = use_dollar(_placeholder_name(node))
         else:
             self.name = ""
 
@@ -66,7 +71,10 @@ class PythonPattern:
         return use_dollar(str(self.node))
 
     def _derive_pattern_kind(self, node) -> None:
-        """Set pattern_kind to MATCH_ONE or MATCH_ALL when node is a `$x` or `$$x` placeholder, including a type parameter."""
+        """Set pattern_kind to MATCH_ONE or MATCH_ALL when node is a `$x` or `$$x` placeholder.
+
+        A type parameter and an unpacked keyword argument, as in `**$$kws`, can be placeholders as well.
+        """
         if isinstance(node, ast.arg):
             signature = node.arg
         elif isinstance(node, ast.Name):
@@ -76,7 +84,7 @@ class PythonPattern:
         elif isinstance(node, ast.AST):
             signature = str(node)
         else:
-            signature = node.name
+            signature = _placeholder_name(node)
 
         if node.parser_kind in _PLACEHOLDER_PARSER_KINDS:
             if _MATCH_ALL_RE.match(signature):
