@@ -10,10 +10,10 @@ import pytest
 from hamcrest import assert_that, has_length
 from more_itertools import last
 
+from renaissance.core.match import MatchFinder
 from renaissance.core.model import ASTFactory, SemanticKind, find_nodes
 from renaissance.integrations.clang import CPatternFactory
 from renaissance.integrations.clang.clang_json_ast_node import ClangJsonASTNode
-from renaissance.syntax_tree.match_finder import MatchFinder
 
 
 class TestClangJsonMatchFinder:

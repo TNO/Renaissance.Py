@@ -213,6 +213,12 @@ aspects = true
 exempt = ["placeholders"]  # No unit tests of its own yet.
 
 [[tool.check_layout.mirrors]]
+code = "src/renaissance/core/match"
+units = "modules"
+mirror = "test/unit/core/match/test_{path}.py"
+aspects = true
+
+[[tool.check_layout.mirrors]]
 code = "src/renaissance/core"
 units = "packages"
 mirror = "docs/developer/modules/core/{path}.md"
@@ -264,7 +270,6 @@ stale = [
     "docs/assets/images/logos/",
     "docs/assets/images/notation/",
     "docs/user/recipes/",  # targets of the repository structure migration
-    "src/renaissance/core/match/",
 ]
 
 # The dependency rules of docs/developer/architecture/repository_structure.md. This is their single source of truth.
@@ -293,10 +298,7 @@ layers = [
     """renaissance.syntax_tree.ast_rewriter : renaissance.common
     : test.common : test.syntax_tree.test_ast_rewriter : test.syntax_tree.test_rewrite_semantics_properties""",
     # core.match
-    """renaissance.syntax_tree.match_finder
-    : test.syntax_tree.test_match_finder : test.syntax_tree.test_match_finder_multi_assignments
-    : test.syntax_tree.test_match_tree : test.syntax_tree.test_match_dict : test.syntax_tree.test_pattern_match
-    : test.utils.util_equivalence_classes : test.utils_for_tests""",
+    "renaissance.core.match : test.unit.core.match : test.utils.util_equivalence_classes : test.utils_for_tests",
     # core.pattern
     "renaissance.core.pattern : test.unit.core.pattern",
     # core.model
@@ -317,19 +319,19 @@ ignore_imports = [
     "test.syntax_tree.test_ast_rewriter -> test.unit.shared.factories",
     "test.syntax_tree.test_rewrite_semantics_properties -> renaissance.integrations.python.ast.factory",
     "test.syntax_tree.test_rewrite_semantics_properties -> renaissance.integrations.python.ast.rst_node",
-    "test.syntax_tree.test_match_finder -> renaissance.integrations.clang",
-    "test.syntax_tree.test_match_finder_multi_assignments -> renaissance.integrations.python.ast.factory",
-    "test.syntax_tree.test_match_finder_multi_assignments -> renaissance.integrations.python.ast.rst_node",
-    "test.syntax_tree.test_match_tree -> renaissance.integrations.clang",
-    "test.syntax_tree.test_match_tree -> renaissance.integrations.python.ast.factory",
-    "test.syntax_tree.test_match_tree -> renaissance.integrations.python.ast.rst_node",
-    "test.syntax_tree.test_pattern_match -> renaissance.integrations.python.ast.factory",
-    "test.syntax_tree.test_pattern_match -> renaissance.integrations.python.ast.rst_node",
+    "test.unit.core.match.test_match_finder___one_and_all_params -> renaissance.integrations.clang",
+    "test.unit.core.match.test_match_finder___multi_assignments -> renaissance.integrations.python.ast.factory",
+    "test.unit.core.match.test_match_finder___multi_assignments -> renaissance.integrations.python.ast.rst_node",
+    "test.unit.core.match.test_match_finder___match_tree -> renaissance.integrations.clang",
+    "test.unit.core.match.test_match_finder___match_tree -> renaissance.integrations.python.ast.factory",
+    "test.unit.core.match.test_match_finder___match_tree -> renaissance.integrations.python.ast.rst_node",
+    "test.unit.core.match.test_match_finder___pattern_match -> renaissance.integrations.python.ast.factory",
+    "test.unit.core.match.test_match_finder___pattern_match -> renaissance.integrations.python.ast.rst_node",
     "test.unit.core.model.test_ast_finder___parsed_c -> test.unit.shared.factories",
     "test.unit.core.model.test_ast_finder___predicate -> renaissance.integrations.python.ast.rst_node",
     "test.unit.core.model.test_ast_finder___semantic_kind -> renaissance.integrations.python.ast.rst_node",
     # A test of the node protocol that checks its use by the matcher.
-    "test.unit.core.model.test_node_protocol -> renaissance.syntax_tree.match_finder",
+    "test.unit.core.model.test_node_protocol -> renaissance.core.match",
     # A test of the batch processor that runs a real recipe step instead of a test double.
     "test.syntax_tree.test_batch_ast_processor -> renaissance.recipes",
 ]
@@ -499,6 +501,19 @@ name = "Only core.pattern and its unit tests import the modules of core.pattern"
 type = "protected"
 protected_modules = ["renaissance.core.pattern.pattern_kind", "renaissance.core.pattern.placeholders"]
 allowed_importers = ["renaissance.core.pattern", "test.unit.core.pattern"]
+
+[[tool.importlinter.contracts]]
+id = "core-match-api"
+name = "Only core.match and its unit tests import the modules of core.match"
+type = "protected"
+protected_modules = ["renaissance.core.match.match_finder"]
+allowed_importers = ["renaissance.core.match", "test.unit.core.match"]
+ignore_imports = [
+    # Matcher tests under the bindings that inspect the variants of the matcher; step 3.2 sorts them.
+    "test.c_cpp.test_c_match_finder -> renaissance.core.match.match_finder",
+    "test.lst.test_clang_concrete_pattern_matcher -> renaissance.core.match.match_finder",
+    "test.python.ast.test_python_matcher -> renaissance.core.match.match_finder",
+]
 
 # format_node is for the core and the parser bindings only.
 [[tool.importlinter.contracts]]

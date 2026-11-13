@@ -10,10 +10,10 @@ from collections.abc import Callable, Iterator, Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
-import renaissance.syntax_tree.match_finder
+import renaissance.core.match
+from renaissance.core.match import PatternMatch
 from renaissance.core.model import ASTFactory, ASTFinder, ASTNode, NodeProtocol, SemanticKind, find_semantic_kind
 from renaissance.syntax_tree.ast_rewriter import ASTRewriter, Rewritable
-from renaissance.syntax_tree.match_finder import PatternMatch
 
 
 class ASTProcessor:
@@ -111,7 +111,7 @@ class ASTProcessor:
 
     def find_match(self, *patterns_list: Any, recursive: bool = True) -> Sequence[PatternMatch]:
         """AI: Return matches of patterns_list against the root's children."""
-        return renaissance.syntax_tree.match_finder.find_all(
+        return renaissance.core.match.find_all(
             self.__root_node.children,
             *patterns_list,
             recursive=recursive,

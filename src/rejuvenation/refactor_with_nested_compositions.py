@@ -10,10 +10,10 @@
 # It specifically showcases nested replacements and multiple patterns.
 import textwrap
 
+from renaissance.core.match import find_all
 from renaissance.core.model import ASTFactory, ASTShower, SemanticKind, find_semantic_kind
 from renaissance.integrations.clang import ClangASTNode, CPatternFactory
 from renaissance.syntax_tree.ast_rewriter import ASTRewriter
-from renaissance.syntax_tree.match_finder import find_all
 
 example_code = """
 void f1(int a, int b, int c);

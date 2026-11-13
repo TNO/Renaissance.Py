@@ -13,9 +13,9 @@ import pytest
 from hamcrest import assert_that, empty, has_length, is_
 from pytest_mock import MockerFixture
 
+from renaissance.core.match import PatternMatch, match_pattern
 from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
-from renaissance.syntax_tree.match_finder import PatternMatch, match_pattern
 
 
 class TestPatternMatch:
@@ -99,7 +99,7 @@ class TestPatternMatch:
         reference.node = node
         pattern_match = PatternMatch([node, node, node], {}, [])
         mock_matcher = mocker.patch(
-            "renaissance.syntax_tree.match_finder.MatchFinder.match_pattern",
+            "renaissance.core.match.MatchFinder.match_pattern",
             return_value=[pattern_match],
         )
         pattern_match.match_referenced_by([[node]], False)

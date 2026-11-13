@@ -6,8 +6,8 @@
 
 """Tests that arbitrary structural nodes satisfy the NodeProtocol."""
 
+from renaissance.core.match import is_match
 from renaissance.core.model import NodeProtocol, SemanticKind
-from renaissance.syntax_tree.match_finder import is_match
 
 
 class FakeNode:

@@ -13,12 +13,12 @@ import pytest
 from hamcrest import assert_that, has_length, is_
 from pytest_mock import MockerFixture
 
+from renaissance.core.match import PatternMatch, find_all, match_pattern
 from renaissance.core.model import ASTFactory
 from renaissance.integrations.clang import ClangASTNode, CPatternFactory
 from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
 from renaissance.syntax_tree.ast_rewriter import ASTRewriter, Rewritable, _RewriteAction, _RewriteActions
-from renaissance.syntax_tree.match_finder import PatternMatch, find_all, match_pattern
 from test.unit.shared.factories import Factories
 from test.utils_for_tests import compress, debug_print
 

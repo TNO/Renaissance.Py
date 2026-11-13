@@ -284,9 +284,9 @@ A pattern type of its own (improvement plan, phase 3) does not exist yet and is 
 
 | Symbol                                                         | For     | Now in                        |
 | -------------------------------------------------------------- | ------- | ----------------------------- |
-| `PatternMatch`, `MatchFinder`                                  | all     | `syntax_tree/match_finder.py` |
-| `match_pattern`, `find_all`, `is_match`                        | all     | `syntax_tree/match_finder.py` |
-| `find_in_list`                                                 | all     | `syntax_tree/match_finder.py` |
+| `PatternMatch`, `MatchFinder`                                  | all     | `core/match/match_finder.py`  |
+| `match_pattern`, `find_all`, `is_match`                        | all     | `core/match/match_finder.py`  |
+| `find_in_list`                                                 | all     | `core/match/match_finder.py`  |
 
 Internal: `pattern_kind`, which only the matcher uses, `Variant`, `find_variants`, `variant_in_match_stmt`, `is_match_dict`,
 `node_kinds_match`, `IRRELEVANT_PROPS`, `MIS_MATCH`, `INCOMPLETE_MATCH`.
@@ -492,9 +492,9 @@ When the migration splits these packages, these imports become visible, and are 
 | ----------------------------- | ------------------------------------------------------- | ------------------------------------------- |
 | `syntax_tree/ast_rewriter.py` | `get_comment_location`, `__get_comment_after_location`  | comment delimiters `//`, `/* */`, `#`       |
 | `syntax_tree/ast_rewriter.py` | `__get_depth`                                           | clang kinds `CompoundStmt`, `COMPOUND_STMT` |
-| `syntax_tree/match_finder.py` | `_TOP_LEVEL_KINDS`                                      | root kinds `Module`, `TRANSLATION_UNIT`     |
-| `syntax_tree/match_finder.py` | `pattern_kind`                                          | parser kinds `MatchOne`, `MatchAll`         |
-| `syntax_tree/match_finder.py` | `IRRELEVANT_PROPS`                                      | clang and tree-sitter property names        |
+| `core/match/match_finder.py`  | `_TOP_LEVEL_KINDS`                                      | root kinds `Module`, `TRANSLATION_UNIT`     |
+| `core/match/match_finder.py`  | `pattern_kind`                                          | parser kinds `MatchOne`, `MatchAll`         |
+| `core/match/match_finder.py`  | `IRRELEVANT_PROPS`                                      | clang and tree-sitter property names        |
 
 ## Related features
 

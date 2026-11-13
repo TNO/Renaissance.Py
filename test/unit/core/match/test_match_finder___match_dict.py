@@ -8,7 +8,7 @@
 
 from hamcrest import assert_that, is_
 
-from renaissance.syntax_tree.match_finder import is_match_dict
+from renaissance.core.match.match_finder import is_match_dict
 
 
 class TestIsMatchDict:

@@ -21,17 +21,12 @@ from hamcrest import (
     raises,
 )
 
+from renaissance.core.match import MatchFinder, find_in_list, is_match, match_pattern
+from renaissance.core.match.match_finder import variant_in_match_stmt
 from renaissance.core.model import ASTFactory, ASTShower
 from renaissance.integrations.clang import ClangASTNode, CPatternFactory
 from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
-from renaissance.syntax_tree.match_finder import (
-    MatchFinder,
-    find_in_list,
-    is_match,
-    match_pattern,
-    variant_in_match_stmt,
-)
 from test.utils_for_tests import is_match_tree
 
 

@@ -10,9 +10,9 @@ from __future__ import annotations
 
 from hamcrest import assert_that, has_length, is_
 
+from renaissance.core.match import MatchFinder, find_in_list
 from renaissance.core.model import ASTFactory
 from renaissance.integrations.clang import ClangASTNode, CPatternFactory
-from renaissance.syntax_tree.match_finder import MatchFinder, find_in_list
 
 code = """
 int one(int a);

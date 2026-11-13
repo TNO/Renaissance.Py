@@ -12,16 +12,11 @@ import textwrap
 import pytest
 from hamcrest import assert_that, empty, greater_than, has_length, is_, is_not
 
+from renaissance.core.match import MatchFinder, is_match, match_pattern
+from renaissance.core.match.match_finder import find_variants, variant_in_match_stmt
 from renaissance.core.pattern import PatternKind
 from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
-from renaissance.syntax_tree.match_finder import (
-    MatchFinder,
-    find_variants,
-    is_match,
-    match_pattern,
-    variant_in_match_stmt,
-)
 
 
 class TestPythonMatcher:

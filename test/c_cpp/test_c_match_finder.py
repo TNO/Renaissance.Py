@@ -10,10 +10,11 @@ import pytest
 from hamcrest import assert_that, greater_than_or_equal_to, has_length, is_
 from more_itertools.more import last
 
+from renaissance.core.match import PatternMatch, find_in_list, is_match, match_pattern
+from renaissance.core.match.match_finder import find_variants
 from renaissance.core.model import ASTFactory, ASTNode, ASTShower, SemanticKind, find_nodes
 from renaissance.integrations.clang import ClangASTNode, CPatternFactory
 from renaissance.integrations.clang.clang_json_ast_node import ClangJsonASTNode
-from renaissance.syntax_tree.match_finder import PatternMatch, find_in_list, find_variants, is_match, match_pattern
 from test.unit.shared.factories import Factories
 from test.utils_for_tests import compress, debug_mismatch, show_node
 

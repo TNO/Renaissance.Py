@@ -15,6 +15,7 @@ from typing import Self
 import tree_sitter_python
 from libcst import SimpleStatementLine
 
+from renaissance.core.match import is_match
 from renaissance.core.model import NodeProtocol, SemanticKind
 from renaissance.core.pattern import MATCH_ALL, MATCH_ONE, PatternKind, replace_dollar, use_dollar
 from renaissance.integrations.python.ast.ast_node import ASTExtension
@@ -22,7 +23,6 @@ from renaissance.integrations.python.ast.cst_node import PythonCstNode
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
 from renaissance.integrations.tree_sitter.adapter import TreeSitterAdapter
 from renaissance.integrations.tree_sitter.lst import LSTNode
-from renaissance.syntax_tree.match_finder import is_match
 
 _MATCH_ALL_RE = re.compile(r"^" + re.escape(MATCH_ALL) + r"\w+$")
 _MATCH_ONE_RE = re.compile(r"^" + re.escape(MATCH_ONE) + r"\w+$")

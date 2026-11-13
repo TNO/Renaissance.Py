@@ -11,19 +11,19 @@ https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 ## 1. Pattern matching
 
 - **Feature:** [Pattern matching](../../user/features/pattern_matching.md)
-- **Concepts:** [Pattern](../../user/core/pattern.md)
-- **Code modules:** [Core pattern](../modules/core/pattern.md)
+- **Concepts:** [Pattern](../../user/core/pattern.md), [Match](../../user/core/match.md)
+- **Code modules:** [Core pattern](../modules/core/pattern.md), [Core match](../modules/core/match.md)
 - **Test file(s):**
-    - `test/syntax_tree/test_match_finder.py`
-    - `test/syntax_tree/test_match_finder_multi_assignments.py`
-    - `test/syntax_tree/test_match_tree.py`
-    - `test/syntax_tree/test_match_dict.py`
-    - `test/syntax_tree/test_pattern_match.py`
+    - `test/unit/core/match/test_match_finder___one_and_all_params.py`
+    - `test/unit/core/match/test_match_finder___multi_assignments.py`
+    - `test/unit/core/match/test_match_finder___match_tree.py`
+    - `test/unit/core/match/test_match_finder___match_dict.py`
+    - `test/unit/core/match/test_match_finder___pattern_match.py`
     - `test/unit/core/pattern/test_pattern_kind.py`
     - `test/python/ast/test_python_matcher.py`
     - `test/python/ast/test_python_pattern_type_parameters.py`
     - `test/c_cpp/test_c_match_finder.py`
-- **Code file(s):** `src/renaissance/syntax_tree/match_finder.py`, `src/renaissance/core/pattern/pattern_kind.py`,
+- **Code file(s):** `src/renaissance/core/match/match_finder.py`, `src/renaissance/core/pattern/pattern_kind.py`,
   `src/renaissance/core/pattern/placeholders.py`, `src/renaissance/integrations/python/ast/factory.py`
 
 ## 2. Rewrite semantics

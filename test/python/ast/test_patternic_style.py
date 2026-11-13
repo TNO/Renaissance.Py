@@ -9,10 +9,10 @@
 import pytest
 from hamcrest import assert_that, empty, has_length, has_property, is_, is_in, is_not
 
+from renaissance.core.match import is_match
 from renaissance.core.pattern import PatternKind
 from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
-from renaissance.syntax_tree.match_finder import is_match
 
 
 class TestPythonicStyle:

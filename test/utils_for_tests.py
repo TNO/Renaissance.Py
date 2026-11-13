@@ -11,8 +11,8 @@ from collections.abc import Sequence
 
 import hypothesis
 
+from renaissance.core.match import PatternMatch, find_in_list
 from renaissance.core.model import ASTNode, ASTShower
-from renaissance.syntax_tree.match_finder import PatternMatch, find_in_list
 
 VERBOSE = False
 AST_SHOWER = False

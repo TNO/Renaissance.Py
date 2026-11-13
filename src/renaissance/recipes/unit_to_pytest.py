@@ -10,10 +10,10 @@ import textwrap
 from collections.abc import Sequence
 from pathlib import Path
 
+from renaissance.core.match import PatternMatch, match_pattern
 from renaissance.core.model import NodeProtocol, SemanticKind, find_semantic_kind
 from renaissance.integrations.python.ast.util import convert_function
 from renaissance.recipes.python_refactoring import PythonRefactoring
-from renaissance.syntax_tree.match_finder import PatternMatch, match_pattern
 
 
 # TODO(FrancescoPezzella): run() leaves broken or non-terminating output for common unittest files.

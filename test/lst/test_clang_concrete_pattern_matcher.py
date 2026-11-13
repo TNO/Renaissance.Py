@@ -9,10 +9,11 @@
 import pytest
 from hamcrest import assert_that, empty, has_length, is_, is_not
 
+from renaissance.core.match import MatchFinder, is_match, match_pattern
+from renaissance.core.match.match_finder import find_variants
 from renaissance.integrations.clang.clang_adapter import ClangAdapter
 from renaissance.integrations.tree_sitter.extractor import Extractor
 from renaissance.integrations.tree_sitter.factory import TreeSitterPatternFactory
-from renaissance.syntax_tree.match_finder import MatchFinder, find_variants, is_match, match_pattern
 from test.utils_for_tests import is_match_tree
 
 
