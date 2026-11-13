@@ -16,11 +16,6 @@ from hamcrest import assert_that, equal_to
 from renaissance.recipes.private_type_parameter_check import PrivateTypeParameterCheck
 from renaissance.recipes.type_parameter_rules import UnsafeReason
 
-_PATTERN_GAP = pytest.mark.xfail(
-    strict=True,
-    reason="The declaration patterns cannot express default values, keyword-only or positional-only parameters.",
-)
-
 
 @pytest.fixture
 def create_check(tmp_path: Path) -> Callable[[str], PrivateTypeParameterCheck]:
@@ -162,7 +157,6 @@ class TestPrivateTypeParameterCheck:
                 """\
                 def f[T](x: T | None = None) -> T: ...
                 """,
-                marks=_PATTERN_GAP,
                 id="default_value",
             ),
             pytest.param(
@@ -172,7 +166,6 @@ class TestPrivateTypeParameterCheck:
                 """\
                 def f[T](x, *, y: T) -> T: ...
                 """,
-                marks=_PATTERN_GAP,
                 id="keyword_only_parameter",
             ),
             pytest.param(
@@ -182,8 +175,18 @@ class TestPrivateTypeParameterCheck:
                 """\
                 def f[T](x: T, /) -> T: ...
                 """,
-                marks=_PATTERN_GAP,
                 id="positional_only_parameter",
+            ),
+            pytest.param(
+                """\
+                class Box[_T]:
+                    async def put[_U](self, key: _U, value: _T = None, /, flag: bool = False, *rest: _U, tag: _U, **extra: _T) -> _U: ...
+                """,
+                """\
+                class Box[T]:
+                    async def put[U](self, key: U, value: T = None, /, flag: bool = False, *rest: U, tag: U, **extra: T) -> U: ...
+                """,
+                id="every_kind_of_parameter_in_an_async_method",
             ),
             pytest.param(
                 """\
@@ -195,6 +198,28 @@ class TestPrivateTypeParameterCheck:
                     a: T
                 """,
                 id="class_with_base_and_keyword",
+            ),
+            pytest.param(
+                """\
+                class Box[_T](Base, metaclass=Meta, flag=True):
+                    a: _T
+                """,
+                """\
+                class Box[T](Base, metaclass=Meta, flag=True):
+                    a: T
+                """,
+                id="class_with_several_keywords",
+            ),
+            pytest.param(
+                """\
+                class Box[_T](Base, **options):
+                    a: _T
+                """,
+                """\
+                class Box[T](Base, **options):
+                    a: T
+                """,
+                id="class_with_unpacked_keywords",
             ),
             pytest.param(
                 """\

@@ -170,8 +170,6 @@ example under *Non-goals* or *Need to fix* in [Refactoring recipes](../../develo
   which shadows the first.
 - `Unpack[Ts]` is left as it is. Run `ruff`'s `UP044` to rewrite it to `*Ts` (see
   [Rejected recipes](../../developer/modules/rejected-recipes.md)).
-- A type parameter of a function with default values, keyword-only or positional-only parameters, or of a class with
-  two or more keyword arguments in its bases, keeps its leading underscore, and the report does not list it.
 - There is no filtering of files, so a large project can take tens of minutes.
 - A file that is not valid UTF-8 stops the whole run with a `UnicodeDecodeError`, before any file is changed. Re-save
   it as UTF-8 or move it out of the target.

@@ -441,12 +441,6 @@ Errors that should be fixed, not accepted.
   in this file and from `typing_extensions` in the origin, adds a second import of the name that shadows the first
   ([issue 279](https://github.com/TNO/Renaissance.Py/issues/279)).
 
-- `PrivateTypeParameterCheck` does not find a function with default values, keyword-only or positional-only
-  parameters, or a class with two or more keyword arguments in its bases, because the patterns cannot express them. It
-  leaves their type parameters unchanged and does not report them
-  ([issue 279](https://github.com/TNO/Renaissance.Py/issues/279)). In `def f[_T](x: _T | None = None) -> _T: ...`,
-  `_T` stays.
-
 - A file that starts with a UTF-8 byte order mark is rewritten with invalid syntax and reported under `ERRORS`: a
   converted `def identity(x: T) -> T:` becomes `def ideidentity[T] T) -> T:`. The file should keep its encoding and
   its byte order mark ([issue 153](https://github.com/TNO/Renaissance.Py/issues/153)).
