@@ -120,7 +120,7 @@ A helper that needs the core, or that the core uses too, stays in the core: `for
 
 #### Bindings do not use rewriting or processing
 
-No binding uses `core.rewriting` or `core.processing` today.
+No binding uses `core.rewrite` or `core.processing` today.
 Information that the rewriter needs from a binding, such as the location of comments, flows through `core.model`.
 
 ### Core
@@ -130,14 +130,17 @@ The core has six sub-packages. Each may import only the sub-packages below it in
 | Sub-package          | Responsibility                                                                                  |
 | -------------------- | ----------------------------------------------------------------------------------------------- |
 | `core.processing`    | Running recipes: processors, batch processing, recipe steps and repetition until no change      |
-| `core.rewriting`     | Collecting changes and applying them to the text, both node based and character based           |
-| `core.matching`      | Finding the occurrences of a pattern in a tree, with their placeholder bindings                 |
+| `core.rewrite`       | Collecting changes and applying them to the text, both node based and character based           |
+| `core.match`         | Finding the occurrences of a pattern in a tree, with their placeholder bindings                 |
 | `core.pattern`       | The pattern language: placeholder markers, placeholder kinds and the `$` notation               |
 | `core.model`         | The AST model: node protocol, semantic kinds, text segments, finding by predicate               |
 | `core.navigate`      | The navigation protocols, and the ancestors and siblings of a node                              |
 
-`core.rewriting` imports `core.matching` for one reason: the rewriter accepts a `PatternMatch` as a target and uses its
+`core.rewrite` imports `core.match` for one reason: the rewriter accepts a `PatternMatch` as a target and uses its
 bindings to fill in a replacement. It does not use the matching algorithm.
+
+`core.match`, `core.rewrite` and `core.navigate` are named after verbs, as their protocols are; see the decisions in
+[Navigation](navigation.md#decisions).
 
 `renaissance.core` itself exports nothing; code imports from the sub-packages.
 This avoids eager re-exports, which caused a circular import in the former `renaissance.syntax_tree` package.
@@ -157,7 +160,7 @@ Either of the following is acceptable, and a binding may choose:
 
 1. the binding recognises comments and exposes them through the model, for example as text segments attached to nodes;
 1. the binding provides a description of its comment syntax (line-comment prefixes, block-comment delimiters) and the generic
-   algorithm in `core.rewriting` takes it as a parameter.
+   algorithm in `core.rewrite` takes it as a parameter.
 
 This is related to [issue 261](https://github.com/TNO/Renaissance.Py/issues/261), which observes that trivia is modelled in two
 different ways.
@@ -220,7 +223,7 @@ Decisions:
 
 - Each package lists its public API in `__all__` of its `__init__.py`. Its `__init__.py` imports these symbols and defines
   nothing else.
-- Code outside the package imports from the package, not from its modules: `from renaissance.core.matching import match_pattern`.
+- Code outside the package imports from the package, not from its modules: `from renaissance.core.match import match_pattern`.
 - `format_node` exists only for the core and the parser bindings, which implement `__repr__` with it. It is marked *binding*
   below, and lives in the module `renaissance.core.model.format`, which `core.model` does not export. Recipes do not import it.
 - Everything else is internal. Unit tests of the package itself may use internal symbols.
@@ -277,7 +280,7 @@ The placeholder markers and the `$` notation are part of the pattern language, n
 
 A pattern type of its own (improvement plan, phase 3) does not exist yet and is not part of this draft.
 
-#### `core.matching`
+#### `core.match`
 
 | Symbol                                                         | For     | Now in                        |
 | -------------------------------------------------------------- | ------- | ----------------------------- |
@@ -288,7 +291,7 @@ A pattern type of its own (improvement plan, phase 3) does not exist yet and is 
 Internal: `pattern_kind`, which only the matcher uses, `Variant`, `find_variants`, `is_match_tree`, `variant_in_match_stmt`,
 `is_match_dict`, `node_kinds_match`, `IRRELEVANT_PROPS`, `MIS_MATCH`, `INCOMPLETE_MATCH`.
 
-#### `core.rewriting`
+#### `core.rewrite`
 
 | Symbol                      | For | Now in                        |
 | --------------------------- | --- | ----------------------------- |
@@ -381,7 +384,7 @@ Decisions:
 - `test/` has one directory per kind of test: `unit/` for the code under `src/`, `features/` for the end-to-end tests,
   and `tools/` for the guard rails. `test_data/` holds input files shared by the tests.
 - A unit test lives in the directory of the unit it tests, not of the parser it happens to use.
-  A test of the matcher that parses C++ is a test of `core.matching`.
+  A test of the matcher that parses C++ is a test of `core.match`.
 - The tests of a module `x` are in `test_x.py` when they fit in one file, and in `test_x___<aspect>.py`, one file per aspect,
   when they do not. Several files help to organize the tests and keep them maintainable. The triple underscore separates the
   module from the aspect. An aspect is lower case words separated by `_`.

@@ -39,7 +39,7 @@ extra = ["docs/developer/tools/index.md"]   # paths that look like a counterpart
 ```
 
 A unit is named by its path relative to `code`, without `.py`, with `/` between directories: `check_layout` for
-`tools/check_layout.py`, `core/matching` for the package `src/renaissance/core/matching/`. The template of `mirror` contains
+`tools/check_layout.py`, `core/match` for the package `src/renaissance/core/match/`. The template of `mirror` contains
 the placeholder `{path}` exactly once; it is replaced by the name of the unit. With `aspects = true`, a path that has `___` and an
 aspect after the name of the unit, such as `test/tools/test_check_example___parsing.py`, is a counterpart of that unit too. A unit
 has its counterpart when at least one of these paths exists. It is a violation when both the whole counterpart and a split one

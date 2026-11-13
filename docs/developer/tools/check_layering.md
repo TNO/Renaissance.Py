@@ -19,7 +19,7 @@ The rules are the contracts in `[tool.importlinter]` of `pyproject.toml`. That s
 | Contract                               | Rule                                                                                      |
 | -------------------------------------- | ----------------------------------------------------------------------------------------- |
 | `layers`                               | recipes above parser bindings above the core; within the core, the order of its parts     |
-| `bindings-use-model-pattern-matching`  | a parser binding does not import `core.rewriting` or `core.processing`                    |
+| `bindings-use-model-pattern-matching`  | a parser binding does not import `core.rewrite` or `core.processing`                      |
 | `recipes-without-bindings`             | a recipe imports a parser binding only if it is parser specific and declares that binding |
 | `clang-independent` and the like       | a parser binding imports no other parser binding, one contract per binding                |
 | `tools-independent`                    | tools and their tests import nothing from `renaissance`, `rejuvenation` or other tests    |
@@ -30,8 +30,8 @@ migration is an edit to these lists. Once a target package exists, its line in a
 
 ## Tests follow the same rules
 
-A test module is listed next to the unit it tests and follows the rules of that unit. A unit test of `core.matching`, for
-example, may import `core.matching` and what lies below it, but no parser binding. Test helpers are listed like any other module.
+A test module is listed next to the unit it tests and follows the rules of that unit. A unit test of `core.match`, for
+example, may import `core.match` and what lies below it, but no parser binding. Test helpers are listed like any other module.
 
 One kind of test code is not checked: the feature tests in `features/`. They are end to end and may import from every layer.
 Import Linter cannot analyse that package either, because `features/targets/` holds deliberately malformed Python.

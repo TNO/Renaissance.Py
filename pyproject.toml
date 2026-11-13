@@ -264,7 +264,7 @@ stale = [
     "docs/assets/images/logos/",
     "docs/assets/images/notation/",
     "docs/user/recipes/",  # targets of the repository structure migration
-    "src/renaissance/core/matching/",
+    "src/renaissance/core/match/",
 ]
 
 # The dependency rules of docs/developer/architecture/repository_structure.md. This is their single source of truth.
@@ -289,10 +289,10 @@ layers = [
     : renaissance.syntax_tree.recipe_ast_processor
     : test.syntax_tree.test_ast_processor : test.syntax_tree.test_ast_processor_semantic_kind
     : test.syntax_tree.test_batch_ast_processor : test.syntax_tree.test_recipe_ast_processor""",
-    # core.rewriting
+    # core.rewrite
     """renaissance.syntax_tree.ast_rewriter : renaissance.common
     : test.common : test.syntax_tree.test_ast_rewriter : test.syntax_tree.test_rewrite_semantics_properties""",
-    # core.matching
+    # core.match
     """renaissance.syntax_tree.match_finder
     : test.syntax_tree.test_match_finder : test.syntax_tree.test_match_finder_multi_assignments
     : test.syntax_tree.test_match_tree : test.syntax_tree.test_match_dict : test.syntax_tree.test_pattern_match
@@ -336,7 +336,7 @@ ignore_imports = [
 
 [[tool.importlinter.contracts]]
 id = "bindings-use-model-pattern-matching"
-name = "Parser bindings use only core.model, core.pattern and core.matching"
+name = "Parser bindings use only core.model, core.pattern and core.match"
 type = "forbidden"
 source_modules = [
     "renaissance.integrations", "renaissance.project",

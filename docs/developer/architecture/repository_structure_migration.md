@@ -160,7 +160,7 @@ in the same directory as the path before it.
   import with `integrations.clang`.
 - test: the same for the importers in `test/` and `features/`.
 - remaining: remove the two `ignore_imports` entries for the re-exports from the `layers` contract. `test.utils_for_tests`
-  moves to the `core.matching` layer: the re-exports hid its import of `PatternMatch`.
+  moves to the `core.match` layer: the re-exports hid its import of `PatternMatch`.
 - Checks: `git grep -E "from renaissance\.syntax_tree import|from renaissance import syntax_tree"` finds nothing;
   `test_removed_legacy_api` still passes.
 
@@ -339,9 +339,9 @@ The modules of this phase move to `core/pattern/`, their tests to `test/unit/cor
   parser agnostic and now live in the core; remove its `ignore_imports` entry.
 - Checks: `src/renaissance/utils/` no longer exists; `integrations/__init__.py` defines nothing.
 
-#### Phase 3: `core.matching`
+#### Phase 3: `core.match`
 
-The modules of this phase move to `core/matching/`, their tests to `test/unit/core/matching/`.
+The modules of this phase move to `core/match/`, their tests to `test/unit/core/match/`.
 
 **3.1 The matcher.**
 
@@ -353,9 +353,9 @@ The modules of this phase move to `core/matching/`, their tests to `test/unit/co
   This decides the users of `test/utils/util_equivalence_classes.py`, which moves to their `shared/` directory.
 - Checks: `git grep "syntax_tree.match_finder"` finds nothing.
 
-#### Phase 4: `core.rewriting`
+#### Phase 4: `core.rewrite`
 
-The modules of this phase move to `core/rewriting/`, their tests to `test/unit/core/rewriting/`.
+The modules of this phase move to `core/rewrite/`, their tests to `test/unit/core/rewrite/`.
 
 **4.1 The character-based rewriter.**
 
