@@ -16,7 +16,6 @@ from hamcrest import (
     is_not,
 )
 
-from c_cpp.factories import Factories
 from rejuvenation.refactor_examples_different_styles import (
     example_add_comment_and_commit,
     example_replace_old_by_fancy_new,
@@ -31,10 +30,10 @@ from rejuvenation.remove_unused_variable import (
     remove_unused_variable_using_refactor_method,
 )
 from rejuvenation.replace_if_with_ternary import replace_if_with_ternary
+from renaissance.core.model import ASTFactory, ASTNode
 from renaissance.integrations.clang import ClangASTNode, CPatternFactory
 from renaissance.integrations.clang.clang_json_ast_node import ClangJsonASTNode
-from renaissance.syntax_tree import ASTFactory
-from renaissance.syntax_tree.ast_node import ASTNode
+from test.unit.shared.factories import Factories
 
 
 class TestRefactorWithNestedCompositions:

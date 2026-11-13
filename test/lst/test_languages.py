@@ -12,9 +12,9 @@ import tree_sitter_java as tsjava
 import tree_sitter_python as tspython
 from hamcrest import assert_that, greater_than, has_length, is_
 
+from renaissance.core.model import traverse
 from renaissance.integrations.tree_sitter.adapter import TreeSitterAdapter
 from renaissance.integrations.tree_sitter.lst import LST
-from renaissance.utils.ast_utils import traverse
 
 
 class TestLanguages:

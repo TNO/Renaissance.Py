@@ -12,11 +12,12 @@ import pytest
 from hamcrest import assert_that, equal_to, has_length, is_
 from pytest_mock import MockerFixture
 
+import renaissance.syntax_tree.batch_ast_processor as bap
+from renaissance.core.model import ASTFactory, SemanticKind
 from renaissance.integrations.clang import ClangASTNode
 from renaissance.recipes import CleanupRefactoring
-from renaissance.syntax_tree import ASTFactory, ASTProcessor, BatchASTProcessor
-from renaissance.syntax_tree import batch_ast_processor as bap
-from renaissance.syntax_tree.semantic_kind import SemanticKind
+from renaissance.syntax_tree.ast_processor import ASTProcessor
+from renaissance.syntax_tree.batch_ast_processor import BatchASTProcessor
 
 
 class TestBatchASTProcessor:

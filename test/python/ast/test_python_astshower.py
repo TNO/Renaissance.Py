@@ -9,9 +9,9 @@
 import pytest
 from hamcrest import assert_that, contains_string, not_, starts_with
 
+from renaissance.core.model import ASTShower
 from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
-from renaissance.syntax_tree import ASTShower
 
 
 class TestPythonShower:

@@ -15,12 +15,12 @@ ALLOWED_DIRS = {
     DOCS / "assets" / "images" / "architecture",
     DOCS / "assets" / "images" / "notation",
     DOCS / "assets" / "images" / "logos",
-    DOCS / "user" / "concepts" / "matching-images",
-    DOCS / "user" / "concepts" / "rewrite-semantics-images",
-    DOCS / "user" / "features" / "pattern-matching-images",
+    DOCS / "user" / "concepts" / "matching_images",
+    DOCS / "user" / "concepts" / "rewrite_semantics_images",
+    DOCS / "user" / "features" / "pattern_matching_images",
     DOCS / "developer" / "architecture" / "images",
 }
-NAME_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*\.(svg|png|jpg|jpeg|gif)$")
+NAME_RE = re.compile(r"^[a-z0-9]+(?:_[a-z0-9]+)*\.(svg|png|jpg|jpeg|gif)$")
 
 errors = []
 for path in DOCS.rglob("*"):

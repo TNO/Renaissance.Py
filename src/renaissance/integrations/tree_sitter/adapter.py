@@ -8,8 +8,8 @@
 
 from tree_sitter import Language, Parser
 
+from renaissance.core.pattern import detect_placeholder, replace_dollar
 from renaissance.integrations.tree_sitter.lst import LST, LSTNode
-from renaissance.utils.ast_utils import detect_placeholder, replace_dollar
 
 
 class TreeSitterAdapter:

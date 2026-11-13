@@ -9,8 +9,10 @@
 from hamcrest import assert_that, is_
 from pytest_mock import MockerFixture
 
+from renaissance.core.match import PatternMatch
+from renaissance.core.model import ASTFactory
 from renaissance.integrations.clang import ClangASTNode
-from renaissance.syntax_tree import ASTFactory, ASTProcessor, PatternMatch
+from renaissance.syntax_tree.ast_processor import ASTProcessor
 
 
 class TestAstProcessor:
@@ -21,7 +23,7 @@ class TestAstProcessor:
         node = mocker.Mock()
         pattern_match = PatternMatch([node, node, node], {}, [])
         mock_matcher = mocker.patch(
-            "renaissance.syntax_tree.match_finder.find_all",
+            "renaissance.core.match.find_all",
             return_value=[pattern_match],
         )
         atu = ClangASTNode.load_from_text("int main(){return 0;}", "test.c", [], None)

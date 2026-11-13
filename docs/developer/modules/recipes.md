@@ -16,7 +16,7 @@ https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
 Recipes are `PythonRefactoring` subclasses that rewrite one Python file at a time, for gaps `ruff` does not fully or
 safely cover. This page covers `TypeParameterCheck`, the recipe behind
-[Type parameter modernization](../../user/features/type-parameter-modernization.md).
+[Type parameter modernization](../../user/features/type_parameter_modernization.md).
 
 ## Location
 
@@ -32,11 +32,11 @@ safely cover. This page covers `TypeParameterCheck`, the recipe behind
 - `src/renaissance/utils/import_resolution.py`: the import statements of a module and what they bind, the resolution of
   `from X import Y` to a file in the project, the re-anchoring of one file's relative import on another file, and the
   names each project file imports from the others.
-- `src/renaissance/utils/cst_utils.py`: a module's top-level statements, the names they read or bind and the comment
-  trailing a statement's line.
+- `src/renaissance/integrations/python/ast/cst_utils.py`: a module's top-level statements, the names they read or bind and
+  the comment trailing a statement's line. They are part of the libcst parser binding.
   
 <!-- TODO: FrancescoPezzella - list ruff_utils.py here once a recipe uses run_ruff_import_cleanup (#111):
-- `src/renaissance/utils/ruff_utils.py`: `run_ruff_import_cleanup`, which removes unused imports and sorts the imports
+- `src/renaissance/recipes/ruff_utils.py`: `run_ruff_import_cleanup`, which removes unused imports and sorts the imports
   of the files a recipe changed, with ruff. -->
   
 ## Public entry points
@@ -132,16 +132,16 @@ safely cover. This page covers `TypeParameterCheck`, the recipe behind
 
 ## Related features
 
-- [Type parameter modernization](../../user/features/type-parameter-modernization.md)
+- [Type parameter modernization](../../user/features/type_parameter_modernization.md)
 
 ## Related concepts
 
-- [Rewrite semantics](../../user/concepts/rewrite-semantics.md)
-- [Python version gates](../../user/features/type-parameter-modernization.md#feature-type-parameter-modernization-version-gates)
+- [Rewrite semantics](../../user/concepts/rewrite_semantics.md)
+- [Python version gates](../../user/features/type_parameter_modernization.md#feature-type-parameter-modernization-version-gates)
 
 ## Validated by test modules
 
-See *Verified by test modules* in [Type parameter modernization](../../user/features/type-parameter-modernization.md).
+See *Verified by test modules* in [Type parameter modernization](../../user/features/type_parameter_modernization.md).
 
 ## Extension points
 
@@ -275,7 +275,7 @@ See *Verified by test modules* in [Type parameter modernization](../../user/feat
 
     `T = TypeVar("T")` is removed, and `Pairs` refers to an undefined `T`.
 
-- `Unpack[Ts]` → `*Ts` is left to `ruff`'s `UP044`, see [Rejected recipes](rejected-recipes.md). In:
+- `Unpack[Ts]` → `*Ts` is left to `ruff`'s `UP044`, see [Rejected recipes](rejected_recipes.md). In:
 
     ```python
     Ts = TypeVarTuple("Ts")
@@ -373,14 +373,14 @@ See *Verified by test modules* in [Type parameter modernization](../../user/feat
     `first` is left unchanged and the file is reported clean.
 
 - Absolute imports are resolved from the given path, so in a `src/` layout run on the repository root,
-  `from pkg.typing import T` does not find `src/pkg/typing.py`. This is rare. In:
+  `from example.typing import T` does not find `src/example/typing.py`. This is rare. In:
 
     ```python
-    # src/pkg/typing.py
+    # src/example/typing.py
     T = TypeVar("T")
 
-    # src/pkg/other.py
-    from pkg.typing import T
+    # src/example/other.py
+    from example.typing import T
 
     def first(items: list[T]) -> T: ...
     ```

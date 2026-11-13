@@ -12,17 +12,13 @@ from collections.abc import Sequence
 from more_itertools import first
 from more_itertools.more import last
 
+from renaissance.core.model import ASTFactory, ASTNode, ASTShower, SemanticKind, find_nodes
 from renaissance.integrations.clang.cpp_utils import CPPUtils
 from renaissance.integrations.clang.predicates import (
     is_clang_compound_statement,
     is_clang_kind,
     is_clang_macro_definition,
 )
-from renaissance.syntax_tree.ast_factory import ASTFactory
-from renaissance.syntax_tree.ast_finder import find_nodes
-from renaissance.syntax_tree.ast_node import ASTNode
-from renaissance.syntax_tree.ast_shower import ASTShower
-from renaissance.syntax_tree.semantic_kind import SemanticKind
 
 SHOW_NODE = False
 
@@ -306,7 +302,7 @@ class CPPPatternFactory(CPatternFactory):
         call_expr = last(find_nodes(target_class, lambda node: node.semantic_kind is SemanticKind.CALL))
         # include the preceding type ref
         assert isinstance(call_expr, ASTNode), "No call expression found"
-        type_ref = call_expr.preceding_sibling
+        type_ref = call_expr.previous_sibling
         assert isinstance(type_ref, ASTNode), "No type ref found"
         # return the constrained pattern where the first node must be of type TypeRef
 

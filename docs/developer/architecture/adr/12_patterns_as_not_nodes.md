@@ -74,7 +74,6 @@ with matching metadata.
 
 ```python
 from dataclasses import dataclass
-from renaissance.common import AstNode, SyntacticKind
 
 
 @dataclass(frozen=True)

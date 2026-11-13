@@ -17,11 +17,11 @@ from typing import cast
 import pytest
 from hamcrest import assert_that, greater_than, is_
 
+from renaissance.core.rewrite import ASTRewriter, Rewritable
 from renaissance.integrations.python.ast.cst_node import PythonCstNode
 from renaissance.integrations.python.ast.factory import PythonFactory
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
 from renaissance.integrations.tree_sitter.lst import LSTNode
-from renaissance.syntax_tree.ast_rewriter import ASTRewriter, Rewritable
 
 type PythonNode = PythonRstNode | PythonCstNode | LSTNode
 

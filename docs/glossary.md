@@ -34,7 +34,7 @@ proper ancestor.
 ### Append
 
 An [insertion](#insertion) that adds text immediately after the end location of an AST node.
-See [Rewrite semantics](user/concepts/rewrite-semantics.md).
+See [Rewrite semantics](user/concepts/rewrite_semantics.md).
 
 ### AST (Abstract Syntax Tree)
 
@@ -55,7 +55,7 @@ See [Automation](user/concepts/automation.md).
 
 A collected modification to the original source text, either a [replacement](#replacement) or an [insertion](#insertion).
 Changes are collected during the *collect* step of a [rewrite step](#rewrite-step) and applied during the *commit* step.
-See [Rewrite semantics](user/concepts/rewrite-semantics.md).
+See [Rewrite semantics](user/concepts/rewrite_semantics.md).
 
 ### Code base
 
@@ -63,7 +63,7 @@ The full set of production, validation, and
 supporting artifacts — including source code, tests, build scripts, and documentation —
 that together constitute a software system.
 A code base is typically multi-language, multi-project, and evolves over decades.
-See [Evolving and maintaining code](user/concepts/code-base-evolution-and-maintenance.md).
+See [Evolving and maintaining code](user/concepts/code_base_evolution_and_maintenance.md).
 
 ### Collection of changes
 
@@ -72,7 +72,7 @@ the *collect* step of a [rewrite step](#rewrite-step), before any changes are
 committed. The sequence in which changes are registered is the *collection order*,
 which affects output ordering only when the same operator is applied multiple times
 to the same node.
-See [Rewrite semantics](user/concepts/rewrite-semantics.md).
+See [Rewrite semantics](user/concepts/rewrite_semantics.md).
 
 ### Composition
 
@@ -99,7 +99,7 @@ proper descendants.
 
 A [change](#change) whose range is a proper subset of the range of another change,
 and which is therefore silently ignored during the [rewrite step](#rewrite-step).
-See [Rewrite semantics](user/concepts/rewrite-semantics.md).
+See [Rewrite semantics](user/concepts/rewrite_semantics.md).
 
 ---
 
@@ -119,14 +119,11 @@ See [Filter](user/concepts/filter.md).
 
 A [change](#change) that adds text at a location in the original source without removing any existing text.
 The supported insertion kinds are [prepend](#prepend), [append](#append), and [surround](#surround).
-See [Rewrite semantics](user/concepts/rewrite-semantics.md).
+See [Rewrite semantics](user/concepts/rewrite_semantics.md).
 
 ### Integration
 
-A parser-specific bridge (e.g., tree-sitter, Clang, Python's `ast` module) that makes a parser's native
-nodes conform to the core [AST](#ast-abstract-syntax-tree) node's `Protocol`, implemented as a wrapper, an
-adapter, or via duck typing.
-See [ADR 14](developer/architecture/adr/14_code_repositories.md).
+Former name of a [parser binding](#parser-binding).
 
 ---
 
@@ -169,10 +166,17 @@ See [Observability](user/concepts/observability.md).
 
 ## P
 
+### Parser binding
+
+The integration of one concrete parser (e.g., tree-sitter, libclang, Python's `ast` module) that makes the parser's native
+nodes conform to the core [AST](#ast-abstract-syntax-tree) node's `Protocol`, implemented as a wrapper, an
+adapter, or via duck typing.
+See [Repository structure](developer/architecture/repository_structure.md).
+
 ### Prepend
 
 An [insertion](#insertion) that adds text immediately before the start location of an AST node.
-See [Rewrite semantics](user/concepts/rewrite-semantics.md).
+See [Rewrite semantics](user/concepts/rewrite_semantics.md).
 
 ---
 
@@ -183,13 +187,13 @@ See [Rewrite semantics](user/concepts/rewrite-semantics.md).
 A contiguous region of the original source text, expressed as a start and end offset.
 Every AST [node](#node-ast-node) has a range; the range of a [replacement](#replacement)
 is derived from the range of the replaced node or sequence of nodes.
-See [Rewrite semantics](user/concepts/rewrite-semantics.md).
+See [Rewrite semantics](user/concepts/rewrite_semantics.md).
 
 ### Recipe
 
-A combination of multiple standard analyses and transformations (rules) applied in a coordinated way to
-perform a non-trivial refactoring; more powerful than a single find / filter / modify rule.
-See [ADR 14](developer/architecture/adr/14_code_repositories.md).
+An analysis or transformation that combines multiple standard analyses and transformations (rules) in a coordinated way,
+such as a non-trivial refactoring or an extractor; more powerful than a single find / filter / modify rule.
+See [Repository structure](developer/architecture/repository_structure.md).
 
 ### Rejuvenation
 
@@ -209,24 +213,24 @@ See [ADR 14](developer/architecture/adr/14_code_repositories.md).
 ### Removal
 
 A [replacement](#replacement) where the replacement text is the empty string, effectively deleting the text of a source [range](#range).
-See [Rewrite semantics](user/concepts/rewrite-semantics.md).
+See [Rewrite semantics](user/concepts/rewrite_semantics.md).
 
 ### Renaissance
 
 The parser-agnostic core of the project: the unified AST model, match-pattern engine, rewriter, and other
 language- and parser-agnostic components.
-See [ADR 14](developer/architecture/adr/14_code_repositories.md).
+See [Repository structure](developer/architecture/repository_structure.md).
 
 ### Replacement
 
 A [change](#change) that substitutes the text of a source [range](#range) with new text.
-See [Rewrite semantics](user/concepts/rewrite-semantics.md).
+See [Rewrite semantics](user/concepts/rewrite_semantics.md).
 
 ### Rewrite step
 
 The sequential process of (1) parsing source code, (2) collecting [changes](#change), and
 (3) committing those changes to produce modified source code.
-See [Rewrite semantics](user/concepts/rewrite-semantics.md).
+See [Rewrite semantics](user/concepts/rewrite_semantics.md).
 
 ---
 
@@ -240,13 +244,13 @@ Two AST nodes are siblings when they share the same direct parent.
 ### Standard analyses and transformations
 
 A library of reusable, pre-built analysis and transformation building blocks that can be combined to improve quality and reduce duplication.
-See [Standard analyses and transformations](user/concepts/standard-libraries.md).
+See [Standard analyses and transformations](user/concepts/standard_libraries.md).
 
 ### Surround
 
 An [insertion](#insertion) that adds text at both the start and end locations of an AST node simultaneously.
 The resulting order in the modified source is: `surround_before_text`, AST node text, `surround_after_text`.
-See [Rewrite semantics](user/concepts/rewrite-semantics.md).
+See [Rewrite semantics](user/concepts/rewrite_semantics.md).
 
 ---
 
@@ -269,16 +273,16 @@ White spaces and comments.
 
 An annotation that states the expected type of a variable, parameter or return value, such as `x: list[int]`.
 Type checkers read it; Python does not enforce it at runtime.
-See [Type parameters](user/concepts/type-parameters.md).
+See [Type parameters](user/concepts/type_parameters.md).
 
 ### Type parameter
 
 A name in a type hint that stands for a type chosen later, declared on a generic function, class or type alias.
 Three kinds exist: [type variable](#type-variable), type variable tuple (`*Ts`) and parameter specification (`**P`).
-See [Type parameters](user/concepts/type-parameters.md).
+See [Type parameters](user/concepts/type_parameters.md).
 
 ### Type variable
 
 The kind of [type parameter](#type-parameter) that stands for a single type.
 Also called *TypeVar*, after the legacy class that declares it (`T = TypeVar("T")`).
-See [Type parameters](user/concepts/type-parameters.md).
+See [Type parameters](user/concepts/type_parameters.md).

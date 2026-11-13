@@ -9,8 +9,8 @@
 from hamcrest import assert_that, is_
 from pytest_mock import MockerFixture
 
-from renaissance.syntax_tree import ASTRefactorActions
-from renaissance.syntax_tree.semantic_kind import SemanticKind
+from renaissance.core.model import SemanticKind
+from renaissance.syntax_tree.ast_refactor_actions import ASTRefactorActions
 
 
 class TestASTRefactorActions:
@@ -79,7 +79,7 @@ class TestASTRefactorActions:
         node = mocker.Mock()
         proc = mocker.Mock()
         factory = mocker.Mock()
-        is_match_mock = mocker.patch("renaissance.syntax_tree.match_finder.find_in_list", return_value=True)
+        is_match_mock = mocker.patch("renaissance.core.match.match_finder.find_in_list", return_value=True)
         refactor_actions = ASTRefactorActions(proc, factory)
 
         refactor_actions._replace_patterns(node, "my_awsome_text", [[node]], "Call")

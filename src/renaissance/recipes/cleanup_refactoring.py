@@ -8,9 +8,8 @@
 
 from more_itertools import flatten
 
-from renaissance.syntax_tree import ASTProcessor
-from renaissance.syntax_tree.ast_finder import find_semantic_kind
-from renaissance.syntax_tree.semantic_kind import SemanticKind
+from renaissance.core.model import SemanticKind, find_semantic_kind
+from renaissance.syntax_tree.ast_processor import ASTProcessor
 
 
 class CleanupRefactoring:

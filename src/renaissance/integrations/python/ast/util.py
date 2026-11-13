@@ -9,17 +9,13 @@
 
 def convert(lines, line_nr, col):
     """AI: Convert a (line, column) source position into an absolute character offset."""
+    # TODO(pjljvandelaar): unverified - the + 1 assumes a one-byte line ending, but splitlines() also splits on "\r\n", so
+    #  with CRLF line endings the offset would be 1 too small per preceding line.
+    #  https://github.com/TNO/Renaissance.Py/issues/153
     if line_nr > len(lines):
         return 0
     return sum(len(lines[i]) + 1 for i in range(line_nr - 1)) + col
     # add node to the node list for references
-
-
-def to_str(node) -> str:
-    """AI: Return the node's signature if it has one, otherwise its string representation."""
-    if hasattr(node, "signature"):
-        return node.signature
-    return str(node)
 
 
 def convert_function(fun):

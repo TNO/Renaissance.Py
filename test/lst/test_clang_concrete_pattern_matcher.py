@@ -9,10 +9,12 @@
 import pytest
 from hamcrest import assert_that, empty, has_length, is_, is_not
 
+from renaissance.core.match import MatchFinder, is_match, match_pattern
+from renaissance.core.match.match_finder import find_variants
 from renaissance.integrations.clang.clang_adapter import ClangAdapter
 from renaissance.integrations.tree_sitter.extractor import Extractor
 from renaissance.integrations.tree_sitter.factory import TreeSitterPatternFactory
-from renaissance.syntax_tree.match_finder import MIS_MATCH, MatchFinder, find_variants, is_match, is_match_tree, match_pattern
+from test.unit.shared.utils_for_tests import is_match_tree
 
 
 class TestClangConcretePatternMatcher:
@@ -63,11 +65,12 @@ class TestClangConcretePatternMatcher:
         """AI: Verify find_variants locates a matching variant for an enum statement pattern."""
         adapter = ClangAdapter()
         interface = TreeSitterPatternFactory(adapter)
-        pattern = interface.create_statements("int E1=0; int vals=0; enum E2 { A };")
-        code = adapter.load_from_text("int E1=0; int vals=0; enum E2 { A };", "snippets.c")
+        statements = "int E1=0; int vals=0; enum E2 { A };"
+        pattern = interface.create_statements(statements)
+        code = adapter.load_from_text(statements, "snippets.c")
         matches = find_variants(code.root.children, pattern)
         assert_that(matches, has_length(1))
-        assert_that(matches[0].end_index, is_not(MIS_MATCH))
+        assert_that(matches[0].index, is_(len(pattern)))
 
     @pytest.mark.skip("it should be the same really")
     def test_type_property_between_code_and_pattern_are_same(self) -> None:
@@ -86,11 +89,18 @@ class TestClangConcretePatternMatcher:
                 "int $a,$b,$body;int $f(int $a, int $b) { $body; }",
             ),
             ("void f() { int x = 0; }", "int $body=0;void $name() { $body }"),
+            # TODO(pjljvandelaar): 1. code doesn't start with declaration, so shouldn't match the pattern.
+            #  2. In CDT $body in the compound statement should be appended with the terminator (;).
+            #  https://github.com/TNO/Renaissance.Py/issues/187
             ("if (x) { y(); }", "int $cond,$body=0;if ($cond) { $body }"),
             ("while (x) {}", "int $cond;while ($cond) $body"),
             ("do {} while (x);", "int $body,$cond;do $body while ($cond);"),
             ("switch(x) { case 1: break; }", "int $val,$cases;switch ($val) { $cases }"),
             ("try {} catch (...) {}", "int $body, $handler;try $body catch (...) $handler"),
+            # TODO(pjljvandelaar): 1. Is explicit declaration within the pattern necessary?
+            #  Can't it be inferred and implicitly added by the tool chain?
+            #  2. Why do some patterns only declare the placeholders, while others initialize them as well?
+            #  https://github.com/TNO/Renaissance.Py/issues/187
         ],
     )
     def test_clang_patterns_to_be_fixed(self, code, pattern) -> None:

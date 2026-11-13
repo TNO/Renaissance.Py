@@ -9,7 +9,7 @@ from parameterized import parameterized
 from c_cpp.factories import Factories
 from renaissance.integrations.clang import CPatternFactory
 from renaissance.integrations.python.ast import PythonRstNode
-from renaissance.syntax_tree import ASTFactory
+from renaissance.syntax_tree.ast_factory import ASTFactory
 from renaissance.syntax_tree.match_finder import (
     match_pattern,
 )

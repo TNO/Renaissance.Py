@@ -6,30 +6,12 @@
 
 """Tests for the encoding guard rail in tools/check_encoding.py.
 
-The `tools` directory is not on the pytest `pythonpath`, so the script is loaded from its path.
 The tests run against byte strings and temporary files, so they do not depend on the contents of the repository.
 """
 
-import importlib.util
 from pathlib import Path
-from types import ModuleType
 
-ROOT = Path(__file__).resolve().parents[2]
-
-
-def _load_check_encoding() -> ModuleType:
-    """Import tools/check_encoding.py as a module."""
-    path = ROOT / "tools" / "check_encoding.py"
-    spec = importlib.util.spec_from_file_location("check_encoding", path)
-    if spec is None or spec.loader is None:
-        message = f"cannot load {path}"
-        raise RuntimeError(message)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
-
-
-check_encoding = _load_check_encoding()
+from tools import check_encoding
 
 
 def test_ascii_is_accepted() -> None:

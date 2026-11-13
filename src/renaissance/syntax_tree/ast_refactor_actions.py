@@ -10,11 +10,9 @@ from collections.abc import Callable, Sequence
 from functools import cache
 from typing import TYPE_CHECKING
 
-from renaissance.syntax_tree.ast_finder import matches_node
-from renaissance.syntax_tree.ast_node import ASTNode
+from renaissance.core.match import MatchFinder, PatternMatch
+from renaissance.core.model import ASTNode, SemanticKind, matches_node
 from renaissance.syntax_tree.ast_processor import ASTProcessor
-from renaissance.syntax_tree.match_finder import MatchFinder, PatternMatch
-from renaissance.syntax_tree.semantic_kind import SemanticKind
 
 # TODO(FrancescoPezzella): Replace with a lazy import in Python 3.15.
 #  https://github.com/TNO/Renaissance.Py/issues/275
