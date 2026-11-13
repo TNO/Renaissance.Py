@@ -121,9 +121,9 @@ The helpers that exist today, with their users, their destination and the step t
   `test_ast_finder.py` or `test_ast_references.py` moves to the core model, else in step 3.1 or 4.2.
   The test input `features/targets/pyunit_test_example.py` names it too, but test inputs are not changed.
 - `test/utils_for_tests.py`: used by `test_ast_rewriter.py`, `test_c_match_finder.py` and two tests of the Python bindings, so
-  it goes to `test/unit/shared/`, in step 3.2 if `test_c_match_finder.py` moves to the matcher, else in step 4.2.
-- `test/utils/util_equivalence_classes.py`: used by three matcher tests in `test/python/ast/`. Step 3.2 decides whether they
-  test the matching or a binding, and the helper goes to the `shared/` directory of that unit in the same step.
+  it goes to `test/unit/shared/` in step 4.2.
+- `test/utils/util_equivalence_classes.py`: used by three tests in `test/python/ast/` of how the Python `ast` binding presents
+  code to the matcher, so it goes to the `shared/` directory of the Python binding tests in step 6.4.
 - `test/python/ast/factories.py`: used by `test_python_nodes.py` and `test_python_pattern_factory.py`, so it goes to the
   `shared/` directory of the Python binding tests in step 6.4.
 - `test/search_strategies/python_type_and_value.py`: used only by its own tests; see step 8.2.
@@ -349,15 +349,16 @@ The modules of this phase move to `core/match/`, their tests to `test/unit/core/
 - test: `test/syntax_tree/test_match_finder.py`, `test_match_finder_multi_assignments.py`, `test_match_tree.py`,
   `test_match_dict.py` and `test_pattern_match.py`, as aspects of the tests of `match_finder`.
 - remaining: the matcher tests of the bindings that import the internal `find_variants` or `variant_in_match_stmt` are known
-  violations of the `protected` contract of `core.match`, until step 3.2.
+  violations of the `protected` contract of `core.match`; see step 3.2.
 - Checks: `git grep "syntax_tree.match_finder"` finds nothing outside the test input `features/targets/pyunit_test_example.py`.
 
-**3.2 The matcher tests of the bindings.** Moves tests only.
+**3.2 The matcher tests of the bindings stay.** Moves nothing.
 
-- test: the matcher tests under `test/c_cpp/`, `test/python/ast/` and `test/lst/` move to `test/unit/core/match/` if they test
-  the algorithm, and stay with their binding if they test how the binding presents its nodes to the matcher.
-  This decides the users of `test/utils/util_equivalence_classes.py`, which moves to their `shared/` directory.
-- remaining: the known violations of the `protected` contract of `core.match` disappear, or follow the tests that move.
+- test: every test of the matching algorithm builds its trees with a parser binding, so moving the algorithm tests under
+  `test/c_cpp/`, `test/python/ast/` and `test/lst/` to `test/unit/core/match/` would only add known violations. They stay with
+  their binding until [issue 396](https://github.com/TNO/Renaissance.Py/issues/396) tests the algorithm on hand-made trees;
+  the issue lists them.
+- remaining: the known violations of the `protected` contract of `core.match` refer to issue 396.
 
 #### Phase 4: `core.rewrite`
 

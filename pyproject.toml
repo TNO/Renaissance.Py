@@ -509,7 +509,7 @@ type = "protected"
 protected_modules = ["renaissance.core.match.match_finder"]
 allowed_importers = ["renaissance.core.match", "test.unit.core.match"]
 ignore_imports = [
-    # Matcher tests under the bindings that inspect the variants of the matcher; step 3.2 sorts them.
+    # Matcher tests under the bindings that inspect the variants of the matcher; issue 396.
     "test.c_cpp.test_c_match_finder -> renaissance.core.match.match_finder",
     "test.lst.test_clang_concrete_pattern_matcher -> renaissance.core.match.match_finder",
     "test.python.ast.test_python_matcher -> renaissance.core.match.match_finder",
