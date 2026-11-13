@@ -9,7 +9,7 @@
 import pytest
 from hamcrest import assert_that, is_
 
-from renaissance.common.rewriter import Rewriter
+from renaissance.core.rewrite import Rewriter
 
 
 class TestRewriter:

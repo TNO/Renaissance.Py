@@ -4,4 +4,4 @@
 # of this repository, also available at:
 # https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
-"""AI: Tests for the common refactoring utilities shared across language integrations."""
+"""Unit tests of renaissance.core.rewrite."""

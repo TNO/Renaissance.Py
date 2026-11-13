@@ -15,10 +15,10 @@ from typing import Protocol, runtime_checkable
 
 from more_itertools import flatten
 
-from renaissance.common import Rewriter
 from renaissance.core.match import PatternMatch
 from renaissance.core.model import TextUtils
 from renaissance.core.navigate import HasParent, is_proper_ancestor_of
+from renaissance.core.rewrite import Rewriter
 
 
 @runtime_checkable

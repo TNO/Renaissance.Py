@@ -219,6 +219,12 @@ mirror = "test/unit/core/match/test_{path}.py"
 aspects = true
 
 [[tool.check_layout.mirrors]]
+code = "src/renaissance/core/rewrite"
+units = "modules"
+mirror = "test/unit/core/rewrite/test_{path}.py"
+aspects = true
+
+[[tool.check_layout.mirrors]]
 code = "src/renaissance/core"
 units = "packages"
 mirror = "docs/developer/modules/core/{path}.md"
@@ -295,8 +301,8 @@ layers = [
     : test.syntax_tree.test_ast_processor : test.syntax_tree.test_ast_processor_semantic_kind
     : test.syntax_tree.test_batch_ast_processor : test.syntax_tree.test_recipe_ast_processor""",
     # core.rewrite
-    """renaissance.syntax_tree.ast_rewriter : renaissance.common
-    : test.common : test.syntax_tree.test_ast_rewriter : test.syntax_tree.test_rewrite_semantics_properties""",
+    """renaissance.syntax_tree.ast_rewriter : renaissance.core.rewrite
+    : test.unit.core.rewrite : test.syntax_tree.test_ast_rewriter : test.syntax_tree.test_rewrite_semantics_properties""",
     # core.match
     "renaissance.core.match : test.unit.core.match : test.utils.util_equivalence_classes : test.utils_for_tests",
     # core.pattern
@@ -346,7 +352,7 @@ source_modules = [
 ]
 forbidden_modules = [
     "renaissance.syntax_tree.ast_processor", "renaissance.syntax_tree.batch_ast_processor",
-    "renaissance.syntax_tree.recipe_ast_processor", "renaissance.syntax_tree.ast_rewriter", "renaissance.common",
+    "renaissance.syntax_tree.recipe_ast_processor", "renaissance.syntax_tree.ast_rewriter", "renaissance.core.rewrite",
 ]
 allow_indirect_imports = true
 ignore_imports = [
@@ -515,6 +521,13 @@ ignore_imports = [
     "test.python.ast.test_python_matcher -> renaissance.core.match.match_finder",
 ]
 
+[[tool.importlinter.contracts]]
+id = "core-rewrite-api"
+name = "Only core.rewrite and its unit tests import the modules of core.rewrite"
+type = "protected"
+protected_modules = ["renaissance.core.rewrite.rewriter"]
+allowed_importers = ["renaissance.core.rewrite", "test.unit.core.rewrite"]
+
 # format_node is for the core and the parser bindings only.
 [[tool.importlinter.contracts]]
 id = "core-model-format"
@@ -533,7 +546,7 @@ name = "The shared helpers of the parser bindings import nothing from Renaissanc
 type = "forbidden"
 source_modules = ["renaissance.integrations.shared"]
 forbidden_modules = [
-    "renaissance.core", "renaissance.syntax_tree", "renaissance.common", "renaissance.recipes",
+    "renaissance.core", "renaissance.syntax_tree", "renaissance.recipes",
     "renaissance.integrations.clang", "renaissance.integrations.python", "renaissance.integrations.tree_sitter",
     "renaissance.project", "rejuvenation",
 ]

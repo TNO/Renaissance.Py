@@ -296,7 +296,7 @@ Internal: `pattern_kind`, which only the matcher uses, `Variant`, `find_variants
 | Symbol                      | For | Now in                        |
 | --------------------------- | --- | ----------------------------- |
 | `ASTRewriter`, `Rewritable` | all | `syntax_tree/ast_rewriter.py` |
-| `Rewriter`, `Rewrite`       | all | `common/rewriter.py`          |
+| `Rewriter`, `Rewrite`       | all | `core/rewrite/rewriter.py`    |
 
 #### `core.processing`
 

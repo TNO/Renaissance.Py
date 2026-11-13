@@ -29,15 +29,16 @@ https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 ## 2. Rewrite semantics
 
 - **Feature:** [Rewrite semantics](../../user/features/rewrite_semantics.md)
-- **Concepts:** [Rewrite semantics](../../user/concepts/rewrite_semantics.md)
+- **Concepts:** [Rewrite semantics](../../user/concepts/rewrite_semantics.md), [Rewrite](../../user/core/rewrite.md)
+- **Code modules:** [Core rewrite](../modules/core/rewrite.md)
 - **Test modules:** [Rewrite semantics test module](../../developer/modules/rewrite_semantics.md)
 - **BDD feature file:** `features/rewrite_semantics.feature`
 - **BDD steps:** `features/steps/test_rewrite_semantics.py`
 - **Test file(s):**
-    - `test/common/test_rewriter.py`
+    - `test/unit/core/rewrite/test_rewriter.py`
     - `test/syntax_tree/test_ast_rewriter.py`
     - `test/syntax_tree/test_rewrite_semantics_properties.py`
-- **Code files:** `src/renaissance/common/rewriter.py`, `src/renaissance/syntax_tree/ast_rewriter.py`
+- **Code files:** `src/renaissance/core/rewrite/rewriter.py`, `src/renaissance/syntax_tree/ast_rewriter.py`
 
 ## 3. Type parameter modernization
 

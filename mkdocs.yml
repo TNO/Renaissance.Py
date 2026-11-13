@@ -154,6 +154,7 @@ nav:
           - Navigate: user/core/navigate.md
           - Pattern: user/core/pattern.md
           - Match: user/core/match.md
+          - Rewrite: user/core/rewrite.md
 
   - Developer documentation:
       - Overview: developer/index.md
@@ -217,6 +218,7 @@ nav:
           - Core navigate: developer/modules/core/navigate.md
           - Core pattern: developer/modules/core/pattern.md
           - Core match: developer/modules/core/match.md
+          - Core rewrite: developer/modules/core/rewrite.md
           - Parser and AST modules: developer/modules/parser_and_ast.md
           - Matching modules: developer/modules/matching.md
           - Filter modules: developer/modules/filter.md
@@ -235,6 +237,7 @@ nav:
           - Core navigate: developer/api/core/navigate.md
           - Core pattern: developer/api/core/pattern.md
           - Core match: developer/api/core/match.md
+          - Core rewrite: developer/api/core/rewrite.md
 
   - Documentation system:
       - Overview: documentation_system/index.md
