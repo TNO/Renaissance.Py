@@ -13,6 +13,13 @@ from renaissance.core.model import NodeProtocol, SemanticKind
 from renaissance.core.pattern import PatternKind, use_dollar
 
 IRRELEVANT_PROPS = {"macro_expansion", "start_point", "end_point", "source_code", "location", "type"}
+# TODO(pjljvandelaar): This list seems language specific (e.g. macro_expansion for C/C++).
+#  Should we use a predicate function instead?
+#  See e.g., src/renaissance/integrations/shared/equal.py for is_relevant_property: Callable[[str], bool]
+#  https://github.com/TNO/Renaissance.Py/issues/187
+# TODO(pjljvandelaar): Why is IRRELEVANT_CHILD not needed here?
+#  Should we have a similar predicate function: is_relevant_child: Callable[[T], bool]?
+#  https://github.com/TNO/Renaissance.Py/issues/187
 
 MIS_MATCH = -12
 INCOMPLETE_MATCH = -11
