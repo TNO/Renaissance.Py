@@ -10,9 +10,9 @@
 # It showcases how to add comments, replace types, and find specific nodes in the AST using different methods.
 from renaissance.core.match import find_all, match_pattern
 from renaissance.core.model import ASTFactory, ASTFinder, ASTShower, find_nodes
+from renaissance.core.rewrite import ASTRewriter
 from renaissance.integrations.clang import ClangASTNode, CPatternFactory
 from renaissance.integrations.clang.predicates import is_clang_type_reference
-from renaissance.syntax_tree.ast_rewriter import ASTRewriter
 
 example_code = """
     typedef int fancy_new;

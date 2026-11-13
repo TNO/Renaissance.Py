@@ -18,7 +18,7 @@
     "reportOptionalMemberAccess": 72,
     "reportOptionalSubscript": 7,
     "reportPossiblyUnboundVariable": 2,
-    "reportPrivateUsage": 72,
+    "reportPrivateUsage": 73,
     "reportReturnType": 5,
     "reportSelfClsParameterName": 6,
     "reportUnknownArgumentType": 901,

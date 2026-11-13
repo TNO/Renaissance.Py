@@ -36,9 +36,11 @@ https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 - **BDD steps:** `features/steps/test_rewrite_semantics.py`
 - **Test file(s):**
     - `test/unit/core/rewrite/test_rewriter.py`
-    - `test/syntax_tree/test_ast_rewriter.py`
-    - `test/syntax_tree/test_rewrite_semantics_properties.py`
-- **Code files:** `src/renaissance/core/rewrite/rewriter.py`, `src/renaissance/syntax_tree/ast_rewriter.py`
+    - `test/unit/core/rewrite/test_ast_rewriter___comment_location.py`
+    - `test/unit/core/rewrite/test_ast_rewriter___composition.py`
+    - `test/unit/core/rewrite/test_ast_rewriter___remove_replace_insert.py`
+    - `test/unit/core/rewrite/test_ast_rewriter___semantics.py`
+- **Code files:** `src/renaissance/core/rewrite/rewriter.py`, `src/renaissance/core/rewrite/ast_rewriter.py`
 
 ## 3. Type parameter modernization
 

@@ -75,7 +75,7 @@ Feature: Rewrite semantics
   # — is verified by Hypothesis tests.
   #
   # Scenario |  test
-  # Equal    | `test_replacing_same_node_twice_always_errors` in test/syntax_tree/test_rewrite_semantics_properties.py.
+  # Equal    | `test_replacing_same_node_twice_always_errors` in test/unit/core/rewrite/test_ast_rewriter___semantics.py.
 
   # ════════════════════════════════════════════════════════════════════════════════
   # Group: Error cases

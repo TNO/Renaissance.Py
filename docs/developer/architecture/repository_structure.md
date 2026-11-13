@@ -293,10 +293,10 @@ Internal: `pattern_kind`, which only the matcher uses, `Variant`, `find_variants
 
 #### `core.rewrite`
 
-| Symbol                      | For | Now in                        |
-| --------------------------- | --- | ----------------------------- |
-| `ASTRewriter`, `Rewritable` | all | `syntax_tree/ast_rewriter.py` |
-| `Rewriter`, `Rewrite`       | all | `core/rewrite/rewriter.py`    |
+| Symbol                      | For | Now in                         |
+| --------------------------- | --- | ------------------------------ |
+| `ASTRewriter`, `Rewritable` | all | `core/rewrite/ast_rewriter.py` |
+| `Rewriter`, `Rewrite`       | all | `core/rewrite/rewriter.py`     |
 
 #### `core.processing`
 
@@ -488,13 +488,13 @@ When the migration splits these packages, these imports become visible, and are 
 
 ### Language-specific facts in the core
 
-| Module                        | Symbol                                                  | Fact                                        |
-| ----------------------------- | ------------------------------------------------------- | ------------------------------------------- |
-| `syntax_tree/ast_rewriter.py` | `get_comment_location`, `__get_comment_after_location`  | comment delimiters `//`, `/* */`, `#`       |
-| `syntax_tree/ast_rewriter.py` | `__get_depth`                                           | clang kinds `CompoundStmt`, `COMPOUND_STMT` |
-| `core/match/match_finder.py`  | `_TOP_LEVEL_KINDS`                                      | root kinds `Module`, `TRANSLATION_UNIT`     |
-| `core/match/match_finder.py`  | `pattern_kind`                                          | parser kinds `MatchOne`, `MatchAll`         |
-| `core/match/match_finder.py`  | `IRRELEVANT_PROPS`                                      | clang and tree-sitter property names        |
+| Module                         | Symbol                                                  | Fact                                        |
+| ------------------------------ | ------------------------------------------------------- | ------------------------------------------- |
+| `core/rewrite/ast_rewriter.py` | `get_comment_location`, `__get_comment_after_location`  | comment delimiters `//`, `/* */`, `#`       |
+| `core/rewrite/ast_rewriter.py` | `__get_depth`                                           | clang kinds `CompoundStmt`, `COMPOUND_STMT` |
+| `core/match/match_finder.py`   | `_TOP_LEVEL_KINDS`                                      | root kinds `Module`, `TRANSLATION_UNIT`     |
+| `core/match/match_finder.py`   | `pattern_kind`                                          | parser kinds `MatchOne`, `MatchAll`         |
+| `core/match/match_finder.py`   | `IRRELEVANT_PROPS`                                      | clang and tree-sitter property names        |
 
 ## Related features
 

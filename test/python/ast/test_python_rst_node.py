@@ -28,7 +28,7 @@ from renaissance.core.model import ASTShower, SemanticKind, traverse
 from renaissance.core.navigate import nearest_proper_ancestor
 from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
-from test.utils_for_tests import reject_unsupported_code
+from test.unit.shared.utils_for_tests import reject_unsupported_code
 
 
 class TestPythonRstNode:

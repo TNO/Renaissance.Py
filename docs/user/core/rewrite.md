@@ -22,6 +22,8 @@ Replacing parts of the content of a file, whatever the language of the source co
 
 ## Definition
 
+- An `ASTRewriter` holds the code of a node, and collects changes of nodes or pattern matches in it: `replace`, `remove`,
+  `insert_before` and `insert_after`. `apply()` returns the changed code as bytes, and `apply_to_string()` as a string.
 - A `Rewriter` holds the content of a file, as bytes, and collects replacements of byte ranges of it.
 - `replace(start, end, new_content)` adds a replacement; `apply()` returns the content with all replacements applied, and
   leaves the content of the rewriter unchanged.
@@ -29,6 +31,8 @@ Replacing parts of the content of a file, whatever the language of the source co
 ## Invariants / guarantees
 
 - The positions of the replacements refer to the original content, whatever the order in which they are added.
+- `ASTRewriter.apply()` raises a `ValueError` when two replacements or removals overlap, unless one node contains the
+  other.
 
 ## Related features
 

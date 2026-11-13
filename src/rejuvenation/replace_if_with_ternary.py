@@ -10,8 +10,8 @@
 # It specifically showcases the replacement of if-else statements with ternary operators.
 from renaissance.core.match import find_all
 from renaissance.core.model import ASTFactory
+from renaissance.core.rewrite import ASTRewriter
 from renaissance.integrations.clang import ClangASTNode, CPatternFactory
-from renaissance.syntax_tree.ast_rewriter import ASTRewriter
 
 example_code = """
         int a = 1;

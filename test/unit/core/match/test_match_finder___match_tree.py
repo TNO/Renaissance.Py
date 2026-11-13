@@ -27,7 +27,7 @@ from renaissance.core.model import ASTFactory, ASTShower
 from renaissance.integrations.clang import ClangASTNode, CPatternFactory
 from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
-from test.utils_for_tests import is_match_tree
+from test.unit.shared.utils_for_tests import is_match_tree
 
 
 class TestMatchTree:

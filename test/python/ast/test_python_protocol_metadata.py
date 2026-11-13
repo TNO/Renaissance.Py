@@ -9,11 +9,11 @@
 import ast
 
 from renaissance.core.model import SemanticKind
+from renaissance.core.rewrite import Rewritable
 from renaissance.integrations.python.ast.cst_node import PythonCstNode
 from renaissance.integrations.python.ast.factory import PythonFactory
 from renaissance.integrations.python.ast.kinds import PYTHON_KIND_MAP
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
-from renaissance.syntax_tree.ast_rewriter import Rewritable
 
 
 def _all_subclasses(base: type) -> list[type]:

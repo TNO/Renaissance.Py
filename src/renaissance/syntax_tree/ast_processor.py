@@ -13,7 +13,7 @@ from typing import Any
 import renaissance.core.match
 from renaissance.core.match import PatternMatch
 from renaissance.core.model import ASTFactory, ASTFinder, ASTNode, NodeProtocol, SemanticKind, find_semantic_kind
-from renaissance.syntax_tree.ast_rewriter import ASTRewriter, Rewritable
+from renaissance.core.rewrite import ASTRewriter, Rewritable
 
 
 class ASTProcessor:

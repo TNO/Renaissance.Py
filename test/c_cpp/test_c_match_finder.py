@@ -16,7 +16,7 @@ from renaissance.core.model import ASTFactory, ASTNode, ASTShower, SemanticKind,
 from renaissance.integrations.clang import ClangASTNode, CPatternFactory
 from renaissance.integrations.clang.clang_json_ast_node import ClangJsonASTNode
 from test.unit.shared.factories import Factories
-from test.utils_for_tests import compress, debug_mismatch, show_node
+from test.unit.shared.utils_for_tests import compress, debug_mismatch, show_node
 
 
 class TestCMatchFinder:

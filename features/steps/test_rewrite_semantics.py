@@ -22,7 +22,7 @@ order stays a real, non-xfail test.
 
 Scenario 0 (Replacements of the same node produce an error) uses a Scenario
 Outline for representative examples. The universal property test is in:
-  test/syntax_tree/test_rewrite_semantics_properties.py
+  test/unit/core/rewrite/test_ast_rewriter___semantics.py
 """
 
 from __future__ import annotations
@@ -32,11 +32,11 @@ from pytest_bdd import given, parsers, scenario, then, when
 
 from renaissance.core.match import match_pattern
 from renaissance.core.model import ASTFactory, find_nodes
+from renaissance.core.rewrite import ASTRewriter
 from renaissance.integrations.clang import ClangASTNode, CPPPatternFactory
 from renaissance.integrations.clang.predicates import is_clang_compound_statement
 from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
-from renaissance.syntax_tree.ast_rewriter import ASTRewriter
 
 _FEATURE = "../rewrite_semantics.feature"
 
@@ -45,7 +45,7 @@ _FEATURE = "../rewrite_semantics.feature"
 
 
 # Scenario 0 — Scenario Outline: three representative examples.
-# Universal property test: test/syntax_tree/test_rewrite_semantics_properties.py
+# Universal property test: test/unit/core/rewrite/test_ast_rewriter___semantics.py
 @scenario(_FEATURE, "Replacements of the same node produce an error")
 def test_replacements_of_same_node_produce_error() -> None:
     """AI: Scenario test for 'Replacements of the same node produce an error'."""

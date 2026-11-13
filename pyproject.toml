@@ -301,10 +301,9 @@ layers = [
     : test.syntax_tree.test_ast_processor : test.syntax_tree.test_ast_processor_semantic_kind
     : test.syntax_tree.test_batch_ast_processor : test.syntax_tree.test_recipe_ast_processor""",
     # core.rewrite
-    """renaissance.syntax_tree.ast_rewriter : renaissance.core.rewrite
-    : test.unit.core.rewrite : test.syntax_tree.test_ast_rewriter : test.syntax_tree.test_rewrite_semantics_properties""",
+    "renaissance.core.rewrite : test.unit.core.rewrite",
     # core.match
-    "renaissance.core.match : test.unit.core.match : test.utils.util_equivalence_classes : test.utils_for_tests",
+    "renaissance.core.match : test.unit.core.match : test.utils.util_equivalence_classes : test.unit.shared.utils_for_tests",
     # core.pattern
     "renaissance.core.pattern : test.unit.core.pattern",
     # core.model
@@ -319,12 +318,16 @@ ignore_imports = [
     "test.syntax_tree.test_recipe_ast_processor -> renaissance.integrations.clang",
     "test.syntax_tree.test_ast_processor_semantic_kind -> renaissance.integrations.python.ast.factory",
     "test.syntax_tree.test_ast_processor_semantic_kind -> renaissance.integrations.python.ast.rst_node",
-    "test.syntax_tree.test_ast_rewriter -> renaissance.integrations.clang",
-    "test.syntax_tree.test_ast_rewriter -> renaissance.integrations.python.ast.factory",
-    "test.syntax_tree.test_ast_rewriter -> renaissance.integrations.python.ast.rst_node",
-    "test.syntax_tree.test_ast_rewriter -> test.unit.shared.factories",
-    "test.syntax_tree.test_rewrite_semantics_properties -> renaissance.integrations.python.ast.factory",
-    "test.syntax_tree.test_rewrite_semantics_properties -> renaissance.integrations.python.ast.rst_node",
+    "test.unit.core.rewrite.test_ast_rewriter___composition -> renaissance.integrations.clang",
+    "test.unit.core.rewrite.test_ast_rewriter___composition -> renaissance.integrations.python.ast.factory",
+    "test.unit.core.rewrite.test_ast_rewriter___composition -> renaissance.integrations.python.ast.rst_node",
+    "test.unit.core.rewrite.test_ast_rewriter___composition -> test.unit.shared.factories",
+    "test.unit.core.rewrite.test_ast_rewriter___remove_replace_insert -> renaissance.integrations.clang",
+    "test.unit.core.rewrite.test_ast_rewriter___remove_replace_insert -> renaissance.integrations.python.ast.factory",
+    "test.unit.core.rewrite.test_ast_rewriter___remove_replace_insert -> renaissance.integrations.python.ast.rst_node",
+    "test.unit.core.rewrite.test_ast_rewriter___remove_replace_insert -> test.unit.shared.factories",
+    "test.unit.core.rewrite.test_ast_rewriter___semantics -> renaissance.integrations.python.ast.factory",
+    "test.unit.core.rewrite.test_ast_rewriter___semantics -> renaissance.integrations.python.ast.rst_node",
     "test.unit.core.match.test_match_finder___one_and_all_params -> renaissance.integrations.clang",
     "test.unit.core.match.test_match_finder___multi_assignments -> renaissance.integrations.python.ast.factory",
     "test.unit.core.match.test_match_finder___multi_assignments -> renaissance.integrations.python.ast.rst_node",
@@ -352,13 +355,13 @@ source_modules = [
 ]
 forbidden_modules = [
     "renaissance.syntax_tree.ast_processor", "renaissance.syntax_tree.batch_ast_processor",
-    "renaissance.syntax_tree.recipe_ast_processor", "renaissance.syntax_tree.ast_rewriter", "renaissance.core.rewrite",
+    "renaissance.syntax_tree.recipe_ast_processor", "renaissance.core.rewrite",
 ]
 allow_indirect_imports = true
 ignore_imports = [
     # Tests of the Python bindings that check the effect of a rewrite on their nodes.
-    "test.python.ast.test_offset_encoding -> renaissance.syntax_tree.ast_rewriter",
-    "test.python.ast.test_python_protocol_metadata -> renaissance.syntax_tree.ast_rewriter",
+    "test.python.ast.test_offset_encoding -> renaissance.core.rewrite",
+    "test.python.ast.test_python_protocol_metadata -> renaissance.core.rewrite",
 ]
 
 [[tool.importlinter.contracts]]
@@ -525,7 +528,7 @@ ignore_imports = [
 id = "core-rewrite-api"
 name = "Only core.rewrite and its unit tests import the modules of core.rewrite"
 type = "protected"
-protected_modules = ["renaissance.core.rewrite.rewriter"]
+protected_modules = ["renaissance.core.rewrite.ast_rewriter", "renaissance.core.rewrite.rewriter"]
 allowed_importers = ["renaissance.core.rewrite", "test.unit.core.rewrite"]
 
 # format_node is for the core and the parser bindings only.

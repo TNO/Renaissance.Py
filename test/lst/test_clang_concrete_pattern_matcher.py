@@ -14,7 +14,7 @@ from renaissance.core.match.match_finder import find_variants
 from renaissance.integrations.clang.clang_adapter import ClangAdapter
 from renaissance.integrations.tree_sitter.extractor import Extractor
 from renaissance.integrations.tree_sitter.factory import TreeSitterPatternFactory
-from test.utils_for_tests import is_match_tree
+from test.unit.shared.utils_for_tests import is_match_tree
 
 
 class TestClangConcretePatternMatcher:

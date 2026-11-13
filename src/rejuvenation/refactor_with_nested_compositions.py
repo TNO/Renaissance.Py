@@ -12,8 +12,8 @@ import textwrap
 
 from renaissance.core.match import find_all
 from renaissance.core.model import ASTFactory, ASTShower, SemanticKind, find_semantic_kind
+from renaissance.core.rewrite import ASTRewriter
 from renaissance.integrations.clang import ClangASTNode, CPatternFactory
-from renaissance.syntax_tree.ast_rewriter import ASTRewriter
 
 example_code = """
 void f1(int a, int b, int c);

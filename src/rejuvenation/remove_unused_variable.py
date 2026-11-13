@@ -9,12 +9,12 @@
 from more_itertools import flatten
 
 from renaissance.core.model import ASTFactory, ASTNode, ASTShower, SemanticKind, find_nodes
+from renaissance.core.rewrite import ASTRewriter
 from renaissance.integrations.clang import ClangASTNode
 from renaissance.integrations.clang.clang_json_ast_node import ClangJsonASTNode
 from renaissance.integrations.clang.predicates import is_clang_compound_statement
 from renaissance.recipes import CleanupRefactoring
 from renaissance.syntax_tree.ast_processor import ASTProcessor
-from renaissance.syntax_tree.ast_rewriter import ASTRewriter
 
 example_code = """
         int a = 1;

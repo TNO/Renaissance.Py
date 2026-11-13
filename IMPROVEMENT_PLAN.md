@@ -146,7 +146,7 @@ instead of something caught by an assertion downstream.
 
 Phase 2 makes this almost mechanical.
 If every node is a `TextSegment` over the same `full_text` bytes, then `Rewriter` in `src/renaissance/core/rewrite/rewriter.py`
-and `ASTRewriter` in `src/renaissance/syntax_tree/ast_rewriter.py` can collapse into a single rewriter
+and `ASTRewriter` in `src/renaissance/core/rewrite/ast_rewriter.py` can collapse into a single rewriter
 that accepts either a `TextSegment` range or a node.
 That is precisely the "both AST-based and character-based rewriting" item.
 The `Rewritable` protocol disappears, subsumed by `TextSegment`.

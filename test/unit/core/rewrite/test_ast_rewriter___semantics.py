@@ -21,9 +21,9 @@ from hypothesis import assume, given, settings
 from hypothesis import strategies as st
 
 from renaissance.core.match import match_pattern
+from renaissance.core.rewrite import ASTRewriter
 from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
-from renaissance.syntax_tree.ast_rewriter import ASTRewriter
 
 # ── Strategies ────────────────────────────────────────────────────────────────
 

@@ -14,7 +14,7 @@ from renaissance.core.match import is_match, match_pattern
 from renaissance.integrations.tree_sitter.adapter import TreeSitterAdapter
 from renaissance.integrations.tree_sitter.extractor import Extractor
 from renaissance.integrations.tree_sitter.factory import TreeSitterPatternFactory
-from test.utils_for_tests import is_match_tree
+from test.unit.shared.utils_for_tests import is_match_tree
 
 
 class TestConcretePatternMatcher:
