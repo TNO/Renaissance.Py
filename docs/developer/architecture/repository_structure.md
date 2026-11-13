@@ -139,8 +139,8 @@ The core has six sub-packages. Each may import only the sub-packages below it in
 `core.rewrite` imports `core.match` for one reason: the rewriter accepts a `PatternMatch` as a target and uses its
 bindings to fill in a replacement. It does not use the matching algorithm.
 
-`core.match`, `core.rewrite` and `core.navigate` are named after verbs, as their protocols are; see the decisions in
-[Navigation](navigation.md#decisions).
+The sub-packages for what can be done with a node are named after verbs: `core.match`, `core.rewrite` and `core.navigate`.
+Their protocols are named the same way, as in `NodeNavigateProtocol`.
 
 `renaissance.core` itself exports nothing; code imports from the sub-packages.
 This avoids eager re-exports, which caused a circular import in the former `renaissance.syntax_tree` package.
@@ -361,8 +361,8 @@ test/
 │   ├── core/
 │   │   ├── model/
 │   │   ├── pattern/
-│   │   ├── matching/
-│   │   ├── rewriting/
+│   │   ├── match/
+│   │   ├── rewrite/
 │   │   └── processing/
 │   ├── parser_bindings/
 │   │   ├── clang/libclang/
@@ -404,7 +404,7 @@ docs/
 │   ├── concepts/
 │   ├── features/
 │   ├── workflows/
-│   ├── core/                   # mirrors renaissance.core: model, pattern, matching, rewriting, processing
+│   ├── core/                   # mirrors renaissance.core: model, pattern, match, rewrite, processing
 │   └── recipes/                # mirrors renaissance.recipes: one page per recipe
 ├── developer/
 │   ├── architecture/           # including adr/ and this page

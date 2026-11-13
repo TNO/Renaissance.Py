@@ -65,8 +65,8 @@ adapter-owned. Their `next_sibling` and `previous_sibling` properties, and `ASTN
 
 ### Decisions
 
-* Protocol names are verbs, after what the protocol enables: match, rewrite and navigate. Hence `NodeNavigateProtocol` and
-  `core.navigate`.
+* Protocol names are verbs, after what the protocol enables, as the names of the core sub-packages are; see
+  [Repository structure](repository_structure.md#core). Hence `NodeNavigateProtocol` and `core.navigate`.
 * The protocols live in `core.navigate`, with the functions that need them, as `Rewritable` lives with the rewriter. They
   cannot live in `core.model` while the functions are in `core.navigate`: `ASTNode`, which belongs to the model, delegates
   to the functions, so the two packages would import each other. `core.navigate` imports nothing from the rest of the core,
