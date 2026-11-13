@@ -25,7 +25,7 @@ By submitting any Contribution to this Project, you agree to the following terms
 
 3. Contribution License
 
-    You agree that all Contributions are submitted under the MIT License.
+    You agree that all Contributions are submitted under the [MIT License](https://en.wikipedia.org/wiki/MIT_License).
 
     By submitting a Contribution, you grant the Maintainer a perpetual, worldwide, non-exclusive, irrevocable,
     royalty-free license to use, reproduce, modify, prepare derivative works of, publicly display, publicly perform,
@@ -35,7 +35,7 @@ By submitting any Contribution to this Project, you agree to the following terms
 
     You expressly agree that the Maintainer may:
 
-    (a) distribute the Contribution as part of the Project under the Eclipse Public License 2.0 (EPL-2.0);
+    (a) distribute the Contribution as part of the Project under the [Eclipse Public License 2.0 (EPL-2.0)](LICENSE);
 
     (b) distribute the Contribution under any future version of the EPL;
 
