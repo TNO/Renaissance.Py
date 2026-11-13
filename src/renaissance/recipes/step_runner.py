@@ -1,0 +1,35 @@
+# Copyright (C) 2024-2026 TNO
+#
+# Licensed under the terms specified in the LICENSE file in the root directory
+# of this repository, also available at:
+# https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
+
+"""A small, generic way to sequence independently-committable fix actions across one or more recipes."""
+
+from collections.abc import Callable, Sequence
+from dataclasses import dataclass
+
+from renaissance.syntax_tree import ASTProcessor
+
+
+@dataclass(frozen=True)
+class Step:
+    """One independently-runnable, independently-committable fix action."""
+
+    label: str
+    recipe: ASTProcessor
+    action: Callable[[], dict[str, str]]
+
+
+def run_steps(steps: Sequence[Step]) -> dict[str, dict[str, str]]:
+    """Run each step in order, committing its recipe if the step fixed anything.
+
+    Returns {step.label: {name: "fixed" | "unsafe"}}, one entry per step, in step order.
+    """
+    result: dict[str, dict[str, str]] = {}
+    for step in steps:
+        outcome = step.action()
+        if "fixed" in outcome.values():
+            step.recipe.commit()
+        result[step.label] = outcome
+    return result

@@ -16,7 +16,7 @@ https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
 Recipes are `PythonRefactoring` subclasses that rewrite one Python file at a time, for gaps `ruff` does not fully or
 safely cover. This page covers `TypeParameterCheck`, the recipe behind
-[Type parameter modernization](../../user/features/type-parameter-modernization.md).
+[Type parameter modernization](../../user/features/type-parameter-modernization.md), and `PrivateTypeParameterCheck`.
 
 ## Location
 
@@ -26,6 +26,9 @@ safely cover. This page covers `TypeParameterCheck`, the recipe behind
 - `src/renaissance/recipes/type_parameter_localization.py`: decides which imported type parameters get a local
   declaration, and the imports and text that replace them.
 - `src/renaissance/recipes/type_parameter_uses.py`: finds where a declared name is used.
+- `src/renaissance/recipes/private_type_parameter_check.py`: `PrivateTypeParameterCheck`, which drops the leading
+  underscore from the PEP 695 type parameters of functions and classes (`def f[_T]` to `def f[T]`) and from every use
+  they bind.
 - `src/renaissance/recipes/step_runner.py`: `Step`/`run_steps`, runs fix actions in order and commits only the ones
   that fixed something.
 - `src/renaissance/recipes/python_refactoring.py`: the base class.
@@ -56,6 +59,10 @@ safely cover. This page covers `TypeParameterCheck`, the recipe behind
   `False`.
 - `PythonRefactoring.process("TypeParameterCheck", file)`, used by `cli.py refactor`, never sets those attributes, so
   `min_python` stays `MIN_SUPPORTED_PYTHON` there and a `default=` declaration is reported `"unsafe"`.
+- `PrivateTypeParameterCheck.check()` (and `run()`): renames each private type parameter and returns
+  `{old name: "fixed" | "unsafe"}`; a name refused in any declaration is `"unsafe"`. `unsafe_reasons` holds the
+  `UnsafeReason` of each unsafe name and `type_param_kinds` the kind of each name it saw. The CLI runs it after
+  `TypeParameterCheck` on each file, as the `renamed` phase of the report.
 
 ## Internal structure
 
@@ -64,13 +71,14 @@ safely cover. This page covers `TypeParameterCheck`, the recipe behind
   replaces only the node it changes, so formatting and comments elsewhere are kept.
 
 - **Unsafe reasons.** `is_safe_to_remove`, `is_safe_to_localize` and `conversion_refusal` return an `UnsafeReason`
-  or `None`. Each of the 8 reasons has an `UnsafeRule` (its message) in `UNSAFE_RULES`. The CLI report prints
+  or `None`. Each of the 10 reasons has an `UnsafeRule` (its message) in `UNSAFE_RULES`. The CLI report prints
   each message and links `DOCS_BASE_URL` once.
 
 - **Refusal rules.** Five of the reasons are independent checks, listed as `RefusalRule` entries in
   `CONVERSION_RULES`, `REMOVAL_RULES` and `LOCALIZATION_RULES`; the first rule of a stage that refuses decides the
   reason. The other three (`USED_IN_GENERIC_CLASS`, `SHARES_FUNCTION_WITH_UNCONVERTIBLE`, `NAME_NOT_AT_MODULE_LEVEL`)
-  follow from how the phases work and are not listed. Commenting out an entry switches its rule off.
+  follow from how the phases work and are not listed. `NEW_NAME_NOT_FREE` and `USE_NOT_RENAMEABLE` are decided by
+  `PrivateTypeParameterCheck` itself. Commenting out an entry switches its rule off.
   `NO_PEP695_EQUIVALENT`, `PEP696_VERSION_GATE` and `ORIGIN_IMPORTS_CONSTRUCTOR_CONDITIONALLY` then let the recipe write
   code that fails or binds another object; `DECLARED_TYPEVAR_EXPORTED` and `IMPORTED_ELSEWHERE_IN_PROJECT` then let it
   break the files that import the name.
@@ -111,7 +119,9 @@ safely cover. This page covers `TypeParameterCheck`, the recipe behind
 - **Localization.** The origin's declaration is copied as written, with the comment trailing it when it is alone on
   its line (`declaration_text`). `NAME_NOT_AT_MODULE_LEVEL` if the origin only binds a name its arguments use
   (`declaration_argument_names`) under `if TYPE_CHECKING:` or this file binds it to something else
-  (`from_import_sources`). All names localized from one import statement are handled together.
+  (`from_import_sources`). All names localized from one import statement are handled together. The import it
+  replaces is this file's binding, so `is_safe_to_remove` checks it too. Only `DECLARED_TYPEVAR_EXPORTED` can refuse
+  there, since the planner gets no `project_wide_imported_names`.
 
   A name the origin imports, the constructor or one an argument uses, is imported here from the module the origin
   gets it from, with its alias (`from_import_binding`). A relative import of the origin is re-anchored on this file
@@ -124,6 +134,12 @@ safely cover. This page covers `TypeParameterCheck`, the recipe behind
   when that import shares its line with other statements and is dropped, when no import of the file remains, or when
   a statement between it and the last import reads one of its names. Merging and sorting the added imports, and
   removing imports that became unused, is left to the CLI's final `ruff` pass (F401, I001).
+
+- **Private type parameters.** `PrivateTypeParameterCheck` finds the declarations with patterns on a second parse of the
+  file, with the RST backend. It maps each type parameter to its libcst node by offset, and takes its uses
+  from `referenced_by`, so a module-level `_T` of the same name is left alone. A name inside a string annotation is
+  renamed inside the string. A type parameter is left unchanged when its new name is already a name in the declaring
+  function or class, or is declared twice in the same bracket.
 
 - **Line endings.** Files are read with universal newlines and a modified file is written back with LF, also on the
   lines the recipe did not change. A file the recipe does not modify is not rewritten.

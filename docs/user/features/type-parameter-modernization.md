@@ -33,11 +33,12 @@ def first[T](items: list[T]) -> T: ...
 Its changes to xarray convert type parameters in 8 files and remove one unused declaration:
 [pydata/xarray#11768](https://github.com/pydata/xarray/pull/11768/commits/bb6033218eee48be64aba921265e3dd4e5aea106).
 
-The tool runs three phases:
+The tool runs four phases:
 
 1. **Localize cross-file imports.** A type parameter imported from another file in the project
    (`from .shapes import T`) is replaced by an exact local copy of its declaration, placed after the file's imports,
-   unless the origin is named by `--ignore` (see *Shared declaration files* below) or `--no-localization` is given.
+   unless the file lists it in `__all__`, the origin is named by `--ignore` (see *Shared declaration files* below) or
+   `--no-localization` is given.
 2. **Convert to [PEP 695](https://peps.python.org/pep-0695/).** Every function whose signature uses a declared type
    parameter gets its own `[T]`, with bounds, constraints and `default=` carried over (`def f[T: str = str](...)`).
    `covariant=` and `contravariant=` are dropped, since only generic classes have a variance. A nested function gets
@@ -46,6 +47,11 @@ The tool runs three phases:
    converted is left unchanged.
 3. **Remove orphaned declarations.** A module-level `T = TypeVar("T")` that nothing uses is deleted, including one left
    behind by `ruff`'s `UP047` or by a manual rewrite.
+4. **Remove the leading underscore.** A type parameter of a function or class written as `_T`, including one phase 2
+   wrote, becomes `T` together with every use it binds (`def f[T](x: T) -> T`). `ruff`'s `UP049` does the same, but
+   leaves the uses behind when a module-level `_T` of the same name remains
+   ([astral-sh/ruff#21004](https://github.com/astral-sh/ruff/issues/21004)). It also can completely break the code, 
+   when running it after changing Type Parameters in certain situations (from an experiment using it before)!
 
 ## Inputs
 
@@ -241,9 +247,10 @@ using it is left unchanged. Functions that use `Ts` without `P` are still conver
 
 **To fix this yourself:** fix the refused declaration as its section describes, then run again.
 
-### A declared type parameter is exported via `__all__` { #feature-type-parameter-modernization-declared-type-parameter-exported }
+### A type parameter is exported via `__all__` { #feature-type-parameter-modernization-declared-type-parameter-exported }
 
-`T` is in its file's `__all__`, so it is public API. The functions are converted, the declaration is kept.
+`T` is in its file's `__all__`, so it is public API. The functions are converted, the declaration is kept. An
+imported `T` keeps its import instead, so the functions in that file using it are not converted.
 
 **Before:**
 
@@ -384,6 +391,35 @@ def second(items: list[shapes.T]) -> shapes.T: ...
 **To remove it yourself:** find that import (`from <module> import <name>` or `<module>.<name>`), remove it, and
 run the tool again.
 
+### The name without its underscore is not free { #feature-type-parameter-modernization-new-name-not-free }
+
+The name without the leading underscore is already used in the same function or class, as a name it reads or defines
+or as another type parameter, or it is not a valid name (`_class`). Renaming would capture or clash with it.
+
+```python
+T = 1
+
+def f[_T](x: _T) -> _T:
+    return T
+```
+
+The type parameter keeps its leading underscore.
+
+**To fix this yourself:** rename the other name, or rename the type parameter by hand.
+
+### A use of the type parameter cannot be rewritten { #feature-type-parameter-modernization-use-not-renameable }
+
+A use of the type parameter is written in a form the tool cannot rewrite, such as an annotation split over
+concatenated strings.
+
+```python
+def f[_T](x: "list[" "_T]") -> _T: ...
+```
+
+The type parameter keeps its leading underscore.
+
+**To fix this yourself:** write the annotation as one string, or without quotes, and run the tool again.
+
 ## Related concepts
 
 - [Rewrite semantics](../concepts/rewrite-semantics.md)
@@ -400,6 +436,7 @@ run the tool again.
 - `test/recipes/test_type_parameter_declarations.py`
 - `test/recipes/test_type_parameter_localization.py`
 - `test/recipes/test_type_parameter_rules.py`
+- `test/recipes/test_private_type_parameter_check.py`
 - `test/recipes/test_step_runner.py`
 - `test/recipes/test_python_refactoring.py`
 - `test/utils/test_cst_utils.py`
@@ -411,7 +448,8 @@ run the tool again.
 
 - [Refactoring recipes](../../developer/modules/recipes.md)
 - `src/renaissance/recipes/type_parameter_check.py`, `type_parameter_rules.py`, `type_parameter_declarations.py`,
-  `type_parameter_localization.py`, `type_parameter_uses.py`, `step_runner.py` and `python_refactoring.py`.
+  `type_parameter_localization.py`, `type_parameter_uses.py`, `private_type_parameter_check.py`, `step_runner.py` and
+  `python_refactoring.py`.
 - `src/renaissance/utils/import_resolution.py`, `cst_utils.py` and `ruff_utils.py`
 - `src/rejuvenation/migration_type_recipes.py` (the CLI)
 
@@ -425,7 +463,7 @@ python src/rejuvenation/migration_type_recipes.py <path> --py MAJOR.MINOR \
 - `<path>`: a `.py` file or a directory, scanned recursively for `.py` files. Files and directories starting with `.`,
   and `__pycache__` and `venv` directories, are skipped.
 - `--py` (required): the oldest Python version the target project supports, 3.12 or higher.
-- `--report`: also write the report to a file.
+- `--report`: write the report to a file. Without it no report is produced.
 - `--no-ruff`: skip the final `ruff` pass.
 - `--ignore`: files left untouched, whose type parameters are never copied into the files importing them (see
   *Shared declaration files*).
@@ -441,16 +479,17 @@ rules. Then it runs `ruff format` on the same files, which reformats **every** l
 `ruff format` settings, not only the changed ones. `ruff` must be installed in the same environment. Files are changed
 directly, so run it on a git checkout.
 
-The report is Markdown, with a summary line, up to two summary tables and the sections `MODIFIED`, `NEEDS MANUAL REVIEW` and
-`ERRORS`. The tables count the type parameters per kind (`TypeVar`, `ParamSpec`, `TypeVarTuple`) and rank the reasons for
-manual review from most to least common; the reasons table is left out when no name needs review. A name counts once
-per file, as needing review if it has a reason to review.
+The CLI prints a progress line per file and, when files were modified, a commit message. The report is Markdown, with a
+summary line, up to two summary tables and the sections `MODIFIED`, `NEEDS MANUAL REVIEW` and `ERRORS`, and ends with
+the same commit message in the `COMMIT MESSAGE` section. The tables count the type parameters per kind (`TypeVar`,
+`ParamSpec`, `TypeVarTuple`) and rank the reasons for manual review from most to least common; the reasons table is left
+out when no name needs review. A name counts once per file, as needing review if it has a reason to review.
 `MODIFIED` says what was done to each name: converted in functions, import replaced by a local declaration, or unused
 declaration removed; a name localized and then removed is listed only as removed. `NEEDS MANUAL REVIEW` groups the files
 and names by reason, most common reason first, and a name can be in both sections. With `--ignore` the report also has
 the `IGNORED FILES` section, and with `--ignore` or `--no-localization` the `Ignored` column. Files are listed relative
-to `<path>`. When files were modified, the run ends with a commit message: the names grouped by what was done to them
-(with the number of files if above one, at most ten per group), then the files left for manual review by reason. Exit
+to `<path>`. The commit message lists the names grouped by what was done to them (with the number of files if above
+one, at most ten per group), then the files left for manual review by reason. Exit
 codes: 0 when the run completes (manual review is not a failure), 2 for a usage error, 3 if any file raised an exception.
 
 ## Change considerations
