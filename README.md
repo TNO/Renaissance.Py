@@ -151,7 +151,7 @@ An incomplete list of todo's:
     - The nodeprotocol doesn't link an AST node to a TextSegment of the code - This link has to be added
       (probably through inheritance as an ASTNode is a TextSegment).
 - Remove all issues detected by Ruff and Pyright
-    - Do we want a union, e.g., X &#124; Sequence[X], or just a Sequence[X] as type hint -
+    - Do we want a union, e.g., X | Sequence[X], or just a Sequence[X] as type hint -
       as a single element of X can always be turned into a sequence of X elements?
 - Introduce the pattern class. Currently a pattern is just an ASTNode, yet a pattern is NOT an ASTNode.
   A pattern has placeholders.

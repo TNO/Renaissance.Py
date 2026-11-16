@@ -921,7 +921,7 @@ wheels = [
 
 [[package]]
 name = "pymarkdownlnt"
-version = "0.9.41"
+version = "0.9.42"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "application-file-scanner" },
@@ -930,9 +930,9 @@ dependencies = [
     { name = "py-walk" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/fc/ba/196874ceaa6c603e39578e92fa1dc8356dec3205d2437c7b1f7bcf606825/pymarkdownlnt-0.9.41.tar.gz", hash = "sha256:d6a477498feacf004ba1eea1847e70cbb083c7175ee62bde7a8f11bf2ce943cb", size = 473432, upload-time = "2026-10-13T01:52:52.595Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a9/bc/9e2e1106784eccfb1b8969ee0905ad48d668790cc981c7aee7d097163651/pymarkdownlnt-0.9.42.tar.gz", hash = "sha256:6ff2569ea4196c47b5fccc72606c0bda87e6b566a03474fccef39ed0bf03b9e7", size = 480668, upload-time = "2026-11-15T15:02:51.05Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/83/03/807220c611e4ff59045c70815d9ca0c8c3a7b4352e8cad0fb7efc1463073/pymarkdownlnt-0.9.41-py3-none-any.whl", hash = "sha256:677985658f0d452c9d0a639d2aca11060a99874c127b3d7513d7f33dc5462973", size = 557287, upload-time = "2026-10-13T01:52:51.397Z" },
+    { url = "https://files.pythonhosted.org/packages/36/a6/5ebe1343bd36572336c6a1d9c5b733de46f575de9de473039efdca0ad240/pymarkdownlnt-0.9.42-py3-none-any.whl", hash = "sha256:31565c3241824922c2bd56eb7cc072b21fed59f6faccb1c23fb9e24af9bd7805", size = 563657, upload-time = "2026-11-15T15:02:49.753Z" },
 ]
 
 [[package]]
@@ -1196,7 +1196,7 @@ dev = [
     { name = "mkdocs-material", specifier = ">=9.0" },
     { name = "mkdocstrings", extras = ["python"], specifier = ">=0.25" },
     { name = "parameterized", specifier = ">=0.9" },
-    { name = "pymarkdownlnt", specifier = ">=0.9" },
+    { name = "pymarkdownlnt", specifier = ">=0.9.42" },
     { name = "pyright", specifier = ">=1.1" },
     { name = "pytest", specifier = ">=8.0" },
     { name = "pytest-bdd", specifier = ">=9.0.1" },
@@ -1213,7 +1213,7 @@ docs = [
 ]
 lint = [
     { name = "codespell", specifier = ">=2.4" },
-    { name = "pymarkdownlnt", specifier = ">=0.9" },
+    { name = "pymarkdownlnt", specifier = ">=0.9.42" },
     { name = "pyright", specifier = ">=1.1" },
 ]
 test = [
