@@ -17,14 +17,15 @@ from pathlib import Path
 import pytest
 from hamcrest import assert_that, equal_to
 
-ROOT = Path(__file__).resolve().parents[2]
-
 
 def _load_lint_budget():
     """AI: Import tools/lint_budget.py as a module."""
-    spec = importlib.util.spec_from_file_location("lint_budget", ROOT / "tools" / "lint_budget.py")
-    assert spec is not None
-    assert spec.loader is not None
+    root = Path(__file__).resolve().parents[2]
+    script = root / "tools" / "lint_budget.py"
+    spec = importlib.util.spec_from_file_location("lint_budget", script)
+    if spec is None or spec.loader is None:
+        msg = f"cannot load {script}"
+        raise ImportError(msg)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module

@@ -1316,7 +1316,14 @@ def f($a,$b,$c):
         rewriter.replace("any", [placeholder_a, placeholder_b])
         rewriter.replace("ANY", [placeholder_b, placeholder_c])
 
-        with pytest.raises(Exception):
+        with pytest.raises(
+            Exception,
+            match=(
+                r"Conflicting rewrites queued for overlapping source ranges "
+                r"\(\d+-\d+ and \d+-\d+\) "
+                r"in the same file - applying both would corrupt the output\."
+            ),
+        ):
             rewriter.apply_to_string()
 
 

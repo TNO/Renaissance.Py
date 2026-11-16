@@ -295,7 +295,7 @@ class _RewriteActions:
                     continue
                 if not (node_a.end_offset < node_b.offset or node_a.offset > node_b.end_offset):
                     raise ValueError(
-                        f"Conflicting rewrites queued for overlapping source ranges "
+                        "Conflicting rewrites queued for overlapping source ranges "
                         f"({node_a.offset}-{node_a.end_offset} and {node_b.offset}-{node_b.end_offset}) "
                         "in the same file - applying both would corrupt the output."
                     )
