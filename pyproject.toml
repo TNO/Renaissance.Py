@@ -43,7 +43,6 @@ urls.Issues = "https://github.com/TNO/Renaissance.Py/issues"
 # the wheel / the renaissance package
 scripts.rejuvenate = "rejuvenation.cli:refactor"
 
-
 [dependency-groups]
 dev = [
   { include-group = "test" },
