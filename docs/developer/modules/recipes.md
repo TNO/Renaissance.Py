@@ -293,11 +293,13 @@ See *Verified by test modules* in [Type parameter modernization](../../user/feat
 - An import that follows another statement on the same line is written back wrongly. This is rare, and `ruff`'s
   `E702` flags such lines. In:
 
-<!-- fmt:off -->
+    <!-- fmt:off -->
+
     ```python
     import os; from origin import T
     ```
-<!-- fmt:on -->
+
+    <!-- fmt:on -->
 
     the lines that replace the import get an extra indent, a syntax error.
 
@@ -322,14 +324,16 @@ See *Verified by test modules* in [Type parameter modernization](../../user/feat
 - A declaration followed by `;` on the same line is removed without its `;`. This is rare, and `ruff`'s `E702` flags
   such lines. In:
 
-<!-- fmt:off -->
+    <!-- fmt:off -->
+
     ```python
     T = TypeVar("T"); U = 1
 
 
     def first(items: list[T]) -> T: ...
     ```
-<!-- fmt:on -->
+
+    <!-- fmt:on -->
 
     the file is written as `; U = 1`, a syntax error, and reported under errors.
 
