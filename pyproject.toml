@@ -5,146 +5,203 @@
 # https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
 [build-system]
-requires = ["hatchling>=1.27"]  # PEP 639 license metadata
 build-backend = "hatchling.build"
+requires = [ "hatchling>=1.33" ]  # PEP 639 license metadata
 
 [project]
+# TODO - rename to renaissance-py?
+# If so, folder src/renaissance becomes src/renaissance_py
 name = "renaissance"
 version = "0.0.1"
-description = "Renaissance reimplementation in Python"
+description = "Toolkit for software understanding and modernization"
 readme = "README.md"
-authors = [
-    { name = "Pierre van de Laar", email = "pierre.vandelaar@tno.nl" },
-    { name = "Jinmin Hu", email = "jinmin.hu@capgemini.com" },
-    { name = "Luna Li", email = "luna.li@capgemini.com" }
-]
 license = "EPL-2.0"
-license-files = ["LICENSE"]
-requires-python = "==3.14.10"
-dependencies = [
-    "arpeggio>=2.0",
-    "pyperclip>=1.8",
-    "libclang-ng==22.1.4.2",
-    "more-itertools>=10.0",
-    "networkx>=3.0",
-    "pyhamcrest>=2.1",
-    "termcolor>=2.0",
-    "tree-sitter>=0.25",
-    "tree-sitter-python==0.25.0",
-    "tree-sitter-cpp==0.23.4",
-    "tree-sitter-java==0.23.5",
-    "libcst>=1.8.6",
-    "ruff>=0.5",
+license-files = [ "LICENSE" ]
+authors = [
+  { name = "Pierre van de Laar", email = "pierre.vandelaar@tno.nl" },
+  { name = "Jinmin Hu", email = "jinmin.hu@capgemini.com" },
+  { name = "Luna Li", email = "luna.li@capgemini.com" }
 ]
+requires-python = ">=3.14.10,<3.15"
+dependencies = [
+  "arpeggio>=2.0.3",
+  "libclang-ng>=22.1.4.2",
+  "libcst>=1.9",
+  "more-itertools>=11.2.1",
+  "networkx>=3.7",
+  "pyperclip>=1.11",
+  "ruff>=0.17.5",
+  "termcolor>=3.3",
+  "tree-sitter>=0.26.1",
+  "tree-sitter-cpp>=0.23.4",
+  "tree-sitter-java>=0.23.5",
+  "tree-sitter-python>=0.25",
+]
+urls.Homepage = "https://github.com/TNO/Renaissance.Py"
+urls.Issues = "https://github.com/TNO/Renaissance.Py/issues"
+# TODO command will fail after a normal install as its reference is outside
+# the wheel / the renaissance package
+scripts.rejuvenate = "rejuvenation.cli:refactor"
+
 
 [dependency-groups]
-test = [
-    "hypothesis>=6.152.4",
-    "hypothesmith>=0.3.3",
-    "parameterized>=0.9",
-    "pytest>=8.0",
-    "pytest-bdd>=9.0.1",
-    "pytest-cov>=7.0",
-    "pytest-mock>=3.15",
-    "pytest-profiling>=1.8",
-    "coverage>=7.0",
+dev = [
+  { include-group = "test" },
+  { include-group = "type" },
+  { include-group = "docs" },
+  { include-group = "lint" },
 ]
-lint = [
-    "codespell>=2.4",
-    "pyright>=1.1",
-    "pymarkdownlnt>=0.9.42",
+test = [
+  "coverage>=7.17.3",
+  "hypothesis>=6.170.15",
+  "hypothesmith>=0.3.3",
+  "parameterized>=0.9",
+  "pyhamcrest>=2.1",
+  "pytest>=9.2",
+  "pytest-bdd>=9.0.1",
+  "pytest-cov>=7.1",
+  "pytest-mock>=3.17",
+  "pytest-profiling>=1.8.1",
+]
+type = [
+  "pyright>=1.1.414",
 ]
 docs = [
-    "mkdocs>=1.6",
-    "mkdocs-material>=9.0",
-    "mkdocstrings[python]>=0.25",
-    "mkdocs-autorefs>=1.0",
-    "mkdocs-exporter>=6.0",
+  "mkdocs>=1.6.1",
+  "mkdocs-autorefs>=1.4.5",
+  "mkdocs-exporter>=6.2",
+  "mkdocs-material>=9.8.1",
+  "mkdocstrings[python]>=1.0.8",
 ]
-dev = [
-    {include-group = "test"},
-    {include-group = "lint"},
-    {include-group = "docs"},
+lint = [
+  "codespell>=2.4.3",
+  "pymarkdownlnt>=0.9.42",
+  "pyproject-fmt>=2.30.6",
+  # ruff is a direct dependency
 ]
-
-[project.urls]
-Homepage = "https://github.com/TNO/Renaissance.Py"
-Issues = "https://github.com/TNO/Renaissance.Py/issues"
-
-[project.scripts]
-rejuvenate = "rejuvenation.cli:refactor"
-
-[tool.pytest.ini_options]
-testpaths = ["test", "features"]
-pythonpath = ["src", "test", "features"]
-norecursedirs = ["features/targets", "*.egg", ".*", "_darcs", "build", "CVS", "dist", "node_modules", "venv", "{arch}"]
-markers = [
-    "xfail_prepend_descendant_first: known-failing rewrite-semantics.feature Examples row (see features/steps/conftest.py)",
-    "xfail_append_ancestor_first: known-failing rewrite-semantics.feature Examples row (see features/steps/conftest.py)",
-    "xfail_surround_descendant_first_shared_start: known-failing rewrite-semantics.feature Examples row (see features/steps/conftest.py)",
-    "xfail_surround_ancestor_first_shared_end: known-failing rewrite-semantics.feature Examples row (see features/steps/conftest.py)",
-]
-
-[tool.coverage.run]
-source = ["src"]
-omit = ["test/*", "features/*"]
-
-[tool.coverage.report]
-show_missing = true
-skip_covered = false
 
 [tool.ruff]
 line-length = 140
-src = ["src", "test", "features"]
+src = [ "features", "src", "test" ]
 # Test inputs: tests can assert their content (including line numbers), so neither Ruff nor the guard rails may change them.
 # tools/check_copyright.py reads this list too; it holds the test inputs only.
-extend-exclude = ["features/targets"]
+extend-exclude = [ "features/targets" ]
 force-exclude = true
-
-[tool.ruff.format]
 # Ruff's default keeps each file's own line ending; LF matches .gitattributes, also on Windows.
-line-ending = "lf"
-
-[tool.ruff.lint]
-select = [
-    "A","AIR", "ASYNC", "COM", "CPY", "D", "DJ", "DTZ", "E", "EXE",
-    "F", "FA", "FAST", "FLY", "FURB", "G", "I", "ICN", "INT", "ISC",
-    "LOG", "N", "NPY", "PTH", "PD", "PERF", "PGH", "PIE", "PLC", "PLE", "PYI",
-    "Q", "RSE", "SIM", "SLOT", "T10", "TC", "TID", "UP", "W", "YTT",
-    # ANN is adopted code by code as each phase clears it; the rest stay unselected so the
-    # lint budget keeps counting them. Still open: ANN001, ANN201, ANN202.
-    "ANN002", "ANN003", "ANN204", "ANN205", "ANN401",
+format.line-ending = "lf"
+lint.select = [
+  "A",
+  "AIR",
+  # ANN is adopted code by code as each phase clears it; the rest stay unselected so the
+  # lint budget keeps counting them. Still open: ANN001, ANN201, ANN202.
+  "ANN002",
+  "ANN003",
+  "ANN204",
+  "ANN205",
+  "ANN401",
+  "ASYNC",
+  "COM",
+  "CPY",
+  "D",
+  "DJ",
+  "DTZ",
+  "E",
+  "EXE",
+  "F",
+  "FA",
+  "FAST",
+  "FLY",
+  "FURB",
+  "G",
+  "I",
+  "ICN",
+  "INT",
+  "ISC",
+  "LOG",
+  "N",
+  "NPY",
+  "PD",
+  "PERF",
+  "PGH",
+  "PIE",
+  "PLC",
+  "PLE",
+  "PTH",
+  "PYI",
+  "Q",
+  "RSE",
+  "SIM",
+  "SLOT",
+  "T10",
+  "TC",
+  "TID",
+  "UP",
+  "W",
+  "YTT",
 ]
-#select = ["ALL"]  # goal of issue 
-ignore = [
-    "D203",   # conflicts with D211 (no blank line before class) — keep D211
-    "D213",   # conflicts with D212 (summary on the first line) — keep D212
-    "COM812", # conflicts when used with the formatter - use formatter
-    "UP037",  # Python 3.14+ evaluates annotations lazily
-    # When we move to 3.15, we will remove the TC001–TC003 ignores and use lazy imports where needed.
-    "TC001",  # Python 3.14+ no longer requires TYPE_CHECKING for annotations
-    "TC002",  # Python 3.14+ no longer requires TYPE_CHECKING for annotations
-    "TC003",  # Python 3.14+ no longer requires TYPE_CHECKING for annotations
-    "FIX",    # FIXMEs, TODOs etc mark out-of-scope work from said PR
+# lint.select = [ "ALL" ]  # goal of issue
+lint.ignore = [
+  "COM812", # conflicts when used with the formatter - use formatter
+  "D203",   # conflicts with D211 (no blank line before class) — keep D211
+  "D213",   # conflicts with D212 (summary on the first line) — keep D212
+  "FIX",    # FIXMEs, TODOs etc mark out-of-scope work from said PR
+  # When we move to 3.15, we will remove the TC001–TC003 ignores and use lazy imports where needed.
+  "TC001",  # Python 3.14+ no longer requires TYPE_CHECKING for annotations
+  "TC002",  # Python 3.14+ no longer requires TYPE_CHECKING for annotations
+  "TC003",  # Python 3.14+ no longer requires TYPE_CHECKING for annotations
+  "UP037",  # Python 3.14+ evaluates annotations lazily
 ]
-
-[tool.ruff.lint.flake8-annotations]
 # ANN002/ANN003 require variadics to be annotated; forwarding ones are genuinely heterogeneous, so Any is allowed there.
-allow-star-arg-any = true
+lint.flake8-annotations.allow-star-arg-any = true
+lint.flake8-copyright.author = "TNO"
+lint.flake8-tidy-imports.ban-relative-imports = "all"
 
-[tool.ruff.lint.flake8-copyright]
-author = "TNO"
-
-[tool.ruff.lint.flake8-tidy-imports]
-ban-relative-imports = "all"
+[tool.pyproject-fmt]
+generate_python_version_classifiers = false
 
 [tool.pyright]
 typeCheckingMode = "off"
-#typeCheckingMode = "strict"
-include = ["src", "test", "tools", "features"]
+# typeCheckingMode = "strict"
+include = [ "features", "src", "test", "tools" ]
 # features/targets holds deliberately malformed sample input, so it is parsed by the tests rather than type-checked.
-exclude = ["features/targets", "**/node_modules", "**/__pycache__", "**/.*", ".venv"]
-extraPaths = ["src", "test", "features"]
+exclude = [ "**/.*", "**/__pycache__", "**/node_modules", ".venv", "features/targets" ]
+extraPaths = [ "features", "src", "test" ]
+
+[tool.pytest]
+ini_options.testpaths = [ "test", "features" ]
+ini_options.pythonpath = [ "features", "src", "test" ]
+ini_options.norecursedirs = [
+  "*.egg",
+  ".*",
+  "_darcs",
+  "{arch}",
+  "build",
+  "CVS",
+  "dist",
+  "features/targets",
+  "node_modules",
+  "venv"
+]
+ini_options.markers = [
+  "xfail_append_ancestor_first: known-failing rewrite-semantics.feature Examples row (see features/steps/conftest.py)",
+  """\
+  xfail_prepend_descendant_first: known-failing rewrite-semantics.feature Examples row (see features/steps/conftest.py)\
+  """,
+  """\
+  xfail_surround_ancestor_first_shared_end: known-failing rewrite-semantics.feature Examples row (see \
+  features/steps/conftest.py)\
+  """,
+  """\
+  xfail_surround_descendant_first_shared_start: known-failing rewrite-semantics.feature Examples row (see \
+  features/steps/conftest.py)\
+  """,
+]
+
+[tool.coverage]
+run.source = [ "src" ]
+run.omit = [ "features/*", "test/*" ]
+report.skip_covered = false
+report.show_missing = true
 
 [tool.pymarkdown]
 plugins.md013.heading_line_length = 140
