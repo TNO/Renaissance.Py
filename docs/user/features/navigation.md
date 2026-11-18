@@ -12,6 +12,9 @@ https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
 **Stable ID:** `FEATURE-NAVIGATION`
 
+The navigation of the AST structure, for the nodes that provide the navigation protocols, is described in
+[Navigate](../core/navigate.md).
+
 ## MISC
 
 Navigate the AST based on

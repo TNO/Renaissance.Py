@@ -17,13 +17,12 @@ import clang.native
 from clang.cindex import Config, Cursor, CursorKind, Index, TypeKind
 from clang.cindex import TranslationUnit as ClangCindexTranslationUnit
 
+from renaissance.core.model import ASTFinder, ASTNode, ASTReference, SemanticKind
+from renaissance.core.pattern import PatternKind
 from renaissance.integrations.clang.cpp_utils import matches_node_kind
 from renaissance.integrations.clang.kinds import CLANG_KIND_MAP
 from renaissance.integrations.clang.predicates import is_clang_compound_statement, is_clang_macro_definition
-from renaissance.syntax_tree import ASTFinder, ASTNode, ASTReference
-from renaissance.syntax_tree.pattern_kind import PatternKind
-from renaissance.syntax_tree.semantic_kind import SemanticKind
-from renaissance.utils.ast_utils import match_children, match_props
+from renaissance.integrations.shared import equal_in_children, equal_in_properties
 
 EMPTY_DICT = {}
 EMPTY_STR = ""
@@ -200,8 +199,8 @@ class ClangASTNode(ASTNode[Cursor, ClangTranslationUnit]):
         return (
             isinstance(other, type(self))
             and self.kind_key == other.kind_key
-            and match_props(self.properties, other.properties, IRRELEVANT_PROPS)
-            and match_children(self.children, other.children, IRRELEVANT_NODES)
+            and equal_in_properties(self.properties, other.properties, lambda name: name not in IRRELEVANT_PROPS)
+            and equal_in_children(self.children, other.children, lambda child: child.parser_kind not in IRRELEVANT_NODES)
         )
 
     def __hash__(self) -> int:
@@ -230,7 +229,7 @@ class ClangASTNode(ASTNode[Cursor, ClangTranslationUnit]):
         working_dir: Path = None,
     ) -> ClangASTNode:
         # Convert file_content to bytes
-        # TODO: see docs/developer/architecture/position-consistency.md - clang decides the encoding, not the host.
+        # TODO: see docs/developer/architecture/position_consistency.md - clang decides the encoding, not the host.
         file_content_bytes = text.encode(sys.getfilesystemencoding())
         # add to cache to avoid reading the file again
         ASTNode.cache[file_name] = file_content_bytes
@@ -420,6 +419,8 @@ class ClangASTNode(ASTNode[Cursor, ClangTranslationUnit]):
 
             if has_body(self):
                 return None
+            # TODO(pjljvandelaar): find_all returns a list, which has no find_first or or_else: this raises AttributeError when reached.
+            #  https://github.com/TNO/Renaissance.Py/issues/187
             body = ASTFinder.find_all(self.root, is_match).find_first().or_else(None)
             if isinstance(body, ClangASTNode):
                 return body

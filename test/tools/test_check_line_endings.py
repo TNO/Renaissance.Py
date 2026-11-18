@@ -6,35 +6,17 @@
 
 """Tests for the line-ending guard rail in tools/check_line_endings.py.
 
-The `tools` directory is not on the pytest `pythonpath`, so the script is loaded from its path.
 The unit tests parse synthetic `git ls-files --eol` output; the integration tests run git in a
 temporary repository, so they verify the parsing against the output git really produces.
 """
 
-import importlib.util
 import shutil
 import subprocess
 from pathlib import Path
-from types import ModuleType
 
 import pytest
 
-ROOT = Path(__file__).resolve().parents[2]
-
-
-def _load_check_line_endings() -> ModuleType:
-    """Import tools/check_line_endings.py as a module."""
-    path = ROOT / "tools" / "check_line_endings.py"
-    spec = importlib.util.spec_from_file_location("check_line_endings", path)
-    if spec is None or spec.loader is None:
-        message = f"cannot load {path}"
-        raise RuntimeError(message)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
-
-
-check_line_endings = _load_check_line_endings()
+from tools import check_line_endings
 
 
 def _record(index_eol: str, attributes: str, path: str) -> str:

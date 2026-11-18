@@ -117,140 +117,140 @@ KNOWN_FAILING_TESTS = {
         r") {\n    return 2;\n}]"
     ),
     (
-        r"test/syntax_tree/test_ast_rewriter.py::TestRemove::test["
+        r"test/unit/core/rewrite/test_ast_rewriter___remove_replace_insert.py::TestRemove::test["
         r"clang_json void f() { int x=2; //x cmt\n  int a=3;\n}-factory3-void f() { int x=2; //x cmt\n  int a=3;\n}-True-True-void"
         r" f() { int x=2; //x cmt\n}]"
     ),
     (
-        r"test/syntax_tree/test_ast_rewriter.py::TestReplace::test["
+        r"test/unit/core/rewrite/test_ast_rewriter___remove_replace_insert.py::TestReplace::test["
         r"clang_json void f() { // c1\n int a=3;\n}-factory19-void f() { // c1\n int a=3;\n}-True-True-void f() { int aa=4;\n}]"
     ),
     (
-        r"test/syntax_tree/test_ast_rewriter.py::TestReplace::test["
+        r"test/unit/core/rewrite/test_ast_rewriter___remove_replace_insert.py::TestReplace::test["
         r"clang_json void f() { // c1\n //c2\n int a=3;\n}-factory20-void f() { // c1\n //c2\n int a=3;\n}-True-True-void f() { //"
         r" c1\n int aa=4;\n}]"
     ),
     (
-        r"test/syntax_tree/test_ast_rewriter.py::TestReplace::test["
+        r"test/unit/core/rewrite/test_ast_rewriter___remove_replace_insert.py::TestReplace::test["
         r"clang_json void f() { //cx\nint x=2; //ca\n int a=3; //caa\n int b=4;//cb \n}-factory32-void f() { //cx\nint x=2; //ca\n"
         r" int a=3; //caa\n int b=4;//cb \n}-True-True-void f() { //cx\nint x=2; //ca\n int aa=4;\n int b=4;//cb \n}]"
     ),
     (
-        r"test/syntax_tree/test_ast_rewriter.py::TestInsertBeforeSingleLine::test["
+        r"test/unit/core/rewrite/test_ast_rewriter___remove_replace_insert.py::TestInsertBeforeSingleLine::test["
         r"clang_json void f() { // c1\n //c2\n int a=3;\n}-factory22-void f() { // c1\n //c2\n int a=3;\n}-True-True-void f() { //"
         r" c1\n int aa=4;\n //c2\n int a=3;\n}]"
     ),
     (
-        r"test/syntax_tree/test_ast_rewriter.py::TestInsertBeforeSingleLine::test["
+        r"test/unit/core/rewrite/test_ast_rewriter___remove_replace_insert.py::TestInsertBeforeSingleLine::test["
         r"clang_json void f() { // c1\n int a=3;\n}-factory23-void f() { // c1\n int a=3;\n}-True-True-void f() { int aa=4;\n // c"
         r"1\n int a=3;\n}]"
     ),
     (
-        r"test/syntax_tree/test_ast_rewriter.py::TestInsertBeforeSingleLine::test["
+        r"test/unit/core/rewrite/test_ast_rewriter___remove_replace_insert.py::TestInsertBeforeSingleLine::test["
         r"clang_json void f() { //cx\n int x=2; //ca\n int a=3; //caa\n int b=4;//cb \n}-factory24-void f() { //cx\n int x=2; //ca"
         r"\n int a=3; //caa\n int b=4;//cb \n}-True-True-void f() { //cx\n int x=2; //ca\n int aa=4;\n int a=3; //caa\n int b=4;//"
         r"cb \n}]"
     ),
     (
-        r"test/syntax_tree/test_ast_rewriter.py::TestInsertBeforeSingleLine::test["
+        r"test/unit/core/rewrite/test_ast_rewriter___remove_replace_insert.py::TestInsertBeforeSingleLine::test["
         r"clang_json void f() { int x=2; //c1\n int a=3; //caa\n int b=4;//cb \n}-factory33-void f() { int x=2; //c1\n int a=3; //"
         r"caa\n int b=4;//cb \n}-True-True-void f() { int x=2; //c1\n int aa=4;\n int a=3; //caa\n int b=4;//cb \n}]"
     ),
     (
-        r"test/syntax_tree/test_ast_rewriter.py::TestInsertBeforeMultiLine::test["
+        r"test/unit/core/rewrite/test_ast_rewriter___remove_replace_insert.py::TestInsertBeforeMultiLine::test["
         r"clang_json /* indent 2 */ void f() {\n  int a=3; /*c1    \n */ }-factory23-/* indent 2 */ void f() {\n  int a=3; /*c1   "
         r" \n */ }-False-False-/* indent 2 */ void f() {\n  int aa=4;\n  int bb=5;int a=3; /*c1    \n */ }]"
     ),
     (
-        r"test/syntax_tree/test_ast_rewriter.py::TestInsertBeforeMultiLine::test["
+        r"test/unit/core/rewrite/test_ast_rewriter___remove_replace_insert.py::TestInsertBeforeMultiLine::test["
         r"clang_json /* indent 2 */ void f() {\n  int a=3; /*c1    \n */ }-factory24-/* indent 2 */ void f() {\n  int a=3; /*c1   "
         r" \n */ }-False-True-/* indent 2 */ void f() {\n  int aa=4;\n  int bb=5;int a=3; /*c1    \n */ }]"
     ),
     (
-        r"test/syntax_tree/test_ast_rewriter.py::TestInsertBeforeMultiLine::test["
+        r"test/unit/core/rewrite/test_ast_rewriter___remove_replace_insert.py::TestInsertBeforeMultiLine::test["
         r"clang_json /* indent 2 */ void f() {\n  int a=3; /*c1    \n */ }-factory25-/* indent 2 */ void f() {\n  int a=3; /*c1   "
         r" \n */ }-True-True-/* indent 2 */ void f() {\n  int aa=4;\n  int bb=5;  int a=3; /*c1    \n */ }]"
     ),
     (
-        r"test/syntax_tree/test_ast_rewriter.py::TestInsertBeforeMultiLine::test["
+        r"test/unit/core/rewrite/test_ast_rewriter___remove_replace_insert.py::TestInsertBeforeMultiLine::test["
         r"clang_json void f() { // c1\n //c2\n int a=3;\n}-factory28-void f() { // c1\n //c2\n int a=3;\n}-True-True-void f() { //"
         r" c1\n int aa=4;\n int bb=5;\n //c2\n int a=3;\n}]"
     ),
     (
-        r"test/syntax_tree/test_ast_rewriter.py::TestInsertBeforeMultiLine::test["
+        r"test/unit/core/rewrite/test_ast_rewriter___remove_replace_insert.py::TestInsertBeforeMultiLine::test["
         r"clang_json void f() { // c1\n int a=3;\n}-factory29-void f() { // c1\n int a=3;\n}-True-True-void f() { int aa=4;\n int "
         r"bb=5;\n // c1\n int a=3;\n}]"
     ),
     (
-        r"test/syntax_tree/test_ast_rewriter.py::TestInsertBeforeMultiLine::test["
+        r"test/unit/core/rewrite/test_ast_rewriter___remove_replace_insert.py::TestInsertBeforeMultiLine::test["
         r"clang_json void f() { //cx\n int x=2; //ca\n int a=3; //caa\n int b=4;//cb \n}-factory30-void f() { //cx\n int x=2; //ca"
         r"\n int a=3; //caa\n int b=4;//cb \n}-True-True-void f() { //cx\n int x=2; //ca\n int aa=4;\n int bb=5;\n int a=3; //caa"
         r"\n int b=4;//cb \n}]"
     ),
     (
-        r"test/syntax_tree/test_ast_rewriter.py::TestInsertBeforeMultiLine::test["
+        r"test/unit/core/rewrite/test_ast_rewriter___remove_replace_insert.py::TestInsertBeforeMultiLine::test["
         r"clang_json void f() { int x=2; //c1\n int a=3; //caa\n int b=4;//cb \n}-factory39-void f() { int x=2; //c1\n int a=3; //"
         r"caa\n int b=4;//cb \n}-True-True-void f() { int x=2; //c1\n int aa=4;\n int bb=5;\n int a=3; //caa\n int b=4;//cb \n}]"
     ),
     (
-        r"test/syntax_tree/test_ast_rewriter.py::TestInsertAfterSingleLine::test["
+        r"test/unit/core/rewrite/test_ast_rewriter___remove_replace_insert.py::TestInsertAfterSingleLine::test["
         r"clang_json void f() { // c1\n //c2\n int a=3;\n}-factory22-void f() { // c1\n //c2\n int a=3;\n}-True-True-void f() { //"
         r" c1\n //c2\n int a=3;\n int aa=4;\n}]"
     ),
     (
-        r"test/syntax_tree/test_ast_rewriter.py::TestInsertAfterSingleLine::test["
+        r"test/unit/core/rewrite/test_ast_rewriter___remove_replace_insert.py::TestInsertAfterSingleLine::test["
         r"clang_json void f() { // c1\n int a=3;\n}-factory23-void f() { // c1\n int a=3;\n}-True-True-void f() { // c1\n int a=3;"
         r"\n int aa=4;\n}]"
     ),
     (
-        r"test/syntax_tree/test_ast_rewriter.py::TestInsertAfterSingleLine::test["
+        r"test/unit/core/rewrite/test_ast_rewriter___remove_replace_insert.py::TestInsertAfterSingleLine::test["
         r"clang_json void f() { //cx\nint x=2; //ca\n int a=3; //caa\n int b=4;//cb \n}-factory24-void f() { //cx\nint x=2; //ca\n"
         r" int a=3; //caa\n int b=4;//cb \n}-True-True-void f() { //cx\nint x=2; //ca\n int a=3; //caa\n int aa=4;\n int b=4;//cb "
         r"\n}]"
     ),
     (
-        r"test/syntax_tree/test_ast_rewriter.py::TestInsertAfterSingleLine::test["
+        r"test/unit/core/rewrite/test_ast_rewriter___remove_replace_insert.py::TestInsertAfterSingleLine::test["
         r"clang_json void f() { int x=2; //c1\n int a=3; //caa\n int b=4;//cb \n}-factory33-void f() { int x=2; //c1\n int a=3; //"
         r"caa\n int b=4;//cb \n}-True-True-void f() { int x=2; //c1\n int a=3; //caa\n int aa=4;\n int b=4;//cb \n}]"
     ),
     (
-        r"test/syntax_tree/test_ast_rewriter.py::TestInsertAfterMultiLine::test["
+        r"test/unit/core/rewrite/test_ast_rewriter___remove_replace_insert.py::TestInsertAfterMultiLine::test["
         r"clang_json /* indent 2 */ void f() {\n  int a=3; /*c1    \n */ }-factory20-/* indent 2 */ void f() {\n  int a=3; /*c1   "
         r" \n */ }-False-False-/* indent 2 */ void f() {\n  int a=3;int aa=4;\n  int bb=5; /*c1    \n */ }]"
     ),
     (
-        r"test/syntax_tree/test_ast_rewriter.py::TestInsertAfterMultiLine::test["
+        r"test/unit/core/rewrite/test_ast_rewriter___remove_replace_insert.py::TestInsertAfterMultiLine::test["
         r"clang_json /* indent 2 */ void f() {\n  int a=3; /*c1    \n */ }-factory21-/* indent 2 */ void f() {\n  int a=3; /*c1   "
         r" \n */ }-False-True-/* indent 2 */ void f() {\n  int a=3; /*c1    \n */int aa=4;\n  int bb=5; }]"
     ),
     (
-        r"test/syntax_tree/test_ast_rewriter.py::TestInsertAfterMultiLine::test["
+        r"test/unit/core/rewrite/test_ast_rewriter___remove_replace_insert.py::TestInsertAfterMultiLine::test["
         r"clang_json /* indent 2 */ void f() {\n  int a=3; /*c1    \n */ }-factory22-/* indent 2 */ void f() {\n  int a=3; /*c1   "
         r" \n */ }-True-True-/* indent 2 */ void f() {\n  int a=3; /*c1    \n */  int aa=4;\n  int bb=5; }]"
     ),
     (
-        r"test/syntax_tree/test_ast_rewriter.py::TestInsertAfterMultiLine::test["
+        r"test/unit/core/rewrite/test_ast_rewriter___remove_replace_insert.py::TestInsertAfterMultiLine::test["
         r"clang_json void f() { // c1\n //c2\n int a=3;\n}-factory28-void f() { // c1\n //c2\n int a=3;\n}-True-True-void f() { //"
         r" c1\n //c2\n int a=3;\n int aa=4;\n int bb=5;\n}]"
     ),
     (
-        r"test/syntax_tree/test_ast_rewriter.py::TestInsertAfterMultiLine::test["
+        r"test/unit/core/rewrite/test_ast_rewriter___remove_replace_insert.py::TestInsertAfterMultiLine::test["
         r"clang_json void f() { // c1\n int a=3;\n}-factory29-void f() { // c1\n int a=3;\n}-True-True-void f() { // c1\n int a=3;"
         r"\n int aa=4;\n int bb=5;\n}]"
     ),
     (
-        r"test/syntax_tree/test_ast_rewriter.py::TestInsertAfterMultiLine::test["
+        r"test/unit/core/rewrite/test_ast_rewriter___remove_replace_insert.py::TestInsertAfterMultiLine::test["
         r"clang_json void f() { //cx\nint x=2; //ca\n int a=3; //caa\n int b=4;//cb \n}-factory30-void f() { //cx\nint x=2; //ca\n"
         r" int a=3; //caa\n int b=4;//cb \n}-True-True-void f() { //cx\nint x=2; //ca\n int a=3; //caa\n int aa=4;\n int bb=5;\n i"
         r"nt b=4;//cb \n}]"
     ),
     (
-        r"test/syntax_tree/test_ast_rewriter.py::TestInsertAfterMultiLine::test["
+        r"test/unit/core/rewrite/test_ast_rewriter___remove_replace_insert.py::TestInsertAfterMultiLine::test["
         r"clang_json void f() { int x=2; //c1\n int a=3; //caa\n int b=4;//cb \n}-factory39-void f() { int x=2; //c1\n int a=3; //"
         r"caa\n int b=4;//cb \n}-True-True-void f() { int x=2; //c1\n int a=3; //caa\n int aa=4;\n int bb=5;\n int b=4;//cb \n}]"
     ),
     (
-        r"test/syntax_tree/test_ast_rewriter.py::TestComposeReplacement::test_args["
+        r"test/unit/core/rewrite/test_ast_rewriter___composition.py::TestComposeReplacement::test_args["
         r"clang_json if($exp){$$before;b=$d1;$$after;}else{$$before;b=$d2;$$after;}-factory1-if($exp){$$before;b=$d1;$$after;}els"
         r"e{$$before;b=$d2;$$after;}-extra_declarations1-replacement1]"
     ),

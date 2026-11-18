@@ -11,9 +11,9 @@ from pathlib import Path
 import pytest
 from hamcrest import assert_that, is_
 
+from renaissance.core.model import ASTFactory, ASTShower
 from renaissance.integrations.clang import CPatternFactory
 from renaissance.integrations.clang.clang_json_ast_node import ClangJsonASTNode
-from renaissance.syntax_tree import ASTFactory, ASTShower
 
 
 class TestClangJsonAstNode:

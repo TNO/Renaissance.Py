@@ -9,9 +9,9 @@
 import pytest
 from hamcrest import assert_that, equal_to, has_length
 
+from renaissance.core.match import PatternMatch, match_pattern
 from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
-from renaissance.syntax_tree.match_finder import PatternMatch, match_pattern
 
 FUNCTION_PATTERN = "def $f[$$tps]($$args) -> $r:\n    $$body"
 DECORATED_FUNCTION_PATTERN = "@$$decorators\ndef $f[$$tps]($$args) -> $r:\n    $$body"

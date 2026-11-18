@@ -10,21 +10,19 @@ import ast
 import re
 from collections.abc import Sequence
 from pathlib import Path
+from typing import Self
 
 import tree_sitter_python
 from libcst import SimpleStatementLine
 
-from renaissance.integrations import MATCH_ALL, MATCH_ONE
+from renaissance.core.match import is_match
+from renaissance.core.model import NodeProtocol, SemanticKind
+from renaissance.core.pattern import MATCH_ALL, MATCH_ONE, PatternKind, replace_dollar, use_dollar
 from renaissance.integrations.python.ast.ast_node import ASTExtension
 from renaissance.integrations.python.ast.cst_node import PythonCstNode
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
 from renaissance.integrations.tree_sitter.adapter import TreeSitterAdapter
 from renaissance.integrations.tree_sitter.lst import LSTNode
-from renaissance.syntax_tree.match_finder import is_match
-from renaissance.syntax_tree.node_protocol import NodeProtocol
-from renaissance.syntax_tree.pattern_kind import PatternKind
-from renaissance.syntax_tree.semantic_kind import SemanticKind
-from renaissance.utils.ast_utils import replace_dollar, use_dollar
 
 _MATCH_ALL_RE = re.compile(r"^" + re.escape(MATCH_ALL) + r"\w+$")
 _MATCH_ONE_RE = re.compile(r"^" + re.escape(MATCH_ONE) + r"\w+$")
@@ -37,8 +35,10 @@ _PLACEHOLDER_PARSER_KINDS = frozenset({"Name", "Expr", "arg", "Param", "TypeVar"
 class PythonPattern:
     """AI: Wrap a Python AST/RST node as a matchable pattern, detecting match-all/match-one placeholders."""
 
-    def __init__(self, node, parent: PythonPattern | None = None) -> None:
+    def __init__(self, node, parent: Self | None = None) -> None:
         """AI: Wrap a Python AST/RST node as a matchable pattern, detecting match-all/match-one placeholders."""
+        # TODO(pjljvandelaar): wrong type - node can also be an ast.AST, a PythonCstNode, an LSTNode, or a str.
+        #  https://github.com/TNO/Renaissance.Py/issues/187
         self.node: PythonRstNode = node
         self.parent = parent
         if type(node) is str:
@@ -50,7 +50,7 @@ class PythonPattern:
         self._derive_pattern_kind(node)
 
         self.properties: dict = node.properties
-        self.children: list[PythonPattern] = [PythonPattern(child, self) for child in node.children]
+        self.children: list[Self] = [type(self)(child, self) for child in node.children]
         self.signature: str = node.signature
         if hasattr(node, "name") and node.name:
             self.name: str = use_dollar(node.name)

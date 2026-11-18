@@ -1,0 +1,21 @@
+# Copyright (C) 2024-2026 TNO
+#
+# Licensed under the terms specified in the LICENSE file in the root directory
+# of this repository, also available at:
+# https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
+
+"""Tests for finding AST nodes by semantic kind via the ast_finder module."""
+
+from renaissance.core.model import SemanticKind, find_semantic_kind
+from renaissance.integrations.python.ast.rst_node import PythonRstNode
+
+
+def test_find_semantic_kind_uses_protocol_metadata() -> None:
+    """AI: Assert find_semantic_kind locates nodes by their semantic kind via protocol metadata."""
+    root = PythonRstNode.load_from_text("def f():\n    return 1\n")
+
+    functions = find_semantic_kind(root, SemanticKind.FUNCTION)
+    returns = find_semantic_kind(root, SemanticKind.RETURN)
+
+    assert len(functions) == 1
+    assert len(returns) == 1

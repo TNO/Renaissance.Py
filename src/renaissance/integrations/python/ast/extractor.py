@@ -10,8 +10,8 @@ from pathlib import Path
 
 import networkx as nx
 
+from renaissance.core.model import SemanticKind
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
-from renaissance.syntax_tree.semantic_kind import SemanticKind
 
 
 class PythonExtractor:

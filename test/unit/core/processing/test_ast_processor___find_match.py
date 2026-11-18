@@ -1,0 +1,34 @@
+# Copyright (C) 2024-2026 TNO
+#
+# Licensed under the terms specified in the LICENSE file in the root directory
+# of this repository, also available at:
+# https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
+
+"""Tests for the ASTProcessor pattern-match/find functionality."""
+
+from hamcrest import assert_that, is_
+from pytest_mock import MockerFixture
+
+from renaissance.core.match import PatternMatch
+from renaissance.core.model import ASTFactory
+from renaissance.core.processing import ASTProcessor
+from renaissance.integrations.clang import ClangASTNode
+
+
+class TestAstProcessor:
+    """AI: Tests for the ASTProcessor pattern-match/find functionality."""
+
+    def test_find_match(self, mocker: MockerFixture) -> None:
+        """AI: Verify find_match delegates to the match_finder.find_all function."""
+        node = mocker.Mock()
+        pattern_match = PatternMatch([node, node, node], {}, [])
+        mock_matcher = mocker.patch(
+            "renaissance.core.match.find_all",
+            return_value=[pattern_match],
+        )
+        atu = ClangASTNode.load_from_text("int main(){return 0;}", "test.c", [], None)
+        ast_refactor = ASTProcessor(atu, ASTFactory(ClangASTNode), in_memory=True)
+
+        ast_refactor.find_match([atu.children[-1].children[-1]])
+
+        assert_that(mock_matcher.call_count, is_(1))

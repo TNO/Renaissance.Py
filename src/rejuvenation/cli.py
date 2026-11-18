@@ -9,11 +9,11 @@
 import sys
 from pathlib import Path
 
+from renaissance.core.model import ASTShower
 from renaissance.integrations.python.ast.extractor import PythonExtractor
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
 from renaissance.project.project_scanner import PythonScanner
 from renaissance.recipes.python_refactoring import PythonRefactoring
-from renaissance.syntax_tree import ASTShower
 
 
 def refactor() -> None:

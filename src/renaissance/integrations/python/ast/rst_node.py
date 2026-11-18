@@ -13,18 +13,13 @@ from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import Any, Self
 
+from renaissance.core.match import find_in_list
+from renaissance.core.model import SemanticKind, traverse
+from renaissance.core.model.format import format_node
+from renaissance.core.navigate import next_sibling, previous_sibling
 from renaissance.integrations.python.ast.kinds import PYTHON_KIND_MAP, PYTHON_OPERATOR_MAP
 from renaissance.integrations.python.ast.util import convert
-from renaissance.syntax_tree.match_finder import find_in_list
-from renaissance.syntax_tree.semantic_kind import SemanticKind
-from renaissance.utils.ast_utils import (
-    format_node,
-    match_children,
-    match_props,
-    next_sibling,
-    preceding_sibling,
-    traverse,
-)
+from renaissance.integrations.shared import equal_in_children, equal_in_properties
 
 types = ["int", "float", "str", "list", "set", "tuple", "Mapping", "dict", "Optional"]
 IRRELEVANT_PROPS = {"comment"}
@@ -75,7 +70,7 @@ class PythonRstTranslationUnit:
 
     def __init__(self, content, file_name: str) -> None:
         """AI: Parse Python source into a stdlib ast tree with lazily-built reference caches."""
-        # TODO: see docs/developer/architecture/position-consistency.md - PEP 263 declares the encoding, not the host.
+        # TODO: see docs/developer/architecture/position_consistency.md - PEP 263 declares the encoding, not the host.
         self.content = content.encode(sys.getfilesystemencoding())
         self.atu = ast.parse(content, file_name)
         self.file_name = file_name
@@ -220,7 +215,7 @@ class PythonRstTranslationUnit:
 class PythonRstNode:
     """AI: ASTNode implementation backed by the stdlib ast module."""
 
-    def __init__(self, node: ast.AST, translation_unit: PythonRstTranslationUnit = None, parent=None) -> None:
+    def __init__(self, node: ast.AST, translation_unit: PythonRstTranslationUnit = None, parent: Self | None = None) -> None:
         """AI: Wrap a stdlib ast node as an AST node within the given translation unit."""
         self.root = parent.root if parent and parent.root else self
         self.node = node
@@ -232,7 +227,7 @@ class PythonRstNode:
         self.indent = ""
         self.name = self._derive_name()
         self.show_props = False
-        self.children: list[PythonRstNode] = []
+        self.children: list[Self] = []
         self.properties = {}
         self.is_implicit = self.parser_kind not in IMPLICIT
         self.offset = 0
@@ -254,17 +249,17 @@ class PythonRstNode:
                         elif isinstance(node, (ImplicitNode, ast.Module)) or len(node._fields) == 1:
                             # A list field can hold a bare None at a position with no value
                             # None isn't a real AST node, so it has nothing to build a child from.
-                            self.children.extend(PythonRstNode(n, translation_unit, self) for n in child if n is not None)
+                            self.children.extend(type(self)(n, translation_unit, self) for n in child if n is not None)
                             if name == "body":
                                 self.body = self.children
                         else:
-                            self.children.append(PythonRstNode(ImplicitNode(name, child), translation_unit, self))
+                            self.children.append(type(self)(ImplicitNode(name, child), translation_unit, self))
                             if name in ["body", "cases"]:
                                 self.body = self.children[-1].children
 
                     case ast.AST():
                         if name != "ctx":
-                            self.children.append(PythonRstNode(child, translation_unit, self))
+                            self.children.append(type(self)(child, translation_unit, self))
                             if isinstance(child, ast.expr):
                                 self.expression = self.children[-1]
                     case _:
@@ -288,8 +283,8 @@ class PythonRstNode:
         return (
             isinstance(other, type(self))
             and self.kind_key == other.kind_key
-            and match_props(self.properties, other.properties, IRRELEVANT_PROPS)
-            and match_children(self.children, other.children, IRRELEVANT_NODES)
+            and equal_in_properties(self.properties, other.properties, lambda name: name not in IRRELEVANT_PROPS)
+            and equal_in_children(self.children, other.children, lambda child: child.parser_kind not in IRRELEVANT_NODES)
         )
 
     def __contains__(self, item) -> bool:
@@ -315,9 +310,9 @@ class PythonRstNode:
         return next_sibling(self)
 
     @property
-    def preceding_sibling(self) -> Self | None:
+    def previous_sibling(self) -> Self | None:
         """AI: Return the sibling node immediately preceding this one, or None."""
-        return preceding_sibling(self)
+        return previous_sibling(self)
 
     def process(self, function: Callable[[PythonRstNode], None]) -> None:
         """AI: Apply function to this node and recursively to all of its descendants."""
@@ -467,7 +462,7 @@ class PythonRstNode:
     @property
     def signature(self) -> str:
         """AI: Return the source code text of this node, prefixed with '@' for decorators."""
-        # TODO: see docs/developer/architecture/position-consistency.md - decodes with the host encoding, not the adapter's.
+        # TODO: see docs/developer/architecture/position_consistency.md - decodes with the host encoding, not the adapter's.
         sig = self.binary_file_content().decode(sys.getfilesystemencoding())
         if self.parent and self.parent.name == "decorator_list" and not sig.startswith("@"):
             sig = "@" + sig
@@ -475,7 +470,7 @@ class PythonRstNode:
 
     def binary_file_content(self) -> bytes:
         """AI: Return this node's source text as encoded bytes."""
-        # TODO: see docs/developer/architecture/position-consistency.md - the unparse fallback builds a buffer no offset indexes.
+        # TODO: see docs/developer/architecture/position_consistency.md - the unparse fallback builds a buffer no offset indexes.
         return (
             self.translation_unit.content[self.offset : self.offset + self.length]
             if self.translation_unit

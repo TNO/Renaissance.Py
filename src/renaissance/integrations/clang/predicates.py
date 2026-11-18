@@ -6,7 +6,7 @@
 
 """AI: Predicate helpers for identifying specific Clang AST node kinds."""
 
-from renaissance.syntax_tree.node_protocol import NodeProtocol
+from renaissance.core.model import NodeProtocol
 
 TYPE_REFERENCE_KINDS = frozenset({"TypeRef", "TYPE_REF", "type_identifier"})
 DECLARATION_REFERENCE_KINDS = frozenset({"DeclRefExpr", "DECL_REF_EXPR"})

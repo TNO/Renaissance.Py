@@ -14,13 +14,13 @@ import tree_sitter_python
 from hamcrest import assert_that, has_item, instance_of, is_, not_
 from pytest_mock import MockerFixture
 
+from renaissance.core.model import SemanticKind
 from renaissance.integrations.tree_sitter.extractor import (
     BaseCodeGraphExtractor,
     CppCodeGraphExtractor,
     JavaCodeGraphExtractor,
     PythonCodeGraphExtractor,
 )
-from renaissance.syntax_tree.semantic_kind import SemanticKind
 
 # ---------------------------------------------------------------------------
 # BaseCodeGraphExtractor

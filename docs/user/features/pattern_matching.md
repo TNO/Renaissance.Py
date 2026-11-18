@@ -1,0 +1,83 @@
+<!--
+Copyright (C) 2024-2026 TNO
+
+Licensed under the terms specified in the LICENSE file in the root directory
+of this repository, also available at:
+https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
+-->
+
+# Pattern matching
+
+{ #feature-pattern-matching }
+
+**Stable ID:** `FEATURE-PATTERN-MATCHING`
+
+## User-facing summary
+
+The system supports sequence-based, kind-based, and structural matching with placeholders and controllable matching criteria.
+
+## Related concepts
+
+- [Matching](../concepts/matching.md)
+- [Pattern](../core/pattern.md)
+
+## Related images
+
+- Local image directory: [pattern_matching_images/](pattern_matching_images/README.md)
+
+## MISC
+
+## Scenario: Independent of layout (whitespaces)
+
+## Scenario: Independent of comments
+
+Three cases
+
+1. absent in pattern, present in code
+1. present in pattern, absent in code
+1. present in pattern, present in code, yet different content
+
+## Scenario: Support of placeholders
+
+- Placeholders are AST Nodes
+- Support of explicit and implicit placeholders
+
+## Scenario: Placeholders for type parameters
+
+- `[$$tps]` in `def $f[$$tps]($$args) -> $r:` or `class $c[$$tps]($$bases):` matches any number of type parameters
+  (`TypeVar`, `ParamSpec` and `TypeVarTuple`).
+- `[$t]` matches exactly one type parameter.
+- Each captured type parameter is an AST node.
+- A type parameter written in the pattern, such as `[T]`, matches only that name.
+
+## Scenario: Robustness for occurrence of implicit placeholders
+
+- in strings, e.g. `"$X"`
+- in comments, e.g., `/* $X */`.
+
+## Scenario: Multiple occurrences of placeholders
+
+- Equivalent AST nodes
+- Access to all occurrences
+
+## Scenario: Multiple assignments of placeholders
+
+- E.g., in patterns like `$f($$before, $arg, $$after)`
+
+## Legality of match-patterns
+
+For exact matching, we currently accept all patterns.
+In other words, no illegal `match` pattern exists.
+
+-------------------------------------------------
+
+1. Match functionality
+
+    1. Elementary matching - "symbols with symbols" - representations of  integers, characters, etc.
+    1. Basic matching - "code with code" - with(out) comment, with white spaces - note: python is sensitive for  indentation
+    1. Single placeholder - "pattern with code" - pattern has only one instance of a single placeholder
+    1. Multi placeholder - "pattern with code" - pattern has only one instance of a multi placeholder
+    1. different placeholders - "pattern with code" with different placeholders (each placeholder occurs only once & only single assignment)
+    1. constraint / recurring placeholder - "pattern with code" with single placeholder that occurs multiple times
+    1. patterns with multi placeholders that can have multiple assignments
+    1. mixed

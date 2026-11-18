@@ -22,9 +22,9 @@ from hamcrest import (
 from libcst import ParserSyntaxError
 
 import targets
+from renaissance.core.model import ASTShower
 from renaissance.integrations.python.ast.cst_node import PythonCstNode
 from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
-from renaissance.syntax_tree import ASTShower
 
 
 class TestPythonCstNode:
@@ -80,7 +80,7 @@ class TestPythonCstNode:
             me,
             has_properties(
                 name="mememe",
-                preceding_sibling=has_property("name", "previous_me"),
+                previous_sibling=has_property("name", "previous_me"),
                 next_sibling=has_property("name", "next_me"),
                 parent=has_property("parent", has_property("name", "Parent")),
             ),
@@ -170,7 +170,7 @@ def test_load_builds_every_node_from_the_subclass(source: str, tmp_path: Path) -
     pending: list[PythonCstNode] = [_SubclassNode.load(file)]
     while pending:
         node = pending.pop()
-        for related in (node, node.root, node.parent, node.next_sibling, node.preceding_sibling):
+        for related in (node, node.root, node.parent, node.next_sibling, node.previous_sibling):
             if related is not None:
                 assert_that(related, is_(_SubclassNode))
         pending.extend(node.children)

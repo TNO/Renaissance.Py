@@ -9,9 +9,11 @@
 import sys
 from typing import Any, Self, cast
 
+from renaissance.core.model import SemanticKind
+from renaissance.core.model.format import format_node
+from renaissance.core.navigate import next_sibling, previous_sibling
+from renaissance.integrations.shared import equal_in_children, equal_in_properties
 from renaissance.integrations.tree_sitter.kinds import TREE_SITTER_KIND_MAP
-from renaissance.syntax_tree.semantic_kind import SemanticKind
-from renaissance.utils.ast_utils import format_node, match_children, match_props, next_sibling, preceding_sibling
 
 IRRELEVANT_PROPS = {"source_code", "end_point", "start_point", "location", "type"}
 IRRELEVANT_NODE = {"comment"}
@@ -67,12 +69,14 @@ class LSTNode:
         return (
             isinstance(other, type(self))
             and self.kind_key == other.kind_key
-            and match_props(self.properties, other.properties, IRRELEVANT_PROPS)
-            and match_children(self.children, other.children, IRRELEVANT_NODE)
+            and equal_in_properties(self.properties, other.properties, lambda name: name not in IRRELEVANT_PROPS)
+            and equal_in_children(self.children, other.children, lambda child: child.parser_kind not in IRRELEVANT_NODE)
         )
 
     def __hash__(self) -> int:
         """AI: Return a hash based on the node's kind key, properties, and children."""
+        # TODO(pjljvandelaar): hashes the IRRELEVANT_PROPS that __eq__ ignores, so equal nodes can have different hashes.
+        #  https://github.com/TNO/Renaissance.Py/issues/187
         return hash((self.kind_key, frozenset(self.properties.items()), tuple(self.children)))
 
     def add_child(self, child) -> None:  # LSTNode):
@@ -81,9 +85,9 @@ class LSTNode:
         child.parent = self
 
     @property
-    def preceding_sibling(self) -> Self | None:
+    def previous_sibling(self) -> Self | None:
         """AI: Return the sibling node immediately preceding this one, or None."""
-        return preceding_sibling(self)
+        return previous_sibling(self)
 
     @property
     def next_sibling(self) -> Self | None:
@@ -97,7 +101,7 @@ class LSTNode:
 
     def binary_file_content(self):
         """AI: Return this node's source code encoded as bytes using the filesystem encoding."""
-        # TODO: see docs/developer/architecture/position-consistency.md - builds a per-node buffer, not the root's.
+        # TODO: see docs/developer/architecture/position_consistency.md - builds a per-node buffer, not the root's.
         src = cast("str", self.properties.get("source_code"))
         return src.encode(sys.getfilesystemencoding())
 

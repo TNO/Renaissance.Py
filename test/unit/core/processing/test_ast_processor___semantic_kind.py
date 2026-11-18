@@ -1,0 +1,21 @@
+# Copyright (C) 2024-2026 TNO
+#
+# Licensed under the terms specified in the LICENSE file in the root directory
+# of this repository, also available at:
+# https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
+
+"""Tests that ASTProcessor finds nodes by semantic kind."""
+
+from renaissance.core.model import SemanticKind
+from renaissance.core.processing import ASTProcessor
+from renaissance.integrations.python.ast.factory import PythonFactory
+from renaissance.integrations.python.ast.rst_node import PythonRstNode
+
+
+def test_ast_processor_finds_nodes_by_semantic_kind() -> None:
+    """AI: Assert ASTProcessor.find_semantic_kind locates nodes by their semantic kind."""
+    root = PythonRstNode.load_from_text("def f():\n    return 1\n")
+    processor = ASTProcessor(root, PythonFactory(PythonRstNode), in_memory=True)
+
+    assert len(processor.find_semantic_kind(SemanticKind.FUNCTION)) == 1
+    assert len(processor.find_semantic_kind(SemanticKind.RETURN)) == 1

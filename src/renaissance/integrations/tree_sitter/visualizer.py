@@ -6,8 +6,15 @@
 
 """AI: Render a tree-sitter LST as a Mermaid graph for visualization."""
 
+import re
+
 from renaissance.integrations.tree_sitter.lst import LST
-from renaissance.utils.text_utils import signature_to_id
+
+
+def signature_to_id(signature: str) -> str:
+    """AI: Derive a short, filesystem/identifier-safe id from a node signature."""
+    text = signature.replace("\n", " ")
+    return re.sub(r"[^\w\s]", "", text)[:30]  # Remove punctuation, limit length
 
 
 class LstVisualizer:

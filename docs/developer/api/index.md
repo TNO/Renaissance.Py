@@ -8,4 +8,5 @@ https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
 # API reference
 
-1. [Public API](public-api.md)
+1. [Public API](public_api.md)
+1. [Core model](core/model.md)
