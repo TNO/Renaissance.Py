@@ -218,7 +218,7 @@ def main(argv: list[str] | None = None) -> int:
         report += [f"  {violation.describe()}" for violation in violations]
         report.append(
             "\nAdd or move the counterpart, or record the deviation in [tool.check_layout] of pyproject.toml;"
-            " see docs/developer/tools/check_layout.md."
+            " see docs/developer/tools/check_layout.md.",
         )
     else:
         unit_count = sum(len(find_units(mirror, files)) for mirror in mirrors)

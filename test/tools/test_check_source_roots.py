@@ -20,7 +20,7 @@ def _config(pythonpath: list[str], src: list[str], extra_paths: list[str]) -> di
             "pytest": {"ini_options": {"pythonpath": pythonpath}},
             "ruff": {"src": src},
             "pyright": {"extraPaths": extra_paths},
-        }
+        },
     }
 
 
