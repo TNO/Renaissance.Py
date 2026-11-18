@@ -32,8 +32,12 @@ jobs:
       # uv installs the interpreter pinned by requires-python in pyproject.toml.
       - name: Install dependencies
         run: uv sync --group dev
+      - name: Check pyproject.toml formatting
+        run: uv run pyproject-fmt --check pyproject.toml
       - name: Lint with ruff
         run: uv run ruff check ./src ./test ./tools ./features
+      - name: Check formatting with ruff
+        run: uv run ruff format --check ./src ./test ./tools ./features ./docs
       - name: Type check with pyright
         run: uv run pyright ./src ./test ./tools ./features
       - name: Check ruff and pyright issue budgets

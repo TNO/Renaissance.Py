@@ -131,7 +131,7 @@ pytest-bdd is chosen over Behave and Robot Framework (see [Alternatives consider
 - Fixtures are defined with `@pytest.fixture`; shared fixtures live in `conftest.py`.
 - Parametrised tests use `@pytest.mark.parametrize`.
 - Coverage is measured with `pytest-cov` (`--cov-report=term-missing`).
-- All pytest configuration lives under `[tool.pytest.ini_options]` in `pyproject.toml`.
+- All pytest configuration lives in `pyproject.toml`, as the `ini_options.*` keys of the `[tool.pytest]` table.
 - Performance baselines are stored in `.benchmarks/` (git-ignored by default).
 
 ## Example

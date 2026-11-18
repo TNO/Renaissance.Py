@@ -21,6 +21,7 @@ from another module, `default=` and nested functions, and never removes the old 
 ```python
 T = TypeVar("T")
 
+
 def first(items: list[T]) -> T: ...
 ```
 
@@ -100,6 +101,7 @@ methods. With `class Box[T]:` the methods don't use the module-level `T`, so a d
 
 ```python
 T = TypeVar("T")
+
 
 class Box[T]:
     def get(self) -> T: ...
@@ -193,6 +195,7 @@ checkers infer. Other declarations in the file are still converted, except in fu
 ```python
 T = TypeVar("T", default=int)
 
+
 def first(items: list[T]) -> T: ...
 ```
 
@@ -215,6 +218,7 @@ parameter has no variance.)
 ```python
 P = ParamSpec("P", bound=int)
 
+
 def run(func: Callable[P, int]) -> Callable[P, int]: ...
 ```
 
@@ -232,6 +236,7 @@ legacy type parameter of an enclosing generic class is not the method's own, so 
 ```python
 P = ParamSpec("P", bound=int)
 Ts = TypeVarTuple("Ts")
+
 
 def run(func: Callable[P, tuple[*Ts]]) -> Callable[P, tuple[*Ts]]: ...
 ```
@@ -252,6 +257,7 @@ __all__ = ["T", "first"]
 
 T = TypeVar("T")
 
+
 def first(items: list[T]) -> T: ...
 ```
 
@@ -261,6 +267,7 @@ def first(items: list[T]) -> T: ...
 __all__ = ["T", "first"]
 
 T = TypeVar("T")
+
 
 def first[T](items: list[T]) -> T: ...
 ```
@@ -275,6 +282,7 @@ needing review, because its declaration stays.
 
 ```python
 T = TypeVar("T")
+
 
 class Box(Generic[T]):
     def get(self) -> T: ...
@@ -307,6 +315,7 @@ T = TypeVar("T", bound="Shape")
 # main.py
 from shapes import T
 
+
 def biggest(items: list[T]) -> T: ...
 ```
 
@@ -335,6 +344,7 @@ T = TypeVar("T")
 # main.py
 from shapes import T
 
+
 def first(items: list[T]) -> T: ...
 ```
 
@@ -355,10 +365,13 @@ from typing import TypeVar
 
 T = TypeVar("T")
 
+
 def first(items: list[T]) -> T: ...
+
 
 # other.py
 import shapes
+
 
 def second(items: list[shapes.T]) -> shapes.T: ...
 ```
@@ -371,10 +384,13 @@ from typing import TypeVar
 
 T = TypeVar("T")
 
+
 def first[T](items: list[T]) -> T: ...
+
 
 # other.py
 import shapes
+
 
 def second(items: list[shapes.T]) -> shapes.T: ...
 ```
@@ -404,6 +420,7 @@ run the tool again.
 - `test/recipes/test_python_refactoring.py`
 - `test/python/ast/test_cst_utils.py`
 - `test/utils/test_import_resolution.py`
+- `test/recipes/test_ruff_utils.py`
 - `test/rejuvenation/test_migration_type_recipes.py`
 
 ## Implemented by code modules
@@ -411,7 +428,8 @@ run the tool again.
 - [Refactoring recipes](../../developer/modules/recipes.md)
 - `src/renaissance/recipes/type_parameter_check.py`, `type_parameter_rules.py`, `type_parameter_declarations.py`,
   `type_parameter_localization.py`, `type_parameter_uses.py`, `step_runner.py` and `python_refactoring.py`.
-- `src/renaissance/utils/import_resolution.py` and `src/renaissance/integrations/python/ast/cst_utils.py`
+- `src/renaissance/utils/import_resolution.py`, `src/renaissance/integrations/python/ast/cst_utils.py` and
+  `src/renaissance/recipes/ruff_utils.py`
 - `src/rejuvenation/migration_type_recipes.py` (the CLI)
 
 ## API entry points
@@ -432,12 +450,10 @@ python src/rejuvenation/migration_type_recipes.py <path> --py MAJOR.MINOR \
 - `--second-pass`: process again only the files that kept a declaration because another file imported it when the run
   started, and merge the result into the same report.
 
-After the recipe, the CLI runs `ruff check --fix --select F401,I001,UP049` on the changed files. This removes **every**
+After the recipe, the CLI runs `ruff check --fix --select F401,I001` on the changed files. This removes **every**
 unused import in them, including ones that were unused before (such as `from typing import TypeVar` after the
 declaration is gone). It also merges and sorts **every** import block in them, including imports that were unsorted
-before, using the `ruff` settings of the project. It removes the leading underscores of **every** PEP 695 type
-parameter in them, so `def f[_T]` becomes `def f[T]`, unless the new name would shadow another one. Docstrings,
-comments and the report keep the old name. The project's `select` and `ignore` lists do not apply to these three
+before, using the `ruff` settings of the project. The project's `select` and `ignore` lists do not apply to these two
 rules. Then it runs `ruff format` on the same files, which reformats **every** line in them with the project's
 `ruff format` settings, not only the changed ones. `ruff` must be installed in the same environment. Files are changed
 directly, so run it on a git checkout.

@@ -43,6 +43,7 @@ Before Python 3.12, `T` had to be declared separately. The legacy form still wor
 ```python
 T = TypeVar("T")
 
+
 def first(items: list[T]) -> T: ...
 ```
 

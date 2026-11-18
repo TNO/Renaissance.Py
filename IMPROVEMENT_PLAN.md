@@ -116,14 +116,14 @@ It is not a separate workstream.
 ```python
 class Pattern[N: NodeProtocol]:
     tree: N
-    semantic_kind: SemanticKind        # what this pattern may match
+    semantic_kind: SemanticKind  # what this pattern may match
     placeholders: Mapping[str, Placeholder]
 
 
 class Placeholder:
     name: str
-    pattern_kind: PatternKind          # MATCH_ONE | MATCH_ALL
-    semantic_kind: SemanticKind        # fixes PatternFactory.create_statement("$placeholder")
+    pattern_kind: PatternKind  # MATCH_ONE | MATCH_ALL
+    semantic_kind: SemanticKind  # fixes PatternFactory.create_statement("$placeholder")
 ```
 
 Placeholders are discovered once, at pattern construction, inside the `PatternFactory`,
@@ -162,8 +162,8 @@ class Recipe(Protocol):
     def apply(self, unit: TranslationUnit) -> RewriteResult: ...
 
 
-Sequence(r1, r2)            # composition
-RepeatUntilFixedPoint(r)    # recursive find and replace falls out, per issue 187
+Sequence(r1, r2)  # composition
+RepeatUntilFixedPoint(r)  # recursive find and replace falls out, per issue 187
 ```
 
 Keep the decorator API as a thin adapter over this, so that existing recipes keep working.
