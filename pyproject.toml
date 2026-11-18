@@ -281,6 +281,12 @@ mirror = "test/unit/core/rewrite/test_{path}.py"
 aspects = true
 
 [[tool.check_layout.mirrors]]
+code = "src/renaissance/core/processing"
+units = "modules"
+mirror = "test/unit/core/processing/test_{path}.py"
+aspects = true
+
+[[tool.check_layout.mirrors]]
 code = "src/renaissance/core"
 units = "packages"
 mirror = "docs/developer/modules/core/{path}.md"
@@ -352,10 +358,7 @@ layers = [
   """renaissance.integrations : renaissance.project
     : test.c_cpp : test.python : test.lst : test.extractors : test.project : test.unit.shared.factories""",
   # core.processing
-  """renaissance.syntax_tree.ast_processor : renaissance.syntax_tree.batch_ast_processor
-    : renaissance.syntax_tree.recipe_ast_processor
-    : test.syntax_tree.test_ast_processor : test.syntax_tree.test_ast_processor_semantic_kind
-    : test.syntax_tree.test_batch_ast_processor : test.syntax_tree.test_recipe_ast_processor""",
+  "renaissance.core.processing : test.unit.core.processing",
   # core.rewrite
   "renaissance.core.rewrite : test.unit.core.rewrite",
   # core.match
@@ -372,11 +375,11 @@ layers = [
 ]
 ignore_imports = [
   # Unit tests of the core that parse real code instead of using test doubles.
-  "test.syntax_tree.test_ast_processor -> renaissance.integrations.clang",
-  "test.syntax_tree.test_batch_ast_processor -> renaissance.integrations.clang",
-  "test.syntax_tree.test_recipe_ast_processor -> renaissance.integrations.clang",
-  "test.syntax_tree.test_ast_processor_semantic_kind -> renaissance.integrations.python.ast.factory",
-  "test.syntax_tree.test_ast_processor_semantic_kind -> renaissance.integrations.python.ast.rst_node",
+  "test.unit.core.processing.test_ast_processor___find_match -> renaissance.integrations.clang",
+  "test.unit.core.processing.test_batch_ast_processor -> renaissance.integrations.clang",
+  "test.unit.core.processing.test_recipe_ast_processor -> renaissance.integrations.clang",
+  "test.unit.core.processing.test_ast_processor___semantic_kind -> renaissance.integrations.python.ast.factory",
+  "test.unit.core.processing.test_ast_processor___semantic_kind -> renaissance.integrations.python.ast.rst_node",
   "test.unit.core.rewrite.test_ast_rewriter___composition -> renaissance.integrations.clang",
   "test.unit.core.rewrite.test_ast_rewriter___composition -> renaissance.integrations.python.ast.factory",
   "test.unit.core.rewrite.test_ast_rewriter___composition -> renaissance.integrations.python.ast.rst_node",
@@ -401,7 +404,7 @@ ignore_imports = [
   # A test of the node protocol that checks its use by the matcher.
   "test.unit.core.model.test_node_protocol -> renaissance.core.match",
   # A test of the batch processor that runs a real recipe step instead of a test double.
-  "test.syntax_tree.test_batch_ast_processor -> renaissance.recipes",
+  "test.unit.core.processing.test_batch_ast_processor -> renaissance.recipes",
 ]
 
 [[tool.importlinter.contracts]]
@@ -419,9 +422,7 @@ source_modules = [
   "test.unit.shared.factories",
 ]
 forbidden_modules = [
-  "renaissance.syntax_tree.ast_processor",
-  "renaissance.syntax_tree.batch_ast_processor",
-  "renaissance.syntax_tree.recipe_ast_processor",
+  "renaissance.core.processing",
   "renaissance.core.rewrite",
 ]
 allow_indirect_imports = true
@@ -628,6 +629,17 @@ name = "Only core.rewrite and its unit tests import the modules of core.rewrite"
 type = "protected"
 protected_modules = [ "renaissance.core.rewrite.ast_rewriter", "renaissance.core.rewrite.rewriter" ]
 allowed_importers = [ "renaissance.core.rewrite", "test.unit.core.rewrite" ]
+
+[[tool.importlinter.contracts]]
+id = "core-processing-api"
+name = "Only core.processing and its unit tests import the modules of core.processing"
+type = "protected"
+protected_modules = [
+  "renaissance.core.processing.ast_processor",
+  "renaissance.core.processing.batch_ast_processor",
+  "renaissance.core.processing.recipe_ast_processor",
+]
+allowed_importers = [ "renaissance.core.processing", "test.unit.core.processing" ]
 
 # format_node is for the core and the parser bindings only.
 [[tool.importlinter.contracts]]

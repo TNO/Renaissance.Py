@@ -7,9 +7,9 @@
 """Tests that ASTProcessor finds nodes by semantic kind."""
 
 from renaissance.core.model import SemanticKind
+from renaissance.core.processing import ASTProcessor
 from renaissance.integrations.python.ast.factory import PythonFactory
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
-from renaissance.syntax_tree.ast_processor import ASTProcessor
 
 
 def test_ast_processor_finds_nodes_by_semantic_kind() -> None:

@@ -11,8 +11,8 @@ from pytest_mock import MockerFixture
 
 from renaissance.core.match import PatternMatch
 from renaissance.core.model import ASTFactory
+from renaissance.core.processing import ASTProcessor
 from renaissance.integrations.clang import ClangASTNode
-from renaissance.syntax_tree.ast_processor import ASTProcessor
 
 
 class TestAstProcessor:

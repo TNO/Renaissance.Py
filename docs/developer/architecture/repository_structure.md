@@ -300,12 +300,12 @@ Internal: `pattern_kind`, which only the matcher uses, `Variant`, `find_variants
 
 #### `core.processing`
 
-| Symbol                                                                | For | Now in                                |
-| --------------------------------------------------------------------- | --- | ------------------------------------- |
-| `ASTProcessor`                                                        | all | `syntax_tree/ast_processor.py`        |
-| `BatchASTProcessor`, `process_atu`                                    | all | `syntax_tree/batch_ast_processor.py`  |
-| `Action`, `IterableProvider`, `AST_FACTORY_AND_ATU`                   | all | `syntax_tree/batch_ast_processor.py`  |
-| `RecipeASTProcessor`, `recipe_step`, `after_step`, `final_action`     | all | `syntax_tree/recipe_ast_processor.py` |
+| Symbol                                                                | For | Now in                                    |
+| --------------------------------------------------------------------- | --- | ----------------------------------------- |
+| `ASTProcessor`                                                        | all | `core/processing/ast_processor.py`        |
+| `BatchASTProcessor`, `process_atu`                                    | all | `core/processing/batch_ast_processor.py`  |
+| `Action`, `IterableProvider`, `AST_FACTORY_AND_ATU`                   | all | `core/processing/batch_ast_processor.py`  |
+| `RecipeASTProcessor`, `recipe_step`, `after_step`, `final_action`     | all | `core/processing/recipe_ast_processor.py` |
 
 Internal: `annotate_decorator`, `get_methods_with_decorator`.
 

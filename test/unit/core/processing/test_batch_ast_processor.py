@@ -12,12 +12,11 @@ import pytest
 from hamcrest import assert_that, equal_to, has_length, is_
 from pytest_mock import MockerFixture
 
-import renaissance.syntax_tree.batch_ast_processor as bap
+import renaissance.core.processing.batch_ast_processor as bap
 from renaissance.core.model import ASTFactory, SemanticKind
+from renaissance.core.processing import ASTProcessor, BatchASTProcessor
 from renaissance.integrations.clang import ClangASTNode
 from renaissance.recipes import CleanupRefactoring
-from renaissance.syntax_tree.ast_processor import ASTProcessor
-from renaissance.syntax_tree.batch_ast_processor import BatchASTProcessor
 
 
 class TestBatchASTProcessor:
@@ -55,7 +54,7 @@ class TestBatchASTProcessor:
         dummy_atu_item = (mocker.Mock(), mocker.Mock())
         atu_items = [dummy_atu_item]
         actions_list = [mocker.Mock()]
-        process_atu_spy = mocker.patch("renaissance.syntax_tree.batch_ast_processor.process_atu", return_value=[])
+        process_atu_spy = mocker.patch("renaissance.core.processing.batch_ast_processor.process_atu", return_value=[])
         processor._BatchASTProcessor__process(atu_items, actions_list)
         assert_that(process_atu_spy.called)
 
@@ -100,7 +99,7 @@ class TestBatchASTProcessor:
         mock_ast_proc.filename.return_value = "file"
         mock_ast_proc.apply_to_string.return_value = "content"
         mocker.patch(
-            "renaissance.syntax_tree.batch_ast_processor.ASTProcessor",
+            "renaissance.core.processing.batch_ast_processor.ASTProcessor",
             return_value=mock_ast_proc,
         )
 

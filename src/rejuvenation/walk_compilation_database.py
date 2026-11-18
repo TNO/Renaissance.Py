@@ -12,9 +12,9 @@ from pathlib import Path
 
 import targets
 from renaissance.core.model import ASTShower, SemanticKind
+from renaissance.core.processing import ASTProcessor
 from renaissance.integrations.clang import ClangASTNode, CompilationDatabase
 from renaissance.integrations.clang.clang_json_ast_node import ClangJsonASTNode
-from renaissance.syntax_tree.ast_processor import ASTProcessor
 
 
 def main(args) -> None:

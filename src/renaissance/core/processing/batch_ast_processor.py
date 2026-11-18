@@ -13,7 +13,7 @@ from functools import partial
 from typing import Any
 
 from renaissance.core.model import ASTFactory, ASTNode
-from renaissance.syntax_tree.ast_processor import ASTProcessor
+from renaissance.core.processing.ast_processor import ASTProcessor
 
 AST_FACTORY_AND_ATU = tuple[ASTFactory, ASTNode]
 Action = Callable[[ASTProcessor], Callable[[], Any] | None]

@@ -17,10 +17,10 @@ from termcolor import colored
 
 from renaissance.core.match import match_pattern
 from renaissance.core.model import SemanticKind
+from renaissance.core.processing import ASTProcessor
 from renaissance.integrations.python.ast.cst_node import PythonCstNode
 from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
-from renaissance.syntax_tree.ast_processor import ASTProcessor
 
 
 def to_str(node) -> str:

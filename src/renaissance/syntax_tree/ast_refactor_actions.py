@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING
 
 from renaissance.core.match import MatchFinder, PatternMatch
 from renaissance.core.model import ASTNode, SemanticKind, matches_node
-from renaissance.syntax_tree.ast_processor import ASTProcessor
+from renaissance.core.processing import ASTProcessor
 
 # TODO(FrancescoPezzella): Replace with a lazy import in Python 3.15.
 #  https://github.com/TNO/Renaissance.Py/issues/275
