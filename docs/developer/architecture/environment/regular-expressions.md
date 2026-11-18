@@ -30,9 +30,6 @@ See the [`re` module documentation](https://docs.python.org/3/library/re.html) a
 
 ## Capabilities of `re`
 
-<!-- MD060 is disabled because pymarkdown miscounts the width of `<` and `>` in code spans; RECHECK when pymarkdown is updated. -->
-<!-- pyml disable md060-->
-
 | Area                         | Support                                                                                                |
 | ---------------------------- | ------------------------------------------------------------------------------------------------------ |
 | Subject types                | `str` patterns on `str`; `bytes` patterns on bytes-like objects; the two cannot be mixed               |
@@ -46,7 +43,6 @@ See the [`re` module documentation](https://docs.python.org/3/library/re.html) a
 | Replacement                  | Template string (`\1`, `\g<name>`, `\g<0>`) or a callable that receives the match object               |
 | Engine                       | Backtracking engine; recently used compiled patterns are cached                                        |
 
-<!-- pyml enable md060-->
 Bytes-like objects include `bytes`, `bytearray`, `memoryview`, and `mmap`.
 
 ## Limitations of `re`
