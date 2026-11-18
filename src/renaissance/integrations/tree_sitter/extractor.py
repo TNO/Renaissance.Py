@@ -29,10 +29,16 @@ class Extractor:
     def __init__(self, factory: TreeSitterPatternFactory, patterns: list[str]) -> None:
         """AI: Configure an extractor that finds occurrences of the given patterns in code."""
         self.pattern_factory = factory
+        # TODO(pjljvandelaar): Each pattern in `patterns` is assumed to be a string that can be parsed as a statement.
+        #  https://github.com/TNO/Renaissance.Py/issues/187
+        # TODO(pjljvandelaar): Parse each pattern only once and reuse the parsed representation.
+        #  https://github.com/TNO/Renaissance.Py/issues/187
         self.patterns = patterns
 
     def run(self, raw: str) -> list[PatternMatch]:
         """AI: Find occurrences of the configured patterns in raw code and return the matches."""
+        # TODO(pjljvandelaar): `raw` is assumed to be a string that can be parsed as a statement.
+        #  https://github.com/TNO/Renaissance.Py/issues/187
         code = self.pattern_factory.create_statements(raw)
         results = []
         for rule in self.patterns:
