@@ -398,8 +398,9 @@ The modules of this phase move to `core/rewrite/`, their tests to `test/unit/cor
 - test: removes `test/syntax_tree/`.
 - docs: removes the core API tables from [repository structure](repository_structure.md); the `__all__` lists are now the
   source of truth.
-- remaining: gives the `layers` contract a container `renaissance.core` with `exhaustive = true`, so that a new core sub-package
-  cannot escape the order.
+- remaining: a `layers` contract with the container `renaissance.core`, one layer of all core sub-packages, and
+  `exhaustive = true`, so that a new core sub-package cannot escape the order of the `layers` contract. That contract cannot
+  have a container itself, because its layers include the tests.
 - Checks: `git grep -E "renaissance\.(syntax_tree|utils|common)\b"` finds nothing; each core sub-package has its
   `protected` contract.
 

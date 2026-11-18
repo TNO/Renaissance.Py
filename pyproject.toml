@@ -431,6 +431,16 @@ ignore_imports = [
   "test.unit.core.processing.test_batch_ast_processor -> renaissance.recipes",
 ]
 
+# Exhaustive needs a container, which the layers contract cannot have; this contract lists the core sub-packages, not their order.
+[[tool.importlinter.contracts]]
+id = "core-exhaustive"
+name = "Every core sub-package is a layer of the layers contract"
+type = "layers"
+containers = [ "renaissance.core" ]
+layers = [ "match : model : navigate : pattern : processing : rewrite" ]
+exhaustive = true
+broken_contract_guidance = "Add the new core sub-package here, and to its place in the order of the layers contract."
+
 [[tool.importlinter.contracts]]
 id = "bindings-use-model-pattern-matching"
 name = "Parser bindings use only core.model, core.pattern and core.match"
@@ -698,7 +708,6 @@ type = "forbidden"
 source_modules = [ "renaissance.integrations.shared" ]
 forbidden_modules = [
   "renaissance.core",
-  "renaissance.syntax_tree",
   "renaissance.recipes",
   "renaissance.integrations.clang",
   "renaissance.integrations.python",

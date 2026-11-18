@@ -224,8 +224,10 @@ Decisions:
 - Each package lists its public API in `__all__` of its `__init__.py`. Its `__init__.py` imports these symbols and defines
   nothing else.
 - Code outside the package imports from the package, not from its modules: `from renaissance.core.match import match_pattern`.
-- `format_node` exists only for the core and the parser bindings, which implement `__repr__` with it. It is marked *binding*
-  below, and lives in the module `renaissance.core.model.format`, which `core.model` does not export. Recipes do not import it.
+- `format_node` exists only for the core and the parser bindings, which implement `__repr__` with it. It lives in the module
+  `renaissance.core.model.format`, which `core.model` does not export. Recipes do not import it.
+- The placeholder markers and the `$` notation are part of the pattern language, not of a binding, so `core.pattern` exports
+  them for all.
 - Everything else is internal. Unit tests of the package itself may use internal symbols.
 
 How these decisions are checked:
@@ -239,75 +241,8 @@ How these decisions are checked:
 - Ruff rule F401 reports a name that an `__init__.py` imports but does not list in `__all__`.
 - That an `__init__.py` defines nothing itself is enforced by review.
 
-The tables below are the starting point; once a package exists, its `__all__` is the source of truth.
-The column *now in* gives the current module, relative to `src/renaissance/`.
-
-#### `core.model`
-
-| Symbol                                                          | For     | Now in                                  |
-| --------------------------------------------------------------- | ------- | --------------------------------------- |
-| `NodeProtocol`                                                  | all     | `core/model/node_protocol.py`           |
-| `SemanticKind`                                                  | all     | `core/model/semantic_kind.py`           |
-| `TextSegment`, `SyntaxNode`, `Siblings`                         | all     | `core/model/text_segment.py` and so on  |
-| `ASTNode`, `ASTReference`, `VisitorResult`                      | all     | `core/model/ast_node.py`                |
-| `ASTFactory`                                                    | all     | `core/model/ast_factory.py`             |
-| `ASTFinder`, `find_nodes`, `matches_node`, `find_semantic_kind` | all     | `core/model/ast_finder.py`              |
-| `ASTShower`, `Displayable`                                      | all     | `core/model/ast_shower.py`              |
-| `traverse`                                                      | all     | `core/model/node_utils.py`              |
-| `TextUtils`                                                     | all     | `core/model/text_utils.py`              |
-| `format_node`                                                   | binding | `core/model/format.py`                  |
-
-Internal: `display_context`, `DISPLAY_PARSER_KIND`, `process_node`.
-
-#### `core.navigate`
-
-| Symbol                                                                       | For | Now in                         |
-| ---------------------------------------------------------------------------- | --- | ------------------------------ |
-| `HasParent`, `HasChildren`, `NodeNavigateProtocol`                           | all | `core/navigate/protocols.py`   |
-| `is_ancestor_of`, `is_proper_ancestor_of`, `ancestors`, `proper_ancestors`   | all | `core/navigate/navigate.py`    |
-| `nearest_ancestor`, `nearest_proper_ancestor`                                | all | `core/navigate/navigate.py`    |
-| `next_sibling`, `previous_sibling`                                           | all | `core/navigate/navigate.py`    |
-
-#### `core.pattern`
-
-| Symbol                                               | For | Now in                         |
-| ---------------------------------------------------- | --- | ------------------------------ |
-| `PatternKind`                                        | all | `core/pattern/pattern_kind.py` |
-| `MATCH_ONE`, `MATCH_ALL`                             | all | `core/pattern/placeholders.py` |
-| `replace_dollar`, `use_dollar`, `detect_placeholder` | all | `core/pattern/placeholders.py` |
-
-The placeholder markers and the `$` notation are part of the pattern language, not of a binding, so they are for all.
-
-A pattern type of its own (improvement plan, phase 3) does not exist yet and is not part of this draft.
-
-#### `core.match`
-
-| Symbol                                                         | For     | Now in                        |
-| -------------------------------------------------------------- | ------- | ----------------------------- |
-| `PatternMatch`, `MatchFinder`                                  | all     | `core/match/match_finder.py`  |
-| `match_pattern`, `find_all`, `is_match`                        | all     | `core/match/match_finder.py`  |
-| `find_in_list`                                                 | all     | `core/match/match_finder.py`  |
-
-Internal: `pattern_kind`, which only the matcher uses, `Variant`, `find_variants`, `variant_in_match_stmt`, `is_match_dict`,
-`node_kinds_match`, `IRRELEVANT_PROPS`, `MIS_MATCH`, `INCOMPLETE_MATCH`.
-
-#### `core.rewrite`
-
-| Symbol                      | For | Now in                         |
-| --------------------------- | --- | ------------------------------ |
-| `ASTRewriter`, `Rewritable` | all | `core/rewrite/ast_rewriter.py` |
-| `Rewriter`, `Rewrite`       | all | `core/rewrite/rewriter.py`     |
-
-#### `core.processing`
-
-| Symbol                                                                | For | Now in                                    |
-| --------------------------------------------------------------------- | --- | ----------------------------------------- |
-| `ASTProcessor`                                                        | all | `core/processing/ast_processor.py`        |
-| `BatchASTProcessor`, `process_atu`                                    | all | `core/processing/batch_ast_processor.py`  |
-| `Action`, `IterableProvider`, `AST_FACTORY_AND_ATU`                   | all | `core/processing/batch_ast_processor.py`  |
-| `RecipeASTProcessor`, `recipe_step`, `after_step`, `final_action`     | all | `core/processing/recipe_ast_processor.py` |
-
-Internal: `annotate_decorator`, `get_methods_with_decorator`.
+The `__all__` of each core sub-package is the source of truth of its public API. For the parser bindings and the recipes, the
+sections below are the starting point; once a package exists, its `__all__` is the source of truth.
 
 #### Leaving the core API
 
