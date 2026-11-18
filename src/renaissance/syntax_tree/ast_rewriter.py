@@ -101,7 +101,7 @@ class ASTRewriter:
 
         """
         self.__rewrites.add_rewrite(
-            _RewriteAction(_RewriteActionType.REPLACE, target, new_content, include_whitespace, include_comments, transforms or {})
+            _RewriteAction(_RewriteActionType.REPLACE, target, new_content, include_whitespace, include_comments, transforms or {}),
         )
 
     def remove(
@@ -297,7 +297,7 @@ class _RewriteActions:
                     raise ValueError(
                         "Conflicting rewrites queued for overlapping source ranges "
                         f"({node_a.offset}-{node_a.end_offset} and {node_b.offset}-{node_b.end_offset}) "
-                        "in the same file - applying both would corrupt the output."
+                        "in the same file - applying both would corrupt the output.",
                     )
 
     @staticmethod
@@ -478,7 +478,10 @@ class _RewriteActions:
         rewriter.replace(start, end, new_content.encode(self.encoding))
 
     def __compose_replacement(
-        self, replacement: str, matches: Sequence[PatternMatch], transforms: Mapping[str, Callable[[str], str]]
+        self,
+        replacement: str,
+        matches: Sequence[PatternMatch],
+        transforms: Mapping[str, Callable[[str], str]],
     ) -> str:
         all_placeholders = {p: n for m in matches for p, n in m.expansions.items()}
         for placeholder, nodes in all_placeholders.items():
@@ -540,7 +543,9 @@ class _RewriteActions:
                 text = transform(text)
             if text != node.text:
                 rewriter.replace(
-                    self.cor_offset(node.offset) - start, self.cor_offset(node.extended_end_offset) - start, text.encode(self.encoding)
+                    self.cor_offset(node.offset) - start,
+                    self.cor_offset(node.extended_end_offset) - start,
+                    text.encode(self.encoding),
                 )
         result = rewriter.apply().decode(self.encoding)
         return TextUtils.shift_left(result, self.derive_indent(start), start_line=1)

@@ -108,7 +108,10 @@ def test_a_fixture_marked_minus_text_keeps_crlf_and_is_exempt(git_repository: Pa
     files = {".gitattributes": b"* text=auto eol=lf\ncrlf/** -text\n", "crlf/input.c": b"int a;\r\n"}
     assert _stage(git_repository, files) == []  # noqa: S101 (pytest assertion; new tests must not raise the S101 budget)
     stored = subprocess.run(  # noqa: S603 (command built from constants here)
-        [shutil.which("git") or "git", "show", ":crlf/input.c"], cwd=git_repository, capture_output=True, check=True
+        [shutil.which("git") or "git", "show", ":crlf/input.c"],
+        cwd=git_repository,
+        capture_output=True,
+        check=True,
     ).stdout
     assert stored == b"int a;\r\n"  # noqa: S101 (pytest assertion; new tests must not raise the S101 budget)
 

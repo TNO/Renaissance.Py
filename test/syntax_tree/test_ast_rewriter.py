@@ -1072,7 +1072,12 @@ class TestComposeReplacement:
         ],
     )
     def test_python_placeholder_transform(
-        self, source: str, find: str, replacement: str, transforms: dict[str, Callable[[str], str]], expected: str
+        self,
+        source: str,
+        find: str,
+        replacement: str,
+        transforms: dict[str, Callable[[str], str]],
+        expected: str,
     ) -> None:
         """Verify `transforms` rewrites the text of each node bound to its placeholder, and leaves other placeholders as they are."""
         root = PythonRstNode.load_from_text(source, "test.py")
@@ -1105,7 +1110,7 @@ class TestComposeReplacement:
                         sys.platform == "win32",
                         strict=True,
                         reason="clang_json sends the code to clang with CRLF line endings on Windows, so offsets shift",
-                    )
+                    ),
                 ]
                 if name == "clang_json"
                 else [],
