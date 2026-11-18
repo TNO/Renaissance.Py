@@ -143,7 +143,7 @@ The sub-packages for what can be done with a node are named after verbs: `core.m
 Their protocols are named the same way, as in `NodeNavigateProtocol`.
 
 `renaissance.core` itself exports nothing; code imports from the sub-packages.
-This avoids eager re-exports, which caused a circular import in the former `renaissance.syntax_tree` package.
+This avoids eager re-exports.
 
 #### The core contains no language- or parser-specific facts
 

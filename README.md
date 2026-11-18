@@ -89,7 +89,7 @@ Currently, clang native and clang python bindings are supported.
 
 ## How to add a different binding
 
-You'll need to implement a concrete class for syntax_tree.ASTNode.
+You'll need to implement a wrapper, adapter or duck-type the AST Node.
 Follow the implementations of `ClangASTNode` and `ClangJsonASTNode` as an example.
 If the concrete AST has a different language then also a `PatternFactory` must be added. See `CPatternFactory` for inspiration.
 

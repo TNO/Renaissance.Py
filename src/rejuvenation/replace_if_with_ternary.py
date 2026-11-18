@@ -6,7 +6,7 @@
 
 """AI: Example script demonstrating replacement of if-else statements with ternary operators in C source."""
 
-# This script demonstrates the use of the syntax_tree library to parse and rewrite C code.
+# This script demonstrates the use of the Renaissance.Py library to parse and rewrite C code.
 # It specifically showcases the replacement of if-else statements with ternary operators.
 from renaissance.core.match import find_all
 from renaissance.core.model import ASTFactory
