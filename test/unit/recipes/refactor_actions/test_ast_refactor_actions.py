@@ -10,7 +10,7 @@ from hamcrest import assert_that, is_
 from pytest_mock import MockerFixture
 
 from renaissance.core.model import SemanticKind
-from renaissance.syntax_tree.ast_refactor_actions import ASTRefactorActions
+from renaissance.recipes.refactor_actions import ASTRefactorActions
 
 
 class TestASTRefactorActions:

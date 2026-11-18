@@ -157,6 +157,9 @@ nav:
           - Rewrite: user/core/rewrite.md
           - Processing: user/core/processing.md
 
+      - Recipes:
+          - Refactor actions: user/recipes/refactor_actions.md
+
   - Developer documentation:
       - Overview: developer/index.md
       - Coding conventions: developer/coding_conventions.md
@@ -221,6 +224,7 @@ nav:
           - Core match: developer/modules/core/match.md
           - Core rewrite: developer/modules/core/rewrite.md
           - Core processing: developer/modules/core/processing.md
+          - Recipe refactor actions: developer/modules/recipes/refactor_actions.md
           - Parser and AST modules: developer/modules/parser_and_ast.md
           - Matching modules: developer/modules/matching.md
           - Filter modules: developer/modules/filter.md
@@ -241,6 +245,7 @@ nav:
           - Core match: developer/api/core/match.md
           - Core rewrite: developer/api/core/rewrite.md
           - Core processing: developer/api/core/processing.md
+          - Recipe refactor actions: developer/api/recipes/refactor_actions.md
 
   - Documentation system:
       - Overview: documentation_system/index.md

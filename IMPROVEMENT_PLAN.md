@@ -62,7 +62,7 @@ Small, pure wins. These come first because every later phase is validated by the
 - **Import-layering guard rail**, the "core is independent of all other code" tool.
   Write it now, against the current layout, as a test in `test/tools`.
   It immediately flags the two real violations: the late `cpp_utils` import in `src/renaissance/syntax_tree/__init__.py`
-  and the `CPPPatternFactory` `TYPE_CHECKING` import in `src/renaissance/syntax_tree/ast_refactor_actions.py`.
+  and the `CPPPatternFactory` `TYPE_CHECKING` import in `src/renaissance/recipes/refactor_actions/ast_refactor_actions.py`.
   Those two violations become the acceptance criterion for phase 1.
 - **Split `lint_budget.json` per package.**
   A single global budget means new `core/` code inherits a 9200-issue allowance.

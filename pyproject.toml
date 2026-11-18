@@ -301,6 +301,32 @@ code = "src/renaissance/core"
 units = "packages"
 mirror = "docs/user/core/{path}.md"
 
+[[tool.check_layout.mirrors]]
+code = "src/renaissance/recipes/refactor_actions"
+units = "modules"
+mirror = "test/unit/recipes/refactor_actions/test_{path}.py"
+aspects = true
+
+[[tool.check_layout.mirrors]]
+code = "src/renaissance/recipes"
+units = "packages"
+mirror = "test/unit/recipes/{path}/"
+
+[[tool.check_layout.mirrors]]
+code = "src/renaissance/recipes"
+units = "packages"
+mirror = "docs/developer/modules/recipes/{path}.md"
+
+[[tool.check_layout.mirrors]]
+code = "src/renaissance/recipes"
+units = "packages"
+mirror = "docs/developer/api/recipes/{path}.md"
+
+[[tool.check_layout.mirrors]]
+code = "src/renaissance/recipes"
+units = "packages"
+mirror = "docs/user/recipes/{path}.md"
+
 # Every repository path named in the documentation, in comments and docstrings, and in feature files exists; checked by
 # tools/check_references.py. `exclude` lists the files that are not read; `known_issues` and `stale` list the paths that are
 # known to be missing. An entry that no longer applies fails the check, so these lists only shrink.
@@ -337,7 +363,6 @@ stale = [
   "docs/assets/images/architecture/", # allowed locations of shared images
   "docs/assets/images/logos/",
   "docs/assets/images/notation/",
-  "docs/user/recipes/",               # targets of the repository structure migration
 ]
 
 # The dependency rules of docs/developer/architecture/repository_structure.md. This is their single source of truth.
@@ -352,8 +377,7 @@ name = "Layers, and the order of the core sub-packages"
 type = "layers"
 layers = [
   # recipes
-  """renaissance.recipes : rejuvenation : renaissance.syntax_tree.ast_refactor_actions
-    : test.recipes : test.examples : test.syntax_tree.test_ast_refactor_actions""",
+  "renaissance.recipes : rejuvenation : test.recipes : test.examples : test.unit.recipes",
   # parser_bindings
   """renaissance.integrations : renaissance.project
     : test.c_cpp : test.python : test.lst : test.extractors : test.project : test.unit.shared.factories""",
@@ -439,10 +463,9 @@ type = "forbidden"
 source_modules = [
   "renaissance.recipes",
   "rejuvenation",
-  "renaissance.syntax_tree.ast_refactor_actions",
   "test.recipes",
   "test.examples",
-  "test.syntax_tree.test_ast_refactor_actions",
+  "test.unit.recipes",
 ]
 forbidden_modules = [
   "renaissance.integrations",
@@ -476,7 +499,7 @@ ignore_imports = [
   # Access to the parameters of a function is missing in the core; convert_function reads stdlib ast.
   "renaissance.recipes.unit_to_pytest -> renaissance.integrations.python.ast.util",
   # A pattern factory protocol is missing in the core; CPPPatternFactory is used in an annotation only.
-  "renaissance.syntax_tree.ast_refactor_actions -> renaissance.integrations.clang.c_pattern_factory",
+  "renaissance.recipes.refactor_actions.ast_refactor_actions -> renaissance.integrations.clang.c_pattern_factory",
   # The examples that show how one parser represents code become unit tests of that binding; the others are violations.
   "rejuvenation.cpp_clang_lst_example -> renaissance.integrations.**",
   "rejuvenation.refactor_examples_different_styles -> renaissance.integrations.**",
@@ -640,6 +663,14 @@ protected_modules = [
   "renaissance.core.processing.recipe_ast_processor",
 ]
 allowed_importers = [ "renaissance.core.processing", "test.unit.core.processing" ]
+
+# One contract per recipe package: code outside the package imports only its public API, from the package itself.
+[[tool.importlinter.contracts]]
+id = "recipes-refactor-actions-api"
+name = "Only recipes.refactor_actions and its unit tests import the modules of recipes.refactor_actions"
+type = "protected"
+protected_modules = [ "renaissance.recipes.refactor_actions.ast_refactor_actions" ]
+allowed_importers = [ "renaissance.recipes.refactor_actions", "test.unit.recipes.refactor_actions" ]
 
 # format_node is for the core and the parser bindings only.
 [[tool.importlinter.contracts]]
