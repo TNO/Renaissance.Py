@@ -20,7 +20,6 @@ It supports Tree-sitter grammars and offers a flexible interface for analyzing P
 - Structural pattern matching with placeholders
 - Node-type based matchers
 - Match abstraction layer (`Match`)
-- Rule-based extractor (templated, with filtering)
 - Symbol table for declarations, definitions, and uses
 - Extensible for multi-language support
 - Unit-tested matcher components
@@ -71,7 +70,6 @@ python -m unittest discover tests
 - `core/pattern_matcher.py` — Structural matcher
 - `core/node_type_matcher.py` — Node-type matcher
 - `core/match.py` — Match abstraction
-- `core/extractor.py` — Rule-based extractor
 - `core/symbols.py` — Symbol table
 - `examples/` — Example input files
 - `tests/` — Unit tests
@@ -81,15 +79,7 @@ python -m unittest discover tests
 
 ## 🧩 Integration
 
-You can use `Extractor`, `Match`, and `PatternMatcherInterfaceExtended` to write custom rules.
-
-Example:
-
-```python
-extractor = Extractor(interface)
-extractor.add_rule("function_definition", lambda m: m.first("match").signature)
-results = extractor.run(source_code)
-```
+You can use `Match` and `PatternMatcherInterfaceExtended` to write custom rules.
 
 ---
 

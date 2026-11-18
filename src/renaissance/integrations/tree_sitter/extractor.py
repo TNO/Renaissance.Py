@@ -4,16 +4,14 @@
 # of this repository, also available at:
 # https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
-"""AI: Extractor that builds a codebase graph from tree-sitter-matched patterns."""
+"""CodeGraphExtractors module: Build codebase graphs using tree-sitter."""
 
 from pathlib import Path
 
 import networkx as nx
 
-from renaissance.core.match import PatternMatch, match_pattern
 from renaissance.core.model import SemanticKind
 from renaissance.integrations.tree_sitter.adapter import TreeSitterAdapter
-from renaissance.integrations.tree_sitter.factory import TreeSitterPatternFactory
 
 GRAPHML_DIR = "out_graphml"
 Path(GRAPHML_DIR).mkdir(parents=True, exist_ok=True)
@@ -21,30 +19,6 @@ Path(GRAPHML_DIR).mkdir(parents=True, exist_ok=True)
 
 def _has_semantic_kind(node, kind: SemanticKind) -> bool:
     return node.semantic_kind is kind
-
-
-class Extractor:
-    """AI: Find occurrences of a set of patterns in tree-sitter-parsed code."""
-
-    def __init__(self, factory: TreeSitterPatternFactory, patterns: list[str]) -> None:
-        """AI: Configure an extractor that finds occurrences of the given patterns in code."""
-        self.pattern_factory = factory
-        # TODO(pjljvandelaar): Each pattern in `patterns` is assumed to be a string that can be parsed as a statement.
-        #  https://github.com/TNO/Renaissance.Py/issues/187
-        # TODO(pjljvandelaar): Parse each pattern only once and reuse the parsed representation.
-        #  https://github.com/TNO/Renaissance.Py/issues/187
-        self.patterns = patterns
-
-    def run(self, raw: str) -> list[PatternMatch]:
-        """AI: Find occurrences of the configured patterns in raw code and return the matches."""
-        # TODO(pjljvandelaar): `raw` is assumed to be a string that can be parsed as a statement.
-        #  https://github.com/TNO/Renaissance.Py/issues/187
-        code = self.pattern_factory.create_statements(raw)
-        results = []
-        for rule in self.patterns:
-            pattern = self.pattern_factory.create_statements(rule)
-            results.extend(match_pattern(code, pattern, {}))
-        return results
 
 
 class BaseCodeGraphExtractor:

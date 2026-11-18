@@ -12,7 +12,6 @@ from hamcrest import assert_that, empty, has_length, is_, is_not
 
 from renaissance.core.match import is_match, match_pattern
 from renaissance.integrations.tree_sitter.adapter import TreeSitterAdapter
-from renaissance.integrations.tree_sitter.extractor import Extractor
 from renaissance.integrations.tree_sitter.factory import TreeSitterPatternFactory
 from test.unit.shared.utils_for_tests import is_match_tree
 
@@ -21,7 +20,7 @@ class TestConcretePatternMatcher:
     """AI: Tests concrete (LST-level) pattern matching against tree-sitter-parsed Python code."""
 
     @pytest.mark.parametrize(
-        ("code", "pattern"),
+        ("code_txt", "pattern_txt"),
         [
             ("def foo(): pass", "def foo(): pass"),
             ("if x:  print(x)", "if x:  $body"),
@@ -45,14 +44,14 @@ class TestConcretePatternMatcher:
             ("import os\nx=5", "import $mod $stmt"),
         ],
     )
-    def test_python_pattern(self, code, pattern) -> None:
+    def test_python_pattern(self, code_txt: str, pattern_txt: str) -> None:
         """AI: Verify a variety of Python constructs match their corresponding pattern with placeholders."""
         adapter = TreeSitterAdapter(tree_sitter_python)
-        interface = TreeSitterPatternFactory(adapter)
-        extractor = Extractor(interface, [pattern])
-        matches = extractor.run(code)
-
-        assert_that(matches, has_length(1), f"{code=} {pattern=}")
+        factory = TreeSitterPatternFactory(adapter)
+        pattern = factory.create_statements(pattern_txt)
+        code = factory.create_statements(code_txt)
+        matches = match_pattern(code, pattern, recursive=False)
+        assert_that(matches, has_length(1), f"{code_txt=} {pattern_txt=}")
 
     def test_is_match_python_patterns(self) -> None:
         """AI: Verify each try/except sub-statement matches its corresponding placeholder pattern node."""
