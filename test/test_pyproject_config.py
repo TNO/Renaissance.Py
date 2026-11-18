@@ -6,9 +6,9 @@
 
 """Guard against the source-root list drifting between tool configs.
 
-pyproject.toml has no way to declare `["src", "test", "features"]` once and
+pyproject.toml has no way to declare `["features", "src", "test"]` once and
 reuse it (TOML has no anchors/references), so the same list is duplicated in
-[tool.pytest.ini_options] pythonpath, [tool.ruff] src, and
+[tool.pytest] ini_options.pythonpath, [tool.ruff] src, and
 [tool.pyright] extraPaths. This test fails loudly if one of them is updated
 without updating the others.
 """
@@ -33,7 +33,7 @@ def test_source_roots_are_consistent_across_tool_configs() -> None:
     pyright_extra_paths = config["tool"]["pyright"]["extraPaths"]
 
     assert pytest_pythonpath == ruff_src == pyright_extra_paths, (
-        "The source-root list ['src', 'test', 'features'] must be kept in sync across "
-        "[tool.pytest.ini_options].pythonpath, [tool.ruff].src, and [tool.pyright].extraPaths "
+        "The source-root list ['features', 'src', 'test'] must be kept in sync across "
+        "[tool.pytest].ini_options.pythonpath, [tool.ruff].src, and [tool.pyright].extraPaths "
         "in pyproject.toml."
     )

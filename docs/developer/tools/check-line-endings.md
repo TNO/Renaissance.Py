@@ -30,7 +30,7 @@ The rule is enforced in layers; this check is the last one.
    PowerPoint file are also marked `binary` explicitly.
 1. `.editorconfig` sets `end_of_line = lf`, and `.vscode/settings.json` sets `files.eol` to `\n`, so editors write LF in the first
    place. VS Code only reads `.editorconfig` with the EditorConfig extension, which is why both exist.
-1. The `[tool.ruff.format]` section of `pyproject.toml` sets `line-ending = "lf"`, so `ruff format` writes LF on Windows as well;
+1. The `[tool.ruff]` table of `pyproject.toml` sets `format.line-ending = "lf"`, so `ruff format` writes LF on Windows as well;
    its default keeps whatever ending a file already has.
 1. This check fails the build when a text file is stored with CRLF anyway.
 
