@@ -83,7 +83,7 @@ def parse_ls_files_eol(output: str) -> list[TrackedFile]:
                 path=path,
                 index_eol=index_field.removeprefix("i/"),
                 attributes=tuple(attribute_field.removeprefix("attr/").split()),
-            )
+            ),
         )
     return files
 

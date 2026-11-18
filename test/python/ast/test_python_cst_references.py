@@ -100,7 +100,8 @@ class TestPythonCstReferences:
     def test_lazily_evaluated_use_above_the_declaration_is_a_reference(self, body: str, expected_uses: list[str]) -> None:
         """An annotation or type hint above `T = TypeVar("T")` is a use of it; a value read there at once is not."""
         root = PythonCstNode.load_from_text(
-            f'from __future__ import annotations\nfrom typing import TypeVar, cast\n{body}T = TypeVar("T")\n', "refs.py"
+            f'from __future__ import annotations\nfrom typing import TypeVar, cast\n{body}T = TypeVar("T")\n',
+            "refs.py",
         )
         declared = _declared_t(root)
 

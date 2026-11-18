@@ -177,7 +177,7 @@ def violations_in(path: Path, source_root: Path) -> list[Violation]:
                 path=path,
                 line=site.line,
                 type_checking_only=site.type_checking_only,
-            )
+            ),
         )
     return violations
 
