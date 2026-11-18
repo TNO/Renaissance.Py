@@ -21,6 +21,7 @@ from another module, `default=` and nested functions, and never removes the old 
 ```python
 T = TypeVar("T")
 
+
 def first(items: list[T]) -> T: ...
 ```
 
@@ -100,6 +101,7 @@ methods. With `class Box[T]:` the methods don't use the module-level `T`, so a d
 
 ```python
 T = TypeVar("T")
+
 
 class Box[T]:
     def get(self) -> T: ...
@@ -193,6 +195,7 @@ checkers infer. Other declarations in the file are still converted, except in fu
 ```python
 T = TypeVar("T", default=int)
 
+
 def first(items: list[T]) -> T: ...
 ```
 
@@ -215,6 +218,7 @@ parameter has no variance.)
 ```python
 P = ParamSpec("P", bound=int)
 
+
 def run(func: Callable[P, int]) -> Callable[P, int]: ...
 ```
 
@@ -232,6 +236,7 @@ legacy type parameter of an enclosing generic class is not the method's own, so 
 ```python
 P = ParamSpec("P", bound=int)
 Ts = TypeVarTuple("Ts")
+
 
 def run(func: Callable[P, tuple[*Ts]]) -> Callable[P, tuple[*Ts]]: ...
 ```
@@ -252,6 +257,7 @@ __all__ = ["T", "first"]
 
 T = TypeVar("T")
 
+
 def first(items: list[T]) -> T: ...
 ```
 
@@ -261,6 +267,7 @@ def first(items: list[T]) -> T: ...
 __all__ = ["T", "first"]
 
 T = TypeVar("T")
+
 
 def first[T](items: list[T]) -> T: ...
 ```
@@ -275,6 +282,7 @@ needing review, because its declaration stays.
 
 ```python
 T = TypeVar("T")
+
 
 class Box(Generic[T]):
     def get(self) -> T: ...
@@ -307,6 +315,7 @@ T = TypeVar("T", bound="Shape")
 # main.py
 from shapes import T
 
+
 def biggest(items: list[T]) -> T: ...
 ```
 
@@ -335,6 +344,7 @@ T = TypeVar("T")
 # main.py
 from shapes import T
 
+
 def first(items: list[T]) -> T: ...
 ```
 
@@ -355,10 +365,13 @@ from typing import TypeVar
 
 T = TypeVar("T")
 
+
 def first(items: list[T]) -> T: ...
+
 
 # other.py
 import shapes
+
 
 def second(items: list[shapes.T]) -> shapes.T: ...
 ```
@@ -371,10 +384,13 @@ from typing import TypeVar
 
 T = TypeVar("T")
 
+
 def first[T](items: list[T]) -> T: ...
+
 
 # other.py
 import shapes
+
 
 def second(items: list[shapes.T]) -> shapes.T: ...
 ```

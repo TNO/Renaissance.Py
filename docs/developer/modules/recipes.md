@@ -186,6 +186,7 @@ See *Verified by test modules* in [Type parameter modernization](../../user/feat
     # main.py
     from origin import T as U
 
+
     def first(items: list[U]) -> U: ...
     ```
 
@@ -198,7 +199,9 @@ See *Verified by test modules* in [Type parameter modernization](../../user/feat
     # origin.py
     T = TypeVar("T")
 
+
     def identity(x: T) -> T: ...
+
 
     # main.py
     from origin import *
@@ -215,6 +218,7 @@ See *Verified by test modules* in [Type parameter modernization](../../user/feat
 
     V = TypeVar("V")
 
+
     def get(mapping: dict[K, V], key: K) -> V: ...
     ```
 
@@ -230,6 +234,7 @@ See *Verified by test modules* in [Type parameter modernization](../../user/feat
     # main.py
     from origin import T
 
+
     def first(items: list[T]) -> T: ...
     ```
 
@@ -243,6 +248,7 @@ See *Verified by test modules* in [Type parameter modernization](../../user/feat
     __all__.extend(["T"])
 
     T = TypeVar("T")
+
 
     def first(items: list[T]) -> T: ...
     ```
@@ -278,6 +284,7 @@ See *Verified by test modules* in [Type parameter modernization](../../user/feat
     ```python
     Ts = TypeVarTuple("Ts")
 
+
     def pack(*args: Unpack[Ts]) -> tuple[Unpack[Ts]]: ...
     ```
 
@@ -286,9 +293,13 @@ See *Verified by test modules* in [Type parameter modernization](../../user/feat
 - An import that follows another statement on the same line is written back wrongly. This is rare, and `ruff`'s
   `E702` flags such lines. In:
 
+    <!-- fmt:off -->
+
     ```python
     import os; from origin import T
     ```
+
+    <!-- fmt:on -->
 
     the lines that replace the import get an extra indent, a syntax error.
 
@@ -301,6 +312,7 @@ See *Verified by test modules* in [Type parameter modernization](../../user/feat
     ```python
     T = TypeVar("T")
 
+
     def first(items: list[T], default=T) -> T: ...
     ```
 
@@ -312,11 +324,16 @@ See *Verified by test modules* in [Type parameter modernization](../../user/feat
 - A declaration followed by `;` on the same line is removed without its `;`. This is rare, and `ruff`'s `E702` flags
   such lines. In:
 
+    <!-- fmt:off -->
+
     ```python
     T = TypeVar("T"); U = 1
 
+
     def first(items: list[T]) -> T: ...
     ```
+
+    <!-- fmt:on -->
 
     the file is written as `; U = 1`, a syntax error, and reported under errors.
 
@@ -325,8 +342,8 @@ See *Verified by test modules* in [Type parameter modernization](../../user/feat
 
     ```python
     T = U = TypeVar("T")  # if T is unused, the statement is removed and U is no longer defined
-    V = TypeVar("W")      # def f(x: V) -> V becomes def f[W](x: V) -> V
-    X = TypeVar(name)     # AttributeError: no phase is applied to the file
+    V = TypeVar("W")  # def f(x: V) -> V becomes def f[W](x: V) -> V
+    X = TypeVar(name)  # AttributeError: no phase is applied to the file
     ```
 
     If both `T` and `U` are unused, the run fails with a `ValueError` ("Conflicting rewrites") reported under errors,
@@ -344,6 +361,7 @@ See *Verified by test modules* in [Type parameter modernization](../../user/feat
     # main.py
     from origin import T
 
+
     class Pair(dict[str, T]): ...
     ```
 
@@ -355,6 +373,7 @@ See *Verified by test modules* in [Type parameter modernization](../../user/feat
     T = TypeVar("T")
     U = TypeVar("U", default=T)
 
+
     def first(items: list[U]) -> U: ...
     ```
 
@@ -364,6 +383,7 @@ See *Verified by test modules* in [Type parameter modernization](../../user/feat
 
     ```python
     T = typing.TypeVar("T")
+
 
     def first(items: list[T]) -> T: ...
     ```
@@ -379,6 +399,7 @@ See *Verified by test modules* in [Type parameter modernization](../../user/feat
 
     # src/pkg/other.py
     from pkg.typing import T
+
 
     def first(items: list[T]) -> T: ...
     ```
@@ -412,6 +433,7 @@ Errors that should be fixed, not accepted.
 
     ```python
     T = TypeVar("T")
+
 
     def f[
         A,  # first
