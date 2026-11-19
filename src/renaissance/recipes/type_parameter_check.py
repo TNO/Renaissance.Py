@@ -75,10 +75,6 @@ class TypeParameterCheck(PythonRefactoring[PythonCstNode]):
         """Run check() and store its result on self.result."""
         self.result = self.check()
 
-    def _cst_root(self) -> PythonCstNode:
-        """Return the root node of the file as it currently is (after the last commit)."""
-        return cast("PythonCstNode", cast("object", self.root))
-
     def check(self) -> dict[str, dict[str, str]]:
         """Run the three phases in order, committing each one that fixed something.
 
@@ -103,7 +99,7 @@ class TypeParameterCheck(PythonRefactoring[PythonCstNode]):
         with each UnsafeReason on self.converted_unsafe_reasons; a "fixed" name that a generic class still uses gets
         USED_IN_GENERIC_CLASS there too.
         """
-        root = self._cst_root()
+        root = self.typed_root
         module = root.translation_unit.atu
 
         results: dict[str, str] = {}
@@ -214,7 +210,7 @@ class TypeParameterCheck(PythonRefactoring[PythonCstNode]):
         A declaration that is_safe_to_remove rejects is kept and reported "unsafe", with its UnsafeReason on
         self.orphaned_unsafe_reasons. Returns {name: "fixed" | "unsafe"}.
         """
-        root = self._cst_root()
+        root = self.typed_root
         module = root.translation_unit.atu
 
         results: dict[str, str] = {}
@@ -236,7 +232,7 @@ class TypeParameterCheck(PythonRefactoring[PythonCstNode]):
 
     def _remove_declaration(self, decl_stmt: cst.Assign) -> None:
         """Remove decl_stmt's statement from the file, with the comment trailing it when it is alone on its line."""
-        unit = self._cst_root().translation_unit
+        unit = self.typed_root.translation_unit
         targets: list[cst.CSTNode] = [decl_stmt]
         trailing = trailing_of_sole_statement(unit.atu, decl_stmt)
         if trailing is not None and trailing.comment is not None:
@@ -260,7 +256,7 @@ class TypeParameterCheck(PythonRefactoring[PythonCstNode]):
         """
         project_root = self.project_root if self.project_root is not None else Path(self.filename).parent
         plan = plan_localizations(
-            self._cst_root().translation_unit.atu,
+            self.typed_root.translation_unit.atu,
             Path(self.filename),
             project_root,
             localize_imports=self.localize_imports,
@@ -280,8 +276,8 @@ class TypeParameterCheck(PythonRefactoring[PythonCstNode]):
         statements and would be dropped, when no import remains to go after, or when a statement in between reads one
         of its names.
         """
-        body = self._cst_root().translation_unit.atu.body
-        wrappers = self._cst_root().translation_unit.wrappers
+        body = self.typed_root.translation_unit.atu.body
+        wrappers = self.typed_root.translation_unit.wrappers
         dropped = {id(item.line) for item in localizations if not item.kept}
         anchor, replaces_anchor = self._anchor_index(body, dropped)
         if anchor is None:
@@ -337,7 +333,7 @@ class TypeParameterCheck(PythonRefactoring[PythonCstNode]):
 
     def _write_in_place(self, item: Localization) -> None:
         """Replace the names of item where its import is: its needed imports and declarations follow the kept names, if any."""
-        wrappers = self._cst_root().translation_unit.wrappers
+        wrappers = self.typed_root.translation_unit.wrappers
         text = "\n".join([*item.imports, *item.declarations])
         if not item.kept:
             self.replace(text, wrappers[item.raw], include_whitespace=False, include_comments=False)
@@ -347,7 +343,7 @@ class TypeParameterCheck(PythonRefactoring[PythonCstNode]):
 
     def _drop(self, item: Localization) -> None:
         """Remove the import of item, with the comment trailing it, from its line."""
-        wrappers = self._cst_root().translation_unit.wrappers
+        wrappers = self.typed_root.translation_unit.wrappers
         targets = [wrappers[item.raw]]
         comment = item.line.trailing_whitespace.comment
         if comment is not None:
@@ -356,9 +352,9 @@ class TypeParameterCheck(PythonRefactoring[PythonCstNode]):
 
     def _narrow(self, item: Localization) -> None:
         """Replace the import of item with one that only imports its kept names, keeping its comments."""
-        module = self._cst_root().translation_unit.atu
+        module = self.typed_root.translation_unit.atu
         narrowed = module.code_for_node(item.raw.with_changes(names=item.kept, semicolon=cst.MaybeSentinel.DEFAULT))
-        self.replace(narrowed, self._cst_root().translation_unit.wrappers[item.raw], include_whitespace=False, include_comments=False)
+        self.replace(narrowed, self.typed_root.translation_unit.wrappers[item.raw], include_whitespace=False, include_comments=False)
 
     def _goes_after_last_import(self, item: Localization, body: Sequence[cst.BaseStatement], anchor: int) -> bool:
         """Return True if item can be written after body[anchor], the last import that stays.

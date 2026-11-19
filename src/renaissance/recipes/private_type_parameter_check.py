@@ -18,7 +18,7 @@ from renaissance.integrations.python.ast.factory import PythonFactory, PythonPat
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
 from renaissance.recipes.python_refactoring import PythonRefactoring
 from renaissance.recipes.type_parameter_rules import UnsafeReason
-from renaissance.syntax_tree.match_finder import match_pattern
+from renaissance.syntax_tree.match_finder import MatchFinder
 from renaissance.utils.cst_utils import names_read_by
 
 _TYPE_PARAM_NODES = (cst.TypeVar, cst.ParamSpec, cst.TypeVarTuple)
@@ -103,7 +103,10 @@ def _declared_positions(nodes: Sequence[PythonRstNode], patterns: Sequence[Seque
     """Return the offset of every type parameter that a function or class in nodes declares, nested ones included."""
     positions: set[int] = set()
     for pattern in patterns:
-        for match in match_pattern(nodes, pattern):
+        for match in MatchFinder.match_pattern(nodes, pattern):
+            # TODO(FrancescoPezzella): `match.expansions["$$tps"][0].offset` and `match.nodes[0].children` are Unknown,
+            #  since PatternMatch is not generic over its node type.
+            #  https://github.com/TNO/Renaissance.Py/issues/149
             positions.update(param.offset for param in match.expansions["$$tps"])
             positions |= _declared_positions(match.nodes[0].children, patterns)
     return positions
@@ -158,7 +161,7 @@ class PrivateTypeParameterCheck(PythonRefactoring[PythonCstNode]):
 
     def _private_type_params(self) -> dict[PythonCstNode, list[PythonCstNode]]:
         """Return the private type parameters of each function or class, found with patterns on a parse of the same text."""
-        unit = cast("PythonCstNode", cast("object", self.root)).translation_unit
+        unit = self.typed_root.translation_unit
         rst_factory = PythonFactory(PythonRstNode)
         pattern_factory = PythonPatternFactory(rst_factory)
         patterns = [pattern_factory.create_statements(text) for text in _DECLARATION_PATTERNS]

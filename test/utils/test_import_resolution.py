@@ -12,7 +12,7 @@ from typing import cast
 
 import libcst as cst
 import pytest
-from hamcrest import assert_that, equal_to, has_item, has_key, is_, none, not_, not_none
+from hamcrest import assert_that, equal_to, has_item, has_key, none, not_, not_none
 
 from renaissance.utils.import_resolution import (
     ProjectImportGraph,
@@ -330,4 +330,4 @@ class TestImportsNameConditionally:
     )
     def test_detects_an_import_of_the_name_inside_a_module_level_if_or_try(self, source: str, *, expected: bool) -> None:
         """Verify only an import of the name inside a module-level `if` or `try` counts."""
-        assert_that(imports_name_conditionally(cst.parse_module(source), "TypeVar"), is_(expected))
+        assert_that(imports_name_conditionally(cst.parse_module(source), "TypeVar"), equal_to(expected))
