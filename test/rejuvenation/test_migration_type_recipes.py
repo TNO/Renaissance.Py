@@ -14,7 +14,7 @@ import textwrap
 from pathlib import Path
 
 import pytest
-from hamcrest import assert_that, contains_string, equal_to, not_
+from hamcrest import assert_that, contains_string, equal_to, matches_regexp, not_
 from hamcrest.core.matcher import Matcher
 
 from rejuvenation import migration_type_recipes as migration
@@ -500,57 +500,6 @@ class TestIgnore:
         )
 
 
-class TestSecondPass:
-    """main(): --second-pass removes a declaration whose importers were all localized, and reports it in the same report."""
-
-    @pytest.mark.parametrize(
-        ("extra_args", "declaration_kept", "expected_review"),
-        [
-            pytest.param([], True, "NEEDS MANUAL REVIEW (1)", id="single-pass"),
-            pytest.param(["--second-pass"], False, "NEEDS MANUAL REVIEW (0)", id="second-pass"),
-        ],
-    )
-    def test_declaration_left_behind_by_localizing_is_removed_in_the_same_run(
-        self,
-        tmp_path: Path,
-        extra_args: list[str],
-        *,
-        declaration_kept: bool,
-        expected_review: str,
-    ) -> None:
-        """Only the second pass removes the origin's declaration, and the one report counts both files once."""
-        (tmp_path / "origin.py").write_text('from typing import TypeVar\n\nT = TypeVar("T")\n', encoding="utf-8")
-        (tmp_path / "user.py").write_text("from origin import T\n\n\ndef identity(x: T) -> T:\n    return x\n", encoding="utf-8")
-
-        output = _report_of(tmp_path, str(tmp_path), "--py", "3.12", "--no-ruff", *extra_args)
-
-        assert_that('T = TypeVar("T")' in (tmp_path / "origin.py").read_text(encoding="utf-8"), equal_to(declaration_kept))
-        assert_that(output, contains_string(expected_review))
-        assert_that(output, contains_string("Processed 2 files"))
-
-    @pytest.mark.parametrize(
-        "import_line", [pytest.param("from pkg.base import T", id="absolute"), pytest.param("from .base import T", id="relative")]
-    )
-    def test_name_re_exported_via_dunder_all_stays_the_same_object(self, tmp_path: Path, import_line: str) -> None:
-        """A package re-exporting T via `__all__` is left untouched, so it and its origin still bind the same T."""
-        package = tmp_path / "pkg"
-        package.mkdir()
-        init_source = f'{import_line}\n\n__all__ = ["T"]\n'
-        (package / "__init__.py").write_text(init_source, encoding="utf-8")
-        base_source = 'from typing import TypeVar\n\nT = TypeVar("T")\n\n\ndef first(items: list[T]) -> T:\n    return items[0]\n'
-        (package / "base.py").write_text(base_source, encoding="utf-8")
-
-        migration.main([str(tmp_path), "--py", "3.12", "--no-ruff", "--second-pass"])
-
-        assert_that((package / "__init__.py").read_text(encoding="utf-8"), equal_to(init_source))
-        base_text = (package / "base.py").read_text(encoding="utf-8")
-        assert_that(base_text, contains_string('T = TypeVar("T")'))
-        assert_that(base_text, contains_string("def first[T](items: list[T]) -> T:"))
-        same_object = "import pkg, pkg.base; assert pkg.T is pkg.base.T"
-        result = subprocess.run([sys.executable, "-c", same_object], cwd=tmp_path, capture_output=True, text=True, check=False)  # noqa: S603 - fixed argv
-        assert_that(result.stderr, equal_to(""))
-
-
 class TestNoLocalization:
     """main(): --no-localization keeps every project import of a type parameter and reports the names left."""
 
@@ -663,30 +612,99 @@ class TestMainFileEncoding:
         assert_that(good.read_text(encoding="utf-8"), contains_string("def identity[T]"))
 
 
+def _function_using(name: str, imported: str) -> str:
+    """Return the source of a function `name` whose signature uses the type parameter `imported`."""
+    return f"\n\ndef {name}(x: {imported}) -> {imported}:\n    return x\n"
+
+
 class TestMainProjectWideImportSafety:
-    """main(): a TypeVar imported by another file in the batch is localized there and kept at its origin."""
+    """main(): a type parameter imported by another file of the project is localized there, then removed from its origin."""
 
-    def test_consumer_is_localized_and_origin_declaration_survives(self, tmp_path: Path) -> None:
-        """The importing file gets a PEP 695 local TypeVar, and the origin declaration is not removed."""
-        import_line = "from pkg.typing_mod import T"
-        pkg = tmp_path / "pkg"
-        pkg.mkdir()
-        (pkg / "__init__.py").write_text("", encoding="utf-8")
-        (pkg / "typing_mod.py").write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
-        consumer = pkg / "client.py"
-        consumer.write_text(f"{import_line}\n\ndef use(x: T) -> T:\n    return x\n", encoding="utf-8")
-        (pkg / "unused.py").write_text(f"{import_line}\n", encoding="utf-8")
+    @pytest.mark.parametrize(
+        ("sources", "modules"),
+        [
+            pytest.param(
+                {
+                    "pkg/__init__.py": "",
+                    "pkg/typing_mod.py": LEGACY_TYPEVAR_SOURCE,
+                    "pkg/client.py": "from pkg.typing_mod import T" + _function_using("use", "T"),
+                    "pkg/unused.py": "from pkg.typing_mod import T\n",
+                },
+                "pkg.typing_mod, pkg.client, pkg.unused",
+                id="two-importers",
+            ),
+            pytest.param(
+                {
+                    "a.py": 'from typing import TypeVar\n\nT = TypeVar("T")' + _function_using("fa", "T"),
+                    "b.py": "from a import T" + _function_using("fb", "T"),
+                    "c.py": "from b import T" + _function_using("fc", "T"),
+                },
+                "a, b, c",
+                id="chain-origin-sorted-first",
+            ),
+            pytest.param(
+                {
+                    "a.py": "from b import T" + _function_using("fa", "T"),
+                    "b.py": "from c import T" + _function_using("fb", "T"),
+                    "c.py": 'from typing import TypeVar\n\nT = TypeVar("T")' + _function_using("fc", "T"),
+                },
+                "a, b, c",
+                id="chain-origin-sorted-last",
+            ),
+            pytest.param(
+                {
+                    "a.py": 'from typing import TypeVar\n\nT = TypeVar("T")\n\nfrom b import U' + _function_using("fa", "U"),
+                    "b.py": 'from typing import TypeVar\n\nU = TypeVar("U")\n\nfrom a import T' + _function_using("fb", "T"),
+                },
+                "a, b",
+                id="import-cycle",
+            ),
+        ],
+    )
+    def test_declaration_is_removed_once_every_importer_is_localized(self, tmp_path: Path, sources: dict[str, str], modules: str) -> None:
+        """One run leaves no legacy declaration in any file, converts every function, and every module still imports.
 
+        The report counts each file once and leaves nothing for manual review.
+        """
+        for relative, source in sources.items():
+            (tmp_path / relative).parent.mkdir(exist_ok=True)
+            (tmp_path / relative).write_text(source, encoding="utf-8")
         report = tmp_path / "report.md"
 
-        exit_code = migration.main([str(tmp_path), "--py", "3.12", "--report", str(report)])
+        exit_code = migration.main([str(tmp_path), "--py", "3.12", "--no-ruff", "--report", str(report)])
 
         assert_that(exit_code, equal_to(0))
-        consumer_text = consumer.read_text(encoding="utf-8")
-        assert_that(consumer_text, contains_string("def use[T](x: T) -> T:"))
-        assert_that(consumer_text, not_(contains_string(import_line)))
-        assert_that(report.read_text(encoding="utf-8"), contains_string("    `T`: unused declaration removed\n"))
-        assert_that((pkg / "typing_mod.py").read_text(encoding="utf-8"), contains_string('T = TypeVar("T")'))
+        report_text = report.read_text(encoding="utf-8")
+        assert_that(report_text, contains_string(f"Processed {len(sources)} files"))
+        assert_that(report_text, contains_string("NEEDS MANUAL REVIEW (0)"))
+        for relative in sources:
+            text = (tmp_path / relative).read_text(encoding="utf-8")
+            assert_that(text, not_(contains_string("TypeVar(")))
+            assert_that(text, not_(matches_regexp(r"def \w+\(")))
+        result = subprocess.run([sys.executable, "-c", f"import {modules}"], cwd=tmp_path, capture_output=True, text=True, check=False)  # noqa: S603 - fixed argv
+        assert_that(result.stderr, equal_to(""))
+
+    @pytest.mark.parametrize(
+        "import_line", [pytest.param("from pkg.base import T", id="absolute"), pytest.param("from .base import T", id="relative")]
+    )
+    def test_name_re_exported_via_dunder_all_stays_the_same_object(self, tmp_path: Path, import_line: str) -> None:
+        """A package re-exporting T via `__all__` is left untouched, so it and its origin still bind the same T."""
+        package = tmp_path / "pkg"
+        package.mkdir()
+        init_source = f'{import_line}\n\n__all__ = ["T"]\n'
+        (package / "__init__.py").write_text(init_source, encoding="utf-8")
+        base_source = 'from typing import TypeVar\n\nT = TypeVar("T")\n\n\ndef first(items: list[T]) -> T:\n    return items[0]\n'
+        (package / "base.py").write_text(base_source, encoding="utf-8")
+
+        migration.main([str(tmp_path), "--py", "3.12", "--no-ruff"])
+
+        assert_that((package / "__init__.py").read_text(encoding="utf-8"), equal_to(init_source))
+        base_text = (package / "base.py").read_text(encoding="utf-8")
+        assert_that(base_text, contains_string('T = TypeVar("T")'))
+        assert_that(base_text, contains_string("def first[T](items: list[T]) -> T:"))
+        same_object = "import pkg, pkg.base; assert pkg.T is pkg.base.T"
+        result = subprocess.run([sys.executable, "-c", same_object], cwd=tmp_path, capture_output=True, text=True, check=False)  # noqa: S603 - fixed argv
+        assert_that(result.stderr, equal_to(""))
 
     @pytest.mark.xfail(
         strict=True,
@@ -725,18 +743,21 @@ class TestMainProjectWideImportSafety:
         monkeypatch: pytest.MonkeyPatch,
         target_arg: str,
     ) -> None:
-        """A relative target path still protects a declaration imported by another file in the batch."""
+        """A relative target path still protects a declaration another file of the batch reads as a module attribute."""
         pkg = tmp_path / "pkg"
         pkg.mkdir()
         (pkg / "typing_mod.py").write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
-        (pkg / "client.py").write_text("from .typing_mod import T\n\ndef use(x: T) -> T:\n    return x\n", encoding="utf-8")
+        client_source = "from . import typing_mod" + _function_using("use", "typing_mod.T")
+        (pkg / "client.py").write_text(client_source, encoding="utf-8")
         monkeypatch.chdir(tmp_path)
 
-        exit_code = migration.main([target_arg, "--py", "3.12"])
+        exit_code = migration.main([target_arg, "--py", "3.12", "--no-ruff"])
 
         assert_that(exit_code, equal_to(0))
-        assert_that((pkg / "typing_mod.py").read_text(encoding="utf-8"), contains_string('T = TypeVar("T")'))
-        assert_that((pkg / "client.py").read_text(encoding="utf-8"), contains_string("def use[T](x: T) -> T:"))
+        typing_mod_text = (pkg / "typing_mod.py").read_text(encoding="utf-8")
+        assert_that(typing_mod_text, contains_string('T = TypeVar("T")'))
+        assert_that(typing_mod_text, contains_string("def identity[T](x: T) -> T:"))
+        assert_that((pkg / "client.py").read_text(encoding="utf-8"), equal_to(client_source))
 
 
 class TestPyVersionFlag:

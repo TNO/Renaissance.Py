@@ -51,7 +51,7 @@ The tool runs four phases:
 4. **Remove the leading underscore.** A type parameter of a function or class written as `_T`, including one phase 2
    wrote, becomes `T` together with every use it binds (`def f[T](x: T) -> T`). `ruff`'s `UP049` does the same, but
    leaves the uses behind when a module-level `_T` of the same name remains
-   ([astral-sh/ruff#21004](https://github.com/astral-sh/ruff/issues/21004)). It also can completely break the code, 
+   ([astral-sh/ruff#21004](https://github.com/astral-sh/ruff/issues/21004)). It also can completely break the code,
    when running it after changing Type Parameters in certain situations (from an experiment using it before)!
 
 ## Inputs
@@ -63,8 +63,8 @@ Imports are resolved against the directory passed to the CLI (the file's own fol
 skipped without a report:
 
 - imports from outside that directory (stdlib, third-party);
-- re-exports through an intermediate `__init__.py`, unless that file was already changed earlier in the run, so the
-  result depends on the order of the files;
+- re-exports through an intermediate `__init__.py` that keeps its import, for example because its `__all__` lists the
+  name;
 - a namespace package itself as the origin of an import (the modules inside it are not skipped);
 - a renamed import (`from .shapes import T as U`); a file whose only type parameters arrive that way counts as clean.
 
@@ -160,8 +160,6 @@ example under *Non-goals* or *Need to fix* in [Refactoring recipes](../../develo
 
 **Cosmetic or operational:**
 
-- A declaration whose importers are all localized in a run is only removed by a second run, or by `--second-pass`.
-  A chain of three files, each importing from the previous one, can still need another run.
 - With `--no-ruff`, the imports added by localizing are not merged into the file's existing `from` imports and not
   sorted, and removing a line can leave extra blank lines.
 - A modified CRLF file is written back with LF, so `git diff` shows all its lines changed in a repository that stores CRLF.
@@ -415,6 +413,7 @@ or as another type parameter, or it is not a valid name (`_class`). Renaming wou
 ```python
 T = 1
 
+
 def f[_T](x: _T) -> _T:
     return T
 ```
@@ -428,9 +427,13 @@ The type parameter keeps its leading underscore.
 A use of the type parameter is written in a form the tool cannot rewrite, such as an annotation split over
 concatenated strings.
 
+<!-- fmt:off -->
+
 ```python
 def f[_T](x: "list[" "_T]") -> _T: ...
 ```
+
+<!-- fmt:on -->
 
 The type parameter keeps its leading underscore.
 
@@ -473,7 +476,7 @@ The type parameter keeps its leading underscore.
 
 ```shell
 python src/rejuvenation/migration_type_recipes.py <path> --py MAJOR.MINOR \
-    [--report PATH] [--no-ruff] [--ignore FILE...] [--no-localization] [--second-pass]
+    [--report PATH] [--no-ruff] [--ignore FILE...] [--no-localization]
 ```
 
 - `<path>`: a `.py` file or a directory, scanned recursively for `.py` files. Files and directories starting with `.`,
@@ -484,8 +487,6 @@ python src/rejuvenation/migration_type_recipes.py <path> --py MAJOR.MINOR \
 - `--ignore`: files left untouched, whose type parameters are never copied into the files importing them (see
   *Shared declaration files*).
 - `--no-localization`: keep every project import of a type parameter (see *Disabling localization*).
-- `--second-pass`: process again only the files that kept a declaration because another file imported it when the run
-  started, and merge the result into the same report.
 
 After the recipe, the CLI runs `ruff check --fix --select F401,I001` on the changed files. This removes **every**
 unused import in them, including ones that were unused before (such as `from typing import TypeVar` after the

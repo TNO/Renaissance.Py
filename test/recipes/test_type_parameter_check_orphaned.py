@@ -149,9 +149,7 @@ class TestTypeParameterCheckOrphaned:
         assert_that(result, equal_to({}))
         assert_that(subject.apply_to_string(), contains_string("T = TypeVar('T')"))
 
-    def test_keeps_orphaned_declaration_imported_elsewhere(
-        self, create_type_parameter_check: Callable[[str], TypeParameterCheck]
-    ) -> None:
+    def test_keeps_orphaned_declaration_imported_elsewhere(self, create_type_parameter_check: Callable[[str], TypeParameterCheck]) -> None:
         """Verify an orphaned declaration is kept and reported unsafe when removing it would break an importer."""
         subject = create_type_parameter_check(ALREADY_CONVERTED_SOURCE)
         subject.project_wide_imported_names = frozenset({"T"})

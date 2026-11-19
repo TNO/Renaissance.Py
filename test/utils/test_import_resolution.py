@@ -15,10 +15,11 @@ import pytest
 from hamcrest import assert_that, equal_to, has_item, has_key, is_, none, not_, not_none
 
 from renaissance.utils.import_resolution import (
-    collect_project_imported_names,
+    ProjectImportGraph,
     from_import_binding,
     from_import_sources,
     import_from_module,
+    imported_project_names,
     imports_name_conditionally,
     rebase_relative_module,
     resolve_project_module,
@@ -114,7 +115,7 @@ class TestRebaseRelativeModule:
         assert_that(rebased, equal_to(expected))
 
 
-class TestCollectProjectImportedNames:
+class TestImportedProjectNames:
     """See module docstring."""
 
     @pytest.mark.parametrize(
@@ -136,7 +137,7 @@ class TestCollectProjectImportedNames:
         (tmp_path / "origin.py").write_text("X = 1\n")
         (tmp_path / "consumer.py").write_text(consumer_source)
 
-        result = collect_project_imported_names([tmp_path / "origin.py", tmp_path / "consumer.py"], tmp_path)
+        result = imported_project_names(tmp_path / "consumer.py", tmp_path)
 
         assert_that(result, equal_to({tmp_path / name: names for name, names in expected.items()}))
 
@@ -148,16 +149,14 @@ class TestCollectProjectImportedNames:
             pytest.param('x = t"a" t"b"\n', id="valid-t-string-concatenation"),
         ],
     )
-    def test_skips_a_file_libcst_cannot_parse(self, tmp_path: Path, unparsable_source: str) -> None:
-        """A file libcst cannot parse is skipped, and the imports of the other files are still recorded."""
-        (tmp_path / "unparsable.py").write_text(unparsable_source, encoding="utf-8")
+    def test_records_nothing_for_a_file_libcst_cannot_parse(self, tmp_path: Path, unparsable_source: str) -> None:
+        """A file libcst cannot parse imports nothing, even when it also contains a project import."""
         (tmp_path / "origin.py").write_text("X = 1\n")
-        (tmp_path / "consumer.py").write_text("from origin import X\n")
+        (tmp_path / "unparsable.py").write_text(f"from origin import X\n{unparsable_source}", encoding="utf-8")
 
-        files = [tmp_path / "unparsable.py", tmp_path / "origin.py", tmp_path / "consumer.py"]
-        result = collect_project_imported_names(files, tmp_path)
+        result = imported_project_names(tmp_path / "unparsable.py", tmp_path)
 
-        assert_that(result, equal_to({tmp_path / "origin.py": frozenset({"X"})}))
+        assert_that(result, equal_to({}))
 
 
 @pytest.fixture
@@ -169,8 +168,8 @@ def module_tree(tmp_path: Path) -> Path:
     return tmp_path
 
 
-class TestCollectModuleAttributeAccess:
-    """collect_project_imported_names: names reached as attributes of an imported project module."""
+class TestImportedModuleAttributeAccess:
+    """imported_project_names: names reached as attributes of an imported project module."""
 
     @pytest.mark.parametrize(
         ("consumer_source", "origin_rel", "expected"),
@@ -194,7 +193,7 @@ class TestCollectModuleAttributeAccess:
         consumer = module_tree / "pkg" / "consumer.py"
         consumer.write_text(consumer_source)
 
-        result = collect_project_imported_names([consumer], module_tree)
+        result = imported_project_names(consumer, module_tree)
 
         assert_that(sorted(result.get(module_tree / origin_rel, frozenset[str]())), has_item(expected))
 
@@ -212,9 +211,61 @@ class TestCollectModuleAttributeAccess:
         consumer = module_tree / "pkg" / "consumer.py"
         consumer.write_text(consumer_source)
 
-        result = collect_project_imported_names([consumer], module_tree)
+        result = imported_project_names(consumer, module_tree)
 
         assert_that(result, not_(has_key(module_tree / "pkg" / "mod.py")))
+
+
+class TestProjectImportGraph:
+    """ProjectImportGraph: the order origins and importers are processed in, and the names imported from each file."""
+
+    @pytest.mark.parametrize(
+        ("sources", "expected"),
+        [
+            pytest.param(
+                {"a.py": "from b import X\n", "b.py": "from c import X\n", "c.py": "from d import X\n", "d.py": "X = 1\n"},
+                [["d.py"], ["c.py"], ["b.py"], ["a.py"]],
+                id="chain",
+            ),
+            pytest.param(
+                {"a.py": "from b import X\n", "b.py": "from c import Y\nX = 1\n", "c.py": "from b import X\nY = 1\n"},
+                [["b.py", "c.py"], ["a.py"]],
+                id="cycle-grouped-before-its-importer",
+            ),
+        ],
+    )
+    def test_processing_order_puts_origins_before_their_importers(
+        self,
+        tmp_path: Path,
+        sources: dict[str, str],
+        expected: list[list[str]],
+    ) -> None:
+        """Each group of files comes before every file importing from it, and a cycle forms one group in file order."""
+        for name, source in sources.items():
+            (tmp_path / name).write_text(source)
+
+        graph = ProjectImportGraph([tmp_path / name for name in sources], tmp_path)
+
+        assert_that(graph.processing_order(), equal_to([[tmp_path / name for name in group] for group in expected]))
+
+    @pytest.mark.parametrize(
+        ("rewritten_consumer", "expected"),
+        [
+            pytest.param("from origin import X\n", frozenset({"X", "Y"}), id="unchanged"),
+            pytest.param("X = 1\n", frozenset({"Y"}), id="import-dropped"),
+        ],
+    )
+    def test_imported_names_follow_a_refreshed_importer(self, tmp_path: Path, rewritten_consumer: str, expected: frozenset[str]) -> None:
+        """After an importer is rewritten and refreshed, the names imported from its origin are read from its new source."""
+        (tmp_path / "origin.py").write_text("X = 1\nY = 2\n")
+        (tmp_path / "consumer.py").write_text("from origin import X\n")
+        (tmp_path / "other.py").write_text("from origin import Y\n")
+        graph = ProjectImportGraph([tmp_path / "origin.py", tmp_path / "consumer.py", tmp_path / "other.py"], tmp_path)
+
+        (tmp_path / "consumer.py").write_text(rewritten_consumer)
+        graph.refresh(tmp_path / "consumer.py")
+
+        assert_that(graph.imported_names(tmp_path / "origin.py"), equal_to(expected))
 
 
 class TestFromImportSources:

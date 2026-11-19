@@ -31,7 +31,7 @@ from renaissance.recipes.private_type_parameter_check import PrivateTypeParamete
 from renaissance.recipes.step_runner import Step, run_steps
 from renaissance.recipes.type_parameter_check import MIN_SUPPORTED_PYTHON, TypeParameterCheck
 from renaissance.recipes.type_parameter_rules import DOCS_BASE_URL, UNSAFE_RULES, UnsafeReason
-from renaissance.utils.import_resolution import collect_project_imported_names
+from renaissance.utils.import_resolution import ProjectImportGraph
 from renaissance.utils.ruff_utils import run_ruff_format, run_ruff_import_cleanup
 
 _MAJOR_MINOR_PART_COUNT = 2
@@ -190,41 +190,44 @@ def _merge_reports(first: FileReport, second: FileReport) -> FileReport:
     )
 
 
-def _run_second_pass(
-    reports: list[FileReport],
+def _process_files(
     files: Sequence[Path],
-    project_root: Path,
+    graph: ProjectImportGraph,
+    *,
     min_python: tuple[int, int],
+    project_root: Path,
     localization: LocalizationSettings,
-) -> list[FileReport]:
-    """Process again the files that kept a declaration because another file imported it, and merge the two reports of each.
+) -> dict[Path, FileReport]:
+    """Process files in order, each with the names graph says the project imports from it, again while those names change.
 
-    The imported names are collected again, so a declaration whose importers were all localized in the first pass is
-    no longer protected. Every other report is returned as it was.
+    graph re-reads each file's imports after it is processed. A file processed more than once gets one merged report.
     """
-    candidates = {
-        report.path
-        for report in reports
-        if any(UnsafeReason.IMPORTED_ELSEWHERE_IN_PROJECT in reasons.values() for reasons in (report.reasons or {}).values())
-    }
-    if not candidates:
-        return reports
-    imported_names_by_file = collect_project_imported_names(files, project_root)
-    merged: list[FileReport] = []
-    for report in reports:
-        if report.path not in candidates:
-            merged.append(report)
-            continue
-        second = process_file(
-            report.path,
-            min_python=min_python,
-            project_root=project_root,
-            project_wide_imported_names=imported_names_by_file.get(report.path, frozenset()),
-            localization=localization,
-        )
-        merged.append(_merge_reports(report, second))
-        print(f"File {report.path} checked again.")
-    return merged
+    reports: dict[Path, FileReport] = {}
+    processed_with: dict[Path, frozenset[str]] = {}
+    changed = True
+    while changed:
+        changed = False
+        for path in files:
+            imported_names = graph.imported_names(path)
+            if processed_with.get(path) == imported_names:
+                continue
+            report = process_file(
+                path,
+                min_python=min_python,
+                project_root=project_root,
+                project_wide_imported_names=imported_names,
+                localization=localization,
+            )
+            graph.refresh(path)
+            if path in reports:
+                reports[path] = _merge_reports(reports[path], report)
+                print(f"File {path} checked again.")
+            else:
+                reports[path] = report
+                print(f"File {path} checked.")
+            processed_with[path] = imported_names
+            changed = True
+    return reports
 
 
 def _files(count: int) -> str:
@@ -511,14 +514,6 @@ def build_arg_parser() -> argparse.ArgumentParser:
             "the functions using them are not converted."
         ),
     )
-    parser.add_argument(
-        "--second-pass",
-        action="store_true",
-        help=(
-            "Process again the files that kept a declaration only because another file imported it when the run started, "
-            "and report both passes together."
-        ),
-    )
     return parser
 
 
@@ -553,31 +548,17 @@ def main(argv: Sequence[str] | None = None) -> int:
     if target.is_file() and target.suffix != ".py":
         parser.error(f"not a Python file: {target}")
 
-    # Absolute and normalized, so file paths match the keys collect_project_imported_names returns.
+    # Absolute and normalized, so file paths match the paths ProjectImportGraph resolves imports to.
     target = target.resolve()
     files = resolve_target_files(target)
     project_root = target if target.is_dir() else target.parent
-    imported_names_by_file = collect_project_imported_names(files, project_root)
+    graph = ProjectImportGraph(files, project_root)
 
     localization = _localization_settings(parser, args, project_root)
 
-    reports: list[FileReport] = []
-    for path in files:
-        if path in localization.ignored_files:
-            continue
-        project_wide_imported_names = imported_names_by_file.get(path, frozenset())
-        report = process_file(
-            path,
-            min_python=args.py,
-            project_root=project_root,
-            project_wide_imported_names=project_wide_imported_names,
-            localization=localization,
-        )
-        reports.append(report)
-        print(f"File {path} checked.")
-
-    if args.second_pass:
-        reports = _run_second_pass(reports, files, project_root, args.py, localization)
+    processed = [path for group in graph.processing_order() for path in group if path not in localization.ignored_files]
+    reports_by_path = _process_files(processed, graph, min_python=args.py, project_root=project_root, localization=localization)
+    reports = [reports_by_path[path] for path in files if path in reports_by_path]
 
     modified_paths = [report.path for report in reports if has_fixed(report)]
     ruff_ran = bool(modified_paths) and not args.no_ruff

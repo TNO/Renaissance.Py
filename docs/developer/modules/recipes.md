@@ -33,8 +33,8 @@ safely cover. This page covers `TypeParameterCheck`, the recipe behind
   that fixed something.
 - `src/renaissance/recipes/python_refactoring.py`: the base class.
 - `src/renaissance/utils/import_resolution.py`: the import statements of a module and what they bind, the resolution of
-  `from X import Y` to a file in the project, the re-anchoring of one file's relative import on another file, and the
-  names each project file imports from the others.
+  `from X import Y` to a file in the project, the re-anchoring of one file's relative import on another file, and
+  `ProjectImportGraph`, the names each project file imports from the others.
 - `src/renaissance/utils/cst_utils.py`: a module's top-level statements, the names they read or bind and the comment
   trailing a statement's line.
 - `src/renaissance/utils/ruff_utils.py`: `run_ruff_import_cleanup` and `run_ruff_format`, which the CLI runs on the
@@ -53,7 +53,7 @@ safely cover. This page covers `TypeParameterCheck`, the recipe behind
 
 - `type_param_kinds`: maps each type parameter name the phases see to `"TypeVar"`, `"ParamSpec"` or `"TypeVarTuple"`.
 - Attributes set by the CLI (`migration_type_recipes.py`): `min_python`, `project_root` (falls back to the file's
-  folder), `project_wide_imported_names` (from `collect_project_imported_names`), `ignore_localize_origins` (absolute
+  folder), `project_wide_imported_names` (from `ProjectImportGraph.imported_names`), `ignore_localize_origins` (absolute
   paths of the files `--ignore` names) and `localize_imports` (`False` with `--no-localization`). `ignored_names` holds
   the type parameter names this file imports from those files, or from any project file when `localize_imports` is
   `False`.
@@ -135,6 +135,12 @@ safely cover. This page covers `TypeParameterCheck`, the recipe behind
   a statement between it and the last import reads one of its names. Merging and sorting the added imports, and
   removing imports that became unused, is left to the CLI's final `ruff` pass (F401, I001).
 
+- **Processing order.** The CLI reads the imports of every file into a `ProjectImportGraph` and processes origins
+  before the files importing from them (`processing_order`); the files of an import cycle form one group. A file that
+  only re-imports `T` is thus localized before its importers copy `T` from it. After each file, the graph reads its
+  imports again, and a file is processed again while the names the project imports from it change. A declaration is
+  removed in the same run once its last importer has localized it.
+
 - **Private type parameters.** `PrivateTypeParameterCheck` finds the declarations with patterns on a second parse of the
   file, with the RST backend. It maps each type parameter to its libcst node by offset, and takes its uses
   from `referenced_by`, so a module-level `_T` of the same name is left alone. A name inside a string annotation is
@@ -189,8 +195,8 @@ See *Verified by test modules* in [Type parameter modernization](../../user/feat
     run with `--py 3.12` is treated as below 3.13, so a `default=` declaration is not converted.
 
 - Only the file an import names is read. A name it re-exports from another module (`pkg/__init__.py` with
-  `from .mod import T`) is not followed, so the result depends on whether that file was already localized earlier in
-  the run. Renamed imports and `import *` are skipped, and so is a namespace package (a directory without
+  `from .mod import T`) is not followed, so it is copied only once that file holds a declaration of its own, as after
+  localizing it. Renamed imports and `import *` are skipped, and so is a namespace package (a directory without
   `__init__.py`) as the origin; the modules inside it are followed. In:
 
     ```python
@@ -242,20 +248,6 @@ See *Verified by test modules* in [Type parameter modernization](../../user/feat
     parameter, so `get` mixes both syntaxes, which
     [PEP 695](https://peps.python.org/pep-0695/#compatibility-with-traditional-typevars) forbids. Type checkers
     report an error.
-
-- Imported names are collected once before the run, so removing a declaration whose importers were all localized
-  needs a second run, which `--second-pass` does for the files concerned. With `origin.py` as above and:
-
-    ```python
-    # main.py
-    from origin import T
-
-
-    def first(items: list[T]) -> T: ...
-    ```
-
-    the first run turns `main.py` into `def first[T](items: list[T]) -> T: ...`, but keeps `T` in `origin.py`, since
-    `main.py` imported it when the run started. A second run removes it.
 
 - `__all__.extend(...)` and `__all__.append(...)` are not read to detect an exported declaration. In:
 

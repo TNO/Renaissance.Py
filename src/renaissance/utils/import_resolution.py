@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import cast
 
 import libcst as cst
+import networkx as nx
 from libcst import matchers
 from libcst.helpers import get_full_name_for_node
 
@@ -152,8 +153,8 @@ def rebase_relative_module(via_module: str | None, via_level: int, origin_file: 
     return "." * dots + ".".join(parts)
 
 
-def collect_project_imported_names(files: Sequence[Path], project_root: Path) -> dict[Path, frozenset[str]]:
-    """Map each project file to the names any file in `files` imports or reads from it.
+def imported_project_names(file: Path, project_root: Path) -> dict[Path, frozenset[str]]:
+    """Map each project file to the names `file` imports or reads from it.
 
     Two kinds of dependency are recorded against the resolved origin file:
 
@@ -162,26 +163,63 @@ def collect_project_imported_names(files: Sequence[Path], project_root: Path) ->
     - An attribute read through an imported project module (`import pkg.mod` then `pkg.mod.T`,
       `import pkg.mod as m` then `m.T`, `from pkg import mod` then `mod.T`): the attribute name.
 
-    Imports that don't resolve inside `project_root` (stdlib/third-party) are skipped, as is any
-    file that can't be read or parsed.
+    Imports that don't resolve inside `project_root` (stdlib/third-party) are skipped. A file that
+    can't be read or parsed imports nothing.
     """
+    try:
+        module = cst.parse_module(file.read_text(encoding="utf-8"))
+    # TODO(FrancescoPezzella): libcst raises CSTLogicError on an implicit concatenation of t-strings, like `t"a" t"b"`,
+    #  which is valid code.
+    #  https://github.com/Instagram/LibCST/issues/1485
+    except OSError, cst.ParserSyntaxError, cst.CSTLogicError:
+        return {}
     imported: dict[Path, set[str]] = {}
-    for file in files:
-        try:
-            module = cst.parse_module(file.read_text(encoding="utf-8"))
-        # TODO(FrancescoPezzella): libcst raises CSTLogicError on an implicit concatenation of t-strings, like `t"a" t"b"`,
-        #  which is valid code.
-        #  https://github.com/Instagram/LibCST/issues/1485
-        except OSError, cst.ParserSyntaxError, cst.CSTLogicError:
-            continue
-        module_bindings: dict[str, Path] = {}
-        for statement in matchers.findall(module, matchers.ImportFrom() | matchers.Import()):
-            if isinstance(statement, cst.ImportFrom):
-                _record_from_import(file, project_root, statement, imported, module_bindings)
-            else:
-                _bind_imported_modules(file, project_root, cast("cst.Import", statement), module_bindings)
-        _record_module_attribute_reads(module, module_bindings, imported)
+    module_bindings: dict[str, Path] = {}
+    for statement in matchers.findall(module, matchers.ImportFrom() | matchers.Import()):
+        if isinstance(statement, cst.ImportFrom):
+            _record_from_import(file, project_root, statement, imported, module_bindings)
+        else:
+            _bind_imported_modules(file, project_root, cast("cst.Import", statement), module_bindings)
+    _record_module_attribute_reads(module, module_bindings, imported)
     return {path: frozenset(names) for path, names in imported.items()}
+
+
+class ProjectImportGraph:
+    """Which project files import which names from which others, kept up to date as files are rewritten."""
+
+    def __init__(self, files: Sequence[Path], project_root: Path) -> None:
+        """Read the imports of every file in `files` into a graph with an edge from each importer to each origin."""
+        self._files = list(files)
+        self._project_root = project_root
+        self._imports: dict[Path, dict[Path, frozenset[str]]] = {}
+        self._graph: nx.DiGraph[Path] = nx.DiGraph()
+        self._graph.add_nodes_from(self._files)
+        for file in self._files:
+            self.refresh(file)
+
+    def refresh(self, file: Path) -> None:
+        """Read the imports of `file` again, replacing the edges that leave it."""
+        self._imports[file] = imported_project_names(file, self._project_root)
+        self._graph.remove_edges_from(list(self._graph.out_edges(file)))
+        self._graph.add_edges_from((file, origin) for origin in self._imports[file])
+
+    def imported_names(self, file: Path) -> frozenset[str]:
+        """Return the names the files of the graph import or read from `file`."""
+        if file not in self._graph:
+            return frozenset()
+        return frozenset[str]().union(*(self._imports[importer][file] for importer in self._graph.predecessors(file)))
+
+    def processing_order(self) -> list[list[Path]]:
+        """Return the files in groups, each group before every file that imports from it.
+
+        The files of an import cycle form one group, in the order of `files`.
+        """
+        position = {file: index for index, file in enumerate(self._files)}
+        condensed = nx.condensation(self._graph)
+        origins_first = reversed(list(nx.topological_sort(condensed)))
+        groups = (condensed.nodes[node]["members"] for node in origins_first)
+        sorted_groups = (sorted((file for file in group if file in position), key=position.__getitem__) for group in groups)
+        return [group for group in sorted_groups if group]
 
 
 def _record_from_import(
