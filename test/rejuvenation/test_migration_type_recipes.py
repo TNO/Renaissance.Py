@@ -461,6 +461,40 @@ class TestCommitSummary:
         assert_that(report, not_(contains_string("COMMIT MESSAGE")))
 
 
+_DEFAULT_TYPEVAR_SOURCE = LEGACY_TYPEVAR_SOURCE.replace('TypeVar("T")', 'TypeVar("T", default=int)')
+
+
+class TestManualReviewLine:
+    """main(): what is left for manual review is printed also when no file was modified."""
+
+    @pytest.mark.parametrize(
+        ("file_count", "expected"),
+        [
+            pytest.param(1, "1 file left for manual review", id="one-file"),
+            pytest.param(2, "2 files left for manual review", id="two-files"),
+        ],
+    )
+    def test_review_line_is_printed_when_nothing_was_modified(
+        self,
+        tmp_path: Path,
+        capsys: pytest.CaptureFixture[str],
+        file_count: int,
+        expected: str,
+    ) -> None:
+        """Without --report, a run whose only outcome is refusals prints the review line, and no commit message."""
+        paths = [tmp_path / f"mod_{index}.py" for index in range(file_count)]
+        for path in paths:
+            path.write_text(_DEFAULT_TYPEVAR_SOURCE, encoding="utf-8")
+
+        migration.main([str(tmp_path), "--py", "3.12", "--no-ruff"])
+
+        output = capsys.readouterr().out
+        message = UNSAFE_RULES[UnsafeReason.PEP696_VERSION_GATE].message
+        assert_that(output, contains_string(f"{expected}: {message} ({file_count})."))
+        assert_that(output, not_(contains_string(_COMMIT_SUBJECT)))
+        assert_that([path.read_text(encoding="utf-8") for path in paths], equal_to([_DEFAULT_TYPEVAR_SOURCE] * file_count))
+
+
 class TestReportOutput:
     """main(): the report is written only to the --report file, never printed."""
 

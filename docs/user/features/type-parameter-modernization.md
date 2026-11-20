@@ -90,8 +90,8 @@ python src/rejuvenation/migration_type_recipes.py ./some_repo --py 3.12 --no-loc
 ## Outputs / effects
 
 - Files are changed in place, then cleaned up by the `ruff` step (see *The `ruff` step*).
-- With `--report`, each refused change is listed with its reason (see *Constraints*). Without it, refusals only appear
-  in the commit message, which is printed only when a file changed.
+- With `--report`, each refused change is listed with its reason (see *Constraints*). Without it, only the number of
+  files left for manual review and their reasons are printed.
 - A file under `ERRORS` may be partly changed, since each phase is saved before the next one runs. A file that is not
   valid UTF-8 is listed there with its `UnicodeDecodeError`, and left unchanged.
 
@@ -388,8 +388,9 @@ Unless `--no-ruff` is given, the CLI runs two commands on the modified files:
 
 ### Output
 
-The CLI prints `File <path> checked.` per file, or `checked again.` when a file is processed again, and then a commit
-message if a file was modified. With `--report`, a run where `shapes.py` declares and uses `T`, `main.py` imports it and
+The CLI prints `File <path> checked.` per file, or `checked again.` when a file is processed again. It then prints the
+commit message if a file was modified, and otherwise only its last line, `N files left for manual review: ...`, if a
+file needs review. With `--report`, a run where `shapes.py` declares and uses `T`, `main.py` imports it and
 `box.py` has `class Box(Generic[T])` writes:
 
 ````text

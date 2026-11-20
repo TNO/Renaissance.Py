@@ -254,8 +254,6 @@ fixed or accepted as a non-goal.
   `ruff` configuration gets the one of that directory, and a missing or failing `ruff` gives no message.
 - `_report_generic_class_leftovers` adds `USED_IN_GENERIC_CLASS` to a name that was converted in a standalone function,
   so the message "only used inside a class that is generic over it" is wrong there.
-- Without `--report`, a run whose only outcome is refusals prints nothing about them, since the commit message is only
-  printed when a file was modified.
 - Type parameters of a `type` statement (`type A[_T] = list[_T]`) are neither renamed nor reported.
 - `T = U = TypeVar("T")` leaves `U` undefined, and `V = TypeVar("W")` writes `def f[W](x: V) -> V`, both without a
   warning.

@@ -246,11 +246,23 @@ def _format_names(file_counts: Counter[str]) -> str:
     return f"{listed} and {hidden} more" if hidden > 0 else listed
 
 
+def _format_manual_review_line(reports: Sequence[FileReport]) -> str | None:
+    """Return the line with the number of files needing manual review and their reasons by frequency.
+
+    Returns None when no file needs review.
+    """
+    needs_review = sum(1 for report in reports if has_unsafe(report))
+    if not needs_review:
+        return None
+    reasons = ", ".join(f"{UNSAFE_RULES[reason].message} ({count})" for reason, count in rank_reasons(reports))
+    return f"{_files(needs_review)} left for manual review: {reasons}."
+
+
 def _format_commit_summary(reports: Sequence[FileReport], min_python: tuple[int, int]) -> str:
     """Build the copy-pasteable commit message: what was done to which names, and what is left for manual review.
 
-    Names are grouped by action with the number of files they were fixed in. The manual review line,
-    with the files needing it and their reasons by frequency, is left out when no file needs review.
+    Names are grouped by action with the number of files they were fixed in. The manual review line is left out
+    when no file needs review.
     """
     modified = [report for report in reports if has_fixed(report)]
     names_by_action = {action: Counter[str]() for action in _FIXED_DESCRIPTIONS.values()}
@@ -264,10 +276,9 @@ def _format_commit_summary(reports: Sequence[FileReport], min_python: tuple[int,
         "",
         *(f"- {action}: {_format_names(file_counts)}" for action, file_counts in names_by_action.items() if file_counts),
     ]
-    needs_review = sum(1 for report in reports if has_unsafe(report))
-    if needs_review:
-        reasons = ", ".join(f"{UNSAFE_RULES[reason].message} ({count})" for reason, count in rank_reasons(reports))
-        lines.extend(["", f"{_files(needs_review)} left for manual review: {reasons}."])
+    review_line = _format_manual_review_line(reports)
+    if review_line is not None:
+        lines.extend(["", review_line])
     return "\n".join(lines)
 
 
@@ -534,7 +545,8 @@ def _localization_settings(parser: argparse.ArgumentParser, args: argparse.Names
 def main(argv: Sequence[str] | None = None) -> int:
     """Parse arguments, run TypeParameterCheck across the target, print progress and the commit message, return an exit code.
 
-    The report is written only if --report is given.
+    Without a modified file, the manual review line is printed instead of the commit message. The report is written
+    only if --report is given.
 
     Exit codes: 0 on normal completion (files needing manual review are informational, not a
     failure), 2 on a usage error (bad path/argument), 3 if any file hit an unhandled exception.
@@ -569,9 +581,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         run_ruff_format(modified_paths)
 
     commit_summary = _format_commit_summary(reports, args.py) if modified_paths else None
+    review_line = _format_manual_review_line(reports)
     if commit_summary is not None:
         print()
         print(colored(commit_summary, "green", attrs=["bold"]))
+    elif review_line is not None:
+        print()
+        print(colored(review_line, "yellow", attrs=["bold"]))
 
     if args.report is not None:
         report_text = _format_report(
