@@ -547,6 +547,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         parser.error(f"path does not exist: {target}")
     if target.is_file() and target.suffix != ".py":
         parser.error(f"not a Python file: {target}")
+    if args.report is not None and not args.report.parent.is_dir():
+        parser.error(f"--report: directory does not exist: {args.report.parent}")
 
     # Absolute and normalized, so file paths match the paths ProjectImportGraph resolves imports to.
     target = target.resolve()

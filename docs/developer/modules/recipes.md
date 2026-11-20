@@ -250,8 +250,6 @@ fixed or accepted as a non-goal.
   refused. `def ok[_T]` then keeps its underscore because another function's `_T` is refused, unless another name in
   the file is renamed: `run_steps` commits every planned edit, and `ok` is renamed while the report lists `_T` only for
   review.
-- `--report` to a directory that does not exist raises `FileNotFoundError` after the files were rewritten, so the run
-  exits with code 1 and the report is lost.
 - The `ruff` step runs in the CLI's working directory and hides its output (`ruff_utils.py`). A project without a
   `ruff` configuration gets the one of that directory, and a missing or failing `ruff` gives no message.
 - `_report_generic_class_leftovers` adds `USED_IN_GENERIC_CLASS` to a name that was converted in a standalone function,

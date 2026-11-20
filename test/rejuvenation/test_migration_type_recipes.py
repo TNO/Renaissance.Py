@@ -473,6 +473,30 @@ class TestReportOutput:
         assert_that(capsys.readouterr().out, not_(contains_string("NEEDS MANUAL REVIEW")))
         assert_that(list(tmp_path.glob("*.md")), equal_to([]))
 
+    @pytest.mark.parametrize(
+        "report_path",
+        [
+            pytest.param("missing/report.md", id="missing-directory"),
+            pytest.param("mod.py/report.md", id="parent-is-a-file"),
+        ],
+    )
+    def test_report_outside_a_directory_is_a_usage_error_and_changes_nothing(
+        self,
+        tmp_path: Path,
+        capsys: pytest.CaptureFixture[str],
+        report_path: str,
+    ) -> None:
+        """A --report path whose parent is not a directory exits with code 2, naming the parent, before any file changes."""
+        target = tmp_path / "mod.py"
+        target.write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
+
+        with pytest.raises(SystemExit) as excinfo:
+            migration.main([str(tmp_path), "--py", "3.12", "--no-ruff", "--report", str(tmp_path / report_path)])
+
+        assert_that(excinfo.value.code, equal_to(2))
+        assert_that(capsys.readouterr().err, contains_string(f"--report: directory does not exist: {(tmp_path / report_path).parent}"))
+        assert_that(target.read_text(encoding="utf-8"), equal_to(LEGACY_TYPEVAR_SOURCE))
+
 
 class TestIgnore:
     """main(): --ignore leaves a shared declaration file and the imports of its names untouched, and reports them."""

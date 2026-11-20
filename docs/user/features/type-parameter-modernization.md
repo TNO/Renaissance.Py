@@ -131,7 +131,6 @@ The report does not explain these cases, so check the result with `git diff`. Th
 | `_T` refused in one function of a file                                                    | Kept in the file's other functions too, or renamed there while the report lists `_T` only for review                                         |
 | `--no-ruff`                                                                               | Added imports are not merged or sorted; unused imports and extra blank lines stay                                                            |
 | CRLF line endings                                                                         | A changed file is written back with LF                                                                                                       |
-| `--report` in a directory that does not exist                                             | The run stops after the files are rewritten, and no report is written                                                                        |
 
 ## Constraints
 
@@ -450,12 +449,12 @@ Convert type parameters to PEP 695 syntax in 2 files (Python 3.12+).
 
 ### Exit codes
 
-| Code | Meaning                                                                                               |
-| ---- | ----------------------------------------------------------------------------------------------------- |
-| 0    | The run completed, also when names need manual review                                                 |
-| 1    | The run stopped on an uncaught exception                                                              |
-| 2    | Usage error: a missing path, a file that is not `.py`, an invalid `--py` or a missing `--ignore` file |
-| 3    | At least one file raised an exception (see `ERRORS`)                                                  |
+| Code | Meaning                                                                                                                                                    |
+| ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0    | The run completed, also when names need manual review                                                                                                      |
+| 1    | The run stopped on an uncaught exception                                                                                                                   |
+| 2    | Usage error, before any file is changed: a missing path, a file that is not `.py`, an invalid `--py`, or a missing `--ignore` file or `--report` directory |
+| 3    | At least one file raised an exception (see `ERRORS`)                                                                                                       |
 
 ## Change considerations
 
