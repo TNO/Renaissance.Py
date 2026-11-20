@@ -598,7 +598,7 @@ class TestMainBatchErrorIsolation:
         tmp_path: Path,
         capsys: pytest.CaptureFixture[str],
     ) -> None:
-        """A batch with one broken file still checks and converts the good file, and exits with code 3."""
+        """A batch with one broken file still checks and converts the good file, prints the error, and exits with code 3."""
         good = tmp_path / "good.py"
         good.write_text(LEGACY_TYPEVAR_SOURCE, encoding="utf-8")
         broken = tmp_path / "broken.py"
@@ -610,6 +610,8 @@ class TestMainBatchErrorIsolation:
         output = capsys.readouterr().out
         assert_that(output, contains_string(f"File {good} checked."))
         assert_that(output, contains_string(f"File {broken} checked."))
+        assert_that(output, contains_string(f"File {broken} failed: ParserSyntaxError: "))
+        assert_that(output, not_(contains_string(f"File {good} failed")))
         assert_that(good.read_text(encoding="utf-8"), contains_string("def identity[T]"))
 
 

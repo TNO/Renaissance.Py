@@ -545,8 +545,8 @@ def _localization_settings(parser: argparse.ArgumentParser, args: argparse.Names
 def main(argv: Sequence[str] | None = None) -> int:
     """Parse arguments, run TypeParameterCheck across the target, print progress and the commit message, return an exit code.
 
-    Without a modified file, the manual review line is printed instead of the commit message. The report is written
-    only if --report is given.
+    Each file that raised an exception is printed with its error after the progress lines. Without a modified file,
+    the manual review line is printed instead of the commit message. The report is written only if --report is given.
 
     Exit codes: 0 on normal completion (files needing manual review are informational, not a
     failure), 2 on a usage error (bad path/argument), 3 if any file hit an unhandled exception.
@@ -573,6 +573,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     processed = [path for group in graph.processing_order() for path in group if path not in localization.ignored_files]
     reports_by_path = _process_files(processed, graph, min_python=args.py, project_root=project_root, localization=localization)
     reports = [reports_by_path[path] for path in files if path in reports_by_path]
+    for report in reports:
+        if report.error is not None:
+            print(colored(f"File {report.path} failed: {report.error}", "red"))
 
     modified_paths = [report.path for report in reports if has_fixed(report)]
     ruff_ran = bool(modified_paths) and not args.no_ruff
