@@ -119,9 +119,17 @@ class PythonRefactoring[NodeT: PythonRstNode | PythonCstNode = PythonRstNode](AS
         return [child.signature for child in bases_implicit.children]
 
     @property
+    def typed_root(self) -> NodeT:
+        """Return the root node of the file as it currently is (after the last commit), as a NodeT."""
+        # TODO(FrancescoPezzella): ASTProcessor.root is typed `ASTNode[Unknown, Unknown]`, and PythonRstNode and
+        #  PythonCstNode are not ASTNodes, so `self.root.translation_unit` is Unknown without this cast.
+        #  https://github.com/TNO/Renaissance.Py/issues/269
+        return cast("NodeT", cast("object", self.root))
+
+    @property
     def body(self) -> Sequence[NodeT]:
         """Return the module's top-level statements; with the CST backend, a simple statement comes as its whole line."""
-        root = cast("NodeT", cast("object", self.root))
+        root = self.typed_root
         if isinstance(root, PythonCstNode):
             wrappers = root.translation_unit.wrappers
             return cast("Sequence[NodeT]", [wrappers[statement] for statement in root.translation_unit.atu.body])

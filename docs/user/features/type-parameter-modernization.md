@@ -12,185 +12,153 @@ https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
 ## User-facing summary
 
-Rewrites legacy `TypeVar`, `ParamSpec` and `TypeVarTuple` declarations to [PEP 695](https://peps.python.org/pep-0695/)
-syntax in one command. `ruff`'s `UP047` only does part of this, as an unsafe fix: it skips type parameters imported
-from another module, `default=` and nested functions, and never removes the old declaration.
+Rewrites legacy [type parameter](../concepts/type-parameters.md) declarations (`TypeVar`, `ParamSpec` and
+`TypeVarTuple`) to [PEP 695](https://peps.python.org/pep-0695/) syntax across a project. `ruff`'s `UP047` only does
+part of this: it skips imported type parameters, nested functions and (outside preview) `default=`, and keeps the old
+declaration.
 
 **Before:**
 
 ```python
-T = TypeVar("T")
+# shapes.py
+from typing import TypeVar
+
+T = TypeVar("T", bound=int)
+
+# main.py
+from shapes import T
 
 
 def first(items: list[T]) -> T: ...
 ```
 
-**After:**
+**After:** `main.py` holds `def first[T: int](items: list[T]) -> T: ...`, and `shapes.py` no longer declares `T`.
+On xarray, the tool converted type parameters in 8 files
+([pydata/xarray#11768](https://github.com/pydata/xarray/pull/11768/commits/bb6033218eee48be64aba921265e3dd4e5aea106)).
 
-```python
-def first[T](items: list[T]) -> T: ...
-```
+The tool runs four phases on each file:
 
-Its changes to xarray convert type parameters in 8 files and remove one unused declaration:
-[pydata/xarray#11768](https://github.com/pydata/xarray/pull/11768/commits/bb6033218eee48be64aba921265e3dd4e5aea106).
+1. **Localize.** An import of a type parameter from another project file (`from shapes import T`) is replaced by a copy
+   of its declaration.
+2. **Convert.** Every function whose signature uses a declared type parameter gets its own `[T]`, with bound,
+   constraints and `default=` (`def f[T: str = str](...)`). `covariant=` and `contravariant=` (on `TypeVar` and
+   `ParamSpec`) are dropped. A nested function gets no `[T]` when an enclosing function uses `T` too, and neither do
+   methods of a class generic over `T` (`class Box[T]`, `Generic[T]`, `Protocol[T]`).
+3. **Remove.** A module-level declaration that nothing uses any more is deleted, including one left behind by `ruff`'s
+   `UP046` or `UP047`.
+4. **Drop the underscore.** `def f[_T](x: _T)` becomes `def f[T](x: T)`. `ruff`'s `UP049` does this too, but
+   together with `UP047` it can leave the uses as `_T`
+   ([astral-sh/ruff#21004](https://github.com/astral-sh/ruff/issues/21004)).
 
-The tool runs three phases:
-
-1. **Localize cross-file imports.** A type parameter imported from another file in the project
-   (`from .shapes import T`) is replaced by an exact local copy of its declaration, placed after the file's imports,
-   unless the origin is named by `--ignore` (see *Shared declaration files* below) or `--no-localization` is given.
-2. **Convert to [PEP 695](https://peps.python.org/pep-0695/).** Every function whose signature uses a declared type
-   parameter gets its own `[T]`, with bounds, constraints and `default=` carried over (`def f[T: str = str](...)`).
-   `covariant=` and `contravariant=` are dropped, since only generic classes have a variance. A nested function gets
-   none when an enclosing function's signature uses `T` too. If `T` is also used outside functions (a `Generic[T]` base, an alias),
-   the declaration is kept. A function that also uses a type parameter that can't be
-   converted is left unchanged.
-3. **Remove orphaned declarations.** A module-level `T = TypeVar("T")` that nothing uses is deleted, including one left
-   behind by `ruff`'s `UP047` or by a manual rewrite.
+Files are processed origins first, and again while the names other files import from them change. A declaration left
+unused by localization is therefore removed in the same run.
 
 ## Inputs
 
-A Python file or directory, and the target project's minimum supported Python version (`--py`). Supported
-declarations: `TypeVar` (with `bound=`, constraints or `default=`), `ParamSpec` and `TypeVarTuple` (with `default=`).
+A `.py` file or a directory, and `--py`, the oldest Python version the project supports (see *API entry points*).
 
-Imports are resolved against the directory passed to the CLI (the file's own folder for a single file). These are
-skipped without a report:
+Imports are resolved against `<path>` (in a `src/` layout, pass `src/`). Only a module-level `from X import T`, where
+`X` is a file under `<path>`, is localized. These imports stay, and the origin keeps its declaration:
 
-- imports from outside that directory (stdlib, third-party);
-- re-exports through an intermediate `__init__.py`, unless that file was already changed earlier in the run, so the
-  result depends on the order of the files;
-- a namespace package itself as the origin of an import (the modules inside it are not skipped);
-- a renamed import (`from .shapes import T as U`); a file whose only type parameters arrive that way counts as clean.
+- imports from outside `<path>`;
+- imports inside an `if` or `try` block, or inside a function;
+- a renamed import (`from shapes import T as U`);
+- a re-export through an `__init__.py` that keeps its own import, for example because its `__all__` lists `T`.
 
 ### Shared declaration files { #feature-type-parameter-modernization-ignore }
 
-`--ignore FILE...` names files, relative to `<path>` as the report lists them, that are left untouched: no phase runs
-on them, and their type parameters are never copied into the files importing them. Those files keep their imports, so
-the functions using the imported names are not converted. Use it for a file that other projects may import, such as a
-shared `types.py`.
+The tool cannot see other projects, so a declaration that nothing in the project uses is removed, unless `__all__`
+lists it. To keep a shared file such as `types.py`, name it with `--ignore FILE...`, relative to `<path>`. The file is
+not processed, and files importing from it keep that import, so their functions using it are not converted.
 
 ```shell
 python src/rejuvenation/migration_type_recipes.py ./some_repo --py 3.12 --ignore pkg/types.py pkg/aliases.py
 ```
 
-Give `<path>` first, since the option takes every value after it. A file that does not exist is a usage error. The
-report lists the files under `IGNORED FILES` and adds an `Ignored` column to the table, counting each name imported
-from an ignored file once per importing file. The ignored files are not in the processed count.
+Put `<path>` before `--ignore`, which takes every value after it.
 
 ### Disabling localization { #feature-type-parameter-modernization-no-localization }
 
-Converting a function and removing an unused declaration only improve the file. Localizing does not always: the copy is a
-second declaration, and a localized `T` is a different object from the original. `--no-localization` turns the first
-phase off for the whole project. Every project import of a type parameter stays, so the functions using the imported
-names are not converted. The other phases run as usual, on every file.
+A localized `T` is a copy, a different object from the original, so code that compares type parameters with `is`
+sees two objects. `--no-localization` keeps every project import of a type parameter, so the functions using it are not
+converted. Unlike `--ignore`, every file is still processed.
 
 ```shell
 python src/rejuvenation/migration_type_recipes.py ./some_repo --py 3.12 --no-localization
 ```
 
-The report adds the `Ignored` column, counting each imported name once per importing file. `--ignore` differs in that
-it leaves chosen files unprocessed, so their declarations are never removed.
-
-### Generic classes { #feature-type-parameter-modernization-generic-class }
-
-A class is *generic over* `T` when it declares `T` itself (`class Box[T]:`) or has `T` in a base (`Generic[T]`,
-`Protocol[T]`, `Base[int, T]`). Inside such a class, `T` belongs to the class, so the tool never adds `[T]` to its
-methods. With `class Box[T]:` the methods don't use the module-level `T`, so a declaration nothing else uses is removed:
-
-**Before:**
-
-```python
-T = TypeVar("T")
-
-
-class Box[T]:
-    def get(self) -> T: ...
-```
-
-**After:**
-
-```python
-class Box[T]:
-    def get(self) -> T: ...
-```
-
 ## Outputs / effects
 
-- Every safe change is written to the file in place.
-- Every candidate left unchanged for one of the reasons under *Constraints* is listed in the report as **needs manual
-  review**, with its reason. The report links this page once, at the top of that section.
-- A file listed under `ERRORS` may already be changed: each phase is written before the next one runs, so a failure
-  keeps the earlier phases. Check it with `git diff`.
+- Files are changed in place, then cleaned up by the `ruff` step (see *The `ruff` step*).
+- With `--report`, each refused change is listed with its reason (see *Constraints*). Without it, only the number of
+  files left for manual review and their reasons are printed.
+- A file under `ERRORS` may be partly changed, since each phase is saved before the next one runs. A file that is not
+  valid UTF-8 is listed there with its `UnicodeDecodeError`, and left unchanged.
 
 ### Known limitations
 
-None of these is a *Constraint*: the tool applies the change. Review the result with `git diff`. Most of them have an
-example under *Non-goals* or *Need to fix* in [Refactoring recipes](../../developer/modules/recipes.md#non-goals).
+The report does not explain these cases, so check the result with `git diff`. Their causes are in
+[Refactoring recipes](../../developer/modules/recipes.md#non-goals).
 
-**Can leave code that fails or changes meaning:**
+**Can break code:**
 
-- A decorator or a parameter default that reads `T` (`def f(x: list[T], default=T)`) is not counted as a use, so the
-  declaration can be removed and importing the module raises `NameError`.
-- A declaration constructed from `from typing import *` is localized without importing `TypeVar`: `NameError`.
-- A file that imports a declaration with `from module import *` is not seen as an importer. The declaration is removed
-  from `module` once nothing in it uses it, and the importing file raises `NameError`. No warning is given.
-- A file that starts with a UTF-8 byte order mark is rewritten with invalid syntax and reported under `ERRORS`.
-- A declaration followed by `;` on the same line is removed without its `;`, leaving invalid syntax. The file is
-  reported under `ERRORS`.
-- A declaration that breaks the naming rule of [PEP 484](https://peps.python.org/pep-0484/)
-  (`T = U = TypeVar("T")`, `V = TypeVar("W")`, `TypeVar(name)`) gets a wrong rewrite or is skipped with an error.
-- `U = TypeVar("U", default=T)` becomes `def f[U = T]`, where `T` still means the module-level one. Fix it by hand as
-  `def f[T, U = T]`.
-- Only `__all__` marks a declaration as public, since the tool sees nothing outside the scanned project. One that
-  nothing in the project uses is removed, even if other projects import it, as with a shared `types.py`. Name such a
-  file with `--ignore` (see *Shared declaration files*).
-- `__all__.extend(...)` and `__all__.append(...)` are not read.
-- A `T` used only in the string value of a `TypeAlias` (`A: TypeAlias = "list[T]"`) is seen as unused, so its
-  declaration is removed.
-- A function that uses a legacy type parameter that stays imported (e.g. from another package) still gets `[...]`
-  for the file's own declarations. It then mixes both syntaxes, which type checkers reject.
-- A localized `T` is a new object: code comparing type parameters by identity (`is`) sees two different objects.
-  A file importing `T` from a localized file gets that copy too.
+| Input                                                                                                   | Result                                                                           |
+| ------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `@cache_on(T)` or `def f(x: list[T], default=T)`                                                        | Declaration removed: `NameError` on import                                       |
+| Importer with `from shapes import *`                                                                    | Declaration removed from `shapes.py`: `NameError` in the importer                |
+| `__all__.append("T")` or `__all__.extend(["T"])`                                                        | Declaration removed, although it is exported                                     |
+| `A: TypeAlias = "list[T]"`                                                                              | Declaration removed, while the string still names `T`                            |
+| `from pkg.shapes import T`, with `<path>` above `src/`                                                  | Declaration removed: `ImportError` in the importer                               |
+| Origin with `from typing import *`, when the copy is kept (for a `Generic[T]` base)                     | Copy without a `TypeVar` import: `NameError`                                     |
+| `T = U = TypeVar("T")`                                                                                  | `U` is left undefined                                                            |
+| `V = TypeVar("W")`                                                                                      | `def f(x: V) -> V` becomes `def f[W](x: V) -> V`                                 |
+| `U = TypeVar("U", default=T)`, in a function that does not use `T`                                      | `def f[U = T]`, where `T` is still the module-level one                          |
+| `def f(a: AnyStr, b: T)`                                                                                | `def f[T](a: AnyStr, b: T)`, which type checkers reject for mixing both syntaxes |
+| A file starting with a UTF-8 byte order mark ([#153](https://github.com/TNO/Renaissance.Py/issues/153)) | Code corrupted, file listed under `ERRORS`                                       |
+| `T = TypeVar("T"); x = 1` or `import os; from shapes import T`                                          | Invalid syntax written, file listed under `ERRORS`                               |
 
 **Cosmetic or operational:**
 
-- A declaration whose importers are all localized in a run is only removed by a second run, or by `--second-pass`.
-  A chain of three files, each importing from the previous one, can still need another run.
-- With `--no-ruff`, the imports added by localizing are not merged into the file's existing `from` imports and not
-  sorted, and removing a line can leave extra blank lines.
-- A modified CRLF file is written back with LF, so `git diff` shows all its lines changed in a repository that stores CRLF.
-- The comment lines above a localized declaration are not copied, and the ones above a removed declaration stay. The
-  comment trailing a declaration's line, such as `# noqa: PLC0105`, is copied or removed with it.
-- An existing type-parameter bracket on a converted function is rebuilt on one line, losing its comments and line breaks.
-- A localized declaration whose constructor is already imported from another module gets a second import of the name,
-  which shadows the first.
-- `Unpack[Ts]` is left as it is. Run `ruff`'s `UP044` to rewrite it to `*Ts` (see
-  [Rejected recipes](../../developer/modules/rejected-recipes.md)).
-- There is no filtering of files, so a large project can take tens of minutes.
-- A file that is not valid UTF-8 stops the whole run with a `UnicodeDecodeError`, before any file is changed. Re-save
-  it as UTF-8 or move it out of the target.
+| Case                                                                                      | Result                                                                                                                                       |
+| ----------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `T = typing.TypeVar("T")`                                                                 | Not recognised, the file counts as clean                                                                                                     |
+| `X = TypeVar(name)`                                                                       | File listed under `ERRORS`, nothing changed                                                                                                  |
+| `Unpack[Ts]`                                                                              | Left as it is. `ruff`'s `UP044` rewrites it to `*Ts` (see [Rejected recipes](../../developer/modules/rejected-recipes.md))                   |
+| `requires-python` in `pyproject.toml`                                                     | Not read: `--py` decides which syntax is written                                                                                             |
+| Comment lines above a moved or removed declaration                                        | Not copied, or left behind ([#189](https://github.com/TNO/Renaissance.Py/issues/189)); a comment on the declaration's own line moves with it |
+| An existing type parameter bracket split over lines                                       | Rebuilt on one line, without its comments                                                                                                    |
+| A localized declaration whose constructor this file already imports from another module   | A second import of the constructor shadows the first                                                                                         |
+| `_T` refused in one function of a file                                                    | Kept in the file's other functions too, or renamed there while the report lists `_T` only for review                                         |
+| `--no-ruff`                                                                               | Added imports are not merged or sorted; unused imports and extra blank lines stay                                                            |
+| CRLF line endings                                                                         | A changed file is written back with LF                                                                                                       |
 
 ## Constraints
 
-Each case below stops one change and is reported under *needs manual review*.
+Each case below stops one change. With `--report`, it is listed under `NEEDS MANUAL REVIEW` with this message:
+
+| Report message                                                                           | Section                                  |
+| ---------------------------------------------------------------------------------------- | ---------------------------------------- |
+| Declares a `default=` (PEP 696), …                                                       | *PEP 696 version gate*                   |
+| Declaration passes an argument with no PEP 695 equivalent, …                             | *No PEP 695 equivalent*                  |
+| Every function using it also uses a type variable that can't be converted                | *Shares a function with a refused one*   |
+| Exported via `__all__`                                                                   | *Exported via `__all__`*                 |
+| Only used inside a class that is generic over it                                         | *Only used inside a generic class*       |
+| Declaration uses a name that isn't available at module level …                           | *Name not available at module level*     |
+| Origin module imports `TypeVar`/`ParamSpec`/`TypeVarTuple` inside an `if`/`try` block, … | *Origin imports `TypeVar` conditionally* |
+| Imported directly by another file in the target project                                  | *Imported by another project file*       |
+| Name without its leading underscore is already used …                                    | *New name not free*                      |
+| A use of it is written in a form the tool can't rewrite, …                               | *Use cannot be rewritten*                |
 
 ### Python version gates { #feature-type-parameter-modernization-version-gates }
 
-[PEP 695](https://peps.python.org/pep-0695/) syntax (`def f[T](...)`) is a `SyntaxError` before Python 3.12, so `--py`
-(the oldest version the target supports, not the one running the tool) must be 3.12 or higher. A lower value is a usage
-error and nothing is changed. The version is never guessed. Newer syntax is written only when `--py` is new enough:
-
-| Syntax                | PEP                                          | Minimum Python |
-| --------------------- | -------------------------------------------- | -------------- |
-| `def f[T = int](...)` | [PEP 696](https://peps.python.org/pep-0696/) | 3.13           |
+`--py` is the oldest Python version the project supports, not the one running the tool. It must be 3.12 or higher,
+since [PEP 695](https://peps.python.org/pep-0695/) syntax is a `SyntaxError` before that. Syntax from a later PEP is
+only written when `--py` allows it.
 
 #### PEP 696 version gate { #feature-type-parameter-modernization-pep696-version-gate }
 
-Below 3.13 a declaration with `default=` is not converted, since dropping the default would change what type
-checkers infer. Other declarations in the file are still converted, except in functions that also use it (see
-*A function also uses a type variable that can't be converted* below).
-
-**Before:**
+A `default=` needs Python 3.13 ([PEP 696](https://peps.python.org/pep-0696/)). Below that, the declaration and the
+functions using it are not converted, since dropping the default would change what type checkers infer.
 
 ```python
 T = TypeVar("T", default=int)
@@ -199,21 +167,14 @@ T = TypeVar("T", default=int)
 def first(items: list[T]) -> T: ...
 ```
 
-**After, with `--py 3.13`:**
+With `--py 3.13` this becomes `def first[T = int](items: list[T]) -> T: ...`. With `--py 3.12` the file is unchanged.
 
-```python
-def first[T = int](items: list[T]) -> T: ...
-```
+**What to do:** run again with `--py 3.13` if the project supports it. Otherwise keep the declaration.
 
-With `--py 3.12` the file is unchanged.
+### No PEP 695 equivalent { #feature-type-parameter-modernization-no-pep695-equivalent }
 
-**To fix this yourself:** run again with `--py 3.13` if the project supports it. Otherwise keep the declaration.
-
-### A declaration passes an argument with no PEP 695 equivalent { #feature-type-parameter-modernization-no-pep695-equivalent }
-
-The `[...]` syntax cannot write a `bound=` on a `ParamSpec` or `TypeVarTuple`, a `**mapping` of options, or a keyword
-added by a later Python version. (`covariant=`, `contravariant=` and `infer_variance=` are fine: a function's type
-parameter has no variance.)
+The `[...]` syntax cannot write a `bound=` on a `ParamSpec` or `TypeVarTuple`, `covariant=` or `contravariant=` on a
+`TypeVarTuple`, a `**mapping` of options, or a keyword added by a later Python version.
 
 ```python
 P = ParamSpec("P", bound=int)
@@ -222,16 +183,13 @@ P = ParamSpec("P", bound=int)
 def run(func: Callable[P, int]) -> Callable[P, int]: ...
 ```
 
-The file is unchanged.
+**What to do:** keep the declaration.
 
-**To fix this yourself:** keep the declaration.
+### Shares a function with a refused one { #feature-type-parameter-modernization-shares-function-with-unconvertible }
 
-### A function also uses a type variable that can't be converted { #feature-type-parameter-modernization-shares-function-with-unconvertible }
-
-[PEP 695](https://peps.python.org/pep-0695/#compatibility-with-traditional-typevars) forbids a function from mixing
-`[...]` type parameters with legacy ones of its own. A function that uses a declaration refused for a version gate or
-an argument with no [PEP 695](https://peps.python.org/pep-0695/) equivalent keeps all its type parameters legacy. A
-legacy type parameter of an enclosing generic class is not the method's own, so it blocks nothing.
+A function cannot mix `[...]` type parameters with legacy ones
+([PEP 695](https://peps.python.org/pep-0695/#compatibility-with-traditional-typevars)), so a function that uses a
+refused declaration keeps all its type parameters legacy.
 
 ```python
 P = ParamSpec("P", bound=int)
@@ -241,27 +199,13 @@ Ts = TypeVarTuple("Ts")
 def run(func: Callable[P, tuple[*Ts]]) -> Callable[P, tuple[*Ts]]: ...
 ```
 
-The file is unchanged. `P` is reported for its own reason. `Ts` is reported for this one, because every function
-using it is left unchanged. Functions that use `Ts` without `P` are still converted.
+`P` is reported for its own reason, and `Ts` for this one. Functions that use `Ts` without `P` are still converted.
 
-**To fix this yourself:** fix the refused declaration as its section describes, then run again.
+**What to do:** fix the refused declaration as its section describes, and run the tool again.
 
-### A declared type parameter is exported via `__all__` { #feature-type-parameter-modernization-declared-type-parameter-exported }
+### Exported via `__all__` { #feature-type-parameter-modernization-declared-type-parameter-exported }
 
-`T` is in its file's `__all__`, so it is public API. The functions are converted, the declaration is kept.
-
-**Before:**
-
-```python
-__all__ = ["T", "first"]
-
-T = TypeVar("T")
-
-
-def first(items: list[T]) -> T: ...
-```
-
-**After:**
+`T` is in its file's `__all__`, so it is public API. The functions are converted and the declaration stays:
 
 ```python
 __all__ = ["T", "first"]
@@ -272,13 +216,13 @@ T = TypeVar("T")
 def first[T](items: list[T]) -> T: ...
 ```
 
-**To remove it yourself:** remove `T` from `__all__` (a breaking change for importers), then delete the declaration.
+An imported `T` listed in `__all__` keeps its import. `__all__ += ["T"]` is read too, `__all__.append(...)` is not.
 
-### A declared type parameter is only used inside a generic class { #feature-type-parameter-modernization-used-in-generic-class }
+**What to do:** remove `T` from `__all__`, which breaks code that imports it, and run the tool again.
 
-Only methods of a class with `T` in a base (see *Generic classes* above) use `T`, so there is nothing to
-convert. Standalone functions that also use `T` are still converted, and `T` is then listed both as modified and as
-needing review, because its declaration stays.
+### Only used inside a generic class { #feature-type-parameter-modernization-used-in-generic-class }
+
+Every function using `T` is a method of a class generic over `T`, so there is nothing to convert.
 
 ```python
 T = TypeVar("T")
@@ -288,117 +232,95 @@ class Box(Generic[T]):
     def get(self) -> T: ...
 ```
 
-The file is unchanged.
+A standalone function that also uses `T` is converted, and `T` is then listed both as modified and for review.
 
-**To fix this yourself:** `ruff`'s `UP046` rewrites `Generic[T]` to `class Box[T]:`. Run the tool again afterwards:
-it removes the now unused `T = TypeVar("T")`. `UP046` does not touch `Protocol[T]` or a `T` in any other base, so
-write `class Box[T](MutableSet[T]):` by hand.
+**What to do:** run `ruff check --select UP046 --fix --unsafe-fixes` with `target-version` 3.12 or higher, which
+rewrites `class Box(Generic[T]):` to `class Box[T]:`, and run the tool again. `UP046` leaves `Protocol[T]` and other
+bases alone, so write `class Box[T](MutableSet[T]):` by hand.
 
-### The declaration uses a name that isn't available at module level { #feature-type-parameter-modernization-name-not-at-module-level }
+### Name not available at module level { #feature-type-parameter-modernization-name-not-at-module-level }
 
-Localizing copies the declaration into this file, so every name it uses (`bound=Shape`) must be available at module
-level, as the same object, in both files. The file is left unchanged when:
-
-- **The origin binds the name only under `if TYPE_CHECKING:`**, or inside a function or class. The copy could not
-  import it at runtime.
-- **This file binds the name to something else.** It already has a different `Shape`.
+A copied declaration needs every name its arguments use (`bound=Shape`) as the same object in the importing file.
+The import stays when the origin binds the name only inside a block, such as `if TYPE_CHECKING:`, or when the
+importing file binds it to something else.
 
 ```python
 # shapes.py
-from typing import TYPE_CHECKING, TypeVar
-
 if TYPE_CHECKING:
     from geometry import Shape
 
 T = TypeVar("T", bound="Shape")
-
-# main.py
-from shapes import T
-
-
-def biggest(items: list[T]) -> T: ...
 ```
 
-`main.py` is unchanged and keeps importing `T` from `shapes.py`.
+`shapes.py` is reported too, under *Imported by another project file*.
 
-**To fix this yourself:** import the name at module level the same way the origin does, or rename one of the two,
-then copy the declaration by hand.
+**What to do:** import the name at module level in the origin, if that causes no import cycle, and run the tool again.
+If the importing file has another `Shape`, rename one of the two.
 
-### The origin imports `TypeVar` conditionally { #feature-type-parameter-modernization-origin-imports-constructor-conditionally }
+### Origin imports `TypeVar` conditionally { #feature-type-parameter-modernization-origin-imports-constructor-conditionally }
 
-The origin imports `TypeVar` inside an `if` or `try` (for example `typing` or `typing_extensions` per Python
-version, or `typing_extensions` under `TYPE_CHECKING` and `typing` otherwise). A copy would use whatever `TypeVar`
-this file has, which may fail on some versions or differ for the type checker.
+The origin imports `TypeVar` inside an `if` or `try` block. A copy would use the importing file's `TypeVar`, which
+may differ at runtime or for the type checker.
 
 ```python
 # shapes.py
-from typing import TYPE_CHECKING
-
 if TYPE_CHECKING:
     from typing_extensions import TypeVar
 else:
     from typing import TypeVar
 
 T = TypeVar("T")
-
-# main.py
-from shapes import T
-
-
-def first(items: list[T]) -> T: ...
 ```
 
-`main.py` is unchanged and keeps importing `T` from `shapes.py`.
+The importing file keeps its import, and `shapes.py` is reported under *Imported by another project file*.
 
-**To fix this yourself:** add the same conditional import to this file, then copy the declaration by hand.
+**What to do:** add the same conditional import to the importing file, then copy the declaration by hand.
 
-### A declared type parameter is imported by another project file { #feature-type-parameter-modernization-imported-elsewhere-in-project }
+### Imported by another project file { #feature-type-parameter-modernization-imported-elsewhere-in-project }
 
-Another file in the target directory imports `T` from this module (`from mod import T` or `mod.T`). The functions
-are converted, the declaration is kept. Only checked when a directory is passed; `import *` is not checked.
-
-**Before:**
+After the run, another file still uses `T` from this module: it reads `shapes.T`, imports `T` under another name, or
+keeps `from shapes import T` because localizing was refused or disabled. The functions are converted and the
+declaration stays. This is only checked when a directory is passed, and not for an `import *` of this module.
 
 ```python
-# shapes.py
-from typing import TypeVar
-
-T = TypeVar("T")
-
-
-def first(items: list[T]) -> T: ...
-
-
 # other.py
 import shapes
 
 
-def second(items: list[shapes.T]) -> shapes.T: ...
+def last(items: list[shapes.T]) -> shapes.T: ...
 ```
 
-**After:**
+**What to do:** change the importer to `from shapes import T`, or drop the alias, and run the tool again.
+
+### New name not free { #feature-type-parameter-modernization-new-name-not-free }
+
+Dropping the underscore would clash: the function or class already uses the new name (it reads or assigns `T`, or has
+another type parameter `T`), or the new name is not valid (`_class` would become `class`).
 
 ```python
-# shapes.py
-from typing import TypeVar
-
-T = TypeVar("T")
-
-
-def first[T](items: list[T]) -> T: ...
-
-
-# other.py
-import shapes
-
-
-def second(items: list[shapes.T]) -> shapes.T: ...
+def f[_T](x: _T) -> _T:
+    return T
 ```
 
-`T = TypeVar("T")` stays, because `other.py` reads `shapes.T`.
+The type parameter keeps its leading underscore.
 
-**To remove it yourself:** find that import (`from <module> import <name>` or `<module>.<name>`), remove it, and
-run the tool again.
+**What to do:** rename the other name, or rename the type parameter by hand.
+
+### Use cannot be rewritten { #feature-type-parameter-modernization-use-not-renameable }
+
+A use is written in a form the tool cannot rewrite, such as an annotation split over concatenated strings.
+
+<!-- fmt:off -->
+
+```python
+def f[_T](x: "list[" "_T]") -> _T: ...
+```
+
+<!-- fmt:on -->
+
+The type parameter keeps its leading underscore.
+
+**What to do:** write the annotation as one string, or without quotes, and run the tool again.
 
 ## Related concepts
 
@@ -416,6 +338,7 @@ run the tool again.
 - `test/recipes/test_type_parameter_declarations.py`
 - `test/recipes/test_type_parameter_localization.py`
 - `test/recipes/test_type_parameter_rules.py`
+- `test/recipes/test_private_type_parameter_check.py`
 - `test/recipes/test_step_runner.py`
 - `test/recipes/test_python_refactoring.py`
 - `test/utils/test_cst_utils.py`
@@ -427,7 +350,8 @@ run the tool again.
 
 - [Refactoring recipes](../../developer/modules/recipes.md)
 - `src/renaissance/recipes/type_parameter_check.py`, `type_parameter_rules.py`, `type_parameter_declarations.py`,
-  `type_parameter_localization.py`, `type_parameter_uses.py`, `step_runner.py` and `python_refactoring.py`.
+  `type_parameter_localization.py`, `type_parameter_uses.py`, `private_type_parameter_check.py`, `step_runner.py` and
+  `python_refactoring.py`.
 - `src/renaissance/utils/import_resolution.py`, `cst_utils.py` and `ruff_utils.py`
 - `src/rejuvenation/migration_type_recipes.py` (the CLI)
 
@@ -435,39 +359,106 @@ run the tool again.
 
 ```shell
 python src/rejuvenation/migration_type_recipes.py <path> --py MAJOR.MINOR \
-    [--report PATH] [--no-ruff] [--ignore FILE...] [--no-localization] [--second-pass]
+    [--report PATH] [--no-ruff] [--ignore FILE...] [--no-localization]
 ```
 
-- `<path>`: a `.py` file or a directory, scanned recursively for `.py` files. Files and directories starting with `.`,
-  and `__pycache__` and `venv` directories, are skipped.
-- `--py` (required): the oldest Python version the target project supports, 3.12 or higher.
-- `--report`: also write the report to a file.
-- `--no-ruff`: skip the final `ruff` pass.
-- `--ignore`: files left untouched, whose type parameters are never copied into the files importing them (see
-  *Shared declaration files*).
-- `--no-localization`: keep every project import of a type parameter (see *Disabling localization*).
-- `--second-pass`: process again only the files that kept a declaration because another file imported it when the run
-  started, and merge the result into the same report.
+| Argument            | Effect                                                                       |
+| ------------------- | ---------------------------------------------------------------------------- |
+| `<path>`            | A `.py` file, or a directory scanned recursively                             |
+| `--py MAJOR.MINOR`  | Required. The oldest Python version the project supports, 3.12 or higher     |
+| `--report PATH`     | Write the Markdown report to `PATH`. Without it, no report is written        |
+| `--no-ruff`         | Skip the `ruff` step                                                         |
+| `--ignore FILE...`  | Leave these files untouched (see *Shared declaration files*)                 |
+| `--no-localization` | Keep every project import of a type parameter (see *Disabling localization*) |
 
-After the recipe, the CLI runs `ruff check --fix --select F401,I001` on the changed files. This removes **every**
-unused import in them, including ones that were unused before (such as `from typing import TypeVar` after the
-declaration is gone). It also merges and sorts **every** import block in them, including imports that were unsorted
-before, using the `ruff` settings of the project. The project's `select` and `ignore` lists do not apply to these two
-rules. Then it runs `ruff format` on the same files, which reformats **every** line in them with the project's
-`ruff format` settings, not only the changed ones. `ruff` must be installed in the same environment. Files are changed
-directly, so run it on a git checkout.
+A directory scan skips names starting with `.`, and `__pycache__` and `venv` directories. Files are changed in place,
+so run the tool on a clean git checkout.
 
-The report is Markdown, with a summary line, up to two summary tables and the sections `MODIFIED`, `NEEDS MANUAL REVIEW` and
-`ERRORS`. The tables count the type parameters per kind (`TypeVar`, `ParamSpec`, `TypeVarTuple`) and rank the reasons for
-manual review from most to least common; the reasons table is left out when no name needs review. A name counts once
-per file, as needing review if it has a reason to review.
-`MODIFIED` says what was done to each name: converted in functions, import replaced by a local declaration, or unused
-declaration removed; a name localized and then removed is listed only as removed. `NEEDS MANUAL REVIEW` groups the files
-and names by reason, most common reason first, and a name can be in both sections. With `--ignore` the report also has
-the `IGNORED FILES` section, and with `--ignore` or `--no-localization` the `Ignored` column. Files are listed relative
-to `<path>`. When files were modified, the run ends with a commit message: the names grouped by what was done to them
-(with the number of files if above one, at most ten per group), then the files left for manual review by reason. Exit
-codes: 0 when the run completes (manual review is not a failure), 2 for a usage error, 3 if any file raised an exception.
+### The `ruff` step
+
+Unless `--no-ruff` is given, the CLI runs two commands on the modified files:
+
+1. `ruff check --fix --select F401,I001` removes unused imports and sorts the imports.
+2. `ruff format` formats the files.
+
+- Both change whole files, including imports and lines the tool did not touch.
+- `--select` replaces the project's `select` and `ignore`; its other settings, such as `per-file-ignores` and
+  `line-length`, still apply. A project without a `ruff` configuration gets the one of the directory the CLI runs from.
+- Without `ruff` in the environment that runs the CLI, the step is silently skipped.
+
+### Output
+
+The CLI prints `File <path> checked.` per file, or `checked again.` when a file is processed again, and then
+`File <path> failed: <error>` for each file under `ERRORS`. It then prints the commit message if a file was modified,
+and otherwise only its last line, `N files left for manual review: ...`, if a file needs review. With `--report`, a run
+where `shapes.py` declares and uses `T`, `main.py` imports it and
+`box.py` has `class Box(Generic[T])` writes:
+
+````text
+Renaissance TypeParameterCheck migration report
+Processed 3 files: 2 modified, 1 need manual review, 0 clean, 0 errors
+
+**TYPE PARAMETERS BY KIND**
+
+| Kind           | Reported | Fixed | Needs review |
+| -------------- | -------- | ----- | ------------ |
+| `TypeVar`      | 3        | 2     | 1            |
+| `ParamSpec`    | 0        | 0     | 0            |
+| `TypeVarTuple` | 0        | 0     | 0            |
+
+**UNSAFE REASONS, MOST COMMON FIRST**
+
+| Reason                                           | Count |
+| ------------------------------------------------ | ----- |
+| only used inside a class that is generic over it | 1     |
+
+**MODIFIED (2)**
+  `main.py`
+    `T`: import replaced by a local declaration, converted to PEP 695 in functions
+
+  `shapes.py`
+    `T`: converted to PEP 695 in functions
+
+**NEEDS MANUAL REVIEW (1)**
+  https://tno.github.io/Renaissance.Py/user/features/type-parameter-modernization/
+
+**Only used inside a class that is generic over it**
+  `box.py`: `T`
+
+**ERRORS (0)**
+
+**COMMIT MESSAGE**
+
+```text
+Convert type parameters to PEP 695 syntax in 2 files (Python 3.12+).
+
+- converted to PEP 695 in functions: T (2 files)
+- import replaced by a local declaration: T
+
+1 file left for manual review: only used inside a class that is generic over it (1).
+```
+````
+
+- Paths are relative to `<path>`. A file can be both modified and in need of review, so the first line can add up to
+  more than the total.
+- The kinds table counts each name once per file. A name with a reason for review counts as *Needs review*, even when
+  it was also converted. The reasons table counts names, and is left out when nothing needs review.
+- `MODIFIED` uses four actions: converted to PEP 695 in functions, import replaced by a local declaration, unused
+  declaration removed, and leading underscore removed.
+- `IGNORED FILES` lists the `--ignore` files, which are not counted as processed. With `--ignore` or
+  `--no-localization`, the kinds table gets an `Ignored` column: each name kept imported, once per importing file.
+- `ERRORS` gives each file with the first line of its error. The other lines of an error, such as the code excerpt
+  of a syntax error, follow in a code block.
+- `COMMIT MESSAGE` is left out when no file was modified. It lists at most ten names per action.
+
+### Exit codes
+
+| Code | Meaning                                                                                                                                                    |
+| ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0    | The run completed, also when names need manual review                                                                                                      |
+| 1    | The run stopped on an uncaught exception                                                                                                                   |
+| 2    | Usage error, before any file is changed: a missing path, a file that is not `.py`, an invalid `--py`, or a missing `--ignore` file or `--report` directory |
+| 3    | At least one file raised an exception (see `ERRORS`)                                                                                                       |
 
 ## Change considerations
 
