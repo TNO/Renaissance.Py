@@ -136,18 +136,18 @@ The report does not explain these cases, so check the result with `git diff`. Th
 
 Each case below stops one change. With `--report`, it is listed under `NEEDS MANUAL REVIEW` with this message:
 
-| Report message                                                                 | Section                                  |
-| ------------------------------------------------------------------------------ | ---------------------------------------- |
-| Declares a default= (PEP 696), …                                               | *PEP 696 version gate*                   |
-| Declaration passes an argument with no PEP 695 equivalent, …                   | *No PEP 695 equivalent*                  |
-| Every function using it also uses a type variable that can't be converted      | *Shares a function with a refused one*   |
-| Exported via `__all__`                                                         | *Exported via `__all__`*                 |
-| Only used inside a class that is generic over it                               | *Only used inside a generic class*       |
-| Declaration uses a name that isn't available at module level …                 | *Name not available at module level*     |
-| Origin module imports TypeVar/ParamSpec/TypeVarTuple inside an if/try block, … | *Origin imports `TypeVar` conditionally* |
-| Imported directly by another file in the target project                        | *Imported by another project file*       |
-| Name without its leading underscore is already used …                          | *New name not free*                      |
-| A use of it is written in a form the tool can't rewrite, …                     | *Use cannot be rewritten*                |
+| Report message                                                                           | Section                                  |
+| ---------------------------------------------------------------------------------------- | ---------------------------------------- |
+| Declares a `default=` (PEP 696), …                                                       | *PEP 696 version gate*                   |
+| Declaration passes an argument with no PEP 695 equivalent, …                             | *No PEP 695 equivalent*                  |
+| Every function using it also uses a type variable that can't be converted                | *Shares a function with a refused one*   |
+| Exported via `__all__`                                                                   | *Exported via `__all__`*                 |
+| Only used inside a class that is generic over it                                         | *Only used inside a generic class*       |
+| Declaration uses a name that isn't available at module level …                           | *Name not available at module level*     |
+| Origin module imports `TypeVar`/`ParamSpec`/`TypeVarTuple` inside an `if`/`try` block, … | *Origin imports `TypeVar` conditionally* |
+| Imported directly by another file in the target project                                  | *Imported by another project file*       |
+| Name without its leading underscore is already used …                                    | *New name not free*                      |
+| A use of it is written in a form the tool can't rewrite, …                               | *Use cannot be rewritten*                |
 
 ### Python version gates { #feature-type-parameter-modernization-version-gates }
 

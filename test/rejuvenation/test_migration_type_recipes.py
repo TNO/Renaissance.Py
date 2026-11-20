@@ -8,6 +8,7 @@
 
 import ast
 import codecs
+import re
 import subprocess
 import sys
 import textwrap
@@ -170,7 +171,7 @@ class TestConsoleReportNeedsReviewSection:
 
         assert_that(output.count(DOCS_BASE_URL), equal_to(1))
         assert_that(output, not_(contains_string("#feature-")))
-        assert_that(output, contains_string("**Exported via __all__**\n  `mod.py`: `T`\n"))
+        assert_that(output, contains_string("**Exported via `__all__`**\n  `mod.py`: `T`\n"))
         assert_that(output, not_(contains_string("    orphaned:")))
 
     def test_files_and_names_sharing_a_reason_are_listed_under_one_heading(self, tmp_path: Path) -> None:
@@ -208,7 +209,7 @@ class TestConsoleReportNeedsReviewSection:
 
         output = _report_of(tmp_path, str(tmp_path), "--py", "3.12", "--no-ruff")
 
-        assert_that(output.count("**Exported via __all__**"), equal_to(1))
+        assert_that(output.count("**Exported via `__all__`**"), equal_to(1))
         for line in ["  `one.py`: `T`\n", "  `three.py`: `A`, `B`\n", "  `two.py`: `U`\n"]:
             assert_that(output, contains_string(line))
 
@@ -342,9 +343,15 @@ class TestPrivateTypeParameterRename:
         assert_that(output, contains_string(message[:1].upper() + message[1:]))
 
 
+def _table_cell(cell: str) -> str:
+    """Return cell without its padding, and without its backticks when the whole cell is one code span."""
+    text = cell.strip()
+    return text[1:-1] if re.fullmatch(r"`[^`]*`", text) else text
+
+
 def _table_rows(output: str, first_header: str) -> list[list[str]]:
-    """Return the data rows, as cells without padding or backticks, of the report table whose header starts with first_header."""
-    rows = [[cell.strip().strip("`") for cell in line.strip("|").split("|")] for line in output.splitlines() if line.startswith("|")]
+    """Return the data rows, as cells from _table_cell, of the report table whose header starts with first_header."""
+    rows = [[_table_cell(cell) for cell in line.strip("|").split("|")] for line in output.splitlines() if line.startswith("|")]
     start = next(index for index, row in enumerate(rows) if row[0] == first_header)
     table: list[list[str]] = []
     for row in rows[start + 2 :]:

@@ -6,19 +6,21 @@
 
 """Tests for type_parameter_rules's safety predicates and their UnsafeReason results."""
 
+import re
 import textwrap
 from collections import Counter
 from typing import cast
 
 import libcst as cst
 import pytest
-from hamcrest import assert_that, equal_to
+from hamcrest import assert_that, equal_to, matches_regexp, not_
 
 from renaissance.recipes.type_parameter_rules import (
     CONVERSION_RULES,
     LOCALIZATION_RULES,
     PEP_696_MINIMUM,
     REMOVAL_RULES,
+    UNSAFE_RULES,
     UnsafeReason,
     conversion_refusal,
     is_safe_to_localize,
@@ -168,3 +170,14 @@ class TestRefusalRuleRegistry:
         registered = [rule.reason for rules in (CONVERSION_RULES, REMOVAL_RULES, LOCALIZATION_RULES) for rule in rules]
 
         assert_that(max(Counter(registered).values()), equal_to(1))
+
+
+class TestUnsafeRuleMessages:
+    """UNSAFE_RULES: the messages the report prints as Markdown."""
+
+    @pytest.mark.parametrize("reason", list(UnsafeReason), ids=lambda reason: reason.name)
+    def test_markdown_characters_only_appear_in_code_spans(self, reason: UnsafeReason) -> None:
+        """Outside its code spans, a message has no character that Markdown or a table cell would interpret."""
+        text_outside_code = re.sub(r"`[^`]+`", "", UNSAFE_RULES[reason].message)
+
+        assert_that(text_outside_code, not_(matches_regexp(r"[_*`|\\[\]<>#]")))

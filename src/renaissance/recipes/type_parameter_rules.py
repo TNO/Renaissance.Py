@@ -53,13 +53,13 @@ class UnsafeRule:
 
 UNSAFE_RULES: dict[UnsafeReason, UnsafeRule] = {
     UnsafeReason.PEP696_VERSION_GATE: UnsafeRule(
-        "declares a default= (PEP 696), which needs the target's minimum Python to be 3.13+",
+        "declares a `default=` (PEP 696), which needs the target's minimum Python to be 3.13+",
     ),
     UnsafeReason.NO_PEP695_EQUIVALENT: UnsafeRule(
-        "declaration passes an argument with no PEP 695 equivalent, e.g. bound= on a ParamSpec or a **mapping",
+        "declaration passes an argument with no PEP 695 equivalent, e.g. `bound=` on a `ParamSpec` or a `**mapping`",
     ),
     UnsafeReason.DECLARED_TYPEVAR_EXPORTED: UnsafeRule(
-        "exported via __all__",
+        "exported via `__all__`",
     ),
     UnsafeReason.USED_IN_GENERIC_CLASS: UnsafeRule(
         "only used inside a class that is generic over it",
@@ -74,7 +74,8 @@ UNSAFE_RULES: dict[UnsafeReason, UnsafeRule] = {
         "imported directly by another file in the target project",
     ),
     UnsafeReason.ORIGIN_IMPORTS_CONSTRUCTOR_CONDITIONALLY: UnsafeRule(
-        "origin module imports TypeVar/ParamSpec/TypeVarTuple inside an if/try block, e.g. under TYPE_CHECKING or per Python version",
+        "origin module imports `TypeVar`/`ParamSpec`/`TypeVarTuple` inside an `if`/`try` block, e.g. under `TYPE_CHECKING` or per"
+        " Python version",
     ),
     UnsafeReason.NEW_NAME_NOT_FREE: UnsafeRule(
         "name without its leading underscore is already used in the function or class, or is not a valid name",

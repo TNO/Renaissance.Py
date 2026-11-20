@@ -257,6 +257,5 @@ fixed or accepted as a non-goal.
 - Type parameters of a `type` statement (`type A[_T] = list[_T]`) are neither renamed nor reported.
 - `T = U = TypeVar("T")` leaves `U` undefined, and `V = TypeVar("W")` writes `def f[W](x: V) -> V`, both without a
   warning.
-- The report prints the `UNSAFE_RULES` messages as raw Markdown, so `__all__` renders as bold "all" and `**mapping`
-  breaks the bold heading. It also writes "1 files" and "1 errors", and the reasons table counts names where the
-  commit message counts files.
+- The report writes "1 files" and "1 errors", and the reasons table counts names where the commit message counts
+  files.
