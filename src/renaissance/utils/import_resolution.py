@@ -164,14 +164,14 @@ def imported_project_names(file: Path, project_root: Path) -> dict[Path, frozens
       `import pkg.mod as m` then `m.T`, `from pkg import mod` then `mod.T`): the attribute name.
 
     Imports that don't resolve inside `project_root` (stdlib/third-party) are skipped. A file that
-    can't be read or parsed imports nothing.
+    can't be read, decoded as UTF-8 or parsed imports nothing.
     """
     try:
         module = cst.parse_module(file.read_text(encoding="utf-8"))
     # TODO(FrancescoPezzella): libcst raises CSTLogicError on an implicit concatenation of t-strings, like `t"a" t"b"`,
     #  which is valid code.
     #  https://github.com/Instagram/LibCST/issues/1485
-    except OSError, cst.ParserSyntaxError, cst.CSTLogicError:
+    except OSError, UnicodeDecodeError, cst.ParserSyntaxError, cst.CSTLogicError:
         return {}
     imported: dict[Path, set[str]] = {}
     module_bindings: dict[str, Path] = {}

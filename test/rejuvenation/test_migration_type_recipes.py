@@ -583,11 +583,6 @@ class TestMainFileEncoding:
         ast.parse(text)
         assert_that(text, contains_string("def identity[T](x: T) -> T:"))
 
-    @pytest.mark.xfail(
-        strict=True,
-        raises=UnicodeDecodeError,
-        reason="A file that is not UTF-8 aborts the whole run: https://github.com/TNO/Renaissance.Py/issues/188",
-    )
     @pytest.mark.parametrize(
         "content",
         [

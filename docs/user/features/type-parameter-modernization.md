@@ -92,7 +92,8 @@ python src/rejuvenation/migration_type_recipes.py ./some_repo --py 3.12 --no-loc
 - Files are changed in place, then cleaned up by the `ruff` step (see *The `ruff` step*).
 - With `--report`, each refused change is listed with its reason (see *Constraints*). Without it, refusals only appear
   in the commit message, which is printed only when a file changed.
-- A file under `ERRORS` may be partly changed, since each phase is saved before the next one runs.
+- A file under `ERRORS` may be partly changed, since each phase is saved before the next one runs. A file that is not
+  valid UTF-8 is listed there with its `UnicodeDecodeError`, and left unchanged.
 
 ### Known limitations
 
@@ -130,7 +131,6 @@ The report does not explain these cases, so check the result with `git diff`. Th
 | `_T` refused in one function of a file                                                    | Kept in the file's other functions too, or renamed there while the report lists `_T` only for review                                         |
 | `--no-ruff`                                                                               | Added imports are not merged or sorted; unused imports and extra blank lines stay                                                            |
 | CRLF line endings                                                                         | A changed file is written back with LF                                                                                                       |
-| A file that is not valid UTF-8 ([#188](https://github.com/TNO/Renaissance.Py/issues/188)) | The run stops with `UnicodeDecodeError` before any file is changed                                                                           |
 | `--report` in a directory that does not exist                                             | The run stops after the files are rewritten, and no report is written                                                                        |
 
 ## Constraints
@@ -450,12 +450,12 @@ Convert type parameters to PEP 695 syntax in 2 files (Python 3.12+).
 
 ### Exit codes
 
-| Code | Meaning                                                                                                    |
-| ---- | ---------------------------------------------------------------------------------------------------------- |
-| 0    | The run completed, also when names need manual review                                                      |
-| 1    | The run stopped on an uncaught exception, such as a file that is not valid UTF-8 (see *Known limitations*) |
-| 2    | Usage error: a missing path, a file that is not `.py`, an invalid `--py` or a missing `--ignore` file      |
-| 3    | At least one file raised an exception (see `ERRORS`)                                                       |
+| Code | Meaning                                                                                               |
+| ---- | ----------------------------------------------------------------------------------------------------- |
+| 0    | The run completed, also when names need manual review                                                 |
+| 1    | The run stopped on an uncaught exception                                                              |
+| 2    | Usage error: a missing path, a file that is not `.py`, an invalid `--py` or a missing `--ignore` file |
+| 3    | At least one file raised an exception (see `ERRORS`)                                                  |
 
 ## Change considerations
 

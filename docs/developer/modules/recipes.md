@@ -246,9 +246,6 @@ fixed or accepted as a non-goal.
   shadows the first ([issue 279](https://github.com/TNO/Renaissance.Py/issues/279)).
 - A file that starts with a UTF-8 byte order mark is corrupted: `def identity(x: T) -> T:` becomes
   `def ideidentity[T] T) -> T:` ([issue 153](https://github.com/TNO/Renaissance.Py/issues/153)).
-- A file that is not valid UTF-8 stops the whole run with an uncaught `UnicodeDecodeError` (exit code 1), because
-  `imported_project_names` does not catch it. It should be listed under `ERRORS`
-  ([issue 188](https://github.com/TNO/Renaissance.Py/issues/188)).
 - `PrivateTypeParameterCheck.check()` marks a name `"unsafe"` for the whole file when one declaration of it is
   refused. `def ok[_T]` then keeps its underscore because another function's `_T` is refused, unless another name in
   the file is renamed: `run_steps` commits every planned edit, and `ok` is renamed while the report lists `_T` only for
