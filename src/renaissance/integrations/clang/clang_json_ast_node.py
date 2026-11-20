@@ -377,6 +377,11 @@ class ClangJsonASTNode(ASTNode[dict[str, Any], ClangJsonTranslationUnit]):
         properties = {
             k: ClangJsonASTNode._remove_ids(v)
             for k, v in self.node.items()
+            # TODO(pjljvandelaar): reference values are never filtered out, see the explanation below.
+            # https://github.com/TNO/Renaissance.Py/issues/414
+            #  `_is_reference(v) is not None` is always True since `_is_reference` returns a bool. Probably intended
+            #  `not _is_reference(v)`; when fixing, consider moving this use-case-specific filtering (also
+            #  `_remove_ids`) to a policy such as `relevant_properties`.
             if ClangJsonASTNode.__is_property(k) and ClangJsonASTNode._is_reference(v) is not None
         }
         if self._get(["range", "end", "expansionLoc", "offset"], -1) != -1:  # dealing with a macro expansion
