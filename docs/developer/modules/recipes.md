@@ -15,140 +15,160 @@ https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 ## Responsibility
 
 Recipes are `PythonRefactoring` subclasses that rewrite one Python file at a time, for gaps `ruff` does not fully or
-safely cover. This page covers `TypeParameterCheck`, the recipe behind
-[Type parameter modernization](../../user/features/type-parameter-modernization.md), and `PrivateTypeParameterCheck`.
+safely cover. This page covers `TypeParameterCheck` and `PrivateTypeParameterCheck`, the recipes behind
+[Type parameter modernization](../../user/features/type-parameter-modernization.md). That page describes what they
+change and refuse; this page says where it is decided.
 
 ## Location
 
 - `src/renaissance/recipes/type_parameter_check.py`: the `TypeParameterCheck` pipeline and the edits its phases write.
-- `src/renaissance/recipes/type_parameter_rules.py`: the reasons a type parameter is left unconverted, and the refusal rules.
+- `src/renaissance/recipes/type_parameter_rules.py`: the reasons a type parameter is left unconverted, and the refusal
+  rules.
 - `src/renaissance/recipes/type_parameter_declarations.py`: reads and rewrites a declaration (`T = TypeVar(...)`).
 - `src/renaissance/recipes/type_parameter_localization.py`: decides which imported type parameters get a local
   declaration, and the imports and text that replace them.
 - `src/renaissance/recipes/type_parameter_uses.py`: finds where a declared name is used.
 - `src/renaissance/recipes/private_type_parameter_check.py`: `PrivateTypeParameterCheck`, which drops the leading
-  underscore from the PEP 695 type parameters of functions and classes (`def f[_T]` to `def f[T]`) and from every use
-  they bind.
+  underscore from the type parameters of functions and classes and from every use they bind.
 - `src/renaissance/recipes/step_runner.py`: `Step`/`run_steps`, runs fix actions in order and commits only the ones
   that fixed something.
-- `src/renaissance/recipes/python_refactoring.py`: the base class.
+- `src/renaissance/recipes/python_refactoring.py`: the base class. `typed_root` gives the root node as the recipe's node
+  class.
 - `src/renaissance/utils/import_resolution.py`: the import statements of a module and what they bind, the resolution of
-  `from X import Y` to a file in the project, the re-anchoring of one file's relative import on another file, and
-  `ProjectImportGraph`, the names each project file imports from the others.
+  `from X import Y` to a project file, the re-anchoring of a relative import on another file, and `ProjectImportGraph`,
+  the names each project file imports from the others.
 - `src/renaissance/utils/cst_utils.py`: a module's top-level statements, the names they read or bind and the comment
   trailing a statement's line.
-- `src/renaissance/utils/ruff_utils.py`: `run_ruff_import_cleanup` and `run_ruff_format`, which the CLI runs on the
-  files the recipe changed. The first removes unused imports and sorts the imports, the second formats the files.
+- `src/renaissance/utils/ruff_utils.py`: `run_ruff_import_cleanup` (`ruff check --fix --select F401,I001`) and
+  `run_ruff_format` (`ruff format`), which the CLI runs on the changed files.
+- `src/rejuvenation/migration_type_recipes.py`: the CLI. It sets the recipe attributes, orders and repeats the files
+  with `ProjectImportGraph`, runs the `ruff` step and writes the report.
 
 ## Public entry points
 
-- `TypeParameterCheck.check()` (and `run()`): runs the three phases through `run_steps`, committing to disk between them.
-- The phases, each returning `{name: "fixed" | "unsafe"}` and recording the `UnsafeReason` of each unsafe name:
+- `TypeParameterCheck.check()` (and `run()`) runs the three phases through `run_steps`, committing to disk between
+  them. Each phase returns `{name: "fixed" | "unsafe"}` and records the `UnsafeReason` of each unsafe name:
 
-    | Phase                                                        | Reasons attribute           |
-    | ------------------------------------------------------------ | --------------------------- |
-    | `localize_imported_typevars()`                               | `cross_file_unsafe_reasons` |
-    | `convert_declared_typevars()` (only adds type parameters)    | `converted_unsafe_reasons`  |
-    | `remove_orphaned_declarations()` (only removes declarations) | `orphaned_unsafe_reasons`   |
+    | Phase                            | Step label   | Reasons attribute           |
+    | -------------------------------- | ------------ | --------------------------- |
+    | `localize_imported_typevars()`   | `cross_file` | `cross_file_unsafe_reasons` |
+    | `convert_declared_typevars()`    | `converted`  | `converted_unsafe_reasons`  |
+    | `remove_orphaned_declarations()` | `orphaned`   | `orphaned_unsafe_reasons`   |
 
-- `type_param_kinds`: maps each type parameter name the phases see to `"TypeVar"`, `"ParamSpec"` or `"TypeVarTuple"`.
-- Attributes set by the CLI (`migration_type_recipes.py`): `min_python`, `project_root` (falls back to the file's
-  folder), `project_wide_imported_names` (from `ProjectImportGraph.imported_names`), `ignore_localize_origins` (absolute
-  paths of the files `--ignore` names) and `localize_imports` (`False` with `--no-localization`). `ignored_names` holds
-  the type parameter names this file imports from those files, or from any project file when `localize_imports` is
-  `False`.
-- `PythonRefactoring.process("TypeParameterCheck", file)`, used by `cli.py refactor`, never sets those attributes, so
-  `min_python` stays `MIN_SUPPORTED_PYTHON` there and a `default=` declaration is reported `"unsafe"`.
-- `PrivateTypeParameterCheck.check()` (and `run()`): renames each private type parameter and returns
-  `{old name: "fixed" | "unsafe"}`; a name refused in any declaration is `"unsafe"`. `unsafe_reasons` holds the
-  `UnsafeReason` of each unsafe name and `type_param_kinds` the kind of each name it saw. The CLI runs it after
-  `TypeParameterCheck` on each file, as the `renamed` phase of the report.
+    `converted_unsafe_reasons` can also hold a fixed name that a generic class still uses (`USED_IN_GENERIC_CLASS`).
+- `type_param_kinds` maps each type parameter name the phases see to `"TypeVar"`, `"ParamSpec"` or `"TypeVarTuple"`.
+- The CLI sets these attributes before `check()`:
+
+    | Attribute                     | Value                                                                       |
+    | ----------------------------- | --------------------------------------------------------------------------- |
+    | `min_python`                  | `--py`                                                                      |
+    | `project_root`                | `<path>`, or the file's folder for a single file                            |
+    | `project_wide_imported_names` | `ProjectImportGraph.imported_names` of the file                             |
+    | `ignore_localize_origins`     | the absolute paths of the `--ignore` files                                  |
+    | `localize_imports`            | `False` with `--no-localization`                                            |
+
+    `ignored_names` then holds the names this file imports from those files, or from any project file when
+    `localize_imports` is `False`.
+- `PythonRefactoring.process("TypeParameterCheck", file)`, used by `cli.py refactor`, sets none of these attributes.
+  `min_python` stays `MIN_SUPPORTED_PYTHON`, so a `default=` is refused, and `project_wide_imported_names` stays empty,
+  so a declaration that other files import is removed.
+- `PrivateTypeParameterCheck.check()` (and `run()`) renames each private type parameter and returns
+  `{old name: "fixed" | "unsafe"}`. A name refused in any declaration is `"unsafe"`. `unsafe_reasons` holds the reason
+  of each unsafe name, and `type_param_kinds` the kind of each name. The CLI runs it after `TypeParameterCheck`, as
+  step `renamed`.
 
 ## Internal structure
 
-- **libcst throughout.** The recipe runs on the CST backend (`PythonRefactoring[PythonCstNode]`) and analyses the
-  same libcst tree it rewrites; the cross-file phase parses the origin with `libcst.parse_module`. Each edit
-  replaces only the node it changes, so formatting and comments elsewhere are kept.
+### Common
 
-- **Unsafe reasons.** `is_safe_to_remove`, `is_safe_to_localize` and `conversion_refusal` return an `UnsafeReason`
-  or `None`. Each of the 10 reasons has an `UnsafeRule` (its message) in `UNSAFE_RULES`. The CLI report prints
-  each message and links `DOCS_BASE_URL` once.
+- Both recipes use the CST backend (`PythonRefactoring[PythonCstNode]`) and read the tree through `typed_root`. Each
+  edit replaces only the node it changes, so formatting and comments elsewhere are kept.
+- `uses_of` takes a declaration's uses from libcst's scope analysis (`referenced_by`). A use inside a string annotation
+  or `cast("T", x)` counts. A `T` that a PEP 695 type parameter of an enclosing function or class declares does not.
+- Files are read with universal newlines, and a modified file is written back with LF, also on the lines the recipe did
+  not change. A file the recipe does not modify is not rewritten.
 
-- **Refusal rules.** Five of the reasons are independent checks, listed as `RefusalRule` entries in
-  `CONVERSION_RULES`, `REMOVAL_RULES` and `LOCALIZATION_RULES`; the first rule of a stage that refuses decides the
-  reason. The other three (`USED_IN_GENERIC_CLASS`, `SHARES_FUNCTION_WITH_UNCONVERTIBLE`, `NAME_NOT_AT_MODULE_LEVEL`)
-  follow from how the phases work and are not listed. `NEW_NAME_NOT_FREE` and `USE_NOT_RENAMEABLE` are decided by
-  `PrivateTypeParameterCheck` itself. Commenting out an entry switches its rule off.
-  `NO_PEP695_EQUIVALENT`, `PEP696_VERSION_GATE` and `ORIGIN_IMPORTS_CONSTRUCTOR_CONDITIONALLY` then let the recipe write
-  code that fails or binds another object; `DECLARED_TYPEVAR_EXPORTED` and `IMPORTED_ELSEWHERE_IN_PROJECT` then let it
-  break the files that import the name.
+### Refusals
 
-- **Version gates.** The CLI rejects `--py` below `MIN_SUPPORTED_PYTHON = (3, 12)`, so
-  [PEP 695](https://peps.python.org/pep-0695/) syntax is always available there; the recipe itself does not check it.
-  `conversion_refusal` compares `min_python` with `PEP_696_MINIMUM = (3, 13)` for a `default=`. A keyword outside
-  `_CONVERTIBLE_KEYWORDS` is refused (`NO_PEP695_EQUIVALENT`) instead of dropped. `covariant` and `contravariant` are
-  in the set and are dropped, because a function's type parameter has no variance; converting classes would have to
-  refuse them.
+`is_safe_to_remove`, `is_safe_to_localize` and `conversion_refusal` return an `UnsafeReason` or `None`. Each reason has
+a message in `UNSAFE_RULES`, which the report prints; the report links `DOCS_BASE_URL` once.
 
-- **Uses.** `uses_of` takes a declaration's uses from libcst's scope analysis (`referenced_by`). A use inside a
-  string annotation or `cast("T", x)` counts; a `T` that a [PEP 695](https://peps.python.org/pep-0695/) type parameter
-  of an enclosing function or class declares (`def f[T]`, `class C[T]`) does not.
+| Reason                                     | Decided by                                |
+| ------------------------------------------ | ----------------------------------------- |
+| `NO_PEP695_EQUIVALENT`                     | `CONVERSION_RULES`                        |
+| `PEP696_VERSION_GATE`                      | `CONVERSION_RULES`                        |
+| `DECLARED_TYPEVAR_EXPORTED`                | `REMOVAL_RULES`                           |
+| `IMPORTED_ELSEWHERE_IN_PROJECT`            | `REMOVAL_RULES`                           |
+| `ORIGIN_IMPORTS_CONSTRUCTOR_CONDITIONALLY` | `LOCALIZATION_RULES`                      |
+| `SHARES_FUNCTION_WITH_UNCONVERTIBLE`       | `convert_declared_typevars`               |
+| `USED_IN_GENERIC_CLASS`                    | `convert_declared_typevars`               |
+| `NAME_NOT_AT_MODULE_LEVEL`                 | `plan_localizations`                      |
+| `NEW_NAME_NOT_FREE`                        | `PrivateTypeParameterCheck._plan_renames` |
+| `USE_NOT_RENAMEABLE`                       | `PrivateTypeParameterCheck._plan_renames` |
 
-- **Signature edit.** `_add_type_params` replaces only the function's name (`f` → `f[T]`) or, if it has one, its
-  type-parameter bracket; the body is never touched. `type_param_text` writes each parameter (`T: int`, `**P`,
-  `*Ts`, `= default`) from the declaration's own text.
+In a rules tuple, the first rule that refuses decides the reason. Commenting out an entry switches its rule off, after
+which the recipe can write code that fails or breaks the files that import the name.
 
-- **One edit per function.** All type parameters of a function go into one `replace()`, in declaration order, with
-  the defaulted ones last (`type_params_bracket`). Two edits on one node would be rejected as conflicting rewrites.
-  
-- **Owning function.** A legacy type parameter belongs to the function whose signature uses it. `signature_function`
-  finds the functions whose parameter or return annotations use the name, and `owning_function` gives each use to the
-  outermost of them that encloses it. A nested function whose enclosing function's signature also uses `T` gets no
-  `[T]` of its own, since it already sees the outer one. A use outside every such signature, e.g. `y: list[T] = []` in
-  a function whose signature doesn't use `T`, is given to no function.
+### Conversion
 
-- **Generic classes.** Methods of a class with the name in a base (`generic_classes`) are skipped. A generic class at
-  the origin does not block localization.
+- The CLI rejects `--py` below `MIN_SUPPORTED_PYTHON = (3, 12)`; the recipe itself does not check it.
+  `conversion_refusal` compares `min_python` with `PEP_696_MINIMUM = (3, 13)` for a `default=`.
+- A keyword outside `_CONVERTIBLE_KEYWORDS` is refused (`NO_PEP695_EQUIVALENT`) instead of dropped. `covariant` and
+  `contravariant` (on `TypeVar` and `ParamSpec`) and `infer_variance` are dropped, because a function's type parameter
+  has no variance. Converting classes would have to refuse them.
+- A legacy type parameter belongs to the function whose signature uses it. `signature_function` finds the functions
+  whose parameter or return annotations use the name, and `owning_function` gives each use to the outermost of them.
+  A use outside every such signature, such as `y: list[T] = []` in a function whose signature does not use `T`, goes
+  to no function.
+- Functions inside a class with the name in a base (`generic_classes`) are skipped.
+- A function using a declaration that `conversion_refusal` rejects gets none of its type parameters, since PEP 695
+  forbids mixing them with legacy ones. All refusals are therefore collected (`_plan_conversions`) before any
+  parameter is added.
+- `_add_type_params` replaces only the function's name (`f` → `f[T]`) or its existing bracket, never the body. All type
+  parameters of a function go into one `replace()`, in declaration order with the defaulted ones last
+  (`type_params_bracket`), since two edits on one node conflict. `type_param_text` writes each parameter (`T: int`,
+  `**P`, `*Ts`, `= default`) from the declaration's own text.
 
-- **No mixed syntax.** A function using a declaration that `conversion_refusal` rejects gets none of its type
-  parameters, since [PEP 695](https://peps.python.org/pep-0695/) forbids mixing them with legacy ones. A name whose
-  every function is blocked is `SHARES_FUNCTION_WITH_UNCONVERTIBLE`. This needs two passes: all refusals are known before any parameter is added.
+### Removal
 
-- **Orphans.** A declaration with no uses left (`uses_of` is empty) is orphaned. Conversion skips such names too.
+A declaration with no uses left (`uses_of` is empty) is orphaned and removed, unless `REMOVAL_RULES` refuses.
+Conversion skips orphaned names too.
 
-- **Localization.** The origin's declaration is copied as written, with the comment trailing it when it is alone on
-  its line (`declaration_text`). `NAME_NOT_AT_MODULE_LEVEL` if the origin only binds a name its arguments use
-  (`declaration_argument_names`) under `if TYPE_CHECKING:` or this file binds it to something else
-  (`from_import_sources`). All names localized from one import statement are handled together. The import it
-  replaces is this file's binding, so `is_safe_to_remove` checks it too. Only `DECLARED_TYPEVAR_EXPORTED` can refuse
-  there, since the planner gets no `project_wide_imported_names`.
+### Localization
 
-  A name the origin imports, the constructor or one an argument uses, is imported here from the module the origin
-  gets it from, with its alias (`from_import_binding`). A relative import of the origin is re-anchored on this file
-  by `rebase_relative_module`. A name the origin defines itself, or one whose module this file can't name, is
-  imported from the origin.
+- The origin is parsed with `libcst.parse_module`, and its declaration is copied as written, with the comment trailing
+  it when it is alone on its line (`declaration_text`). All names localized from one import statement are handled
+  together.
+- `NAME_NOT_AT_MODULE_LEVEL` is returned when the origin binds a name the arguments use (`declaration_argument_names`)
+  only inside a block, or this file binds it to something else (`from_import_sources`).
+- A name the origin imports, such as the constructor, is imported here from the same module, with its alias
+  (`from_import_binding`). `rebase_relative_module` re-anchors a relative import of the origin on this file. A name the
+  origin defines itself, or one whose module this file cannot name, is imported from the origin.
+- The import a localization replaces is this file's binding, so `is_safe_to_remove` checks it too. Only
+  `DECLARED_TYPEVAR_EXPORTED` can refuse there, since the planner gets no `project_wide_imported_names`.
+- An import whose names are now declared locally is narrowed, keeping its comments, or dropped with its trailing
+  comment. The needed imports, once each, and then the declarations go after the last import that stays, so no import
+  ends up below code (E402). If every import is dropped, they replace the last dropped import line (`_anchor_index`).
+  They go where the replaced import was when it is dropped from a line with other statements, or when a statement
+  between it and the last import reads one of its names. Merging, sorting and removing unused imports is left to the
+  CLI's `ruff` step.
 
-- **Imports.** An import whose names are now declared locally is narrowed, keeping its comments, or dropped with its
-  trailing comment when no name remains. The needed imports, each once per file, and then the declarations go after
-  the file's last import, so no import is left below code (E402). A localization is written where its import was
-  when that import shares its line with other statements and is dropped, when no import of the file remains, or when
-  a statement between it and the last import reads one of its names. Merging and sorting the added imports, and
-  removing imports that became unused, is left to the CLI's final `ruff` pass (F401, I001).
+### Processing order
 
-- **Processing order.** The CLI reads the imports of every file into a `ProjectImportGraph` and processes origins
-  before the files importing from them (`processing_order`); the files of an import cycle form one group. A file that
-  only re-imports `T` is thus localized before its importers copy `T` from it. After each file, the graph reads its
-  imports again, and a file is processed again while the names the project imports from it change. A declaration is
-  removed in the same run once its last importer has localized it.
+The CLI reads the imports of every file, `--ignore` files included, into a `ProjectImportGraph`. It processes origins
+before the files importing from them (`processing_order`); the files of an import cycle form one group. After each
+file, the graph reads its imports again, and a file is processed again (`_merge_reports`) while the names the project
+imports from it change. A re-export through `pkg/__init__.py` is localized there first, so its importers copy it from
+that file.
 
-- **Private type parameters.** `PrivateTypeParameterCheck` finds the declarations with patterns on a second parse of the
-  file, with the RST backend. It maps each type parameter to its libcst node by offset, and takes its uses
-  from `referenced_by`, so a module-level `_T` of the same name is left alone. A name inside a string annotation is
-  renamed inside the string. A type parameter is left unchanged when its new name is already a name in the declaring
-  function or class, or is declared twice in the same bracket.
+### Private type parameters
 
-- **Line endings.** Files are read with universal newlines and a modified file is written back with LF, also on the
-  lines the recipe did not change. A file the recipe does not modify is not rewritten.
+`PrivateTypeParameterCheck` finds the type parameters of every `def`, `async def` and `class`, nested ones included,
+with `_DECLARATION_PATTERNS` on an RST parse of the same text. It maps each one to its libcst node by offset and takes
+its uses from `referenced_by`, so a module-level `_T` of the same name is left alone. A name inside a string annotation
+is renamed inside the string. `NEW_NAME_NOT_FREE` refuses a new name that is not a valid identifier (`_`, `_1`), is
+already a name in the function or class, or would appear twice in its bracket. `USE_NOT_RENAMEABLE` refuses a use that
+is neither a name nor a single string.
 
 ## Related features
 
@@ -156,6 +176,7 @@ safely cover. This page covers `TypeParameterCheck`, the recipe behind
 
 ## Related concepts
 
+- [Type parameters](../../user/concepts/type-parameters.md)
 - [Rewrite semantics](../../user/concepts/rewrite-semantics.md)
 - [Python version gates](../../user/features/type-parameter-modernization.md#feature-type-parameter-modernization-version-gates)
 
@@ -165,300 +186,84 @@ See *Verified by test modules* in [Type parameter modernization](../../user/feat
 
 ## Extension points
 
-- A new recipe is a `PythonRefactoring` subclass in its own `snake_case`-named module in `src/renaissance/recipes/`;
-  no registration is needed.
-- A new type-parameter-declaring construct: extend `_is_type_param_call` and `type_param_text` together, both in
-  `type_parameter_declarations.py`.
-- A keyword added by a later Python, or future [PEP 695](https://peps.python.org/pep-0695/) syntax for variance or a
-  bound on `**P`/`*Ts`: add it to `_CONVERTIBLE_KEYWORDS` and carry it over in `type_param_text`.
-- A new refusal rule: add a check function and a `RefusalRule` entry to the stage's tuple in `type_parameter_rules.py`,
-  a message and anchor to `UNSAFE_RULES`, and a section to the feature page.
-- A new version gate uses the syntax's own minimum Python from its PEP, not a value copied from another gate.
-- Re-exports through `__init__.py`, and a namespace package ([PEP 420](https://peps.python.org/pep-0420/)) as an
-  import's origin: extend `resolve_project_module`.
+- A new recipe is a `PythonRefactoring` subclass in a module named after the class in `snake_case`, in
+  `src/renaissance/recipes/`. `cli.py refactor` finds it by name. A CST recipe subclasses
+  `PythonRefactoring[PythonCstNode]` and reads the tree through `typed_root`.
+- A new declaring constructor: add it to `_CONSTRUCTORS` and `_CONVERTIBLE_KEYWORDS`, and write its syntax in
+  `type_param_text`, all in `type_parameter_declarations.py`.
+- A keyword added by a later Python, or future PEP 695 syntax for variance or a bound on `**P`/`*Ts`: add it to
+  `_CONVERTIBLE_KEYWORDS` and carry it over in `type_param_text`.
+- A new refusal rule: add an `UnsafeReason` member, a check function, a `RefusalRule` entry in the stage's tuple and
+  an `UnsafeRule` message in `UNSAFE_RULES`, all in `type_parameter_rules.py`, and a section on the feature page.
+- A new version gate compares `min_python` with a constant holding the minimum Python from the syntax's own PEP, as
+  `PEP_696_MINIMUM` does.
+- A namespace package ([PEP 420](https://peps.python.org/pep-0420/)) as an import's origin: extend
+  `resolve_project_module`.
 - `Step`/`run_steps` is generic and can be reused by any recipe.
 
 ## Non-goals
 
-- Make the tool more efficient. Currently the tool does not make use of any filtering or similar features, making it
-  exponentially slower than other tools (Ruff can run on milliseconds on big projects, while it may take upwards of 30
-  minutes per project with this tool). This is a limitation of it, and a low priority fix due to time constraints.
-
-- The target's minimum Python is not detected (e.g. from `requires-python`); it must be passed with `--py`. A
-  project with:
-
-    ```toml
-    [project]
-    requires-python = ">=3.13"
-    ```
-
-    run with `--py 3.12` is treated as below 3.13, so a `default=` declaration is not converted.
-
-- Only the file an import names is read. A name it re-exports from another module (`pkg/__init__.py` with
-  `from .mod import T`) is not followed, so it is copied only once that file holds a declaration of its own, as after
-  localizing it. Renamed imports and `import *` are skipped, and so is a namespace package (a directory without
-  `__init__.py`) as the origin; the modules inside it are followed. In:
-
-    ```python
-    # origin.py
-    from typing import TypeVar
-
-    T = TypeVar("T")
-
-    # main.py
-    from origin import T as U
-
-
-    def first(items: list[U]) -> U: ...
-    ```
-
-    `main.py` is left unchanged.
-
-- A file that imports a declaration with `from origin import *` does not count as an importer, so the declaration is
-  removed from its origin once nothing else in the origin uses it. In:
-
-    ```python
-    # origin.py
-    T = TypeVar("T")
-
-
-    def identity(x: T) -> T: ...
-
-
-    # main.py
-    from origin import *
-    ```
-
-    `T = TypeVar("T")` is removed from `origin.py`, and `main.py` raises `NameError` where it uses `T`. The run exits
-    with 0 and gives no warning.
-
-- Only declarations in the file itself can block a function. A legacy type parameter that stays imported, such as one
-  from another package, does not. In:
-
-    ```python
-    from other_package import K
-
-    V = TypeVar("V")
-
-
-    def get(mapping: dict[K, V], key: K) -> V: ...
-    ```
-
-    `get` becomes `def get[V](mapping: dict[K, V], key: K) -> V: ...`. `K` is still the imported legacy type
-    parameter, so `get` mixes both syntaxes, which
-    [PEP 695](https://peps.python.org/pep-0695/#compatibility-with-traditional-typevars) forbids. Type checkers
-    report an error.
-
-- `__all__.extend(...)` and `__all__.append(...)` are not read to detect an exported declaration. In:
-
-    ```python
-    __all__ = ["first"]
-    __all__.extend(["T"])
-
-    T = TypeVar("T")
-
-
-    def first(items: list[T]) -> T: ...
-    ```
-
-    `first` is converted and `T = TypeVar("T")` is removed, although `__all__` exports it.
-
-- A declaration is only treated as public API when `__all__` lists it, since the tool sees nothing outside the scanned
-  project. One that nothing in the project uses is removed, even if other projects import it. `--ignore` leaves
-  such a file untouched. In:
-
-    ```python
-    # mylib/typing.py
-    from typing import TypeVar
-
-    KeyT = TypeVar("KeyT", bytes, str)
-    ```
-
-    `KeyT = TypeVar("KeyT", bytes, str)` is removed, so `from mylib.typing import KeyT` fails elsewhere. With
-    `__all__ = ["KeyT"]` it is kept.
-
-- A name used only in the string value of a `TypeAlias` is not seen as a use, so its declaration can be removed as
-  orphaned. In:
-
-    ```python
-    T = TypeVar("T")
-    Pairs: TypeAlias = "list[tuple[T, T]]"
-    ```
-
-    `T = TypeVar("T")` is removed, and `Pairs` refers to an undefined `T`.
-
-- `Unpack[Ts]` → `*Ts` is left to `ruff`'s `UP044`, see [Rejected recipes](rejected-recipes.md). In:
-
-    ```python
-    Ts = TypeVarTuple("Ts")
-
-
-    def pack(*args: Unpack[Ts]) -> tuple[Unpack[Ts]]: ...
-    ```
-
-    only `[*Ts]` is added: `def pack[*Ts](*args: Unpack[Ts]) -> tuple[Unpack[Ts]]: ...`.
-
-- An import that follows another statement on the same line is written back wrongly. This is rare, and `ruff`'s
-  `E702` flags such lines. In:
-
-    <!-- fmt:off -->
-
-    ```python
-    import os; from origin import T
-    ```
-
-    <!-- fmt:on -->
-
-    the lines that replace the import get an extra indent, a syntax error.
-
-- Without the CLI's `ruff` pass (`--no-ruff`, or using the recipe as a library) the added imports are not merged
-  into the file's existing `from` imports and not sorted. They are still placed with the other imports.
-
-- A declaration still read by a decorator or a parameter default of a converted function can be removed. This is
-  rare. In:
-
-    ```python
-    T = TypeVar("T")
-
-
-    def first(items: list[T], default=T) -> T: ...
-    ```
-
-    `first` becomes `def first[T](items: list[T], default=T) -> T: ...`. The annotations now use the new type
-    parameter, but `default=T` is evaluated outside it and still reads the module-level `T`. libcst places it inside
-    the type parameter's scope, so the declaration looks unused and is removed: importing the module raises
-    `NameError`.
-
-- A declaration followed by `;` on the same line is removed without its `;`. This is rare, and `ruff`'s `E702` flags
-  such lines. In:
-
-    <!-- fmt:off -->
-
-    ```python
-    T = TypeVar("T"); U = 1
-
-
-    def first(items: list[T]) -> T: ...
-    ```
-
-    <!-- fmt:on -->
-
-    the file is written as `; U = 1`, a syntax error, and reported under errors.
-
-- Declarations that break the naming rule of [PEP 484](https://peps.python.org/pep-0484/) (a single variable named
-  after the string argument) are not handled. This is rare, and `ruff`'s `PLC0132` flags a mismatched name:
-
-    ```python
-    T = U = TypeVar("T")  # if T is unused, the statement is removed and U is no longer defined
-    V = TypeVar("W")  # def f(x: V) -> V becomes def f[W](x: V) -> V
-    X = TypeVar(name)  # AttributeError: no phase is applied to the file
-    ```
-
-    If both `T` and `U` are unused, the run fails with a `ValueError` ("Conflicting rewrites") reported under errors,
-    and the declaration stays.
-
-- A declaration whose constructor comes from `from typing import *` is localized without importing it. This is rare,
-  and `ruff`'s `F403` flags the star import. In:
-
-    ```python
-    # origin.py
-    from typing import *
-
-    T = TypeVar("T")
-
-    # main.py
-    from origin import T
-
-
-    class Pair(dict[str, T]): ...
-    ```
-
-    `main.py` gets `T = TypeVar("T")` without an import of `TypeVar`, so it raises `NameError`.
-
-- A `default=` that uses another declaration is carried over as is. This is rare. With `--py 3.13`:
-
-    ```python
-    T = TypeVar("T")
-    U = TypeVar("U", default=T)
-
-
-    def first(items: list[U]) -> U: ...
-    ```
-
-    becomes `def first[U = T](items: list[U]) -> U: ...`, whose default still refers to the module-level `T`.
-
-- A constructor written with its module, such as `typing.TypeVar`, is not recognised. This is rare. In:
-
-    ```python
-    T = typing.TypeVar("T")
-
-
-    def first(items: list[T]) -> T: ...
-    ```
-
-    `first` is left unchanged and the file is reported clean.
-
-- Absolute imports are resolved from the given path, so in a `src/` layout run on the repository root,
-  `from pkg.typing import T` does not find `src/pkg/typing.py`. This is rare. In:
-
-    ```python
-    # src/pkg/typing.py
-    T = TypeVar("T")
-
-    # src/pkg/other.py
-    from pkg.typing import T
-
-
-    def first(items: list[T]) -> T: ...
-    ```
-
-    `T = TypeVar("T")` is removed and `other.py` fails with `ImportError`.
+The feature page shows what each case does to the user's code, mostly under *Known limitations*.
+
+- Every file is parsed and analysed, with no caching. An origin is parsed once per importing statement, and a file is
+  processed again while the names imported from it change.
+- The target's minimum Python is not read from `requires-python`; `--py` sets `min_python`.
+- Renamed imports (`from shapes import T as U`) and imports inside blocks are not localized (`_Planner.run` reads only
+  top-level `from` imports).
+- A file importing with `from origin import *` is not an importer: `imported_project_names` records `"*"`, so the
+  origin's declaration is removed once the origin itself no longer uses it.
+- Only declarations in the file can block a function. A legacy type parameter that stays imported, such as
+  `typing.AnyStr`, does not, so the function mixes both syntaxes.
+- `__all__.extend(...)` and `__all__.append(...)` are not read by `_is_exported`.
+- Only `__all__` marks a declaration as public. One that nothing in the project uses is removed, even if other
+  projects import it; `--ignore` keeps such a file.
+- A name used only in the string value of a `TypeAlias` is not a use for `uses_of`, so its declaration is removed.
+- `Unpack[Ts]` → `*Ts` is left to `ruff`'s `UP044`, see [Rejected recipes](rejected-recipes.md).
+- A statement on the same line as a removed declaration or a replaced import (`T = TypeVar("T"); x = 1`) is written
+  back wrongly, a syntax error. `ruff`'s `E702` flags such lines.
+- Without the `ruff` step (`--no-ruff`, or the recipe used as a library), the added imports are not merged or sorted.
+- A decorator or a parameter default that reads `T` is evaluated outside the new type parameter's scope, but libcst
+  places it inside, so the declaration looks unused and is removed.
+- Declarations that break the naming rule of [PEP 484](https://peps.python.org/pep-0484/) (`T = U = TypeVar("T")`,
+  `V = TypeVar("W")`, `TypeVar(name)`) are not handled. `ruff`'s `PLC0132` flags a mismatched name.
+- A constructor from `from typing import *` is not imported with the copy (`ctor_source is None`).
+- A `default=` that names another declaration is carried over as is, so `def f[U = T]` can still mean the module-level
+  `T`.
+- A constructor written with its module (`typing.TypeVar`) is not recognised by `_is_type_param_call`.
+- Absolute imports are resolved from `<path>`, so in a `src/` layout run on the repository root, `from pkg.shapes import
+  T` does not find `src/pkg/shapes.py`.
 
 ## Need to fix
 
-Errors that should be fixed, not accepted.
+Temporary list of defects the code should fix, with their issue where one exists. Each entry moves out once it is
+fixed or accepted as a non-goal.
 
-- The comment lines above a localized declaration are not copied. Only the comment trailing its line is, because
-  the rewriter handles a comment as one line
-  ([issue 189](https://github.com/TNO/Renaissance.Py/issues/189)). In:
-
-    ```python
-    # origin.py
-    from typing import TypeVar
-
-    # Placeholder until the array API types are narrower.
-    T = TypeVar("T")  # noqa: PLC0105
-
-    # main.py
-    from origin import T
-    ```
-
-    `main.py` gets `T = TypeVar("T")  # noqa: PLC0105` without the comment above it. The origin keeps its comment
-    when it drops the declaration.
-
-- An existing type-parameter bracket on a converted function is rebuilt on one line, so its comments and line breaks
-  are lost ([issue 279](https://github.com/TNO/Renaissance.Py/issues/279)). In:
-
-    ```python
-    T = TypeVar("T")
-
-
-    def f[
-        A,  # first
-        B,
-    ](x: A, y: B, z: T) -> T: ...
-    ```
-
-    `f` becomes `def f[A, B, T](x: A, y: B, z: T) -> T: ...`.
-
-- A localized declaration whose constructor is already imported from another module, such as `TypeVar` from `typing`
-  in this file and from `typing_extensions` in the origin, adds a second import of the name that shadows the first
-  ([issue 279](https://github.com/TNO/Renaissance.Py/issues/279)).
-
-- A file that starts with a UTF-8 byte order mark is rewritten with invalid syntax and reported under `ERRORS`: a
-  converted `def identity(x: T) -> T:` becomes `def ideidentity[T] T) -> T:`. The file should keep its encoding and
-  its byte order mark ([issue 153](https://github.com/TNO/Renaissance.Py/issues/153)).
-
-- A file that is not valid UTF-8 stops the whole run with an uncaught `UnicodeDecodeError`, before any file is
-  changed. The file should be reported under `ERRORS` and the others processed
+- The comment lines above a localized declaration are not copied, because the rewriter handles a comment as one line
+  ([issue 189](https://github.com/TNO/Renaissance.Py/issues/189)).
+- An existing type parameter bracket on a converted function is rebuilt on one line, losing its comments and line
+  breaks (`_add_type_params`, [issue 279](https://github.com/TNO/Renaissance.Py/issues/279)).
+- A localized declaration whose constructor this file already imports from another module adds a second import that
+  shadows the first ([issue 279](https://github.com/TNO/Renaissance.Py/issues/279)).
+- A file that starts with a UTF-8 byte order mark is corrupted: `def identity(x: T) -> T:` becomes
+  `def ideidentity[T] T) -> T:` ([issue 153](https://github.com/TNO/Renaissance.Py/issues/153)).
+- A file that is not valid UTF-8 stops the whole run with an uncaught `UnicodeDecodeError` (exit code 1), because
+  `imported_project_names` does not catch it. It should be listed under `ERRORS`
   ([issue 188](https://github.com/TNO/Renaissance.Py/issues/188)).
+- `PrivateTypeParameterCheck.check()` marks a name `"unsafe"` for the whole file when one declaration of it is
+  refused. `def ok[_T]` then keeps its underscore because another function's `_T` is refused, unless another name in
+  the file is renamed: `run_steps` commits every planned edit, and `ok` is renamed while the report lists `_T` only for
+  review.
+- `--report` to a directory that does not exist raises `FileNotFoundError` after the files were rewritten, so the run
+  exits with code 1 and the report is lost.
+- The `ruff` step runs in the CLI's working directory and hides its output (`ruff_utils.py`). A project without a
+  `ruff` configuration gets the one of that directory, and a missing or failing `ruff` gives no message.
+- `_report_generic_class_leftovers` adds `USED_IN_GENERIC_CLASS` to a name that was converted in a standalone function,
+  so the message "only used inside a class that is generic over it" is wrong there.
+- Without `--report`, a run whose only outcome is refusals prints nothing about them, since the commit message is only
+  printed when a file was modified.
+- Type parameters of a `type` statement (`type A[_T] = list[_T]`) are neither renamed nor reported.
+- `T = U = TypeVar("T")` leaves `U` undefined, and `V = TypeVar("W")` writes `def f[W](x: V) -> V`, both without a
+  warning.
+- The report prints the `UNSAFE_RULES` messages as raw Markdown, so `__all__` renders as bold "all" and `**mapping`
+  breaks the bold heading. It also writes "1 files" and "1 errors", and the reasons table counts names where the
+  commit message counts files.
