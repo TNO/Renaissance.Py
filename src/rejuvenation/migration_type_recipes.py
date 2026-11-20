@@ -399,6 +399,18 @@ def _modified_entry(report: FileReport, project_root: Path) -> list[str]:
     return lines
 
 
+def _error_entry(report: FileReport, project_root: Path) -> list[str]:
+    """Return the ERRORS lines for one file: its path relative to project_root and the first line of its error.
+
+    The other lines of a multi-line error follow in a text code block, so their layout is kept.
+    """
+    first, *rest = (report.error or "").splitlines()
+    lines = [f"  {_code(report.path.relative_to(project_root))}: {first}"]
+    if rest:
+        lines.extend(["", *(f"  {line}" if line else "" for line in ["```text", *rest, "```"])])
+    return lines
+
+
 def _needs_review_groups(reports: Sequence[FileReport], project_root: Path) -> list[list[str]]:
     """Return one block of NEEDS MANUAL REVIEW lines per reason, most common reason first.
 
@@ -465,7 +477,7 @@ def _format_report(
     lines.extend(_join_with_blank_lines(_needs_review_groups(needs_review, project_root)))
 
     lines.extend(["", _heading(f"ERRORS ({len(errors)})")])
-    lines.extend(f"  {_code(report.path.relative_to(project_root))}: {report.error}" for report in errors)
+    lines.extend(_join_with_blank_lines([_error_entry(report, project_root) for report in errors]))
 
     if commit_summary is not None:
         lines.extend(["", _heading("COMMIT MESSAGE"), "", "```text", commit_summary, "```"])

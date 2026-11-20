@@ -447,6 +447,8 @@ Convert type parameters to PEP 695 syntax in 2 files (Python 3.12+).
   declaration removed, and leading underscore removed.
 - `IGNORED FILES` lists the `--ignore` files, which are not counted as processed. With `--ignore` or
   `--no-localization`, the kinds table gets an `Ignored` column: each name kept imported, once per importing file.
+- `ERRORS` gives each file with the first line of its error. The other lines of an error, such as the code excerpt
+  of a syntax error, follow in a code block.
 - `COMMIT MESSAGE` is left out when no file was modified. It lists at most ten names per action.
 
 ### Exit codes

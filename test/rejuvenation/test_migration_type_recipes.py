@@ -14,6 +14,7 @@ import sys
 import textwrap
 from pathlib import Path
 
+import libcst as cst
 import pytest
 from hamcrest import assert_that, contains_string, equal_to, matches_regexp, not_
 from hamcrest.core.matcher import Matcher
@@ -620,6 +621,25 @@ class TestMainBatchErrorIsolation:
         assert_that(output, contains_string(f"File {broken} failed: ParserSyntaxError: "))
         assert_that(output, not_(contains_string(f"File {good} failed")))
         assert_that(good.read_text(encoding="utf-8"), contains_string("def identity[T]"))
+
+    @pytest.mark.parametrize(
+        "broken_source",
+        [
+            pytest.param("def broken(:\n", id="unclosed-parameters"),
+            pytest.param("x = [1,\n", id="unclosed-list"),
+        ],
+    )
+    def test_multiline_error_keeps_its_layout_in_a_code_block(self, tmp_path: Path, broken_source: str) -> None:
+        """In the report, the error's first line follows the file name, and its other lines form a text code block."""
+        (tmp_path / "broken.py").write_text(broken_source, encoding="utf-8")
+        with pytest.raises(cst.ParserSyntaxError) as excinfo:
+            cst.parse_module(broken_source)
+        first, *rest = f"ParserSyntaxError: {excinfo.value}".splitlines()
+
+        output = _report_of(tmp_path, str(tmp_path), "--py", "3.12", "--no-ruff")
+
+        block = "\n".join(f"  {line}" if line else "" for line in ["```text", *rest, "```"])
+        assert_that(output, contains_string(f"**ERRORS (1)**\n  `broken.py`: {first}\n\n{block}"))
 
 
 class TestMainFileEncoding:
