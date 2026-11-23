@@ -35,6 +35,15 @@ class TestPythonAstMatcherBasic:
             "if (c1):\n    pass",
             "if c1:\n    # comment\n    pass",
         ],
+        # [Ellipsis (...)](https://docs.python.org/3/builtins/constants.html#Ellipsis) is an expression.
+        # Any expression is a valid statement. An expression statement differs from the
+        # [pass statement](https://docs.python.org/3/reference/simple_stmts.html#grammar-token-python-grammar-pass_stmt).
+        [
+            "if c1:\n    ...",
+            "if c1: ...",
+            "if (c1):\n    ...",
+            "if c1: # comment\n    # more comment\n    ... # another comment",
+        ],
         # `else: pass` is not the same as no `else`
         [
             "if c1:\n    pass\nelse:   \n    pass",
@@ -48,13 +57,25 @@ class TestPythonAstMatcherBasic:
             "if c1:\n    pass\nelif c2:\n    pass\nelse:\n    pass",
             "if c1:\n    pass\nelse:\n    if c2:\n        pass\n    else:\n        pass",
         ],
-        # the parser does not rewrite logic
+        # children include the statements inside the body and orelse lists.
+        # Comparison should compare the lists, not the concatenation of the lists.
+        [
+            "if cond:\n    a=1\n    b=2\n    c=3",
+        ],
+        [
+            "if cond:\n    a=1\n    b=2\nelse:\n    c=3",
+        ],
+        [
+            "if cond:\n    a=1\nelse:\n    b=2\n    c=3",
+        ],
+        # the parser does not rewrite logic - and
         [
             "if c1 and c2:\n    pass",
         ],
         [
             "if c1:\n    if c2:\n        pass",
         ],
+        # the parser does not rewrite logic - not
         [
             "if c1:\n    a\nelse:\n    b",
         ],
