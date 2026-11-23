@@ -175,6 +175,33 @@ class TestPythonAstMatcherBasic:
         ],
     ]
 
+    # TODO(pjljvdlaar): Test case showing that positional comparison is flawed.
+    # https://github.com/TNO/Renaissance.Py/issues/416
+    # For more details on slices see:
+    # * https://docs.python.org/3/c-api/slice.html
+    # * https://docs.python.org/3.15/builtins/functions.html#slice
+    SLICE_CLASSES: ClassVar[list[list[str]]] = [
+        # no dimension specified
+        [
+            "a[:]",
+            "a[::]",
+        ],
+        # one dimension specified
+        [
+            "a[10:]",
+            "a[10::]",
+            "a[:10]",
+            "a[:10:]",
+            "a[::10]",
+        ],
+        # two dimensions specified
+        [
+            "a[10:2]",
+            "a[10::2]",
+            "a[:10:2]",
+        ],
+    ]
+
     # generate test cases from equivalence classes
     PATTERN_FACTORY: ClassVar[PythonPatternFactory] = PythonPatternFactory(PythonFactory(PythonRstNode))
 
@@ -184,7 +211,8 @@ class TestPythonAstMatcherBasic:
         ("a", "b", "expected"),
         make_parametersets_of_equivalence_classes("if statement", PATTERN_FACTORY.create_statement, IF_CLASSES)
         + make_parametersets_of_equivalence_classes("type hint", PATTERN_FACTORY.create_statement, TYPEHINT_CLASSES)
-        + make_parametersets_of_equivalence_classes("function call", PATTERN_FACTORY.create_expression, FUNCTIONCALL_CLASSES),
+        + make_parametersets_of_equivalence_classes("function call", PATTERN_FACTORY.create_expression, FUNCTIONCALL_CLASSES)
+        + make_parametersets_of_equivalence_classes("slice", PATTERN_FACTORY.create_expression, SLICE_CLASSES),
     )
     def test_pairs_of_equivalence_classes(self, a: NodeProtocol, b: NodeProtocol, *, expected: bool) -> None:
         """AI: Verify if-statement pairs from the same or different equivalence classes match as expected."""
