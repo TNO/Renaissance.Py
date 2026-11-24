@@ -20,7 +20,8 @@ See the [`re` module documentation](https://docs.python.org/3/library/re.html) a
 ## Key conclusions
 
 1. Regular expressions work on both `str` and `bytes`, but a `bytes` pattern matches bytes, not characters.
-   Its results therefore depend on the encoding of the input, so `str` is the preferred default.
+   Its results therefore depend on the encoding of the input, so `str` is the preferred default
+   as it is independent of the encoding.
 1. Python has no built-in transaction or batch mechanism for combining multiple changes.
    A single `re.sub` call applies all its matches against the original text,
    but combining several rules or edits requires custom logic.
