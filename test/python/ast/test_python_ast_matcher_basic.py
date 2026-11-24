@@ -35,6 +35,15 @@ class TestPythonAstMatcherBasic:
             "if (c1):\n    pass",
             "if c1:\n    # comment\n    pass",
         ],
+        # [Ellipsis (...)](https://docs.python.org/3/builtins/constants.html#Ellipsis) is an expression.
+        # Any expression is a valid statement. An expression statement differs from the
+        # [pass statement](https://docs.python.org/3/reference/simple_stmts.html#grammar-token-python-grammar-pass_stmt).
+        [
+            "if c1:\n    ...",
+            "if c1: ...",
+            "if (c1):\n    ...",
+            "if c1: # comment\n    # more comment\n    ... # another comment",
+        ],
         # `else: pass` is not the same as no `else`
         [
             "if c1:\n    pass\nelse:   \n    pass",
@@ -48,13 +57,25 @@ class TestPythonAstMatcherBasic:
             "if c1:\n    pass\nelif c2:\n    pass\nelse:\n    pass",
             "if c1:\n    pass\nelse:\n    if c2:\n        pass\n    else:\n        pass",
         ],
-        # the parser does not rewrite logic
+        # children include the statements inside the body and orelse lists.
+        # Comparison should compare the lists, not the concatenation of the lists.
+        [
+            "if cond:\n    a=1\n    b=2\n    c=3",
+        ],
+        [
+            "if cond:\n    a=1\n    b=2\nelse:\n    c=3",
+        ],
+        [
+            "if cond:\n    a=1\nelse:\n    b=2\n    c=3",
+        ],
+        # the parser does not rewrite logic - and
         [
             "if c1 and c2:\n    pass",
         ],
         [
             "if c1:\n    if c2:\n        pass",
         ],
+        # the parser does not rewrite logic - not
         [
             "if c1:\n    a\nelse:\n    b",
         ],
@@ -154,6 +175,33 @@ class TestPythonAstMatcherBasic:
         ],
     ]
 
+    # TODO(pjljvdlaar): Test case showing that positional comparison is flawed.
+    # https://github.com/TNO/Renaissance.Py/issues/416
+    # For more details on slices see:
+    # * https://docs.python.org/3/c-api/slice.html
+    # * https://docs.python.org/3.15/builtins/functions.html#slice
+    SLICE_CLASSES: ClassVar[list[list[str]]] = [
+        # no dimension specified
+        [
+            "a[:]",
+            "a[::]",
+        ],
+        # one dimension specified
+        [
+            "a[10:]",
+            "a[10::]",
+            "a[:10]",
+            "a[:10:]",
+            "a[::10]",
+        ],
+        # two dimensions specified
+        [
+            "a[10:2]",
+            "a[10::2]",
+            "a[:10:2]",
+        ],
+    ]
+
     # generate test cases from equivalence classes
     PATTERN_FACTORY: ClassVar[PythonPatternFactory] = PythonPatternFactory(PythonFactory(PythonRstNode))
 
@@ -163,7 +211,8 @@ class TestPythonAstMatcherBasic:
         ("a", "b", "expected"),
         make_parametersets_of_equivalence_classes("if statement", PATTERN_FACTORY.create_statement, IF_CLASSES)
         + make_parametersets_of_equivalence_classes("type hint", PATTERN_FACTORY.create_statement, TYPEHINT_CLASSES)
-        + make_parametersets_of_equivalence_classes("function call", PATTERN_FACTORY.create_expression, FUNCTIONCALL_CLASSES),
+        + make_parametersets_of_equivalence_classes("function call", PATTERN_FACTORY.create_expression, FUNCTIONCALL_CLASSES)
+        + make_parametersets_of_equivalence_classes("slice", PATTERN_FACTORY.create_expression, SLICE_CLASSES),
     )
     def test_pairs_of_equivalence_classes(self, a: NodeProtocol, b: NodeProtocol, *, expected: bool) -> None:
         """AI: Verify if-statement pairs from the same or different equivalence classes match as expected."""

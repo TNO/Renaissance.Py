@@ -22,6 +22,7 @@ https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
     - `test/unit/core/pattern/test_pattern_kind.py`
     - `test/python/ast/test_python_matcher.py`
     - `test/python/ast/test_python_pattern_type_parameters.py`
+    - `test/python/ast/test_python_pattern_keywords.py`
     - `test/c_cpp/test_c_match_finder.py`
 - **Code file(s):** `src/renaissance/core/match/match_finder.py`, `src/renaissance/core/pattern/pattern_kind.py`,
   `src/renaissance/core/pattern/placeholders.py`, `src/renaissance/integrations/python/ast/factory.py`
