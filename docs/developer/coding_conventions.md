@@ -28,6 +28,11 @@ def convert_ast_to_cst(node): ...
 def convert_ast2cst(node): ...
 ```
 
+## Imports
+
+The modules of a package import each other from their module, not from the package, so that importing the package imports no
+module halfway.
+
 ## Disabling checks
 
 Disable a lint or type check locally, on the specific line that triggers it — not for a whole file or project.

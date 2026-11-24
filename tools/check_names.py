@@ -9,11 +9,11 @@
 A name is an optional leading `.`, which hides a file such as `.gitignore`, a stem of ASCII letters, digits and `_`, and an
 optional extension: a `.` followed by ASCII letters, digits and `_`. So a name contains no `-`, no space and at most one other `.`.
 
-A separator is a run of underscores between two letters or digits. It is a single `_`; in a name that starts with `test_` it may
-also be a triple `___`, which separates a module from an aspect in `test_x___<aspect>.py`. Underscores at the start or the end of
-a word, as in `__init__.py`, separate no words and are left alone.
+A separator is a run of underscores between two letters or digits. It is a single `_`; in a name that starts with `test_` or ends
+with `.md` it may also be a triple `___`, which separates a module from an aspect in `test_x___<aspect>.py` and `x___<aspect>.md`.
+Underscores at the start or the end of a word, as in `__init__.py`, separate no words and are left alone.
 
-The check looks at names only. Whether a test file belongs to a module is checked by `tools/check_layout.py`.
+The check looks at names only. Whether a test file or a page belongs to a module is checked by `tools/check_layout.py`.
 
 The files are those that git tracks or would track: `git ls-files --cached --others --exclude-standard`. A directory exists when
 it holds such a file.
@@ -35,6 +35,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SHAPE = re.compile(r"\.?[A-Za-z0-9_]+(?:\.[A-Za-z0-9_]+)?")
 SEPARATOR = re.compile(r"(?<=[A-Za-z0-9])_+(?=[A-Za-z0-9])")
 TEST_PREFIX = "test_"
+PAGE_SUFFIX = ".md"
 
 EXIT_OK = 0
 EXIT_VIOLATIONS = 1
@@ -57,11 +58,11 @@ def check_name(name: str) -> str | None:
     """Return why `name` breaks the naming rule, or None when it does not."""
     if SHAPE.fullmatch(name) is None:
         return "is not an optional `.`, letters, digits and `_`, and an optional `.` with an extension"
-    allowed = {"_", "___"} if name.startswith(TEST_PREFIX) else {"_"}
+    allowed = {"_", "___"} if name.startswith(TEST_PREFIX) or name.endswith(PAGE_SUFFIX) else {"_"}
     for separator in SEPARATOR.findall(name):
         if separator not in allowed:
             if separator == "___":
-                return f"separates words by `___`, which only a name that starts with `{TEST_PREFIX}` may do"
+                return f"separates words by `___`, which only a name that starts with `{TEST_PREFIX}` or ends with `{PAGE_SUFFIX}` may do"
             return f"separates words by `{separator}`; use `_`"
     return None
 

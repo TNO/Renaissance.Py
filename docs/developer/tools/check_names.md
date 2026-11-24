@@ -15,18 +15,19 @@ https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
 [Repository structure](../architecture/repository_structure.md#names) decides that file and directory names consist of ASCII
 letters, digits and `_`, that they separate their words by a single `_`, never by `-`, and that the test files of a module `x` may
-be split into `test_x___<aspect>.py`, with a triple `___` between the module and the aspect.
+be split into `test_x___<aspect>.py`, and its pages into `x.md` and `x___<aspect>.md`, with a triple `___` between the module and
+the aspect.
 
 The check requires of every name that:
 
 - it is an optional leading `.`, which hides a file such as `.gitignore`, a stem of ASCII letters, digits and `_`, and an optional
   extension: a `.` followed by ASCII letters, digits and `_`;
-- every separator, a run of underscores between two letters or digits, is a single `_`, or, in a name that starts with `test_`, a
-  triple `___`.
+- every separator, a run of underscores between two letters or digits, is a single `_`, or, in a name that starts with `test_` or
+  ends with `.md`, a triple `___`.
 
 Underscores at the start or the end of a word separate no words, so `__init__.py` passes.
 
-The check looks at names only. Whether `test_x___<aspect>.py` belongs to a module `x` is checked by the
+The check looks at names only. Whether `test_x___<aspect>.py` or `x___<aspect>.md` belongs to a module `x` is checked by the
 [layout check](check_layout.md).
 
 ## Running it
@@ -56,7 +57,7 @@ Every violation is reported on one line; a directory is reported once, not for e
 These names break the naming rule:
   docs/bad-example/: is not an optional `.`, letters, digits and `_`, and an optional `.` with an extension
   tools/check__example.py: separates words by `__`; use `_`
-  tools/check___example.py: separates words by `___`, which only a name that starts with `test_` may do
+  tools/check___example.py: separates words by `___`, which only a name that starts with `test_` or ends with `.md` may do
 ```
 
 ## Fixing a reported name

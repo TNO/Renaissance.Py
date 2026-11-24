@@ -32,7 +32,7 @@ We use the terms *proper ancestor* and *proper descendant* to exclude the node i
 
 ## Shared and adapter navigation
 
-[`core.navigate`](../modules/core/navigate.md) provides the navigation of the AST structure for the nodes that provide its
+[`core.navigate`](../core/navigate/navigate.md) provides the navigation of the AST structure for the nodes that provide its
 protocols.
 
 ### Protocols

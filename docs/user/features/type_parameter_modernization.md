@@ -125,7 +125,7 @@ class Box[T]:
 ### Known limitations
 
 None of these is a *Constraint*: the tool applies the change. Review the result with `git diff`. Most of them have an
-example under *Non-goals* or *Need to fix* in [Refactoring recipes](../../developer/modules/recipes.md#non-goals).
+example under *Non-goals* or *Need to fix* in [Refactoring recipes](../../developer/architecture/modules/recipes.md#non-goals).
 
 **Can leave code that fails or changes meaning:**
 
@@ -165,7 +165,7 @@ example under *Non-goals* or *Need to fix* in [Refactoring recipes](../../develo
 - A localized declaration whose constructor is already imported from another module gets a second import of the name,
   which shadows the first.
 - `Unpack[Ts]` is left as it is. Run `ruff`'s `UP044` to rewrite it to `*Ts` (see
-  [Rejected recipes](../../developer/modules/rejected_recipes.md)).
+  [Rejected recipes](../../developer/architecture/modules/rejected_recipes.md)).
 - There is no filtering of files, so a large project can take tens of minutes.
 - A file that is not valid UTF-8 stops the whole run with a `UnicodeDecodeError`, before any file is changed. Re-save
   it as UTF-8 or move it out of the target.
@@ -425,7 +425,7 @@ run the tool again.
 
 ## Implemented by code modules
 
-- [Refactoring recipes](../../developer/modules/recipes.md)
+- [Refactoring recipes](../../developer/architecture/modules/recipes.md)
 - `src/renaissance/recipes/type_parameter_check.py`, `type_parameter_rules.py`, `type_parameter_declarations.py`,
   `type_parameter_localization.py`, `type_parameter_uses.py`, `step_runner.py` and `python_refactoring.py`.
 - `src/renaissance/utils/import_resolution.py`, `src/renaissance/integrations/python/ast/cst_utils.py` and
@@ -472,4 +472,4 @@ codes: 0 when the run completes (manual review is not a failure), 2 for a usage 
 
 ## Change considerations
 
-See *Extension points* in [Refactoring recipes](../../developer/modules/recipes.md).
+See *Extension points* in [Refactoring recipes](../../developer/architecture/modules/recipes.md).

@@ -105,6 +105,16 @@ See [Rewrite semantics](user/concepts/rewrite_semantics.md).
 
 ## F
 
+### Feature
+
+A capability of Renaissance.Py that a user relies on, described in the user documentation.
+See [Features](user/features/index.md).
+
+### Feature test
+
+An end-to-end test of a [feature](#feature): a `.feature` file with its steps. It may import from every layer.
+See [Repository structure](developer/architecture/repository_structure.md#tests).
+
 ### Filter
 
 A check applied to candidate [matches](#match) that produces an *include*, *remove*, or *undecisive* result,
@@ -114,6 +124,12 @@ See [Filter](user/concepts/filter.md).
 ---
 
 ## I
+
+### In tree
+
+Part of the repository of Renaissance.Py, and so bound by its rules, as an in-tree recipe or parser binding.
+The opposite of [out of tree](#out-of-tree).
+See [Repository structure](developer/architecture/repository_structure.md#out-of-tree).
 
 ### Insertion
 
@@ -161,6 +177,12 @@ See [Matching](user/concepts/matching.md).
 The degree to which the behavior of the tool can be inspected and described,
 supporting understanding and debugging of analysis and transformation results.
 See [Observability](user/concepts/observability.md).
+
+### Out of tree
+
+Part of another project that uses Renaissance.Py through its public API, as an out-of-tree recipe or parser binding.
+The opposite of [in tree](#in-tree).
+See [Repository structure](developer/architecture/repository_structure.md#out-of-tree).
 
 ---
 

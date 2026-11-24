@@ -11,8 +11,9 @@ https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 ## 1. Pattern matching
 
 - **Feature:** [Pattern matching](../../user/features/pattern_matching.md)
-- **Concepts:** [Pattern](../../user/core/pattern.md), [Match](../../user/core/match.md)
-- **Code modules:** [Core pattern](../modules/core/pattern.md), [Core match](../modules/core/match.md)
+- **Concepts:** [Pattern](../../user/core/pattern/pattern.md), [Match](../../user/core/match/match.md)
+- **Code modules:** [Core pattern kind](../core/pattern/pattern_kind.md), [Core placeholders](../core/pattern/placeholders.md),
+  [Core match finder](../core/match/match_finder.md)
 - **Test file(s):**
     - `test/unit/core/match/test_match_finder___one_and_all_params.py`
     - `test/unit/core/match/test_match_finder___multi_assignments.py`
@@ -30,9 +31,9 @@ https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 ## 2. Rewrite semantics
 
 - **Feature:** [Rewrite semantics](../../user/features/rewrite_semantics.md)
-- **Concepts:** [Rewrite semantics](../../user/concepts/rewrite_semantics.md), [Rewrite](../../user/core/rewrite.md)
-- **Code modules:** [Core rewrite](../modules/core/rewrite.md)
-- **Test modules:** [Rewrite semantics test module](../../developer/modules/rewrite_semantics.md)
+- **Concepts:** [Rewrite semantics](../../user/concepts/rewrite_semantics.md), [Rewrite](../../user/core/rewrite/rewrite.md)
+- **Code modules:** [Core AST rewriter](../core/rewrite/ast_rewriter.md), [Core rewriter](../core/rewrite/rewriter.md)
+- **Test modules:** [Rewrite semantics test module](../architecture/modules/rewrite_semantics.md)
 - **BDD feature file:** `features/rewrite_semantics.feature`
 - **BDD steps:** `features/steps/test_rewrite_semantics.py`
 - **Test file(s):**
@@ -47,7 +48,7 @@ https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
 - **Feature:** [Type parameter modernization](../../user/features/type_parameter_modernization.md)
 - **Concepts:** [Rewrite semantics](../../user/concepts/rewrite_semantics.md)
-- **Code modules:** [Refactoring recipes](../../developer/modules/recipes.md)
+- **Code modules:** [Refactoring recipes](../architecture/modules/recipes.md)
 - **Test file(s):**
     - `test/recipes/test_type_parameter_check.py`
     - `test/recipes/test_type_parameter_check_convert.py`
@@ -76,8 +77,8 @@ https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 ## 4. Navigation
 
 - **Feature:** [Navigation](../../user/features/navigation.md)
-- **Concepts:** [Navigate](../../user/core/navigate.md)
-- **Code modules:** [Core navigate](../modules/core/navigate.md)
+- **Concepts:** [Navigate](../../user/core/navigate/navigate.md)
+- **Code modules:** [Core navigate](../core/navigate/navigate.md), [Core navigation protocols](../core/navigate/protocols.md)
 - **Test file(s):**
     - `test/unit/core/navigate/test_navigate.py`
 - **Code file(s):** `src/renaissance/core/navigate/protocols.py`, `src/renaissance/core/navigate/navigate.py`

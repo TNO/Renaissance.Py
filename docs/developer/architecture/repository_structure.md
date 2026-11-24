@@ -244,6 +244,18 @@ How these decisions are checked:
 The `__all__` of each core sub-package is the source of truth of its public API. For the parser bindings and the recipes, the
 sections below are the starting point; once a package exists, its `__all__` is the source of truth.
 
+#### Out of tree
+
+Code in this repository is in tree; code that uses Renaissance.Py from another project is out of tree.
+
+- The public API is the contract with out-of-tree code. Before version 1.0, it may change without notice.
+- Out-of-tree recipes may use the public API of the core, the parser bindings and the recipes.
+- Out-of-tree parser bindings may use the public API of the core and of `parser_bindings/shared`.
+- An out-of-tree project ships its own command line; Renaissance.Py does not discover recipes or parser bindings.
+- The rules of this page cannot be enforced out of tree; there they are principles of good design. The core may raise an
+  exception when out-of-tree code violates an assumption of the core.
+- Out-of-tree code that is offered for inclusion follows the rules of this page.
+
 #### Leaving the core API
 
 | Symbol               | Moves to                                 | Reason                                        |
@@ -335,33 +347,54 @@ Decisions:
 
 ```text
 docs/
-├── user/                       # no pages about parser bindings
+├── user/                       # how to use Renaissance.Py, and its public API
 │   ├── concepts/
 │   ├── features/
 │   ├── workflows/
-│   ├── core/                   # mirrors renaissance.core: model, pattern, match, rewrite, processing
-│   └── recipes/                # mirrors renaissance.recipes: one page per recipe
-├── developer/
-│   ├── architecture/           # including adr/ and this page
-│   ├── modules/                # mirrors src/renaissance: core/, parser_bindings/, recipes/
-│   ├── api/                    # mirrors src/renaissance: one reference page per package
+│   ├── core/                   # mirrors renaissance.core: <package>/<package>.md
+│   ├── parser_bindings/        # mirrors renaissance.parser_bindings: <binding>/<binding>.md
+│   └── recipes/                # mirrors renaissance.recipes: <package>/<package>.md
+├── developer/                  # the internal rules and structure of Renaissance.Py
+│   ├── architecture/           # including adr/, modules/ and this page
+│   ├── core/                   # mirrors renaissance.core: <package>/<module>.md
+│   ├── parser_bindings/        # mirrors renaissance.parser_bindings: <binding>/<module>.md
+│   ├── recipes/                # mirrors renaissance.recipes: <package>/<module>.md
 │   ├── feature_test_map/
 │   ├── tools/                  # mirrors tools/
 │   └── coding_conventions.md
 └── documentation_system/
 ```
 
+The readers:
+
+| Reader                                                                          | Reads                              |
+| ------------------------------------------------------------------------------- | ---------------------------------- |
+| End user, who runs a command line                                               | `docs/user/`                       |
+| Out-of-tree recipe author or parser binder                                      | `docs/user/`                       |
+| In-tree recipe author or parser binder, maintainer, architect or tool developer | `docs/user/` and `docs/developer/` |
+
 Decisions:
 
-- The user documentation does not describe parser bindings; which parser is used is an implementation detail.
-  It may state which languages are supported.
+- A package has a user page, `docs/user/<layer>/<package>/<package>.md`. It describes the package for its users and renders
+  its public API, its `__all__`, with mkdocstrings, so the code is the single source of truth of the API. It follows the
+  [package template](../../documentation_system/templates/package_template.md).
+- A module has a developer page, `docs/developer/<layer>/<package>/<module>.md`. Pages per aspect, `<module>___<aspect>.md`,
+  may be added beside it. It follows the [code module template](../../documentation_system/templates/code_module_template.md).
+- A package that only groups packages, such as `core`, has no pages.
+- The pages of the end users, `concepts/`, `features/` and `workflows/`, do not name the parser; which parser is used is an
+  implementation detail. They may state which languages are supported. The user pages of the parser bindings describe their
+  public API for out-of-tree authors.
 - The user documentation does not describe the tools; they serve the development of Renaissance.Py, not its use.
   Only `docs/developer/tools/` documents them.
-- `docs/user/core/` and `docs/user/recipes/` follow the structure of the core and the recipes.
-  `concepts/`, `features/` and `workflows/` remain organised by task.
-- `docs/developer/modules/` and `docs/developer/api/` follow the structure of `src/renaissance/`.
-  The parser bindings are documented there.
+- `concepts/`, `features/` and `workflows/` remain organised by task. `docs/developer/architecture/modules/` describes groups
+  of modules across packages.
 - That these directories mirror the code is checked by the [layout check](../tools/check_layout.md).
+
+For example, `src/renaissance/recipes/python_extractor/python_extractor.py` is described by
+`docs/developer/recipes/python_extractor/python_extractor.md`, and its package by
+`docs/user/recipes/python_extractor/python_extractor.md`. `src/renaissance/core/match/match_finder.py` is described by
+`docs/developer/core/match/match_finder.md`, beside which `match_finder___<aspect>.md` may be added, and its package by
+`docs/user/core/match/match.md`.
 
 ### Tools
 
@@ -390,7 +423,8 @@ The [layering check](../tools/check_layering.md) enforces these rules, except fo
 - Every module under `src/` belongs to exactly one layer, and every module under `parser_bindings/` to exactly one binding or
   to `shared/`.
 - `parser_bindings/shared/` imports nothing from Renaissance.Py, and only the parser bindings import it.
-- The unit tests and the documentation mirror the code.
+- The unit tests and the documentation mirror the code: the developer documentation per module, the user documentation per
+  package.
 - The tools and their tests are independent of the rest of the repository, and only the developer documentation describes them.
 - The core contains no language- or parser-specific facts.
 

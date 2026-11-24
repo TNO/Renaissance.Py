@@ -13,12 +13,15 @@ import shutil
 from collections.abc import Mapping
 
 import pytest
+from hamcrest import assert_that, calling, empty, equal_to, is_, raises
 
 from tools import check_layout
 
 TESTS_OF_TOOLS = {"code": "tools", "units": "modules", "mirror": "test/tools/test_{path}.py"}
-TESTS_OF_TOOLS_PER_ASPECT = {**TESTS_OF_TOOLS, "aspects": True}
+TESTS_OF_TOOLS_PER_ASPECT = {**TESTS_OF_TOOLS, "aspects": "instead"}
+PAGES_OF_TOOLS = {"code": "tools", "units": "modules", "mirror": "docs/tools/{path}.md", "aspects": "beside"}
 TESTS_OF_CORE = {"code": "src/core", "units": "packages", "mirror": "test/unit/core/{path}/"}
+PAGES_OF_CORE = {"code": "src/core", "units": "packages", "mirror": "docs/core/{path}/{name}.md"}
 
 
 def _violations(entry: Mapping[str, object], files: set[str]) -> list[str]:
@@ -30,20 +33,20 @@ def _violations(entry: Mapping[str, object], files: set[str]) -> list[str]:
 def test_a_module_with_its_counterpart_passes() -> None:
     """Assert a module with its test file passes, and that `__init__.py` and helpers in the mirror are ignored."""
     files = {"tools/__init__.py", "tools/check_a.py", "test/tools/test_check_a.py", "test/tools/conftest.py"}
-    assert _violations(TESTS_OF_TOOLS, files) == []  # noqa: S101 (pytest assertion; new tests must not raise the S101 budget)
+    assert_that(_violations(TESTS_OF_TOOLS, files), is_(empty()))
 
 
 def test_a_module_without_its_counterpart_is_reported() -> None:
     """Assert a module without its test file is reported with the path the test file needs."""
     violations = _violations(TESTS_OF_TOOLS, {"tools/check_a.py"})
-    assert violations == ["tools/check_a.py: has no counterpart test/tools/test_check_a.py"]  # noqa: S101 (pytest assertion; new tests must not raise the S101 budget)
+    assert_that(violations, equal_to(["tools/check_a.py: has no counterpart test/tools/test_check_a.py"]))
 
 
 def test_a_counterpart_without_its_unit_is_reported() -> None:
     """Assert a test file left behind by a renamed module is reported."""
     files = {"tools/check_b.py", "test/tools/test_check_a.py", "test/tools/test_check_b.py"}
     violations = _violations(TESTS_OF_TOOLS, files)
-    assert violations == ["test/tools/test_check_a.py: mirrors no unit of tools/"]  # noqa: S101 (pytest assertion; new tests must not raise the S101 budget)
+    assert_that(violations, equal_to(["test/tools/test_check_a.py: mirrors no unit of tools/"]))
 
 
 def test_a_counterpart_split_per_aspect_mirrors_its_unit() -> None:
@@ -53,7 +56,7 @@ def test_a_counterpart_split_per_aspect_mirrors_its_unit() -> None:
         "test/tools/test_check_a___parsing.py",
         "test/tools/test_check_a___reporting.py",
     }
-    assert _violations(TESTS_OF_TOOLS_PER_ASPECT, files) == []  # noqa: S101 (pytest assertion; new tests must not raise the S101 budget)
+    assert_that(_violations(TESTS_OF_TOOLS_PER_ASPECT, files), is_(empty()))
 
 
 def test_a_counterpart_both_whole_and_split_per_aspect_is_reported() -> None:
@@ -61,38 +64,70 @@ def test_a_counterpart_both_whole_and_split_per_aspect_is_reported() -> None:
     whole, split = "test/tools/test_check_a.py", "test/tools/test_check_a___parsing.py"
     violations = _violations(TESTS_OF_TOOLS_PER_ASPECT, {"tools/check_a.py", whole, split})
     expected = f"tools/check_a.py: has both {whole} and {split}: keep one file or split it per aspect"
-    assert violations == [expected]  # noqa: S101 (pytest assertion; new tests must not raise the S101 budget)
+    assert_that(violations, equal_to([expected]))
 
 
 def test_a_counterpart_split_into_one_aspect_only_is_reported() -> None:
     """Assert a module whose only test file is `test_x___<aspect>.py` is reported: one file is `test_x.py`."""
     violations = _violations(TESTS_OF_TOOLS_PER_ASPECT, {"tools/check_a.py", "test/tools/test_check_a___parsing.py"})
     expected = "tools/check_a.py: has one aspect only, test/tools/test_check_a___parsing.py: rename it to test/tools/test_check_a.py"
-    assert violations == [expected]  # noqa: S101 (pytest assertion; new tests must not raise the S101 budget)
+    assert_that(violations, equal_to([expected]))
 
 
 def test_a_counterpart_split_per_aspect_without_its_unit_is_reported() -> None:
     """Assert a test file per aspect of a missing module is reported, as is a file with an empty aspect."""
     files = {"tools/check_a.py", "test/tools/test_check_a___.py", "test/tools/test_check_gone___parsing.py"}
     violations = _violations(TESTS_OF_TOOLS_PER_ASPECT, files)
-    assert violations == [  # noqa: S101 (pytest assertion; new tests must not raise the S101 budget)
+    expected = [
         "tools/check_a.py: has no counterpart test/tools/test_check_a.py",
         "test/tools/test_check_a___.py: mirrors no unit of tools/",
         "test/tools/test_check_gone___parsing.py: mirrors no unit of tools/",
     ]
+    assert_that(violations, equal_to(expected))
 
 
 def test_a_mirror_without_aspects_does_not_split_counterparts() -> None:
     """Assert a test file per aspect is no counterpart when the mirror does not allow aspects."""
     files = {"tools/check_a.py", "test/tools/test_check_a.py", "test/tools/test_check_a___parsing.py"}
     violations = _violations(TESTS_OF_TOOLS, files)
-    assert violations == ["test/tools/test_check_a___parsing.py: mirrors no unit of tools/"]  # noqa: S101 (pytest assertion; new tests must not raise the S101 budget)
+    assert_that(violations, equal_to(["test/tools/test_check_a___parsing.py: mirrors no unit of tools/"]))
+
+
+def test_aspects_beside_the_whole_counterpart_mirror_its_unit() -> None:
+    """Assert pages per aspect beside the whole page, even a single one, count as the counterpart of their module."""
+    files = {"tools/check_a.py", "tools/check_b.py", "docs/tools/check_a.md", "docs/tools/check_a___usage.md", "docs/tools/check_b.md"}
+    files |= {"docs/tools/check_b___usage.md", "docs/tools/check_b___output.md"}
+    assert_that(_violations(PAGES_OF_TOOLS, files), is_(empty()))
+
+
+def test_aspects_beside_a_missing_whole_counterpart_are_reported() -> None:
+    """Assert a module with pages per aspect but without its whole page is reported."""
+    violations = _violations(PAGES_OF_TOOLS, {"tools/check_a.py", "docs/tools/check_a___usage.md"})
+    expected = "tools/check_a.py: has docs/tools/check_a___usage.md, but not docs/tools/check_a.md: add it"
+    assert_that(violations, equal_to([expected]))
+
+
+def test_the_name_placeholder_is_the_last_part_of_the_unit() -> None:
+    """Assert `{name}` is replaced by the last part of the path of a package, and that a page of no package is reported."""
+    files = {
+        "src/core/model/__init__.py",
+        "src/core/model/sub/__init__.py",
+        "docs/core/model/model.md",
+        "docs/core/model/other.md",
+        "docs/core/gone/gone.md",
+    }
+    violations = _violations(PAGES_OF_CORE, files)
+    expected = [
+        "src/core/model/sub/: has no counterpart docs/core/model/sub/sub.md",
+        "docs/core/gone/gone.md: mirrors no unit of src/core/",
+    ]
+    assert_that(violations, equal_to(expected))
 
 
 def test_the_modules_of_a_sub_package_are_no_units() -> None:
     """Assert only the modules directly in `code` are units; a sub-package needs a mirror of its own."""
     files = {"tools/check_a.py", "tools/shared/__init__.py", "tools/shared/runner.py", "test/tools/test_check_a.py"}
-    assert _violations(TESTS_OF_TOOLS, files) == []  # noqa: S101 (pytest assertion; new tests must not raise the S101 budget)
+    assert_that(_violations(TESTS_OF_TOOLS, files), is_(empty()))
 
 
 def test_packages_are_mirrored_by_directories_at_every_depth() -> None:
@@ -105,7 +140,7 @@ def test_packages_are_mirrored_by_directories_at_every_depth() -> None:
         "test/unit/core/model/test_node.py",
     }
     violations = _violations(TESTS_OF_CORE, files)
-    assert violations == ["src/core/model/sub/: has no counterpart test/unit/core/model/sub/"]  # noqa: S101 (pytest assertion; new tests must not raise the S101 budget)
+    assert_that(violations, equal_to(["src/core/model/sub/: has no counterpart test/unit/core/model/sub/"]))
 
 
 def test_a_directory_without_its_package_is_reported() -> None:
@@ -118,13 +153,13 @@ def test_a_directory_without_its_package_is_reported() -> None:
     }
     entry = {**TESTS_OF_CORE, "extra": ["test/unit/core/model/data/"]}
     violations = _violations(entry, files)
-    assert violations == ["test/unit/core/matching/: mirrors no unit of src/core/"]  # noqa: S101 (pytest assertion; new tests must not raise the S101 budget)
+    assert_that(violations, equal_to(["test/unit/core/matching/: mirrors no unit of src/core/"]))
 
 
 def test_an_exempt_unit_needs_no_counterpart() -> None:
     """Assert an exempt unit without counterpart passes."""
     entry = {**TESTS_OF_TOOLS, "exempt": ["check_a"]}
-    assert _violations(entry, {"tools/check_a.py"}) == []  # noqa: S101 (pytest assertion; new tests must not raise the S101 budget)
+    assert_that(_violations(entry, {"tools/check_a.py"}), is_(empty()))
 
 
 def test_stale_deviations_are_reported() -> None:
@@ -135,12 +170,13 @@ def test_stale_deviations_are_reported() -> None:
         "extra": ["test/tools/test_check_a.py", "test/tools/missing.py"],
     }
     violations = _violations(entry, {"tools/check_a.py", "test/tools/test_check_a.py"})
-    assert violations == [  # noqa: S101 (pytest assertion; new tests must not raise the S101 budget)
+    expected = [
         "tools/check_a.py: is exempt, but test/tools/test_check_a.py exists: remove the exemption",
         "tools/check_gone: is exempt, but is not a unit: remove the exemption",
         "test/tools/missing.py: is an extra of the mirror of tools/, but does not exist: remove it",
         "test/tools/test_check_a.py: is an extra of the mirror of tools/, but is a counterpart: remove it",
     ]
+    assert_that(violations, equal_to(expected))
 
 
 @pytest.mark.parametrize(
@@ -152,18 +188,20 @@ def test_stale_deviations_are_reported() -> None:
         ({"mirrors": [{**TESTS_OF_TOOLS, "units": "files"}]}, "`units`"),
         ({"mirrors": [{**TESTS_OF_TOOLS, "mirror": "test/tools/test.py"}]}, "exactly once"),
         ({"mirrors": [{**TESTS_OF_TOOLS, "mirror": "{path}/{path}.md"}]}, "exactly once"),
+        ({"mirrors": [{**TESTS_OF_TOOLS, "mirror": "{name}/{path}.md"}]}, "after"),
+        ({"mirrors": [{**TESTS_OF_TOOLS, "mirror": "{path}/{name}/{name}.md"}]}, "after"),
         ({"mirrors": [{**TESTS_OF_TOOLS, "exempt": "check_a"}]}, "list of strings"),
         ({"mirrors": [{**TESTS_OF_TOOLS, "exempt": ["check_a", "check_a"]}]}, "twice"),
         ({"mirrors": [{**TESTS_OF_TOOLS, "aspects": "yes"}]}, "`aspects`"),
+        ({"mirrors": [{**TESTS_OF_TOOLS, "aspects": True}]}, "`aspects`"),
     ],
 )
 def test_an_invalid_configuration_is_rejected(config: Mapping[str, object], message: str) -> None:
     """Assert a configuration that does not describe valid mirrors raises `ConfigError`."""
-    with pytest.raises(check_layout.ConfigError, match=message):
-        check_layout.parse_mirrors(config)
+    assert_that(calling(check_layout.parse_mirrors).with_args(config), raises(check_layout.ConfigError, message))
 
 
 @pytest.mark.skipif(shutil.which("git") is None, reason="git is not installed")
 def test_the_repository_mirrors_its_code() -> None:
     """Assert the repository itself passes its own `[tool.check_layout]`."""
-    assert check_layout.main([]) == check_layout.EXIT_OK  # noqa: S101 (pytest assertion; new tests must not raise the S101 budget)
+    assert_that(check_layout.main([]), equal_to(check_layout.EXIT_OK))

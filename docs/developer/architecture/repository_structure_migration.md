@@ -70,14 +70,15 @@ Every step consists of the same four substeps, in this order.
    (its `__all__` and the imports of these symbols, nothing else), and update the imports in `src/`.
 1. **test:** move the unit tests with `git mv` to the mirror of their unit under `test/unit/`, add the `__init__.py` files,
    and update the imports in `test/` and `features/`.
-1. **docs:** add the mirror pages of each new package (`docs/developer/modules/`, `docs/developer/api/`, and for the core and the
-   recipes `docs/user/`), add them to the `mkdocs.yml` nav, and update
+1. **docs:** add the mirror pages of each new package and its modules, `docs/user/<layer>/<package>/<package>.md` and
+   `docs/developer/<layer>/<package>/<module>.md`, add them to the `mkdocs.yml` nav, and update
    [repository structure](repository_structure.md): the *now in* column, and the paths under Known violations.
-   A page in `docs/developer/modules/` follows the [code module template](../../documentation_system/templates/code_module_template.md):
-   its *Location*, *Validated by test modules* and *Related features* name the package, its test directory and its features.
-   A page in `docs/developer/api/` renders the package with mkdocstrings, so the strict build fails when the package is missing.
-   Existing pages that are organised by topic, such as `docs/developer/modules/matching.md`, stay; content that describes the
-   moved package moves to its mirror page.
+   A user page follows the [package template](../../documentation_system/templates/package_template.md): it renders the
+   public API of the package with mkdocstrings, so the strict build fails when the package is missing.
+   A developer page follows the [code module template](../../documentation_system/templates/code_module_template.md):
+   its *Location* and *Validated by test modules* name the module and its test files.
+   Existing pages that are organised by topic, such as `docs/developer/architecture/modules/matching.md`, stay; content that
+   describes the moved module moves to its mirror page.
    Update every reference to a moved path: in the documentation, in `docs/developer/feature_test_map/`, and in docstrings,
    comments and feature files.
 1. **remaining:** update `[tool.importlinter]`, `[tool.check_layout]`, `[tool.check_references]` and any other path in
@@ -262,10 +263,10 @@ layer, below `core.model`.
           never its own ancestor, so the functions take a node, and code that needs the ancestors of `Siblings` calls them
           on `siblings.parent`. The children of the siblings have different parents, so they are not the children of any
           one node.
-    - The [core model](../modules/core/model.md) page loses the sibling functions and calls `Siblings` a range, or slice.
+    - The core model page loses the sibling functions and calls `Siblings` a range, or slice.
     - [Repository structure](repository_structure.md): the core has six sub-packages, with `core.navigate` at the bottom;
       navigation leaves the responsibility of `core.model`; `core.navigate` gets its own table of symbols.
-    - The sibling functions in [parser and AST modules](../modules/parser_and_ast.md).
+    - The sibling functions in [parser and AST modules](modules/parser_and_ast.md).
 - remaining: the `layers` contract gets the layer `renaissance.core.navigate : test.unit.core.navigate`, below `core.model`.
   The `protected` contract of `core.navigate`. In `[tool.check_layout]`, the mirror of the modules of `core/navigate/` in
   `test/unit/core/navigate/`, as for `core.model`. The removed test files leave the `layers` contract, and so do their
@@ -285,7 +286,7 @@ layer, below `core.model`.
   [repository structure](repository_structure.md#bindings-share-helpers-in-parser_bindingsshared).
 - test: `test/unit/integrations/shared/test_equal.py` tests `equal`, including the regression of the asymmetric
   `equal_in_children`; `format` has no unit tests of its own.
-- docs: the [core model](../modules/core/model.md) page loses the equality helpers and names `format.py`.
+- docs: the core model page loses the equality helpers and names `format.py`.
 - remaining: the `protected` contract of `core.model.for_bindings` becomes that of `core.model.format`, with the same allowed
   importers. `renaissance.integrations.shared` gets a `forbidden` contract, which forbids every other package of
   Renaissance.Py, and a `protected` contract, which allows `renaissance.integrations`, `renaissance.project` and their tests.
@@ -315,14 +316,14 @@ layer, below `core.model`.
 - src: `utils/ruff_utils.py` to `recipes/ruff_utils.py`. `run_ruff_import_cleanup` removes the imports that a recipe left
   unused and sorts the imports, so it is a recipe.
 - test: `test/utils/test_ruff_utils.py` to `test/recipes/test_ruff_utils.py`.
-- docs: the path of `ruff_utils.py` in [recipes](../modules/recipes.md).
+- docs: the path of `ruff_utils.py` in [recipes](modules/recipes.md).
 
 **1.7 The libcst helpers go to the libcst binding.**
 
 - src: `utils/cst_utils.py` to `integrations/python/ast/cst_utils.py`. Its helpers analyse the names in a libcst tree, which
   is the reference analysis that a binding provides; a recipe uses them as a step.
 - test: `test/utils/test_cst_utils.py` to `test/python/ast/test_cst_utils.py`.
-- docs: its paths in [recipes](../modules/recipes.md), the feature test map and type parameter modernization.
+- docs: its paths in [recipes](modules/recipes.md), the feature test map and type parameter modernization.
 
 #### Phase 2: `core.pattern`
 

@@ -210,20 +210,21 @@ report.show_missing = true
 # The layout rules of docs/developer/architecture/repository_structure.md: the tests and the documentation mirror the code.
 # This is their single source of truth, checked by tools/check_layout.py. Each mirror maps every unit under `code` onto its
 # counterpart; `exempt` lists units without a counterpart, `extra` lists paths in the mirror that are no counterpart. With
-# `aspects = true`, the tests of a module may instead be split into several files, one per aspect, `test_x___<aspect>.py`.
-# The migration adds the mirrors of each part of src/renaissance once that part is in its target place.
+# `aspects = "instead"`, the tests of a module may instead be split into several files, one per aspect, `test_x___<aspect>.py`;
+# with `aspects = "beside"`, the page of a module `x.md` may have pages per aspect `x___<aspect>.md` beside it. `{name}` is the
+# last part of `{path}`. The migration adds the mirrors of each part of src/renaissance once that part is in its target place.
 [[tool.check_layout.mirrors]]
 code = "tools"
 units = "modules"
 mirror = "test/tools/test_{path}.py"
-aspects = true
+aspects = "instead"
 exempt = [ "check_doc_images_policy", "mkdocs_hooks", "ruff_stats" ]
 
 [[tool.check_layout.mirrors]]
 code = "tools/shared"
 units = "modules"
 mirror = "test/tools/shared/test_{path}.py"
-aspects = true
+aspects = "instead"
 
 [[tool.check_layout.mirrors]]
 code = "tools"
@@ -250,7 +251,7 @@ extra = [ "test/unit/core/model/shared/" ]  # test helpers
 code = "src/renaissance/core/model"
 units = "modules"
 mirror = "test/unit/core/model/test_{path}.py"
-aspects = true
+aspects = "instead"
 # No unit tests of their own yet.
 exempt = [ "ast_factory", "ast_node", "ast_shower", "format", "node_utils", "semantic_kind", "siblings", "text_utils" ]
 
@@ -258,66 +259,98 @@ exempt = [ "ast_factory", "ast_node", "ast_shower", "format", "node_utils", "sem
 code = "src/renaissance/core/navigate"
 units = "modules"
 mirror = "test/unit/core/navigate/test_{path}.py"
-aspects = true
+aspects = "instead"
 exempt = [ "protocols" ]  # Protocols only: Pyright checks that nodes implement them.
 
 [[tool.check_layout.mirrors]]
 code = "src/renaissance/core/pattern"
 units = "modules"
 mirror = "test/unit/core/pattern/test_{path}.py"
-aspects = true
+aspects = "instead"
 exempt = [ "placeholders" ]  # No unit tests of its own yet.
 
 [[tool.check_layout.mirrors]]
 code = "src/renaissance/core/match"
 units = "modules"
 mirror = "test/unit/core/match/test_{path}.py"
-aspects = true
+aspects = "instead"
 
 [[tool.check_layout.mirrors]]
 code = "src/renaissance/core/rewrite"
 units = "modules"
 mirror = "test/unit/core/rewrite/test_{path}.py"
-aspects = true
+aspects = "instead"
 
 [[tool.check_layout.mirrors]]
 code = "src/renaissance/core/processing"
 units = "modules"
 mirror = "test/unit/core/processing/test_{path}.py"
-aspects = true
+aspects = "instead"
 
 [[tool.check_layout.mirrors]]
 code = "src/renaissance/core"
 units = "packages"
-mirror = "docs/developer/modules/core/{path}.md"
+mirror = "docs/developer/core/{path}/"
+
+[[tool.check_layout.mirrors]]
+code = "src/renaissance/core/model"
+units = "modules"
+mirror = "docs/developer/core/model/{path}.md"
+aspects = "beside"
+
+[[tool.check_layout.mirrors]]
+code = "src/renaissance/core/navigate"
+units = "modules"
+mirror = "docs/developer/core/navigate/{path}.md"
+aspects = "beside"
+
+[[tool.check_layout.mirrors]]
+code = "src/renaissance/core/pattern"
+units = "modules"
+mirror = "docs/developer/core/pattern/{path}.md"
+aspects = "beside"
+
+[[tool.check_layout.mirrors]]
+code = "src/renaissance/core/match"
+units = "modules"
+mirror = "docs/developer/core/match/{path}.md"
+aspects = "beside"
+
+[[tool.check_layout.mirrors]]
+code = "src/renaissance/core/rewrite"
+units = "modules"
+mirror = "docs/developer/core/rewrite/{path}.md"
+aspects = "beside"
+
+[[tool.check_layout.mirrors]]
+code = "src/renaissance/core/processing"
+units = "modules"
+mirror = "docs/developer/core/processing/{path}.md"
+aspects = "beside"
 
 [[tool.check_layout.mirrors]]
 code = "src/renaissance/core"
 units = "packages"
-mirror = "docs/developer/api/core/{path}.md"
-
-[[tool.check_layout.mirrors]]
-code = "src/renaissance/core"
-units = "packages"
-mirror = "docs/user/core/{path}.md"
+mirror = "docs/user/core/{path}/{name}.md"
+aspects = "beside"
 
 [[tool.check_layout.mirrors]]
 code = "src/renaissance/recipes/refactor_actions"
 units = "modules"
 mirror = "test/unit/recipes/refactor_actions/test_{path}.py"
-aspects = true
+aspects = "instead"
 
 [[tool.check_layout.mirrors]]
 code = "src/renaissance/recipes/python_extractor"
 units = "modules"
 mirror = "test/unit/recipes/python_extractor/test_{path}.py"
-aspects = true
+aspects = "instead"
 
 [[tool.check_layout.mirrors]]
 code = "src/renaissance/recipes/code_graph_extractor"
 units = "modules"
 mirror = "test/unit/recipes/code_graph_extractor/test_{path}.py"
-aspects = true
+aspects = "instead"
 
 [[tool.check_layout.mirrors]]
 code = "src/renaissance/recipes"
@@ -327,17 +360,31 @@ mirror = "test/unit/recipes/{path}/"
 [[tool.check_layout.mirrors]]
 code = "src/renaissance/recipes"
 units = "packages"
-mirror = "docs/developer/modules/recipes/{path}.md"
+mirror = "docs/developer/recipes/{path}/"
+
+[[tool.check_layout.mirrors]]
+code = "src/renaissance/recipes/refactor_actions"
+units = "modules"
+mirror = "docs/developer/recipes/refactor_actions/{path}.md"
+aspects = "beside"
+
+[[tool.check_layout.mirrors]]
+code = "src/renaissance/recipes/python_extractor"
+units = "modules"
+mirror = "docs/developer/recipes/python_extractor/{path}.md"
+aspects = "beside"
+
+[[tool.check_layout.mirrors]]
+code = "src/renaissance/recipes/code_graph_extractor"
+units = "modules"
+mirror = "docs/developer/recipes/code_graph_extractor/{path}.md"
+aspects = "beside"
 
 [[tool.check_layout.mirrors]]
 code = "src/renaissance/recipes"
 units = "packages"
-mirror = "docs/developer/api/recipes/{path}.md"
-
-[[tool.check_layout.mirrors]]
-code = "src/renaissance/recipes"
-units = "packages"
-mirror = "docs/user/recipes/{path}.md"
+mirror = "docs/user/recipes/{path}/{name}.md"
+aspects = "beside"
 
 # Every repository path named in the documentation, in comments and docstrings, and in feature files exists; checked by
 # tools/check_references.py. `exclude` lists the files that are not read; `known_issues` and `stale` list the paths that are

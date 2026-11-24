@@ -150,17 +150,17 @@ nav:
           - 3. Investigate undecisive results: user/workflows/investigate_undecisive_results.md
 
       - Core:
-          - Model: user/core/model.md
-          - Navigate: user/core/navigate.md
-          - Pattern: user/core/pattern.md
-          - Match: user/core/match.md
-          - Rewrite: user/core/rewrite.md
-          - Processing: user/core/processing.md
+          - Model: user/core/model/model.md
+          - Navigate: user/core/navigate/navigate.md
+          - Pattern: user/core/pattern/pattern.md
+          - Match: user/core/match/match.md
+          - Rewrite: user/core/rewrite/rewrite.md
+          - Processing: user/core/processing/processing.md
 
       - Recipes:
-          - Refactor actions: user/recipes/refactor_actions.md
-          - Python extractor: user/recipes/python_extractor.md
-          - Code graph extractor: user/recipes/code_graph_extractor.md
+          - Refactor actions: user/recipes/refactor_actions/refactor_actions.md
+          - Python extractor: user/recipes/python_extractor/python_extractor.md
+          - Code graph extractor: user/recipes/code_graph_extractor/code_graph_extractor.md
 
   - Developer documentation:
       - Overview: developer/index.md
@@ -194,6 +194,18 @@ nav:
           - Architecture images: developer/architecture/images/README.md
           - Test architecture: developer/architecture/test_architecture.md
           - Traceability model: developer/architecture/traceability_model.md
+          - Code modules:
+              - Overview: developer/architecture/modules/index.md
+              - Parser and AST modules: developer/architecture/modules/parser_and_ast.md
+              - Matching modules: developer/architecture/modules/matching.md
+              - Filter modules: developer/architecture/modules/filter.md
+              - Analysis modules: developer/architecture/modules/analysis.md
+              - Transformation modules: developer/architecture/modules/transformation.md
+              - Observability modules: developer/architecture/modules/observability.md
+              - Strategy modules: developer/architecture/modules/strategy.md
+              - Rewrite semantics module: developer/architecture/modules/rewrite_semantics.md
+              - Refactoring recipes: developer/architecture/modules/recipes.md
+              - Rejected recipes: developer/architecture/modules/rejected_recipes.md
           - Environment:
               - Regular expressions in Python: developer/architecture/environment/regular_expressions.md
           - Architecture Decision Records:
@@ -218,40 +230,43 @@ nav:
           - Overview: developer/feature_test_map/index.md
           - Core mappings: developer/feature_test_map/core.md
 
-      - Code modules:
-          - Overview: developer/modules/index.md
-          - Core model: developer/modules/core/model.md
-          - Core navigate: developer/modules/core/navigate.md
-          - Core pattern: developer/modules/core/pattern.md
-          - Core match: developer/modules/core/match.md
-          - Core rewrite: developer/modules/core/rewrite.md
-          - Core processing: developer/modules/core/processing.md
-          - Recipe refactor actions: developer/modules/recipes/refactor_actions.md
-          - Recipe Python extractor: developer/modules/recipes/python_extractor.md
-          - Recipe code graph extractor: developer/modules/recipes/code_graph_extractor.md
-          - Parser and AST modules: developer/modules/parser_and_ast.md
-          - Matching modules: developer/modules/matching.md
-          - Filter modules: developer/modules/filter.md
-          - Analysis modules: developer/modules/analysis.md
-          - Transformation modules: developer/modules/transformation.md
-          - Observability modules: developer/modules/observability.md
-          - Strategy modules: developer/modules/strategy.md
-          - Rewrite semantics module: developer/modules/rewrite_semantics.md
-          - Refactoring recipes: developer/modules/recipes.md
-          - Rejected recipes: developer/modules/rejected_recipes.md
+      - Core:
+          - Model:
+              - ast_factory: developer/core/model/ast_factory.md
+              - ast_finder: developer/core/model/ast_finder.md
+              - ast_node: developer/core/model/ast_node.md
+              - ast_shower: developer/core/model/ast_shower.md
+              - format: developer/core/model/format.md
+              - node_protocol: developer/core/model/node_protocol.md
+              - node_utils: developer/core/model/node_utils.md
+              - semantic_kind: developer/core/model/semantic_kind.md
+              - siblings: developer/core/model/siblings.md
+              - syntax_node: developer/core/model/syntax_node.md
+              - text_segment: developer/core/model/text_segment.md
+              - text_utils: developer/core/model/text_utils.md
+          - Navigate:
+              - navigate: developer/core/navigate/navigate.md
+              - protocols: developer/core/navigate/protocols.md
+          - Pattern:
+              - pattern_kind: developer/core/pattern/pattern_kind.md
+              - placeholders: developer/core/pattern/placeholders.md
+          - Match:
+              - match_finder: developer/core/match/match_finder.md
+          - Rewrite:
+              - ast_rewriter: developer/core/rewrite/ast_rewriter.md
+              - rewriter: developer/core/rewrite/rewriter.md
+          - Processing:
+              - ast_processor: developer/core/processing/ast_processor.md
+              - batch_ast_processor: developer/core/processing/batch_ast_processor.md
+              - recipe_ast_processor: developer/core/processing/recipe_ast_processor.md
 
-      - API reference:
-          - Overview: developer/api/index.md
-          - Public API: developer/api/public_api.md
-          - Core model: developer/api/core/model.md
-          - Core navigate: developer/api/core/navigate.md
-          - Core pattern: developer/api/core/pattern.md
-          - Core match: developer/api/core/match.md
-          - Core rewrite: developer/api/core/rewrite.md
-          - Core processing: developer/api/core/processing.md
-          - Recipe refactor actions: developer/api/recipes/refactor_actions.md
-          - Recipe Python extractor: developer/api/recipes/python_extractor.md
-          - Recipe code graph extractor: developer/api/recipes/code_graph_extractor.md
+      - Recipes:
+          - Refactor actions:
+              - ast_refactor_actions: developer/recipes/refactor_actions/ast_refactor_actions.md
+          - Python extractor:
+              - python_extractor: developer/recipes/python_extractor/python_extractor.md
+          - Code graph extractor:
+              - code_graph_extractor: developer/recipes/code_graph_extractor/code_graph_extractor.md
 
   - Documentation system:
       - Overview: documentation_system/index.md
@@ -263,6 +278,7 @@ nav:
           - Feature template: documentation_system/templates/feature_template.md
           - Test module template: documentation_system/templates/test_module_template.md
           - Code module template: documentation_system/templates/code_module_template.md
+          - Package template: documentation_system/templates/package_template.md
           - Feature-test mapping template: documentation_system/templates/feature_test_map_template.md
 
       - Policies:

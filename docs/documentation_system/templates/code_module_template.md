@@ -12,12 +12,15 @@ https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
 **Stable ID:** `TEMPLATE-CODEMOD`
 
+The developer page of a module, `docs/developer/<layer>/<package>/<module>.md`. Pages per aspect,
+`<module>___<aspect>.md`, may be added beside it.
+
 ```md
-# <Code module title>
+# <layer>.<package>.<module>
 
-{ #codemod-<slug> }
+{ #codemod-<layer>-<package>-<module> }
 
-**Stable ID:** `CODEMOD-<AREA>-<NAME>`
+**Stable ID:** `CODEMOD-<LAYER>-<PACKAGE>-<MODULE>`
 
 ## Responsibility
 
@@ -27,13 +30,7 @@ https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
 ## Internal structure
 
-## Related features
-
-## Related concepts
-
 ## Validated by test modules
 
-## Extension points
-
-## Non-goals
+## Related concepts
 ```

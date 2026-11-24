@@ -11,9 +11,10 @@ code under one directory, a module or a package, onto its counterpart: a test fi
 The check fails on a unit without its counterpart, and on a path in the mirror that is the counterpart of no unit, so a renamed
 or deleted unit cannot leave its tests or its page behind.
 
-A mirror with `aspects = true` also accepts a counterpart split into one file per aspect: `{path}` followed by `___<aspect>`,
-such as `test_x___parsing.py` instead of `test_x.py`, but not next to it, and only when there are several aspects. Whether names
-are well formed is not checked here, but by `tools/check_names.py`.
+A mirror with `aspects = "instead"` also accepts a counterpart split into one file per aspect: `{path}` followed by
+`___<aspect>`, such as `test_x___parsing.py` instead of `test_x.py`, but not next to it, and only when there are several aspects.
+A mirror with `aspects = "beside"` requires the whole counterpart, such as `x.md`, and accepts any number of files per aspect
+beside it, such as `x___usage.md`. Whether names are well formed is not checked here, but by `tools/check_names.py`.
 
 A mirror may list known deviations: `exempt` names units that have no counterpart, `extra` names paths in the mirror that are no
 counterpart. An entry that no longer describes a deviation fails the check, so these lists only shrink.
@@ -39,9 +40,12 @@ ROOT = Path(__file__).resolve().parents[1]
 
 # The placeholder of a mirror template, replaced by the path of a unit.
 PLACEHOLDER = "{path}"
+# The optional placeholder of a mirror template after PLACEHOLDER, replaced by the last part of the path of a unit.
+NAME_PLACEHOLDER = "{name}"
 # Separates the unit from the aspect in the name of a counterpart split per aspect.
 ASPECT_SEPARATOR = "___"
 UNIT_KINDS = ("modules", "packages")
+ASPECT_KINDS = ("instead", "beside")
 INIT = "__init__.py"
 
 EXIT_OK = 0
@@ -60,7 +64,7 @@ class Mirror:
     A unit is a module (a `.py` file directly in `code`, other than `__init__.py`) or a package (a directory below `code` holding
     `__init__.py`), named by its path relative to `code`, without `.py`, separated by `/`. A template that ends with `/` names a
     directory. The modules of a sub-package of `code` are units of a mirror of that sub-package. With `aspects`, the counterpart
-    may instead be split into several files with `___<aspect>` after the unit.
+    may be split into several files with `___<aspect>` after the unit: `"instead"` of the whole one, or `"beside"` it.
     """
 
     code: str
@@ -68,18 +72,23 @@ class Mirror:
     template: str
     exempt: frozenset[str] = frozenset()
     extra: frozenset[str] = frozenset()
-    aspects: bool = False
+    aspects: str | None = None
 
     def counterpart(self, unit: str) -> str:
         """Return the path of the counterpart of `unit`, when it is not split per aspect."""
-        return self.template.replace(PLACEHOLDER, unit)
+        return self.template.replace(PLACEHOLDER, unit).replace(NAME_PLACEHOLDER, unit.rsplit("/", 1)[-1])
 
     def unit_of(self, path: str) -> str | None:
         """Return the unit whose counterpart `path` is, whether or not that unit exists, or None when `path` has no such shape."""
         before, after = self.template.split(PLACEHOLDER)
         aspect = f"(?:{ASPECT_SEPARATOR}[^/]+)?" if self.aspects else ""
-        match = re.fullmatch(f"{re.escape(before)}(.+?){aspect}{re.escape(after)}", path)
-        return None if match is None else match.group(1)
+        if NAME_PLACEHOLDER in after:
+            middle, after = after.split(NAME_PLACEHOLDER)
+            unit = f"(?P<unit>(?:.+/)?(?P<name>[^/]+?)){re.escape(middle)}(?P=name)"
+        else:
+            unit = "(?P<unit>.+?)"
+        match = re.fullmatch(f"{re.escape(before)}{unit}{aspect}{re.escape(after)}", path)
+        return None if match is None else match.group("unit")
 
     def location(self, unit: str) -> str:
         """Return the path of `unit` relative to the repository root."""
@@ -138,9 +147,13 @@ def parse_mirrors(config: Mapping[str, object]) -> list[Mirror]:
         if not isinstance(template, str) or template.count(PLACEHOLDER) != 1:
             message = f"`mirror` of the mirror of {code} must contain {PLACEHOLDER} exactly once"
             raise ConfigError(message)
-        aspects = entry.get("aspects", False)
-        if not isinstance(aspects, bool):
-            message = f"`aspects` of the mirror of {code} must be true or false"
+        names = template.count(NAME_PLACEHOLDER)
+        if names > 1 or (names == 1 and NAME_PLACEHOLDER not in template.split(PLACEHOLDER)[1]):
+            message = f"`mirror` of the mirror of {code} may contain {NAME_PLACEHOLDER} once, after {PLACEHOLDER}"
+            raise ConfigError(message)
+        aspects = entry.get("aspects")
+        if aspects is not None and (not isinstance(aspects, str) or aspects not in ASPECT_KINDS):
+            message = f"`aspects` of the mirror of {code} must be one of {list(ASPECT_KINDS)}"
             raise ConfigError(message)
         mirrors.append(Mirror(code, units, template, _strings(entry, "exempt"), _strings(entry, "extra"), aspects))
     return mirrors
@@ -169,14 +182,18 @@ def check_mirror(mirror: Mirror, files: set[str]) -> list[Violation]:
     violations: list[Violation] = []
     for unit in sorted(units):
         counterparts = [path for path, mirrored_unit in mirrored.items() if mirrored_unit == unit]
+        whole = mirror.counterpart(unit)
         if not counterparts and unit not in mirror.exempt:
-            violations.append(Violation(mirror.location(unit), f"has no counterpart {mirror.counterpart(unit)}"))
+            violations.append(Violation(mirror.location(unit), f"has no counterpart {whole}"))
         elif counterparts and unit in mirror.exempt:
             violations.append(Violation(mirror.location(unit), f"is exempt, but {counterparts[0]} exists: remove the exemption"))
-        elif len(counterparts) > 1 and (whole := mirror.counterpart(unit)) in counterparts:
+        elif mirror.aspects == "beside":
+            if whole not in counterparts:
+                violations.append(Violation(mirror.location(unit), f"has {counterparts[0]}, but not {whole}: add it"))
+        elif len(counterparts) > 1 and whole in counterparts:
             split = next(path for path in counterparts if path != whole)
             violations.append(Violation(mirror.location(unit), f"has both {whole} and {split}: keep one file or split it per aspect"))
-        elif len(counterparts) == 1 and (split := counterparts[0]) != (whole := mirror.counterpart(unit)):
+        elif len(counterparts) == 1 and (split := counterparts[0]) != whole:
             violations.append(Violation(mirror.location(unit), f"has one aspect only, {split}: rename it to {whole}"))
     violations += [
         Violation(f"{mirror.code}/{unit}", "is exempt, but is not a unit: remove the exemption") for unit in sorted(mirror.exempt - units)

@@ -24,7 +24,7 @@ which produce errors, so that transformation authors can reason about the outcom
 
 ## Verified by test modules
 
-* [Rewrite semantics test module](../../developer/modules/rewrite_semantics.md)
+* [Rewrite semantics test module](../../developer/architecture/modules/rewrite_semantics.md)
 * BDD scenarios: `features/rewrite_semantics.feature`
 * BDD steps: `features/steps/test_rewrite_semantics.py`
 

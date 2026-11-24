@@ -70,7 +70,7 @@ Every violation is reported on one line; a reference with its file and line numb
 
 ```text
 These references name a missing path, or these entries of [tool.check_references] no longer apply:
-  docs/developer/modules/example.md:12: names src/renaissance/example.py, which does not exist
+  docs/developer/architecture/modules/example.md:12: names src/renaissance/example.py, which does not exist
   test/unit/example/: is listed in `stale`, but exists: remove it
 ```
 

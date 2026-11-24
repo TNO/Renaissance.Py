@@ -19,7 +19,7 @@ The system supports sequence-based, kind-based, and structural matching with pla
 ## Related concepts
 
 - [Matching](../concepts/matching.md)
-- [Pattern](../core/pattern.md)
+- [Pattern](../core/pattern/pattern.md)
 
 ## Related images
 

@@ -12,6 +12,7 @@ The unit tests check synthetic names and file lists; one integration test checks
 import shutil
 
 import pytest
+from hamcrest import all_of, assert_that, contains_string, equal_to, is_, none, not_none
 
 from tools import check_names
 
@@ -28,12 +29,13 @@ from tools import check_names
         ".gitignore",
         "test_x.py",
         "test_x___parsing_errors.py",
+        "match_finder___usage.md",
         "model",
     ],
 )
 def test_a_well_formed_name_passes(name: str) -> None:
-    """Assert names with single `_` separators, triple ones in test names, leading or trailing underscores and a hidden `.` pass."""
-    assert check_names.check_name(name) is None  # noqa: S101 (pytest assertion; new tests must not raise the S101 budget)
+    """Assert names with single `_` separators, triple ones in test and page names, outer underscores and a hidden `.` pass."""
+    assert_that(check_names.check_name(name), is_(none()))
 
 
 @pytest.mark.parametrize(
@@ -48,24 +50,22 @@ def test_a_well_formed_name_passes(name: str) -> None:
         ("README.", "is not an optional `.`"),
         ("check__names.py", "by `__`"),
         ("test_x____parsing.py", "by `____`"),
-        ("node___parsing.py", "only a name that starts with `test_`"),
-        ("tests___x", "only a name that starts with `test_`"),
+        ("node___parsing.py", "only a name that starts with `test_` or ends with `.md`"),
+        ("tests___x", "only a name that starts with `test_` or ends with `.md`"),
     ],
 )
 def test_a_malformed_name_is_reported(name: str, message: str) -> None:
-    """Assert other characters, a second `.`, double underscores and triple underscores outside test names are reported."""
-    reason = check_names.check_name(name)
-    assert reason is not None  # noqa: S101 (pytest assertion; new tests must not raise the S101 budget)
-    assert message in reason  # noqa: S101 (pytest assertion; new tests must not raise the S101 budget)
+    """Assert other characters, a second `.`, double underscores and triple underscores outside test and page names are reported."""
+    assert_that(check_names.check_name(name), all_of(not_none(), contains_string(message)))
 
 
 def test_a_directory_is_reported_once() -> None:
     """Assert a malformed directory name is reported once, not for every file it holds."""
     violations = check_names.find_violations({"docs/bad-dir/a.md", "docs/bad-dir/b.md", "docs/good.md"})
-    assert [violation.path for violation in violations] == ["docs/bad-dir/"]  # noqa: S101 (pytest assertion; new tests must not raise the S101 budget)
+    assert_that([violation.path for violation in violations], equal_to(["docs/bad-dir/"]))
 
 
 @pytest.mark.skipif(shutil.which("git") is None, reason="git is not installed")
 def test_the_repository_names_pass() -> None:
     """Assert the repository itself passes its own naming rule."""
-    assert check_names.main([]) == check_names.EXIT_OK  # noqa: S101 (pytest assertion; new tests must not raise the S101 budget)
+    assert_that(check_names.main([]), equal_to(check_names.EXIT_OK))

@@ -76,7 +76,7 @@ brew install llvm@22
 
 Open a new terminal and check that `clang --version` reports the expected version.
 On Windows the installer does not add LLVM to `PATH`, so add `C:\Program Files\LLVM\bin` to it yourself.
-See [Clang prerequisites](docs/developer/modules/parser_and_ast.md#clang-prerequisites) for selecting a specific driver
+See [Clang prerequisites](docs/developer/architecture/modules/parser_and_ast.md#clang-prerequisites) for selecting a specific driver
 when it is not on `PATH`.
 
 The code for the experiments is located in the [src](./src) folder.
