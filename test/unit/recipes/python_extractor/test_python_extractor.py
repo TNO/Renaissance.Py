@@ -11,7 +11,7 @@ from pathlib import Path
 from hamcrest import assert_that, empty, is_not
 
 import targets
-from renaissance.integrations.python.ast.extractor import PythonExtractor
+from renaissance.recipes.python_extractor import PythonExtractor
 
 
 class TestPythonExtractor:

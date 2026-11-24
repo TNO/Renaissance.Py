@@ -308,6 +308,18 @@ mirror = "test/unit/recipes/refactor_actions/test_{path}.py"
 aspects = true
 
 [[tool.check_layout.mirrors]]
+code = "src/renaissance/recipes/python_extractor"
+units = "modules"
+mirror = "test/unit/recipes/python_extractor/test_{path}.py"
+aspects = true
+
+[[tool.check_layout.mirrors]]
+code = "src/renaissance/recipes/code_graph_extractor"
+units = "modules"
+mirror = "test/unit/recipes/code_graph_extractor/test_{path}.py"
+aspects = true
+
+[[tool.check_layout.mirrors]]
 code = "src/renaissance/recipes"
 units = "packages"
 mirror = "test/unit/recipes/{path}/"
@@ -380,7 +392,7 @@ layers = [
   "renaissance.recipes : rejuvenation : test.recipes : test.examples : test.unit.recipes",
   # parser_bindings
   """renaissance.integrations : renaissance.project
-    : test.c_cpp : test.python : test.lst : test.extractors : test.project : test.unit.shared.factories""",
+    : test.c_cpp : test.python : test.lst : test.project : test.unit.shared.factories""",
   # core.processing
   "renaissance.core.processing : test.unit.core.processing",
   # core.rewrite
@@ -451,7 +463,6 @@ source_modules = [
   "test.c_cpp",
   "test.python",
   "test.lst",
-  "test.extractors",
   "test.project",
   "test.unit.shared.factories",
 ]
@@ -483,7 +494,6 @@ forbidden_modules = [
   "test.c_cpp",
   "test.python",
   "test.lst",
-  "test.extractors",
   "test.project",
   "test.unit.shared.factories",
 ]
@@ -493,11 +503,14 @@ Express the recipe in terms of the core. A recipe that relies on what one parser
 declare each binding it depends on in ignore_imports, with the reason shown by the code that needs it."""
 # Declared dependencies of parser-specific recipes come first, then the known violations.
 ignore_imports = [
+  # PythonExtractor walks the nodes of the Python standard library ast parser.
+  "renaissance.recipes.python_extractor.python_extractor -> renaissance.integrations.python.ast.rst_node",
+  # The code graph extractors parse with tree-sitter and walk its LST.
+  "renaissance.recipes.code_graph_extractor.code_graph_extractor -> renaissance.integrations.tree_sitter.adapter",
   # Parsing a file and creating patterns without naming the parser is missing in the core.
   "renaissance.recipes.python_refactoring -> renaissance.integrations.python.ast.cst_node",
   "renaissance.recipes.python_refactoring -> renaissance.integrations.python.ast.factory",
   "renaissance.recipes.python_refactoring -> renaissance.integrations.python.ast.rst_node",
-  "rejuvenation.cli -> renaissance.integrations.python.ast.extractor",
   "rejuvenation.cli -> renaissance.integrations.python.ast.rst_node",
   "rejuvenation.cli -> renaissance.project.project_scanner",
   "test.recipes.test_python_refactoring -> renaissance.integrations.python.ast.cst_node",
@@ -536,7 +549,6 @@ forbidden_modules = [
   "renaissance.project",
   "test.python",
   "test.lst",
-  "test.extractors",
   "test.project",
 ]
 allow_indirect_imports = true
@@ -549,7 +561,7 @@ ignore_imports = [
 id = "python-independent"
 name = "The Python bindings import no other binding"
 type = "forbidden"
-source_modules = [ "renaissance.integrations.python", "test.python", "test.extractors.test_python_extractors" ]
+source_modules = [ "renaissance.integrations.python", "test.python" ]
 forbidden_modules = [
   "renaissance.integrations.clang",
   "renaissance.integrations.tree_sitter",
@@ -557,7 +569,6 @@ forbidden_modules = [
   "test.c_cpp",
   "test.unit.shared.factories",
   "test.lst",
-  "test.extractors.test_code_graph_extractors",
   "test.project",
 ]
 allow_indirect_imports = true
@@ -575,7 +586,7 @@ ignore_imports = [
 id = "tree-sitter-independent"
 name = "The tree-sitter binding imports no other binding"
 type = "forbidden"
-source_modules = [ "renaissance.integrations.tree_sitter", "test.lst", "test.extractors.test_code_graph_extractors" ]
+source_modules = [ "renaissance.integrations.tree_sitter", "test.lst" ]
 forbidden_modules = [
   "renaissance.integrations.clang",
   "renaissance.integrations.python",
@@ -583,7 +594,6 @@ forbidden_modules = [
   "test.c_cpp",
   "test.unit.shared.factories",
   "test.python",
-  "test.extractors.test_python_extractors",
   "test.project",
 ]
 allow_indirect_imports = true
@@ -604,7 +614,6 @@ forbidden_modules = [
   "test.unit.shared.factories",
   "test.python",
   "test.lst",
-  "test.extractors",
 ]
 allow_indirect_imports = true
 
@@ -682,6 +691,20 @@ type = "protected"
 protected_modules = [ "renaissance.recipes.refactor_actions.ast_refactor_actions" ]
 allowed_importers = [ "renaissance.recipes.refactor_actions", "test.unit.recipes.refactor_actions" ]
 
+[[tool.importlinter.contracts]]
+id = "recipes-python-extractor-api"
+name = "Only recipes.python_extractor and its unit tests import the modules of recipes.python_extractor"
+type = "protected"
+protected_modules = [ "renaissance.recipes.python_extractor.python_extractor" ]
+allowed_importers = [ "renaissance.recipes.python_extractor", "test.unit.recipes.python_extractor" ]
+
+[[tool.importlinter.contracts]]
+id = "recipes-code-graph-extractor-api"
+name = "Only recipes.code_graph_extractor and its unit tests import the modules of recipes.code_graph_extractor"
+type = "protected"
+protected_modules = [ "renaissance.recipes.code_graph_extractor.code_graph_extractor" ]
+allowed_importers = [ "renaissance.recipes.code_graph_extractor", "test.unit.recipes.code_graph_extractor" ]
+
 # format_node is for the core and the parser bindings only.
 [[tool.importlinter.contracts]]
 id = "core-model-format"
@@ -696,7 +719,6 @@ allowed_importers = [
   "test.c_cpp",
   "test.python",
   "test.lst",
-  "test.extractors",
   "test.project",
 ]
 
@@ -728,7 +750,6 @@ allowed_importers = [
   "test.c_cpp",
   "test.python",
   "test.lst",
-  "test.extractors",
   "test.project",
 ]
 

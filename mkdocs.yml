@@ -159,6 +159,8 @@ nav:
 
       - Recipes:
           - Refactor actions: user/recipes/refactor_actions.md
+          - Python extractor: user/recipes/python_extractor.md
+          - Code graph extractor: user/recipes/code_graph_extractor.md
 
   - Developer documentation:
       - Overview: developer/index.md
@@ -225,6 +227,8 @@ nav:
           - Core rewrite: developer/modules/core/rewrite.md
           - Core processing: developer/modules/core/processing.md
           - Recipe refactor actions: developer/modules/recipes/refactor_actions.md
+          - Recipe Python extractor: developer/modules/recipes/python_extractor.md
+          - Recipe code graph extractor: developer/modules/recipes/code_graph_extractor.md
           - Parser and AST modules: developer/modules/parser_and_ast.md
           - Matching modules: developer/modules/matching.md
           - Filter modules: developer/modules/filter.md
@@ -246,6 +250,8 @@ nav:
           - Core rewrite: developer/api/core/rewrite.md
           - Core processing: developer/api/core/processing.md
           - Recipe refactor actions: developer/api/recipes/refactor_actions.md
+          - Recipe Python extractor: developer/api/recipes/python_extractor.md
+          - Recipe code graph extractor: developer/api/recipes/code_graph_extractor.md
 
   - Documentation system:
       - Overview: documentation_system/index.md

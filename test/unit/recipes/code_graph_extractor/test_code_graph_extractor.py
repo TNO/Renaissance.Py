@@ -15,7 +15,7 @@ from hamcrest import assert_that, has_item, instance_of, is_, not_
 from pytest_mock import MockerFixture
 
 from renaissance.core.model import SemanticKind
-from renaissance.integrations.tree_sitter.extractor import (
+from renaissance.recipes.code_graph_extractor import (
     BaseCodeGraphExtractor,
     CppCodeGraphExtractor,
     JavaCodeGraphExtractor,
@@ -80,8 +80,8 @@ class TestBaseCodeGraphExtractor:
         """AI: Verify save_graph writes the graph to a graphml file."""
         with patch("renaissance.integrations.tree_sitter.adapter.TreeSitterAdapter"):
             extractor = PythonCodeGraphExtractor("python", tree_sitter_python)
-            mock_write = mocker.patch("renaissance.integrations.tree_sitter.extractor.nx.write_graphml")
-            mocker.patch("renaissance.integrations.tree_sitter.extractor.GRAPHML_DIR", str(tmp_path))
+            mock_write = mocker.patch("renaissance.recipes.code_graph_extractor.code_graph_extractor.nx.write_graphml")
+            mocker.patch("renaissance.recipes.code_graph_extractor.code_graph_extractor.GRAPHML_DIR", str(tmp_path))
 
             extractor.save_graph("test.graphml")
 

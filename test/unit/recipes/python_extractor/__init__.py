@@ -4,4 +4,4 @@
 # of this repository, also available at:
 # https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
-"""AI: Tests for the code-graph and Python text-extraction utilities."""
+"""Unit tests of renaissance.recipes.python_extractor."""

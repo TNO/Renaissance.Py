@@ -107,10 +107,22 @@ KNOWN_FAILING_TESTS = {
         r"clang_json function-factory3-function-example_use_ast_function_finder]"
     ),
     r"test/examples/test_examples.py::TestExamplesDifferentStyles::test_example_add_comment_and_commit_json",
-    r"test/extractors/test_code_graph_extractors.py::TestPythonCodeGraphExtractor::test_adds_file_and_folder_nodes",
-    r"test/extractors/test_code_graph_extractors.py::TestPythonCodeGraphExtractor::test_adds_contains_edge_from_folder_to_file",
-    r"test/extractors/test_code_graph_extractors.py::TestJavaCodeGraphExtractor::test_adds_file_and_folder_nodes",
-    r"test/extractors/test_code_graph_extractors.py::TestCppCodeGraphExtractor::test_adds_file_and_folder_nodes",
+    (
+        r"test/unit/recipes/code_graph_extractor/test_code_graph_extractor.py::TestPythonCodeGraphExtractor::"
+        r"test_adds_file_and_folder_nodes"
+    ),
+    (
+        r"test/unit/recipes/code_graph_extractor/test_code_graph_extractor.py::TestPythonCodeGraphExtractor::"
+        r"test_adds_contains_edge_from_folder_to_file"
+    ),
+    (
+        r"test/unit/recipes/code_graph_extractor/test_code_graph_extractor.py::TestJavaCodeGraphExtractor::"
+        r"test_adds_file_and_folder_nodes"
+    ),
+    (
+        r"test/unit/recipes/code_graph_extractor/test_code_graph_extractor.py::TestCppCodeGraphExtractor::"
+        r"test_adds_file_and_folder_nodes"
+    ),
     (
         r"test/recipes/test_cleanup_refactoring.py::TestCleanupRefactoring::test_remove_unused_variables["
         r"clang_json int foo() {\n    int x = 1;\n    return 2;\n}-factory3-int foo() {\n    int x = 1;\n    return 2;\n}-int foo("
