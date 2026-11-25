@@ -421,7 +421,16 @@ binding by one contract per new binding.
 
 - src: `project/` to `parser_bindings/project/`, and `integrations/shared/` to `parser_bindings/shared/`.
 - test: `test/project/`, and `test/unit/integrations/shared/` to `test/unit/parser_bindings/shared/`.
-- remaining: the mirrors of `src/renaissance/parser_bindings`, with `units = "packages"`. The contracts of `shared` follow it.
+- docs: the user pages `docs/user/parser_bindings/project/project.md` and `shared/shared.md`, which render the public API
+  for out-of-tree parser binders, and a developer page per module under `docs/developer/parser_bindings/project/` and
+  `shared/`. `parser_bindings` only groups packages, so it has no pages.
+- remaining: the contracts of `shared` follow it. The mirrors of `src/renaissance/parser_bindings`, as for the core and the
+  recipes:
+    - three with `units = "packages"`: `test/unit/parser_bindings/{path}/`, `docs/developer/parser_bindings/{path}/`, and
+      `docs/user/parser_bindings/{path}/{name}.md` with `aspects = "beside"`;
+    - two with `units = "modules"` for each of `project` and `shared`: `test/unit/parser_bindings/<package>/test_{path}.py`
+      with `aspects = "instead"`, and `docs/developer/parser_bindings/<package>/{path}.md` with `aspects = "beside"`.
+      Steps 6.3 to 6.5 add these two for each binding they create.
 
 **6.3 tree-sitter.**
 
@@ -445,8 +454,13 @@ binding by one contract per new binding.
 - src: `integrations/clang/clang_json_ast_node.py` to `parser_bindings/clang/json_ast/`, the rest to
   `parser_bindings/clang/libclang/`. As in 6.4, the modules both use (`kinds.py`, `predicates.py`, `cpp_utils.py` and
   `c_pattern_factory.py`) go to `clang/libclang/`, and the imports of `clang/json_ast/` become known violations.
-  `clang_adapter` keeps its known import of `tree_sitter`.
+  `clang_adapter` keeps its known import of `tree_sitter`. `clang/` is a grouping package: an `__init__.py` without imports.
 - test: `test/c_cpp/`, and the `clang_adapter` tests of `test/lst/`.
+- docs: the user pages `docs/user/parser_bindings/clang/libclang/libclang.md` and `clang/json_ast/json_ast.md`, and a
+  developer page per module under `docs/developer/parser_bindings/clang/libclang/` and `clang/json_ast/`. `clang/` has no
+  pages.
+- remaining: the module mirrors of `clang/libclang/` and `clang/json_ast/`; the grouping package is exempt from the docs
+  mirrors.
 - Checks: `src/renaissance/integrations/`, `src/renaissance/project/`, `test/c_cpp/`, `test/python/`, `test/lst/`,
   `test/project/` and `test/extractors/` no longer exist; `git grep -E "renaissance\.(integrations|project)\b"`
   finds nothing; the `layers` contract has a container `renaissance.parser_bindings`, and each binding is independent.
@@ -465,7 +479,13 @@ binding by one contract per new binding.
 - src: the modules of `src/rejuvenation/`, except `cli.py`, to `recipes/examples/`. This includes the examples that show how
   one parser represents code, such as `cpp_clang_lst_example.py`; rewriting them as unit tests of their binding is not a move, so
   it is an issue.
-- test: `test/examples/` to `test/unit/recipes/examples/`.
+- test: `test/examples/` to `test/unit/recipes/examples/`. `test_examples.py` tests four examples, so it mirrors no single
+  module.
+- docs: the user page `docs/user/recipes/examples/examples.md` lists the examples and what each shows. `examples` has no public
+  API, so its *API* section renders the package docstring only. A developer page per example, seven in all, under
+  `docs/developer/recipes/examples/`.
+- remaining: the module mirrors of `examples`. The test mirror lists `test_examples.py` as an `extra`, and the examples
+  without a test file of their own as `exempt`.
 
 **7.6 The command line.**
 
