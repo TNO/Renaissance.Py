@@ -85,6 +85,9 @@ class TestClangConcretePatternMatcher:
                 "int add(int a, int b) { return a + b; }",
                 "int $a,$b,$body;int $f(int $a, int $b) { $body; }",
             ),
+            # TODO(pjljvandelaar): Why are patterns not consistent with respect to ;
+            #  in $body; (see e.g., above) / $body (see e.g., below)?
+            #  https://github.com/TNO/Renaissance.Py/issues/187
             ("void f() { int x = 0; }", "int $body=0;void $name() { $body }"),
             # TODO(pjljvandelaar): 1. code doesn't start with declaration, so shouldn't match the pattern.
             #  2. In CDT $body in the compound statement should be appended with the terminator (;).
