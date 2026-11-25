@@ -9,8 +9,8 @@
 from collections.abc import Sequence
 
 from renaissance.core.pattern import replace_dollar
-from renaissance.integrations.tree_sitter.adapter import TreeSitterAdapter
-from renaissance.integrations.tree_sitter.lst import LSTNode
+from renaissance.parser_bindings.tree_sitter.adapter import TreeSitterAdapter
+from renaissance.parser_bindings.tree_sitter.lst import LSTNode
 
 
 class TreeSitterPatternFactory:

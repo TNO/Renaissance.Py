@@ -19,7 +19,7 @@ from hypothesis import HealthCheck, given, settings
 
 from renaissance.core.model import SemanticKind
 from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
-from renaissance.integrations.tree_sitter.lst import LSTNode
+from renaissance.parser_bindings.tree_sitter.lst import LSTNode
 from test.unit.shared.utils_for_tests import reject_unsupported_code
 
 TREE_SITTER_PYTHON = tree_sitter.Parser(tree_sitter.Language(tree_sitter_python.language()))

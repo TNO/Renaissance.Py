@@ -12,7 +12,7 @@ import tree_sitter_python as tspython
 from hamcrest import assert_that, has_length
 
 from renaissance.core.match import match_pattern
-from renaissance.integrations.tree_sitter.adapter import TreeSitterAdapter
+from renaissance.parser_bindings.tree_sitter.adapter import TreeSitterAdapter
 
 
 class TestTreeSitterStructuralMatcher:

@@ -41,7 +41,7 @@ class TestBaseCodeGraphExtractor:
 
     def test_is_abstract(self) -> None:
         """AI: Verify _process_file raises NotImplementedError on the base extractor."""
-        with patch("renaissance.integrations.tree_sitter.adapter.TreeSitterAdapter"):
+        with patch("renaissance.parser_bindings.tree_sitter.adapter.TreeSitterAdapter"):
             extractor = BaseCodeGraphExtractor.__new__(BaseCodeGraphExtractor)
             extractor.graph = MagicMock()
             with pytest.raises(NotImplementedError):
@@ -54,7 +54,7 @@ class TestBaseCodeGraphExtractor:
         f2 = tmp_path / "b.py"
         f2.write_text("y = 2")
 
-        with patch("renaissance.integrations.tree_sitter.adapter.TreeSitterAdapter") as mock_adapter_cls:
+        with patch("renaissance.parser_bindings.tree_sitter.adapter.TreeSitterAdapter") as mock_adapter_cls:
             mock_adapter = mock_adapter_cls.return_value
             mock_adapter.parse_code.return_value = MagicMock()
             mock_adapter.to_lst.return_value = self.make_lst([])
@@ -68,7 +68,7 @@ class TestBaseCodeGraphExtractor:
 
     def test_extract_skips_file_on_error(self, tmp_path) -> None:
         """AI: Verify extract() skips a file whose parsing raises an error without propagating it."""
-        with patch("renaissance.integrations.tree_sitter.adapter.TreeSitterAdapter") as mock_adapter_cls:
+        with patch("renaissance.parser_bindings.tree_sitter.adapter.TreeSitterAdapter") as mock_adapter_cls:
             mock_adapter = mock_adapter_cls.return_value
             mock_adapter.parse_code.side_effect = RuntimeError("parse error")
 
@@ -78,7 +78,7 @@ class TestBaseCodeGraphExtractor:
 
     def test_save_graph_writes_file(self, tmp_path, mocker: MockerFixture) -> None:
         """AI: Verify save_graph writes the graph to a graphml file."""
-        with patch("renaissance.integrations.tree_sitter.adapter.TreeSitterAdapter"):
+        with patch("renaissance.parser_bindings.tree_sitter.adapter.TreeSitterAdapter"):
             extractor = PythonCodeGraphExtractor("python", tree_sitter_python)
             mock_write = mocker.patch("renaissance.recipes.code_graph_extractor.code_graph_extractor.nx.write_graphml")
             mocker.patch("renaissance.recipes.code_graph_extractor.code_graph_extractor.GRAPHML_DIR", str(tmp_path))
@@ -89,7 +89,7 @@ class TestBaseCodeGraphExtractor:
 
     def test_constructor_creates_directed_graph(self) -> None:
         """AI: Verify the extractor constructor initializes a directed graph."""
-        with patch("renaissance.integrations.tree_sitter.adapter.TreeSitterAdapter"):
+        with patch("renaissance.parser_bindings.tree_sitter.adapter.TreeSitterAdapter"):
             extractor = PythonCodeGraphExtractor("python", tree_sitter_python)
             assert_that(extractor.graph, instance_of(nx.DiGraph))
 
@@ -111,7 +111,7 @@ class TestPythonCodeGraphExtractor(TestBaseCodeGraphExtractor):
 
     @staticmethod
     def _make_extractor() -> PythonCodeGraphExtractor:
-        with patch("renaissance.integrations.tree_sitter.adapter.TreeSitterAdapter"):
+        with patch("renaissance.parser_bindings.tree_sitter.adapter.TreeSitterAdapter"):
             return PythonCodeGraphExtractor("python", tree_sitter_python)
 
     def test_adds_file_and_folder_nodes(self) -> None:
@@ -213,7 +213,7 @@ class TestJavaCodeGraphExtractor(TestBaseCodeGraphExtractor):
 
     @staticmethod
     def _make_extractor() -> JavaCodeGraphExtractor:
-        with patch("renaissance.integrations.tree_sitter.adapter.TreeSitterAdapter"):
+        with patch("renaissance.parser_bindings.tree_sitter.adapter.TreeSitterAdapter"):
             return JavaCodeGraphExtractor("java", tree_sitter_python)
 
     def test_adds_file_and_folder_nodes(self) -> None:
@@ -292,7 +292,7 @@ class TestCppCodeGraphExtractor(TestBaseCodeGraphExtractor):
 
     @staticmethod
     def _make_extractor() -> CppCodeGraphExtractor:
-        with patch("renaissance.integrations.tree_sitter.adapter.TreeSitterAdapter"):
+        with patch("renaissance.parser_bindings.tree_sitter.adapter.TreeSitterAdapter"):
             return CppCodeGraphExtractor("cpp", tree_sitter_python)
 
     def test_adds_file_and_folder_nodes(self) -> None:

@@ -451,7 +451,7 @@ Imports within these packages are not yet visible to an import check; they becom
 | `integrations/clang/clang_ast_node`       | `CLANG_KIND_MAP`, `predicates`, `cpp_utils`    | one map, one set of predicates and one `CPPUtils` per binding                     |
 | `integrations/clang/clang_json_ast_node`  | `CLANG_KIND_MAP`, `predicates`, `cpp_utils`    | as above                                                                          |
 | `integrations/clang/c_pattern_factory`    | `predicates`, `cpp_utils`, shared by both      | one pattern factory per binding                                                   |
-| `integrations/clang/clang_adapter`        | `integrations/tree_sitter/lst`                 | clang gets its own node type; `LSTNode` classifies kinds with the tree-sitter map |
+| `integrations/clang/clang_adapter`        | `parser_bindings/tree_sitter/lst`              | clang gets its own node type; `LSTNode` classifies kinds with the tree-sitter map |
 
 When the migration splits these packages, these imports become visible, and are recorded as `ignore_imports` entries.
 

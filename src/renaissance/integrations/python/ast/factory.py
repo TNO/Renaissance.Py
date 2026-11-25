@@ -21,8 +21,7 @@ from renaissance.core.pattern import MATCH_ALL, MATCH_ONE, PatternKind, replace_
 from renaissance.integrations.python.ast.ast_node import ASTExtension
 from renaissance.integrations.python.ast.cst_node import PythonCstNode
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
-from renaissance.integrations.tree_sitter.adapter import TreeSitterAdapter
-from renaissance.integrations.tree_sitter.lst import LSTNode
+from renaissance.parser_bindings.tree_sitter import LSTNode, TreeSitterAdapter
 
 _MATCH_ALL_RE = re.compile(r"^" + re.escape(MATCH_ALL) + r"\w+$")
 _MATCH_ONE_RE = re.compile(r"^" + re.escape(MATCH_ONE) + r"\w+$")

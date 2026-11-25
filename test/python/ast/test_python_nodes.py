@@ -15,7 +15,7 @@ from renaissance.core.model import SemanticKind, traverse
 from renaissance.integrations.python.ast.cst_node import PythonCstNode
 from renaissance.integrations.python.ast.factory import PythonPatternFactory
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
-from renaissance.integrations.tree_sitter.lst import LSTNode
+from renaissance.parser_bindings.tree_sitter import LSTNode
 from test.python.ast.factories import Factories
 
 

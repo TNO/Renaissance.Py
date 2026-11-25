@@ -11,7 +11,7 @@ from pathlib import Path
 import networkx as nx
 
 from renaissance.core.model import SemanticKind
-from renaissance.integrations.tree_sitter.adapter import TreeSitterAdapter
+from renaissance.parser_bindings.tree_sitter import TreeSitterAdapter
 
 GRAPHML_DIR = "out_graphml"
 Path(GRAPHML_DIR).mkdir(parents=True, exist_ok=True)

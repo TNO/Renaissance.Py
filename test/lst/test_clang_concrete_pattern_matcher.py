@@ -12,7 +12,7 @@ from hamcrest import assert_that, has_length, is_
 from renaissance.core.match import MatchFinder, is_match, match_pattern
 from renaissance.core.match.match_finder import find_variants
 from renaissance.integrations.clang.clang_adapter import ClangAdapter
-from renaissance.integrations.tree_sitter.factory import TreeSitterPatternFactory
+from renaissance.parser_bindings.tree_sitter import TreeSitterPatternFactory
 from test.unit.shared.utils_for_tests import is_match_tree
 
 

@@ -11,8 +11,8 @@ import tree_sitter_python
 from hamcrest import assert_that, empty, has_length, is_, is_not
 
 from renaissance.core.match import is_match, match_pattern
-from renaissance.integrations.tree_sitter.adapter import TreeSitterAdapter
-from renaissance.integrations.tree_sitter.factory import TreeSitterPatternFactory
+from renaissance.parser_bindings.tree_sitter.adapter import TreeSitterAdapter
+from renaissance.parser_bindings.tree_sitter.factory import TreeSitterPatternFactory
 from test.unit.shared.utils_for_tests import is_match_tree
 
 

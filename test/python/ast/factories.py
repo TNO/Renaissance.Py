@@ -12,7 +12,7 @@ from itertools import product
 from renaissance.integrations.python.ast.cst_node import PythonCstNode
 from renaissance.integrations.python.ast.factory import PythonFactory
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
-from renaissance.integrations.tree_sitter.lst import LSTNode
+from renaissance.parser_bindings.tree_sitter import LSTNode
 
 
 class Factories:

@@ -45,7 +45,8 @@ sequence of nodes can make several variants, and the most greedy one comes first
 - `test/unit/core/match/test_match_finder___one_and_all_params.py`
 - `test/unit/core/match/test_match_finder___pattern_match.py`
 
-And the matcher tests of the parser bindings in `test/c_cpp/`, `test/lst/` and `test/python/ast/`.
+And the matcher tests of the parser bindings in `test/c_cpp/`, `test/lst/`, `test/python/ast/` and
+`test/unit/parser_bindings/tree_sitter/`.
 
 ## Related concepts
 

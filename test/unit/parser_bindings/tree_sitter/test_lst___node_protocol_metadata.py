@@ -9,7 +9,7 @@
 import tree_sitter_python
 
 from renaissance.core.model import SemanticKind
-from renaissance.integrations.tree_sitter.adapter import TreeSitterAdapter
+from renaissance.parser_bindings.tree_sitter.adapter import TreeSitterAdapter
 
 
 def test_tree_sitter_nodes_expose_protocol_metadata() -> None:

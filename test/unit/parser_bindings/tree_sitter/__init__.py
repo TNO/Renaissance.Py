@@ -4,4 +4,4 @@
 # of this repository, also available at:
 # https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
-"""the tree sitter is adapter to RST using an adapter, we can experiment with multi-language approach here."""
+"""Tests of the tree-sitter binding: its adapter, pattern factory, LST nodes and visualizer."""

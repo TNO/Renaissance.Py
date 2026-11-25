@@ -163,7 +163,7 @@ the two sides can silently disagree, producing incorrect or corrupted output.
   the RST adapter and its line/column to offset conversion.
 * `src/renaissance/integrations/python/ast/cst_node.py` - the CST adapter, which converts libcst's line/column
   positions to byte offsets itself.
-* `src/renaissance/integrations/tree_sitter/lst.py` - the tree-sitter adapter.
+* `src/renaissance/parser_bindings/tree_sitter/lst.py` - the tree-sitter adapter.
 * `src/renaissance/integrations/clang/clang_ast_node.py` and
   `src/renaissance/integrations/clang/clang_json_ast_node.py` - the clang adapters.
 

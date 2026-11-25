@@ -8,7 +8,7 @@
 
 import re
 
-from renaissance.integrations.tree_sitter.lst import LST
+from renaissance.parser_bindings.tree_sitter.lst import LST
 
 
 def signature_to_id(signature: str) -> str:
