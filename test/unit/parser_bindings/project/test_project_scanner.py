@@ -14,7 +14,7 @@ import pytest
 from hamcrest import assert_that, calling, contains_inanyorder, empty, equal_to, is_, raises
 from pytest_mock import MockerFixture
 
-from renaissance.project.project_scanner import (
+from renaissance.parser_bindings.project.project_scanner import (
     BearCppScanner,
     CppScanner,
     JavaScanner,
@@ -339,14 +339,14 @@ class TestBearCppScanner:
     def test_run_bear_raises_on_nonzero_exit(self, mocker: MockerFixture) -> None:
         """AI: Assert BearCppScanner.run_bear raises RuntimeError when the Bear subprocess exits non-zero."""
         scanner = BearCppScanner()
-        mocker.patch("renaissance.project.project_scanner.subprocess.run", return_value=Mock(returncode=1))
+        mocker.patch("renaissance.parser_bindings.project.project_scanner.subprocess.run", return_value=Mock(returncode=1))
 
         assert_that(calling(scanner.run_bear), raises(RuntimeError))
 
     def test_run_bear_succeeds_on_zero_exit(self, mocker: MockerFixture) -> None:
         """AI: Assert BearCppScanner.run_bear does not raise when the Bear subprocess exits zero."""
         scanner = BearCppScanner()
-        mocker.patch("renaissance.project.project_scanner.subprocess.run", return_value=Mock(returncode=0))
+        mocker.patch("renaissance.parser_bindings.project.project_scanner.subprocess.run", return_value=Mock(returncode=0))
 
         # Should not raise
         scanner.run_bear()

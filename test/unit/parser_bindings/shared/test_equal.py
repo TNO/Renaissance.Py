@@ -10,7 +10,7 @@ from hamcrest import assert_that, equal_to, is_
 from hypothesis import given
 from hypothesis import strategies as st
 
-from renaissance.integrations.shared import equal_in_children, equal_in_properties
+from renaissance.parser_bindings.shared import equal_in_children, equal_in_properties
 
 
 def is_relevant_property(name: str) -> bool:

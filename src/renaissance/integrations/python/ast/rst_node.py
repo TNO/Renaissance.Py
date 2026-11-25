@@ -19,7 +19,7 @@ from renaissance.core.model.format import format_node
 from renaissance.core.navigate import next_sibling, previous_sibling
 from renaissance.integrations.python.ast.kinds import PYTHON_KIND_MAP, PYTHON_OPERATOR_MAP
 from renaissance.integrations.python.ast.util import convert
-from renaissance.integrations.shared import equal_in_children, equal_in_properties
+from renaissance.parser_bindings.shared import equal_in_children, equal_in_properties
 
 types = ["int", "float", "str", "list", "set", "tuple", "Mapping", "dict", "Optional"]
 IRRELEVANT_PROPS = {"comment"}

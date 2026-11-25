@@ -4,4 +4,4 @@
 # of this repository, also available at:
 # https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
-"""Unit tests of renaissance.integrations.shared."""
+"""Unit tests of renaissance.parser_bindings, one directory per package."""

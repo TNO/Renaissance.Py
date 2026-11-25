@@ -157,6 +157,10 @@ nav:
           - Rewrite: user/core/rewrite/rewrite.md
           - Processing: user/core/processing/processing.md
 
+      - Parser bindings:
+          - Project scanners: user/parser_bindings/project/project.md
+          - Shared helpers: user/parser_bindings/shared/shared.md
+
       - Recipes:
           - Refactor actions: user/recipes/refactor_actions/refactor_actions.md
           - Python extractor: user/recipes/python_extractor/python_extractor.md
@@ -259,6 +263,12 @@ nav:
               - ast_processor: developer/core/processing/ast_processor.md
               - batch_ast_processor: developer/core/processing/batch_ast_processor.md
               - recipe_ast_processor: developer/core/processing/recipe_ast_processor.md
+
+      - Parser bindings:
+          - Project scanners:
+              - project_scanner: developer/parser_bindings/project/project_scanner.md
+          - Shared helpers:
+              - equal: developer/parser_bindings/shared/equal.md
 
       - Recipes:
           - Refactor actions:

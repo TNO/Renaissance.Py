@@ -386,6 +386,46 @@ units = "packages"
 mirror = "docs/user/recipes/{path}/{name}.md"
 aspects = "beside"
 
+[[tool.check_layout.mirrors]]
+code = "src/renaissance/parser_bindings"
+units = "packages"
+mirror = "test/unit/parser_bindings/{path}/"
+
+[[tool.check_layout.mirrors]]
+code = "src/renaissance/parser_bindings/project"
+units = "modules"
+mirror = "test/unit/parser_bindings/project/test_{path}.py"
+aspects = "instead"
+
+[[tool.check_layout.mirrors]]
+code = "src/renaissance/parser_bindings/shared"
+units = "modules"
+mirror = "test/unit/parser_bindings/shared/test_{path}.py"
+aspects = "instead"
+
+[[tool.check_layout.mirrors]]
+code = "src/renaissance/parser_bindings"
+units = "packages"
+mirror = "docs/developer/parser_bindings/{path}/"
+
+[[tool.check_layout.mirrors]]
+code = "src/renaissance/parser_bindings/project"
+units = "modules"
+mirror = "docs/developer/parser_bindings/project/{path}.md"
+aspects = "beside"
+
+[[tool.check_layout.mirrors]]
+code = "src/renaissance/parser_bindings/shared"
+units = "modules"
+mirror = "docs/developer/parser_bindings/shared/{path}.md"
+aspects = "beside"
+
+[[tool.check_layout.mirrors]]
+code = "src/renaissance/parser_bindings"
+units = "packages"
+mirror = "docs/user/parser_bindings/{path}/{name}.md"
+aspects = "beside"
+
 # Every repository path named in the documentation, in comments and docstrings, and in feature files exists; checked by
 # tools/check_references.py. `exclude` lists the files that are not read; `known_issues` and `stale` list the paths that are
 # known to be missing. An entry that no longer applies fails the check, so these lists only shrink.
@@ -438,8 +478,8 @@ layers = [
   # recipes
   "renaissance.recipes : rejuvenation : test.recipes : test.examples : test.unit.recipes",
   # parser_bindings
-  """renaissance.integrations : renaissance.project
-    : test.c_cpp : test.python : test.lst : test.project : test.unit.shared.factories""",
+  """renaissance.integrations : renaissance.parser_bindings
+    : test.c_cpp : test.python : test.lst : test.unit.parser_bindings : test.unit.shared.factories""",
   # core.processing
   "renaissance.core.processing : test.unit.core.processing",
   # core.rewrite
@@ -506,11 +546,11 @@ name = "Parser bindings use only core.model, core.pattern and core.match"
 type = "forbidden"
 source_modules = [
   "renaissance.integrations",
-  "renaissance.project",
+  "renaissance.parser_bindings",
   "test.c_cpp",
   "test.python",
   "test.lst",
-  "test.project",
+  "test.unit.parser_bindings",
   "test.unit.shared.factories",
 ]
 forbidden_modules = [
@@ -537,11 +577,11 @@ source_modules = [
 ]
 forbidden_modules = [
   "renaissance.integrations",
-  "renaissance.project",
+  "renaissance.parser_bindings",
   "test.c_cpp",
   "test.python",
   "test.lst",
-  "test.project",
+  "test.unit.parser_bindings",
   "test.unit.shared.factories",
 ]
 allow_indirect_imports = true
@@ -559,7 +599,7 @@ ignore_imports = [
   "renaissance.recipes.python_refactoring -> renaissance.integrations.python.ast.factory",
   "renaissance.recipes.python_refactoring -> renaissance.integrations.python.ast.rst_node",
   "rejuvenation.cli -> renaissance.integrations.python.ast.rst_node",
-  "rejuvenation.cli -> renaissance.project.project_scanner",
+  "rejuvenation.cli -> renaissance.parser_bindings.project",
   "test.recipes.test_python_refactoring -> renaissance.integrations.python.ast.cst_node",
   "test.recipes.test_python_refactoring -> renaissance.integrations.python.ast.factory",
   "test.recipes.test_python_refactoring -> renaissance.integrations.python.ast.rst_node",
@@ -593,10 +633,10 @@ source_modules = [ "renaissance.integrations.clang", "test.c_cpp", "test.unit.sh
 forbidden_modules = [
   "renaissance.integrations.python",
   "renaissance.integrations.tree_sitter",
-  "renaissance.project",
+  "renaissance.parser_bindings.project",
   "test.python",
   "test.lst",
-  "test.project",
+  "test.unit.parser_bindings.project",
 ]
 allow_indirect_imports = true
 ignore_imports = [
@@ -612,11 +652,11 @@ source_modules = [ "renaissance.integrations.python", "test.python" ]
 forbidden_modules = [
   "renaissance.integrations.clang",
   "renaissance.integrations.tree_sitter",
-  "renaissance.project",
+  "renaissance.parser_bindings.project",
   "test.c_cpp",
   "test.unit.shared.factories",
   "test.lst",
-  "test.project",
+  "test.unit.parser_bindings.project",
 ]
 allow_indirect_imports = true
 ignore_imports = [
@@ -637,11 +677,11 @@ source_modules = [ "renaissance.integrations.tree_sitter", "test.lst" ]
 forbidden_modules = [
   "renaissance.integrations.clang",
   "renaissance.integrations.python",
-  "renaissance.project",
+  "renaissance.parser_bindings.project",
   "test.c_cpp",
   "test.unit.shared.factories",
   "test.python",
-  "test.project",
+  "test.unit.parser_bindings.project",
 ]
 allow_indirect_imports = true
 ignore_imports = [
@@ -654,7 +694,7 @@ ignore_imports = [
 id = "project-independent"
 name = "The project binding imports no other binding"
 type = "forbidden"
-source_modules = [ "renaissance.project", "test.project" ]
+source_modules = [ "renaissance.parser_bindings.project", "test.unit.parser_bindings.project" ]
 forbidden_modules = [
   "renaissance.integrations",
   "test.c_cpp",
@@ -752,6 +792,21 @@ type = "protected"
 protected_modules = [ "renaissance.recipes.code_graph_extractor.code_graph_extractor" ]
 allowed_importers = [ "renaissance.recipes.code_graph_extractor", "test.unit.recipes.code_graph_extractor" ]
 
+# One contract per parser binding package: code outside the package imports only its public API, from the package itself.
+[[tool.importlinter.contracts]]
+id = "parser-bindings-project-api"
+name = "Only parser_bindings.project and its unit tests import the modules of parser_bindings.project"
+type = "protected"
+protected_modules = [ "renaissance.parser_bindings.project.project_scanner" ]
+allowed_importers = [ "renaissance.parser_bindings.project", "test.unit.parser_bindings.project" ]
+
+[[tool.importlinter.contracts]]
+id = "parser-bindings-shared-modules-api"
+name = "Only parser_bindings.shared and its unit tests import the modules of parser_bindings.shared"
+type = "protected"
+protected_modules = [ "renaissance.parser_bindings.shared.equal" ]
+allowed_importers = [ "renaissance.parser_bindings.shared", "test.unit.parser_bindings.shared" ]
+
 # format_node is for the core and the parser bindings only.
 [[tool.importlinter.contracts]]
 id = "core-model-format"
@@ -761,12 +816,12 @@ protected_modules = [ "renaissance.core.model.format" ]
 allowed_importers = [
   "renaissance.core",
   "renaissance.integrations",
-  "renaissance.project",
+  "renaissance.parser_bindings",
   "test.unit.core",
   "test.c_cpp",
   "test.python",
   "test.lst",
-  "test.project",
+  "test.unit.parser_bindings",
 ]
 
 # The helpers that the parser bindings share import nothing from Renaissance.Py, and only the parser bindings import them.
@@ -774,14 +829,12 @@ allowed_importers = [
 id = "bindings-shared-independent"
 name = "The shared helpers of the parser bindings import nothing from Renaissance.Py"
 type = "forbidden"
-source_modules = [ "renaissance.integrations.shared" ]
+source_modules = [ "renaissance.parser_bindings.shared" ]
 forbidden_modules = [
   "renaissance.core",
   "renaissance.recipes",
-  "renaissance.integrations.clang",
-  "renaissance.integrations.python",
-  "renaissance.integrations.tree_sitter",
-  "renaissance.project",
+  "renaissance.integrations",
+  "renaissance.parser_bindings.project",
   "rejuvenation",
 ]
 
@@ -789,15 +842,14 @@ forbidden_modules = [
 id = "bindings-shared-api"
 name = "Only the parser bindings and their unit tests import the shared helpers of the parser bindings"
 type = "protected"
-protected_modules = [ "renaissance.integrations.shared" ]
+protected_modules = [ "renaissance.parser_bindings.shared" ]
 allowed_importers = [
   "renaissance.integrations",
-  "renaissance.project",
-  "test.unit.integrations",
+  "renaissance.parser_bindings",
+  "test.unit.parser_bindings",
   "test.c_cpp",
   "test.python",
   "test.lst",
-  "test.project",
 ]
 
 # The tools and their tests are independent of the rest of the repository.

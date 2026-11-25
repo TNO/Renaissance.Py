@@ -280,7 +280,7 @@ The public API of a binding serves the tests, the parser-specific recipes, and t
 - `tree_sitter`: `TreeSitterAdapter`, `TreeSitterPatternFactory`, `LST`, `LSTNode`, `LstVisualizer`.
 - `project`: `ProjectScanner`, `CppScanner`, `BearCppScanner`, `JavaScanner`, `PythonScanner`.
 
-`shared` exports `equal_in_properties` and `equal_in_children`, now in `integrations/shared/equal.py`.
+`shared` exports `equal_in_properties` and `equal_in_children`, from `parser_bindings/shared/equal.py`.
 
 Today `PythonFactory`, `PythonPatternFactory` and `PythonPattern` serve the `ast`, `libcst` and tree-sitter parsers at once.
 They are split, so that each binding has its own.

@@ -4,4 +4,4 @@
 # of this repository, also available at:
 # https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
 
-"""project scanner collect the source files in a repo given a correct directory structure according standard."""
+"""Unit tests of renaissance.parser_bindings.shared."""

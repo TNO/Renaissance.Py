@@ -30,7 +30,7 @@ from renaissance.integrations.clang.predicates import (
     is_clang_declaration_reference,
     is_clang_kind,
 )
-from renaissance.integrations.shared import equal_in_children, equal_in_properties
+from renaissance.parser_bindings.shared import equal_in_children, equal_in_properties
 
 EMPTY_DICT = {}
 EMPTY_STR = ""

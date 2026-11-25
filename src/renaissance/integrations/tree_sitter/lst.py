@@ -12,8 +12,8 @@ from typing import Any, Self, cast
 from renaissance.core.model import SemanticKind
 from renaissance.core.model.format import format_node
 from renaissance.core.navigate import next_sibling, previous_sibling
-from renaissance.integrations.shared import equal_in_children, equal_in_properties
 from renaissance.integrations.tree_sitter.kinds import TREE_SITTER_KIND_MAP
+from renaissance.parser_bindings.shared import equal_in_children, equal_in_properties
 
 IRRELEVANT_PROPS = {"source_code", "end_point", "start_point", "location", "type"}
 IRRELEVANT_NODE = {"comment"}
