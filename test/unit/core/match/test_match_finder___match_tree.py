@@ -25,8 +25,8 @@ from renaissance.core.match import MatchFinder, find_in_list, is_match, match_pa
 from renaissance.core.match.match_finder import variant_in_match_stmt
 from renaissance.core.model import ASTFactory, ASTShower
 from renaissance.integrations.clang import ClangASTNode, CPatternFactory
-from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
-from renaissance.integrations.python.ast.rst_node import PythonRstNode
+from renaissance.parser_bindings.python.ast import PythonRstNode
+from renaissance.parser_bindings.python.ast.factory import PythonFactory, PythonPatternFactory
 from test.unit.shared.utils_for_tests import is_match_tree
 
 

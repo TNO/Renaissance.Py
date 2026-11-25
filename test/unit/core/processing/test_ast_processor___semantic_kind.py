@@ -8,8 +8,8 @@
 
 from renaissance.core.model import SemanticKind
 from renaissance.core.processing import ASTProcessor
-from renaissance.integrations.python.ast.factory import PythonFactory
-from renaissance.integrations.python.ast.rst_node import PythonRstNode
+from renaissance.parser_bindings.python.ast import PythonRstNode
+from renaissance.parser_bindings.python.ast.factory import PythonFactory
 
 
 def test_ast_processor_finds_nodes_by_semantic_kind() -> None:

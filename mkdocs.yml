@@ -159,6 +159,8 @@ nav:
 
       - Parser bindings:
           - Project scanners: user/parser_bindings/project/project.md
+          - Python ast: user/parser_bindings/python/ast/ast.md
+          - Python libcst: user/parser_bindings/python/libcst/libcst.md
           - Shared helpers: user/parser_bindings/shared/shared.md
           - tree-sitter: user/parser_bindings/tree_sitter/tree_sitter.md
 
@@ -268,6 +270,15 @@ nav:
       - Parser bindings:
           - Project scanners:
               - project_scanner: developer/parser_bindings/project/project_scanner.md
+          - Python ast:
+              - ast_node: developer/parser_bindings/python/ast/ast_node.md
+              - factory: developer/parser_bindings/python/ast/factory.md
+              - kinds: developer/parser_bindings/python/ast/kinds.md
+              - rst_node: developer/parser_bindings/python/ast/rst_node.md
+              - util: developer/parser_bindings/python/ast/util.md
+          - Python libcst:
+              - cst_node: developer/parser_bindings/python/libcst/cst_node.md
+              - cst_utils: developer/parser_bindings/python/libcst/cst_utils.md
           - Shared helpers:
               - equal: developer/parser_bindings/shared/equal.md
           - tree-sitter:

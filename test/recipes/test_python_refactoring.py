@@ -19,9 +19,9 @@ from hypothesis import strategies as st
 from pytest_mock import MockerFixture
 
 from renaissance.core.model import SemanticKind
-from renaissance.integrations.python.ast.cst_node import PythonCstNode
-from renaissance.integrations.python.ast.factory import PythonFactory
-from renaissance.integrations.python.ast.rst_node import PythonRstNode
+from renaissance.parser_bindings.python.ast import PythonRstNode
+from renaissance.parser_bindings.python.ast.factory import PythonFactory
+from renaissance.parser_bindings.python.libcst import PythonCstNode
 from renaissance.recipes.python_refactoring import PythonRefactoring, snake_case
 from renaissance.recipes.unit_to_pytest import UnitToPytest
 
@@ -58,7 +58,7 @@ class TestPythonRefactoring:
         """Make PythonFactory.create return text parsed by node_class instead of reading filename from disk."""
         code = textwrap.dedent(text)
         mocker.patch(
-            "renaissance.integrations.python.ast.factory.PythonFactory.create",
+            "renaissance.parser_bindings.python.ast.factory.PythonFactory.create",
             return_value=node_class.load_from_text(code, filename),
         )
 
@@ -192,7 +192,7 @@ class TestPythonRefactoring:
 
         code = textwrap.dedent(source)
         with patch(
-            "renaissance.integrations.python.ast.factory.PythonFactory.create",
+            "renaissance.parser_bindings.python.ast.factory.PythonFactory.create",
             return_value=PythonRstNode.load_from_text(code, "test_foo.py"),
         ):
             subject = UnitToPytest("test_foo.py")

@@ -7,7 +7,7 @@
 """Tests for finding AST nodes by semantic kind via the ast_finder module."""
 
 from renaissance.core.model import SemanticKind, find_semantic_kind
-from renaissance.integrations.python.ast.rst_node import PythonRstNode
+from renaissance.parser_bindings.python.ast import PythonRstNode
 
 
 def test_find_semantic_kind_uses_protocol_metadata() -> None:

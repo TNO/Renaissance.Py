@@ -15,8 +15,8 @@ from renaissance.core.match import match_pattern
 from renaissance.core.model import ASTFactory
 from renaissance.core.rewrite import ASTRewriter, Rewritable
 from renaissance.integrations.clang import ClangASTNode, CPatternFactory
-from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
-from renaissance.integrations.python.ast.rst_node import PythonRstNode
+from renaissance.parser_bindings.python.ast import PythonRstNode
+from renaissance.parser_bindings.python.ast.factory import PythonFactory, PythonPatternFactory
 from test.unit.shared.factories import Factories
 from test.unit.shared.utils_for_tests import debug_print
 

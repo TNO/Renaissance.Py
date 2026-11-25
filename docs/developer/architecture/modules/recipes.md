@@ -32,7 +32,7 @@ safely cover. This page covers `TypeParameterCheck`, the recipe behind
 - `src/renaissance/utils/import_resolution.py`: the import statements of a module and what they bind, the resolution of
   `from X import Y` to a file in the project, the re-anchoring of one file's relative import on another file, and the
   names each project file imports from the others.
-- `src/renaissance/integrations/python/ast/cst_utils.py`: a module's top-level statements, the names they read or bind and
+- `src/renaissance/parser_bindings/python/libcst/cst_utils.py`: a module's top-level statements, the names they read or bind and
   the comment trailing a statement's line. They are part of the libcst parser binding.
 - `src/renaissance/recipes/ruff_utils.py`: `run_ruff_import_cleanup` and `run_ruff_format`, which the CLI runs on the
   files the recipe changed. The first removes unused imports and sorts the imports, the second formats the files.

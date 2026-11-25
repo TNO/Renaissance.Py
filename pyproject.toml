@@ -390,6 +390,7 @@ aspects = "beside"
 code = "src/renaissance/parser_bindings"
 units = "packages"
 mirror = "test/unit/parser_bindings/{path}/"
+extra = [ "test/unit/parser_bindings/python/ast/shared/" ]  # test helpers
 
 [[tool.check_layout.mirrors]]
 code = "src/renaissance/parser_bindings/project"
@@ -409,6 +410,23 @@ units = "modules"
 mirror = "test/unit/parser_bindings/tree_sitter/test_{path}.py"
 aspects = "instead"
 exempt = [ "kinds" ]  # Tested through the semantic kinds of the LST nodes.
+
+[[tool.check_layout.mirrors]]
+code = "src/renaissance/parser_bindings/python/ast"
+units = "modules"
+mirror = "test/unit/parser_bindings/python/ast/test_{path}.py"
+aspects = "instead"
+exempt = [
+  "ast_node", # tested through the native ast nodes that the factory creates
+  "kinds",    # tested through the semantic kinds of the nodes
+  "util",     # tested through the offsets of the nodes and the unit_to_pytest recipe
+]
+
+[[tool.check_layout.mirrors]]
+code = "src/renaissance/parser_bindings/python/libcst"
+units = "modules"
+mirror = "test/unit/parser_bindings/python/libcst/test_{path}.py"
+aspects = "instead"
 
 [[tool.check_layout.mirrors]]
 code = "src/renaissance/parser_bindings"
@@ -434,10 +452,23 @@ mirror = "docs/developer/parser_bindings/tree_sitter/{path}.md"
 aspects = "beside"
 
 [[tool.check_layout.mirrors]]
+code = "src/renaissance/parser_bindings/python/ast"
+units = "modules"
+mirror = "docs/developer/parser_bindings/python/ast/{path}.md"
+aspects = "beside"
+
+[[tool.check_layout.mirrors]]
+code = "src/renaissance/parser_bindings/python/libcst"
+units = "modules"
+mirror = "docs/developer/parser_bindings/python/libcst/{path}.md"
+aspects = "beside"
+
+[[tool.check_layout.mirrors]]
 code = "src/renaissance/parser_bindings"
 units = "packages"
 mirror = "docs/user/parser_bindings/{path}/{name}.md"
 aspects = "beside"
+exempt = [ "python" ]  # A grouping package, without pages.
 
 # Every repository path named in the documentation, in comments and docstrings, and in feature files exists; checked by
 # tools/check_references.py. `exclude` lists the files that are not read; `known_issues` and `stale` list the paths that are
@@ -492,16 +523,13 @@ layers = [
   "renaissance.recipes : rejuvenation : test.recipes : test.examples : test.unit.recipes",
   # parser_bindings
   """renaissance.integrations : renaissance.parser_bindings
-    : test.c_cpp : test.python : test.lst : test.unit.parser_bindings : test.unit.shared.factories""",
+    : test.c_cpp : test.lst : test.unit.parser_bindings : test.unit.shared.factories""",
   # core.processing
   "renaissance.core.processing : test.unit.core.processing",
   # core.rewrite
   "renaissance.core.rewrite : test.unit.core.rewrite",
   # core.match
-  """\
-  renaissance.core.match : test.unit.core.match : test.utils.util_equivalence_classes : \
-  test.unit.shared.utils_for_tests\
-  """,
+  "renaissance.core.match : test.unit.core.match : test.unit.shared.utils_for_tests",
   # core.pattern
   "renaissance.core.pattern : test.unit.core.pattern",
   # core.model
@@ -514,29 +542,29 @@ ignore_imports = [
   "test.unit.core.processing.test_ast_processor___find_match -> renaissance.integrations.clang",
   "test.unit.core.processing.test_batch_ast_processor -> renaissance.integrations.clang",
   "test.unit.core.processing.test_recipe_ast_processor -> renaissance.integrations.clang",
-  "test.unit.core.processing.test_ast_processor___semantic_kind -> renaissance.integrations.python.ast.factory",
-  "test.unit.core.processing.test_ast_processor___semantic_kind -> renaissance.integrations.python.ast.rst_node",
+  "test.unit.core.processing.test_ast_processor___semantic_kind -> renaissance.parser_bindings.python.ast.factory",
+  "test.unit.core.processing.test_ast_processor___semantic_kind -> renaissance.parser_bindings.python.ast",
   "test.unit.core.rewrite.test_ast_rewriter___composition -> renaissance.integrations.clang",
-  "test.unit.core.rewrite.test_ast_rewriter___composition -> renaissance.integrations.python.ast.factory",
-  "test.unit.core.rewrite.test_ast_rewriter___composition -> renaissance.integrations.python.ast.rst_node",
+  "test.unit.core.rewrite.test_ast_rewriter___composition -> renaissance.parser_bindings.python.ast.factory",
+  "test.unit.core.rewrite.test_ast_rewriter___composition -> renaissance.parser_bindings.python.ast",
   "test.unit.core.rewrite.test_ast_rewriter___composition -> test.unit.shared.factories",
   "test.unit.core.rewrite.test_ast_rewriter___remove_replace_insert -> renaissance.integrations.clang",
-  "test.unit.core.rewrite.test_ast_rewriter___remove_replace_insert -> renaissance.integrations.python.ast.factory",
-  "test.unit.core.rewrite.test_ast_rewriter___remove_replace_insert -> renaissance.integrations.python.ast.rst_node",
+  "test.unit.core.rewrite.test_ast_rewriter___remove_replace_insert -> renaissance.parser_bindings.python.ast.factory",
+  "test.unit.core.rewrite.test_ast_rewriter___remove_replace_insert -> renaissance.parser_bindings.python.ast",
   "test.unit.core.rewrite.test_ast_rewriter___remove_replace_insert -> test.unit.shared.factories",
-  "test.unit.core.rewrite.test_ast_rewriter___semantics -> renaissance.integrations.python.ast.factory",
-  "test.unit.core.rewrite.test_ast_rewriter___semantics -> renaissance.integrations.python.ast.rst_node",
+  "test.unit.core.rewrite.test_ast_rewriter___semantics -> renaissance.parser_bindings.python.ast.factory",
+  "test.unit.core.rewrite.test_ast_rewriter___semantics -> renaissance.parser_bindings.python.ast",
   "test.unit.core.match.test_match_finder___one_and_all_params -> renaissance.integrations.clang",
-  "test.unit.core.match.test_match_finder___multi_assignments -> renaissance.integrations.python.ast.factory",
-  "test.unit.core.match.test_match_finder___multi_assignments -> renaissance.integrations.python.ast.rst_node",
+  "test.unit.core.match.test_match_finder___multi_assignments -> renaissance.parser_bindings.python.ast.factory",
+  "test.unit.core.match.test_match_finder___multi_assignments -> renaissance.parser_bindings.python.ast",
   "test.unit.core.match.test_match_finder___match_tree -> renaissance.integrations.clang",
-  "test.unit.core.match.test_match_finder___match_tree -> renaissance.integrations.python.ast.factory",
-  "test.unit.core.match.test_match_finder___match_tree -> renaissance.integrations.python.ast.rst_node",
-  "test.unit.core.match.test_match_finder___pattern_match -> renaissance.integrations.python.ast.factory",
-  "test.unit.core.match.test_match_finder___pattern_match -> renaissance.integrations.python.ast.rst_node",
+  "test.unit.core.match.test_match_finder___match_tree -> renaissance.parser_bindings.python.ast.factory",
+  "test.unit.core.match.test_match_finder___match_tree -> renaissance.parser_bindings.python.ast",
+  "test.unit.core.match.test_match_finder___pattern_match -> renaissance.parser_bindings.python.ast.factory",
+  "test.unit.core.match.test_match_finder___pattern_match -> renaissance.parser_bindings.python.ast",
   "test.unit.core.model.test_ast_finder___parsed_c -> test.unit.shared.factories",
-  "test.unit.core.model.test_ast_finder___predicate -> renaissance.integrations.python.ast.rst_node",
-  "test.unit.core.model.test_ast_finder___semantic_kind -> renaissance.integrations.python.ast.rst_node",
+  "test.unit.core.model.test_ast_finder___predicate -> renaissance.parser_bindings.python.ast",
+  "test.unit.core.model.test_ast_finder___semantic_kind -> renaissance.parser_bindings.python.ast",
   # A test of the node protocol that checks its use by the matcher.
   "test.unit.core.model.test_node_protocol -> renaissance.core.match",
   # A test of the batch processor that runs a real recipe step instead of a test double.
@@ -561,7 +589,6 @@ source_modules = [
   "renaissance.integrations",
   "renaissance.parser_bindings",
   "test.c_cpp",
-  "test.python",
   "test.lst",
   "test.unit.parser_bindings",
   "test.unit.shared.factories",
@@ -573,8 +600,8 @@ forbidden_modules = [
 allow_indirect_imports = true
 ignore_imports = [
   # Tests of the Python bindings that check the effect of a rewrite on their nodes.
-  "test.python.ast.test_offset_encoding -> renaissance.core.rewrite",
-  "test.python.ast.test_python_protocol_metadata -> renaissance.core.rewrite",
+  "test.unit.parser_bindings.python.ast.test_factory___offset_encoding -> renaissance.core.rewrite",
+  "test.unit.parser_bindings.python.ast.test_factory___protocol_metadata -> renaissance.core.rewrite",
 ]
 
 [[tool.importlinter.contracts]]
@@ -592,7 +619,6 @@ forbidden_modules = [
   "renaissance.integrations",
   "renaissance.parser_bindings",
   "test.c_cpp",
-  "test.python",
   "test.lst",
   "test.unit.parser_bindings",
   "test.unit.shared.factories",
@@ -604,23 +630,23 @@ declare each binding it depends on in ignore_imports, with the reason shown by t
 # Declared dependencies of parser-specific recipes come first, then the known violations.
 ignore_imports = [
   # PythonExtractor walks the nodes of the Python standard library ast parser.
-  "renaissance.recipes.python_extractor.python_extractor -> renaissance.integrations.python.ast.rst_node",
+  "renaissance.recipes.python_extractor.python_extractor -> renaissance.parser_bindings.python.ast",
   # The code graph extractors parse with tree-sitter and walk its LST.
   "renaissance.recipes.code_graph_extractor.code_graph_extractor -> renaissance.parser_bindings.tree_sitter",
   # Parsing a file and creating patterns without naming the parser is missing in the core.
-  "renaissance.recipes.python_refactoring -> renaissance.integrations.python.ast.cst_node",
-  "renaissance.recipes.python_refactoring -> renaissance.integrations.python.ast.factory",
-  "renaissance.recipes.python_refactoring -> renaissance.integrations.python.ast.rst_node",
-  "rejuvenation.cli -> renaissance.integrations.python.ast.rst_node",
+  "renaissance.recipes.python_refactoring -> renaissance.parser_bindings.python.libcst",
+  "renaissance.recipes.python_refactoring -> renaissance.parser_bindings.python.ast.factory",
+  "renaissance.recipes.python_refactoring -> renaissance.parser_bindings.python.ast",
+  "rejuvenation.cli -> renaissance.parser_bindings.python.ast",
   "rejuvenation.cli -> renaissance.parser_bindings.project",
-  "test.recipes.test_python_refactoring -> renaissance.integrations.python.ast.cst_node",
-  "test.recipes.test_python_refactoring -> renaissance.integrations.python.ast.factory",
-  "test.recipes.test_python_refactoring -> renaissance.integrations.python.ast.rst_node",
-  "test.recipes.test_refactor_with_rewrite -> renaissance.integrations.python.ast.rst_node",
-  "test.recipes.test_unit_to_pytest -> renaissance.integrations.python.ast.rst_node",
+  "test.recipes.test_python_refactoring -> renaissance.parser_bindings.python.libcst",
+  "test.recipes.test_python_refactoring -> renaissance.parser_bindings.python.ast.factory",
+  "test.recipes.test_python_refactoring -> renaissance.parser_bindings.python.ast",
+  "test.recipes.test_refactor_with_rewrite -> renaissance.parser_bindings.python.ast",
+  "test.recipes.test_unit_to_pytest -> renaissance.parser_bindings.python.ast",
   "test.recipes.test_cleanup_refactoring -> test.unit.shared.factories",
   # Access to the parameters of a function is missing in the core; convert_function reads stdlib ast.
-  "renaissance.recipes.unit_to_pytest -> renaissance.integrations.python.ast.util",
+  "renaissance.recipes.unit_to_pytest -> renaissance.parser_bindings.python.ast",
   # A pattern factory protocol is missing in the core; CPPPatternFactory is used in an annotation only.
   "renaissance.recipes.refactor_actions.ast_refactor_actions -> renaissance.integrations.clang.c_pattern_factory",
   # The examples that show how one parser represents code become unit tests of that binding; the others are violations.
@@ -637,18 +663,18 @@ ignore_imports = [
 ]
 
 # One contract per binding: a binding and its tests import no other binding.
-# Within integrations/clang and integrations/python, the parsers are not yet split, so imports between them are not visible.
+# Within integrations/clang, the parsers are not yet split, so imports between them are not visible.
 [[tool.importlinter.contracts]]
 id = "clang-independent"
 name = "The clang binding imports no other binding"
 type = "forbidden"
 source_modules = [ "renaissance.integrations.clang", "test.c_cpp", "test.lst", "test.unit.shared.factories" ]
 forbidden_modules = [
-  "renaissance.integrations.python",
   "renaissance.parser_bindings.project",
+  "renaissance.parser_bindings.python",
   "renaissance.parser_bindings.tree_sitter",
-  "test.python",
   "test.unit.parser_bindings.project",
+  "test.unit.parser_bindings.python",
   "test.unit.parser_bindings.tree_sitter",
 ]
 allow_indirect_imports = true
@@ -661,27 +687,59 @@ ignore_imports = [
 ]
 
 [[tool.importlinter.contracts]]
-id = "python-independent"
-name = "The Python bindings import no other binding"
+id = "python-ast-independent"
+name = "The Python ast binding imports no other binding"
 type = "forbidden"
-source_modules = [ "renaissance.integrations.python", "test.python" ]
+source_modules = [ "renaissance.parser_bindings.python.ast", "test.unit.parser_bindings.python.ast" ]
 forbidden_modules = [
   "renaissance.integrations.clang",
   "renaissance.parser_bindings.project",
+  "renaissance.parser_bindings.python.libcst",
   "renaissance.parser_bindings.tree_sitter",
   "test.c_cpp",
   "test.unit.shared.factories",
   "test.lst",
   "test.unit.parser_bindings.project",
+  "test.unit.parser_bindings.python.libcst",
   "test.unit.parser_bindings.tree_sitter",
 ]
 allow_indirect_imports = true
 ignore_imports = [
   # PythonFactory dispatches over ast, libcst and tree-sitter; each binding gets its own factory.
-  "renaissance.integrations.python.ast.factory -> renaissance.parser_bindings.tree_sitter",
-  "test.python.ast.factories -> renaissance.parser_bindings.tree_sitter",
-  "test.python.ast.test_offset_encoding -> renaissance.parser_bindings.tree_sitter",
-  "test.python.ast.test_python_nodes -> renaissance.parser_bindings.tree_sitter",
+  "renaissance.parser_bindings.python.ast.factory -> renaissance.parser_bindings.python.libcst",
+  "renaissance.parser_bindings.python.ast.factory -> renaissance.parser_bindings.tree_sitter",
+  "test.unit.parser_bindings.python.ast.shared.factories -> renaissance.parser_bindings.python.libcst",
+  "test.unit.parser_bindings.python.ast.shared.factories -> renaissance.parser_bindings.tree_sitter",
+  "test.unit.parser_bindings.python.ast.test_factory___node_kinds -> renaissance.parser_bindings.python.libcst",
+  "test.unit.parser_bindings.python.ast.test_factory___node_kinds -> renaissance.parser_bindings.tree_sitter",
+  "test.unit.parser_bindings.python.ast.test_factory___offset_encoding -> renaissance.parser_bindings.python.libcst",
+  "test.unit.parser_bindings.python.ast.test_factory___offset_encoding -> renaissance.parser_bindings.tree_sitter",
+  "test.unit.parser_bindings.python.ast.test_factory___protocol_metadata -> renaissance.parser_bindings.python.libcst",
+]
+
+[[tool.importlinter.contracts]]
+id = "python-libcst-independent"
+name = "The Python libcst binding imports no other binding"
+type = "forbidden"
+source_modules = [ "renaissance.parser_bindings.python.libcst", "test.unit.parser_bindings.python.libcst" ]
+forbidden_modules = [
+  "renaissance.integrations.clang",
+  "renaissance.parser_bindings.project",
+  "renaissance.parser_bindings.python.ast",
+  "renaissance.parser_bindings.tree_sitter",
+  "test.c_cpp",
+  "test.unit.shared.factories",
+  "test.lst",
+  "test.unit.parser_bindings.project",
+  "test.unit.parser_bindings.python.ast",
+  "test.unit.parser_bindings.tree_sitter",
+]
+allow_indirect_imports = true
+ignore_imports = [
+  # PythonCstNode classifies kinds with the map of the ast binding; each binding gets its own map (issue 266).
+  "renaissance.parser_bindings.python.libcst.cst_node -> renaissance.parser_bindings.python.ast.kinds",
+  # A test of PythonCstNode that builds the nodes with PythonFactory (see the ast contract).
+  "test.unit.parser_bindings.python.libcst.test_cst_node___parsing -> renaissance.parser_bindings.python.ast.factory",
 ]
 
 [[tool.importlinter.contracts]]
@@ -692,16 +750,17 @@ source_modules = [ "renaissance.parser_bindings.tree_sitter", "test.unit.parser_
 forbidden_modules = [
   "renaissance.integrations",
   "renaissance.parser_bindings.project",
+  "renaissance.parser_bindings.python",
   "test.c_cpp",
   "test.unit.shared.factories",
-  "test.python",
   "test.lst",
   "test.unit.parser_bindings.project",
+  "test.unit.parser_bindings.python",
 ]
 allow_indirect_imports = true
 ignore_imports = [
-  # A test of LSTNode that builds the nodes with PythonFactory (see the Python contract).
-  "test.unit.parser_bindings.tree_sitter.test_lst___python -> renaissance.integrations.python.ast.factory",
+  # A test of LSTNode that builds the nodes with PythonFactory (see the Python ast contract).
+  "test.unit.parser_bindings.tree_sitter.test_lst___python -> renaissance.parser_bindings.python.ast.factory",
 ]
 
 [[tool.importlinter.contracts]]
@@ -711,11 +770,12 @@ type = "forbidden"
 source_modules = [ "renaissance.parser_bindings.project", "test.unit.parser_bindings.project" ]
 forbidden_modules = [
   "renaissance.integrations",
+  "renaissance.parser_bindings.python",
   "renaissance.parser_bindings.tree_sitter",
   "test.c_cpp",
   "test.unit.shared.factories",
-  "test.python",
   "test.lst",
+  "test.unit.parser_bindings.python",
   "test.unit.parser_bindings.tree_sitter",
 ]
 allow_indirect_imports = true
@@ -765,7 +825,7 @@ ignore_imports = [
   # Matcher tests under the bindings that inspect the variants of the matcher; issue 396.
   "test.c_cpp.test_c_match_finder -> renaissance.core.match.match_finder",
   "test.lst.test_clang_concrete_pattern_matcher -> renaissance.core.match.match_finder",
-  "test.python.ast.test_python_matcher -> renaissance.core.match.match_finder",
+  "test.unit.parser_bindings.python.ast.test_factory___matcher -> renaissance.core.match.match_finder",
 ]
 
 [[tool.importlinter.contracts]]
@@ -816,6 +876,33 @@ type = "protected"
 protected_modules = [ "renaissance.parser_bindings.project.project_scanner" ]
 allowed_importers = [ "renaissance.parser_bindings.project", "test.unit.parser_bindings.project" ]
 
+# factory is left out: PythonFactory serves the ast, libcst and tree-sitter nodes, and is not exported until it is split per binding.
+[[tool.importlinter.contracts]]
+id = "parser-bindings-python-ast-api"
+name = "Only parser_bindings.python.ast and its unit tests import the modules of parser_bindings.python.ast"
+type = "protected"
+protected_modules = [
+  "renaissance.parser_bindings.python.ast.ast_node",
+  "renaissance.parser_bindings.python.ast.kinds",
+  "renaissance.parser_bindings.python.ast.rst_node",
+  "renaissance.parser_bindings.python.ast.util",
+]
+allowed_importers = [ "renaissance.parser_bindings.python.ast", "test.unit.parser_bindings.python.ast" ]
+ignore_imports = [
+  # PythonCstNode classifies kinds with the map of the ast binding; each binding gets its own map (issue 266).
+  "renaissance.parser_bindings.python.libcst.cst_node -> renaissance.parser_bindings.python.ast.kinds",
+]
+
+[[tool.importlinter.contracts]]
+id = "parser-bindings-python-libcst-api"
+name = "Only parser_bindings.python.libcst and its unit tests import the modules of parser_bindings.python.libcst"
+type = "protected"
+protected_modules = [
+  "renaissance.parser_bindings.python.libcst.cst_node",
+  "renaissance.parser_bindings.python.libcst.cst_utils",
+]
+allowed_importers = [ "renaissance.parser_bindings.python.libcst", "test.unit.parser_bindings.python.libcst" ]
+
 [[tool.importlinter.contracts]]
 id = "parser-bindings-shared-modules-api"
 name = "Only parser_bindings.shared and its unit tests import the modules of parser_bindings.shared"
@@ -848,7 +935,6 @@ allowed_importers = [
   "renaissance.parser_bindings",
   "test.unit.core",
   "test.c_cpp",
-  "test.python",
   "test.lst",
   "test.unit.parser_bindings",
 ]
@@ -864,6 +950,7 @@ forbidden_modules = [
   "renaissance.recipes",
   "renaissance.integrations",
   "renaissance.parser_bindings.project",
+  "renaissance.parser_bindings.python",
   "renaissance.parser_bindings.tree_sitter",
   "rejuvenation",
 ]
@@ -878,7 +965,6 @@ allowed_importers = [
   "renaissance.parser_bindings",
   "test.unit.parser_bindings",
   "test.c_cpp",
-  "test.python",
   "test.lst",
 ]
 

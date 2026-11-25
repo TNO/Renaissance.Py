@@ -7,7 +7,7 @@
 """Tests for finding AST nodes by a NodeProtocol predicate."""
 
 from renaissance.core.model import SemanticKind, find_nodes
-from renaissance.integrations.python.ast.rst_node import PythonRstNode
+from renaissance.parser_bindings.python.ast import PythonRstNode
 
 
 def test_find_nodes_accepts_protocol_predicate() -> None:

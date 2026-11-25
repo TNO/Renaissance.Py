@@ -183,9 +183,10 @@ def check_mirror(mirror: Mirror, files: set[str]) -> list[Violation]:
     for unit in sorted(units):
         counterparts = [path for path, mirrored_unit in mirrored.items() if mirrored_unit == unit]
         whole = mirror.counterpart(unit)
-        if not counterparts and unit not in mirror.exempt:
-            violations.append(Violation(mirror.location(unit), f"has no counterpart {whole}"))
-        elif counterparts and unit in mirror.exempt:
+        if not counterparts:
+            if unit not in mirror.exempt:
+                violations.append(Violation(mirror.location(unit), f"has no counterpart {whole}"))
+        elif unit in mirror.exempt:
             violations.append(Violation(mirror.location(unit), f"is exempt, but {counterparts[0]} exists: remove the exemption"))
         elif mirror.aspects == "beside":
             if whole not in counterparts:

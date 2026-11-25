@@ -10,8 +10,8 @@ import sys
 from pathlib import Path
 
 from renaissance.core.model import ASTShower
-from renaissance.integrations.python.ast.rst_node import PythonRstNode
 from renaissance.parser_bindings.project import PythonScanner
+from renaissance.parser_bindings.python.ast import PythonRstNode
 from renaissance.recipes.python_extractor import PythonExtractor
 from renaissance.recipes.python_refactoring import PythonRefactoring
 

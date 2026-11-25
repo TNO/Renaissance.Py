@@ -11,8 +11,8 @@ from hamcrest import has_length
 from hamcrest.core import assert_that
 
 from renaissance.core.match.match_finder import find_variants
-from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
-from renaissance.integrations.python.ast.rst_node import PythonRstNode
+from renaissance.parser_bindings.python.ast import PythonRstNode
+from renaissance.parser_bindings.python.ast.factory import PythonFactory, PythonPatternFactory
 
 code = """
 f(0,0)

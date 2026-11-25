@@ -283,7 +283,8 @@ The public API of a binding serves the tests, the parser-specific recipes, and t
 `shared` exports `equal_in_properties` and `equal_in_children`, from `parser_bindings/shared/equal.py`.
 
 Today `PythonFactory`, `PythonPatternFactory` and `PythonPattern` serve the `ast`, `libcst` and tree-sitter parsers at once.
-They are split, so that each binding has its own.
+They are split, so that each binding has its own. Until then, they are in `python/ast/factory.py`, outside the `__all__` of
+`python.ast`: exporting them would make `python.ast` and `python.libcst` import each other when the package is imported.
 
 #### `recipes` API
 
@@ -440,14 +441,13 @@ reason. They include recipes that import parser bindings, and unit tests of the 
 
 ### Imports between parser bindings
 
-Today the `ast` and `libcst` parsers share one package, `integrations/python/ast/`, and the libclang and JSON AST parsers share
-`integrations/clang/`.
-Imports within these packages are not yet visible to an import check; they become violations once they are split per parser.
+Today the libclang and JSON AST parsers share one package, `integrations/clang/`.
+Imports within it are not yet visible to an import check; they become violations once it is split per parser.
 
 | Importing module                          | Imported                                       | Resolution                                                                        |
 | ----------------------------------------- | ---------------------------------------------- | --------------------------------------------------------------------------------- |
-| `integrations/python/ast/cst_node`        | `PYTHON_KIND_MAP`, shared with the `ast` nodes | one map per binding (issue 266)                                                   |
-| `integrations/python/ast/factory`         | `ast`, `libcst` and tree-sitter nodes          | one factory and pattern factory per binding                                       |
+| `parser_bindings/python/libcst/cst_node`  | `PYTHON_KIND_MAP`, shared with the `ast` nodes | one map per binding (issue 266)                                                   |
+| `parser_bindings/python/ast/factory`      | `ast`, `libcst` and tree-sitter nodes          | one factory and pattern factory per binding                                       |
 | `integrations/clang/clang_ast_node`       | `CLANG_KIND_MAP`, `predicates`, `cpp_utils`    | one map, one set of predicates and one `CPPUtils` per binding                     |
 | `integrations/clang/clang_json_ast_node`  | `CLANG_KIND_MAP`, `predicates`, `cpp_utils`    | as above                                                                          |
 | `integrations/clang/c_pattern_factory`    | `predicates`, `cpp_utils`, shared by both      | one pattern factory per binding                                                   |

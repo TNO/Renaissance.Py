@@ -156,9 +156,10 @@ def test_a_directory_without_its_package_is_reported() -> None:
     assert_that(violations, equal_to(["test/unit/core/matching/: mirrors no unit of src/core/"]))
 
 
-def test_an_exempt_unit_needs_no_counterpart() -> None:
-    """Assert an exempt unit without counterpart passes."""
-    entry = {**TESTS_OF_TOOLS, "exempt": ["check_a"]}
+@pytest.mark.parametrize("mirror", [TESTS_OF_TOOLS, PAGES_OF_TOOLS])
+def test_an_exempt_unit_needs_no_counterpart(mirror: Mapping[str, object]) -> None:
+    """Assert an exempt unit without counterpart passes, also when pages per aspect may be beside its counterpart."""
+    entry = {**mirror, "exempt": ["check_a"]}
     assert_that(_violations(entry, {"tools/check_a.py"}), is_(empty()))
 
 

@@ -14,8 +14,8 @@ from hamcrest import assert_that, empty, has_length, is_
 from pytest_mock import MockerFixture
 
 from renaissance.core.match import PatternMatch, match_pattern
-from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
-from renaissance.integrations.python.ast.rst_node import PythonRstNode
+from renaissance.parser_bindings.python.ast import PythonRstNode
+from renaissance.parser_bindings.python.ast.factory import PythonFactory, PythonPatternFactory
 
 
 class TestPatternMatch:

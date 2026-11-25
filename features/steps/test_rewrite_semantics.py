@@ -35,8 +35,8 @@ from renaissance.core.model import ASTFactory, find_nodes
 from renaissance.core.rewrite import ASTRewriter
 from renaissance.integrations.clang import ClangASTNode, CPPPatternFactory
 from renaissance.integrations.clang.predicates import is_clang_compound_statement
-from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
-from renaissance.integrations.python.ast.rst_node import PythonRstNode
+from renaissance.parser_bindings.python.ast import PythonRstNode
+from renaissance.parser_bindings.python.ast.factory import PythonFactory, PythonPatternFactory
 
 _FEATURE = "../rewrite_semantics.feature"
 

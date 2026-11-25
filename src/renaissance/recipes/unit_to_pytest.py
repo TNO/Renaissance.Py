@@ -12,7 +12,7 @@ from pathlib import Path
 
 from renaissance.core.match import PatternMatch, match_pattern
 from renaissance.core.model import NodeProtocol, SemanticKind, find_semantic_kind
-from renaissance.integrations.python.ast.util import convert_function
+from renaissance.parser_bindings.python.ast import convert_function
 from renaissance.recipes.python_refactoring import PythonRefactoring
 
 

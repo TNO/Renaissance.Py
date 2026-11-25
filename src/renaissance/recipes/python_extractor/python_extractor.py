@@ -11,7 +11,7 @@ from pathlib import Path
 import networkx as nx
 
 from renaissance.core.model import SemanticKind
-from renaissance.integrations.python.ast.rst_node import PythonRstNode
+from renaissance.parser_bindings.python.ast import PythonRstNode
 
 
 class PythonExtractor:

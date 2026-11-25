@@ -149,7 +149,7 @@ the two sides can silently disagree, producing incorrect or corrupted output.
 
 ## Related tests
 
-* `test/python/ast/test_offset_encoding.py` - checks, per Python adapter, that `offset` and
+* `test/unit/parser_bindings/python/ast/test_factory___offset_encoding.py` - checks, per Python adapter, that `offset` and
   `end_offset` address the same units the rewriter splices. The ASCII cases are the control that
   isolates unit mismatches from unrelated defects; the non-ASCII cases record which adapters
   currently deviate from the decisions above.
@@ -159,9 +159,9 @@ the two sides can silently disagree, producing incorrect or corrupted output.
 * `src/renaissance/core/rewrite/ast_rewriter.py` - derives the buffer a rewrite batch is applied to.
 * `src/renaissance/core/rewrite/rewriter.py` - splices replacement text into that buffer, in bytes.
 * `src/renaissance/core/model/ast_node.py` - `binary_file_content`, the root-owned buffer accessor.
-* `src/renaissance/integrations/python/ast/rst_node.py` and `src/renaissance/integrations/python/ast/util.py` -
+* `src/renaissance/parser_bindings/python/ast/rst_node.py` and `src/renaissance/parser_bindings/python/ast/util.py` -
   the RST adapter and its line/column to offset conversion.
-* `src/renaissance/integrations/python/ast/cst_node.py` - the CST adapter, which converts libcst's line/column
+* `src/renaissance/parser_bindings/python/libcst/cst_node.py` - the CST adapter, which converts libcst's line/column
   positions to byte offsets itself.
 * `src/renaissance/parser_bindings/tree_sitter/lst.py` - the tree-sitter adapter.
 * `src/renaissance/integrations/clang/clang_ast_node.py` and

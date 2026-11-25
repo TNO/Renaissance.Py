@@ -21,12 +21,12 @@ https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
     - `test/unit/core/match/test_match_finder___match_dict.py`
     - `test/unit/core/match/test_match_finder___pattern_match.py`
     - `test/unit/core/pattern/test_pattern_kind.py`
-    - `test/python/ast/test_python_matcher.py`
-    - `test/python/ast/test_python_pattern_type_parameters.py`
-    - `test/python/ast/test_python_pattern_keywords.py`
+    - `test/unit/parser_bindings/python/ast/test_factory___matcher.py`
+    - `test/unit/parser_bindings/python/ast/test_factory___type_parameters.py`
+    - `test/unit/parser_bindings/python/ast/test_factory___keywords.py`
     - `test/c_cpp/test_c_match_finder.py`
 - **Code file(s):** `src/renaissance/core/match/match_finder.py`, `src/renaissance/core/pattern/pattern_kind.py`,
-  `src/renaissance/core/pattern/placeholders.py`, `src/renaissance/integrations/python/ast/factory.py`
+  `src/renaissance/core/pattern/placeholders.py`, `src/renaissance/parser_bindings/python/ast/factory.py`
 
 ## 2. Rewrite semantics
 
@@ -61,7 +61,7 @@ https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
     - `test/recipes/test_type_parameter_rules.py`
     - `test/recipes/test_step_runner.py`
     - `test/recipes/test_python_refactoring.py`
-    - `test/python/ast/test_cst_utils.py`
+    - `test/unit/parser_bindings/python/libcst/test_cst_utils.py`
     - `test/utils/test_import_resolution.py`
     - `test/recipes/test_ruff_utils.py`
     - `test/rejuvenation/test_migration_type_recipes.py`
@@ -70,7 +70,7 @@ https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
   `src/renaissance/recipes/type_parameter_uses.py`,
   `src/renaissance/recipes/step_runner.py`,
   `src/renaissance/recipes/python_refactoring.py`,
-  `src/renaissance/utils/import_resolution.py`, `src/renaissance/integrations/python/ast/cst_utils.py`,
+  `src/renaissance/utils/import_resolution.py`, `src/renaissance/parser_bindings/python/libcst/cst_utils.py`,
   `src/renaissance/recipes/ruff_utils.py`,
   `src/rejuvenation/migration_type_recipes.py`
 

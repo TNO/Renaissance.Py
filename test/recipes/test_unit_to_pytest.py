@@ -20,7 +20,7 @@ from hamcrest import assert_that, contains_string, ends_with, equal_to, is_, not
 from pytest_mock import MockerFixture
 
 import targets
-from renaissance.integrations.python.ast.rst_node import PythonRstNode
+from renaissance.parser_bindings.python.ast import PythonRstNode
 from renaissance.recipes.unit_to_pytest import UnitToPytest
 
 
@@ -61,7 +61,7 @@ class TestUnitToPytest:
     def _create(self, mocker: MockerFixture, text: str) -> UnitToPytest:
         code = textwrap.dedent(text)
         mocker.patch(
-            "renaissance.integrations.python.ast.factory.PythonFactory.create",
+            "renaissance.parser_bindings.python.ast.factory.PythonFactory.create",
             return_value=PythonRstNode.load_from_text(code),
         )
         subject = UnitToPytest("x.py")
