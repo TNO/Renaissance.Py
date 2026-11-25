@@ -8,8 +8,8 @@
 
 from clang import cindex
 
-from renaissance.integrations.tree_sitter.lst import LST, LSTNode
-from renaissance.utils.ast_utils import detect_placeholder
+from renaissance.core.pattern import detect_placeholder
+from renaissance.parser_bindings.tree_sitter import LST, LSTNode
 
 
 class ClangAdapter:

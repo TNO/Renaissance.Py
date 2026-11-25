@@ -14,7 +14,7 @@ from features.steps.test_steps import *  # noqa: F403 -- pytest-bdd step aggrega
 
 FEATURES_BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Tags on individual `Examples:` blocks in features/rewrite-semantics.feature that
+# Tags on individual `Examples:` blocks in features/rewrite_semantics.feature that
 # mark one specific collection-order case as a known, not-yet-fixed failure. The
 # Rewriter currently orders prepend/append text by collection order rather than
 # AST structure, so only ONE of the two collection orders in each scenario

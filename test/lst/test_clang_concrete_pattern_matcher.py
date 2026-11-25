@@ -7,20 +7,22 @@
 """Tests for concrete (LST-level) pattern matching against Clang-parsed C++ code."""
 
 import pytest
-from hamcrest import assert_that, empty, has_length, is_, is_not
+from hamcrest import assert_that, has_length, is_
 
+from renaissance.core.match import MatchFinder, is_match, match_pattern
+from renaissance.core.match.match_finder import find_variants
 from renaissance.integrations.clang.clang_adapter import ClangAdapter
-from renaissance.integrations.tree_sitter.extractor import Extractor
-from renaissance.integrations.tree_sitter.factory import TreeSitterPatternFactory
-from renaissance.syntax_tree.match_finder import MIS_MATCH, MatchFinder, find_variants, is_match, is_match_tree, match_pattern
+from renaissance.parser_bindings.tree_sitter import TreeSitterPatternFactory
+from test.unit.shared.utils_for_tests import is_match_tree
 
 
 class TestClangConcretePatternMatcher:
     """AI: Tests concrete (LST-level) pattern matching against Clang-parsed C++ code."""
 
     @pytest.mark.parametrize(
-        ("code", "pattern"),
+        ("code_txt", "pattern_txt"),
         [
+            ("int E = 0; int vals=0; enum E { A };", "int E=0; int vals=0; enum E { A };"),
             ("int body=0;int main() { return body; }", "int body=0;int main() { return body; }"),
             ("int init, cond, inc=0;int body=0;for (;;) {}", "int $i, $c, $inc=0;int $b=0;for ($i; $c; $inc) $b"),
             ("a = b;", "$lhs = $rhs;"),
@@ -34,24 +36,21 @@ class TestClangConcretePatternMatcher:
             ("int body=0; auto f = []() { return 1; };", "int $body=0; auto $f = []() { $body; };"),
         ],
     )
-    def test_clang_patterns(self, code, pattern) -> None:
+    def test_clang_patterns(self, code_txt, pattern_txt) -> None:
         """AI: Verify a variety of C++ constructs match their corresponding pattern with placeholders."""
         adapter = ClangAdapter()
-        interface = TreeSitterPatternFactory(adapter)
-        extractor = Extractor(interface, [pattern])
-        matches = extractor.run(code)
-        assert_that(matches, is_not(empty()))
-
-    def test_clang_patterns_using_extractor(self) -> None:
-        """AI: Verify an enum pattern matches its occurrence in source via the Extractor."""
-        adapter = ClangAdapter()
-        interface = TreeSitterPatternFactory(adapter)
-        extractor = Extractor(interface, ["int E=0; int vals=0; enum E { A };"])
-        matches = extractor.run("int E = 0; int vals=0; enum E { A };")
+        factory = TreeSitterPatternFactory(adapter)
+        pattern = factory.create_statements(pattern_txt)
+        code = factory.create_statements(code_txt)
+        matches = match_pattern(code, pattern, recursive=False)
         assert_that(matches, has_length(1))
 
     def test_clang_failing_pattern(self) -> None:
         """AI: Verify an enum statement pattern matches its occurrence via match_pattern directly on LST nodes."""
+        # TODO(pjljvandelaar): Why is "failing" in the name of this test function? The match succeeds - has length 1.
+        #  @Jinmin Hu: How would you describe the scenario?
+        #  What about renaming this test to test_clang_pattern_matches_code_parsed_from_file?
+        #  https://github.com/TNO/Renaissance.Py/issues/187
         adapter = ClangAdapter()
         interface = TreeSitterPatternFactory(adapter)
         pattern = interface.create_statements("int E=0; int vals=0; enum E { A };")
@@ -63,11 +62,12 @@ class TestClangConcretePatternMatcher:
         """AI: Verify find_variants locates a matching variant for an enum statement pattern."""
         adapter = ClangAdapter()
         interface = TreeSitterPatternFactory(adapter)
-        pattern = interface.create_statements("int E1=0; int vals=0; enum E2 { A };")
-        code = adapter.load_from_text("int E1=0; int vals=0; enum E2 { A };", "snippets.c")
+        statements = "int E1=0; int vals=0; enum E2 { A };"
+        pattern = interface.create_statements(statements)
+        code = adapter.load_from_text(statements, "snippets.c")
         matches = find_variants(code.root.children, pattern)
         assert_that(matches, has_length(1))
-        assert_that(matches[0].end_index, is_not(MIS_MATCH))
+        assert_that(matches[0].index, is_(len(pattern)))
 
     @pytest.mark.skip("it should be the same really")
     def test_type_property_between_code_and_pattern_are_same(self) -> None:
@@ -79,26 +79,37 @@ class TestClangConcretePatternMatcher:
         assert_that(code.properties["type"], is_(pattern.properties["type"]))
 
     @pytest.mark.parametrize(
-        ("code", "pattern"),
+        ("code_txt", "pattern_txt"),
         [
             (
                 "int add(int a, int b) { return a + b; }",
                 "int $a,$b,$body;int $f(int $a, int $b) { $body; }",
             ),
+            # TODO(pjljvandelaar): Why are patterns not consistent with respect to ;
+            #  in $body; (see e.g., above) / $body (see e.g., below)?
+            #  https://github.com/TNO/Renaissance.Py/issues/187
             ("void f() { int x = 0; }", "int $body=0;void $name() { $body }"),
+            # TODO(pjljvandelaar): 1. code doesn't start with declaration, so shouldn't match the pattern.
+            #  2. In CDT $body in the compound statement should be appended with the terminator (;).
+            #  https://github.com/TNO/Renaissance.Py/issues/187
             ("if (x) { y(); }", "int $cond,$body=0;if ($cond) { $body }"),
             ("while (x) {}", "int $cond;while ($cond) $body"),
             ("do {} while (x);", "int $body,$cond;do $body while ($cond);"),
             ("switch(x) { case 1: break; }", "int $val,$cases;switch ($val) { $cases }"),
             ("try {} catch (...) {}", "int $body, $handler;try $body catch (...) $handler"),
+            # TODO(pjljvandelaar): 1. Is explicit declaration within the pattern necessary?
+            #  Can't it be inferred and implicitly added by the tool chain?
+            #  2. Why do some patterns only declare the placeholders, while others initialize them as well?
+            #  https://github.com/TNO/Renaissance.Py/issues/187
         ],
     )
-    def test_clang_patterns_to_be_fixed(self, code, pattern) -> None:
+    def test_clang_patterns_to_be_fixed(self, code_txt: str, pattern_txt: str) -> None:
         """AI: Verify currently-unsupported C++ constructs don't match their pattern yet (documents known gaps)."""
         adapter = ClangAdapter()
-        interface = TreeSitterPatternFactory(adapter)
-        extractor = Extractor(interface, [pattern])
-        matches = extractor.run(code)
+        factory = TreeSitterPatternFactory(adapter)
+        pattern = factory.create_statements(pattern_txt)
+        code = factory.create_statements(code_txt)
+        matches = match_pattern(code, pattern, recursive=False)
         assert_that(matches, has_length(0))  # but should be 1
 
     def test_is_match_clang_patterns_without_decl(self) -> None:

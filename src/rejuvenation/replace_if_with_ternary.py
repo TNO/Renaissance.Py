@@ -6,11 +6,12 @@
 
 """AI: Example script demonstrating replacement of if-else statements with ternary operators in C source."""
 
-# This script demonstrates the use of the syntax_tree library to parse and rewrite C code.
+# This script demonstrates the use of the Renaissance.Py library to parse and rewrite C code.
 # It specifically showcases the replacement of if-else statements with ternary operators.
+from renaissance.core.match import find_all
+from renaissance.core.model import ASTFactory
+from renaissance.core.rewrite import ASTRewriter
 from renaissance.integrations.clang import ClangASTNode, CPatternFactory
-from renaissance.syntax_tree import ASTFactory, ASTRewriter
-from renaissance.syntax_tree.match_finder import find_all
 
 example_code = """
         int a = 1;
@@ -54,6 +55,8 @@ def replace_if_with_ternary():
     # Create a pattern factory (using the factory (hence also its args)
     pattern_factory = CPatternFactory(factory)
     if_else_patterns = pattern_factory.create_statements("if($exp){$$before;b=$d1;$$after;}else{$$before;b=$d2;$$after;}")
+    # TODO(pjljvandelaar): Should b be $b? Or is the pattern intentionally limited to this fixed variable name?
+    #  https://github.com/TNO/Renaissance.Py/issues/187
 
     # Create translation unit
     atu = factory.create_from_text(example_code, "test.c")
@@ -61,6 +64,10 @@ def replace_if_with_ternary():
     rewriter = ASTRewriter(atu)
     # Search matches and replace them
     for match in find_all(atu.children, if_else_patterns):
+        # TODO(pjljvandelaar): Should a filter function be applied to ensure correctness?
+        #  Currently the replacement is not correct when e.g., b is used in $$before
+        #  and when $$before changes the value of $exp.
+        #  https://github.com/TNO/Renaissance.Py/issues/187
         rewriter.replace("$$before; b=($exp) ? $d1:$d2; $$after;", match)
     # Return the rewritten code
     return rewriter.apply_to_string().strip()

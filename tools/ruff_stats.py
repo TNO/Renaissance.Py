@@ -6,7 +6,7 @@
 
 """AI: Report the ruff violation counts grouped by the prefix used in `select` and `ignore`.
 
-`tools/lint_budget.py` counts the issues per rule code; this script aggregates the same counts per
+`tools/shared/linters.py` counts the issues per rule code; this script aggregates the same counts per
 linter prefix (`E`, `PLC`, `SIM`, ...), because that is the granularity at which `[tool.ruff.lint]`
 in pyproject.toml switches a whole group of checks on or off. Prefixes without a single violation
 can be added to `select` right away, so they are listed separately; prefixes whose rules all live in
@@ -14,7 +14,7 @@ ruff's preview mode are listed apart, because selecting them has no effect witho
 The `+preview` column shows how many violations each prefix gains when preview mode is enabled.
 `--format toml` prints the extended selection ready to paste into pyproject.toml.
 
-Run `python tools/ruff_stats.py` for the table, `--format json` for machine-readable output.
+Run `python -m tools.ruff_stats` for the table, `--format json` for machine-readable output.
 """
 
 import argparse
@@ -25,9 +25,12 @@ from collections import Counter
 from dataclasses import dataclass
 from typing import Any
 
-from lint_budget import EXIT_OK, EXIT_TOOL_FAILURE, PYPROJECT_FILE, count_ruff_issues, run_json_array
+from tools.shared.linters import PYPROJECT_FILE, count_ruff_issues, run_json_array
 
 UNGROUPED = "-"
+
+EXIT_OK = 0
+EXIT_TOOL_FAILURE = 2
 
 
 @dataclass(frozen=True)

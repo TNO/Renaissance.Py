@@ -6,38 +6,22 @@
 
 """Tests for the copyright guard rail in tools/check_copyright.py.
 
-The `tools` directory is not on the pytest `pythonpath`, so the script is loaded from its path.
 The unit tests work on bytes with a synthetic notice; the end-to-end tests run against a temporary git repository.
 """
 
-import importlib.util
 import shutil
 import subprocess
 from pathlib import Path, PurePosixPath
-from types import ModuleType
 
 import pytest
+
+from tools import check_copyright
 
 ROOT = Path(__file__).resolve().parents[2]
 
 NOTICE = ("Copyright (C) 2024-2026 Example", "", "Licensed as described in LICENSE.")
 PYTHON_NOTICE = b"# Copyright (C) 2024-2026 Example\n#\n# Licensed as described in LICENSE.\n"
 MARKDOWN_NOTICE = b"<!--\nCopyright (C) 2024-2026 Example\n\nLicensed as described in LICENSE.\n-->\n"
-
-
-def _load_check_copyright() -> ModuleType:
-    """Import tools/check_copyright.py as a module."""
-    path = ROOT / "tools" / "check_copyright.py"
-    spec = importlib.util.spec_from_file_location("check_copyright", path)
-    if spec is None or spec.loader is None:
-        message = f"cannot load {path}"
-        raise RuntimeError(message)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
-
-
-check_copyright = _load_check_copyright()
 
 
 def _apply(command: str, name: str, data: bytes) -> tuple[bytes, str | None]:

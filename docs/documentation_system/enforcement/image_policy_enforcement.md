@@ -1,0 +1,34 @@
+<!--
+Copyright (C) 2024-2026 TNO
+
+Licensed under the terms specified in the LICENSE file in the root directory
+of this repository, also available at:
+https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
+-->
+
+# Image policy enforcement
+
+This page describes how the mandatory [image policy](../policies/mandatory/image_policy.md) is enforced.
+
+## Enforcing code
+
+The repository contains a custom checker:
+
+- `tools/check_doc_images_policy.py`
+
+This checker validates:
+
+- allowed image locations,
+- image file naming conventions,
+- supported image filename pattern checks.
+
+## CI integration
+
+The checker is intended to run from CI, for example through:
+
+- `.github/workflows/docs_quality.yml`
+
+## Rationale
+
+Existing generic tools can validate broken links and some Markdown quality aspects,
+but repository-specific image placement and naming rules are best handled by custom code.

@@ -1,0 +1,28 @@
+# Copyright (C) 2024-2026 TNO
+#
+# Licensed under the terms specified in the LICENSE file in the root directory
+# of this repository, also available at:
+# https://github.com/TNO/Renaissance.Py/blob/main/LICENSE
+
+"""AI: Utility helpers for converting between source positions and node representations."""
+
+
+def convert(lines, line_nr, col):
+    """AI: Convert a (line, column) source position into an absolute character offset."""
+    # TODO(pjljvandelaar): unverified - the + 1 assumes a one-byte line ending, but splitlines() also splits on "\r\n", so
+    #  with CRLF line endings the offset would be 1 too small per preceding line.
+    #  https://github.com/TNO/Renaissance.Py/issues/153
+    if line_nr > len(lines):
+        return 0
+    return sum(len(lines[i]) + 1 for i in range(line_nr - 1)) + col
+    # add node to the node list for references
+
+
+def convert_function(fun):
+    """AI: Return the function's signature rewritten to take a leading 'self' parameter."""
+    signature: str = fun.signature + "\n\n\n"
+    if len(fun.node.args.args) == 0:
+        signature = signature.replace(f"{fun.name}()", f"{fun.name}(self)", 1)
+    else:
+        signature = signature.replace(f"{fun.name}(", f"{fun.name}(self,", 1)
+    return signature

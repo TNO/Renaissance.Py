@@ -10,8 +10,9 @@ import pytest
 from hamcrest import assert_that, has_length, has_string, is_
 from pytest_mock import MockerFixture
 
+from renaissance.core.model import ASTFactory
+from renaissance.core.navigate import is_proper_ancestor_of
 from renaissance.integrations.clang import ClangASTNode, CPatternFactory
-from renaissance.syntax_tree import ASTFactory
 
 
 class TestClangAstNode:
@@ -51,9 +52,9 @@ class TestClangAstNode:
         assert_that(src.children[-1].children[-1].get_ancestor("VAR_DECL"))
 
     def test_var_decl_in_ancestor_of(self) -> None:
-        """AI: Verify is_ancestor_of confirms the translation unit is an ancestor of a nested declaration node."""
+        """AI: Verify the translation unit is a proper ancestor of a nested declaration node."""
         src = ClangASTNode.load_from_text("int x= 0;", "test.c")
-        assert_that(src.is_ancestor_of(src.children[-1].children[-1]))
+        assert_that(is_proper_ancestor_of(src, src.children[-1].children[-1]))
 
     @pytest.mark.skip("last semicolon is cut off from decl")
     def test_var_decl_include_semi_column_and_keep_space(self) -> None:

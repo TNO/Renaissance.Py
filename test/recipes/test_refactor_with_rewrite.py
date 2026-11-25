@@ -12,7 +12,7 @@ import pytest
 from hamcrest import assert_that, is_
 from pytest_mock import MockerFixture
 
-from renaissance.integrations.python.ast.rst_node import PythonRstNode
+from renaissance.parser_bindings.python.ast import PythonRstNode
 from renaissance.recipes.python_refactoring import PythonRefactoring
 
 
@@ -22,7 +22,7 @@ class TestRefactorWithRewrite:
     def _create(self, mocker: MockerFixture, text) -> PythonRefactoring:
         code = textwrap.dedent(text)
         mocker.patch(
-            "renaissance.integrations.python.ast.factory.PythonFactory.create",
+            "renaissance.parser_bindings.python.ast.factory.PythonFactory.create",
             return_value=PythonRstNode.load_from_text(code),
         )
         subject = PythonRefactoring("x.py")

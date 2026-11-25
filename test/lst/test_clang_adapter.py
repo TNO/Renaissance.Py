@@ -11,9 +11,9 @@ from pathlib import Path
 from hamcrest import assert_that, greater_than, has_length, is_
 
 import targets
+from renaissance.core.model import traverse
 from renaissance.integrations.clang.clang_adapter import ClangAdapter
-from renaissance.integrations.tree_sitter.lst import LST
-from renaissance.utils.ast_utils import traverse
+from renaissance.parser_bindings.tree_sitter import LST
 
 
 class TestClangAdapter:

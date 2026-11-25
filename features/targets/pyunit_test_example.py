@@ -6,13 +6,11 @@ from unittest import TestCase
 
 from parameterized import parameterized
 
-from c_cpp.factories import Factories
+from renaissance.core.match import match_pattern
+from renaissance.core.model import ASTFactory
 from renaissance.integrations.clang import CPatternFactory
-from renaissance.integrations.python.ast import PythonRstNode
-from renaissance.syntax_tree import ASTFactory
-from renaissance.syntax_tree.match_finder import (
-    match_pattern,
-)
+from renaissance.integrations.python.ast.rst_node import PythonRstNode
+from test.unit.shared.factories import Factories
 
 
 class FindMatchTest(unittest.TestCase):
