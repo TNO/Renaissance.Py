@@ -22,6 +22,7 @@ from hamcrest import (
 from libcst import ParserSyntaxError
 
 import targets
+from python.ast.factories import CST_PATTERNS_UNSUPPORTED
 from renaissance.integrations.python.ast.cst_node import PythonCstNode
 from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
 from renaissance.syntax_tree import ASTShower
@@ -38,6 +39,7 @@ class TestPythonCstNode:
         # create a pattern factory atu is passed to the pattern factory for use of all # includes, #defines and declarations
         self.pattern_factory = PythonPatternFactory(self.factory)
 
+    @CST_PATTERNS_UNSUPPORTED
     def test_slice(self) -> None:
         """AI: Verify a subscript slice expression's children expose the expected CST parser kinds in order."""
         it = self.pattern_factory.create_expression("items[1:2:3]")
@@ -48,6 +50,7 @@ class TestPythonCstNode:
         assert_that(it.children[3].parser_kind, is_("SubscriptElement"))
         assert_that(it.children[4].parser_kind, is_("RightSquareBracket"))
 
+    @CST_PATTERNS_UNSUPPORTED
     def test_attribute_signature_has_at(self) -> None:
         """AI: Verify a decorated function's decorator node signature includes the leading @ syntax."""
         src = self.pattern_factory.create_statement("@TUAT\ndef ba(): pass")

@@ -117,7 +117,9 @@ The native Python `ast.AST` adapter is a lightweight structural adapter and
 does not preserve source trivia in the same way as the lossless Python RST/CST
 adapters. Use the lossless adapter when source-preserving rewriting is needed.
 `PythonRefactoring` parses with the RST adapter by default; pass
-`node_class=PythonCstNode` to use the CST adapter instead.
+`node_class=PythonCstNode` to use the CST adapter instead. Patterns need the
+RST adapter: on the CST adapter, the `create*` methods of `PythonPatternFactory`
+and `replace_stmt` raise `NotImplementedError`.
 
 ## Classify nodes
 

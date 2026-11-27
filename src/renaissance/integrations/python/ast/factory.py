@@ -151,7 +151,16 @@ class PythonPatternFactory:
         return PythonPattern(self.factory.create_from_text(text, "pattern.py"))
 
     def create(self, text: str) -> PythonPattern:
-        """AI: Parse text as a Python pattern, substituting placeholder dollar syntax first."""
+        """Parse text as a Python pattern, substituting placeholder dollar syntax first.
+
+        Raises:
+            NotImplementedError: The factory parses with PythonCstNode, whose patterns do not match reliably.
+
+        """
+        # TODO(FrancescoPezzella): match patterns on PythonCstNode, see #400. Today print(1) matches print(2).
+        if issubclass(self.factory.clazz, PythonCstNode):
+            msg = "Patterns are not supported on PythonCstNode; build the PythonFactory with PythonRstNode."
+            raise NotImplementedError(msg)
         text = replace_dollar(text)
         return self._create(text)
 
