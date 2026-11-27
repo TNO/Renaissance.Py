@@ -10,6 +10,7 @@ import pytest
 from hamcrest import assert_that, has_length, is_, is_in
 
 from python.ast.factories import Factories
+from renaissance.integrations.python.ast.cst_node import PythonCstNode
 from renaissance.integrations.python.ast.factory import PythonFactory, PythonPatternFactory
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
 from renaissance.syntax_tree.match_finder import match_pattern
@@ -292,7 +293,7 @@ class TestPythonFactory:
 
     @pytest.mark.parametrize(
         ("_", "factory", "raw", "expected"),
-        Factories.extend(
+        Factories.extend_for_patterns(
             [
                 ("a = 1", ["Number", "Assign", "Literal", "Name", "AssignTarget", "Constant", "Integer", "assignment"]),
             ],
@@ -312,3 +313,26 @@ class TestPythonFactory:
         assert_that(pattern.children[1].children[0].pattern_kind, is_(PatternKind.MATCH_ALL))
         assert_that(pattern.children[1].children[1].pattern_kind, is_(PatternKind.MATCH_ONE))
         assert_that(pattern.children[1].children[2].pattern_kind, is_(PatternKind.MATCH_ALL))
+
+
+class _CstSubclass(PythonCstNode):
+    """A PythonCstNode subclass that adds nothing."""
+
+
+@pytest.mark.parametrize("node_class", [PythonCstNode, _CstSubclass], ids=["cst", "cst_subclass"])
+@pytest.mark.parametrize(
+    ("method", "text"),
+    [
+        ("create", "print($x)"),
+        ("create_statements", "print($x)"),
+        ("create_statement", "print($x)"),
+        ("create_expression", "print($x)"),
+        ("create_decorators", "@$decorator"),
+    ],
+)
+def test_cst_patterns_are_rejected(node_class: type[PythonCstNode], method: str, text: str) -> None:
+    """Verify every pattern creation method raises NotImplementedError for a PythonCstNode factory."""
+    pattern_factory = PythonPatternFactory(PythonFactory(node_class))
+
+    with pytest.raises(NotImplementedError, match="PythonRstNode"):
+        getattr(pattern_factory, method)(text)

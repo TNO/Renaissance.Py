@@ -106,6 +106,16 @@ class TestPythonRefactoring:
         )
         assert_that(subject.apply_to_string(), contains_string("import pytest"))
 
+    def test_replace_stmt_rejects_the_cst_backend(self, mocker: MockerFixture) -> None:
+        """Verify replace_stmt on a PythonCstNode recipe raises NotImplementedError and leaves the source unchanged."""
+        self._patch_factory(mocker, "x = 1\ny = 2\n", "test_foo.py", PythonCstNode)
+        subject = PythonRefactoring(Path("test_foo.py"), node_class=PythonCstNode)
+
+        with pytest.raises(NotImplementedError, match="PythonRstNode"):
+            subject.replace_stmt("x = 1", "x = 3")
+
+        assert_that(subject.apply_to_string(), is_("x = 1\ny = 2\n"))
+
     # ------------------------------------------------------------------
     # extract_call_arguments()
     # ------------------------------------------------------------------

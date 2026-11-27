@@ -9,14 +9,22 @@
 import ast
 from itertools import product
 
+import pytest
+
 from renaissance.integrations.python.ast.cst_node import PythonCstNode
 from renaissance.integrations.python.ast.factory import PythonFactory
 from renaissance.integrations.python.ast.rst_node import PythonRstNode
 from renaissance.integrations.tree_sitter.lst import LSTNode
 
+CST_PATTERNS_UNSUPPORTED = pytest.mark.xfail(
+    raises=NotImplementedError,
+    strict=True,
+    reason="PythonPatternFactory does not support PythonCstNode, see #400",
+)
+
 
 class Factories:
-    """AI: Shared list of (name, PythonFactory) pairs for each Python node backend, plus a helper to expand test parameters across them."""
+    """Shared list of (name, PythonFactory) pairs for each Python node backend, plus helpers to expand test parameters across them."""
 
     # add factories here to test different ASTNode implementations
     node_types = [
@@ -34,3 +42,16 @@ class Factories:
             (str(factory[0]) + " " + str(pars[0]), factory[1], *pars) for factory, pars in product(Factories.factories, test_parameters)
         ]
         return result
+
+    @staticmethod
+    def extend_for_patterns(test_parameters: list[tuple[object, ...]]) -> list[object]:
+        """Expand test parameters like extend, marking each PythonCstNode case with CST_PATTERNS_UNSUPPORTED."""
+        cases: list[object] = []
+        for name, factory in Factories.factories:
+            for parameters in test_parameters:
+                case = (f"{name} {parameters[0]}", factory, *parameters)
+                if factory.clazz is PythonCstNode:
+                    cases.append(pytest.param(*case, marks=CST_PATTERNS_UNSUPPORTED))
+                else:
+                    cases.append(case)
+        return cases

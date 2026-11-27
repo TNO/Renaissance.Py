@@ -43,7 +43,12 @@ class PythonRefactoring[NodeT: PythonRstNode | PythonCstNode = PythonRstNode](AS
         self.white_list_pattern = ""
 
     def replace_stmt(self, find, repl) -> None:
-        """AI: Replace all statements matching the find pattern with the repl template, expanding captures."""
+        """Replace all statements matching the find pattern with the repl template, expanding captures.
+
+        Raises:
+            NotImplementedError: The recipe parses with PythonCstNode, which does not support patterns.
+
+        """
         pattern = self.pattern_factory.create_statements(find)
         for match in match_pattern(self.root.children, pattern):
             replacement = repl

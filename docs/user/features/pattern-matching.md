@@ -26,6 +26,12 @@ The system supports sequence-based, kind-based, and structural matching with pla
 
 ## MISC
 
+## Scenario: Python parser backends
+
+- Python patterns match on `PythonRstNode`.
+- With a `PythonFactory(PythonCstNode)`, the `create*` methods of `PythonPatternFactory` and
+  `PythonRefactoring.replace_stmt` raise `NotImplementedError` instead of matching.
+
 ## Scenario: Independent of layout (whitespaces)
 
 ## Scenario: Independent of comments

@@ -37,7 +37,7 @@ class TestPythonNodes:
 
     @pytest.mark.parametrize(
         ("_", "factory", "raw", "kind"),
-        Factories.extend(
+        Factories.extend_for_patterns(
             [
                 ("i:int=0", "AnnAssign"),
                 ("assert 0", "Assert"),
@@ -105,7 +105,7 @@ def outer():
         it = factory.create_from_text(raw, "context.py")
         assert_that(any(has_parser_or_semantic_kind(node, kind) for node in traverse(it) if hasattr(node, "parser_kind")), is_(True))
 
-    @pytest.mark.parametrize(("_", "factory", "raw", "kind"), Factories.extend([("global x", "Global")]))
+    @pytest.mark.parametrize(("_", "factory", "raw", "kind"), Factories.extend_for_patterns([("global x", "Global")]))
     def test_global_stmt(self, _, factory, raw, kind) -> None:
         """AI: Verify a global statement parses to the expected parser/semantic kind."""
         pattern_factory = PythonPatternFactory(factory)
@@ -114,7 +114,7 @@ def outer():
 
     @pytest.mark.parametrize(
         ("_", "factory", "raw", "kind"),
-        Factories.extend(
+        Factories.extend_for_patterns(
             [
                 ("fun()", "Call"),
                 ("{one: 1, two:2}", "Dict"),
@@ -143,7 +143,7 @@ def outer():
 
     @pytest.mark.parametrize(
         ("_", "factory", "raw", "kind"),
-        Factories.extend(
+        Factories.extend_for_patterns(
             [
                 ("a == b", "Eq"),
                 ("a in b", "In"),
@@ -169,7 +169,7 @@ def outer():
 
     @pytest.mark.parametrize(
         ("_", "factory", "raw", "kind"),
-        Factories.extend(
+        Factories.extend_for_patterns(
             [
                 ('case None: return "No data"', "MatchSingleton"),
                 ('case True | False: return "Boolean value"', "MatchOr"),
@@ -203,7 +203,7 @@ def outer():
 
     @pytest.mark.parametrize(
         ("_", "factory", "raw", "kind"),
-        Factories.extend(
+        Factories.extend_for_patterns(
             [
                 ("a % b", "Mod"),
                 ("a / b", "Div"),
@@ -225,7 +225,7 @@ def outer():
 
     @pytest.mark.parametrize(
         ("_", "factory", "raw", "kind"),
-        Factories.extend(
+        Factories.extend_for_patterns(
             [
                 ("+b", "UAdd"),
                 ("-b", "USub"),
